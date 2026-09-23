@@ -61,3 +61,4 @@
 - 검색 한도가 세션 전체에서 공유된다(첫 세션은 200회). 원문 읽기(curl/WebFetch)를 우선하고 검색은 아껴 쓴다.
 - 사용자에게는 한국어로, 짧고 명확하게 보고한다.
 - `paper/` 컴파일 확인(로컬 Windows): Tectonic 0.15.0이 `D:	ools	ectonic	ectonic.exe`에 있다. `rm -rf D:/tools/texbuild; mkdir D:/tools/texbuild; cp -r paper/. D:/tools/texbuild/; cd D:/tools/texbuild; TECTONIC_CACHE_DIR=D:/tools/tectonic/cache D:/tools/tectonic/tectonic.exe main.tex`. PDF 확인은 `PYTHONPATH=D:/tools/pylib`의 pymupdf. 참고 문헌은 arXiv abs 메타데이터로 만든다(스크립트 예: 로컬 `D:	mp_mainmkbib.py`). 작업 드라이브는 D만 쓴다.
+- Windows 클론은 체크아웃 파일이 CRLF다. `sed`로 줄 단위 치환하면 조용히 실패할 수 있다(2026-09-23 실제로 발생). tex/md 수정은 Edit 도구나 python(open → replace → write)으로 하고, 결과를 grep으로 확인한다.
