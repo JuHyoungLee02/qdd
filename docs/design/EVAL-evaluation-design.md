@@ -1,0 +1,209 @@
+# EVAL. 평가 설계 (구체화판)
+
+작성: 2026-09-24, 단계 2 평가 설계 에이전트. 대상: `plan.md` §3 평가, §5, §6 / `docs/research/v3/10`, `13` / `user-log.md` 11-(10)(11).
+표기: **[원문]** = 문서·README·논문이 말한 것(출처 URL과 위치). **[우리 계획]** = 우리 제안. **[사용자]** = 사용자 발언(바꾸지 않음). **[결정 필요]** = 사용자가 정할 것. **[우리 계산]** = 공개 원자료로 우리가 직접 계산한 값(원문에 없는 수치).
+
+---
+
+## 0. 사용자 의도 [사용자] (바꾸지 않는다)
+- 비교 대상: **Astra만 / Jev만 / VLA / 룰베이스(스킬 다발) / LLM+스킬을 연결한 기존 논문 / Astra를 쓰는 기존 논문.** (user-log 11-(10))
+- "VLA는 다른 환경으로 일반화가 안 되고 LLM은 된다. 이걸 엄청 부각하고 항상 기억한다." (user-log 11-(5))
+- 안전은 크게 다루지 않는다. (user-log 11-(11)) → 이 문서는 안전 지표를 두지 않는다. 시뮬레이터가 내는 불안정 표본 처리만 적는다(§6).
+
+## 1. 이번에 새로 확인한 것 (앞 보고서 정정 포함)
+
+| # | 내용 | 구분 | 출처 |
+|---|---|---|---|
+| N1 | **Astra의 RoboDojo Gen standard/random 분리 수치를 공개 원자료로 계산할 수 있다.** RoboProbe 저장소가 2,100칸 전부를 칸(slot)별로 공개한다. Gen 과제는 "slot 1–25 = standard, 26–50 = 짝지은 `_random`"이고 **같은 layout_id 0–24를 양쪽에 쓴다(짝 300쌍)**. | [원문] | `https://raw.githubusercontent.com/RoboProbe/RoboProbe/main/results/l3_inspect_eef_official_2100/astra_task_layouts.json` (`protocol.generalization` 필드) |
+| N2 | 위 자료로 계산: Astra Gen **Score 35.32 → 31.40 (상대 하락 −11.1%)**, **SR 32.67 → 28.33% (−13.3%)**. 두 조건 평균 33.36 / 30.50은 논문 표 1 Gen 셀과 일치(검산 통과). 95% CI(과제 재표집 부트스트랩 1만 회): Score 하락 2.2~22.2%, SR 하락 3.8~27.1%. 과제 안 짝 재표집(과제 고정): −3.6~23.8%. | **[우리 계산]** (논문에 없는 값. 논문 2609.24170은 Gen을 평균만 보고) | 같은 JSON, 스크립트는 §9 |
+| N3 | 과제별(Score, std→rnd): stack_blocks 89.8→86.4, fold_clothes 76.8→76.0, arrange_largest_number 76.0→61.4, stack_bowls 68.8→64.2, push_T 68.0→52.0, sort_nesting_dolls 16.0→20.0, pack_objects 11.0→12.2, sweep_blocks 8.0→0.0, pour_liquid 8.0→0.0, hang_mugs 0.6→1.2, make_toast 0.0→1.0, store_laptop 0.8→2.4. **12개 중 5개는 standard에서도 거의 0점(바닥 효과)**이라 하락폭은 7개 과제가 정한다(standard Score ≥10 과제만: −8.4%). | [우리 계산] | 같은 JSON |
+| N4 | 비교: RoboDojo 원 논문 표 3 π0.5 **20.92 → 5.82 (−72.2%)**. 즉 공개 자료만으로도 "Astra-as-policy는 random에서 −11%, 미세조정 VLA는 −65~−93%"라는 **예비 지지 증거**가 있다. 단 (1) Astra는 wiki 레시피를 받았고 VLA는 안 받았다, (2) Astra는 1 seed, (3) "같은 인식" 조건이 아니다(둘 다 RGB 직접). | [원문] + [우리 계산] | 2607.04434 표 3, 2609.24170 §3.3 |
+| N5 | **RoboDojo 라이선스 표기가 엇갈린다.** 저장소 `LICENSE` 파일은 MIT(© 2025 Yue Chen)인데 README 본문·배지는 "RoboDojo **Non-Commercial** Research License … Commercial use requires prior written permission". v3/10·13의 "MIT"는 **정정 필요**. 연구 목적 사용은 양쪽 모두 허용이라 우리 평가에는 지장 없음. 보수적으로 "비상업 연구용"으로 적는다. | [원문] | `raw.githubusercontent.com/RoboDojo-Benchmark/RoboDojo/main/README.md` 끝 "License" 절, 같은 저장소 `LICENSE` |
+| N6 | **LIBERO-PRO README에는 환경(Env) 섭동 수치가 표로 있다**(v3/10은 "그림에만"이라 적음 → 보완). π0.5 Env: Goal 0.46 / Spatial 0.46 / 10 0.46 / Object 0.73. π0: 0.39/0.60/0.27/0.29. OpenVLA: 0.98/0.89/0.85/0.00. 원본 LIBERO는 모두 ≥0.9. 단 README 스스로 "환경을 바꾸면 경우에 따라 탁자 위 물체가 무작위로 움직인다, `main_table`만 안정"이라고 적어 **환경 축 신뢰성이 낮다.** | [원문] | `raw.githubusercontent.com/Zxy-MLlab/LIBERO-PRO/master/README.md` "LIBERO-Pro Model Leaderboard", "Note!!!" 줄 |
+| N7 | LIBERO-Plus README 리더보드 값이 논문 표 1과 다르다(π0 카메라: README 13.8 / 논문 15.8, 조명 85.0 / 79.6). 판본이 다른 것으로 보인다. **인용할 때 출처(README 대 논문 표)를 반드시 명시.** | [원문] | `raw.githubusercontent.com/sylvestf/LIBERO-plus/main/README.md` |
+| N8 | **Isaac Sim 5.1 공식 요구사항은 "RT 코어 없는 GPU 미지원"**이다(RoboDojo Installation Issues 문서가 인용). 우리 H200은 RT 코어가 없다. 한편 RoboProbe `setup`은 "A100/A800 호스트에서는 `scripts/a100_env_setup.sh`"를 제공한다(A100도 RT 코어 없음) → 데이터센터 GPU에서 돌리는 우회 경로가 실제로 있다. **첫 단계에서 스모크로 확인해야 할 1순위 위험.** | [원문] | `robodojo-benchmark.com/doc/common-issue/installation/`, `raw.githubusercontent.com/RoboProbe/RoboProbe/main/README.md` |
+| N9 | RoboProbe Lite 주 조건의 정보 경계: **RGB + 고유수용(관절) + 공식 지시문만.** "Depth, camera calibration, ground-truth object poses, layout metadata and reward internals are not available." | [원문] | `RoboProbe/docs/llm_benchmark_protocol.md` "Locked benchmark boundary" |
+| N10 | GPT-as-Policy(Astra xhigh가 π0.5 행동을 검토·수정): RoboDojo 10과제 × 정렬 사례 5개, 하이브리드 Score 62.60 / SR 48%, Astra Direct 26% / 37.81. "공식 모델 비교는 재가중 공개 참고치이지 같은 seed 재실행이 아니다." 코드 공개(시뮬 자산·체크포인트 제외). | [원문] | `raw.githubusercontent.com/anonymous-report-421/GPT-as-Policy/main/README.md` 9행 |
+
+---
+
+## 2. 벤치마크별 실행 가능성
+
+### 2.1 RoboDojo-Sim (주 벤치마크) [원문 → 우리 계획]
+| 항목 | [원문] | 출처 |
+|---|---|---|
+| 시뮬레이터 | Isaac Sim 5.1 + Isaac Lab 2.3, Python 3.11, CuRobo | README 배지, doc/usage/install-and-download |
+| 하드웨어 | Ubuntu 22.04 권장, RAM ≥32 GB, VRAM ≥16 GB, 드라이버 570/580, CUDA 12.8. Isaac Sim 5.1은 RT 코어 없는 GPU 미지원(N8) | install-and-download §1, common-issue/installation |
+| 설치 | `bash scripts/install.sh -i` (단계별 재개 `--from isaacsim` 등), 자산 `scripts/init_assets.sh`(ModelScope, git-lfs), 경로 갱신 스크립트. Docker(시뮬 쪽만) 선택 | install §3~5, §8 |
+| 데이터 | LeRobot v2.1 64 GB / v3.0 120 GB / HDF5 523 GB / 깊이 포함 ≈4.5 TB / 실물 273 GB. 25 Hz, 카메라 3개(머리·좌우 손목, 480×640) | install §6 |
+| 체크포인트 | `scripts/RoboDojo/download_ckpt.sh huggingface Pi_0` 식으로 정책별 다운로드(어댑터가 있어야 함) | install §7 |
+| 로봇 | 양팔 ARX X5(`dual_x5`, 팔 6축 × 2 + 그리퍼 1 × 2), 행동 `joint` 또는 `ee`(기본 `ee`) | configurations "Robot config", quick-evaluation 인자표 |
+| 과제 | 42 기본 + Gen 12개의 `_random` 짝 = 실행 가능 54개. Gen 12 / Memory 6 / Precision 8 / Long 8 / Open 8 | quick-evaluation "Benchmark rules" |
+| standard/random 설정 | **`_random`은 별도 과제 설정**(`stack_bowls_random` 등, 같은 목적, `--only`로 따로 실행). 무작위화 대상 5가지: 탁자 위 방해물, 탁자 재질, 바닥 재질, 조명(종류·세기·색온도), HDR 배경. 배치는 seed로 고정된 `Assets/Eval_Layout/RoboDojo/arx_x5/<seed>/` | quick-evaluation, sim-tasks/domain-randomization, configurations |
+| 공식 에피소드 수 | `--eval-num native`: 비-Gen 과제 50회/seed, Gen 기본 25회/seed, Gen random 25회/seed. 출판용은 seed 0·1·2 세 번. 요약 스크립트가 Gen 기본과 `_random`을 합쳐 `_summary.md` | quick-evaluation "Complete evaluation" |
+| 점수 | 과제별 단계 점수(예: stack_bowls 0/15/100), Score = 과정 보상 평균 × 100, SR = 완전 성공 비율 | sim-tasks/stack-bowls, 2609.24170 §3.3 |
+| 정책 꽂기 | XPolicyLab 어댑터: `policy/<NAME>/eval.sh`, `deploy.yml`, `model.py`(`update_obs`, `get_action`, `reset`, 배치판). websocket 정책 서버 ↔ Isaac 클라이언트 분리 가능. **`EVAL_ENV_TYPE=debug`로 Isaac 없이 배선 점검** | doc/usage/xpolicylab |
+| 관측 형식 | RGB(+선택 깊이·내부/외부 행렬), 관절·EE 자세. 깊이·행렬은 설정(`observation.vision`)으로 켜고 끔 | configurations "Top-level config", xpolicylab "Standard Data Formats" |
+| 불안정 표본 | 배치 불안정·보조 팔 실패 표본은 "unstable"로 표시되고 **집계에서 빠진다**(정책 실패로 세지 않음) | common-issue/evaluation |
+| 병렬 | `scene.num_envs`(기본 1), `--gpu-ids`로 과제를 GPU별 분배 | parallel-environments, quick-evaluation |
+| 라이선스 | README: 비상업 연구 라이선스 / LICENSE 파일: MIT (N5) | README |
+
+**[우리 계획] 우리 스택을 꽂는 방법**
+- 정책 서버 = 우리 스택 전체(인식 앞단 M1 → Jev/Astra 결정 → 스킬 → M5). XPolicyLab `model.py`의 `get_action()`이 **행동 덩어리(action chunk)**를 돌려주는 구조라, 우리 비정지 루프는 서버 안에서 돌고 `get_action()`은 "현재 확정 궤적의 다음 N틱"을 넘긴다. 25 Hz 시뮬이 정책 응답을 기다리는지(동기 스텝)는 **확인 못 함** → 시뮬이 기다리면 "비정지"의 벽시계 이점은 시뮬에서 드러나지 않는다(§7 위험 R3).
+- 행동 공간은 `ee`(RoboProbe L3 Inspect EEF와 같은 경계). 스킬은 EE 목표 → 비학습 계획기(CuRobo/RoboProbe 변환부)로 관절 경로. **RoboProbe 변환부를 그대로 재사용**하면 Astra 기존 결과와 행동 경계가 같아진다.
+- 정보 경계는 두 트랙으로 나눈다 [결정 필요]:
+  - **트랙 O(공식 경계)**: RGB + 관절 + 지시문(+ wiki 레시피, Astra 조건과 같게). 깊이·보정·정답 자세 없음(N9와 같음). 인식 앞단은 RGB에서만 상태를 만든다(M1 후보 중 단안 깊이/다중 시점 방식 필요).
+  - **트랙 D(확장 감지)**: 깊이·카메라 행렬을 켠다. VLA는 원래 쓰지 않는 정보라 **표에 "입력 정보 다름"을 적고 주 주장에는 쓰지 않는다.**
+  - 정답 상태(시뮬 내부 자세)는 **상한선 참고**로만(v3/10 §3-4 유지).
+
+### 2.2 LIBERO-Plus (보조, 환경 축 세분)
+- [원문] robosuite/MuJoCo, 원 LIBERO를 대체 설치(`pip install -e .` + 추가 apt 패키지), 자산은 HF `Sylvest/LIBERO-plus`. 평가는 LIBERO와 같고 `num_trials_per_task`를 50 → 1로. 과제 10,030개, 과제 ID ↔ 섭동 범주·난이도 표 `task_classification.json`. 섭동 7축: 배치, 카메라, 로봇 초기 상태, 언어, 조명, 배경, 센서 노이즈. 평가 대상은 VLA만. CVPR 2026.
+- 설정 부담: 낮음(단일 Franka, MuJoCo, GPU는 렌더·VLA 추론 정도). 우리 스택: 단일 팔용 스킬 필요(양팔 스킬과 별도). 정답 상태를 주면 조명·배경·노이즈 축이 무의미해지므로 **인식 추정 상태로만** 돌린다.
+- 공개 수치: VLA 10종(README 표, 논문 표 1과 판본 차이 N7), Astra판 TGL LIBERO-Plus 92.4%(v3/01, 축별 분리 여부 미확인).
+
+### 2.3 LIBERO-PRO (보조, 범주 5·6 공개 수치가 가장 많은 곳)
+- [원문] LIBERO와 같은 환경(conda py3.8, torch 1.11), bddl/init 파일은 HF `zhouxueyang/LIBERO-Pro`. `evaluation_config.yaml`의 `use_environment / use_swap(위치) / use_object / use_language / use_task`, 한 번에 하나(조합은 설정 가능, task는 조합 불가). 환경 섭동 불안정 경고(N6). 라이선스 MIT 배지.
+- 공개 수치: VLA(README 표, Env 열 포함), CaP-X(위치·작업 축만, 표 2), RPent Astra low **92.63% (741/800, 8개 묶음 전체)** — 어느 섭동 축인지는 문서 확인 필요(`rpent.readthedocs.io` 리더보드), Zetta 90.8%.
+- 우리 쓰임: **환경 주장 근거로는 약하다**(N6). 범주 5·6 기존 방법과 같은 판에 서는 용도.
+
+### 2.4 AGNOSTOS (선택, 작업 축)
+- [원문] RLBench/CoppeliaSim, Pixi로 설치(CUDA 12.4 필요), 데이터 seen 18과제 140 GB + unseen 23과제 20.2 GB. X-ICM(7B 23.5%, 72B 30.1%, 로그 공개), VLA는 seen 18과제로 미세조정 후 unseen 23과제 시험(`custom_agent.py`의 `_inference`만 구현하면 됨). NeurIPS 2025.
+- 우리 쓰임: 작업 축(새 작업) 보조. X-ICM은 LLM(Qwen 72B, 로컬 GPU 필요)이라 범주 5 비교가 된다. 환경 축 근거는 아님.
+
+### 2.5 MolmoSpaces (선택, "양쪽 모두 zero-shot" 새 집)
+- [원문] `pip install molmo-spaces==0.2.9`(벤치 고정 판본), **벤치 실행은 MuJoCo만 지원**, 8작업 벤치(MS-Bench v1/v2), `eval_main.py … PiPolicyEvalConfig --benchmark_dir …`. Franka FR3(+Robotiq), RB-Y1 등. Apache 2.0(일부 Objaverse 자산은 비상업). 2026-09-13 "업그레이드 중, 안정판 0.2.9 사용" 공지. 리더보드 `molmospaces.allen.ai/leaderboard`, 정책 모음 `molmospaces_policy_zoo`.
+- 우리 쓰임: π0.5-DROID도 해당 집 데이터 0이라 **가장 공정한 zero-shot 비교**. 단 Franka 스킬을 새로 붙여야 하고 결과 수치가 논문에선 그림뿐. 4단계 이후.
+
+### 2.6 요약표 [우리 계획]
+| 벤치 | 설정 부담 | GPU | 우리 스택 꽂기 | 범주 1 | 2 | 3 | 4 | 5 | 6 | 쓰임 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| RoboDojo-Sim | **높음**(Isaac 5.1, RT 코어 위험, 자산 수십 GB) | 작업자당 ≥16 GB VRAM 1장 | XPolicyLab 어댑터, `ee` 경계 | **공개 칸별 자료(N1)** | 구현 | 공개 40종 + 체크포인트 재실행 | 구현 | 재구현 필요 | **RoboProbe, GPT-as-Policy 코드** | **주: 환경 축(Gen) + 작업 축(Open)** |
+| LIBERO-Plus | 낮음 | 작음 | 단일 팔 스킬 필요 | TGL(축 불명) | 구현 | VLA 10종 | 구현 | 없음 | TGL | 보조: 환경 축 세분 |
+| LIBERO-PRO | 낮음 | 작음 | 같음 | RPent Astra | 구현 | VLA 6종 | 구현 | CaP-X, Zetta | RPent | 보조: 기존 방법과 같은 판 |
+| AGNOSTOS | 중간(CoppeliaSim) | 72B 로컬 LLM 시 큼 | 키프레임 자세 출력 | 없음 | 구현 | π0·OpenVLA·RDT | 구현 | X-ICM, D&R | 없음 | 선택: 작업 축 |
+| MolmoSpaces | 중간 | 작음(MuJoCo) | Franka 스킬 새로 | 없음 | 구현 | π0/π0.5-DROID zero-shot | 구현 | 없음 | 없음 | 선택: 새 집 |
+
+---
+
+## 3. 기준 방법 재현 경로
+
+### 3.1 범주별 [사용자 범주 → 우리 계획]
+| 범주 | 구체 조건 | 코드 | 새로 구현할 것 | 공정 조건 |
+|---|---|---|---|---|
+| 1. Astra만 | **B1a** RoboProbe L3 Inspect EEF 그대로(이미지 직접, `move_eef`/`give_up`, 호출 100회, medium). **B1b** 우리 인식·스킬 위에서 Astra가 결정 지점마다 직접 답(Jev 없음, 로봇은 응답 동안 "직전 행동 유지") | B1a: RoboProbe 공개(설정 스크립트, `run_fixed_layout.sh`) + 칸별 결과 공개 | B1b는 우리 스택의 스위치 | B1a는 **공개 결과 재사용 + 일부 layout 재실행으로 모델 판본 변동 확인**. B1b는 Astra 호출 상한을 우리 시스템과 같게 |
+| 2. Jev만 | 우리 스택에서 Astra 끔. 첫 계획(세션 계약)은 과제별 고정 문서, 실패 시 Astra 대신 M9 아래 층 복구만 | Jev API | 과제별 고정 세션 계약 12개(Gen) | [결정 필요] 고정 계약을 누가 쓰나: (a) 사람이 wiki 레시피로 작성(정보 동등) / (b) Astra가 standard 장면 1장으로 사전 작성(Astra 누출) |
+| 3. VLA | **B3a** 공개 표 3 수치(π0.5, X-VLA, Spatial Forcing, π0, GR00T N1.7, Hy-Embodied). **B3b** XPolicyLab 체크포인트로 π0.5(필수)·X-VLA·Spatial Forcing을 **같은 layout 0–24에서 재실행**(칸별 짝 자료 확보, 표 3 재현 점검). **B3c** [우리 계획] "같은 인식 위 학습 결정 층": 우리 인식 앞단이 만든 상태 벡터/술어를 입력으로 받는 상태 기반 모방 정책(DP 또는 ACT)을 **standard 시연으로만** 학습 | B3a/b: XPolicyLab `policy/Pi_05` 등 + `download_ckpt.sh` | B3c: 시연 영상 → 인식 앞단 → 상태 변환, 학습 스크립트 | B3b는 공식 native 프로토콜. B3c는 우리 방법과 **입력이 완전히 같다** → 핵심 대조의 "VLA식 학습 결정 층" 대표 |
+| 4. 룰베이스(스킬 다발) | **B4a** 같은 술어·같은 스킬 위 손으로 쓴 규칙(E2의 룰). **B4b** 과제별 고정 스킬 순서(분기 없음) | 없음 | 과제별 규칙표 | 규칙 작성 시간(사람-시간)과 개발에 쓴 seed를 기록. 규칙 작성자는 standard 장면만 본다(random은 시험 전용) |
+| 5. LLM+스킬 기존 논문 | **B5a** CaP-X를 LIBERO-PRO에서 공개 코드로(공개 수치와 대조). **B5b** RoboDojo에서 "CaP-X식" 재구현: Astra가 우리 스킬 API 위에서 코드 생성 + 다회 실행 피드백. **B5c** X-ICM(AGNOSTOS, 선택). Show-Harness는 Isaac Lab·Piper 양팔 해석기가 있어 ARX X5 이식을 검토 | CaP-X 공개(ICML 2026), X-ICM 공개, Show-Harness 공개 | B5b 전부, Show-Harness ARX 해석기 | B5b는 "재구현"임을 표기. 같은 스킬 API·같은 인식·같은 Astra 판본·같은 호출 상한 |
+| 6. Astra 쓰는 기존 논문 | **B6a** RoboDojo Astra = B1a와 같은 것(논문 2609.24170). **B6b** GPT-as-Policy(π0.5 + Astra xhigh 검토) 공개 코드로 Gen 12과제 재실행. **B6c** RPent Astra를 LIBERO-PRO에서(공개 수치 + 코드) | RoboProbe, GPT-as-Policy, RPent 공개 | GPT-as-Policy의 클러스터 설정 이식 | B6b는 π0.5 체크포인트가 같은 것인지 확인. effort는 원문대로 xhigh |
+| 7. 예산 맞춘 메모리 없음 | 우리 스택에서 M10(경험) 끔, Astra·Jev 호출 수를 켠 쪽 실측에 맞춤 | 우리 스택 | 없음 | 호출 수 ±10% 안 |
+| 8. logprob 선택기 | Jev 자리에 GPT-6 Sol/Luna(`none` effort, logprob) 또는 system-one-adapter를 같은 질문·보기로 | API | 질문 형식 어댑터 | 같은 결정 지점·같은 보기·같은 호출 주기 |
+
+### 3.2 공정 조건 체크리스트 (모든 비교에 적용) [우리 계획]
+1. **같은 layout·seed**: RoboDojo `Eval_Layout/arx_x5/<seed>` layout_id 0–24(Gen std/rnd 짝). 모든 시스템이 같은 칸을 돈다.
+2. **같은 인식**(범주 2·4·7·8, B1b, B3c, B5b): M1 판본 해시를 결과 파일에 기록. 인식 앞단은 standard 장면에서만 조정(개발). random은 시험 전용.
+3. **정보 동등**: wiki 레시피 문장을 **모든 LLM 시스템(B1, B2, 우리, B5b, B6)과 규칙 작성자**에게 똑같이 준다. VLA(B3a/b)는 레시피를 쓸 수 없으므로 표에 "입력 정보 다름" 표기(원문 2609.24170 §3.3과 같은 단서).
+4. **같은 호출 예산**: Astra 호출 상한 100/에피소드(RoboDojo 기본값). Jev는 초당 상한(설정 표 T_c 0.33 s)과 에피소드 총량을 기록. 비용(달러)·토큰도 같이 보고.
+5. **같은 행동 경계**: `ee` 목표 + RoboProbe 비학습 변환부. 정밀 프리미티브(집기 등)를 쓰는 시스템(우리, B4, B5b)은 RoboProbe 원문이 "집기 프리미티브를 주지 않는다"고 한 것과 **조건이 다르다**는 것을 B1a 대비 표에 적는다.
+6. **모델 판본 고정**: Astra·Jev(`jev-1.13.0`)·Sol 판본 문자열과 날짜 기록. B1a 공개 결과는 2026-09 이전 실행이므로 **재실행 표본(과제 4개 × 짝 10개)으로 판본 변동 점검**.
+7. **effort**: B1a는 원문 medium. 우리 시스템의 Astra effort는 [결정 필요](§8 Q2).
+8. **불안정 표본**: RoboDojo가 빼는 unstable 표본은 모든 시스템에서 같은 규칙(버퍼 layout ≥50으로 채움, RoboProbe 선택 규칙과 같게)으로 처리하고 개수를 보고.
+
+---
+
+## 4. 핵심 주장 시험 (사전 등록안)
+
+### 4.1 주장과 가설 [우리 계획, 문구는 plan §3 [제안] 유지, 최종 [결정 필요]]
+- 주장: "같은 인식 앞단 위에서, 과제 데이터로 미세조정한 VLA식 정책은 배경·조명·방해물이 바뀌면 성능 대부분을 잃는다. 학습 없는 API 모델 + 스킬 결정 층은 같은 변화에서 상대 하락폭이 작다." 절대 성공률 우위는 주장하지 않는다.
+- **H1 (시스템 수준)**: RD(우리) < RD(π0.5 재실행 B3b).
+- **H2 (같은 인식, 학습 결정 층 대 LLM 결정 층)**: RD(우리) < RD(B3c). ← 사용자 요구 "같은 인식, VLA 대 LLM"을 가장 깨끗하게 재는 대조.
+- **H3 (같은 인식, 규칙 대 LLM)**: random 조건 Score(우리) > Score(B4a). RD 차이도 보고. ← 인식이 환경 변화를 막아 주면 규칙도 안 무너질 수 있다. 그 경우 LLM의 몫은 RD가 아니라 random에서의 절대 점수·Open 축·복구에서 보여야 한다(정직하게 사전 등록).
+- **H4 (인식 귀속)**: standard → random에서 인식 술어 정확도 하락(시뮬 정답과 비교, 분석용 기록만, 정책 입력 아님)이 RD의 몇 %를 설명하는지.
+
+### 4.2 프로토콜
+- 과제: RoboDojo Gen 12과제 전부(주). 바닥 효과 과제(standard Score <10)도 빼지 않고 포함하되, 부차 분석으로 "standard Score ≥10 과제만"을 따로 보고(사전 등록).
+- 에피소드: 과제당 standard 25 + random 25(layout 0–24 짝) × seed 0 = **시스템당 600회**. 주 시스템(우리, B4a, B3b, B3c)은 seed 1·2를 더해 1,800회(예산 되면). B1a는 공개 자료 1 seed.
+- 지표: 주 = **상대 하락 RD = 1 − Score_rnd / Score_std**(과제 합산 Score, RoboDojo 표 3과 같은 식). 보조 = SR 기반 RD, 과제별 RD, random 절대 Score, 0% 과제 수, 결정 수·호출 수·지연 p50/p95·비용.
+- 통계:
+  - **짝 층화 부트스트랩**(과제 고정, 과제 안 layout 짝 재표집, 시스템 간에도 같은 layout 인덱스로 같이 재표집) 10,000회, 95% 백분위 CI. 이게 주 추론(12과제를 고정 대상으로 보는 해석).
+  - **과제 군집 부트스트랩**(과제 재표집 후 과제 안 짝 재표집) = "다른 과제로 일반화" 해석용 부차 CI.
+  - 시스템 간 차이 ΔRD = RD(A) − RD(B)의 CI. 과제별 짝 McNemar(SR)는 기술 통계로만.
+  - 다중 비교: 주 가설 H1·H2 두 개만 확인적, 나머지는 탐색적으로 표기.
+- **사전 등록 판정 기준**
+  - H1 지지: ΔRD(우리 − π0.5) 95% CI 상한 < 0 **그리고** RD(우리) 점추정 ≤ 35%(π0.5 72%의 절반 이하).
+  - H2 지지: ΔRD(우리 − B3c) 95% CI 상한 < 0. B3c가 standard에서 우리보다 Score가 낮으면(학습이 덜 된 경우) "공정 비교 불성립"으로 기록하고 B3c 학습을 늘린다(시연 수·에폭은 사전에 고정, 늘리는 규칙도 사전 고정: standard Score가 π0.5 재실행의 80% 이상이 될 때까지 최대 2회).
+  - H3: random Score 차이(우리 − B4a) CI 하한 > 0이면 지지. CI가 0을 걸치고 RD도 비슷하면 "환경 강건성은 인식 앞단 몫"으로 결론을 **바꿔 적는다**(주장 문구 수정 [결정 필요]).
+  - 실패 처리: H1이 기각되면 핵심 메시지를 주 결과로 쓰지 않고 사용자에게 보고.
+- 표본 크기 근거 [우리 계산]: Astra 1 seed(600회)의 RD CI 폭이 약 ±10~13%p(N2). π0.5와의 차이(약 60%p)는 1 seed로 충분히 검출. H2·H3의 차이가 10%p 수준이면 1 seed로는 CI가 0을 걸칠 수 있어 **seed 0 결과로 차이 점추정이 <15%p면 seed 1·2를 추가**(사전 규칙).
+
+### 4.3 이미 가진 예비 결과 [우리 계산]
+| 시스템 | standard Score | random Score | RD | 조건 |
+|---|---|---|---|---|
+| GPT-6 Astra (RoboProbe L3, B1a) | 35.32 | 31.40 | **−11.1%** (층화 CI −3.6~23.8, 과제 CI 2.2~22.2) | wiki 레시피, medium, 100호출, 1 seed, RGB 직접 |
+| π0.5 (표 3) | 20.92 | 5.82 | −72.2% | 과제 데이터 미세조정, 레시피 없음 |
+| Spatial Forcing (표 3) | 21.25 | 6.98 | −67.2% | 같음 |
+| X-VLA (표 3) | 17.92 | 3.04 | −83.0% | 같음 |
+→ "Astra-as-policy는 덜 무너진다"는 공개 자료로 이미 보인다. **우리 기여는 이것을 "같은 인식" 조건(H2·H3)과 우리 계층 구조(Astra+Jev+스킬)로 옮기는 것**이다. 이 표는 조건이 달라 같은 열 비교가 아니다(주석 필수).
+
+---
+
+## 5. 단계별 실행 계획 (자원이 적을 때 순서) [우리 계획]
+| 단계 | 내용 | 자원 | 산출·진행 조건 |
+|---|---|---|---|
+| S0 (GPU 없음, 반나절) | RoboProbe 칸별 자료 분석(§4.3, 완료), RoboProbe·XPolicyLab 클론, `pytest`, 우리 어댑터 뼈대를 `EVAL_ENV_TYPE=debug`로 배선 점검 | CPU | 어댑터가 행동 키·차원 점검 통과 |
+| S1 (1~2일) | Isaac Sim 5.1 설치를 클러스터 노드에서 시도(RT 코어 위험 N8, RoboProbe A100 스크립트 참고), `robodojo.sh doctor`, `smoke --only stack_bowls,push_T`, π0.5 체크포인트로 stack_blocks·stack_bowls std/rnd 각 25회 | GPU 1~2장 | π0.5 재실행 RD가 표 3과 ±15%p 안이면 통과. 실패하면 RTX 계열 노드 확보 [결정 필요] |
+| S2 | E0(지연)·E1(보정)을 RoboDojo 관측으로. E2 마차 시험을 RoboDojo Gen 두 과제(stack_blocks, stack_bowls)에서: 정답 상태(상한) → 인식 상태 순 | GPU 1장 + Jev API | E2 판정(plan §5) |
+| S3 파일럿 | Gen 4과제(stack_blocks, stack_bowls, push_T, arrange_largest_number = Astra가 점수를 낸 과제) + 바닥 과제 1개(pour_liquid) × 짝 10개: 우리 / B4a / B2 / B3b | GPU 2~4장 | 효과 방향 확인, 비용·시간 실측으로 S4 예산 확정 |
+| S4 주 실험 | Gen 12 × 짝 25 × seed 0: 우리, B4a, B2, B3b(π0.5), B3c, B7. B1a는 공개 자료 + 재실행 점검 | GPU 4~8장 병렬(`--gpu-ids`) | H1·H2·H3 판정. 필요하면 seed 1·2 |
+| S5 | Open 8과제(작업 축): 우리, B1a(공개), B3b, B4a. LLM 이점이 가장 클 곳(Astra Open 31.00% 대 VLA ≈2%) | 같음 | 작업 축 결과 |
+| S6 | 범주 6 B6b(GPT-as-Policy)를 Gen에서, 범주 5 B5b(CaP-X식 재구현) | 같음 + Astra xhigh 비용 | 범주 5·6 같은 판 비교 |
+| S7 | LIBERO-Plus 환경 축(조명·배경·노이즈·배치·카메라) 부분집합 + LIBERO-PRO(CaP-X, RPent 공개 수치 옆) | GPU 1~2장 | 보조 표 |
+| S8 (선택) | AGNOSTOS, MolmoSpaces | | |
+- 시간 추정은 **미측정**이다. Astra medium 첫 토큰 5.9 s(plan §1, 날마다 변동) × 최대 100호출이면 B1a형 에피소드는 10분 이상일 수 있다. S3에서 실측해 S4 규모를 정한다.
+- Jev 요청 한도 1,200/분: 3 Hz × 병렬 에피소드 6개 = 1,080/분 → **동시 에피소드 6개 이하**로 운영.
+
+---
+
+## 6. 지표와 보고 형식 [우리 계획]
+- 주: RD(Score), random Score, standard Score, 0% 과제 수.
+- 비용·시간: 에피소드 벽시계, 정지 시간, Astra 호출 수·토큰·비용·응답 시간, Jev 호출 수·지연 p50/p95.
+- 과정: 적시 재현율(M7), 복구 성공률(M9), jerk(M5).
+- 표기 규칙: 공개 수치와 우리 실행 수치는 **다른 열**. 모든 칸에 (정보 경계 O/D, 레시피 유무, seed 수, 에피소드 수, 모델 판본)을 각주로. unstable 제외 개수 보고.
+- 안전 지표는 두지 않는다 [사용자].
+
+## 7. 위험과 반대 증거
+- R1 **Isaac Sim이 H200에서 안 돌 수 있다**(N8). 대응: S1에서 가장 먼저 확인, 안 되면 RTX 노드 확보 또는 Docker 경로.
+- R2 **바닥 효과**: Gen 12개 중 5개는 Astra도 standard ≈0. 우리 시스템도 같으면 RD가 7개 과제로 결정되고 CI가 넓다. 대응: 부차 분석 사전 등록, 절대 점수를 같이 보고.
+- R3 **시뮬 동기 스텝**: XPolicyLab 루프가 정책 응답을 기다리면 비정지·겹침(M4)의 벽시계 이점이 시뮬 점수에 안 나타난다. 확인 못 함 → S0에서 `deploy.py` 읽기.
+- R4 **정보 비대칭**: 레시피·스킬(집기 프리미티브)은 VLA에 없는 정보다. 상대 하락폭으로 주장하는 이유이고, 절대 비교는 하지 않는다.
+- R5 **H3 반대 결과 가능성**: 같은 인식 위에서는 규칙도 안 무너질 수 있다(환경 변화는 주로 인식을 때린다, v3/10 §3-4). 사전 등록대로 결론을 바꾼다.
+- R6 **Astra 판본 변동**: B1a 공개 자료는 과거 판본. 재실행 점검 필수.
+- R7 반대 증거(v3/10 §4 유지): π0.5 새 집, DreamZero 62.2% 대 27.4%(학습에 있던 작업·새 환경), 2512.02902 1-shot 적응 회복, GR 1.5 기성 계획기 실패 25.5% 대 9%. "적응 예산" 열을 표에 둔다.
+- R8 벤치 신뢰도: RoboDojo 미심사, 라이선스 표기 엇갈림(N5), LIBERO-PRO 환경 섭동 불안정(N6), LIBERO-Plus 판본 차이(N7).
+
+## 8. [결정 필요]
+- Q1 정보 경계: 주 결과를 트랙 O(RGB만, 공식 경계)로 할지, 트랙 D(깊이·보정 허용)로 할지. 권장: 주 = O, D는 보조.
+- Q2 effort: 우리 시스템 Astra effort. B1a와 맞추려면 medium, 사용자 원칙(낮추지 않음)과 M8 실험 축을 따르면 high 이상. 권장: 주 비교는 medium(동등) + high 보조 1회.
+- Q3 Jev만(B2)의 첫 계획을 누가 쓰나(사람 작성 대 Astra 사전 작성).
+- Q4 B3c(같은 인식 위 학습 결정 층)를 "VLA 범주"의 대표로 인정할지. 사용자 범주 "VLA"는 픽셀 VLA(B3b)가 원뜻일 수 있어 둘 다 둔다.
+- Q5 주장 문구(plan §3). H3가 기각되면 문구를 "인식 앞단 + 학습 없는 결정 층"으로 바꿀지.
+- Q6 H200에서 Isaac이 안 되면 다른 GPU 노드 사용 허가.
+
+## 9. 재현용 계산 (N2~N3)
+```python
+import json; d=json.load(open('astra_task_layouts.json'))
+G=[r for r in d['rows'] if r['dimension']=='Generalization']
+S=[s['score'] for r in G for s in r['slots'] if s['variant']=='standard']
+R=[s['score'] for r in G for s in r['slots'] if s['variant']=='random']
+print(100*sum(S)/len(S), 100*sum(R)/len(R), 1-sum(R)/sum(S))  # 35.32 31.40 0.111
+```
+부트스트랩: 과제 재표집 10,000회(seed 0), 층화는 과제 안 짝 재표집 10,000회(seed 1).
+
+## 10. 확인 못 한 것
+- XPolicyLab 평가 루프가 정책 응답을 기다리는지(동기 여부), 에피소드 시간 제한(스텝 수).
+- RoboDojo 원 논문 표 3의 VLA 수치가 seed 몇 개·에피소드 몇 회인지(native면 seed 3 × 25).
+- RPent 92.63%와 TGL 92.4%가 어느 섭동 축인지(환경 축 포함 여부).
+- GPT-as-Policy 10과제가 Gen standard/random 중 어느 것인지.
+- Isaac Sim 5.1이 H200에서 실제로 도는지(메모리상 이 사용자의 다른 작업은 같은 클러스터에서 Isaac 렌더를 돌린 기록이 있으나 판본 5.1인지 모름).
+- MolmoSpaces 리더보드 수치(JS 페이지, 읽지 않음). RoboDojo 리더보드 사이트도 JS라 읽지 않음.
+- 사용한 조회: RoboDojo README·LICENSE·문서 9쪽(install, xpolicylab, configurations, quick-evaluation, sim-tasks, domain-randomization, stack-bowls, common-issue 2쪽), XPolicyLab 문서, RoboProbe README·protocol·leaderboard·setup·칸별 JSON, 2609.24170 HTML, LIBERO-Plus·LIBERO-PRO·X-ICM·MolmoSpaces·GPT-as-Policy·CaP-X·RPent·Show-Harness README. WebSearch 0회.

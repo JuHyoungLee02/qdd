@@ -6,7 +6,8 @@
   \item \idea{``Astra 쓰는 기존 논문''이 이제 있음~\cite{agp2026,harnessvla2026} $\rightarrow$ 재현 가능한 것 선택}
   \item \idea{AGNOSTOS~\cite{agnostos2025}의 LLM 방법은 정답 좌표를 받음 $\rightarrow$ 정답 상태 / 인식 상태 두 조건}
   \item \idea{VLA가 장면 바뀌면 무너지는 건 강한 근거 있음: RoboDojo에서 $\pi_{0.5}$ 20.92$\rightarrow$5.82 ($-$72\%)}
-  \item \idea{하지만 ``LLM 쪽이 덜 무너진다''는 아직 아무도 안 잼(Astra의 standard/random 분리 수치 없음) $\rightarrow$ 우리가 채울 빈칸}
+  \item \chg{공개 원자료로 직접 계산해 보니 Astra는 같은 변화에서 35.3$\rightarrow$31.4 ($-$11\%)만 떨어짐. $\pi_{0.5}$는 $-$72\%. 사용자 주장의 첫 정량 근거. 단 조건이 달라 예비(레시피 정보, 1 seed, 인식 조건)}
+  \item \dirn{가장 깨끗한 비교: 같은 인식 상태 위에서 ``학습한 결정 층'' 대 ``LLM 결정 층''}
   \item \chg{전칭 주장 대신 ``상대 하락폭이 작다''로. 절대 성공률 우위는 주장 안 함 (Astra도 20--30\%대)}
   \item \dirn{주 벤치마크 RoboDojo-Sim(환경 축 Gen + 작업 축 Open), 보조 LIBERO-Plus. 환경 축은 인식 상태 조건에서만}
   \item \decide{실험 환경, 주장 문구}
