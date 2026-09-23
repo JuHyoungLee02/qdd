@@ -76,3 +76,17 @@
 - **충돌 발견**: plan v2 M8은 "복구와 주기 호출은 Astra effort low"를 제안했다. 그런데 사용자는 다른 프로젝트(2026-09-23, GPT-as-Policy 작업)에서 "추론 강도를 낮추는 건 옳지 않다. 옳은 추론을 하면 더 빨리 성공한다"고 했다(Claude 메모리 기록).
   - v3 조치: effort low를 기본안으로 쓰지 않는다. effort는 비교 실험 축으로만 남기고, 속도는 호출 수·결정 수를 줄이는 쪽으로 푼다. [결정 필요]로 사용자에게 확인한다.
   - 교훈: 사용자 의도와 부딪히는 제안은 다른 프로젝트 발언까지 확인한 뒤 낸다.
+
+### v3 진행 중 메모 — 20:20 UTC (보고서 2개 도착: v3/02 인용 검증, v3/03 메모리)
+- 메인 세션이 직접 원문으로 교차 확인한 것
+  - A2C2(2509.23224): OpenReview venueid = `ICLR.cc/2026/Conference/Rejected_Submission`. **ICLR 2026 탈락**. v2의 "ICLR 2026(단일 출처)"는 틀렸다.
+  - 2606.15017: arXiv 제목 "Are Online Skill and Memory Modules Always Worth Their Tokens? A Budget-Constrained Study of Web Agents", 주석 "Accepted to EMNLP 2026". v2에서 미확인이었지만 실재하고 신뢰도가 높다.
+- v2에서 틀렸던 것 (v3/02가 원문으로 확인)
+  - VLASH는 학습 없이 옮길 수 없다: 원문이 "추론 때 미래 상태만 넣는 것은 부족하고 미세조정 증강이 필요하다"고 했다. → 발상만 빌린다.
+  - A2C2 "LIBERO +7%p vs RTC"는 본문 표가 뒷받침하지 않는다(LIBERO는 naive async와만 비교).
+  - FLARE의 retry는 우리 식의 "재시도 스킬"이 아니라 VLA 자체의 강건성 학습이다. 온라인 MLLM은 OOD 때만 reset 어댑터로 바꾼다. 88/96%는 오프라인 분류 정확도.
+  - SiT-Bench는 이미지와 텍스트를 비교하지 않는다. "이미지가 해롭다"는 근거로 쓰면 안 된다. BALROG의 "이미지 추가가 해롭다"도 모델마다 다르다(GPT-4o 하락, Claude-3.5/Gemini-1.5 상승).
+  - X-ICM은 시뮬레이터의 정답 물체 중심 좌표를 받는다 → 우리 평가에서 "정답 상태 조건" 비교가 필요하다.
+- 교훈
+  - 학회 채택은 OpenReview의 venueid로 확인한다. 검색 요약의 "ICLR 2026"은 제출과 채택을 구분하지 않는다.
+  - "학습 없이 옮길 수 있다"는 판단은 원문의 절제 실험(추론 때만 넣었을 때 결과)을 보고 한다.
