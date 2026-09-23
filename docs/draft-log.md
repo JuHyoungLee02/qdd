@@ -128,3 +128,10 @@
 - 남은 초안 조사 (22:25 UTC 마감 전)
   - 429로 막힌 부재 판정 검색 재실행(M8 검색어, M4 선점 검색어).
   - 핵심 새 문헌 몇 편 원문 재확인(CheckVLA 수치, BRACE, Evo-Memory, MemCompiler, Show-Harness 방법).
+
+### v3.1 시작 — 20:09 UTC (초안 마감 22:25 전 마무리 조사)
+- 사용자 요구 중 아직 안 한 것: "저자의 블로그, 발표, 게시물까지 찾아본다", "정말 최고 성능인지". v1~v3 모두 이 부분이 비어 있었다. → 에이전트 3개 추가.
+  1. v3/07: 429로 막혔던 선점 부재 검색 재실행(M4, M8, M10, M6). **arXiv 검색 API는 이 에이전트만** 쓴다(4초 간격).
+  2. v3/08: plan v3가 새로 기대는 핵심 문헌 16편 원문 확인(Show-Harness, Zetta, CheckVLA, BRACE, Evo-Memory, MemCompiler 등). abs/html 페이지만.
+  3. v3/09: 저자 목소리(블로그·발표·X·프로젝트 FAQ)와 "아직 최고인가". WebSearch/WebFetch만.
+- 교훈 적용: API 한도 충돌을 막으려고 에이전트별로 쓸 수 있는 API를 나눴다.
