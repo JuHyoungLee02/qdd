@@ -55,35 +55,45 @@
   \end{itemize}
 \end{itemize}
 
+\section{두 모델에 대해 확인된 제약}
+\begin{itemize}
+  \item Jev: 텍스트/JSON 입력만 받음. Choice(보기 최대 255개), Score(2--10단계), Noul(예/아니오). 한 요청에 여러 질문을 병렬로 답함
+  \item Jev 공식 약점: 수치 정밀도, 수치 비교, 산술에 약함. 관련 없는 상태가 늘면 정확도 하락 $\rightarrow$ 기하 계산은 코드에서 하고 범주화해서 넘김
+  \item Jev 확률 보정은 업체 주장뿐 $\rightarrow$ 우리 데이터로 먼저 측정
+  \item Astra: 텍스트와 이미지 입력(비디오 없음). 첫 토큰까지 effort low 약 2.8초, high 약 45초 $\rightarrow$ effort가 설계 변수
+  \item Astra 로봇 결과는 모두 제3자 평가. 정밀 삽입은 2/20으로 약함 $\rightarrow$ 정밀 실행을 하위에 맡기는 동기
+  \item Astra 계획 + Jev 실행 조합은 데모 수준으로 이미 공개됨 $\rightarrow$ 계층 구조 자체가 아니라 방법과 평가에서 새로움을 찾음
+\end{itemize}
+
 \section{모듈별 계획}
 
 \subsection{상태 표현: 이미지 $\rightarrow$ Jev 입력}
 \begin{itemize}
   \item \intent{Jev는 이미지를 못 봄. VLA에 국한하지 않고 AI 전 분야에서 이미지를 텍스트로 가장 효율적으로 바꾸는 방법을 가져옴}
-  \item \plan{객체 중심 수치 JSON + 진행 술어 + 이전 프레임 대비 변화분}
+  \item \plan{작업 관련 물체만 + 코드로 미리 계산한 범주형 관계 + 참/거짓 술어}
   \begin{itemize}
-    \item 작업 관련 물체만: ID, 3D 위치(필요 시 자세), 그리퍼 상태
-    \item 참/거짓 술어: grasped, above\_target, in\_contact 등
-    \item 상대 벡터(목표 $-$ 그리퍼)는 미리 계산해서 넣음
+    \item 예: 목표가 그리퍼의 $+x$ 방향, 거리 구간 3/5
+    \item 술어: grasped, above\_target, in\_contact 등
+    \item 원좌표는 보조로만
   \end{itemize}
-  \item \refs{좌표 입력이 자연어/ASCII보다 우수 (arXiv 2502.16690); 텍스트 LLM이 물체 자세 텍스트로 행동 예측 (RoboPrompt, arXiv 2410.12782); 짧은 입력과 변화분 (arXiv 2604.01535); 술어 장면 그래프 (arXiv 2504.06661)}
-  \item 나중에 비교할 것: 좌표 JSON / 자연어 / 격자 / 장면 그래프
+  \item 인식 앞단 후보: SAM 3 (ICLR 2026) + 깊이, 자세가 필요하면 FoundationPose (CVPR 2024)
+  \item \refs{BALROG (ICLR 2025); SiT-Bench (ACL 2026 Findings); RoboPrompt (arXiv 2410.12782)}
+  \item 나중에 비교할 것: 표현 형식별로 Jev 정확도와 토큰 수
 \end{itemize}
 
 \subsection{Astra $\rightarrow$ Jev 전달}
 \begin{itemize}
   \item \intent{Astra는 이미지를 보고 명령하지만 Jev는 이미지를 못 봄. 이 전달을 효율적으로 하는 방법이 필요. 상태 표현과 거의 같은 문제}
-  \item \plan{Astra가 상태 표현과 같은 형식으로 하위 목표를 넘김}
-  \begin{itemize}
-    \item 대상 물체, 완료 조건(술어), 중간 이정표 상태, 예상 소요 시간, 허용 동작 범위, 연결할 스킬
-  \end{itemize}
-  \item \refs{ReKep (arXiv 2409.01652); B2FF (arXiv 2606.09258)}
+  \item \plan{완료 조건 술어 + 대상 물체 ID + 예상 소요 시간 + 허용 동작 범위 + 연결할 스킬}
+  \item 키포인트 관계 제약은 ``만족 여부'' 술어로 바꿔서 넘김
+  \item \refs{ReKep (arXiv 2409.01652)}
 \end{itemize}
 
 \subsection{행동 표현}
 \begin{itemize}
   \item \intent{촘촘하게 가도 됨. Jev의 방식이면 충분히 가능하다고 봄}
-  \item \plan{방향, 크기, 회전, 그리퍼를 각각 객관식 질문으로. 한 번의 호출에 여러 질문을 병렬로}
+  \item \plan{크기는 순서형 보기. 확률 가중 평균은 분포가 한 봉우리일 때만, 그 외에는 최빈값}
+  \item 나중에 비교할 것: 스텝별 단일축 선택 vs 저주파 경유점 선택
 \end{itemize}
 
 \subsection{연속 동작 1단계: RTC 방식 계단식 호출}
@@ -93,34 +103,37 @@
   \item \intent{겹치는 구간의 움직임이 제대로 반영됐는지 스스로 확인하고 업데이트하는 시스템이 반드시 있어야 함. 굉장히 중요}
   \item \plan{}
   \begin{itemize}
-    \item 매 호출이 앞으로 $k$스텝의 동작 조각을 냄
-    \item 이미 실행이 확정된 앞 $d$스텝은 고정하고 입력으로 넣어 줌
-    \item 겹침 구간에서 이전 조각과 새 조각의 선택과 확률을 비교: 일치하면 확정, 불일치하면 가까운 미래는 이전 조각, 먼 미래는 새 조각 쪽으로 가중
-    \item 실행 후 예측한 상태 변화와 실제 변화를 비교해서 다음 호출에 보정
+    \item 동작 큐가 임계값 아래로 내려가면 다음 호출 (비동기 스케줄러)
+    \item 이미 실행이 확정된 앞부분은 고정하고 입력으로 넣어 줌
+    \item 응답이 도착할 시점의 예상 상태를 입력으로 넣음
+    \item 겹침 구간에서 이전 선택과 새 선택을 비교: 가까운 미래는 이전 쪽, 먼 미래는 새 쪽으로 가중
+    \item 매 제어 스텝 도는 빠른 기하 보정층을 따로 둠
+    \item 겹침 불일치가 크면 진행 판별에 이상 신호로 보냄
   \end{itemize}
-  \item \refs{RTC (arXiv 2506.07339); Training-time RTC (arXiv 2512.05964); A2C2 (arXiv 2509.23224); 비동기 추론 비교 연구 (arXiv 2605.08168)}
+  \item \refs{RTC (NeurIPS 2025, arXiv 2506.07339); SmolVLA 비동기 추론 (arXiv 2506.01844); VLASH (arXiv 2512.01031); A2C2 (arXiv 2509.23224); BID (ICLR 2025)}
 \end{itemize}
 
 \subsection{연속 동작 2단계: 액션 스무딩}
 \begin{itemize}
   \item \intent{아주 작은 움직임은 액션 스무딩이나 VLA에서 쓰는 부드럽게 만드는 방법으로. 두 단계로 나눔}
-  \item \plan{Jev 조각의 경유점을 B-스플라인으로 이어 고주파 명령 생성}
-  \item \refs{ABPolicy (arXiv 2602.23901); LiPo (arXiv 2506.05165)}
-  \item 나중에 비교할 것: temporal ensembling (ACT)
+  \item \plan{겹침 선형 블렌딩 + jerk 최소화 후처리. B-스플라인 제어점 표현}
+  \item \refs{LiPo (arXiv 2506.05165); SMILE (arXiv 2608.29432)}
+  \item 나중에 비교할 것: temporal ensembling (ACT), 지수 평활
 \end{itemize}
 
 \subsection{스킬과 Jev 결합}
 \begin{itemize}
   \item \intent{기존 스킬은 Jev와 밀접하게 연관될수록 좋음. LLM이 스킬을 불러오고 끝이 아니라 잘게 엮어야 함}
-  \item \plan{스킬 내부의 결정 지점(접근 방향, 잡는 위치, 다음 단계로 넘어갈지)을 Jev 객관식으로 노출. 스킬은 매 스텝 상태와 술어를 내보냄. Astra가 복구하며 고친 것은 검증 후 스킬로 저장}
-  \item \refs{CaP-X (arXiv 2603.22435); ASPIRE (arXiv 2607.00272); VLCP (arXiv 2608.16978); RoboOS (arXiv 2505.03673)}
+  \item \plan{스킬 코드 안의 결정 지점(접근 방향, 잡는 위치, 다음 단계로 넘어갈지)을 Jev 질문으로 엶. 스킬은 매 스텝 상태와 술어를 내보냄. Astra가 복구하며 고친 것은 검증 후 스킬로 저장}
+  \item \refs{CaP-X (ICML 2026, arXiv 2603.22435); ASPIRE (arXiv 2607.00272)}
 \end{itemize}
 
 \subsection{진행 판별: 계획대로인가}
 \begin{itemize}
   \item \intent{VLA에서 ``계획대로''를 무엇으로 정의했는지 많이 참고. VLA는 로봇을 학술적으로 어떻게 조종할지 개념 공부를 많이 해 놓았기 때문}
-  \item \plan{계획대로 = 완료 술어 쪽으로 진행 중 + 예상 시간 안 + 겹침 구간 불일치가 작음. 한 프레임이 아니라 짧은 구간으로 판정}
-  \item \refs{VLAC (arXiv 2509.15937); $\pi^*_{0.6}$ RECAP (arXiv 2511.14759); TOPReward (arXiv 2602.19313); SAFE (arXiv 2506.09937); FailBench (arXiv 2609.03611)}
+  \item \plan{완료는 센서와 술어로 판정. 진행도는 ``완료까지 남은 시간''으로 정의. 임계값은 시간에 따라 바뀌는 conformal 방식}
+  \item 접촉과 파지는 VLM 판단이 약하므로 센서로 확인
+  \item \refs{$\pi^*_{0.6}$ RECAP (arXiv 2511.14759); SAFE (NeurIPS 2025, arXiv 2506.09937); FailBench (arXiv 2609.03611)}
 \end{itemize}
 
 \subsection{Astra 호출}
@@ -134,8 +147,9 @@
     \item \intent{미리 정해 둔 순간마다}
     \item \intent{``이때쯤 결과가 나왔어야 하는데 안 나왔다''는 자체 판단}
   \end{enumerate}
-  \item \refs{다중 프레임 격자 (STAR, arXiv 2503.06060); 필요할 때만 깊게 추론 (Sentinel-VLA, arXiv 2605.01191); 키프레임 호출 (FPC-VLA, arXiv 2509.04018)}
-  \item 나중에 비교할 것: 격자 한 장 vs 프레임 개별 입력 (Guardian, arXiv 2512.01946)
+  \item \plan{Astra effort를 호출 목적별로 나눔: 처음 계획은 high, 복구와 주기 호출은 low. 호출 방식 비교에 effort 축을 추가}
+  \item \refs{필요할 때만 깊게 추론 (Sentinel-VLA, ICML 2026, arXiv 2605.01191); 키프레임 호출 (FPC-VLA, arXiv 2509.04018)}
+  \item 나중에 비교할 것: 격자 한 장 vs 프레임 개별 입력
 \end{itemize}
 
 \subsection{실패 복구}
@@ -144,17 +158,18 @@
   \item \plan{복구 3단계}
   \begin{enumerate}
     \item Jev 수준에서 동작을 조금 바꿔 재시도
-    \item Astra가 준 가장 가까운 이정표 상태로 되돌아감
-    \item Astra 재계획 (연속 프레임 + 실패 기록)
+    \item 리셋 스킬로 환경을 되돌림
+    \item Astra 재계획 (연속 프레임 + 실패 설명)
   \end{enumerate}
-  \item \refs{B2FF (arXiv 2606.09258); FailSafe (arXiv 2510.01642); FAR (arXiv 2607.01111)}
+  \item \refs{FLARE (CVPR 2026, arXiv 2608.26645); FailSafe (arXiv 2510.01642)}
 \end{itemize}
 
 \subsection{경험 축적}
 \begin{itemize}
   \item \intent{경험 축적이 제대로 되어야 함. API로 불러오는 모델의 경험 축적을 어떻게 하는지 참고}
-  \item \plan{성공 계획 라이브러리(같은 작업이면 Astra 호출 생략) + 실패 교훈 은행 + 조금씩 덧붙이고 고치는 방식의 정리}
-  \item \refs{ViReSkill (arXiv 2509.24219); ReasoningBank (arXiv 2509.25140); ACE (arXiv 2510.04618); 같은 토큰 예산 비교 (arXiv 2606.15017)}
+  \item \plan{성공과 실패에서 뽑은 짧은 교훈을 유사도로 꺼내 씀 + 조금씩 덧붙이고 중복을 합치는 정리}
+  \item \refs{ReasoningBank (ICLR 2026, arXiv 2509.25140); ACE (ICLR 2026, arXiv 2510.04618); Dynamic Cheatsheet (EACL 2026)}
+  \item 나중에 비교할 것: 같은 토큰 예산의 메모리 없는 방법
 \end{itemize}
 
 \section{평가}
@@ -169,9 +184,20 @@
     \item \intent{Astra를 쓰는 기존 논문}
   \end{itemize}
   \item \intent{VLA는 새 환경에 일반화가 안 되고 LLM은 됨}
-  \item 처음 보는 환경과 물체에서의 비교를 평가의 중심에 둠
-  \item \refs{AGNOSTOS / X-ICM (arXiv 2505.15660)}
+  \item 최신 VLA($\pi_{0.5}$ 등)는 새 환경 일반화를 주장하므로 주장 범위를 좁힐 필요가 있음. 예: 대규모 로봇 데이터와 학습 없이도 덜 무너짐
+  \item 벤치마크 후보: AGNOSTOS (NeurIPS 2025, RLBench 기반, 새 작업 23개) + 같은 RLBench 위의 환경 변화 조건
+  \item 기준 방법 후보: $\pi_0$, OpenVLA, RDT, 가능하면 $\pi_{0.5}$ / X-ICM, VoxPoser / 기존 방법의 백본을 Astra로 바꾼 버전
+  \item 지표: 작업별 성공률, 0\% 작업 수, seen 대비 unseen 하락폭, 완료 시간, 정지 시간, Astra 호출 수, 비용
+  \item \refs{AGNOSTOS / X-ICM (NeurIPS 2025, arXiv 2505.15660)}
   \item \intent{안전은 크게 다루지 않음}
+\end{itemize}
+
+\section{컨트리뷰션 후보}
+\begin{itemize}
+  \item 객관식 결정 모델을 위한 계단식 겹침 호출과 확률 기반 자기 검증 업데이트
+  \item 실패 중심 Astra 호출 방식(주기 / 정한 순간 / 시간 초과)과 effort의 정량 비교
+  \item 스킬 내부 결정 지점을 Jev 질문으로 여는 결합 방식
+  \item 학습 없이 새 작업과 새 환경에서 VLA보다 덜 무너짐
 \end{itemize}
 
 \end{document}
