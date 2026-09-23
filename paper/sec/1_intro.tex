@@ -1,0 +1,20 @@
+\section{Introduction --- 큰 줄기}
+\label{sec:intro}
+
+\begin{itemize}
+  \item \intent{기존 스킬 기반 잡기를 기본으로 쓰고, 실패할 때마다 GPT-6 Astra가 개입해서 이어감}
+  \item \intent{상위 Astra(느림, 계획) / 하위 Jev(빠른 객관식 판단). 예전 VLA의 큰 LLM + 작은 VLM처럼}
+  \item \intent{VLA는 다른 환경으로 일반화가 안 됨. LLM은 됨. 항상 부각}
+  \item \intent{안전은 크게 다루지 않음}
+  \item \idea{계층 구조, Astra로 로봇 제어~\cite{agp2026,robodojo2026}, 스텝마다 LLM 이산 행동~\cite{showharness2026}은 이미 있음. 우리 자리는 Jev 확률로 겹쳐 부르고 스스로 확인하는 부분(M4)}
+  \item \decide{주장 범위. $\pi_{0.5}$ 등이 새 환경을 주장함 $\rightarrow$ ``대규모 로봇 데이터·학습 없이 덜 무너짐''으로 좁힐지}
+\end{itemize}
+
+\paragraph{컨트리뷰션 후보 (v3)}
+\begin{enumerate}
+  \item M4: Jev 확률 기반 계단식 겹침 호출 + 측정 상태로 겹침 반영 확인·갱신 (선점 없음, 가장 강함)
+  \item M8: 비정지 로봇에서 호출 시점 $\times$ effort 평가 (방법 아닌 평가 컨트리뷰션으로 좁힘)
+  \item M6: 스킬 내부 결정 지점을 typed 질문으로
+  \item M10: Astra가 컴파일한 규칙만 Jev에 (로봇 미적용)
+\end{enumerate}
+\chg{v2의 ``호출 방식 비교가 새롭다''는 틀림. 주기 대 이벤트 비교는 이미 여러 편~\cite{checkvla2026,eventtrig2026}}

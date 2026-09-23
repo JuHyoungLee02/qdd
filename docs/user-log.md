@@ -123,3 +123,6 @@
 
 23. Overleaf 양식 (20:04 UTC 경)
     - Overleaf 논문 양식은 CVPR 양식을 따른다. (ICRA도 말했다가 CVPR로 정정했다.)
+
+24. CVPR 양식 정정 (20:13 UTC 경)
+    - "저게 어떻게 CVPR 양식이야? 실제 CVPR에서 준비해 놓은 Overleaf 양식을 그대로 가져와서 거기다가 해 달라."

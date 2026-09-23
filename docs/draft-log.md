@@ -135,3 +135,12 @@
   2. v3/08: plan v3가 새로 기대는 핵심 문헌 16편 원문 확인(Show-Harness, Zetta, CheckVLA, BRACE, Evo-Memory, MemCompiler 등). abs/html 페이지만.
   3. v3/09: 저자 목소리(블로그·발표·X·프로젝트 FAQ)와 "아직 최고인가". WebSearch/WebFetch만.
 - 교훈 적용: API 한도 충돌을 막으려고 에이전트별로 쓸 수 있는 API를 나눴다.
+
+### v3 Overleaf 양식 정정 — 20:13 UTC
+- 실수: "CVPR 양식"을 cvpr.sty 한 줄만 쓴 한 파일짜리로 만들었다(pagenumbers 모드, 절 구조·teaser·참고 문헌 없음). 사용자 지적: 실제 CVPR Overleaf 템플릿을 그대로 가져와서 거기에 써야 한다.
+- 고침: 공식 author kit(github.com/cvpr-org/author-kit, CVPR 2026, Overleaf 공식 템플릿과 같은 것)를 그대로 `paper/`에 옮겼다.
+  - 원본 유지: main.tex(review 모드, hyperref, paperID), preamble.tex, cvpr.sty, ieeenat_fullname.bst, rebuttal.tex, sec/X_suppl.tex, fig/teaser.tex 자리.
+  - 바꾼 곳: 제목, \input 절 목록(템플릿 안내 절 2_formatting/3_finalcopy 대신 2_related/3_method/4_experiments), preamble 끝에 kotex·마인드맵 매크로, teaser 내용(자리만), main.bib.
+  - main.bib은 arXiv abs 페이지 메타데이터(citation_title/author)로 자동 생성했다(23편). 서지를 손으로 쓰지 않아 저자·제목 오류를 막았다.
+  - 컴파일: XeLaTeX(Tectonic)로 3쪽, 머리글·줄번호·익명·참고 문헌 정상.
+- 교훈: "○○ 양식"은 공식 템플릿 파일 묶음 전체를 뜻한다. 스타일 파일만 가져다 쓰지 않는다.

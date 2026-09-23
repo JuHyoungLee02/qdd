@@ -11,7 +11,7 @@
 - 저장소 이름은 나중에 사용자가 직접 `harvest`로 바꾼다.
 
 ## 논문 초안 (`paper/main.tex`) — 2026-09-23 개정 [사용자]
-- Overleaf에 그대로 붙일 수 있는 LaTeX 형식이다. **CVPR 양식(공식 author kit, cvpr.sty)을 따른다** [사용자]. 양식만 CVPR이고 내용은 여전히 마인드맵 초안이다.
+- Overleaf에 그대로 붙일 수 있는 LaTeX 형식이다. **CVPR 공식 Overleaf 템플릿(github.com/cvpr-org/author-kit)을 파일 구조 그대로 쓴다** [사용자]: main.tex(review 모드), preamble.tex, sec/*.tex, fig/teaser.tex, main.bib. 절 파일에 내용을 쓰고, 템플릿 자체는 제목·절 목록·preamble 끝(한국어)만 바꾼다. 컴파일러 XeLaTeX. 양식만 CVPR이고 내용은 여전히 마인드맵 초안이다.
 - 그 시점까지의 최신 생각을 잘 정리된 글로 계속 업데이트한다. 조사 중에도 멈추지 않는다.
 - **색 구분**: 사용자가 의도하고 말한 내용은 빨간색(`\intent{}`), 그 밖의 내용(조사, 판단, 제안)은 검정색이다. 사용자 발언과 Claude 내용을 한 항목에 섞지 않는다.
 - 논문 문장이 아니라 "이렇게 할 거다" 수준으로 쓴다. 관련 없거나 이상한 문장은 넣지 않는다.
