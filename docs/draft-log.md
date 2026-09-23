@@ -312,3 +312,4 @@
 - 교훈: 설계가 커질수록 "한 논문이 무엇을 주장하는가"가 흐려진다. 모듈 설계와 별도로 논문 틀을 이른 시점에 사용자에게 확인한다.
 - 23:35 UTC 학회 일정 공식 확인: CVPR 2027 제출 2026-11-16 AoE(등록 11-10), ICRA 2027 논문 접수 마감됨. plan §8에 기록.
 - 23:40 UTC 설계 정리본 v2(`SUMMARY.md`, 654줄) 저장 — D5 반영(user-log 3 원문, effort 잠정 기본, 정지 두 곳, H1~H6, 등록부 술어 이름, critic_accept, 잠정 기본 목록 + 불허 시 대체안). 머리에 D6 모의 심사 추가 안내.
+- 23:46 UTC D6 실험 보강을 M4·E-first·EVAL·M7에 반영(E-M4-lat, E-M4-gen, 지표 보강, E0.5 = E0 같은 날, 2×2, B3c-V, B3b' 적응 곡선, 7과제 부분집합, 조건부 E-link·E-real). 메인 재확인: 7과제 부분집합(standard Score ≥10)이 RoboProbe 원자료 과제별 점수와 일치(바닥: hang_mugs 0.6, make_toast 0.0, store_laptop 0.8, sweep_blocks 8.0, pour_liquid 8.0).
