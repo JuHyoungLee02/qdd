@@ -1,0 +1,50 @@
+% Harvest 연구 초안 (마인드맵)
+% Overleaf 컴파일러: pdfLaTeX 또는 XeLaTeX
+\documentclass[11pt]{article}
+\usepackage{kotex}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{enumitem}
+
+\title{Harvest --- 연구 초안}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{대주제}
+\begin{itemize}
+  \item 물체를 보고 스킬을 생성해서 잡는 기존 방법들을 기본으로 사용
+  \item 이 방법들은 실패할 때가 있음
+  \item 실패할 때마다 GPT Astra가 개입해서 작업을 이어감
+  \item 논문 제출 목표
+\end{itemize}
+
+\section{관찰}
+\begin{itemize}
+  \item Astra로 로봇을 명령 기반으로 제어하는 프로젝트가 많이 나옴
+  \item Astra로 조정하는 방식이 VLA보다 생각보다 성능이 잘 나옴
+  \item 하지만 이미지를 보고 엔드포인트를 움직이는 방식에 그침
+  \item Astra는 API라서 시간이 너무 오래 걸림
+\end{itemize}
+
+\section{파이프라인}
+\begin{enumerate}
+  \item 사용자가 명령을 입력
+  \item Astra가 명령을 잘게 쪼개서 어떻게 실행할지 미리 계획
+  \item 계획에 맞는 스킬들을 불러옴
+  \item Astra가 불러온 스킬로 작업을 진행
+  \item 프레임별로 확인해서 Astra의 계획대로 되고 있는지 판별
+\end{enumerate}
+
+\section{계층 구조}
+\begin{itemize}
+  \item 기존 VLA에서 상위에 큰 LLM, 하위에 작은 VLM을 둔 것처럼 구성
+  \item 상위: Astra
+  \item 하위: JEV
+  \begin{itemize}
+    \item 새로 나온 모델, 객관식 문제를 잘 풂
+    \item 엔드포인트를 어디로 얼마만큼 움직일지에 대한 순간적인 판단이 몇십 배 빠름
+  \end{itemize}
+\end{itemize}
+
+\end{document}
