@@ -5,8 +5,10 @@
 \usepackage[margin=2.5cm]{geometry}
 \usepackage{enumitem}
 \usepackage{amsmath}
+\usepackage{xcolor}
 
-\newcommand{\intent}[1]{\textbf{의도:} #1}
+% 빨간색: 사용자가 의도하고 말한 내용 / 검정색: 조사와 판단으로 채운 최신 생각
+\newcommand{\intent}[1]{\textcolor{red}{#1}}
 \newcommand{\plan}[1]{\textbf{계획:} #1}
 \newcommand{\refs}[1]{\textit{참고:} #1}
 
@@ -18,38 +20,38 @@
 
 \section{대주제}
 \begin{itemize}
-  \item 물체를 보고 스킬을 생성해서 잡는 기존 방법들을 기본으로 사용
-  \item 이 방법들은 실패할 때가 있음
-  \item 실패할 때마다 GPT-6 Astra가 개입해서 작업을 이어감
-  \item 논문 제출 목표
+  \item \intent{물체를 보고 스킬을 생성해서 잡는 기존 방법들을 기본으로 사용}
+  \item \intent{이 방법들은 실패할 때가 있음}
+  \item \intent{실패할 때마다 GPT-6 Astra가 개입해서 작업을 이어감}
+  \item \intent{논문 제출 목표}
   \item \intent{VLA는 다른 환경으로 일반화가 안 된다는 큰 단점이 있음. LLM은 일반화가 됨. 이 점을 항상 부각}
 \end{itemize}
 
 \section{관찰}
 \begin{itemize}
-  \item Astra로 로봇을 명령 기반으로 제어하는 프로젝트가 많이 나옴
-  \item Astra로 조정하는 방식이 VLA보다 생각보다 성능이 잘 나옴
-  \item 하지만 이미지를 보고 엔드포인트를 움직이는 방식에 그침
-  \item Astra는 API라서 시간이 너무 오래 걸림
+  \item \intent{Astra로 로봇을 명령 기반으로 제어하는 프로젝트가 많이 나옴}
+  \item \intent{Astra로 조정하는 방식이 VLA보다 생각보다 성능이 잘 나옴}
+  \item \intent{하지만 이미지를 보고 엔드포인트를 움직이는 방식에 그침}
+  \item \intent{Astra는 API라서 시간이 너무 오래 걸림}
 \end{itemize}
 
 \section{파이프라인}
 \begin{enumerate}
-  \item 사용자가 명령을 입력
-  \item Astra가 명령을 잘게 쪼개서 어떻게 실행할지 미리 계획
-  \item 계획에 맞는 스킬들을 불러옴
-  \item Astra가 불러온 스킬로 작업을 진행
-  \item 프레임별로 확인해서 Astra의 계획대로 되고 있는지 판별
+  \item \intent{사용자가 명령을 입력}
+  \item \intent{Astra가 명령을 잘게 쪼개서 어떻게 실행할지 미리 계획}
+  \item \intent{계획에 맞는 스킬들을 불러옴}
+  \item \intent{Astra가 불러온 스킬로 작업을 진행}
+  \item \intent{프레임별로 확인해서 Astra의 계획대로 되고 있는지 판별}
 \end{enumerate}
 
 \section{계층 구조}
 \begin{itemize}
-  \item 기존 VLA에서 상위에 큰 LLM, 하위에 작은 VLM을 둔 것처럼 구성
-  \item 상위: Astra
-  \item 하위: Jev
+  \item \intent{기존 VLA에서 상위에 큰 LLM, 하위에 작은 VLM을 둔 것처럼 구성}
+  \item \intent{상위: Astra}
+  \item \intent{하위: Jev}
   \begin{itemize}
-    \item 새로 나온 모델, 객관식 문제를 잘 풂
-    \item 엔드포인트를 어디로 얼마만큼 움직일지에 대한 순간적인 판단이 몇십 배 빠름
+    \item \intent{새로 나온 모델, 객관식 문제를 잘 풂}
+    \item \intent{엔드포인트를 어디로 얼마만큼 움직일지에 대한 순간적인 판단이 몇십 배 빠름}
   \end{itemize}
 \end{itemize}
 
@@ -126,11 +128,11 @@
   \item \intent{적어도 실패 판정이 났을 때는 Astra를 부름}
   \item \intent{그 순간의 이미지 한 장이 아니라 연속 프레임을 줌. 예: 한 이미지 안에 프레임 10개}
   \item \intent{처음 계획할 때는 멈추는 게 맞지만, 그 이후로는 웬만하면 멈추지 않음. 실패해서 다시 생각해야 할 때만 예외}
-  \item \plan{호출 방식 비교}
+  \item \intent{호출 방식은 비교 평가로 정함}
   \begin{enumerate}
-    \item 일정 주기(Hz)
-    \item 미리 정해 둔 순간마다
-    \item ``이때쯤 결과가 나왔어야 하는데 안 나왔다''는 자체 판단
+    \item \intent{일정 주기(Hz)}
+    \item \intent{미리 정해 둔 순간마다}
+    \item \intent{``이때쯤 결과가 나왔어야 하는데 안 나왔다''는 자체 판단}
   \end{enumerate}
   \item \refs{다중 프레임 격자 (STAR, arXiv 2503.06060); 필요할 때만 깊게 추론 (Sentinel-VLA, arXiv 2605.01191); 키프레임 호출 (FPC-VLA, arXiv 2509.04018)}
   \item 나중에 비교할 것: 격자 한 장 vs 프레임 개별 입력 (Guardian, arXiv 2512.01946)
@@ -159,16 +161,17 @@
 \begin{itemize}
   \item \intent{비교 대상}
   \begin{itemize}
-    \item Astra만
-    \item Jev만
-    \item VLA
-    \item 룰베이스(스킬 다발만)
-    \item LLM에 스킬을 연결한 기존 논문
-    \item Astra를 쓰는 기존 논문
+    \item \intent{Astra만}
+    \item \intent{Jev만}
+    \item \intent{VLA}
+    \item \intent{룰베이스(스킬 다발만)}
+    \item \intent{LLM에 스킬을 연결한 기존 논문}
+    \item \intent{Astra를 쓰는 기존 논문}
   \end{itemize}
-  \item \intent{VLA는 새 환경에 일반화가 안 되고 LLM은 됨 $\rightarrow$ 처음 보는 환경과 물체에서의 비교를 중심에}
+  \item \intent{VLA는 새 환경에 일반화가 안 되고 LLM은 됨}
+  \item 처음 보는 환경과 물체에서의 비교를 평가의 중심에 둠
   \item \refs{AGNOSTOS / X-ICM (arXiv 2505.15660)}
-  \item 안전은 크게 다루지 않음
+  \item \intent{안전은 크게 다루지 않음}
 \end{itemize}
 
 \end{document}
