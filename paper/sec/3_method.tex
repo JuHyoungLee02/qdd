@@ -36,6 +36,7 @@
   \item \idea{확인을 둘로 나눔: (a) 호출끼리 같은 말을 하나(앞부분 합의) (b) 실제로 그렇게 움직였나(예상 상태 대 측정 상태, 코드)}
   \item \idea{(a)만으론 안 됨. 같은 모델은 같은 오답을 반복}
   \item \chg{VLASH~\cite{vlash2025}·A2C2~\cite{a2c2}는 학습형이라 발상만. A2C2는 ICLR 탈락}
+  \item \dirn{RTC의 3구간을 그대로: 고정(길이 = 실측 Jev 지연) / 중간(이전 선택 가중치가 점점 줄어듦) / 끝(새 선택)}
 \end{itemize}
 
 \subsection{M5 스무딩}
@@ -48,7 +49,8 @@
 \begin{itemize}
   \item \intent{잘게 엮음. 1년 이내 스타 상위 5개 참고}
   \item \idea{스타 상위: PhyAgentOS, Zetta, Harness VLA, CaP-X, ROSClaw(또는 Show-Harness)}
-  \item \idea{스타 1위는 거칠게 엮음. 잘게 엮는 쪽은 Zetta~\cite{zetta2026}(critic 코드 + 수락/거부)와 Show-Harness}
+  \item \idea{스타 1위는 거칠게 엮음. 잘게 엮는 쪽은 Zetta~\cite{zetta2026}(런타임 critic은 코드, LLM은 오프라인)와 Show-Harness}
+  \item \idea{Harness VLA 저자 스스로 ``계획기와 하위 사이 루프가 열려 있다''고 함 $\rightarrow$ 우리 M4/M7 자리}
   \item \decide{5위 ROSClaw 대 Show-Harness}
 \end{itemize}
 
@@ -66,6 +68,8 @@
   \item \idea{``이때쯤''은 코드가 예상 시간으로 계산. LLM에게 맡기면 안 됨}
   \item \idea{프레임은 격자보다 ``어떤 프레임을 고르냐''가 중요~\cite{kite2026}. 움직임 큰 순간 위주 6--10장}
   \item \chg{effort low 기본안 삭제(사용자: 추론 강도 낮추지 말 것). effort는 실험 축만}
+  \item \idea{effort는 성공률보다 결정 수·시간을 바꿈(Show-Harness 스텝 37$\rightarrow$30). 지표에 결정 수 추가. 단 Astra low로 강한 결과도 있음(Harness VLA) $\rightarrow$ \decide{effort 기본값}}
+  \item \dirn{프레임 비교에 ``무엇이 바뀌었는지 텍스트'' 조건 추가(CaP-X에서 원시 이미지보다 나음)}
 \end{itemize}
 
 \subsection{M9 실패 복구}
