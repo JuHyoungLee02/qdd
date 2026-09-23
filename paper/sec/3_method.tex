@@ -19,6 +19,7 @@
 \begin{itemize}
   \item \intent{M1과 같은 문제}
   \item \idea{물체 번호로 말하게 함(텍스트판 Set-of-Mark). 제약은 Astra가 코드로 쓰고 Jev에는 참/거짓만}
+  \item \idea{작은 모델에겐 ``어떻게''보다 ``무엇을''(목표형)이 나음. 계획이 본 시각·금지 조건·단계 ID 칸 추가}
 \end{itemize}
 
 \subsection{M3 행동}
@@ -26,6 +27,8 @@
   \item \intent{촘촘하게 가도 됨}
   \item \chg{``확률 평균으로 크기''는 Jev 공식 문서가 금지 $\rightarrow$ 이름 붙은 구간을 고름}
   \item \idea{보기 255개 한 번이면 충분할 수 있음(해상도 250 대 1000 차이 작음)}
+  \item \idea{반대 증거 있음: 학습 없는 모델은 잘게 여러 번 움직이기보다 목표 지점을 한 번에 가리킬 때 훨씬 잘함(드론 40\%$\rightarrow$100\%, GUI 반복 이동 붕괴)}
+  \item \dirn{``목표 지정형''(Jev가 목표 물체·부분을 고르고 크기는 코드)을 원안 옆에 나란히 재 봄. \decide{기본안}}
   \item \dirn{첫 실험 = Jev 보정 측정}
 \end{itemize}
 
@@ -42,7 +45,7 @@
 \subsection{M5 스무딩}
 \begin{itemize}
   \item \intent{아주 작은 움직임은 스무딩으로. 두 단계}
-  \item \idea{v2 그대로(겹침 블렌딩 + jerk 최소화~\cite{lipo2025})}
+  \item \idea{겹침 블렌딩 + jerk 최소화~\cite{lipo2025}. 단 겹침 평균은 정밀 작업 성공률을 깎음 $\rightarrow$ 같은 보기끼리만 섞고 마지막에 저크 필터}
 \end{itemize}
 
 \subsection{M6 스킬 $\leftrightarrow$ Jev}
