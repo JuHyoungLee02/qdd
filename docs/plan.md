@@ -211,6 +211,28 @@
 - 평가: 메모리 on/off, 예산 맞춘 기본 방법, 라벨 방식, Jev 힌트 방식 ablation. **3회 이상 평균 ± 표준편차.**
 - [결정 필요] Astra 메모리를 top-k 기본 주입 / 필요할 때 조회 / 둘 다 비교. Jev 재질의를 M4와 합칠지.
 
+## 2.5 대략적 파이프라인 (user-log 11: 스타 상위 5개를 참고해 "대충" 짜 본다, 깊게 가지 않음)
+- 근거: `docs/research/v3/15-m6-pipeline-sketch.md` (6편 방법 절 원문, [원문]/[해석] 구분)
+- **핵심 관찰**: 여섯 편 모두 상위 모델이 결정하는 동안 로봇이 기다리거나(Harness VLA 원문 "The planner waits for these files before selecting the next primitive", 메인 세션 확인; CaP-X·ROSClaw 턴 단위), 상위 모델이 실행 루프 밖이다(PhyAgentOS 정책 모드, Zetta 온라인). → **비정지 로봇에서 빠른 typed 모델이 제어 루프 가까이 도는 구조는 없다** = M4 빈칸과 같은 자리.
+- 잘게 엮는 두 갈래: Show-Harness(모델이 매 스텝 결정) / Zetta(코드 critic이 고주기 감시, 모델은 제안 승인만).
+```
+ 계획 시점 (정지 허용)
+ [Astra, 수 초~수십 초] M2·M8 ← 기억 규칙 M10
+   출력 = 세션 계약(PhyAgentOS): 단계 원장(완료 술어+예상 시간, M7) / 단계별 스킬 + stop 술어(Harness VLA)
+          / 결정 지점 typed 질문(M6·M3) / critic 규칙(코드) + 복구 playbook(Zetta)
+ 실행 (비정지)
+ 카메라 → 인식 → 코드 기하 → 술어·범주 텍스트 (M1; PhyAgentOS ENVIRONMENT.md, CaP-X 변화 텍스트)
+ [Jev, 약 3Hz 계단식 겹침] M4·M3·M6: 다음 스킬/재스테이징, 이동 단위·스텝 크기(이동 구간만), critic 제안 수락/거부
+   → bounded 큐 → 겹침 합의 + 실제 반영 확인 후 확정
+ [스킬/제어기, 100Hz+] 기존 스킬 + M5 스무딩, stop 술어로 종료·결과 술어 반환
+ [코드 critic, 제어 주기] M7: 마일스톤 술어, 정체 규칙, 마감 초과 → 제안
+ [복구 사다리] M9: 스킬 재시도 → Jev 재선택 → 리셋 → Astra(증거 묶음 + 다중 프레임, M8)
+ 에피소드 후
+ [검증 게이트 → 기억] M10: 센서 술어로 검증된 것만 → Astra가 typed 규칙으로 컴파일
+```
+- 빌려온 것: PhyAgentOS(세션 계약, 장면 텍스트 파일, 검증 뒤에만 기억), Zetta(세 시간 척도, 마일스톤·First Missing Milestone, 재진입 계약, 검증 게이트 — 승인자를 Jev로 바꾸는 것은 우리 접목안), Harness VLA(고정 스킬 어휘, stop 술어 인자, 스테이징→시도→관찰→재시도), Show-Harness(의미 행동 단위, 선택적 청킹, 빈 집기 복구), CaP-X(변화 텍스트, 성공 실행에서 스킬 추출).
+- 열린 질문(모듈 설계 단계에서): Zetta 승인 중 로봇 정지 여부(원문 미확인) / 증분 이동을 스킬 밖 이동 구간에만 쓸지 / 결정 지점을 Astra가 매번 만들지 스킬마다 코드로 박을지 / Astra가 만든 critic의 오경보 방지 / 5위 ROSClaw 대 Show-Harness.
+
 ## 3. 평가
 - [사용자] 비교 대상: Astra만 / Jev만 / VLA / 룰베이스(스킬 다발) / LLM+스킬 기존 논문 / Astra를 쓰는 기존 논문. 안전은 크게 다루지 않는다.
 - **핵심 주장 점검** ★ (v2 유지 + v3 보강)
