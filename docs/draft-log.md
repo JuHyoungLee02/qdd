@@ -263,3 +263,4 @@
 ## 단계 2 모듈 설계 — 시작 21:32 UTC (목표 최소 6시간, 최대 24시간 ±1~2시간)
 - 방식: handoff §3. 모듈마다 `docs/design/Mx-*.md`. 순서 M4 → M3·M5 → M7·M8·M9 → M1·M2 → M6 → M10 → 평가·첫 실험.
 - 21:33 UTC 라운드 D1 시작: 설계 공통 규칙 `docs/design/README.md`. 에이전트 3개 — M4(arXiv API 전담), M3·M5, M7·M8·M9. 끝나면 독립 원문 확인 → 메인 재확인 → plan·Overleaf 반영.
+- 21:41 UTC D1: M3·M5 설계 문서 도착(`docs/design/M3-action-representation.md`, `M5-smoothing.md`). 메인 재확인: 2604.14634 표 2 Full 조건 N=4→100 정확도 Gemini-3-Pro 0.9881→0.8574, 2.5-Flash 0.9730→0.7172(원문 일치, arXiv만 LOW-MED). → M3 "한 질문의 보기는 서로 뚜렷이 다른 것 소수, 크기는 로그 간격 이름 구간" 근거. 사용자 원안(촘촘)은 D-줌(방향 26 + 거친 5 + 세밀 5~9)으로 살리고, 혼합안 H(먼 구간 목표 지정, 접촉 근처 미세 조정)는 [결정 필요] 1순위 제안. M5는 L1 뒤집힘 억제 + L2 같은 보기끼리만 블렌딩 + L3 Ruckig, 예상 상태는 Ruckig 계획 궤적 기준(M4와 맞춤).
