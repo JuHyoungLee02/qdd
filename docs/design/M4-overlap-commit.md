@@ -1,5 +1,8 @@
 # M4. 연속 동작 1단계: 계단식 겹침 호출 + 겹침 구간 자기 확인·갱신 — 모듈 설계 (단계 2)
 
+> **정본 우선**: 모듈 사이 인터페이스·정지·확정 규칙·확률 게이트·시간 값은 `00-interfaces.md`가 우선한다(2026-09-23 22:00 UTC). 이 문서와 다르면 그쪽을 따른다.
+
+
 작성: 2026-09-24 UTC. 규칙: `docs/design/README.md`.
 읽은 것: `CLAUDE.md`, `plan.md` v4.3(§1, M3, M4, M5, §2.5, §4, §5), `research/v3/README.md`, `v3/06`, `v3/08`, `v3/09`, `v3/18`, `v3/02`(SmolVLA·A2C2), `v3/01`(Jev 지연), `design/M3-action-representation.md` §4.5(결정 스텝 기록).
 

@@ -1,5 +1,8 @@
 # M3. 행동 표현 — 모듈 설계 (단계 2)
 
+> **정본 우선**: 모듈 사이 인터페이스·정지·확정 규칙·확률 게이트·시간 값은 `00-interfaces.md`가 우선한다(2026-09-23 22:00 UTC). 이 문서와 다르면 그쪽을 따른다.
+
+
 - 작성: 2026-09-23 21:37 UTC 시작, 설계 에이전트(M3·M5 담당). 규칙: `docs/design/README.md`.
 - 읽은 것: `plan.md` v4.3 §1·M3·M4·M5, `research/v3/04`, `14`, `16`, `CLAUDE.md`, `draft-log.md` 교훈 요약.
 - 이번 조사: WebSearch 8회, arXiv abs/html 원문 12편(2초 간격, curl). arXiv 검색 API·Semantic Scholar·GitHub API는 쓰지 않았다 → **인용 수·스타는 이번 문서에서 새로 재지 않았다("미측정")**. v3/19에 이미 있는 값만 옮긴다.
