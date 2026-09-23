@@ -17,7 +17,7 @@
 
 \subsection{M2 Astra $\rightarrow$ Jev}
 \begin{itemize}
-  \item \intent{M1과 같은 문제}
+  \item \intent{M1과 거의 같은 문제. Astra는 이미지를 보고 명령하지만 Jev는 못 보니, 효율적으로 전달하는 방법을 더 생각함}
   \item \idea{물체 번호로 말하게 함(텍스트판 Set-of-Mark). 제약은 Astra가 코드로 쓰고 Jev에는 참/거짓만}
   \item \idea{작은 모델에겐 ``어떻게''보다 ``무엇을''(목표형)이 나음. 계획이 본 시각·금지 조건·단계 ID 칸 추가}
 \end{itemize}
@@ -35,7 +35,7 @@
 \subsection{M4 RTC식 겹침 호출 (가장 중요)}
 \begin{itemize}
   \item \intent{Jev가 빠르다지만 로봇 동작에서는 빠르지 않음. 연속 동작처럼 내뱉게 하는 법을 RTC에서 많이 참고~\cite{black2025rtc}. 1초에 한 번이 아니라 여러 번(예: 3번) 계단식으로 겹쳐 호출}
-  \item \intent{겹친 구간이 제대로 반영됐는지 스스로 확인하고 업데이트. 가장 중요}
+  \item \intent{겹친 부분의 움직임이 제대로 반영됐는지 스스로 감지하고 업데이트하는 시스템이 자동으로 반드시 있어야 함. 굉장히 중요}
   \item \idea{확인을 둘로 나눔: (a) 호출끼리 같은 말을 하나(앞부분 합의) (b) 실제로 그렇게 움직였나(예상 상태 대 측정 상태, 코드)}
   \item \idea{(a)만으론 안 됨. 같은 모델은 같은 오답을 반복}
   \item \chg{``안 멈추고 겹쳐 보내기''는 선행 있음(Slow Brain~\cite{slowbrain2026}: 최신 답만 씀, Jev 데모: 요청 하나 + 직전 행동 유지) $\rightarrow$ 새로움은 (a)+(b)로 확정하는 규칙뿐}
@@ -63,7 +63,7 @@
 
 \subsection{M7 진행 판별}
 \begin{itemize}
-  \item \intent{프레임별로 확인해서 Astra의 계획대로 되는지 판별. VLA에서 ``계획대로''를 무엇으로 정의했는지 많이 참고}
+  \item \intent{프레임별로 확인해서 Astra의 계획대로 되는지 판별. VLA에서 ``계획대로''를 무엇으로 정의했는지 많이 참고(VLA는 로봇을 학술적으로 조종하는 개념 공부를 많이 해 둠)}
   \item \idea{v2 그대로(센서·술어, 남은 시간). 시간 임계값은 SAFE~\cite{safe2025} 방식, 가끔 Astra로 GVL~\cite{gvl2024}}
   \item \idea{실패 판정은 코드 critic 한 곳에서만(정체 규칙·마감 초과·겹침 불일치·Jev 진행 범주를 모아서)}
   \item \chg{$\pi^*_{0.6}$·$\pi_{0.7}$의 진행 정의는 학습 신호일 뿐, 실행 중 판정엔 안 씀 $\rightarrow$ 술어+남은 시간 유지}

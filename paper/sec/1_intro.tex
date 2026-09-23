@@ -2,9 +2,10 @@
 \label{sec:intro}
 
 \begin{itemize}
-  \item \intent{물체를 보고 스킬을 생성해서 잡는 기존 방법들을 기본으로 사용. 이 방법들은 실패할 때가 있음. 실패할 때마다 GPT-6 Astra가 개입해서 작업을 이어감. 논문 제출 목표}
+  \item \intent{물체를 보고 스킬을 생성해서 잡는 방법들이 많지만 실패할 때가 있음. 실패할 때마다 GPT-6 Astra가 개입해서 진행하는 방식을 원함. 논문으로 제출할 계획}
   \item \intent{상위 Astra(느림, 계획) / 하위 Jev(빠른 객관식 판단). 예전 VLA의 큰 LLM + 작은 VLM처럼}
-  \item \intent{VLA는 다른 환경으로 일반화가 안 됨. LLM은 됨. 항상 부각}
+  \item \intent{Jev는 객관식 문제를 엄청 잘 풂. 엔드포인트를 어디로 얼마만큼 움직일지에 대한 순간 판단이 몇십 배 빠름}
+  \item \intent{VLA는 다른 환경으로 일반화가 안 됨. LLM은 됨. 이걸 엄청 부각하고 항상 기억}
   \item \intent{안전은 크게 다루지 않음}
   \item \intent{관찰: Astra로 로봇을 명령 기반으로 제어하는 프로젝트가 많이 나옴. Astra로 조정하는 방식이 VLA보다 생각보다 성능이 잘 나옴. 하지만 이미지를 보고 엔드포인트를 움직이는 방식에 그침. Astra는 API라서 시간이 너무 오래 걸림}
   \item \intent{파이프라인: 사용자 명령 $\rightarrow$ Astra가 잘게 쪼개 미리 계획 $\rightarrow$ 계획에 맞는 스킬을 불러옴 $\rightarrow$ Astra가 진행 $\rightarrow$ 프레임별로 계획대로 되는지 판별}
