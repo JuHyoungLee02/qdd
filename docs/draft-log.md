@@ -231,3 +231,12 @@
 - 정정: SPF 7%의 출처·조건 / Zetta Orchestrator에 대해 원문 자체가 엇갈림(온라인 LLM 승인 대 오프라인만) / CaP-X의 "코드 안 typed 선택"은 우리 제안 / CaP-X 변화 텍스트는 VLM(VDM)이 만든 것.
 - 새 반대 증거: WAM 정밀 끼우기에서 동기 실행(정지) 72.5 ≫ 비동기 40 → 사용자 "웬만하면 멈추지 않는다"와 긴장. 방향은 유지, [결정 필요] 10번으로.
 - 교훈: 우리 제안이 원문 설명 안에 섞여 들어가는 일이 세 번째다(Zetta 승인자, CaP-X typed 선택, CaP-X 코드 변화 텍스트). 표나 목록에서도 원문 칸과 우리 접목안 칸을 따로 둔다.
+
+### v4.2 — 21:24 UTC (v3/18 M4 새로움 심층 조사 반영)
+- **또 하나의 과대 주장**: plan v3~v4.1은 M4를 "비정지 로봇에서 빠른 typed 모델을 겹쳐 부르는 구조가 없다"로 적었다. v3/18이 본문 부록까지 읽어 선행을 찾았다.
+  - Slow Brain, Fast Planner(2606.20458) 부록 원문(메인 세션 확인): "We submit queries at a fixed cadence (1 Hz by default) without waiting for previous responses, keep multiple requests in flight … The robot is never blocked."
+  - Jev-as-Policy app.py(메인 세션 확인): busy 플래그로 요청 하나, 실행 중 wait_ticks=0, 직전 방향 유지 → 비정지.
+- 수정: 비정지·겹침 요청은 전제로 내리고, 새로움을 "(a) 호출 사이 typed 합의 + (b) 실행한 스텝의 코드 예상 대 측정 상태로 확정/유지/교체/수리를 고르는 규칙"으로 좁혔다. 실험 조건 C0~C6, 핵심 비교 C5 대 C2(Slow Brain식). E0(한국 지연) 추가.
+- main.tex: intro·related·method M4 동기화, main.bib에 slowbrain2026 추가(저자명 따옴표 BibTeX 문제 수정), 컴파일 확인.
+- 교훈: **선점 검색은 초록·제목 검색으로 끝내지 않는다.** 가장 가까운 논문 몇 편은 본문과 부록까지 읽고, 관련 저장소는 코드까지 본다. 초록 검색 53개로도 못 잡은 선행이 부록에 있었다.
+- 이어서: v3/19 신뢰도 지표(인용·스타) 일괄 측정 — 신뢰도 규칙에서 비어 있던 부분.
