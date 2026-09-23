@@ -125,3 +125,5 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - M6 typed hole: PLDI 2025 원문은 **디코딩 중 제약**만 평가했다. "사후 타입 검사 + 오류 되먹임"은 **우리 접목안**으로 표기한다.
 - M5 관성화: 반대 근거 추가 — Half Pound Filter §1이 관성화의 과평활·overshoot 한계를 적는다. "약 60% 절감"은 SIGGRAPH 2017 Talk §2(12µs 대 30µs, 원본 애니메이션 1개 조건)이고 GDC 소개문에는 수치가 없다.
 - 보완: RouteNLP는 OpenReview상 ACL 2026 Industry Poster(Anthology 목록 미등재), 보장은 작업·단계당 보정 약 500개일 때(n=100 위반 7.2%) → E1 뒤 T3b 게이트 보정 표본은 500 이상. Inter-Cascade 임계값은 logprob 필요(Astra 불가) → 개념만. TabGR 순서 강건성 근거는 부록 Table 12. Agentproof 저자 구성·형식 위치 정정. SagaLLM = PVLDB 18(12)(기간 8일 밖).
+
+- (23:10 UTC) 실행 중 거부된 계약 patch(`contract_patch_rejected`)는 새 채널을 만들지 않고 **`C_assume`로** 보낸다(계약 관련 소프트 신호로 묶음, 채널 수 억제).

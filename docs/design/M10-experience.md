@@ -1,6 +1,7 @@
 # M10. 경험 축적 — 모듈 설계 (단계 2)
 
 > **정본 우선**: 모듈 사이 인터페이스·정지·확정 규칙·확률 게이트·시간 값은 `00-interfaces.md`가 우선한다(2026-09-23 22:00 UTC). 이 문서와 다르면 그쪽을 따른다.
+> 개정: 2026-09-23 정본 §14–§15 반영 (`00-interfaces.md` §14·§15, `D4-cross-field.md` §11, `D4-cross-field-verification.md` #17·#18·#19): CBR 4R의 Revise(적용·검증 뒤에만 Retain, Aamodt·Plaza 1994)를 센서 라벨 규칙의 **기초 문헌 근거**로 추가(새 기전 아님), **역량 보존 사례 삭제**(Smyth·Keane, IJCAI 1995)를 E-M10 조건 B10으로 추가, TLM(ICML 2025)·MemoPilot(ICML 2026)은 가중치 갱신·갱신기 학습이 필요해 **쓸 수 없음**으로 기록.
 > 개정: 2026-09-23 D2 검증·00-interfaces §11 반영 (`D2-verification.md` Part A 정정, Part B·C 해소안. 핵심: Jev 규칙 키 = M6 스킬 고정 결정 지점 id, 술어는 M1 등록부 이름, L1 LAG는 `ref(t)` 기준, 삭제 규칙 "최소 n회 꺼낸 뒤", GEPA Pareto 뜻 정정(우리 게이트는 "비열화 게이트"), PragmaBot·Proactive Memory Agent 수치·조건 정정, SkillsBench 사람이 다듬은 스킬 +18.2~+24.8pp 추가, BATON 보조로 내림.)
 
 
@@ -56,6 +57,7 @@
 | Analytic Concept-Centric Memory (2606.29774) ○ | 로봇 | 물체 부분·템플릿·자세·어포던스·조작 상태 + 전이 메모리 + 스킬 메모리, **거친→세밀 구조 검색**이 비구조·임베딩 메모리보다 나음(초록) | MED(SJTU Cewu Lu, 심사 전) | 2026-06 | 확인 못 함 | 예 |
 | Kintsugi (2605.09487) △ | 로봇(기호) | typed 실행 KB(술어·연산자·모니터·복구 규칙) + 결정론 검증 게이트, **실행 시 LLM 0회** | MED-LOW(TU Darmstadt, 인용 2) | 2026-05 | 예 | 예 |
 | Dynamic Cheatsheet △ | LLM | 비교 기준 | MED(EACL 2026) | 2025-04 | 예 | 아니오 |
+| TLM (2505.20633) / MemoPilot (2606.08656) | 동결 LLM 테스트 시점 학습 | TLM: 입력 perplexity 최소화 + LoRA 갱신. MemoPilot: 메모리 갱신기를 multi-turn GRPO로 학습해 동결 LLM 플레이어 개선, Elo LHE 1762 / RPS 1590(초록) | HIGH (TLM ICML 2025, PMLR 267:24823–24849 / MemoPilot ICML 2026 공식 목록) | 2025-05-27 / 2026-06-07 | **아니오**(가중치 갱신 / 갱신기 학습) → Astra·Jev(API)에 **쓸 수 없음** | 아니오 |
 
 ### 2.2 (2) 라벨: 무엇을 "성공 경험"으로 저장하나
 
@@ -65,6 +67,8 @@
 | 2606.15017 표 10 △ | ReasoningBank LLM 판정이 "성공"이라 한 것 중 52.9%(Gemini)·59.5%(GPT) Shopping이 실제 실패 | HIGH(EMNLP 2026) |
 | PragmaBot ◎ | VLM 자기 판정 라벨을 쓰는 시스템이 실물 단일 시도 80%(비교값 22%는 다른 방법 COME). **정정(D2)**: LTM 100항목 중 96개가 교시용 경험이라 **이득의 대부분을 VLM 자기 판정 라벨로 돌릴 수 없다**. "LLM 판정이 쓸모없지 않다"의 약한 근거로만 | MED-HIGH(RA-L) |
 | Zetta 검증 게이트 △ | 패치는 진단 재생 + 새 폐루프 롤아웃 두 단계 통과해야 채택 | MED |
+| **CBR 4R 순환** (Aamodt·Plaza, AI Communications 1994) | Retrieve → Reuse → **Revise(재사용한 해를 실제로 적용·검증)** → Retain. 검증된 해만 저장 | 기간 밖, 기초 문헌(원문 이번에 안 읽음) |
+| **역량 보존 사례 삭제** (Smyth·Keane, "Remembering To Forget", IJCAI 1995, 1권 p.377) | 사례마다 coverage(그 사례가 풀 수 있는 문제 집합)·reachability(그 문제를 풀 수 있는 사례 집합)를 보고 pivotal / spanning / support / auxiliary로 4분류. pivotal을 지우면 역량이 되돌릴 수 없게 줄어들므로, 다른 사례가 덮는 auxiliary부터 지운다(D4 검증이 ijcai.org 목차와 PDF 원문으로 확인) | 기간 밖, 기초 문헌 |
 
 ### 2.3 (4) 메모리가 도움이 될 때와 해가 될 때 (2026 증거)
 
@@ -100,6 +104,9 @@
 | Zetta | 진단 재생 + 새 롤아웃 두 단계 검증 | 게이트 두 단계: (1) 원 실패 에피소드 재생에서 규칙이 해당 결정을 바꾸는지, (2) 새 시드 롤아웃에서 성공률 비감소 |
 | Kintsugi | 실행 시 LLM 0회 규칙 실행 | 기준 방법 "rules-only": 컴파일 규칙 + M6 R 조건 규칙을 코드가 실행, Jev·Astra 없음 |
 | 2604.27003 | 추상 > 원시, 음의 전이는 어려운 사례에 | 원시 궤적은 저장만(디버깅·재생용), 주입 금지. 결과는 **쉬운/어려운 부분집합으로 나눠 보고** |
+| CBR 4R (기초) | Revise = 재사용한 해를 실제로 적용·검증한 뒤에만 Retain | 새 기전이 아니다. 센서 라벨 규칙("센서 술어로 확정한 (a)등급만 교훈·규칙 재료", §4.2)이 이미 Revise다 → **기초 문헌 근거 상향**으로만 표기(00 §14) |
+| Smyth·Keane 1995 (기초) | coverage·reachability로 4분류, 다른 사례가 덮는 것부터 삭제, 유일하게 덮는 사례(pivotal)는 보존 | Jev 규칙의 coverage = 정확 일치 키(skill_id, dp_id, 조건 술어). **같은 키를 다른 규칙이 이미 덮으면 먼저 삭제 후보, 그 키를 유일하게 덮는 규칙은 보존**(삭제 대신 재게이트). 2505.16067식 이력 기반 삭제의 **비교 조건**(E-M10 B10)으로만 둔다. Astra 교훈은 scope로 coverage를 근사해야 해 정의가 느슨하다 → Jev 규칙표에만 적용 |
+| TLM, MemoPilot | 가중치 갱신 / 갱신기 학습 | 쓰지 않는다. MemoPilot의 "메모리 갱신을 다단계 결정으로 보고 뒤 결과로 평가"는 발상만: E-M10에서 규칙 추가·삭제마다 뒤 N 사건의 성공 변화를 기록(측정만, 학습 없음) |
 
 ---
 
@@ -145,6 +152,7 @@ hint: at dp.release if contact_under(o3)=no -> avoid release_now
 | 등급 | (a) 술어로 확정(T1·T2 술어, T3는 (b)) → 교훈·규칙 재료 / (b) 술어가 못 다뤄 Astra 다중 프레임 판정 → "미검증", Astra 참고만 / (c) 판정 불가 → 저장 안 함 | v3/03 §3.4 |
 | 효용 라벨 | 꺼낸 항목마다 이후 해당 단계의 L2 결과를 counters에 누적(2505.16067 "future task evaluations as free labels") | 2505.16067 |
 실패 경험: (a)등급 실패 + L4로 책임 단계가 특정된 것만 "예방 교훈"으로(Evo-Memory 표 3의 거르지 않은 실패 경고).
+근거 표기(00 §14): (a)등급만 교훈·규칙 재료로 쓰는 규칙은 CBR 4R의 Revise(Aamodt·Plaza 1994, **기간 밖, 기초 문헌**)와 같은 원리다. 새 기전이 아니라 근거 상향이다.
 
 ### 4.3 검색 키와 예산
 - Astra 키 계층: ① (skill_id, dp_id(M6 고정 id), 실패 유형 술어) 정확 — 전이 유형은 보조 키(§3 BATON 행) → ② + object_cat → ③ (선택) 임베딩(2511.21730: 처음 보는 어휘에서 임베딩 급락이라 마지막 수단). 최대 top-3 교훈 + 사례 2건, 상한 토큰 T_mem(예: 1,500) [제안 값].
@@ -176,6 +184,7 @@ hint: at dp.release if contact_under(o3)=no -> avoid release_now
 | B7 | **rules-only**(Kintsugi식): B4 규칙표 + M6 R 규칙을 코드가 실행, Jev·Astra 결정 없음(Astra는 계획만) |
 | B8 | Dynamic Cheatsheet |
 | B9 | B4에서 게이트(⑤) 끔 |
+| B10 | [제안] B4에서 삭제 정책만 **역량 보존 삭제**(Smyth·Keane IJCAI 1995식)로 교체: 규칙표를 키 coverage로 분류해, 효용 조건(최소 n회 꺼낸 뒤 `then_success / retrieved` ≤ β)에 걸린 규칙 중 **같은 키를 다른 규칙이 덮는 것은 삭제**, 그 키를 유일하게 덮는 규칙은 삭제 대신 재게이트(⑤)로 보냄. 결정 지점당 2줄 상한을 넘을 때도 덮이는 규칙부터 뺀다. n·β는 B4와 같게 |
 
 ### 지표
 성공률(A, B, A 재평가), **전방 전이**(B의 학습 곡선 기울기·B 첫 10편 성공률), **BWT**(A 재평가 − A 끝), **쉬운/어려운 부분집합**(B0 기준 성공/실패 시드별로 나눠 음의 전이 위치, 2604.27003), 에피소드당 Astra 토큰·호출·벽시계, Jev 입력 토큰·지연 p50/p95, 메모리 크기, 규칙 수, 규칙 발동률, 규칙 발동 시 결정이 바뀐 비율, 라벨 오염률(B3의 LLM 라벨 대 센서 라벨 불일치).
@@ -188,6 +197,7 @@ hint: at dp.release if contact_under(o3)=no -> avoid release_now
 5. **라벨**: B4(센서) − B3(LLM 판정) ≥ +3%p이거나 라벨 오염률 ≥ 20%이면 센서 라벨 원칙 확정. 차이 없으면 PragmaBot 쪽 증거와 함께 "판정 품질이 결정적이지 않을 수 있음" 보고.
 6. **rules-only**: B7이 B4와 −2%p 이내면 "규칙이 쌓인 결정 지점은 Jev 불필요"를 인정하고 호출 절감으로 보고(프로젝트 주장 약화 위험 명시).
 7. **게이트**: B9가 B4보다 낮으면(1%p 이상) 게이트 유지. 비용(게이트 롤아웃 수)도 함께 보고.
+8. **삭제 정책**: B10이 B4보다 성공률 +2%p 이상이거나, −1%p 이내이면서 BWT가 B4 이상이고 규칙 수가 적으면 역량 보존 삭제를 채택 후보로. B10의 BWT가 B4보다 나쁘면(역량 보존의 원래 목적과 반대) 채택하지 않는다.
 
 ### E-M10-2 Astra 주입 방식
 (i) top-k 항상 / (ii) 도구 조회 / (iii) 키 ① 일치 때만. 지표: 복구 성공률, Astra 토큰, 조회 횟수(ii), 교훈 "과잉 적용"(한 교훈이 응답에서 언급된 횟수, 2606.15017 F.3 관찰). 판정: 성공률 차 2%p 이내면 토큰이 가장 적은 안.
@@ -204,6 +214,7 @@ hint: at dp.release if contact_under(o3)=no -> avoid release_now
 - 선행: 경험 → typed 규칙 컴파일(Kintsugi, AutoRefine, MemCompiler 등, v3/07). 새로움은 **확률 결정 모델(Jev)의 결정 지점에 정확 일치로 붙이고 비열화 게이트로 채택**하는 부분뿐(좁음, plan §4-5).
 - GEPA·Training-Free GRPO·Proactive Memory Agent는 로봇 미적용(확인한 범위). Proactive Memory Agent 이득은 약한 행동 에이전트(Sonnet 4.5)에서 컸고 강한 쪽(Opus 4.6)은 +2.4/+2.5 — Astra가 강한 모델이면 이득이 작을 수 있다. BATON·2604.27003은 심사 전.
 - **SkillsBench 양면**: 자기 생성 스킬 −8.1~−11.5pp, 사람이 다듬은 스킬 +18.2~+24.8pp. Astra가 만든 교훈·규칙은 "자기 생성" 쪽에 가깝다 → 게이트 없이 넣으면 해로울 수 있다(B9 조건).
+- **역량 보존 삭제의 옮김 한계**: 원문은 1995년 CBR(사례가 문제를 "푼다"는 정의가 명확한 설정)이다. 우리 규칙의 coverage를 키 일치로 근사한 것은 접목안이고, 해로운 유일 규칙을 오래 남길 위험이 있다(B10에서 삭제 대신 재게이트로 막음).
 
 ## 7. 열린 질문, [결정 필요]
 1. [결정 필요] Astra 메모리 주입 방식(4.3 (i)/(ii)/(iii)), 기본 제안 (iii).
@@ -219,3 +230,4 @@ hint: at dp.release if contact_under(o3)=no -> avoid release_now
 - 2606.29774(개념 중심 로봇 메모리)의 수치와 학습 여부.
 - "메모리가 로봇 반복 조작에서 예산 맞춘 기준보다 나은가"를 잰 연구: 찾지 못했다. 검색어: "agent memory hurts performance repeated embodied tasks experience retrieval negative transfer", "robot manipulation LLM planner experience memory lessons from failures across episodes training-free". 부재를 주장하지 않는다.
 - 스타·인용 수(API 금지).
+- Aamodt·Plaza 1994 원문은 읽지 않았다(D4 검증 §4). Smyth·Keane 1995는 D4 검증이 원문 PDF로 확인했다. TLM·MemoPilot은 D4 검증의 학회 목록 확인 범위만.

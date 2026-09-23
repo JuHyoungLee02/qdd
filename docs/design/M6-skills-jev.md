@@ -1,6 +1,7 @@
 # M6. 스킬과 Jev 결합 — 모듈 설계 (단계 2)
 
 > **정본 우선**: 모듈 사이 인터페이스·정지·확정 규칙·확률 게이트·시간 값은 `00-interfaces.md`가 우선한다(2026-09-23 22:00 UTC). 이 문서와 다르면 그쪽을 따른다.
+> 개정: 2026-09-23 정본 §14–§15 반영 (`00-interfaces.md` §14-3·§14 M6 항·§15, `D4-cross-field.md` §7·§10, `D4-cross-field-verification.md` #1·#2·#5·§2-4). 핵심: (1) 스킬 계약 phase마다 **`effect` 필드**를 둔다. 값은 `reversible` + 보상 스킬 id, 또는 `irreversible`이다(§4.1.1). M9는 보상을 역순으로 실행하고 비가역 경계를 넘어 되돌리지 않으며, M4는 비가역 보기 확정에 W+1을 쓴다. 근거는 사가(1987, 기초 문헌), SagaLLM(PVLDB 18(12), 2025-03-15 공개로 기간 8일 밖), Atomix 2602.14849다(§2.3). (2) 생성 스킬 (b)에 **typed hole 사후 검사 게이트**를 둔다(§4.5 신설). 이것은 **[접목] 우리 접목안**이다. PLDI 2025 원문은 디코딩 중 제약만 평가했다(§2.4). E-M6-2 절제에 −`effect` 추가, E-M6-5(typed hole 게이트) 신설, §7-8 해소.
 > 개정: 2026-09-23 D2 검증·00-interfaces §11 반영 (`D2-verification.md` Part A 정정, Part B·C 해소안. 핵심: 결정 지점 id는 이 문서의 스킬 고정 id가 정본(M2는 골라 쓰고 인자만, M10 키도 이 id), `default_on_timeout` = 직전 확정 행동 유지 + 감속, 확률 게이트는 E1 뒤에만, `dp.critic_accept`는 M9 복구 제안 중 선택만(M7 FAIL을 뒤집지 못함), `dp.grasp_result` 보기 = M7 S5 공유 목록, "기존 스킬" (b)·(a') 동등 조건, BATON은 보조 참고로 내림, GPSFSM 수치 정정.)
 
 
@@ -74,6 +75,21 @@
 
 **스타 상위 5(+1)** (v3/06, 측정 2026-09-23 20:00 UTC, 다시 재지 않음): PhyAgentOS 2,481 / Zetta 1,252 / Harness VLA 962 / CaP-X 819 / ROSClaw 625(저장소 연결 추정) 또는 Show-Harness 451. [결정 필요: 5위] — 그대로 유지.
 
+### 2.3 하위 부분 (3) 효과 분류·보상 (사가, 00-interfaces §14-3)
+
+| 이름 | 분야 | 어디서 최고였나 (조건) | 신뢰도 | 기간 | 학습 없이 | 로봇 |
+|---|---|---|---|---|---|---|
+| Sagas (Garcia-Molina·Salem, SIGMOD 1987) | 데이터베이스 | 긴 트랜잭션을 하위 트랜잭션 열 T_i로 나누고 각각에 보상 C_i를 짝짓는다. 실패하면 역순 보상(backward) 또는 저장점부터 재시도(forward) | 기초 문헌(원문은 이번 라운드와 D4 검증 모두 읽지 않음) | **기간 밖, 기초 문헌** | 예 | – |
+| **SagaLLM** (2503.11951) | LLM 다중 에이전트 계획 | 사가 패턴 + 지속 메모리 + 자동 보상 + 독립 검증 에이전트(초록. 수치 미확인) | HIGH (**PVLDB 18권 12호, pp. 4874–4886**, DOI 10.14778/3750601.3750611, vldb.org 목록 확인. 트랙(연구/산업)은 미확인. 인용 76) | **2025-03-15 → 기간 밖(8일)** | 예 | 아니오 |
+| **Atomix** (2602.14849) | LLM 에이전트 도구 사용 트랜잭션 | 효과 3분류(본문 §2): Reversible(즉시 실행, 중단 시 **역방향 의존 순서로 보상**) / Bufferable(커밋 때 적용) / **Irreversible-gated**(이메일·송금·"**physical actions**", 커밋 때만 방출). 본문: "Saga compensation helps only when every externalized effect is reversible… cannot prevent an irreversible send" | MED-LOW (무학회, 인용 25) | 2026-02-16, 기간 안 | 예 | 아니오(원문이 물리 행동을 비가역 게이트 대상으로 직접 꼽음) |
+
+### 2.4 하위 부분 (4) 생성 스킬 검사 (타입 제약 생성, 00-interfaces §14·§15)
+
+| 이름 | 분야 | 어디서 최고였나 (조건) | 신뢰도 | 기간 | 학습 없이 | 로봇 |
+|---|---|---|---|---|---|---|
+| **Type-Constrained Code Generation with Language Models** (2504.09246) | PL / LLM 코드 생성 | 기전: 접두부 오토마타 + 거주 가능 타입 탐색으로 **디코딩 중** 타입이 맞지 않는 토큰을 막는다. HumanEval·MBPP(TypeScript)에서 컴파일 오류 절반 이상 감소, 합성·번역·수리 과제 기능 정확도 향상, 30B 넘는 오픈 가중치 모델 포함(초록). **원문이 평가한 것은 디코딩 중 제약뿐이다.** 사후 타입 검사 + 오류 되먹임은 평가하지 않았다(D4 검증 #5·§2-4) | HIGH (**PLDI 2025** Research Papers, DOI 10.1145/3729274, 인용 60. 쪽수 601–626은 ACM 403으로 미확인) | 2025-04-12, 기간 안 | 예(단 로짓 접근 필요 → **Astra API에는 직접 못 씀**) | 아니오 |
+| Statically Contextualizing LLMs with Typed Holes (Hazel, OOPSLA 2024) | PL | 구멍의 기대 타입과 관련 타입 정의를 LLM 문맥에 넣음 | 원문 안 읽음 | 기간 밖(2024-09) | 예 | 아니오 |
+
 ---
 
 ## 3. 가져올 것과 접목 방법 (원문 칸과 접목 칸 분리)
@@ -93,6 +109,8 @@
 | SkillWrapper | 블랙박스 스킬의 사전조건·효과를 기반 모델로 발명·학습 | "기존 스킬 = 라이브러리(a)"일 때 `entry`/`exit` 술어가 없는 스킬에 **오프라인으로 술어를 붙이는 방법** 후보(대안). 기본은 사람이 쓰고 Astra가 제안 |
 | Show-Harness | interpreter가 단위 한계 강제, 위반 실행 전 차단 | 스킬 파라미터 enum의 각 값은 코드가 한계 안의 수치로 바꾼다(Jev는 수치를 쓰지 않음). 스킬 밖 자유 이동 구간만 Show-Harness식 단위(M3 D안) |
 | CaP-X | 코드 턴, 성공 롤아웃에서 스킬 추출 | "기존 스킬 = 생성(b)"일 때: 생성 코드 안에 `jev_choice(dp_id)` 호출만 허용하는 API(v2부터 우리 제안, 원문 아님) |
+| 사가(기초) · SagaLLM · Atomix (§2.3) | [원문] 하위 단계마다 보상 짝(사가). 효과를 가역 / 버퍼 가능 / 비가역 게이트로 나누고, 비가역은 커밋 게이트 전에 방출하지 않는다(Atomix §2). 가역 효과는 중단 시 역방향 의존 순서로 보상한다 | [접목] 스킬 계약 phase마다 `effect`: `{kind: reversible, compensate: <스킬 id>}` 또는 `{kind: irreversible}`(§4.1.1). M9 재개 = 재개 지점까지 가역 phase의 보상 스킬을 **역순**으로 실행하고, 비가역 경계를 넘어 되돌리지 않는다(그 너머는 forward 재시도만). M4 = 비가역 보기의 유예 창 W+1(00-interfaces §14-3). 물리 보상은 원상 복구가 아니므로 보상 뒤 `entry`를 다시 확인한다 |
+| PLDI 2025 타입 제약 생성 (§2.4) | [원문] 디코딩 중 타입 제약(로짓 필요). 사후 검사는 평가하지 않음 | [접목] **원문 미평가 접목안**: 생성 스킬 (b)의 결정 자리를 typed hole `jev_choice(dp_id, Enum)`으로만 허용하고, 생성 뒤 코드가 타입·철저성·id·술어·`effect`를 검사해 오류 문장을 되먹인다(§4.5). 원문의 "타입을 생성의 합격 조건으로 쓴다"는 발상만 옮긴다 |
 
 ---
 
@@ -127,6 +145,11 @@ metadata:
   "reentry": ["failure_evidence_cleared", "contact_stable"],             // Zetta
   "lookahead_req": { "if next_skill=place-narrow": "approach=side_*" },  // 착상 BATON(보조), 유지 여부는 E-M6-2
   "annotations": { "irreversible_phases": [], "retry_safe_phases": ["approach", "align"] },
+  "effect": {                                                           // phase별 효과 (00-interfaces §14-3, 사가·Atomix 접목)
+    "approach": { "kind": "reversible", "compensate": "retreat-to-pregrasp" },
+    "align":    { "kind": "reversible", "compensate": "retreat-to-pregrasp" },
+    "grasp":    { "kind": "reversible", "compensate": "open-and-retreat" },
+    "lift":     { "kind": "reversible", "compensate": "lower-and-release-in-place" } },
   "outputSchema": { "result": "enum[ok, stopped_early, budget_exceeded, precondition_false, error]",
                     "exit_predicates": "map<predicate,bool>" }
 }
@@ -134,6 +157,11 @@ metadata:
 - 파라미터 범위: **enum(보기 ID)만**. 순서형은 M3의 보기 수 실험(E-M3-1) 결과 N을 따른다. 코드 표가 enum 값을 수치로 바꾼다(Jev 수치 약함, plan §1).
 - 술어: 모두 M1 술어 등록부 이름(수치 인자 없음). `reachable`·`aligned_*`·`at_pregrasp`·`contact_stable`은 T2라 M7 하드 채널(즉시 FAIL)에 쓰이지 않고 소프트 채널로만 간다(00-interfaces §11.2). `holding`·`gripper_open`·`lifted`는 T1.
 - Astra 권한: 계약에 있는 스킬·보기·**결정 지점 id**만 고른다(Harness VLA "cannot invent"). 결정 지점 id는 이 스킬 계약에 고정된 것이 정본이고, M2 세션 계약은 그 id를 골라 쓰고 인자(예: `target`)만 채운다. M10 Jev 규칙 키도 같은 id를 쓴다(00-interfaces §11.1). 새 스킬·새 결정 지점 제안은 오프라인 경로(M10 검증 게이트)로만.
+- **`effect` 필드** (00-interfaces §14-3 채택) [접목]:
+  - 값: phase마다 `{kind: "reversible", compensate: <스킬 id>}` 또는 `{kind: "irreversible"}`. 보상 스킬 id는 라이브러리에 있는 스킬이어야 하고, 그 스킬도 `entry`/`exit`를 갖는다(검사기가 확인). 예: `place-on` 스킬의 `release` phase는 `irreversible`(놓기), `lower` phase는 `reversible`(보상 = 다시 들어 올리기).
+  - 읽는 곳: **M9**는 재개 지점("사전조건이 참인 가장 늦은 지점", 00 §12)까지 가역 phase의 보상을 **역순**으로 실행한다. 경로에 비가역 phase가 있으면 그 너머로는 되돌리지 않고 forward 재시도만 한다. **M4**는 비가역 phase의 보기 확정에 유예 창 W+1을 쓴다(M4 §4.6). **M2** 단계 수준 `irreversible`은 "그 단계 phase 중 하나라도 `irreversible`"과 같게 두는 것을 제안한다([제안], §7-7 [결정 필요]와 묶음).
+  - `annotations.irreversible_phases`와의 관계: `effect`가 정본이고 `irreversible_phases`는 `effect`에서 계산되는 파생 값으로 둔다([제안]). 두 값이 다르면 검사기가 거부한다.
+  - `effect`는 **표지(힌트)**다. MCP annotations와 같은 이유로 안전을 넘기지 않는다. 코드 안전 술어가 최종이다. 물리 보상은 원상 복구가 아니므로(물체 자세 변화) 보상 뒤 재개 phase의 `entry`를 반드시 다시 확인한다.
 
 #### 4.1.2 Jev 질문을 꽂는 자리: 단계별 템플릿 [제안]
 원칙: (1) 코드 술어로 답이 나오는 것은 묻지 않는다. (2) 질문은 **단계 전이 사건** 때와 M4의 겹침 확인 때만. (3) 모든 보기에 예상 결과 술어(M3), 모든 질문에 `NONE_ESCALATE`. (4) 같은 문구 고정(Jev #8). (5) **확률 게이트는 E1(보정 측정) 뒤에만 켠다. E1 전에는 확률 게이트를 끄고 최빈 선택만 쓴다**(00-interfaces §6, D2 B9). (6) 아래 표의 id가 정본 결정 지점 id다(M2·M10이 그대로 참조).
@@ -148,7 +176,7 @@ metadata:
 | grasp | `dp.grasp_result` (**코드 술어가 애매할 때만**: 그리퍼 폭이 "빈 집기"와 "얇은 물체" 경계) | "What is the grasp progress?" | **M7 S5와 한 목록을 공유**(00-interfaces §11.2, D2 B11): `valid_progress`(after: `holding(target)`), `allowed_change`(after: 파지 유지·자세 조금 변함), `failure`(after: `not holding(target)` — 빈 집기·미끄러짐), `recovering`, + `NONE_ESCALATE`(불확실) | M7 입력(S5), 확정은 코드(T1 `holding`) 우선 |
 | lift/transport | `dp.critic_accept` (**M9가 복구 제안 목록을 냈을 때만**: M7 FAIL 뒤 또는 WARN의 모드 제안) | "Which recovery proposal should run for {phase}? Evidence: {evidence}." | **M9 복구 제안 목록**(코드가 채움, 예: `retry_grasp_once`, `regrasp`, `restage`) + `NONE_ESCALATE`(M8로 올림). "거절하고 계속" 보기는 없다 | 제안 중 선택만. **M7 FAIL 판정을 뒤집을 수 없다**(00-interfaces §11.2, D2 B10). Zetta 승인자 자리(접목) |
 | transport | `dp.transport_mode` (경로 막힘 술어) | "Choose how to continue transport." | `continue`, `slow`, `detour_up`, `regrasp`, `place_safe_now` | 스킬 인자 |
-| place | `dp.release` (놓을 자리 위 도달) | "Release now?" | `release_now`, `lower_more`, `adjust_small`, `hold`, `NONE_ESCALATE` | **irreversible**: M4 확정 + 코드 안전 술어(접촉·높이) 둘 다 필요 |
+| place | `dp.release` (놓을 자리 위 도달) | "Release now?" | `release_now`, `lower_more`, `adjust_small`, `hold`, `NONE_ESCALATE` | **irreversible**(`effect`): M4 확정 + 코드 안전 술어(접촉·높이) 둘 다 필요. M4 유예 창은 W+1(00-interfaces §14-3, M4 §4.6) |
 | (재진입) | `dp.reentry` (복구 동작 끝) | "Resume the skill from which phase?" | 코드가 계산한 재개 가능 단계만(M9 §4.2) | M9 L2와 공유 |
 
 - 한 요청에 여러 질문 묶기(Jev 질문 수 상한 없음, plan §1): 진입 시 `dp.approach_dir` + `dp.next_skill` 확인을 한 요청에.
@@ -176,6 +204,17 @@ metadata:
 
 **사용자 표현("물체를 보고 스킬을 생성해서 잡는 기존 방법들을 기본으로 사용")은 (b)에 가깝다.** 그래서 이 문서는 (a')를 1순위로 두지 않는다(00-interfaces §11.3, D2 C1). **(b)와 (a')를 동등한 조건**으로 둔다: 같은 계약 형식(4.1.1), 같은 결정 지점 id 목록, 같은 실험 조건(§5 E-M6-1·E-M6-2를 두 본 조건 각각에서 실행). 구현 순서를 정해야 하면 사용자 문장에 가까운 **(b)를 먼저** 만든다. (b)면 Astra가 스킬 코드와 계약을 생성하고 코드가 검증한다. **최종 선택은 [결정 필요, 사용자]**.
 
+### 4.5 생성 스킬 (b)의 typed hole 사후 검사 게이트 [접목, 원문 미평가] (00-interfaces §14·§15)
+
+[원문] PLDI 2025(2504.09246)는 접두부 오토마타와 거주 가능 타입 탐색으로 **디코딩 중**에 타입이 맞지 않는 토큰을 막는다. 원문의 "수리" 과제 이득도 제약 디코딩으로 얻은 것이다. **사후 타입 검사 + 오류 되먹임의 효과는 원문에 없다**(D4 검증 #5·§2-4). 디코딩 제약은 로짓 접근이 필요해 Astra(API, logprob 불가)에는 직접 못 쓴다.
+
+[접목] 아래는 **우리 접목안**이다. 효과 근거는 없고 E-M6-5로 잰다.
+- **typed hole**: 생성 스킬 코드의 결정 자리는 `jev_choice(dp_id: DecisionPointId, options: Enum[...]) -> 그 Enum` 형태로만 허용한다(§3 CaP-X 행과 같은 API).
+- **게이트 검사**(생성 직후, 실행 전): (i) 타입 검사(mypy/pyright 수준) (ii) `dp_id`가 스킬 계약의 고정 id 목록 안인지(00-interfaces §11.1) (iii) **철저성**: 반환 Enum의 모든 값에 분기가 있는지(`NONE_ESCALATE` 포함) (iv) 모든 술어가 M1 등록부에 있는지 (v) phase마다 `effect`가 있고 `compensate` 스킬 id가 라이브러리에 있는지(§4.1.1).
+- **오류 되먹임**: 실패하면 검사기 오류 문장(파일·줄·어느 검사·왜)을 Astra에 되돌려 수리하게 한다. 시점 규칙은 M2 계약 검사와 같다(00-interfaces §14-4). **T0(첫 계획)에서는 수리 왕복 1~2회**를 허용한다. **실행 중 재계획으로 새로 생성된 스킬은 검사만** 하고, 실패하면 그 스킬을 거부하고 M7에 신호를 보낸다. 로봇은 직전 확정 행동을 유지하며 멈추지 않는다(M2 §4.2 R7과 같은 규칙).
+- **대칭 조건**: (a') 래퍼 라이브러리에도 같은 게이트를 적용한다(검사 (ii)~(v)). (b)·(a') 동등 비교(00-interfaces §11.3)의 공정 조건이다.
+- Hazel식 문맥 넣기(보조, 원문 안 읽음): Astra가 스킬을 쓸 때 각 구멍에 필요한 타입 정의(술어 시그니처, 스킬 계약 스키마)만 골라 문맥에 넣는다. 게이트와 따로 켜고 끌 수 있게 둔다.
+
 ---
 
 ## 5. 비교 실험 (판정 기준은 실행 전 고정)
@@ -199,13 +238,16 @@ metadata:
 4. SH가 G2보다 grasp·place 단계 실패가 많으면(Show-Harness 원문 관찰과 같은 방향) "접촉 구간은 스킬" 원칙 확정.
 
 ### E-M6-2 인터페이스 절제
-G2에서 하나씩 뺀다: −예상 결과 술어 / −`entry` / −`lookahead_req` / −`stop` 술어(budget만) / −`NONE_ESCALATE` / FSM 대신 BT(대안 B). 판정: 빼서 성공률이 **3%p 이상** 떨어지는 필드만 필수로 남긴다. `lookahead_req`는 "narrow place" 과제에서만 판정. BATON(보조)에서 온 필드(`lookahead_req`, `next_entry_ok`)는 이 절제 결과로만 필수 여부를 정한다(00-interfaces §11.3).
+G2에서 하나씩 뺀다: −예상 결과 술어 / −`entry` / −`lookahead_req` / −`stop` 술어(budget만) / −`NONE_ESCALATE` / FSM 대신 BT(대안 B) / −`effect`(M9 보상 역순 재개와 M4 W+1을 끔. 복구 성공률과 비가역 단계 오확정 수로 판정하며 E-M9와 함께 돌린다). 판정: 빼서 성공률이 **3%p 이상** 떨어지는 필드만 필수로 남긴다. `lookahead_req`는 "narrow place" 과제에서만 판정. BATON(보조)에서 온 필드(`lookahead_req`, `next_entry_ok`)는 이 절제 결과로만 필수 여부를 정한다(00-interfaces §11.3).
 
 ### E-M6-3 "기존 스킬" 정의
 (b)(Astra 생성 + `jev_choice` 삽입) 대 (a')(래퍼 + 같은 결정 지점) 대 (b) 원형(생성 코드만, Jev 없음 = CaP-X식 기준) 대 (a') 원형(래퍼 없이 부르고 끝). 지표에 **생성 코드 형식 오류율, 계약 검증 거부율, 래퍼 작성 시간(사람)** 추가. 판정(대칭, 사전): (b)가 (a')보다 3%p 이상 낮으면 SkillsBench 자기 생성 경고가 우리에게도 해당된다고 보고. (a')가 (b)보다 3%p 이상 낮으면 SkillsBench "사람이 다듬은 스킬" 이득이 우리 래퍼에는 나오지 않는다고 보고. 부트스트랩 95% 구간이 겹치면 "차이 없음". 어느 쪽이든 본 조건 선택은 사용자에게 올린다.
 
 ### E-M6-4 Astra 스킬 카드 점진 공개
 Astra 계획에 (i) 카드만(메타 ~100토큰/스킬) 대 (ii) 본문 전부. 지표: 계획 성공률(계약 검증 통과율), 입력 토큰, 첫 계획 지연. 판정: (i)가 계획 통과율 −2%p 이내면 (i).
+
+### E-M6-5 typed hole 게이트 (§4.5, 우리 접목안 검증)
+(b) 생성 조건에서 게이트 켬 대 게이트 끔(코드 안전 규칙만 남김) 대 게이트 켬 + Hazel식 문맥. 지표: **첫 생성 합격률**, T0 수리 왕복 횟수와 왕복 뒤 합격률, 실행 중 재생성 스킬 거부율, 거부 유형(타입 / id / 철저성 / 술어 / `effect`), 실행 중 오류(런타임 예외·정의되지 않은 분기)로 인한 실패 수, 과제 성공률. 판정(사전, [제안]): 게이트 켬이 끔보다 실행 중 오류 실패를 절반 이하로 줄이고 성공률이 −2%p보다 나빠지지 않으면 게이트를 기본으로 둔다. 첫 생성 합격률이 50% 미만이면 T0 지연을 따로 보고하고, 카드·예시 계약을 프롬프트에 넣는 조건을 더한다.
 
 ---
 
@@ -218,6 +260,8 @@ Astra 계획에 (i) 카드만(메타 ~100토큰/스킬) 대 (ii) 본문 전부. 
 - BATON은 심사 전·인용 1이라 보조 참고로만 둔다(D2 A1이 초록·본문 문장은 확인). GPSFSM의 BTGenBot 대비 우위는 GPT 모델에서만이고 로컬 모델에서는 BTGenBot이 낫다(Table I) — FSM 선택의 근거로 과장하지 않는다.
 - **MCP idempotent ≠ 로봇 재시도 안전**: 뜻이 바뀌므로 `retry_safe`는 우리 정의로 둔다(§3).
 - Zetta 원문 불일치(온라인 LLM 승인자 대 인프라 절 "온라인 에이전트 없음", v3/16 #23).
+- **typed hole 게이트는 원문이 평가하지 않은 접목안이다**(00-interfaces §15): PLDI 2025 결과는 디코딩 중 제약이다. 사후 검사 + 수리로 바꾸면 같은 효과가 난다는 근거가 없다. 수리 왕복은 T0 지연을 늘린다.
+- **`effect`의 근거와 한계**: 사가(1987)는 기초 문헌이고 원문을 읽지 않았다. SagaLLM은 PVLDB 18(12)로 확정됐지만 2025-03-15 공개라 기간 8일 밖이고 수치는 확인하지 못했다. Atomix는 무학회다. 모두 소프트웨어 효과가 대상이다. 로봇의 보상 스킬은 원상 복구를 보장하지 못한다(물체가 움직임). 그래서 보상 뒤 `entry` 재확인이 필수다. 가역/비가역 표지를 잘못 붙이면 M9가 되돌릴 수 없는 것을 되돌리려 할 수 있다 → 코드 안전 술어가 최종이다.
 
 ## 7. 열린 질문, [결정 필요]
 1. [결정 필요, 사용자] "기존 스킬"의 정의: (b) 생성과 (a') 래퍼를 동등 조건으로 둘 다 실험(구현은 (b) 먼저) 뒤 선택, 또는 처음부터 한쪽(4.4).
@@ -227,6 +271,7 @@ Astra 계획에 (i) 카드만(메타 ~100토큰/스킬) 대 (ii) 본문 전부. 
 5. `lookahead_req`를 Astra가 계획 때 채울지, 스킬 작성자가 표로 둘지(필드 존속은 E-M6-2 결과가 먼저).
 6. `dp.grasp_result`처럼 코드 술어가 애매한 곳의 경계(그리퍼 폭 임계)는 M7 보정과 같이 정한다.
 7. [결정 필요] 되돌릴 수 없음을 누가 정하나: `annotations.irreversible_phases`(스킬 작성자) / M2 계약 단계 수준 `irreversible`(Astra) / 사용자 목록. M2 §7-4와 **한 [결정 필요]**로 묶는다(D2 B7). 어느 안이든 코드 안전 규칙이 최종.
+8. 해소(00-interfaces §14-3, D4 §14-3): 스킬 계약 phase별 `effect`(가역 + 보상 스킬 id / 비가역)를 **채택**한다. M9는 보상 역순, 비가역 경계 너머 되돌리기 금지, M4는 비가역 보기 W+1. 메인 세션 잠정 결정이며 E-M6-2(−`effect` 절제)와 E-M9로 검증한다. 누가 표지를 붙이느냐는 7번 [결정 필요]에 그대로 남는다. 생성 스킬 (b)의 typed hole 게이트(§4.5)도 00-interfaces §14에 따라 넣었고, 원문 미평가 접목안이라 E-M6-5로 검증한다.
 
 ## 8. 확인 못 한 것
 - Agent Skills 공개 표준화 날짜(2025-12-18)는 2차 출처(firecrawl 블로그)만 봤다.
@@ -234,3 +279,5 @@ Astra 계획에 (i) 카드만(메타 ~100토큰/스킬) 대 (ii) 본문 전부. 
 - 스타 수 재측정(API 금지). 2025-09-23 이후 스킬 논문 중 v3/06 이후(9/23 이후) 새로 뜬 고스타 저장소.
 - 로봇에서 Agent Skills(SKILL.md) 형식을 스킬 계약으로 쓴 선행: PhyAgentOS가 SKILL.md를 절차 기억으로 씀(원문 문장 확인). 그 밖은 찾지 않았다(부재 주장 안 함).
 - "스킬 내부 단계마다 typed 결정 모델 질문"의 로봇 선행: v3/07 결론(로봇 선점 없음, 비로봇 선례 있음)을 따르고 이번에 새로 검색하지 않았다.
+- Sagas 1987 원문, SagaLLM의 VLDB 트랙(연구/산업)과 본문 수치, PLDI 논문 쪽수(601–626, ACM 403), Hazel OOPSLA 2024 원문. SagaLLM 권·호·쪽, Atomix §2 효과 분류, PLDI 채택은 D4 검증 #1·#2·#5에 기댄다. 이번에 다시 읽지 않았다.
+- 로봇 스킬에 가역/비가역 효과 표지와 보상 스킬을 붙인 선행: 따로 검색하지 않았다. 부재 주장 안 함.
