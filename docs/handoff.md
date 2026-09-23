@@ -60,3 +60,4 @@
 - 조사 에이전트를 병렬로 돌릴 때는 공통 규칙을 파일로 주고, 결과는 `docs/research/<버전>/`에 쓰게 한다.
 - 검색 한도가 세션 전체에서 공유된다(첫 세션은 200회). 원문 읽기(curl/WebFetch)를 우선하고 검색은 아껴 쓴다.
 - 사용자에게는 한국어로, 짧고 명확하게 보고한다.
+- `main.tex` 컴파일 확인(로컬 Windows): Tectonic 0.15.0이 `D:\tools\tectonic\tectonic.exe`에 있다. `cp paper/main.tex D:/tools/texbuild/ && cd D:/tools/texbuild && TECTONIC_CACHE_DIR=D:/tools/tectonic/cache D:/tools/tectonic/tectonic.exe main.tex`. PDF 확인은 `PYTHONPATH=D:/tools/pylib`의 pymupdf. 작업 드라이브는 D만 쓴다.
