@@ -1,203 +1,118 @@
-% Harvest 연구 초안 (마인드맵)
-% Overleaf 컴파일러: pdfLaTeX 또는 XeLaTeX
+% Harvest 연구 초안 (마인드맵) — 논문 아님. 부분마다 "생각 / 바뀐 점 / 방향"만 적는다.
+% Overleaf 컴파일러: XeLaTeX 권장 (pdfLaTeX도 kotex로 동작)
 \documentclass[11pt]{article}
 \usepackage{kotex}
-\usepackage[margin=2.5cm]{geometry}
+\usepackage[margin=2.2cm]{geometry}
 \usepackage{enumitem}
-\usepackage{amsmath}
 \usepackage{xcolor}
+\setlist{nosep}
 
-% 빨간색: 사용자가 의도하고 말한 내용 / 검정색: 조사와 판단으로 채운 최신 생각
+% 빨간색: 사용자가 의도하고 말한 것 / 검정색: Claude의 조사·판단·제안
 \newcommand{\intent}[1]{\textcolor{red}{#1}}
-\newcommand{\plan}[1]{\textbf{계획:} #1}
-\newcommand{\refs}[1]{\textit{참고:} #1}
+\newcommand{\idea}[1]{\textbf{지금 생각:} #1}
+\newcommand{\chg}[1]{\textbf{바뀐 점:} #1}
+\newcommand{\dirn}[1]{\textbf{방향:} #1}
+\newcommand{\decide}[1]{\textbf{[결정 필요]} #1}
 
-\title{Harvest --- 연구 초안}
-\date{}
+\title{Harvest --- 초안 마인드맵}
+\date{마지막 갱신: 2026-09-23 20:05 UTC (v3 조사 진행 중)}
 
 \begin{document}
 \maketitle
 
-\section{대주제}
+\section*{큰 줄기}
 \begin{itemize}
-  \item \intent{물체를 보고 스킬을 생성해서 잡는 기존 방법들을 기본으로 사용}
-  \item \intent{이 방법들은 실패할 때가 있음}
-  \item \intent{실패할 때마다 GPT-6 Astra가 개입해서 작업을 이어감}
-  \item \intent{논문 제출 목표}
-  \item \intent{VLA는 다른 환경으로 일반화가 안 된다는 큰 단점이 있음. LLM은 일반화가 됨. 이 점을 항상 부각}
-\end{itemize}
-
-\section{관찰}
-\begin{itemize}
-  \item \intent{Astra로 로봇을 명령 기반으로 제어하는 프로젝트가 많이 나옴}
-  \item \intent{Astra로 조정하는 방식이 VLA보다 생각보다 성능이 잘 나옴}
-  \item \intent{하지만 이미지를 보고 엔드포인트를 움직이는 방식에 그침}
-  \item \intent{Astra는 API라서 시간이 너무 오래 걸림}
-\end{itemize}
-
-\section{파이프라인}
-\begin{enumerate}
-  \item \intent{사용자가 명령을 입력}
-  \item \intent{Astra가 명령을 잘게 쪼개서 어떻게 실행할지 미리 계획}
-  \item \intent{계획에 맞는 스킬들을 불러옴}
-  \item \intent{Astra가 불러온 스킬로 작업을 진행}
-  \item \intent{프레임별로 확인해서 Astra의 계획대로 되고 있는지 판별}
-\end{enumerate}
-
-\section{계층 구조}
-\begin{itemize}
-  \item \intent{기존 VLA에서 상위에 큰 LLM, 하위에 작은 VLM을 둔 것처럼 구성}
-  \item \intent{상위: Astra}
-  \item \intent{하위: Jev}
-  \begin{itemize}
-    \item \intent{새로 나온 모델, 객관식 문제를 잘 풂}
-    \item \intent{엔드포인트를 어디로 얼마만큼 움직일지에 대한 순간적인 판단이 몇십 배 빠름}
-  \end{itemize}
-\end{itemize}
-
-\section{두 모델에 대해 확인된 제약}
-\begin{itemize}
-  \item Jev: 텍스트/JSON 입력만 받음. Choice(보기 최대 255개), Score(2--10단계), Noul(예/아니오). 한 요청에 여러 질문을 병렬로 답함
-  \item Jev 공식 약점: 수치 정밀도, 수치 비교, 산술에 약함. 관련 없는 상태가 늘면 정확도 하락 $\rightarrow$ 기하 계산은 코드에서 하고 범주화해서 넘김
-  \item Jev 확률 보정은 업체 주장뿐 $\rightarrow$ 우리 데이터로 먼저 측정
-  \item Astra: 텍스트와 이미지 입력(비디오 없음). 첫 토큰까지 effort low 약 2.8초, high 약 45초 $\rightarrow$ effort가 설계 변수
-  \item Astra 로봇 결과는 모두 제3자 평가. 정밀 삽입은 2/20으로 약함 $\rightarrow$ 정밀 실행을 하위에 맡기는 동기
-  \item Astra 계획 + Jev 실행 조합은 데모 수준으로 이미 공개됨 $\rightarrow$ 계층 구조 자체가 아니라 방법과 평가에서 새로움을 찾음
-\end{itemize}
-
-\section{모듈별 계획}
-
-\subsection{상태 표현: 이미지 $\rightarrow$ Jev 입력}
-\begin{itemize}
-  \item \intent{Jev는 이미지를 못 봄. VLA에 국한하지 않고 AI 전 분야에서 이미지를 텍스트로 가장 효율적으로 바꾸는 방법을 가져옴}
-  \item \plan{작업 관련 물체만 + 코드로 미리 계산한 범주형 관계 + 참/거짓 술어}
-  \begin{itemize}
-    \item 예: 목표가 그리퍼의 $+x$ 방향, 거리 구간 3/5
-    \item 술어: grasped, above\_target, in\_contact 등
-    \item 원좌표는 보조로만
-  \end{itemize}
-  \item 인식 앞단 후보: SAM 3 (ICLR 2026) + 깊이, 자세가 필요하면 FoundationPose (CVPR 2024)
-  \item \refs{BALROG (ICLR 2025); SiT-Bench (ACL 2026 Findings); RoboPrompt (arXiv 2410.12782)}
-  \item 나중에 비교할 것: 표현 형식별로 Jev 정확도와 토큰 수
-\end{itemize}
-
-\subsection{Astra $\rightarrow$ Jev 전달}
-\begin{itemize}
-  \item \intent{Astra는 이미지를 보고 명령하지만 Jev는 이미지를 못 봄. 이 전달을 효율적으로 하는 방법이 필요. 상태 표현과 거의 같은 문제}
-  \item \plan{완료 조건 술어 + 대상 물체 ID + 예상 소요 시간 + 허용 동작 범위 + 연결할 스킬}
-  \item 키포인트 관계 제약은 ``만족 여부'' 술어로 바꿔서 넘김
-  \item \refs{ReKep (arXiv 2409.01652)}
-\end{itemize}
-
-\subsection{행동 표현}
-\begin{itemize}
-  \item \intent{촘촘하게 가도 됨. Jev의 방식이면 충분히 가능하다고 봄}
-  \item \plan{크기는 순서형 보기. 확률 가중 평균은 분포가 한 봉우리일 때만, 그 외에는 최빈값}
-  \item 나중에 비교할 것: 스텝별 단일축 선택 vs 저주파 경유점 선택
-\end{itemize}
-
-\subsection{연속 동작 1단계: RTC 방식 계단식 호출}
-\begin{itemize}
-  \item \intent{Jev가 빠르다곤 하지만 로봇 동작에서는 그렇게 빠르지 않음. 연속적인 동작처럼 내뱉게 하는 방법을 RTC에서 많이 참고}
-  \item \intent{1초에 Jev를 한 번이 아니라 여러 번(예: 3번) 계단식으로 겹쳐 호출}
-  \item \intent{겹치는 구간의 움직임이 제대로 반영됐는지 스스로 확인하고 업데이트하는 시스템이 반드시 있어야 함. 굉장히 중요}
-  \item \plan{}
-  \begin{itemize}
-    \item 동작 큐가 임계값 아래로 내려가면 다음 호출 (비동기 스케줄러)
-    \item 이미 실행이 확정된 앞부분은 고정하고 입력으로 넣어 줌
-    \item 응답이 도착할 시점의 예상 상태를 입력으로 넣음
-    \item 겹침 구간에서 이전 선택과 새 선택을 비교: 가까운 미래는 이전 쪽, 먼 미래는 새 쪽으로 가중
-    \item 매 제어 스텝 도는 빠른 기하 보정층을 따로 둠
-    \item 겹침 불일치가 크면 진행 판별에 이상 신호로 보냄
-  \end{itemize}
-  \item \refs{RTC (NeurIPS 2025, arXiv 2506.07339); SmolVLA 비동기 추론 (arXiv 2506.01844); VLASH (arXiv 2512.01031); A2C2 (arXiv 2509.23224); BID (ICLR 2025)}
-\end{itemize}
-
-\subsection{연속 동작 2단계: 액션 스무딩}
-\begin{itemize}
-  \item \intent{아주 작은 움직임은 액션 스무딩이나 VLA에서 쓰는 부드럽게 만드는 방법으로. 두 단계로 나눔}
-  \item \plan{겹침 선형 블렌딩 + jerk 최소화 후처리. B-스플라인 제어점 표현}
-  \item \refs{LiPo (arXiv 2506.05165); SMILE (arXiv 2608.29432)}
-  \item 나중에 비교할 것: temporal ensembling (ACT), 지수 평활
-\end{itemize}
-
-\subsection{스킬과 Jev 결합}
-\begin{itemize}
-  \item \intent{기존 스킬은 Jev와 밀접하게 연관될수록 좋음. LLM이 스킬을 불러오고 끝이 아니라 잘게 엮어야 함}
-  \item \plan{스킬 코드 안의 결정 지점(접근 방향, 잡는 위치, 다음 단계로 넘어갈지)을 Jev 질문으로 엶. 스킬은 매 스텝 상태와 술어를 내보냄. Astra가 복구하며 고친 것은 검증 후 스킬로 저장}
-  \item \refs{CaP-X (ICML 2026, arXiv 2603.22435); ASPIRE (arXiv 2607.00272)}
-\end{itemize}
-
-\subsection{진행 판별: 계획대로인가}
-\begin{itemize}
-  \item \intent{VLA에서 ``계획대로''를 무엇으로 정의했는지 많이 참고. VLA는 로봇을 학술적으로 어떻게 조종할지 개념 공부를 많이 해 놓았기 때문}
-  \item \plan{완료는 센서와 술어로 판정. 진행도는 ``완료까지 남은 시간''으로 정의. 임계값은 시간에 따라 바뀌는 conformal 방식}
-  \item 접촉과 파지는 VLM 판단이 약하므로 센서로 확인
-  \item \refs{$\pi^*_{0.6}$ RECAP (arXiv 2511.14759); SAFE (NeurIPS 2025, arXiv 2506.09937); FailBench (arXiv 2609.03611)}
-\end{itemize}
-
-\subsection{Astra 호출}
-\begin{itemize}
-  \item \intent{적어도 실패 판정이 났을 때는 Astra를 부름}
-  \item \intent{그 순간의 이미지 한 장이 아니라 연속 프레임을 줌. 예: 한 이미지 안에 프레임 10개}
-  \item \intent{처음 계획할 때는 멈추는 게 맞지만, 그 이후로는 웬만하면 멈추지 않음. 실패해서 다시 생각해야 할 때만 예외}
-  \item \intent{호출 방식은 비교 평가로 정함}
-  \begin{enumerate}
-    \item \intent{일정 주기(Hz)}
-    \item \intent{미리 정해 둔 순간마다}
-    \item \intent{``이때쯤 결과가 나왔어야 하는데 안 나왔다''는 자체 판단}
-  \end{enumerate}
-  \item \plan{Astra effort를 호출 목적별로 나눔: 처음 계획은 high, 복구와 주기 호출은 low. 호출 방식 비교에 effort 축을 추가}
-  \item \refs{필요할 때만 깊게 추론 (Sentinel-VLA, ICML 2026, arXiv 2605.01191); 키프레임 호출 (FPC-VLA, arXiv 2509.04018)}
-  \item 나중에 비교할 것: 격자 한 장 vs 프레임 개별 입력
-\end{itemize}
-
-\subsection{실패 복구}
-\begin{itemize}
-  \item \intent{VLA에서 가장 좋은 실패 복구 방법을 참고}
-  \item \plan{복구 3단계}
-  \begin{enumerate}
-    \item Jev 수준에서 동작을 조금 바꿔 재시도
-    \item 리셋 스킬로 환경을 되돌림
-    \item Astra 재계획 (연속 프레임 + 실패 설명)
-  \end{enumerate}
-  \item \refs{FLARE (CVPR 2026, arXiv 2608.26645); FailSafe (arXiv 2510.01642)}
-\end{itemize}
-
-\subsection{경험 축적}
-\begin{itemize}
-  \item \intent{경험 축적이 제대로 되어야 함. API로 불러오는 모델의 경험 축적을 어떻게 하는지 참고}
-  \item \plan{성공과 실패에서 뽑은 짧은 교훈을 유사도로 꺼내 씀 + 조금씩 덧붙이고 중복을 합치는 정리}
-  \item \refs{ReasoningBank (ICLR 2026, arXiv 2509.25140); ACE (ICLR 2026, arXiv 2510.04618); Dynamic Cheatsheet (EACL 2026)}
-  \item 나중에 비교할 것: 같은 토큰 예산의 메모리 없는 방법
-\end{itemize}
-
-\section{평가}
-\begin{itemize}
-  \item \intent{비교 대상}
-  \begin{itemize}
-    \item \intent{Astra만}
-    \item \intent{Jev만}
-    \item \intent{VLA}
-    \item \intent{룰베이스(스킬 다발만)}
-    \item \intent{LLM에 스킬을 연결한 기존 논문}
-    \item \intent{Astra를 쓰는 기존 논문}
-  \end{itemize}
-  \item \intent{VLA는 새 환경에 일반화가 안 되고 LLM은 됨}
-  \item 최신 VLA($\pi_{0.5}$ 등)는 새 환경 일반화를 주장하므로 주장 범위를 좁힐 필요가 있음. 예: 대규모 로봇 데이터와 학습 없이도 덜 무너짐
-  \item 벤치마크 후보: AGNOSTOS (NeurIPS 2025, RLBench 기반, 새 작업 23개) + 같은 RLBench 위의 환경 변화 조건
-  \item 기준 방법 후보: $\pi_0$, OpenVLA, RDT, 가능하면 $\pi_{0.5}$ / X-ICM, VoxPoser / 기존 방법의 백본을 Astra로 바꾼 버전
-  \item 지표: 작업별 성공률, 0\% 작업 수, seen 대비 unseen 하락폭, 완료 시간, 정지 시간, Astra 호출 수, 비용
-  \item \refs{AGNOSTOS / X-ICM (NeurIPS 2025, arXiv 2505.15660)}
+  \item \intent{기존 스킬 기반 잡기를 기본으로 쓰고, 실패할 때마다 GPT-6 Astra가 개입해서 이어감}
+  \item \intent{상위 Astra(느림, 계획) / 하위 Jev(빠른 객관식 판단). 예전 VLA의 큰 LLM + 작은 VLM 구조처럼}
+  \item \intent{VLA는 다른 환경으로 일반화가 안 됨. LLM은 됨. 항상 부각}
   \item \intent{안전은 크게 다루지 않음}
+  \item \idea{계층 구조 자체는 이미 데모로 공개됨. 새로움은 방법(겹침 호출, 호출 시점, 스킬 결합)과 평가에서 찾음}
+  \item \decide{핵심 주장 범위. 최신 VLA($\pi_{0.5}$ 등)가 새 환경을 주장하므로 ``대규모 로봇 데이터와 학습 없이 덜 무너짐''처럼 좁힐지}
 \end{itemize}
 
-\section{컨트리뷰션 후보}
+\section*{모델 제약 (확인된 것만)}
 \begin{itemize}
-  \item 객관식 결정 모델을 위한 계단식 겹침 호출과 확률 기반 자기 검증 업데이트
-  \item 실패 중심 Astra 호출 방식(주기 / 정한 순간 / 시간 초과)과 effort의 정량 비교
-  \item 스킬 내부 결정 지점을 Jev 질문으로 여는 결합 방식
-  \item 학습 없이 새 작업과 새 환경에서 VLA보다 덜 무너짐
+  \item Jev: 텍스트/JSON만. 수치·산술에 약함, 관련 없는 상태가 늘면 정확도 하락 $\rightarrow$ 기하는 코드에서 계산, Jev에는 범주·술어로
+  \item Jev 확률 보정은 업체 주장뿐 $\rightarrow$ 우리 데이터로 먼저 측정
+  \item Astra: 이미지는 받지만 비디오는 없음. 느림
+  \item (v3에서 원문으로 재확인 중)
+\end{itemize}
+
+\section*{M1 상태 표현 (이미지 $\rightarrow$ Jev)}
+\begin{itemize}
+  \item \intent{Jev는 이미지를 못 봄. AI 전 분야에서 가장 효율적인 변환을 가져옴}
+  \item \idea{작업 관련 물체만 + 코드가 계산한 범주형 관계 + 참/거짓 술어. 원좌표는 보조}
+  \item \chg{v1의 ``원좌표 JSON'', ``변화분만 주기''는 뺌 (Jev 수치 약점, 근거 없음)}
+  \item \decide{변환 방법과 인식 앞단은 사용자가 정함}
+\end{itemize}
+
+\section*{M2 Astra $\rightarrow$ Jev 전달}
+\begin{itemize}
+  \item \intent{M1과 거의 같은 문제. Astra는 이미지를 보지만 Jev는 못 봄}
+  \item \idea{완료 조건 술어 + 대상 물체 + 예상 소요 시간 + 연결할 스킬}
+\end{itemize}
+
+\section*{M3 행동 표현}
+\begin{itemize}
+  \item \intent{촘촘하게 가도 됨. Jev 방식이면 가능}
+  \item \idea{크기는 순서형 보기. 확률 평균은 한 봉우리일 때만}
+  \item \dirn{스텝별 선택 vs 저주파 경유점 선택 비교. LLM 쪽 ``확률 $\rightarrow$ 연속값'' 방법 조사 중}
+\end{itemize}
+
+\section*{M4 연속 동작 1단계 (RTC식 겹침 호출)}
+\begin{itemize}
+  \item \intent{1초에 Jev를 여러 번(예: 3번) 계단식으로 겹쳐 호출}
+  \item \intent{겹친 구간이 제대로 반영됐는지 스스로 확인하고 업데이트하는 시스템이 반드시 필요. 가장 중요}
+  \item \idea{확정된 앞부분 고정 + 응답 도착 시점의 예상 상태를 입력 + 겹침 구간 융합 + 매 스텝 빠른 기하 보정}
+  \item \dirn{가장 유력한 컨트리뷰션 자리. LLM 쪽 draft-verify 계열도 보는 중}
+\end{itemize}
+
+\section*{M5 연속 동작 2단계 (스무딩)}
+\begin{itemize}
+  \item \intent{아주 작은 움직임은 VLA식 스무딩으로}
+  \item \idea{학습 없는 후처리(겹침 블렌딩 + jerk 최소화)}
+\end{itemize}
+
+\section*{M6 스킬 $\leftrightarrow$ Jev}
+\begin{itemize}
+  \item \intent{LLM이 스킬을 부르고 끝이 아니라 잘게 엮음. 1년 이내, 스타 상위 논문 참고}
+  \item \idea{스킬 코드 안의 결정 지점을 Jev 질문으로 엶. 기반 후보 CaP-X}
+  \item \dirn{스타 상위 5개 확정 중}
+\end{itemize}
+
+\section*{M7 진행 판별}
+\begin{itemize}
+  \item \intent{VLA에서 ``계획대로''를 어떻게 정의했는지 참고}
+  \item \idea{완료는 센서·술어로, 진행도는 ``완료까지 남은 시간''으로. 접촉·파지는 VLM이 약하니 센서로}
+\end{itemize}
+
+\section*{M8 Astra 호출}
+\begin{itemize}
+  \item \intent{최소한 실패 판정 때 부름. 한 장이 아니라 연속 프레임(예: 한 이미지에 10개)}
+  \item \intent{호출 방식 비교: 일정 주기 / 정한 순간 / ``이때쯤 나왔어야 하는데'' 자체 판단}
+  \item \intent{처음 계획할 때만 멈춤. 이후엔 실패로 다시 생각할 때만}
+  \item \chg{v2의 ``복구·주기 호출은 effort low''는 기본안에서 뺌. 사용자가 다른 작업에서 ``추론 강도를 낮추는 건 옳지 않다''고 함 $\rightarrow$ effort는 실험 축으로만}
+  \item \dirn{세 호출 방식 비교가 이미 있는지 확인 중 (2608.28075)}
+\end{itemize}
+
+\section*{M9 실패 복구}
+\begin{itemize}
+  \item \intent{VLA에서 가장 좋은 실패 복구 방법 참고. 1년 반 이내}
+  \item \idea{Jev 재시도 $\rightarrow$ 리셋 스킬 $\rightarrow$ Astra 재계획 (FLARE의 재시도/리셋 구분)}
+\end{itemize}
+
+\section*{M10 경험 축적}
+\begin{itemize}
+  \item \intent{API 모델 기반 경험 축적을 제대로}
+  \item \idea{성공·실패 교훈을 짧게 꺼내 씀 (ReasoningBank) + 정리 (ACE)}
+  \item \dirn{2026년 방법과 미확인 논문 확인 중}
+\end{itemize}
+
+\section*{평가}
+\begin{itemize}
+  \item \intent{비교 대상: Astra만 / Jev만 / VLA / 룰베이스(스킬 다발) / LLM+스킬 기존 논문 / Astra 쓰는 기존 논문}
+  \item \idea{AGNOSTOS(RLBench, 새 작업) + 같은 시뮬레이터에 환경 변화 추가}
+  \item \decide{실험 환경}
 \end{itemize}
 
 \end{document}
