@@ -1,11 +1,13 @@
-% Harvest 연구 초안 (마인드맵) — 논문 아님. 부분마다 "생각 / 바뀐 점 / 방향"만 적는다.
-% Overleaf 컴파일러: XeLaTeX 권장 (pdfLaTeX도 kotex로 동작)
-\documentclass[11pt]{article}
+% Harvest 초안 마인드맵 — CVPR 양식(공식 author kit의 cvpr.sty), 내용은 논문이 아니라 마인드맵.
+% 부분마다 "지금 생각 / 바뀐 점 / 방향 / [결정 필요]"만 적는다. 안 정해진 곳은 비워 둔다.
+% Overleaf: 이 폴더의 main.tex, cvpr.sty, ieeenat_fullname.bst를 올리고 컴파일러는 XeLaTeX.
+\documentclass[10pt,twocolumn,letterpaper]{article}
+\usepackage[pagenumbers]{cvpr}   % 초안이라 review(익명·줄번호) 대신 쪽번호만
 \usepackage{kotex}
-\usepackage[margin=2.2cm]{geometry}
 \usepackage{enumitem}
-\usepackage{xcolor}
-\setlist{nosep}
+\setlist{nosep,leftmargin=1.2em}
+\definecolor{cvprblue}{rgb}{0.21,0.49,0.74}
+\usepackage[breaklinks,colorlinks,allcolors=cvprblue]{hyperref}
 
 % 빨간색: 사용자가 의도하고 말한 것 / 검정색: Claude의 조사·판단·제안
 \newcommand{\intent}[1]{\textcolor{red}{#1}}
@@ -14,104 +16,135 @@
 \newcommand{\dirn}[1]{\textbf{방향:} #1}
 \newcommand{\decide}[1]{\textbf{[결정 필요]} #1}
 
-\title{Harvest --- 초안 마인드맵}
-\date{마지막 갱신: 2026-09-23 20:05 UTC (v3 조사 진행 중)}
+\def\paperID{*****}
+\def\confName{CVPR}
+\def\confYear{2027}
+
+\title{Harvest --- 초안 마인드맵 (v3)}
+\author{마지막 갱신: 2026-09-23 20:15 UTC \quad 초안 조사 단계, v3 원문 검증 반영}
 
 \begin{document}
 \maketitle
 
-\section*{큰 줄기}
+\begin{abstract}
+(아직 비움. 컨트리뷰션이 정해지면 쓴다.)
+\end{abstract}
+
+\section{Introduction --- 큰 줄기}
 \begin{itemize}
   \item \intent{기존 스킬 기반 잡기를 기본으로 쓰고, 실패할 때마다 GPT-6 Astra가 개입해서 이어감}
-  \item \intent{상위 Astra(느림, 계획) / 하위 Jev(빠른 객관식 판단). 예전 VLA의 큰 LLM + 작은 VLM 구조처럼}
+  \item \intent{상위 Astra(느림, 계획) / 하위 Jev(빠른 객관식 판단). 예전 VLA의 큰 LLM + 작은 VLM처럼}
   \item \intent{VLA는 다른 환경으로 일반화가 안 됨. LLM은 됨. 항상 부각}
   \item \intent{안전은 크게 다루지 않음}
-  \item \idea{계층 구조 자체는 이미 데모로 공개됨. 새로움은 방법(겹침 호출, 호출 시점, 스킬 결합)과 평가에서 찾음}
-  \item \decide{핵심 주장 범위. 최신 VLA($\pi_{0.5}$ 등)가 새 환경을 주장하므로 ``대규모 로봇 데이터와 학습 없이 덜 무너짐''처럼 좁힐지}
+  \item \idea{계층 구조, Astra로 로봇 제어, 스텝마다 LLM 이산 행동은 이미 있음. 우리 자리는 Jev 확률로 겹쳐 부르고 스스로 확인하는 부분(M4)}
+  \item \decide{주장 범위. $\pi_{0.5}$ 등이 새 환경을 주장함 $\rightarrow$ ``대규모 로봇 데이터·학습 없이 덜 무너짐''으로 좁힐지}
 \end{itemize}
 
-\section*{모델 제약 (확인된 것만)}
+\paragraph{컨트리뷰션 후보 (v3)}
+\begin{enumerate}
+  \item M4: Jev 확률 기반 계단식 겹침 호출 + 측정 상태로 겹침 반영 확인·갱신 (선점 없음, 가장 강함)
+  \item M8: 비정지 로봇에서 호출 시점 $\times$ effort 평가 (방법 아닌 평가 컨트리뷰션으로 좁힘)
+  \item M6: 스킬 내부 결정 지점을 typed 질문으로
+  \item M10: Astra가 컴파일한 규칙만 Jev에 (로봇 미적용)
+\end{enumerate}
+\chg{v2의 ``호출 방식 비교가 새롭다''는 틀림. 주기 대 이벤트 비교는 이미 여러 편}
+
+\section{Related Work --- 선점 지도}
 \begin{itemize}
-  \item Jev: 텍스트/JSON만. 수치·산술에 약함, 관련 없는 상태가 늘면 정확도 하락 $\rightarrow$ 기하는 코드에서 계산, Jev에는 범주·술어로
-  \item Jev 확률 보정은 업체 주장뿐 $\rightarrow$ 우리 데이터로 먼저 측정
-  \item Astra: 이미지는 받지만 비디오는 없음. 느림
-  \item (v3에서 원문으로 재확인 중)
+  \item Astra로 로봇: AGP, GPT-as-Policy, TGL, RoboDojo (모두 미심사), Harness VLA가 Astra 계획기 사용
+  \item 스텝마다 LLM이 이산 행동: Show-Harness $\rightarrow$ M3 직접 선행, 반드시 인용
+  \item 주기 대 이벤트 호출: CheckVLA, BRACE(ICML 2026) 등
+  \item Jev를 로봇에 쓴 논문은 아직 없음. 저장소 데모만(Jev-as-Policy 감시 중)
 \end{itemize}
 
-\section*{M1 상태 표현 (이미지 $\rightarrow$ Jev)}
+\section{Method --- 모듈별 생각}
+
+\subsection*{두 모델 제약}
+\begin{itemize}
+  \item Jev: 텍스트만. 수치·시간 비교 약함. 입력 길면 정확도 하락. \textbf{Score 기댓값으로 크기 보간 금지}, \textbf{질문끼리 확률이 서로 안 맞음}(공식 문서)
+  \item Astra: 이미지 OK, 비디오 없음. \textbf{logprob 못 씀}(effort none 없음). effort 지연은 날마다 바뀜
+\end{itemize}
+
+\subsection*{M1 이미지 $\rightarrow$ Jev}
 \begin{itemize}
   \item \intent{Jev는 이미지를 못 봄. AI 전 분야에서 가장 효율적인 변환을 가져옴}
-  \item \idea{작업 관련 물체만 + 코드가 계산한 범주형 관계 + 참/거짓 술어. 원좌표는 보조}
-  \item \chg{v1의 ``원좌표 JSON'', ``변화분만 주기''는 뺌 (Jev 수치 약점, 근거 없음)}
-  \item \decide{변환 방법과 인식 앞단은 사용자가 정함}
+  \item \idea{형식보다 내용. 작업 관련 물체만 + 코드가 계산한 관계·술어}
+  \item \chg{``텍스트가 이미지보다 낫다''의 근거(BALROG)는 모델마다 다름. 근거에서 내림}
+  \item \decide{변환 방법, 인식 앞단}
 \end{itemize}
 
-\section*{M2 Astra $\rightarrow$ Jev 전달}
+\subsection*{M2 Astra $\rightarrow$ Jev}
 \begin{itemize}
-  \item \intent{M1과 거의 같은 문제. Astra는 이미지를 보지만 Jev는 못 봄}
-  \item \idea{완료 조건 술어 + 대상 물체 + 예상 소요 시간 + 연결할 스킬}
+  \item \intent{M1과 같은 문제}
+  \item \idea{물체 번호로 말하게 함(텍스트판 Set-of-Mark). 제약은 Astra가 코드로 쓰고 Jev에는 참/거짓만}
 \end{itemize}
 
-\section*{M3 행동 표현}
+\subsection*{M3 행동}
 \begin{itemize}
-  \item \intent{촘촘하게 가도 됨. Jev 방식이면 가능}
-  \item \idea{크기는 순서형 보기. 확률 평균은 한 봉우리일 때만}
-  \item \dirn{스텝별 선택 vs 저주파 경유점 선택 비교. LLM 쪽 ``확률 $\rightarrow$ 연속값'' 방법 조사 중}
+  \item \intent{촘촘하게 가도 됨}
+  \item \chg{``확률 평균으로 크기''는 Jev 공식 문서가 금지 $\rightarrow$ 이름 붙은 구간을 고름}
+  \item \idea{보기 255개 한 번이면 충분할 수 있음(해상도 250 대 1000 차이 작음)}
+  \item \dirn{첫 실험 = Jev 보정 측정}
 \end{itemize}
 
-\section*{M4 연속 동작 1단계 (RTC식 겹침 호출)}
+\subsection*{M4 RTC식 겹침 호출 ★}
 \begin{itemize}
-  \item \intent{1초에 Jev를 여러 번(예: 3번) 계단식으로 겹쳐 호출}
-  \item \intent{겹친 구간이 제대로 반영됐는지 스스로 확인하고 업데이트하는 시스템이 반드시 필요. 가장 중요}
-  \item \idea{확정된 앞부분 고정 + 응답 도착 시점의 예상 상태를 입력 + 겹침 구간 융합 + 매 스텝 빠른 기하 보정}
-  \item \dirn{가장 유력한 컨트리뷰션 자리. LLM 쪽 draft-verify 계열도 보는 중}
+  \item \intent{1초에 여러 번 계단식으로 겹쳐 호출}
+  \item \intent{겹친 구간이 제대로 반영됐는지 스스로 확인하고 업데이트. 가장 중요}
+  \item \idea{확인을 둘로 나눔: (a) 호출끼리 같은 말을 하나(앞부분 합의) (b) 실제로 그렇게 움직였나(예상 상태 대 측정 상태, 코드)}
+  \item \idea{(a)만으론 안 됨. 같은 모델은 같은 오답을 반복}
+  \item \chg{VLASH·A2C2는 학습형이라 발상만. A2C2는 ICLR 탈락}
 \end{itemize}
 
-\section*{M5 연속 동작 2단계 (스무딩)}
+\subsection*{M5 스무딩}
 \begin{itemize}
-  \item \intent{아주 작은 움직임은 VLA식 스무딩으로}
-  \item \idea{학습 없는 후처리(겹침 블렌딩 + jerk 최소화)}
+  \item \intent{아주 작은 움직임은 스무딩으로. 두 단계}
+  \item \idea{v2 그대로(겹침 블렌딩 + jerk 최소화)}
 \end{itemize}
 
-\section*{M6 스킬 $\leftrightarrow$ Jev}
+\subsection*{M6 스킬 $\leftrightarrow$ Jev}
 \begin{itemize}
-  \item \intent{LLM이 스킬을 부르고 끝이 아니라 잘게 엮음. 1년 이내, 스타 상위 논문 참고}
-  \item \idea{스킬 코드 안의 결정 지점을 Jev 질문으로 엶. 기반 후보 CaP-X}
-  \item \dirn{스타 상위 5개 확정 중}
+  \item \intent{잘게 엮음. 1년 이내 스타 상위 5개 참고}
+  \item \idea{스타 상위: PhyAgentOS, Zetta, Harness VLA, CaP-X, ROSClaw(또는 Show-Harness)}
+  \item \idea{스타 1위는 거칠게 엮음. 잘게 엮는 쪽은 Zetta(critic 코드 + 수락/거부)와 Show-Harness}
+  \item \decide{5위 ROSClaw 대 Show-Harness}
 \end{itemize}
 
-\section*{M7 진행 판별}
+\subsection*{M7 진행 판별}
 \begin{itemize}
-  \item \intent{VLA에서 ``계획대로''를 어떻게 정의했는지 참고}
-  \item \idea{완료는 센서·술어로, 진행도는 ``완료까지 남은 시간''으로. 접촉·파지는 VLM이 약하니 센서로}
+  \item \intent{VLA의 ``계획대로'' 정의를 참고}
+  \item \idea{v2 그대로(센서·술어, 남은 시간)}
 \end{itemize}
 
-\section*{M8 Astra 호출}
+\subsection*{M8 Astra 호출}
 \begin{itemize}
-  \item \intent{최소한 실패 판정 때 부름. 한 장이 아니라 연속 프레임(예: 한 이미지에 10개)}
-  \item \intent{호출 방식 비교: 일정 주기 / 정한 순간 / ``이때쯤 나왔어야 하는데'' 자체 판단}
-  \item \intent{처음 계획할 때만 멈춤. 이후엔 실패로 다시 생각할 때만}
-  \item \chg{v2의 ``복구·주기 호출은 effort low''는 기본안에서 뺌. 사용자가 다른 작업에서 ``추론 강도를 낮추는 건 옳지 않다''고 함 $\rightarrow$ effort는 실험 축으로만}
-  \item \dirn{세 호출 방식 비교가 이미 있는지 확인 중 (2608.28075)}
+  \item \intent{실패 판정 때 부름. 연속 프레임(예: 한 이미지에 10개)}
+  \item \intent{비교: 일정 주기 / 정한 순간 / ``이때쯤 나왔어야 하는데''}
+  \item \intent{처음 계획만 멈춤}
+  \item \idea{``이때쯤''은 코드가 예상 시간으로 계산. LLM에게 맡기면 안 됨}
+  \item \idea{프레임은 격자보다 ``어떤 프레임을 고르냐''가 중요. 움직임 큰 순간 위주 6--10장}
+  \item \chg{effort low 기본안 삭제(사용자: 추론 강도 낮추지 말 것). effort는 실험 축만}
 \end{itemize}
 
-\section*{M9 실패 복구}
+\subsection*{M9 실패 복구}
 \begin{itemize}
-  \item \intent{VLA에서 가장 좋은 실패 복구 방법 참고. 1년 반 이내}
-  \item \idea{Jev 재시도 $\rightarrow$ 리셋 스킬 $\rightarrow$ Astra 재계획 (FLARE의 재시도/리셋 구분)}
+  \item \intent{VLA에서 가장 좋은 실패 복구. 1년 반 이내}
+  \item \idea{아래 층부터: 스킬 재시도 $\rightarrow$ Jev $\rightarrow$ 리셋 스킬 $\rightarrow$ Astra}
+  \item \chg{FLARE는 자세 오류/환경 파괴 구분만 가져옴(재시도는 학습형이었음)}
 \end{itemize}
 
-\section*{M10 경험 축적}
+\subsection*{M10 경험 축적}
 \begin{itemize}
   \item \intent{API 모델 기반 경험 축적을 제대로}
-  \item \idea{성공·실패 교훈을 짧게 꺼내 씀 (ReasoningBank) + 정리 (ACE)}
-  \item \dirn{2026년 방법과 미확인 논문 확인 중}
+  \item \idea{Astra: 단순 경험 검색(ExpRAG) + 교훈. Jev: 교훈 목록 말고 딱 맞는 규칙 0--2개만}
+  \item \chg{``메모리 없는 게 낫다''는 반대 논문이 실재(EMNLP 2026) $\rightarrow$ 같은 예산 비교 필수}
 \end{itemize}
 
-\section*{평가}
+\section{Experiments --- 평가 방향}
 \begin{itemize}
-  \item \intent{비교 대상: Astra만 / Jev만 / VLA / 룰베이스(스킬 다발) / LLM+스킬 기존 논문 / Astra 쓰는 기존 논문}
-  \item \idea{AGNOSTOS(RLBench, 새 작업) + 같은 시뮬레이터에 환경 변화 추가}
+  \item \intent{비교: Astra만 / Jev만 / VLA / 룰베이스 / LLM+스킬 기존 논문 / Astra 쓰는 기존 논문}
+  \item \idea{``Astra 쓰는 기존 논문''이 이제 있음 $\rightarrow$ 재현 가능한 것 선택}
+  \item \idea{AGNOSTOS의 LLM 방법은 정답 좌표를 받음 $\rightarrow$ 정답 상태 / 인식 상태 두 조건}
   \item \decide{실험 환경}
 \end{itemize}
 
