@@ -173,3 +173,8 @@
 - 메인 세션 재확인: FaRe(2609.18016, 2026-09-16) 초록 "when / where / which" 세 결정 분해, 학습 없음. RIR(2609.18304, 2026-09-16) 초록 "when to intervene, where to resume, what information should survive".
 - plan v3.4: M7에 코드 규칙 벗어남 판정·단계 원장·진행 범주 보기, M9 1순위를 "언제/어디로/무엇을 남길지" 틀로. 반대 증거(VRL-Bench, LATS 예산 약점)와 기준 방법(메모리 없는 재시도, 완전 리셋) 추가. main.tex M7·M9 동기화.
 - 확인: 2026-09에도 로봇 복구 기법 직접 비교 벤치마크는 없다. "VLA에서 가장 좋은 복구"는 수치로 못 정한다고 정직하게 적는다.
+
+### v3.4 부분 — 20:41 UTC (v3/11 인식 앞단 반영)
+- 메인 세션 재확인: TypeSafe models 문서 "Text only … No image, audio, or video input", Fast-FoundationStereo arXiv 2512.11130(2025-12-11) 실재. CVPR 2026 채택은 보고서에 기댐(미확인 표시).
+- plan M1: SAM 3.1 1순위 유지(속도 수치 조건 정정), FoundationPose는 "정확도 1위"가 아니라 "최고 공개 소스", 깊이에 Fast-FoundationStereo 추가, 관계 술어는 코드 계산(이유 = 지연·결정성), Visual Jev 없음.
+- 교훈: 속도 수치("7배")는 극단 조건일 때가 많다. 인용할 때 조건(물체 수, GPU)을 같이 적는다.
