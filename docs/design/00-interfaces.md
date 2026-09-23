@@ -97,3 +97,12 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - 근거 상향(설계 유지): M9 "사전조건이 참인 가장 늦은 지점부터 재개" = PLANEX 삼각표(Fikes·Hart·Nilsson 1972, 기간 밖 기초 문헌) + BT 백체이닝(ICRA 2019) + BacktrackAgent(EMNLP 2025) / M5 "모드가 다르면 평균하지 않는다" = RTC(NeurIPS 2025) + BID(ICLR 2025, 기간 밖) / M8 이벤트 대 주기 = 이벤트 트리거 제어 이론(Tabuada 2007, Heemels 2012, Åström 2002, 기간 밖 기초 문헌) / M10 "골라 넣은 소수 > 통째 주입" 원리 = Shi 외(ICML 2023), 적응형 검색(ACL 2023), Lost in the Middle(TACL) / M8 T3b 과신 = Xiong 외(ICLR 2024).
 - 여전히 잠정: M9의 "반성 유지"(로봇 반대 증거 있음), M10 "0~2개" 개수(E-M10 스윕), 호출 수를 맞춘 LLM 호출 방식 비교(학회 통과 문헌 없음 → E-M8a).
 - 서지 정정: 2505.16067 = **ACL 2026**(Anthology 2026.acl-long.27 확인; S2의 ACL 2025 표기는 틀림). Rewind-IL "RA-L 2026"은 S2 표기뿐 → 학회 미확인.
+
+## 13. D4 반영 (2026-09-23 22:45 UTC, `D4-devils-advocate.md`)
+- 우선순위: CONTRADICT → 하드 채널은 **T1 술어일 때만**(§11.2가 §4보다 우선). T2/unknown이면 C_m4.
+- 실험 순서 개정: E0 → **E0.5 표 재생(오프라인)** → E1 → **E2a(룰 대 Jev C1, M4 없이, 결과 기반 라벨, Astra 켠 대응 조건 포함)** → E-M4(C0~C6, C5 포함) → E-M3-2 → E-M5-1 → E-M8a → E-M9 → E-M6·E-M10. 본 평가 S1 직후 **EVAL H4(인식 술어 standard 대 random) + random 스냅샷 룰 대 Jev 오프라인**을 당긴다.
+- E2 방향 재검토 조건: Jev 최선 조건의 R0 대비 차이의 **95% 상한 < +5%p**일 때만. 그 밖의 비유의는 "결론 유보".
+- 환경 역할: E0~E3는 단일 팔 자작 장면(싸고 빠름). 본 평가는 RoboDojo(양팔). 둘을 섞지 않는다.
+- Astra effort 기본 high(사용자 원칙). RoboDojo 원문 재현(medium)은 재현용 조건으로만.
+- RoboDojo 루프 동기 여부를 S0 통과 조건으로. 공식 동기 트랙과 벽시계 트랙을 따로 보고.
+- 기간 밖 문헌이 정한 기본값(LocalAgreement, Sentinel식 C_flip, Ruckig)은 사용자 승인([결정 필요] 4) 전까지 "잠정 기본".
