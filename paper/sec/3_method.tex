@@ -29,7 +29,7 @@
   \item \idea{보기 255개 한 번이면 충분할 수 있음(해상도 250 대 1000 차이 작음)}
   \item \idea{반대 증거 있음: 학습 없는 모델은 잘게 여러 번 움직이기보다 목표 지점을 한 번에 가리킬 때 훨씬 잘함(드론 40\%$\rightarrow$100\%, GUI 반복 이동 붕괴)}
   \item \dirn{``목표 지정형''(Jev가 목표 물체·부분을 고르고 크기는 코드)을 원안 옆에 나란히 재 봄. \decide{기본안}}
-  \item \dirn{첫 실험 = Jev 보정 측정}
+  \item \dirn{첫 실험 = Jev 보정 측정(E1) + ``마차 시험''(E2: 같은 텍스트 상태에서 룰 / Jev 촘촘 / Jev 목표 지정 / 겹침 켬·끔)}
 \end{itemize}
 
 \subsection{M4 RTC식 겹침 호출 (가장 중요)}
@@ -63,7 +63,7 @@
 \begin{itemize}
   \item \intent{VLA의 ``계획대로'' 정의를 참고}
   \item \idea{v2 그대로(센서·술어, 남은 시간). 시간 임계값은 SAFE~\cite{safe2025} 방식, 가끔 Astra로 GVL~\cite{gvl2024}}
-  \item \idea{벗어남은 코드 규칙: 진행이 N번 연속 멈춤 / 최고 진행을 M번 못 넘음. 잡기·놓기 중엔 보류}
+  \item \idea{실패 판정은 코드 critic 한 곳에서만(정체 규칙·마감 초과·겹침 불일치·Jev 진행 범주를 모아서)}
   \item \chg{$\pi^*_{0.6}$·$\pi_{0.7}$의 진행 정의는 학습 신호일 뿐, 실행 중 판정엔 안 씀 $\rightarrow$ 술어+남은 시간 유지}
 \end{itemize}
 
@@ -72,8 +72,8 @@
   \item \intent{실패 판정 때 부름. 연속 프레임(예: 한 이미지에 10개)}
   \item \intent{비교: 일정 주기 / 정한 순간 / ``이때쯤 나왔어야 하는데''}
   \item \intent{처음 계획만 멈춤}
-  \item \idea{``이때쯤''은 코드가 예상 시간으로 계산. LLM에게 맡기면 안 됨}
-  \item \idea{프레임은 격자보다 ``어떤 프레임을 고르냐''가 중요~\cite{kite2026}. 움직임 큰 순간 위주 6--10장}
+  \item \idea{``이때쯤 나왔어야 하는데''의 구현 두 가지를 비교: 코드가 예상 시간으로 마감 계산 / 모델이 경과 시간 보고 스스로 판단 \decide{}}
+  \item \chg{v3에서 기본값을 개별 이미지로 바꿨던 것 되돌림 $\rightarrow$ 사용자 예시(격자 한 장에 10프레임)가 기본 조건, 개별 이미지·변화 텍스트는 비교 조건~\cite{kite2026}}
   \item \chg{effort low 기본안 삭제(사용자: 추론 강도 낮추지 말 것). effort는 실험 축만}
   \item \idea{effort는 성공률보다 결정 수·시간을 바꿈(Show-Harness 스텝 37$\rightarrow$30). 지표에 결정 수 추가. 단 Astra low로 강한 결과도 있음(Harness VLA) $\rightarrow$ \decide{effort 기본값}}
   \item \dirn{프레임 비교에 ``무엇이 바뀌었는지 텍스트'' 조건 추가(CaP-X에서 원시 이미지보다 나음)}
@@ -82,7 +82,7 @@
 \subsection{M9 실패 복구}
 \begin{itemize}
   \item \intent{VLA에서 가장 좋은 실패 복구. 1년 반 이내}
-  \item \idea{아래 층부터: 스킬 재시도 $\rightarrow$ Jev $\rightarrow$ 리셋 스킬 $\rightarrow$ Astra}
+  \item \chg{v3의 ``Astra는 맨 마지막'' 폐기 $\rightarrow$ 실패 판정 순간 Astra를 비동기로 바로 부르고, 기다리는 동안 아래 층(스킬 재시도 $\rightarrow$ Jev 선택)이 로봇을 움직임}
   \item \chg{FLARE~\cite{flare2026}는 자세 오류/환경 파괴 구분만 가져옴(재시도는 학습형이었음)}
   \item \dirn{복구 = 언제 / 어디로 / 무엇을 남길지. 어디로 = 사전조건이 다 참인 가장 늦은 체크포인트. Jev가 \{계속, 체크포인트 재개, 리셋, Astra\} 중 고름 (로봇 FaRe, LLM RIR이 같은 달 같은 분해)}
   \item \idea{복구 기법끼리 직접 비교한 벤치마크는 아직 없음 $\rightarrow$ ``최고''는 수치로 못 정함}
