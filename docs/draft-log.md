@@ -144,3 +144,11 @@
   - main.bib은 arXiv abs 페이지 메타데이터(citation_title/author)로 자동 생성했다(23편). 서지를 손으로 쓰지 않아 저자·제목 오류를 막았다.
   - 컴파일: XeLaTeX(Tectonic)로 3쪽, 머리글·줄번호·익명·참고 문헌 정상.
 - 교훈: "○○ 양식"은 공식 템플릿 파일 묶음 전체를 뜻한다. 스타일 파일만 가져다 쓰지 않는다.
+
+### v3.1 정정 — 20:19 UTC (v3/08 핵심 문헌 원문 확인 반영, plan v3.1)
+- 메인 세션 재확인: Show-Harness 적응 스텝(손목 카메라에 목표가 보이면 2cm / 안 보이면 4cm, arXiv html), RPent README "GPT-6 Astra / low … 92.63% (741/800)".
+- plan에서 고친 9곳: Show-Harness 적응 스텝·사고량 해석, Zetta 구조(원문 대 우리 접목안 구분, "Role1"은 원문에 없음), Harness VLA의 Astra(effort low 92.63%, 날짜 미확인), CheckVLA(+8.5%p 전체 / +3.9%p 검증 시점), BRACE(effort는 우리 확장), Learning When to Plan(정성 서술, ICLR 미채택), MemCompiler(18~62%는 한 행 값, 절반 넘게 음수·최대 −83.3%, 같은 연구진), Spec-VLA 허용 폭(±1이 아니라 256 중 9/5).
+- 교훈
+  - **에이전트 요약(v3/03, 04, 06)도 수치를 한 행에서 뽑아 일반화하거나(MemCompiler), 우리 접목안을 원문처럼 적었다(Zetta).** 원문 확인 에이전트를 별도로 돌린 것이 효과가 있었다. → 요약 에이전트 뒤에는 원문 확인 단계를 항상 둔다.
+  - "원문 값"과 "우리 제안"은 문장 안에서도 구분해 적는다("원문: …, 우리 접목안: …").
+- effort 관련 새 사실: Harness VLA가 Astra effort low로 강한 결과(92.63%). 사용자의 "추론 강도 낮추지 말 것"과 긴장 관계 → [결정 필요]에 그대로 두고 근거로 제시한다.
