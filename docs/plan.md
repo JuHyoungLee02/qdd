@@ -1,4 +1,4 @@
-# Harvest 연구 계획 (v4.3, 2026-09-23 21:30 UTC — 초안 조사 마감본, v3/01~19 반영)
+# Harvest 연구 계획 (v5, 2026-09-23 22:20 UTC — 단계 2 모듈 설계 1판 반영)
 
 - **[사용자]**: 사용자가 직접 정한 것(원문은 `docs/user-log.md`). 이 줄은 조사 결과로 바꾸지 않는다.
 - **[제안]**: Claude가 조사를 바탕으로 제안한 것. 사용자가 확정해야 한다.
@@ -189,3 +189,29 @@
   10. 정밀 접촉 구간에서 로봇 정지(동기 실행) 허용 여부(WAM 반대 증거)
 - 감시: Jev-as-Policy 결과, arXiv "Jev" 로봇 논문, TypeSafe 보정 곡선, awesome-jev.
 - 단계: 초안 조사(단계 1) 22:25 UTC 전후 마감 → 단계 2 모듈 설계(6~24시간): 모듈마다 최고 연구·가져올 것·접목 방법. 파이프라인은 깊게 가지 않는다.
+
+
+---
+
+## 6. 단계 2 모듈 설계 현황 (v5, 2026-09-23 22:20 UTC)
+- 설계 문서: `docs/design/M1~M10-*.md`. **모듈 사이 규칙은 `docs/design/00-interfaces.md`가 정본**(다르면 정본 우선). 검증: `D1-verification.md`, `D2-verification.md`.
+- 공통 규칙(정본 요약): 한 번의 Jev 호출 = 결정 질문 H개(1·3 비교) + 감시 질문 / 예상 상태는 M5 `ref(t)`와 M3 `expected_after` 한 곳 / **FAIL은 M7만**, M4는 신호만 / 정지는 첫 계획과 M9 안전 대기뿐(나머지는 직전 행동 유지 + 감속) / 확정·교체 규칙은 M4 한 곳 / E1 전 확률 게이트 전부 끔 / 결정 지점 id는 스킬 고정 id / 술어 사전은 M1 등록부 하나 / 시간 값은 설정 표 하나.
+
+| 모듈 | 설계 1판의 핵심 | 가장 크게 빌린 것 (분야) | [결정 필요] |
+|---|---|---|---|
+| M1 | 술어 등록부(T1 코드 기하 / T2 임계 민감 / T3 VLM) + 후보 A/B/C 명세, E3 사전 등록 | FocusAgent·ACON(LLM 에이전트 관측 압축), ViPlan(VLM 술어 신뢰도), OmniParser(GUI) | 변환 방법 A/B/C, 카메라 구성 |
+| M2 | 세션 계약 v1(목표·가정·단계 원장·결정 지점 id 선택·금지 술어), 낡은 계획 규칙 R1~R6 | COPE(목표형 > 절차형), AgentSpec(ICSE 2026, 규칙 집행), AgileThinker | rationale를 Jev에 줄지 |
+| M3 | 보기는 서로 뚜렷한 소수, 크기는 로그 간격 이름 구간. D-줌(사용자 원안) / G(목표 지정) / H(혼합) | 2604.14634(보기 수 ↑ → 정확도 ↓), Show-Harness 1cm, PIVOT 텍스트판 | 기본안 D-줌 대 H |
+| M4 ★ | 표 원장 + 전제 epoch. (a) LocalAgreement-2/RALCP + FLy 유예 창, (b) `ref(t)` 잔차 + 성공 실행 conformal + CUSUM → OK/LAG/DEVIATE/CONTRADICT 신호 | 동시통역(LocalAgreement, CUNI IWSLT 2025), 추측 디코딩(FLy ICLR 2026), 로봇 감시(FIPER NeurIPS 2025, Rewind-IL TIDE) | 겹침 끄기(기본은 끄지 않음) |
+| M5 | L1 뒤집힘 억제(M4 규칙) + L2 같은 보기끼리 RTC식 감쇠 블렌딩(기본) + L3 Ruckig | RTC(NeurIPS 2025), SEAM·WAM(평균이 정밀도를 깎음) | L2 빼기, 접촉 순간 짧은 정착 |
+| M6 | 스킬 카드(Agent Skills·MCP 스키마식) + 단계별 결정 지점 질문 틀 + NONE_ESCALATE | Agent Skills 명세, MCP 스키마, Harness VLA·Zetta·CaP-X | "기존 스킬" (b) 생성형 대 (a') 보유 라이브러리(대칭), 5위 |
+| M7 | 코드 critic 2층: 하드(T1 술어만) / 소프트 채널 AND(정체, conformal 마감, Jev 진행, C_m4, C_flip, C_assume) | FIPER(두 점수 AND), SAFE(시간 conformal), Web-Shepherd(이정표 체크리스트) | 로컬 학습 진행 모델 허용 |
+| M8 | 트리거 T1 주기 / T2 정한 순간 / T3a 코드 마감 / T3b 모델 자체 판단 / 정체 → 문지기 → 호출(실패는 항상). 다중 프레임 기본 = 사용자 예시 격자 | BAGEN(모델 자체 판단은 낙관적, 늦음), T2SGrid(CVPR 2026 격자), BRACE | T3 대표 구현, 다중 프레임 기본값, effort |
+| M9 | FAIL 순간 Astra 비동기 호출 + 아래 층(파라미터 재시도 → Jev {계속, 체크포인트 재개, 리셋}) 계속 동작. 재개 지점 = 사전조건 참인 가장 늦은 체크포인트 | FaRe·RIR(언제/어디로/무엇을 남길지), FLARE ID/OOD | 안전 대기 예외, 기초 문헌 사용 |
+| M10 | Astra: 사례 + 교훈(적용 범위·도움/해 횟수), 오프라인 정제 / Jev: 키 정확 일치 규칙 0~2개, 없으면 침묵 / 센서 라벨만 | 2505.16067(ACL 2026, 엄격 선별), Evo-Memory, ReasoningBank, ACE, GEPA | Astra 메모리 주입 방식 |
+
+- 실험 순서(정본 §8): E0 지연 → E1 보정 → E2 마차 시험 → E-M4 → E-M3-2 → E-M5-1 → E-M8a → E-M9 → E-M6·E-M10. E3·E-M7·E-M8b는 오프라인 병행. 모든 실험은 판정 기준을 실행 전에 적는다.
+- 단계 2에서 추가된 [결정 필요](§5 목록에 더함)
+  11. Jev 호출당 결정 스텝 수 H(1 대 3) — 실험으로 정하되, 사용자 선호가 있으면 따름
+  12. M6 "기존 스킬"을 생성형(b)과 보유 라이브러리(a') 중 무엇으로 먼저 구현할지(설계는 대칭, 사용자 문장은 생성형에 가까움)
+  13. M9 안전 대기(L3)와 정밀 접촉 구간 짧은 정지를 "웬만하면 안 멈춘다"의 예외로 인정할지
