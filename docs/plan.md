@@ -1,4 +1,4 @@
-# Harvest 연구 계획 (v4.2, 2026-09-23 21:20 UTC — 초안 조사 마감본, v3/01~18 반영)
+# Harvest 연구 계획 (v4.3, 2026-09-23 21:30 UTC — 초안 조사 마감본, v3/01~19 반영)
 
 - **[사용자]**: 사용자가 직접 정한 것(원문은 `docs/user-log.md`). 이 줄은 조사 결과로 바꾸지 않는다.
 - **[제안]**: Claude가 조사를 바탕으로 제안한 것. 사용자가 확정해야 한다.
@@ -47,6 +47,12 @@
 | 2606.13355 | 토큰 자기회귀 정책의 실시간 비동기 실행 | M4 조각 | 관련 연구 |
 | AGP, GPT-as-Policy, TGL, RoboDojo | Astra를 정책/교정기로 | M8 일부 | "Astra 쓰는 기존 논문" 범주 |
 | REFLEX (2609.26532) | Jev confidence 낮으면 강한 LLM 호출(비로봇) | M8 발상 | 관련 연구 |
+
+### 신뢰도 지표 (v3/19, 2026-09-23 21:26 UTC 측정)
+- 96항목 인용 수(Semantic Scholar)·스타(GitHub)·첫 공개일 표: `docs/research/v3/19-credibility-metrics.md`. 지표 등급 HIGH 58 / MED-HIGH 7 / MED 9 / MED-LOW 2 / LOW-MED 3 / LOW 15.
+- **핵심 근거인데 지표가 LOW 쪽인 것 → "잠정 근거"로 표시하고, 모듈 설계에서 더 강한 근거를 찾거나 우리 실험으로 대체한다**: SEAM(2607.04609), WAM 블렌딩 연구(2608.01880), FaRe(2609.18016), RIR(2609.18304), LIBERO-RECOVER(2609.05178), CheckVLA(2607.26789, LOW-MED), RoboDojo Astra 평가(2609.24170, 공개 직후라 시기상조), MemCompiler(2605.07594, MED-LOW). 대부분 2026-07~09 공개라 인용이 쌓이기 전이다.
+- Slow Brain·Jev-as-Policy는 LOW지만 우리 주장의 근거가 아니라 **인정해야 할 선행**이라 그대로 인용한다.
+- 학회 표기: S2와 다른 학회를 적은 경우 0건. 재확인 권장 5건(Fast-FoundationStereo·Speculative Actions·AgileThinker·CaP-X·LIBERO-Plus) 중 v3/13·16이 공식 페이지로 확인한 것은 확인됨으로 둔다.
 
 ---
 
@@ -174,7 +180,7 @@
   1. 핵심 주장 문구(§3)
   2. M1 변환 방법·인식 앞단(다른 모듈 전제에 영향)
   3. 실험 환경(RoboDojo-Sim 주 + LIBERO-Plus 보조 제안)
-  4. 기간 밖 문헌 허용: 기초 문헌(LocalAgreement, self-triggered 제어, BALROG, GVL, KnowNo, PIVOT, PriDe, FoundationPose, Code-as-Monitor, Sentinel, AHA, BID, RoboOS, 2503.03064, TRACT, YOLOE, OmniParser V2) / 기준 방법(VoxPoser, X-ICM)
+  4. 기간 밖 문헌 허용: 기초 문헌(LocalAgreement, self-triggered 제어, BALROG, GVL, KnowNo, PIVOT, PriDe, FoundationPose, Code-as-Monitor, Sentinel, AHA, BID, RoboOS, 2503.03064, TRACT, YOLOE, OmniParser V2, Set-of-Mark, Ruckig, AWM) / 기준 방법(VoxPoser, X-ICM, π0, OpenVLA, RDT)
   5. Astra effort 원칙(다른 작업 발언)을 이 프로젝트에도 적용할지
   6. M3 기본안: 촘촘한 객관식(원안) 대 목표 지정형
   7. M8 (3) 자체 판단의 구현: 코드 마감(3a) 대 모델 판단(3b), 다중 프레임 기본값(사용자 예시 격자 대 개별)
