@@ -1,0 +1,303 @@
+# M4. 연속 동작 1단계: 계단식 겹침 호출 + 겹침 구간 자기 확인·갱신 — 모듈 설계 (단계 2)
+
+작성: 2026-09-24 UTC. 규칙: `docs/design/README.md`.
+읽은 것: `CLAUDE.md`, `plan.md` v4.3(§1, M3, M4, M5, §2.5, §4, §5), `research/v3/README.md`, `v3/06`, `v3/08`, `v3/09`, `v3/18`, `v3/02`(SmolVLA·A2C2), `v3/01`(Jev 지연), `design/M3-action-representation.md` §4.5(결정 스텝 기록).
+
+---
+
+## 0. 사용자 의도와 결론
+
+- **[사용자]** 1초에 Jev를 여러 번(예: 3번) 계단식으로 겹쳐 호출한다. **겹친 구간의 움직임이 제대로 반영됐는지 스스로 확인하고 업데이트하는 시스템이 반드시 있어야 한다. 가장 중요.** RTC를 많이 참고한다.
+- **전제(새로움 아님, v3/18)**: 비정지와 겹침 요청 자체는 선행이 있다(Slow Brain Fast Planner 2606.20458의 streaming / Jev 데모들의 단일 in-flight + 유지).
+- **결론 [제안]**: 표(원장)를 중심에 둔다. 겹친 호출이 **같은 미래 결정 스텝**에 낸 typed 답을 "표(vote)"로 쌓되, 각 표에 **그 표가 가정한 전제(premise)** = "그 전에 확정된 스텝들이 코드 예상대로 실행된다"를 붙인다.
+  - (a) 합의: 전제가 살아 있는 표끼리만 LocalAgreement-2 / RALCP 투표(γ)로 확정한다. 순서형 보기는 허용 폭 안이면 일치로 친다.
+  - (b) 결과 확인: 확정 스텝이 실행되면 코드 예상 상태 대 측정 상태의 잔차를 conformal로 보정한 임계로 범주화한다(OK / LAG / DEVIATE / CONTRADICT).
+  - 둘을 잇는 고리: (b)가 어긋나면 **그 전제에 기대던 표를 모두 무효화**하고(분산 합의의 term 교체와 같은 구조), 조기 호출을 걸고, 범주를 다음 Jev 입력에 넣는다. 호출 사이 불일치가 갑자기 늘면(TIDE, Rewind-IL) (b)보다 먼저 오는 경고로 쓴다.
+  - 갱신: RTC 3구간을 이산판으로 옮긴다. 고정 구간 = 바꾸지 않음(코드 안전 클램프만), 중간 구간 = 현재 선택 유지 + 도전 선택은 FLy식 "유예 창"을 통과해야 교체, 새 구간 = 새 표 채택(가확정).
+- 가장 중요한 차용 5개는 §3 끝에 있다.
+
+---
+
+## 1. 역할과 입출력 (우리 구조)
+
+| 항목 | 내용 |
+|---|---|
+| 위치 | Astra(느림, 세션 계약) → **Jev ~3Hz 계단식 겹침(M3 질문)** → **M4 원장·확정기(코드)** → 스킬/제어기 100Hz+ → M5 스무딩. M7 critic은 M4(b) 범주를 입력으로 받는다 |
+| 입력 1 | M3 `DecisionStep` 기록(design/M3 §4.5): `ds_id`, `t_state`, `call_id/sent_at/recv_at`, 질문별 `question_id`·`chosen`·`p_chosen`·`p_second`, 코드가 만든 `target`, `expected_after`(예상 결과 술어) |
+| 입력 2 | 측정 상태(M1 인식 앞단 + 로봇 고유 감각): 매 제어 주기 |
+| 입력 3 | Jev 지연 기록(p50/p95 이동 창) |
+| 출력 1 | 확정된 결정 스텝 열(스킬/제어기로), 가확정 스텝 열(M5가 미리 볼 수 있게) |
+| 출력 2 | 스텝별 (b) 범주 → 다음 Jev 입력의 한 줄(예: `last_step: LAG`) 과 M7 critic 입력 |
+| 출력 3 | 조기 호출 요청(스케줄러로), repair 요청(M9로) |
+| 하지 않는 것 | Jev에게 예상 상태·수치를 묻지 않는다(수치 약함, plan §1). Jev 확률을 가중 평균에 쓰지 않는다(E1 전에는 게이트만). 되돌릴 수 없는 물리 행동을 "되돌리기"로 가정하지 않는다 |
+
+M3 안에 따라 원장의 열이 바뀐다(plan M4 v4 의존 문단): D안 = 촘촘한 이동 스텝(초당 3개), G/H안 = 결정 지점 열(다음 스킬, 전이 시점, critic 수락, 목표 선택). **확정기 코드는 같다.** "스텝"은 아래에서 둘 다를 뜻한다.
+
+---
+
+## 2. 분야 전체 최고 후보 표
+
+기간: 첫 공개 2025-03-23 이후. 밖이면 "기간 밖, 기초 문헌". 신뢰도는 v3/README 기준. 이번에 원문(HTML 본문 해당 절)을 읽은 것은 ◎, 초록만 ○, 이전 보고서(v3) 원문 확인에 기댄 것은 △.
+
+### 2.1 하위 부분 (a) 호출 사이 합의 → 확정
+
+| 이름 | 분야 | 어디서 최고였나 (조건 포함) | 신뢰도 | 기간 | 학습 없이 | 로봇 적용 |
+|---|---|---|---|---|---|---|
+| **LocalAgreement-n** (Whisper-Streaming 2307.14743, 원 발상 Liu et al. 2020) △◎ | 동시통역/스트리밍 ASR | 연속 두 갱신 출력의 **가장 긴 공통 접두부**만 확정, 확정분은 뒤 갱신이 못 바꿈. 평균 지연 ≈ 청크 크기의 2배(n=2, 영어 3.3초, MinChunk 1초, v3/08 §2.12). **CUNI IWSLT 2025(2506.17077 ◎ §2): "LocalAgreement … the best-performing policy that does not require attention weights"** — EuroLLM이 attention을 안 내줘서 AlignAtt 대신 LA를 씀 | 기초 문헌: IJCNLP-AACL 2023 데모. CUNI 2025는 IWSLT 워크숍 시스템 논문(MED). 같은 연구실(Polák·Macháček)의 자기 평가라는 점 주의 | 기간 밖, 기초 문헌 (CUNI 판은 기간 안) | 예 | 아니오 |
+| **AlignAtt** (Papi et al. 2023; CUNI·SimulStreaming 2025에서 사용) ◎ | 동시통역 | CUNI 2025가 "state-of-the-art simultaneous policy"로 채택. Papi 2023이 "이전 정책 전부보다 낫다"고 보고(CUNI §2 재인용) | 기초 문헌(Interspeech 2023) | 기간 밖 | 예 | 아니오 |
+| └ 우리에게 | | **attention 가중치가 필요 → 블랙박스 Jev에 못 씀.** 그래서 블랙박스 최선은 LA 계열이다(CUNI 원문 문장이 그대로 근거) | | | | |
+| **RALCP** (Relaxed Agreement LCP, Wang et al. 2309.06706) ◎ | LLM 동시통역 | 후보 여러 개에서 위치별 최빈 토큰의 표 비율이 γ 이상이면 접두부로 수용. γ 0.1~1.0 탐색, **0.6이 품질·지연 균형**(§3.3, 부록 C.4 그림 6, Llama2-7b-chat, MuST-C 9쌍). γ가 크면 지연만 크게 늘고 품질 이득 없음. 후보 수(beam)가 늘면 합의가 어려워져 지연 증가 | 기간 밖(2023-09), Monash, 학회 미확인. **MLLP-VRAIN IWSLT 2025(2506.18828 ◎)가 γ=0.5 + wait-k 3으로 채택** → 2025년에도 쓰이는 정책 | 기간 밖, 기초 문헌 | 예 | 아니오 |
+| **FLy** (Training-Free Loosely Speculative Decoding, 2511.22972) ◎ | LLM 추측 디코딩 | 불일치 위치에서 (1) 엔트로피 게이트: 결정적인 토큰이면 즉시 거부, 여러 답이 가능하면 (2) **유예 창(deferred window) W 토큰 동안 가수용** → 창 안에 또 불일치가 나오면 모델이 "고치려는 것"으로 보고 소급 거부, 아니면 유지. 정확도 99% 이상 유지, 평균 2.81배(Llama-3.1-70B)·5.07배(405B) 가속, 도메인 밖에서 EAGLE-3 대비 1.62배(초록) | **HIGH: ICLR 2026**(arXiv comment) | 기간 안(2025-11-28) | 예 | 아니오 |
+| **Spec-VLA** (2507.22424) △ | VLA 추측 디코딩 | 초안·검증 행동 토큰의 **행동 거리**가 가까우면 수용. 허용 폭 256 bin 중 5~9, 작업 난도에 따라 다름. 수용 길이 +26~44%, 1.22~1.42배 가속, 성공률 유지 | HIGH: EMNLP 2025 main | 기간 안 | 예(규칙 자체) | 예(VLA 내부) |
+| AdaptiveSpec "Margins, Not Windows" (2609.02897) ○ | LLM 추측 디코딩 | 불일치 초안 토큰의 타깃 확률 / top-1 확률 비가 임계 이상이면 수용(학습 없음). EAGLE-3 대비 처리량 향상(초록 "최대" 수치, 잘림) | LOW: arXiv만, comment 없음 | 기간 안 | 예 | 아니오 |
+| Lossy verification 재검토 (2607.26627) ○ | LLM 추측 디코딩 | 완화 수용은 분포를 몰래 바꿔 품질이 불안정해질 수 있음. "절삭형" 완화는 진짜 절삭 샘플링보다 나빠질 수 있다 — **반대 증거** | LOW~MED: arXiv만 | 기간 안 | – | – |
+| **Speculative Actions** (2510.04371) △ | LLM 에이전트 | 추측 모델 답이 권위 모델과 **일치할 때만 확정**, 되돌릴 수 있는 것만 추측. lossy 판은 last-write-wins. "최대" 55% 예측 정확도, "최대" 20% 지연 감소 | HIGH: ICLR 2026 | 기간 안 | 예 | 아니오 |
+| **Slow Brain, Fast Planner** streaming (2606.20458) △ | 로봇(VLM 내비) | 1Hz로 기다리지 않고 여러 요청 in-flight, **가장 새 답**만 기하 유사도 + 지수 감쇠로 융합. VLM Stream은 지연 5초에서 20% 미만, Fusion 80% 유지 | MED(UCLA), 학회 미확인 | 기간 안 | 예 | **예** |
+| 재번역 안정성·마스킹 (Arivazhagan et al. 1912.03393, 2006.00249) ○ | 스트리밍 번역 | 출력 번복(erasure) 지표와 "마지막 k 토큰 숨기기(mask-k)"로 번복 억제 | 기초 문헌(ICASSP 2020 등) | 기간 밖, 기초 문헌 | 예 | 아니오 |
+| Raft/Paxos 커밋 (기초 분산 시스템) | 분산 합의 | 과반이 받은 로그 항목만 커밋, 커밋은 되돌리지 않음. 리더 교체(term 증가) 시 **미커밋 항목 폐기** | 기간 밖, 기초 문헌(비유로만) | 기간 밖 | – | – |
+
+비교에서 뺀 것: 2025-26 SimulMT 학습형 정책(Stable-Prefix 학습 2609.05799, ExPosST 2603.14903, Hierarchical PO 2604.21045, CMU·BeaverTalk IWSLT 2025 미세조정)은 전부 **학습 필요**라 Jev에 못 쓴다. DOA(2605.31432, 학습 없음)는 **self-attention 접근 필요** → 블랙박스 불가. KL 기반 Judge(2601.04766)는 logit 필요.
+
+### 2.2 하위 부분 (b) 실행 결과 확인 (예상 대 측정)
+
+| 이름 | 분야 | 어디서 최고였나 | 신뢰도 | 기간 | 학습 없이 | 로봇 적용 |
+|---|---|---|---|---|---|---|
+| **FIPER** (2510.09459) ◎(초록·본문 일부) | 로봇 실패 예측 | 성공 롤아웃 몇 개로만 conformal 보정한 두 점수(관측 OOD, 행동 청크 엔트로피)를 **짧은 창으로 모아 둘 다 임계를 넘을 때만 경보**. 5개 환경에서 기준 방법 대비 가장 높은 정확도·가장 빠른 탐지(초록). 한계 절: "CP 기반 임계는 예측보다 탐지 쪽", "시간 가변 임계는 제약적" | **HIGH: NeurIPS 2025** | 기간 안 | 보정은 예(RND-OE는 학습) | 예 |
+| **Rewind-IL / TIDE** (2604.16683) ◎ | 로봇 실패 탐지 | **겹치는 행동 청크끼리의 불일치(TIDE)** = "정책이 예상 밖 상태를 보고 가까운 미래 계획을 다시 생각하는 신호". 성공 롤아웃으로 split conformal 임계(α=0.001, §IV-B). ACT 6과제 균형 정확도 평균 **0.95** 대 FAIL-Detect 0.83, RND 0.59(Table I). 섭동 조건 성공률 18.3→76.7%(Table II, 20회씩; 되감기 복구 포함) | LOW-MED: arXiv만, 2026-04, 프로젝트 페이지. **잠정 근거** | 기간 안 | 예 | 예 |
+| 2512.17250 Input Prediction & Mishit Correction △ | 제어(TD-MPC2) | 예측 잠재 대 실제 잠재 차이: 작으면 보정, 크면 큐 비우고 재계획. 추론 500→282회, 보상 −7.1% | LOW(수업 과제) | 기간 안 | 아니오 | 시뮬 |
+| VLA-Corrector (2607.01804) / SV-VLA (2604.02965) △ | VLA | 예측 대 실제 특징 편차가 지속되면 청크를 끊음. π0.5 지평 50 성공 48.7→58.7% | MED-LOW | 기간 안 | 아니오 | 예 |
+| AOSpec JASV (2608.00881) / SMC (2609.03236) △ | LLM 에이전트 추측 실행 | 추측을 **"행동과 실행 전 환경이 모두 같을 때만"** 수용(JASV). SMC는 live-state replay 일치 필요 | LOW / LOW~MED | 기간 안 | 예 | 아니오 |
+| EFR, Evidence-First Reflection (2608.24015) ○ | GUI 에이전트 | 행동 전후 화면에서 **변화 추출**과 **결과 판정**을 두 단계로 분리해야 판정이 근거를 가진다 | LOW: arXiv만 | 기간 안 | 예(프롬프트) | 아니오 |
+| ProTracer (2609.21369) ○ | 로봇 실패 진단 | 고유 감각 신호로 행동 경계를 잡고 자연어 서술로 바꿔 VLM과 함께 판정(학습 없음) | LOW: arXiv만, 2026-09 | 기간 안 | 예 | 예 |
+| Split / Adaptive conformal (Gibbs & Candès 2021), CUSUM (Page 1954), 이벤트 트리거 MPC (Heemels 등) | 통계·제어 | 분포 무관 임계, 온라인 임계 보정(ACI), 누적 표류 탐지, 잔차가 임계를 넘을 때만 재계산 | 기초 문헌 | 기간 밖, 기초 문헌 | 예 | 예(널리) |
+
+LLM 에이전트 쪽의 "예측 대 실제" 확인은 대부분 **LLM이 다음 상태를 예측**하는 세계 모델형이었다(WebSearch 1회, 결과 목록: 2606.25421, 2602.05842 등 — 학습형 또는 LLM 예측). Jev는 수치·예측에 약하므로(plan §1) **예측은 코드가 하는 로봇 잔차 감시 쪽이 우리에게 맞는 최고 후보**다. 판정: (b)의 최고 조합 = **코드 전진 모델 예측 + 성공 실행으로 보정한 split conformal 임계 + 짧은 창 집계(FIPER) + 느린 표류는 CUSUM**. 모두 학습 없음.
+
+### 2.3 하위 부분 (c) 갱신·수리 규칙, (d) 스케줄러
+
+| 이름 | 분야 | 원문 요지 (수치) | 신뢰도 | 기간 | 학습 없이 |
+|---|---|---|---|---|---|
+| **RTC** (2506.07339) △ | VLA | 앞 d(추론 지연) 고정, 중간은 지수 감소 가중으로 이전 청크 따름, 끝은 새로 생성. 앞만 고정(hard mask)은 "방향이 더 빨리 바뀐다", soft mask가 연속성에 결정적(§3.2, 그림 4) | HIGH: NeurIPS 2025, PI | 기간 안 | 예(추론 시점) |
+| Training-time RTC (2512.05964) △ | VLA | 추론형이 더 유연(부드러운 반영). 지연 분포를 신중히 골라야 함 | MED-HIGH(PI) | 기간 안 | 아니오 |
+| **SmolVLA 비동기** (2506.01844) △ | VLA | 큐 비율이 g 아래면 새 요청. HF 블로그: g≈0.7 절충, 시작 0.5. "네트워크 왕복 무시" 가정 | HIGH(HF, 인용 541) | 기간 안 | 예 |
+| TypeGo (2607.05482) △ | 로봇+LLM | 크기 3 bounded queue, 하나 꺼내면 하나 채움, 스텝 = (조건 → 스킬) 분기 | MED-LOW | 기간 안 | 예 |
+| Event-triggered (2609.22587) △ | VLA | 장면 변화 점수 P90 임계로 추론 간격 조절 | MED(TUM) | 기간 안 | 규칙은 예 |
+| BRACE (2608.01428) △ | 로봇 재계획 | cooldown/commit 창 = anti-churn | HIGH: ICML 2026 | 기간 안 | 예 |
+| jev-drone / jev-realtime-sdk △ | Jev 데모 | `stale_after_s: 1.5`, 단일 in-flight, 중앙값 0.11초, "21 decisions/s pipelined" | LOW(관행 기술용) | 기간 안 | 예 |
+
+Jev 지연(plan §1, v3/01): OpenRouter P50 0.37초(전 지역), robokrunch 데모 p50 0.527 / p95 0.813초(LOW), 업체 70~500ms(미국 서부). **한국 측정 없음 → E0.** 속도 제한 1,200 요청/분(초당 20).
+
+---
+
+## 3. 가져올 것과 접목 방법 (원문 칸과 우리 접목안 칸 분리)
+
+| # | 원문에 있는 것 | 우리 접목안 [제안] | 옮길 때 깨지는 가정 |
+|---|---|---|---|
+| 1 | **LocalAgreement-2**: 연속 두 갱신의 공통 접두부 확정, 확정분 불변 | 같은 `ds_id`·같은 `question_id`에 대해 **전제가 살아 있는** 최근 두 표가 같으면 확정 후보. 스텝 열의 **앞에서부터만** 확정(접두부 성질: 뒤 스텝은 앞 스텝 결과에 기댄다) | 원문 "갱신"은 입력이 늘어난 같은 문장. 우리는 입력 상태가 바뀐다 → 표에 전제를 붙여 무효화 규칙(#6)으로 보완 |
+| 2 | **RALCP**: 위치별 최빈 비율 ≥ γ면 수용, γ=0.6 균형(후보 10개) | 한 스텝에 표가 3개 이상 모이면 최빈 비율 ≥ γ로 확정(3표면 2표 = 0.67). γ는 실험 변수 {0.5, 0.67, 1.0} | 원문 후보는 한 번 호출의 beam 10개. 우리 표는 시간차 호출 2~4개 → 표본이 작다. γ=0.6 값을 그대로 옮기지 않는다 |
+| 3 | **FLy 유예 창 + 엔트로피 게이트** | 확정 대기 중(중간 구간) 스텝에 **도전 선택**이 오면 즉시 바꾸지 않고 W개 호출 동안 가수용 대기. 창 안에서 도전 선택이 다시 나오면 교체, 아니면 현 선택 유지. 게이트: 도전 표의 `p_chosen`이 θ 이상이거나 (b)가 OK가 아니면 유예 없이 교체(= "결정적 불일치"). 확률은 **게이트로만**(plan §1 규칙) | 원문 게이트는 타깃 모델 엔트로피(logit). 우리는 Jev 보기 확률의 임계만 씀. E1 전에는 θ를 보수적으로(교체 쪽 게이트는 끄고 (b)만) |
+| 4 | **Spec-VLA 완화 수용**: 행동 거리 가까우면 수용, 허용 폭은 난도별 | 순서형 보기(크기 구간 등)는 인접 τ 칸 이내면 합의로 친다. 순서 없는 보기는 정확 일치만. τ는 실험 변수, 접촉 근처는 τ=0 | 원문은 256 bin, 우리는 로그 간격 5~9 보기(M3) → 한 칸 차이가 원문보다 훨씬 크다 |
+| 5 | **RTC 3구간** (고정 d / 지수 감소 가중 / 새 생성) | 이산판(§4.2): 고정 구간 = 시작 시각이 `now + d̂_p95` 이전인 스텝(변경 금지, 코드 안전 클램프만). 중간 구간 = 교체에 필요한 합의 조건이 **고정 경계에 가까울수록 엄격**(연속 가중의 이산판: 경계 직후 스텝은 W=2·γ=1.0, 멀수록 W=1·γ=0.67). 새 구간 = 가장 새 표를 가확정 | 연속 가중 평균은 이산 보기에 없음(평균 금지, M5·SEAM 교훈). "가중"을 "교체 문턱"으로 바꿈 |
+| 6 | **Raft term / AOSpec JASV** (전제 동일할 때만 수용) | 모든 표에 `premise_epoch`(그 표가 가정한 확정 접두부 + 예상 상태 버전)를 붙인다. (b)가 DEVIATE/CONTRADICT를 내면 epoch를 올리고 **이전 epoch 표 중 미확정 스텝 표는 전부 폐기**(Raft의 미커밋 항목 폐기와 같은 모양). 확정·실행된 것은 되돌리지 않는다(물리) | JASV는 실행 **전** 상태 대조, 우리는 실행 **후** 예상 대 측정. 분산 합의는 비유일 뿐 근거 아님 |
+| 7 | **Rewind-IL TIDE**: 겹친 청크 불일치의 급증 = 예상 밖 상태 신호, conformal 임계 | 새 표가 기존 가확정·확정 대기 스텝과 다른 비율 `flip_rate`를 매 도착마다 계산. 성공 실행으로 잡은 conformal 임계를 넘으면 **(b)보다 먼저 오는 조기 경고**: 새 확정 중단 + 조기 호출. (b)가 OK로 돌아오고 합의가 회복되면 재개 | 원문은 학습 정책의 연속 청크 MSE. 우리는 이산 보기 불일치 비율 → 임계는 우리 데이터로 새로 잡음 |
+| 8 | **FIPER**: 성공 롤아웃으로 conformal 보정, 짧은 창 집계, **두 지표 모두** 넘을 때 경보 | (b) 잔차(위치·자세·그리퍼 폭·접촉 술어)를 성공 실행 N개로 split conformal 보정 → 범주 경계. 창 길이 w 제어 주기 집계. "repair"는 (b) 범주 + TIDE 둘 다 나쁠 때만(오경보 억제) | 원문은 정책 내부 점수. 우리 점수는 코드 예측 잔차라 해석이 쉽다. 폐루프라 교환 가능성 가정이 약함 → ACI(기초 문헌)로 임계를 천천히 적응하는 선택지 |
+| 9 | **CUSUM / 이벤트 트리거 MPC** | 한 스텝으로는 임계 안이지만 같은 방향으로 계속 모자라는 표류(LAG 누적)를 CUSUM으로 잡아 DEVIATE로 올림 | 기초 문헌 |
+| 10 | **EFR**: 변화 추출과 판정을 분리 | (b)는 코드가 "무엇이 바뀌었나(측정 술어 차이)"를 먼저 만들고, 판정(범주)은 규칙이 한다. Jev에 넘길 때는 범주 한 줄만(관련 없는 내용 금지, plan §1) | 원문은 VLM 반성 모듈 |
+| 11 | **SmolVLA 큐 임계 g + TypeGo bounded queue + Event-triggered P90** | 스케줄러(§4.3): 주기 호출 + 확정 스텝 잔량 < g면 즉시 호출 + (b)≠OK 또는 TIDE 경보면 즉시 호출 | SmolVLA "왕복 무시" 가정 폐기, d̂에 왕복 포함 |
+| 12 | **Slow Brain streaming** | 기준 방법 C2/C2'로 그대로 재현. 우리 설계는 늦게 온 표도 전제가 살아 있으면 표로 쓴다(newest-wins 아님) | – |
+
+**가장 중요한 차용 5개(순서 = 설계에서의 무게)**
+1. LocalAgreement(접두부 확정 + 확정 불변) — 블랙박스에서 가장 좋은 합의 정책(CUNI IWSLT 2025 원문 문장). 기간 밖 기초 문헌.
+2. FLy 유예 창 + 게이트(ICLR 2026) — 흔들림과 진짜 수정을 구분하는 학습 없는 규칙.
+3. RTC 3구간(NeurIPS 2025) — 고정/중간/새 구간 틀. 이산판으로 변환.
+4. FIPER(NeurIPS 2025) + split conformal — (b) 임계를 성공 실행만으로 정하고, 두 신호 동시 조건으로 오경보를 줄임.
+5. Rewind-IL TIDE(잠정, LOW-MED) — "겹친 출력끼리의 불일치 급증 = 실패 신호". (a)를 확정 규칙뿐 아니라 **조기 경고**로도 쓰게 해 준다.
+
+---
+
+## 4. 설계안
+
+### 4.1 자료 구조
+
+```
+Vote      { ds_id, question_id, choice, p_chosen, call_id, sent_at, recv_at,
+            t_state, premise_epoch }
+Slot(ds)  { ds_id, t_start, zone ∈ {FROZEN, MID, FRESH},
+            status ∈ {OPEN, TENTATIVE, CONTESTED, COMMITTED, EXECUTING, VERIFIED, FAILED},
+            incumbent, challenger, defer_left, votes[] ,
+            expected_after (코드), outcome ∈ {OK, LAG, DEVIATE, CONTRADICT, -} }
+Ledger    { slots[ds_id], epoch, d_hat (Jev 지연 p95, 이동 창), flip_score }
+```
+
+- 한 번의 Jev 호출은 **H개 미래 스텝**(`t_start ≥ sent_at + d̂`인 첫 스텝부터 H개)의 질문 묶음이다. 각 스텝 질문 앞에 "그 전 스텝들이 코드 예상대로 끝났다고 가정한 상태"(코드가 만든 `expected_after` 술어)를 적는다. 이것이 표의 전제다. [결정 필요 ①: M3 §4.1은 "한 요청 = 한 결정 스텝"이다. 겹친 호출이 같은 스텝에 표를 내려면 H ≥ 2가 필요하다. 대안: H=1 유지 + 호출 시각을 스텝 시작보다 앞당겨 같은 스텝을 2~3회 묻기(질문 문구 동일)]
+- 주기 T_c = 1/3초(사용자 예), H = 3이면 각 스텝이 받는 표 수 ≈ min(H, 스텝 간격·H / T_c) = 약 3표.
+
+### 4.2 확정기 상태 기계 (1순위 안, 결정 모양은 M3 안과 무관)
+
+```
+on_vote(v):                                   # 도착 순서 무관(out-of-order 허용)
+  if v.premise_epoch < ledger.epoch: drop     # 전제 깨진 표 폐기 (#6)
+  if now - v.t_state > STALE_MAX: drop        # 1.5 s 시작값 (jev-drone)
+  s = slot[v.ds_id]
+  if s.zone == FROZEN or s.status >= COMMITTED: log_only(v); return   # 확정 불변 (#1)
+  update_flip_score(v, s)                     # TIDE 이산판 (#7)
+  s.votes.append(v)
+  if s.status == OPEN:      s.incumbent = v.choice; s.status = TENTATIVE
+  elif agrees(v.choice, s.incumbent, tau): pass
+  else:                                        # 도전 선택
+     if gate_hard(v, s): replace(s, v.choice)  # (b)≠OK 이거나 p_chosen≥θ (E1 뒤)
+     elif s.challenger == v.choice: s.defer_left -= 1
+          if s.defer_left <= 0: replace(s, v.choice)          # 유예 창 통과 (#3)
+     else: s.challenger = v.choice; s.defer_left = W(s.zone_dist); s.status = CONTESTED
+  try_commit_prefix()
+
+try_commit_prefix():                           # 앞에서부터만 확정 (#1)
+  for s in slots in order, s not COMMITTED:
+     if flip_score > FLIP_TH: break            # 조기 경고 중엔 새 확정 중단
+     live = [v in s.votes if agrees(v.choice, s.incumbent, tau)]
+     if LA2(s) or ( len(s.votes) >= 3 and len(live)/len(s.votes) >= gamma(s.zone_dist) ):
+          s.status = COMMITTED
+     else: break
+  # 확정 못 한 스텝이 고정 구간에 들어가면: 가확정(incumbent)을 그대로 실행 (비정지)
+  #   → "unconfirmed-executed" 로 기록, (b) 판정 문턱을 한 단계 엄격하게
+
+on_step_executed(s):                           # (b)
+  r = residual(measured, s.expected_after)     # 코드 전진 모델 예측 대 측정
+  s.outcome = categorize(r, conformal_bounds, window=w) ; cusum.update(r)
+  if cusum.alarm: s.outcome = max(s.outcome, DEVIATE)
+  next_jev_input.add_line(f"last_step: {s.outcome}")      # (b) → Jev 입력 (C5'와 대조)
+  match s.outcome:
+    OK:          s.status = VERIFIED
+    LAG:         keep choices; retime later slots (t_start 뒤로); no epoch change
+    DEVIATE:     epoch += 1; reopen all non-FROZEN uncommitted slots; early_call()
+    CONTRADICT:  epoch += 1; flush queue; hold(stop predicate); request repair (M9) + M7
+```
+
+결정 표(요약):
+
+| (b) 결과 \ (a) 상태 | 합의(LA2 또는 γ 이상) | 경합(CONTESTED) | flip 급증(TIDE 경보) |
+|---|---|---|---|
+| OK | **commit** | **keep** 현 선택, 유예 창 진행 | 확정 중단 + 조기 호출(keep) |
+| LAG | commit, 시각만 뒤로 | keep | 조기 호출 |
+| DEVIATE | epoch↑, 미확정 표 폐기, **replace**(새 epoch 첫 표 가확정) | replace | replace + 조기 호출 |
+| CONTRADICT | **repair**(M9) | repair | repair |
+
+### 4.3 스케줄러
+
+```
+every T_c (1/3 s, 계단식):  if inflight < N_max and rate_ok(): send_call()
+N_max = ceil(d̂_p95 / T_c) + 1          # p95 0.81 s면 4, p95 0.3 s면 2
+early_call() if: committed_ahead / needed < g (0.5 시작, 0.7 비교)   # SmolVLA
+                 or (b) ∈ {DEVIATE, CONTRADICT} or flip_score > FLIP_TH
+                 or 장면 변화 점수 > P90 두 번 연속                    # Event-triggered
+early_call은 주기 슬롯 하나를 당겨 쓴다 (초당 호출 예산 고정, C0~C6 공정성)
+d̂ = 최근 50회 지연의 p95 (실행 중 갱신; Training-time RTC 저자 조언의 이산판)
+상태 지문이 같아도 호출은 보낸다 (표 수 확보) — jev-drone식 생략은 비교 변수
+```
+
+### 4.4 조정할 변수 (시작값과 범위)
+
+| 변수 | 뜻 | 시작값 | 범위 / 근거 |
+|---|---|---|---|
+| T_c | 호출 간격 | 0.33 s | 사용자 예 3회/초. {0.2, 0.33, 0.5} |
+| H | 호출당 미래 스텝 수 | 3 | {1, 2, 3}; 결정 필요 ① |
+| d̂ 분위 | 고정 구간 길이 | p95 | {p90, p95, p99} (RTC d) |
+| n (LA) | 연속 일치 표 수 | 2 | {2, 3} (n↑ → 지연 선형 증가, RALCP 부록 C.4와 같은 경향) |
+| γ | 투표 확정 비율 | 0.67 (3표 중 2) | {0.5, 0.67, 1.0}; 원문 0.6(beam 10) |
+| τ | 순서형 허용 칸 | 1 (접촉 근처 0) | {0, 1}; Spec-VLA는 난도별 |
+| W | 유예 창(호출 수) | 1 (경계 직후 2) | {0, 1, 2}; FLy W |
+| θ | 교체 게이트 확률 | 끔(E1 전) | E1 뒤 {0.8, 0.9} |
+| α | conformal 오경보율 | 0.01 | {0.001(Rewind-IL), 0.01, 0.05} |
+| w | (b) 집계 창 | 5 제어 주기 | FIPER 부록 C.3이 창 영향 분석(수치 미확인) |
+| FLIP_TH | TIDE 임계 | 성공 실행 flip_score의 1−α 분위 | 우리 데이터 |
+| STALE_MAX | 표 폐기 나이 | 1.5 s | jev-drone |
+| g | 큐 임계 | 0.5 | {0.5, 0.7} (HF 블로그) |
+
+### 4.5 대안 안
+
+- **대안 A (간단판, (b) 중심)**: (a)를 확정 조건에서 빼고 "가장 새 표 + 유예 창 W=1"만 쓴다. (b)와 epoch 무효화는 그대로. v3/18 §6의 "(a) 실익이 작을 수 있다" 대비. C4와 거의 같다.
+- **대안 B (Slow Brain 확장판)**: newest-wins + 지수 감쇠 융합(C2')에 (b) epoch 무효화만 더함. 합의 없이도 되는지 보는 가장 싼 안.
+- **대안 C (M3 목표 지정형일 때)**: 원장 열 = 결정 지점. 표는 같은 `Q_target`·`Q_phase` 반복 질문. 고정 구간 개념은 "스킬이 이미 시작한 목표"로 바뀌고, 중간 구간 교체는 "스킬 재지정"이라 비용이 커서 W를 2로 올린다.
+
+---
+
+## 5. 비교 실험 (C0~C6, 판정 기준 사전 기록)
+
+**전제 실험**
+- E0 지연: 한국에서 Jev p50/p95/p99, 동시 in-flight 1~4개일 때 지연 변화, **같은 입력 재호출 시 답이 바뀌는 비율**(재시험 flip; Sun & Xu 2609.26758이 재시험 기준선에서도 뒤집힘이 있음을 보고 — v3/01). 판정: p95 < T_c/2이면 "지연 흡수용 겹침"은 불필요 → 겹침의 가치는 (a)(같은 스텝 반복 관측)로만 주장한다. 재호출 flip이 0에 가깝고 상태 변화도 작으면 (a)의 합의는 자명하게 일치 → (a)를 흔들림 억제 지표로만 정당화.
+- E2 마차 시험이 먼저다(Jev가 룰보다 낫지 않으면 M4 대상이 사라짐, plan §5).
+- (b) 보정: 섭동 없는 성공 실행 ≥ 30회로 conformal 경계와 FLIP_TH를 잡는다(평가 에피소드와 분리).
+
+**조건** (같은 텍스트 상태·스킬·M5·Jev 버전 `jev-1.13.0`·**초당 호출 수 동일**)
+
+| 조건 | 설명 | 대응 선행 |
+|---|---|---|
+| C0 | 응답까지 정지 후 실행 | jev-libero |
+| C1 | 단일 in-flight + 직전 행동 유지 | Jev-as-Policy, jev-realtime-sdk |
+| C2 | 겹침 + newest-wins | Slow Brain VLM Stream |
+| C2' | 겹침 + 최신 답 지수 감쇠 융합 | Slow Brain Fusion |
+| C3 | 겹침 + (a)만(LA2/γ + 유예 창, epoch 무효화 없음) | LocalAgreement·FLy |
+| C4 | 겹침 + (b)만(범주 + epoch 무효화, 가장 새 표) | 2512.17250식, 대안 A |
+| **C5** | 겹침 + (a) + (b) + TIDE 경고 (§4.2 전체) | 제안 |
+| C5' | C5에서 (b) 범주를 Jev 입력에서 뺌(코드 재계획만) | "(b)는 그냥 MPC" 반론 분리 |
+| C6 | C5에서 겹침 끔(단일 in-flight 연속 호출 사이 합의) | 겹침 자체의 기여 |
+
+**과제**: E2와 같은 단일 pick-and-place + 실행 중 섭동 4종(물체 2cm 이동, 서보 추종 오차 주입, 짧은 가림, 잡기 미끄러짐). 조건당 섭동 종류마다 ≥ 30회 × 3시드(v3/18의 "3시드"만으로는 10%p 차이를 못 가름 → 회수 추가 제안).
+
+**지표**
+- 주: 섭동 과제 성공률 / **잘못 확정 비율**(확정 뒤 (b)가 DEVIATE·CONTRADICT인 스텝 / 확정 스텝, 사후 라벨) / **섭동 반응 시간**(섭동 → 새 선택이 실행에 반영).
+- 보조: 결정 번복률(스트리밍 번역의 erasure를 옮긴 것: 가확정 뒤 바뀐 스텝 비율), 확정 지연(첫 표 → 확정), 미확정 실행 스텝 비율, 정지 시간, jerk, 완료 시간, 호출 수·지연 p50/p95.
+- 통계: 에피소드 단위 짝 bootstrap 95% CI(같은 시드·섭동 짝).
+
+**판정 기준 (실행 전 고정)**
+1. **핵심 주장 "(a)+(b) 확정 규칙"**: C5가 C2와 C2' 둘 다에 대해 섭동 성공률 +10%p 이상(CI 하한 > 0)이거나, 성공률이 −2%p 이내이면서 잘못 확정 비율 상대 −30% 이상. 3시드 모두 같은 방향.
+2. **(a)와 (b) 각각의 기여**: C5가 C3·C4 각각보다 주 지표 하나 이상에서 CI 하한 > 0. **C4와 C5의 성공률 차가 3%p 미만이고 잘못 확정 비율 차가 상대 10% 미만이면 주장을 (b) 중심으로 좁힌다.** C3가 C2 대비 번복률을 상대 30% 이상 줄이면 (a)는 "안정화 장치"로 유지.
+3. **(b)가 그냥 MPC인가**: C5가 C5'보다 섭동 성공률 +5%p 이상이면 "(b) 범주를 결정 모델에 되먹임"을 주장. 아니면 "(b)는 코드 감시"로 쓰고 새로움 문장에서 되먹임을 뺀다.
+4. **겹침의 기여**: C6이 C5와 성공률 3%p 이내이고 반응 시간이 나쁘지 않으면(중앙값 +10% 이내) 겹침은 불필요로 보고한다(E0 결과와 대조).
+5. **비정지 전체 이득**: C5가 C0 대비 완료 시간 −20% 이상이면서 성공률 −2%p 이내.
+6. 변수 절제(γ, W, τ, n): C5 안에서만. 한 번에 하나씩, 기본값 대비 CI 하한 > 0일 때만 기본값 교체.
+
+---
+
+## 6. 반대 증거와 위험
+
+- **같은 모델의 합의는 틀린 답을 못 막는다.** 시간차 호출은 같은 모델이 비슷한 입력을 보는 것이라 일관된 오답을 반복할 수 있다(v3/18 §6, "Too Consistent to Detect" EMNLP 2025 재인용). → (a)는 흔들림 억제·조기 경고, 오답 차단은 (b)가 맡는다. 판정 기준 2가 이를 가른다.
+- **완화 수용은 품질을 몰래 깎을 수 있다.** 2607.26627(LOW~MED)은 lossy 검증이 분포를 바꿔 불안정해진다고 보고. τ>0은 접촉 근처에서 끈다.
+- **LocalAgreement는 지연을 늘린다**(n=2에서 청크의 약 2배). 우리 구조에선 두 표가 이미 겹쳐 날아오므로 추가 지연은 약 T_c(0.33초)지만, 첫 표가 스텝 시작 `d̂ + T_c`보다 늦으면 확정 못 한 채 고정 구간에 들어간다 → 가확정 실행(비정지 유지). 이 비율이 높으면 (a)는 사실상 꺼진 셈이다 → "미확정 실행 스텝 비율"로 감시.
+- **Slow Brain 반론**: 간단한 감쇠 융합이 지연 5초에서도 80%를 지켰다. C2'가 C5와 같으면 우리 규칙은 복잡도만 늘린 것이다(판정 기준 1).
+- **conformal 가정**: 폐루프에서는 교환 가능성이 깨진다. FIPER 한계 절도 "CP 임계는 예측보다 탐지"라고 적었다. 임계가 틀리면 DEVIATE가 과하게 떠서 epoch가 자주 바뀌고 표가 계속 폐기된다(합의 불능). → epoch 교체 빈도 상한(초당 1회)과 ACI 선택지.
+- **Rewind-IL은 잠정 근거**(arXiv만, 2026-04). TIDE를 빼도 설계가 서도록 FLIP_TH를 끌 수 있게 둔다.
+- **전제 문장이 입력을 늘린다.** 미래 스텝 질문마다 가정 상태를 적으면 Jev 입력이 길어진다(관련 없는 내용 늘면 정확도 하락, plan §1). 가정은 바뀐 술어만 적는다.
+- **E0에서 Jev가 매우 빠르면**(p95 < 0.17초) 겹침 자체가 약해진다(jev-realtime-sdk 21회/초 주장).
+
+---
+
+## 7. 열린 질문, [결정 필요]
+
+1. [결정 필요 ①] 한 호출이 여러 미래 스텝(H≥2)을 묻게 할지, M3의 "한 요청 = 한 스텝"을 유지하고 같은 스텝을 시각을 당겨 여러 번 물을지. 제안: H=3(표 수 확보), M3 문서와 맞춰야 함.
+2. [결정 필요 ②] 확정 못 한 스텝이 고정 구간에 들어갔을 때: 가확정 실행(비정지, 제안 기본) 대 그 스텝만 "직전 행동 유지"(C1식). 사용자 "웬만하면 멈추지 않는다"를 따라 앞 안을 기본으로 둠.
+3. [결정 필요 ③] 정밀 접촉 구간에서 τ=0·W=2로 보수화하는 것으로 충분한지, plan §5-10(접촉 구간 정지 허용)과 함께 정할지.
+4. 열린 질문: (b)의 "코드 전진 모델"이 스킬마다 얼마나 정확한가(예측 자체가 틀리면 (b)가 오경보). M6 스킬 인터페이스에 `predict_after(step)`를 요구해야 한다.
+5. 열린 질문: Jev 확률을 게이트 θ로 쓸 때 보정 곡선(E1)이 보기 수·질문 유형별로 다를 것 — θ는 질문 유형별.
+6. 열린 질문: Astra가 계획을 바꿨을 때(M8) epoch를 올리는 것이 맞는가 — 제안: 올린다(계약 변경 = 전제 변경).
+
+---
+
+## 8. 확인 못 한 것 (조사 방법 포함)
+
+- 조사량: arXiv 검색 API 12회(5초 간격, 모두 응답: A01 local agreement SimulMT, A02 SimulMT LLM policy, A03 SimulStreaming, A04 speculative relaxed/lossy/judge, A05 IWSLT 2025 simultaneous, A06 re-translation stability, A07 streaming stable prefix, A08 agent predicted-state verification, A09 runtime monitoring conformal robot, A10 world model LLM agent verification, A11 training-free failure detection, A12 GUI agent post-action verification). WebSearch 1회. 원문 본문 읽음: 2506.17077, 2506.18828, 2309.06706(§3.3·부록 C.4), 2511.22972(§2.2), 2604.16683(§IV-B·Table I–II), 2510.09459(초록·서론·지표 절). 초록만: 2505.24016, 2506.13143, 2512.17648, 2607.26627, 2609.02897, 2609.05799, 2605.31432, 2601.04766, 2609.21369, 2608.24015, 2506.09937.
+- **SimulStreaming(Macháček 2025)의 LocalAgreement 대 AlignAtt 정량 비교표**는 찾지 못했다(검색 A03은 Simulstream 툴킷만 잡음). CUNI 원문의 정성 문장만 근거.
+- FLy의 과제별 수치·W 기본값, FIPER 부록 C.3(창 크기 영향)의 수치는 읽지 않았다.
+- Rewind-IL 학회 채택 여부, FLy·FIPER·Rewind-IL의 인용 수(S2 API 사용 금지 규칙).
+- RALCP 원 논문(2309.06706)의 학회: arXiv 판(v3, 2025-11 갱신)에 학회 표기 확인 못 함.
+- "2025년 이후 스트리밍 LLM 에이전트에서 시간차 호출 합의로 확정"하는 사례: 이번 검색(A01·A02·A07·A08·A10)에서 못 찾음. v3/18의 53개 검색과 합쳐도 **부록에만 있는 방식은 못 잡는다**는 한계는 그대로다. 없다고 단정하지 않는다.
+- Jev 재호출 결정성(같은 입력 → 같은 답 비율)과 한국 지연: E0에서 잰다.
+- AdaptiveSpec의 확률 비 규칙은 LOW라 설계 기본값에 넣지 않았다(θ 게이트 대안으로만 기록).
+
+## 출처
+- https://arxiv.org/abs/2506.17077 (CUNI IWSLT 2025, §2) · https://arxiv.org/abs/2506.18828 (MLLP-VRAIN, 부록 Table 3) · https://arxiv.org/abs/2309.06706 (RALCP §3.3, 부록 C.4) · https://arxiv.org/abs/2307.14743 (Whisper-Streaming)
+- https://arxiv.org/abs/2511.22972 (FLy, ICLR 2026) · https://arxiv.org/abs/2507.22424 (Spec-VLA) · https://arxiv.org/abs/2609.02897 · https://arxiv.org/abs/2607.26627 · https://arxiv.org/abs/2601.04766 · https://arxiv.org/abs/2510.04371
+- https://arxiv.org/abs/2510.09459 (FIPER, NeurIPS 2025) · https://arxiv.org/abs/2604.16683 (Rewind-IL) · https://arxiv.org/abs/2609.21369 · https://arxiv.org/abs/2608.24015 · https://arxiv.org/abs/2506.09937
+- https://arxiv.org/abs/2606.20458 · https://arxiv.org/abs/2506.07339 · https://arxiv.org/abs/2512.05964 · https://arxiv.org/abs/2506.01844 · https://arxiv.org/abs/2607.05482 · https://arxiv.org/abs/2609.22587 · https://arxiv.org/abs/2608.01428 · https://arxiv.org/abs/2608.00881 · https://arxiv.org/abs/2609.03236 · https://arxiv.org/abs/2512.17250
+- https://arxiv.org/abs/1912.03393 · https://arxiv.org/abs/2006.00249 (재번역 안정성, 기초 문헌)
+- WebSearch 결과 목록(참고만): https://arxiv.org/html/2606.25421 , https://arxiv.org/pdf/2602.05842
