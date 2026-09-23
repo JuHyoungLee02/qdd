@@ -287,3 +287,5 @@
 - 정정: RoboDojo 라이선스 MIT 대 Non-Commercial 엇갈림. 위험: Isaac Sim 5.1 RT 코어 요구(H200) → S0/S1 스모크 먼저.
 - 22:25 UTC D3: 첫 실험 프로토콜 `E-first-experiments.md`(E0~E3, TypeSafe 공식 문서 기준, 판정 기준 사전 등록, 비용 추정). 요점: SDK 재시도 끄기(429가 지연에 숨음), E0 결과 L 구간별 겹침 목적 분기(겹침은 어느 구간에서도 끄지 않음), E1 게이트 켜는 조건(ECE ≤0.05 등, 오답 30개 미만이면 끔), E2 짝 McNemar 150쌍·방향 재검토 조건, E3 Astra는 effort high 고정(비용은 effort가 아니라 표본으로 줄임 — 사용자 원칙과 일치).
 - [결정 필요] 추가: E2는 측정 목적상 실행 중 Astra 개입을 끈다 → 사용자 원칙("실패할 때마다 Astra") 예외 여부.
+- 22:28 UTC D3: 약한 근거 보강 문서 도착. 6개 약한 고리 중 5개 근거 상향(학회·기초 이론), C_flip 계산식은 Sentinel 절제 근거로 "표 분포 거리"로 변경(정본 §12). 메인 재확인: 2505.16067 ACL Anthology 2026.acl-long.27(ACL 2026) — S2 표기가 틀렸다.
+- 교훈: 서지 DB(S2)도 틀린다. 학회 표기는 학회 공식 페이지(Anthology, CVF, OpenReview, 학회 사이트)로 판정한다.

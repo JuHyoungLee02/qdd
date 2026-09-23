@@ -91,3 +91,9 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - Read More "+14~17%p"는 두 모델만, o3-mini는 −7.6. AgentSpec에서 LLM(o1)이 만든 규칙의 재현율 70.96%(M2에 더 가까운 근거). MCP 출력 검증은 SHOULD.
 - Proactive Memory Agent: Sonnet 4.5 +8.3/+6.8, Opus 4.6 +2.4/+2.5, macro에서만 우세, 과제 안 메모리.
 - GEPA Pareto는 "인스턴스별 최고 후보 유지"(다양성 장치). 2505.16067 삭제 규칙은 "최소 n회 꺼낸 뒤". SkillsBench 사람이 다듬은 스킬 +18.2~+24.8pp도 함께 적는다.
+
+## 12. D3 반영 (2026-09-23 22:30 UTC, `D3-evidence-upgrade.md`)
+- **`C_flip` 계산식 변경(기술 결정, 메인 세션 채택)**: 호출 사이 "한 답 대 한 답" 뒤집힘 수가 아니라, **같은 스텝에 쌓인 표들의 분포와 직전 창 표 분포 사이 거리**(총변동 거리 등)를 쓰고, 임계값은 성공 실행으로 conformal 보정한다. 근거: Sentinel/STAC(CoRL 2024, 기간 밖 기초 문헌) 절제 그림 5 — 한 샘플끼리 비교하면 기준 방법보다도 나빴다. M4 §(a) 원장이 이미 스텝별 표를 모으므로 추가 호출 없이 계산된다.
+- 근거 상향(설계 유지): M9 "사전조건이 참인 가장 늦은 지점부터 재개" = PLANEX 삼각표(Fikes·Hart·Nilsson 1972, 기간 밖 기초 문헌) + BT 백체이닝(ICRA 2019) + BacktrackAgent(EMNLP 2025) / M5 "모드가 다르면 평균하지 않는다" = RTC(NeurIPS 2025) + BID(ICLR 2025, 기간 밖) / M8 이벤트 대 주기 = 이벤트 트리거 제어 이론(Tabuada 2007, Heemels 2012, Åström 2002, 기간 밖 기초 문헌) / M10 "골라 넣은 소수 > 통째 주입" 원리 = Shi 외(ICML 2023), 적응형 검색(ACL 2023), Lost in the Middle(TACL) / M8 T3b 과신 = Xiong 외(ICLR 2024).
+- 여전히 잠정: M9의 "반성 유지"(로봇 반대 증거 있음), M10 "0~2개" 개수(E-M10 스윕), 호출 수를 맞춘 LLM 호출 방식 비교(학회 통과 문헌 없음 → E-M8a).
+- 서지 정정: 2505.16067 = **ACL 2026**(Anthology 2026.acl-long.27 확인; S2의 ACL 2025 표기는 틀림). Rewind-IL "RA-L 2026"은 S2 표기뿐 → 학회 미확인.
