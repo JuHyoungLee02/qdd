@@ -58,6 +58,8 @@
 \begin{itemize}
   \item \intent{VLA의 ``계획대로'' 정의를 참고}
   \item \idea{v2 그대로(센서·술어, 남은 시간). 시간 임계값은 SAFE~\cite{safe2025} 방식, 가끔 Astra로 GVL~\cite{gvl2024}}
+  \item \idea{벗어남은 코드 규칙: 진행이 N번 연속 멈춤 / 최고 진행을 M번 못 넘음. 잡기·놓기 중엔 보류}
+  \item \chg{$\pi^*_{0.6}$·$\pi_{0.7}$의 진행 정의는 학습 신호일 뿐, 실행 중 판정엔 안 씀 $\rightarrow$ 술어+남은 시간 유지}
 \end{itemize}
 
 \subsection{M8 Astra 호출}
@@ -77,6 +79,8 @@
   \item \intent{VLA에서 가장 좋은 실패 복구. 1년 반 이내}
   \item \idea{아래 층부터: 스킬 재시도 $\rightarrow$ Jev $\rightarrow$ 리셋 스킬 $\rightarrow$ Astra}
   \item \chg{FLARE~\cite{flare2026}는 자세 오류/환경 파괴 구분만 가져옴(재시도는 학습형이었음)}
+  \item \dirn{복구 = 언제 / 어디로 / 무엇을 남길지. 어디로 = 사전조건이 다 참인 가장 늦은 체크포인트. Jev가 \{계속, 체크포인트 재개, 리셋, Astra\} 중 고름 (로봇 FaRe, LLM RIR이 같은 달 같은 분해)}
+  \item \idea{복구 기법끼리 직접 비교한 벤치마크는 아직 없음 $\rightarrow$ ``최고''는 수치로 못 정함}
 \end{itemize}
 
 \subsection{M10 경험 축적}
