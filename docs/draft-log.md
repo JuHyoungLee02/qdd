@@ -262,3 +262,4 @@
 
 ## 단계 2 모듈 설계 — 시작 21:32 UTC (목표 최소 6시간, 최대 24시간 ±1~2시간)
 - 방식: handoff §3. 모듈마다 `docs/design/Mx-*.md`. 순서 M4 → M3·M5 → M7·M8·M9 → M1·M2 → M6 → M10 → 평가·첫 실험.
+- 21:33 UTC 라운드 D1 시작: 설계 공통 규칙 `docs/design/README.md`. 에이전트 3개 — M4(arXiv API 전담), M3·M5, M7·M8·M9. 끝나면 독립 원문 확인 → 메인 재확인 → plan·Overleaf 반영.
