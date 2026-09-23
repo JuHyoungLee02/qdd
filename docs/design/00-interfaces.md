@@ -117,3 +117,11 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - 실험 조건 추가: E3에 질문 앵커 PageRank 상태 줄 정렬(TabGR, LOW), E-M8a에 **정적 규칙 조건**(ICLR 2026 2602.09902 "정적 규칙이 대개 최적" 반대 근거), E-M10에 역량 보존 사례 삭제(Smyth·Keane 1995, 기초), E-M4에 C3'(Adaptive-Consistency식 베이즈 정지 규칙, 표 수만 사용).
 - M6 생성형(b)에는 **typed hole 사후 검사 게이트**(PLDI 2025 타입 제약 생성의 API판: 타입·철저성·id·술어 검사 후 오류 되먹임).
 - M8 T3b 게이트는 E1 뒤 conformal risk control(RouteNLP, ACL 2026 Industry)로 임계를 정한다. 실패 트리거는 항상 호출(불변).
+
+## 15. D4 2차 원문 확인 반영 (2026-09-23 23:00 UTC, `D4-cross-field-verification.md`: 맞음 12 / 정정 4 / 보완 3)
+- **2602.09902(ICLR 2026) 근거 표기 정정**: 원문은 "모델 2개 + 이탈하는 사용자" 게임에서 **공급자 비용 기준** 최적 라우팅이 거의 항상 캐스케이드 없는 정적 정책이라는 결과다. 트리거 방식 비교(E-M8a)의 근거가 아니다. E-M8a의 "정적 규칙 조건"은 유지하되 근거에서 이 논문을 뺀다. 이 논문은 오히려 "실패하면 항상 상위 모델 호출"에 대한 **비용 측면 반대 근거**로 기록한다. 사용자 원칙("실패할 때마다 Astra 개입")은 바꾸지 않는다(성공률 기준이 아니라 공급자 비용 기준의 결과다).
+- M3 순서 돌리기: 기간 안 직접 근거가 있다 — RecSys 2026 Short("Position Bias Induces Inconsistent Rankings in Listwise LLM-based Recommendation") Table 1, 3회 섞기 + Borda 집계로 PPI 0.4775→0.2992. 단 "노출 평평화는 반드시 복원하지는 않는다(does not necessarily restore)"로 표현한다. 등급 MED(Short).
+- E-M4 C3'(Adaptive-Consistency 베이즈 정지): 원문 기본값(Beta, C_thresh 0.95)이면 만장일치 4표가 필요하다(3표 0.9375). 스텝당 약 3표이므로 **임계값을 0.9로 명시**하거나 표 수를 늘린다. 실험 조건에 임계값을 적는다.
+- M6 typed hole: PLDI 2025 원문은 **디코딩 중 제약**만 평가했다. "사후 타입 검사 + 오류 되먹임"은 **우리 접목안**으로 표기한다.
+- M5 관성화: 반대 근거 추가 — Half Pound Filter §1이 관성화의 과평활·overshoot 한계를 적는다. "약 60% 절감"은 SIGGRAPH 2017 Talk §2(12µs 대 30µs, 원본 애니메이션 1개 조건)이고 GDC 소개문에는 수치가 없다.
+- 보완: RouteNLP는 OpenReview상 ACL 2026 Industry Poster(Anthology 목록 미등재), 보장은 작업·단계당 보정 약 500개일 때(n=100 위반 7.2%) → E1 뒤 T3b 게이트 보정 표본은 500 이상. Inter-Cascade 임계값은 logprob 필요(Astra 불가) → 개념만. TabGR 순서 강건성 근거는 부록 Table 12. Agentproof 저자 구성·형식 위치 정정. SagaLLM = PVLDB 18(12)(기간 8일 밖).
