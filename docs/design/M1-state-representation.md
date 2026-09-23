@@ -1,12 +1,14 @@
 # M1. 이미지 → Jev 입력 (상태 표현) — 모듈 설계
 
 > **정본 우선**: 모듈 사이 인터페이스·정지·확정 규칙·확률 게이트·시간 값은 `00-interfaces.md`가 우선한다(2026-09-23 22:00 UTC). 이 문서와 다르면 그쪽을 따른다.
+> 개정: 2026-09-23 D2 검증·00-interfaces §11 반영 (`D2-verification.md` Part A 정정, Part B·C 해소안. 핵심: "임시 기본 A" 삭제 — 다른 모듈은 특정 후보가 아니라 §4.0 **술어 등록부 인터페이스**에만 의존한다. M2·M6·M7·M10 예시의 술어를 모두 등록부에 올리고 등급(T1/T2/T3)을 붙였다. 단계 필드 이름은 `phases`/`entry`/`exit`/`invariants`로 통일.)
 
 
 - 작성: 2026-09-23 UTC, 단계 2 라운드 D2 설계 에이전트(M1·M2, 이번 라운드 arXiv 검색 API 전담)
 - **[사용자]** Jev는 이미지를 못 본다. VLA에 국한하지 않고 AI 전 분야에서 이미지를 텍스트로 가장 효율적으로 바꾸는 방법을 찾아 쓴다. **변환 방법은 사용자가 정한다.**
+  - 출처 표기(D2 C3): 위 줄의 마지막 문장("변환 방법은 사용자가 정한다")은 user-log 11(1)에는 없고, `D:\qdd\CLAUDE.md` 제약 절("바꾸는 방법은 아직 정해지지 않았으므로 사용자가 정하기 전에는 임의로 정하지 않는다")과 `plan.md` 63행에서 온 사용자 지시다. 내용은 그대로 둔다.
 - 그래서 이 문서는 **최종안을 고르지 않는다.** 순위를 매긴 후보 A/B/C를 끝까지 명세하고(스키마 예, 지연 예산, 실패 방식), 사용자가 고를 수 있게 오프라인 비교 실험 E3의 판정 기준을 미리 적는다. 순위는 "근거가 더 많은 순서"이지 결정이 아니다.
-- 이 문서가 전제하는 다른 문서: `docs/research/v3/04`(문법보다 내용), `v3/11`(인식 앞단 순위), `v3/14`(M2), `docs/design/M3`(`DecisionStep`, `expected_after`), `M4`(`t_state`, `premise_epoch`), `M7`(`done_k`·`pre_k`·`inv_k`), `M9`(체크포인트 = 술어 벡터).
+- 이 문서가 전제하는 다른 문서: `docs/research/v3/04`(문법보다 내용), `v3/11`(인식 앞단 순위), `v3/14`(M2), `docs/design/M3`(`DecisionStep`, `expected_after`), `M4`(`t_state`, `premise_epoch`), `M7`(`exit_k`·`entry_k`·`invariants_k`, 00-interfaces §11.1 이름), `M9`(체크포인트 = 술어 벡터).
 
 ## 0. 조사 방법과 한계
 - arXiv 검색 API 13회(5초 간격), WebSearch 6회(한도 10), arXiv abs 약 25편, 본문 HTML 표·절까지 읽은 것 9편(FocusAgent 2510.03204, Read More Think More 2604.01535, lmgame-Bench 2505.15146, ACON 2510.00615, AgileThinker 2511.04898 Tab.10, CaP-X 2603.22435 VDM 절·부록 K.3, ViPlan 2505.13180, PlanAhead 2605.29927, Structured Interfaces 2510.16643은 v3/04에서).
@@ -23,7 +25,7 @@
 | 위치 | 카메라(+깊이) → 인식 앞단(코드·로컬 모델) → **M1 직렬화기(코드)** → Jev 상태(텍스트) / 같은 ID로 Astra용 Set-of-Mark 이미지 |
 | 입력 | 인식 앞단 산출(추적 ID, 마스크, 3D 중심·크기, 자세 있으면 자세), 로봇 고유 감각(그리퍼 폭, 힘, 말단 자세), **M2 세션 계약**(관련 ID 목록, 단계 원장의 술어 이름, 금지 술어), 직전 Jev 요청의 상태(변화 계산용) |
 | 출력 | (1) Jev `state` 텍스트: 현재 상태 전체(관련 부분만) + 변화 절 + 시각, (2) 모든 술어의 참/거짓 표(코드가 쓰는 것, M4(b)·M7·M9가 읽음), (3) Astra용 번호 표시 이미지(M2·M8) |
-| 쓰는 곳 | M3(질문의 보기 이름과 예상 결과 술어가 이 어휘를 쓴다), M4(`t_state`, 전제 상태), M7(단계 술어), M9(체크포인트 = 술어 벡터), M2(Astra가 계약에 쓰는 술어 이름 = 이 어휘) |
+| 쓰는 곳 | M3(질문의 보기 이름과 예상 결과 술어가 이 어휘를 쓴다), M4(`t_state`, 전제 상태), M7(단계 술어·채널 등급), M9(체크포인트 = 술어 벡터), M2(Astra가 계약에 쓰는 술어 이름 = 이 어휘), M6(스킬 `entry`/`exit`/`invariants`/`stop`), M10(규칙 조건 술어). **모두 §4.0 술어 등록부 하나만 참조한다**(00-interfaces §11.1) |
 | 불변 규칙(v4 공통) | Jev에 숫자 계산을 시키지 않는다(범주·참거짓), 관련 없는 내용 넣지 않는다, 영어, 평평한 상태, 버전 고정 |
 
 **전제 경고(plan v4 그대로)**: M2·M3·M4(b)·M7·M9는 "코드가 기하를 계산해 술어를 만든다"를 전제로 쓰였다. 이 전제는 이 문서의 후보 A·B에서는 성립하고, 후보 C에서도 "술어 부분"은 성립한다. 코드 술어를 전혀 쓰지 않는 변환(예: VLM이 매 프레임 자유 서술)은 다른 모듈 설계를 깨므로 이 문서는 후보가 아니라 **대조 조건**으로만 둔다. [결정 필요]
@@ -42,7 +44,7 @@
 | **CaP-X VDM** (2603.22435) | 로봇 코드 에이전트 | 12개 모델 다중 턴: **VLM이 이미지를 구조화 텍스트로 바꿔 주는 VDM(M3 조건)이 원시 RGB를 매 턴 넣는 조건(M2)보다 일관되게 낫고, 원시 RGB는 오히려 성공률을 낮춤**(Figure 5, 본문). VDM = 첫 턴 장면 설명 + 과제 관련 속성, 이후 턴 **이전 대비 차이 + 완료 여부**. VDM 백본은 Gemini-3-Pro(부록 K.3, 상한을 보려고 가장 강한 모델) | HIGH(ICML 2026, 819★, v3/02) | 안(경계일) | 예 | **예** |
 | **OmniParser V2** | GUI | 검출기 ID·상자 + 캡셔너 → 번호 목록 → 텍스트 LLM. GPT-4o와 ScreenSpot-Pro 39.6, A100 0.6 s/프레임(v3/11) | HIGH(25k★) | **기간 밖, 기초 문헌** | 예 | 아니오 |
 | **ScreenParse / ScreenVLM** (2602.14276) | GUI | 316M VLM이 화면 전체 요소를 압축 마크업(ScreenTag)으로 출력, PageIoU 0.592 대 큰 VLM 0.294(초록) | HIGH(ICML 2026) | 안 | 학습형 | 아니오 |
-| **Read More, Think More** (2604.01535) | 웹 에이전트 | WorkArena L1 Table 1: **강한 모델은 긴 HTML(56,653 토큰)이 짧은 접근성 트리(6,720)보다 좋고**(GPT-5.1 high 55.8→73.3, Sonnet 4.6 52.4→67.0), **약한 모델은 반대**(gpt-oss-20b high 46.4→27.6, Llama-3.1-70B 18.2→3.6). 관측 이력(과거 9스텝)을 **전체 대신 문자 단위 diff로** 넣으면 토큰 약 1/3에 성능 비슷하거나 더 좋음(§3.4, gpt-5.1 low·o3-mini) | MED(NEC, 학회 미확인) | 안 | 예 | 아니오 |
+| **Read More, Think More** (2604.01535) | 웹 에이전트 | WorkArena L1 Table 1: **강한 모델은 긴 HTML(56,653 토큰)이 짧은 접근성 트리(6,720)보다 좋고**(GPT-5.1 high 55.8→73.3, Sonnet 4.6 52.4→67.0), **약한 모델은 반대**(gpt-oss-20b high 46.4→27.6, Llama-3.1-70B 18.2→3.6). **조건(D2 A1)**: 이 방향은 모델·추론 예산 의존이다 — 같은 "상위 능력" 묶음의 o3-mini(high)는 HTML에서 **−7.6**, gemini budget=128은 +6.0. 관측 이력(과거 9스텝)을 **전체 대신 문자 단위 diff로** 넣으면 토큰 약 35%(39,011→13,670)에 gpt-5.1 low 50.9→53.3, o3-mini 43.3→46.1(§3.4). 단 **gemini-2.5-flash budget=128은 diff가 full보다 −6.1(39.4→33.3)**, gpt-oss-120b high −2.1(Table 5) | MED(NEC, 학회 미확인, 인용 4) | 안 | 예 | 아니오 |
 | **A11y-Compressor** (2605.00551) | GUI | OSWorld: 접근성 트리를 구조화·중복 제거로 **입력 22%**, 성공률 평균 +5.1%p(초록) | MED-LOW(ACL SRW 2026) | 안 | 예 | 아니오 |
 | **Structured Interfaces for 3D SG** (2510.16643) | 로봇 LLM | 큰 3D 장면 그래프: 질의로 부분만 가져오면 0.77 대 전체 0.33, 토큰 2,395 대 582,202(Table I·IV, v3/04) | MED(MIT) | 안 | 예 | 예 |
 | MomaGraph (2512.16909) | 로봇 | 공간+기능+상태 그래프 먼저 → 계획, +4~5%p(자체 벤치, v3/04) | MED | 안 | 예(폐쇄 모델) | 예 |
@@ -53,7 +55,7 @@
 
 | 이름 | 분야 | 어디서 최고였나 | 신뢰도 | 기간 | 학습 없이 | 로봇 |
 |---|---|---|---|---|---|---|
-| **FocusAgent** (2510.03204) | 웹 | 작은 LLM이 과제 목표로 접근성 트리 줄을 골라 **50~63% 가지치기, 성공률 거의 유지**(WorkArena L1, GPT-4.1 백본: 기준 53.6 대 FocusAgent(5-mini) 53.2, Table 1·2). **BM25·임베딩 검색은 청크 크기에 민감**(200줄 단위에서 42~46으로 하락). 주입 공격 성공률도 낮춤 | HIGH(TMLR 2026-08) | 안 | 예 | 아니오 |
+| **FocusAgent** (2510.03204) | 웹 | 작은 LLM이 과제 목표로 접근성 트리 줄을 골라 **50~63% 가지치기**(Table 1 변형 56~63%, Table 2 GPT-4.1 51~61%·Claude-3.7 50~51%). 성공률은 **검색기가 강할 때(GPT-5-mini)만 거의 유지**(WorkArena L1, GPT-4.1 백본: 기준 53.6 대 FocusAgent(5-mini) 53.2, Table 1·2). **qwen3-8b 검색기는 43.9(−9.7p)**, 원문 "retrieval is highly dependent on the retriever LLM capability". **BM25·임베딩 검색은 청크 크기에 민감**(**200 토큰** 청크에서 42.4~45.8, Table 1). 주입 공격 성공률도 낮춤 | HIGH(TMLR 08/2026, 인용 15) | 안 | 예 | 아니오 |
 | **ACON** (2510.00615) | LLM 에이전트 | 관측·이력 압축 **지침(자연어)을 실패 대조로 최적화**: 압축 없이 성공·압축해서 실패한 과제만 모아 최적화 LLM이 "무엇을 잃었나" 피드백 → 지침 갱신. AppWorld 최대 토큰 −25% 이상 정확도 유지, 8-목표 QA −54.5%에 EM/F1 상승(§4.2). 최적화기는 o3 + 대조 피드백이 최선(§4.5) | HIGH(ICML 2026) | 안 | **예(프롬프트 최적화)** | 아니오 |
 | **The Complexity Trap** (2508.21433) | 코드 에이전트 | SWE-bench Verified, 모델 5설정: **오래된 관측 가리기(단순)가 LLM 요약과 같은 해결률에 비용 절반** | MED(NeurIPS'25 DL4C 워크숍) | 안 | 예 | 아니오 |
 | SWE-Pruner (2601.16746) | 코드 에이전트 | 에이전트가 목표 힌트를 쓰고 0.6B 스키머가 줄 선택, 토큰 23~54% 감소에 성공률 오히려 상승(초록) | MED(학회 미확인) | 안 | 학습형 스키머 | 아니오 |
@@ -65,7 +67,7 @@
 
 | 이름 | 분야 | 무엇이 믿을 만했나 | 신뢰도 | 기간 |
 |---|---|---|---|---|
-| **ViPlan** (2505.13180) | VLM + 기호 계획 | VLM이 술어 참/거짓을 답하는 grounder: Blocksworld에서 **leftOf·rightOf·on은 강한 모델이 거의 완벽, clear는 더 어려움**. 가정 환경에서 **nextto·open·reachable은 가장 강한 모델도 90% 미만**. 술어 정확도가 대체로 ≥90%여도 **한 에피소드에 최대 120개 술어를 맞혀야 해서 오류가 누적**, 과제 성공은 낮다(본문 §5, 부록 M, Figure 16). VLM-as-grounder 46% 대 VLM-as-planner 9%(BW), 가정 환경은 5% 대 34%(Table 1, 모델 평균) | MED(Aalto·FBK, 학회 미확인, v3 2026-09-01) | 안 |
+| **ViPlan** (2505.13180) | VLM + 기호 계획 | VLM이 술어 참/거짓을 답하는 grounder: Blocksworld에서 **leftOf·rightOf·on은 강한 모델이 거의 완벽, clear는 더 어려움**. 가정 환경에서 **nextto·open·reachable은 가장 강한 모델도 90% 미만**. 술어 정확도는 **"많은 모델 계열에서" ≥90%**(부록 개별 결과 절)이지만 가정 환경(HH)에서 약한 모델의 nextto는 0.12~0.55(부록 M Table 19). **한 에피소드에 최대 120개 술어를 맞혀야 해서 오류가 누적**, 과제 성공은 낮다(본문 §5, 부록 M Table 17~20, Figure 16). VLM-as-grounder 46% 대 VLM-as-planner 9%(BW), 가정 환경은 5% 대 34%(Table 1, 모델 평균) | MED(Aalto·FBK, **EMNLP 2026 Findings**(journal-ref, D2 A1), 인용 9) | 안 |
 | **OmniSpatial** (2506.03135) | VLM | 기본 관계(왼/오, 가깝/멀, 개수)는 최신 추론 VLM이 90% 넘어 포화, 복합 공간(관점 전환·동역학 등) o3 56.33% 대 사람 92.63%(v3/11) | HIGH(ICLR 2026) | 안 |
 | **QSTRBench** (2605.18380) | LLM | 정성 공간·시간 계산(RCC-8, 방위, Allen 등)의 **합성(composition)** 질문: 최신 모델 모두 찍기보다 낫지만 일관되게 다 맞히지 못함, 계산마다 편차 큼(PA 쉬움, RCC-22 가장 어려움)(초록) | MED-LOW(학회 미확인) | 안 |
 | FloorplanQA (2507.07644) | LLM | JSON 평면도: 얕은 질의는 맞히나 **물리 제약·공간 일관성 위반**, JSON↔XML ±3%p(v3/04) | HIGH(ICML 2026) | 안 |
@@ -91,11 +93,11 @@
 | 1 | lmgame-Bench: 백엔드 기호 상태 표가 격자 게임에서 큰 이득, VLM 텍스트 설명은 복잡한 그래픽에서 이득 작음 | Jev 상태의 뼈대는 **인식 앞단이 만든 기호 표**(ID·범주·참거짓)로 하고, VLM 자유 서술은 뼈대가 아니라 보조 칸으로만(후보 C) | 게임 백엔드 상태는 **오라클**이다. 우리 인식 앞단은 오류가 있다 → E3에 인식 잡음 조건 필수 |
 | 2 | CaP-X VDM: 첫 턴 장면 설명 + 이후 턴 차이·완료 여부, 원시 이미지 끼워 넣기보다 낫다 | (a) 상태 텍스트에 **변화 절**을 둔다. (b) 단 변화는 **코드가 술어 표 두 개를 비교해 만든다**(ms, 결정적). VLM(Astra) VDM식 서술은 Astra가 호출될 때(M8)만 부가 | VDM은 턴 기반 코드 에이전트(초 단위). 3Hz 루프에 VLM VDM을 넣으면 지연이 맞지 않는다 |
 | 3 | Read More §3.4: 현재 관측은 전체 + **이력만** diff | **Jev가 diff만으로 상태를 재구성하게 하지 않는다**(과제 규칙). 매 요청 = 현재 상태 전체(관련 부분) + 최근 변화 목록(최대 k개, 시각 붙음) | 원문은 문자 diff. 우리는 술어 단위 diff(`on(obj_3,tray): false→true @t-0.4s`) |
-| 4 | Read More Table 1: 강한 모델은 자세한 관측, 약한 모델은 압축 관측이 유리 | Jev의 "능력 등급"은 모른다(공개 안 됨). **"작게 넣는다"는 가정을 E3에서 시험**: 관련 부분(A) 대 장면 전체(A-full) 조건 | Jev는 빠른 결정 모델. 강한 모델 쪽 결과를 그대로 믿으면 안 되고, 약한 모델 쪽 결과도 그대로 믿으면 안 된다 |
-| 5 | FocusAgent: 과제 목표로 관련 줄을 LLM이 고름, BM25·임베딩은 불안정 | 관련도 판단을 **실행 루프 밖으로** 뺀다: Astra가 세션 계약에 `relevant_ids`와 `relevant_predicates`를 적고(계획 시 1회), 코드가 매 프레임 그 목록 + 규칙(그리퍼와 접촉 중인 것, 경로를 막는 것, 새로 나타난 것)으로 거른다. LLM 검색기를 3Hz에 넣지 않는다 | FocusAgent의 검색기는 매 스텝 돈다. 우리는 계획 시 1회라 장면이 바뀌면 목록이 낡는다 → "새 ID 등장" 규칙과 M8 재호출로 보완 |
+| 4 | Read More Table 1: 강한 모델 두 개(Sonnet 4.6, GPT-5.1 high)는 자세한 관측, 약한 모델은 압축 관측이 유리. 같은 상위 묶음의 o3-mini(high)는 반대(−7.6) — 모델·추론 예산 의존 | Jev의 "능력 등급"은 모른다(공개 안 됨). **"작게 넣는다"는 가정을 E3에서 시험**: 관련 부분(A) 대 장면 전체(A-full) 조건 | Jev는 빠른 결정 모델. 강한 모델 쪽 결과를 그대로 믿으면 안 되고, 약한 모델 쪽 결과도 그대로 믿으면 안 된다 |
+| 5 | FocusAgent: 과제 목표로 관련 줄을 LLM이 고름(강한 검색기일 때만 성공률 유지), BM25·임베딩은 청크 크기에 민감 | 관련도 판단을 **실행 루프 밖으로** 뺀다: Astra가 세션 계약에 `relevant_ids`와 `relevant_predicates`를 적고(계획 시 1회), 코드가 매 프레임 그 목록 + 규칙(그리퍼와 접촉 중인 것, 경로를 막는 것, 새로 나타난 것)으로 거른다. LLM 검색기를 3Hz에 넣지 않는다 | FocusAgent의 검색기는 매 스텝 돈다. 우리는 계획 시 1회라 장면이 바뀌면 목록이 낡는다 → "새 ID 등장" 규칙과 M8 재호출로 보완 |
 | 6 | ACON: 압축 지침을 **실패 대조**(전체로는 성공, 압축으로는 실패)로 자연어 최적화, 학습 없음 | 오프라인 E3 뒤에 **직렬화 규칙(무엇을 남기나)을 Astra가 대조 실패 사례로 고치는 루프**: 같은 결정 문항을 A-full로는 맞히고 A로는 틀린 사례만 모아 Astra에게 "무엇이 빠졌나"를 묻고 규칙(코드 설정)을 갱신. M10 경험 축적과 같은 모양 | ACON은 압축기가 LLM. 우리 압축기는 코드라 Astra 피드백을 **코드 규칙(포함 조건)으로 번역**해야 한다(사람 검토 필요) |
 | 7 | Complexity Trap / SDO: 오래된 관측 가리기, 사건 신호 때만 재관측 | 변화 절은 **최근 N초만**, 그보다 오래된 변화는 버린다(원장 상태로 흡수). 인식 앞단의 무거운 부분(영역 캡션, 자세 초기화)은 신호(새 ID, ID 교체 의심, 접촉 변화, M7 WARN) 때만 | — |
-| 8 | ViPlan: leftOf/rightOf/on은 VLM도 거의 완벽, nextto/open/reachable은 <90%, 술어 오류가 누적 | 술어를 **신뢰 등급**으로 나눈다: T1 코드 기하로 결정적(on, inside, above, left_of(로봇 기준), near 범주, holding(그리퍼 폭+힘), in_contact) / T2 코드지만 임계값 민감(aligned, reachable(IK), clear, graspable) / T3 VLM 필요(open, lid_on, empty, 재질). T3는 매 프레임 넣지 않고 **측정 시각 붙여 캐시**, 불확실하면 `unknown` | ViPlan은 VLM이 술어를 답한 결과. 우리 T1은 코드라 그 수치가 곧 우리 정확도는 아니다. 코드 술어의 오류원은 깊이·분할이다 |
+| 8 | ViPlan: leftOf/rightOf/on은 VLM도 거의 완벽, nextto/open/reachable은 <90%, 술어 오류가 누적 | 술어를 **신뢰 등급**으로 나눈다(전체 목록은 §4.0 술어 등록부가 정본): T1 코드 기하로 결정적(on, inside, above, left_of(로봇 기준), near 범주, holding(그리퍼 폭+힘), in_contact) / T2 코드지만 임계값 민감(aligned, reachable(IK), clear, graspable) / T3 VLM 필요(open, lid_on, empty, 재질). T3는 매 프레임 넣지 않고 **측정 시각 붙여 캐시**, 불확실하면 `unknown` | ViPlan은 VLM이 술어를 답한 결과. 우리 T1은 코드라 그 수치가 곧 우리 정확도는 아니다. 코드 술어의 오류원은 깊이·분할이다 |
 | 9 | ViPlan 오류 누적(120개) | Jev에 주는 술어 개수를 **결정에 필요한 것으로 제한**(M3 질문마다 필요한 술어만 강조 절에 복사) + M4(b)·M7이 술어 뒤집힘을 감시 | — |
 | 10 | QSTRBench: 관계 **합성**은 최신 모델도 흔들림 / Lost in Aggregation: 한 번에 전체 풀이는 무너지고 단일 수준 질문은 됨 | Jev에게 "A가 B 위, B가 C 안 → A는 C 안?" 같은 **추론 사슬을 시키지 않는다**. 필요한 관계는 코드가 **직접** 계산해 적는다(전이 폐쇄 포함). 질문은 한 수준씩(M3의 질문 분해와 같은 방향) | — |
 | 11 | RoboSpatial: 기준 좌표계 셋(ego/world/object), 관계 범주 셋(맥락/호환/배치) | 방향 술어는 **로봇 기준 좌표계 하나로 고정**하고 이름에 박는다(`left_of_robot`). 호환 술어(`fits_in(obj, slot)`)는 코드 기하로 | 기간 밖 기초 문헌 — 어휘 분류만 빌린다 |
@@ -112,9 +114,47 @@
 - 시각: 모든 상태에 `t_state`(프레임 번호·시각) — M4·M2와 공유.
 - 불확실 표시: 추적 ID 교체 의심 `id_uncertain`, 가려짐 `occluded(since=…)`, T3 술어 `unknown`. Jev는 "모름"을 모름으로 받는다(추측값을 넣지 않는다).
 
-### 4.1 후보 A (1순위, 근거 가장 많음): **ID 술어 표 + 변화 절**
+### 4.0 술어 등록부 (모듈 사이 인터페이스, 00-interfaces §11.1) [제안]
+- **등록부는 하나다.** M2 계약(`goal`·`assumptions`·`entry`/`exit`/`invariants`/`stop`·`forbidden`), M3 `expected_after`, M6 스킬 계약, M7 채널, M10 규칙은 모두 이 표의 이름만 쓴다. 표에 없는 술어는 M2 `custom_predicates`(허용 DSL)로만 들어오고, 등급은 구성 함수 중 가장 낮은 등급을 따른다.
+- **다른 모듈은 이 등록부 인터페이스에만 의존한다.** 후보 A·B·C는 모두 이 등록부의 술어를 낸다(B는 부품 노드 인자를, C는 T3 칸을 더 채울 뿐). 그래서 M1 변환 방법 선택(사용자 몫, §7-1)이 다른 모듈 인터페이스를 바꾸지 않는다.
+- **이름 규칙**: 수치 인자를 이름·인자에 넣지 않는다(`lifted(o, >=3cm)` 대신 `lifted(o)`, 문턱값은 설정 표). 인자는 ID·부품 ID·`gripper`·`any`만. 부정은 `not p(...)`.
+- **등급**: T1 = 코드 기하·고유 감각으로 결정적(히스테리시스 띠 포함) / T2 = 코드지만 임계값 민감(보정·조명·깊이 오차에 흔들림) / T3 = VLM 또는 Astra가 필요. 모든 술어는 값 `true/false/unknown`을 가지며 `occluded`·`id_uncertain`인 물체의 술어는 `unknown`이다.
+- **M7 하드 채널(즉시 FAIL)은 T1 술어만 쓴다. T2와 `unknown`은 소프트 채널로만 들어간다**(00-interfaces §11.2). 등급은 이 표의 열이 정본이다.
+
+| 술어 | 뜻(코드 정의 요지) | 등급 | 쓰는 곳(예시 출처) |
+|---|---|---|---|
+| `exists(o)` | 추적 ID가 살아 있음(가려짐이면 `unknown`) | T1 | M2 `assumptions` |
+| `on(a,b)` | a 바닥면이 b 윗면 위, 접촉 + 수직 지지 | T1 | M1, M2 `goal`·`exit` |
+| `inside(a,b)` | a 중심이 b 내부 부피 안 | T1 | M1 |
+| `above(a,b)` | a가 b 투영 영역 위, 접촉 없음 | T1 | M1 |
+| `left_of_robot(a,b)` 등 방향 6종 | 로봇 기준 좌표계 방향(RoboSpatial 어휘, 좌표계 고정) | T1 | M1 |
+| `near(a,b)` | 거리 ≤ 5 cm 들어가기 / 6 cm 나가기(00-interfaces §7, 히스테리시스) | T1 | M1, M2 `when` |
+| `in_contact(a,b)` | 접촉(기하 간격 ≤ ε 또는 힘 센서) | T1 | M1, M2 `stop`, M7 contact 구간 |
+| `touch(o)` | `in_contact(gripper 또는 팔, o)` | T1 | M2 `forbidden` |
+| `holding(o)` / `holding(any)` | 그리퍼 폭 + 힘으로 o를 쥠(`held_by_gripper`는 표시 이름) | T1 | M2, M6 `exit`·`invariants`, M7 H1 |
+| `gripper_open` | 그리퍼 폭 ≥ 열림 문턱 | T1 | M6 `entry` |
+| `lifted(o)` | o가 원래 지지면에서 ≥ `h_lift`(설정 표, 초기 3 cm) 떠 있음 | T1 | M2 `exit`, M6 `exit` |
+| `upright(o)` / `tilt_ok(o)` | 기울기 ≤ `tilt_max`(설정 표, 초기 30°) | T1 | M1, M2 `forbidden`(옛 `tilt(o3)>30deg`) |
+| `contact_under(o)` | 쥔 o의 아래면이 놓을 면에 닿음(`in_contact(o, 놓을 면)`) | T1 | M10 규칙, M6 `dp.release` 안전 술어 |
+| `aligned(a,b)`, `aligned_xy(a,b)`, `aligned_x(a,b)`, `aligned_yaw(a,b)` | 정렬 오차 ≤ 문턱 | T2 | M1, M6 `stop` |
+| `at_pregrasp(o)` | 말단이 o의 사전 파지 자세 허용 오차 안(옛 `dist_to_pregrasp < tol`) | T2 | M6 `stop` |
+| `reachable(o)` | IK 해 존재(여유 포함) | T2 | M6 `entry` |
+| `clear(o)` | o 위에 다른 물체 없음 | T2 | M1, M2 `assumptions` |
+| `top_clear(o)` | o 위쪽 접근 공간이 비어 있음(위 잡기용) | T2 | M10 규칙 |
+| `path_clear(a->b)` | 쓸고 가는 부피에 장애물 없음 | T2 | M1, M2 `assumptions` |
+| `graspable(o)`, `fits_in(a,b)` | 파지 후보 존재 / 크기 호환 | T2 | M1 |
+| `contact_stable` | 접촉 힘 변동이 창(설정 표) 안에서 문턱 이하 | T2 | M6 `reentry` |
+| `collision_risk(opt)`, `next_entry_ok(opt)` | 보기 opt의 예상 결과: 충돌 위험 / 다음 스킬 `entry` 성립(코드가 보기마다 계산) | T2 | M6 `expected_after` |
+| `failure_evidence_cleared` | M7 사건 문맥의 발동 술어가 모두 정상으로 돌아옴 | 구성 술어의 최저 등급 | M6 `reentry` |
+| `open(o)`, `lid_on(o)`, `empty(o)`/`contents`, `material` | 의미 상태·속성 | T3(측정 시각 캐시) | M1, M2 `objects.attrs` |
+| `opens`, `part_of`, `can_contain` (간선) | 기능·부품 관계(Astra가 계획 시 적고 코드가 유지) | T3 | 후보 B |
+| 문맥 변수 `next_skill`, `stage`, `phase`, `skill` | 술어가 아니라 계약·실행기 상태에서 읽는 값(결정적) | T1(문맥) | M10 규칙 조건, M6 `lookahead_req` |
+
+- 등록부 버전은 M2 계약 검사기와 M10 규칙 키가 같이 고정한다. 새 술어 추가는 오프라인 경로(검사기 목록 갱신)로만.
+
+### 4.1 후보 A (근거 수 1위, 결정 아님): **ID 술어 표 + 변화 절**
 - 원문 근거: lmgame-Bench(기호 표), OmniParser(번호 목록), FocusAgent·2510.05381(관련 부분만), ViPlan(술어 등급), CaP-X·Read More(변화 서술, 현재 전체 + 이력 diff).
-- 구성: `objects`(관련 ID만) / `robot` / `facts`(T1·T2 술어 중 참인 것 + 계약이 이름 붙인 술어는 거짓도) / `changes`(최근 3초, 최대 8개) / `stage`(M2 원장의 현재 단계와 그 `done`·`inv` 술어 값).
+- 구성: `objects`(관련 ID만) / `robot` / `facts`(T1·T2 술어 중 참인 것 + 계약이 이름 붙인 술어는 거짓도) / `changes`(최근 3초, 최대 8개) / `stage`(M2 원장의 현재 단계와 그 `exit`·`invariants` 술어 값).
 - 스키마 예(영어, 실제 Jev 입력):
 ```
 t_state: f1287 (t=42.90s)   contract: c7 stage: S2 "place mug o3 on tray o5"
@@ -125,7 +165,7 @@ objects:
   o8 bottle green   | on(table)       | near(o5)
 facts: above(o3,o5)=no  near(o3,o5)=yes  aligned_xy(o3,o5)=no  in_contact(o3,o5)=no
        path_clear(o3->o5)=yes  forbidden: touch(o8)=no
-stage S2: done=on(o3,o5)=no  inv=holding(o3)=yes  elapsed=normal
+stage S2: exit=on(o3,o5)=no  invariants=holding(o3)=yes  elapsed=normal
 changes (last 3s):
   -2.1s near(o3,o5): no->yes
   -0.4s aligned_x(o3,o5): no->yes
@@ -133,7 +173,7 @@ changes (last 3s):
 - 토큰(추정): 관련 물체 3~6개에서 약 150~350 토큰. Jev 한도(state 32k)의 1% 미만.
 - 장점: 결정적, ms 단위, M3 `expected_after`·M4(b)·M7·M9가 **같은 술어 이름**을 쓴다. 단점: 기하로 못 쓰는 상태(뚜껑, 내용물, 천의 모양)는 T3에 기대고 T3는 느리다.
 
-### 4.2 후보 B (2순위): **작업 부분 그래프 (노드·간선 줄 목록)**
+### 4.2 후보 B (근거 수 2위): **작업 부분 그래프 (노드·간선 줄 목록)**
 - 원문 근거: Structured Interfaces(부분 그래프 질의 0.77 대 전체 0.33), MomaGraph(공간+기능+부품+상태), ConceptGraphs·HOV-SG(기초).
 - A와 다른 점: 물체의 **부품 노드**(`o3.handle`, `o7.drawer_1`)와 **기능 간선**(`o7.handle opens o7.drawer_1`, `o2 can_contain o3`)을 둔다. 부분 그래프 선택 = 계약의 `relevant_ids`에서 k=1 홉.
 - 스키마 예:
@@ -147,7 +187,7 @@ changes (last 3s): -1.0s gripper near(o7.h1): no->yes
 - 토큰: A와 비슷하거나 1.2~1.5배(추정). 관절 물체·다단계 과제에서 이득이 기대되고(추론), 단순 pick-and-place에서는 A와 같을 것(v3/04 추론 유지).
 - 단점: 부품 분할·기능 간선의 인식 오류원이 늘어난다. 기능 간선은 누가 만드나 → **Astra가 계획 시 1회 적고 코드가 유지**(M2 계약의 `affordances` 칸).
 
-### 4.3 후보 C (3순위): **A + 영역 캡션 + Astra VDM식 서술 칸**
+### 4.3 후보 C (근거 수 3위): **A + 영역 캡션 + Astra VDM식 서술 칸**
 - 원문 근거: CaP-X VDM(텍스트 차이 서술 > 원시 이미지), OmniParser(캡셔너), DAM(영역 캡션, v3/11).
 - A에 두 칸을 더한다: `attrs`(새 ID 등장 시 1회 영역 캡셔너가 쓴 속성: `material=glass, lid=on`, 측정 시각 붙음), `astra_note`(Astra가 **호출됐을 때만** 쓴 한두 문장 서술과 차이 요약, `from t_state=f1100`처럼 기준 시각 붙음).
 - 스키마 예(A 뒤에 추가):
@@ -183,7 +223,7 @@ astra_note (@f1100, age 6.2s): "Mug is held slightly tilted; tray has a raised r
 목적: 사용자가 M1 변환 방법을 고를 때 쓸 근거를 만든다. 결정은 사용자가 한다.
 
 - **데이터**: 시뮬(RoboDojo-Sim 또는 LIBERO-Plus, plan §3) 에피소드에서 결정 시점 스냅샷 N ≥ 600개(과제 유형 3 × 결정 종류 4 × 50). 스냅샷마다 **시뮬 오라클 정답**이 있는 질문:
-  - Q1 목표 선택(M3 G안 `Q_target`), Q2 단계 완료 판정(M7 `done_k`), Q3 다음 보기(M3 H안 `Q_fine_dir`, 정답 = 오라클 플래너 방향), Q4 계약 위반 여부(금지 술어).
+  - Q1 목표 선택(M3 G안 `Q_target`), Q2 단계 완료 판정(M7 `exit_k`), Q3 다음 보기(M3 H안 `Q_fine_dir`, 정답 = 오라클 플래너 방향), Q4 계약 위반 여부(금지 술어).
 - **조건**: A / B / C / A-full / N-num / D-only / V-free(가능한 스냅샷만). 인식은 두 수준: **오라클 인식**(시뮬 상태) / **실제 인식**(SAM 3.1 + 깊이, 같은 프레임). 인식 잡음 주입 하위 조건: ID 교체 5%, 물체 누락 5%, 깊이 +2cm 편향.
 - **Jev 설정**: 버전 고정, 영어, 같은 질문 문구·보기(확률 비교 규칙 #8), 보기 순서 ID 정렬 고정. 호출당 반복 3회(비결정성 측정).
 - **지표**: 질문 유형별 정답률(Jev 최빈 보기), `NONE_ESCALATE` 비율, 입력 토큰, Jev 지연 p50/p95, M1 직렬화 지연 p50/p95, 오류 유형(술어 오류 전파 / Jev 추론 오류) 분해.
@@ -200,8 +240,8 @@ astra_note (@f1100, age 6.2s): "Mug is held slightly tilted; tray has a raised r
 ---
 
 ## 6. 반대 증거와 위험
-1. **Read More, Think More**: 강한 모델에게는 자세한 원본(HTML)이 압축보다 14~17%p 좋았다. "짧게"가 언제나 옳지 않다. Jev가 어느 쪽인지 모른다 → E3 판정 1.
-2. **lmgame-Bench의 기호 상태는 오라클**이다. 인식 오류가 있는 실제 로봇에서 같은 이득이 난다는 근거는 없다. ViPlan은 술어 정확도 ≥90%여도 누적 오류로 과제가 무너졌다.
+1. **Read More, Think More**: 강한 모델 두 개(Sonnet 4.6, GPT-5.1 high)에게는 자세한 원본(HTML)이 압축보다 14~17%p 좋았다(같은 상위 묶음의 o3-mini(high)는 −7.6, 모델·추론 예산 의존). "짧게"가 언제나 옳지 않고, "길게"도 언제나 옳지 않다. Jev가 어느 쪽인지 모른다 → E3 판정 1.
+2. **lmgame-Bench의 기호 상태는 오라클**이다. 인식 오류가 있는 실제 로봇에서 같은 이득이 난다는 근거는 없다. ViPlan은 술어 정확도가 많은 모델 계열에서 ≥90%여도 누적 오류로 과제가 무너졌다.
 3. **CaP-X VDM은 VLM이 만든 텍스트**이고 가장 강한 VLM(Gemini-3-Pro)으로 상한을 본 것이다. 코드 diff가 같은 효과를 낸다는 근거는 없다(우리 제안).
 4. **관련도 목록이 계획 시 1회**라 장면 변화(새 방해물)를 놓칠 수 있다. FocusAgent는 매 스텝 검색한다. 규칙 기반 추가(새 ID, 경로 막음)로 보완하지만 검증 안 됨.
 5. **술어 임계값**이 깊이 스케일 오차에 민감(v3/11 위험 7). 히스테리시스는 깜빡임을 줄이지만 판정을 늦춘다.
@@ -210,7 +250,7 @@ astra_note (@f1100, age 6.2s): "Mug is held slightly tilted; tray has a raised r
 8. 형식(JSON/줄 표) 효과는 작다는 근거(FloorplanQA ±3%p)가 있지만, 낯선 압축 표기는 손실 보고(TOON/TRON, LOW). 후보 스키마는 흔한 줄 표기로 둔다.
 
 ## 7. 열린 질문, [결정 필요]
-1. **[결정 필요, 사용자]** M1 변환 방법: A / B / C 중 무엇으로 갈지, 또는 E3를 먼저 돌린 뒤 정할지. 이 문서의 권고는 "E3 먼저, 그 전 임시 기본은 A"이지만 결정은 사용자.
+1. **[결정 필요, 사용자]** M1 변환 방법: 후보 A / B / C 중 무엇으로 갈지, 또는 E3를 먼저 돌린 뒤 정할지. **이 문서는 임시 기본값을 두지 않는다**(D2 C2, 00-interfaces §11.3). 다른 모듈은 특정 후보가 아니라 §4.0 술어 등록부 인터페이스에만 의존하므로 결정 전에도 설계가 선다. E3는 비교 자료만 만든다. 결정되면 다시 볼 목록: M3·M4(b)·M6·M7·M9·M10(등록부 밖 칸을 쓰는 곳).
 2. [결정 필요] 코드 술어를 쓰지 않는 방식(V-free)을 후보에서 뺀 것: 다른 모듈 전제 때문이다. 사용자가 VLM 서술 중심을 원하면 M3·M4(b)·M7·M9를 다시 봐야 한다.
 3. [결정 필요] 카메라 구성(스테레오 / RGB-D / 단안) — 깊이 1순위와 술어 정확도가 바뀐다(v3/11).
 4. 열린 질문: 관련 ID 목록의 주인 — Astra(계획 시) 대 코드 규칙 대 둘 다. 이 문서는 둘 다(합집합)를 제안.
@@ -220,8 +260,8 @@ astra_note (@f1100, age 6.2s): "Mug is held slightly tilted; tray has a raised r
 ## 8. 확인 못 한 것
 - lmgame-Bench Table 2의 조건별 수치(정성 서술만 읽음)와 학회 채택 여부.
 - CaP-X Figure 5의 VDM 대 RGB 수치(그림이라 숫자를 뽑지 못함, 방향만 본문 문장으로 확인).
-- Read More §3.4 Table 5의 모델별 diff 수치(본문 서술만).
-- ViPlan 부록 M 술어별 정확도 숫자(본문 요약 문장만), 학회 채택.
+- Read More §3.4 Table 5의 모델별 diff 수치: D2 검증 값으로 채웠다(gemini-2.5-flash budget=128 −6.1, gpt-oss-120b high −2.1). 나머지 셀은 옮기지 않았다.
+- ViPlan 부록 M 술어별 정확도 숫자: D2 검증이 Table 17~20에 있음을 확인(HH 약한 모델 nextto 0.12~0.55). 이 문서는 그 요지만 옮겼다. 학회는 EMNLP 2026 Findings로 확인(D2).
 - SpatialEval·RoboSpatial·Provence 본문 수치(초록만, 둘은 기간 밖).
 - QSTRBench, Lost in Aggregation 본문(초록만).
 - 새 문헌의 인용 수·스타(API 금지).
