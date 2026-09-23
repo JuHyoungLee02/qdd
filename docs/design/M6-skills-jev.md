@@ -1,6 +1,7 @@
 # M6. 스킬과 Jev 결합 — 모듈 설계 (단계 2)
 
 > **정본 우선**: 모듈 사이 인터페이스·정지·확정 규칙·확률 게이트·시간 값은 `00-interfaces.md`가 우선한다(2026-09-23 22:00 UTC). 이 문서와 다르면 그쪽을 따른다.
+> 개정: 2026-09-23 D5 반영 (`D5-consistency.md` 1-9·1-10·1-12·1-15·1-17·4-1, 00-interfaces §11.2·§13·§16): `dp.critic_accept`는 M7 FAIL 뒤 M9 제안 목록이 있을 때만(WARN 발동 삭제), 보기를 M9 §4.1 L2 목록과 같게. E-M6-1 판정 2를 00 §13 방향 재검토 규칙(95% 상한 < +5%p)으로, 통계를 부트스트랩 95% 구간으로. 실험 환경을 단일 팔 자작 장면으로. `effect`(사가)를 잠정 기본([결정 필요] 4)으로 표시. §4.4의 사용자 문장 인용을 user-log 3 원문으로 고침(00 §16).
 > 개정: 2026-09-23 정본 §14–§15 반영 (`00-interfaces.md` §14-3·§14 M6 항·§15, `D4-cross-field.md` §7·§10, `D4-cross-field-verification.md` #1·#2·#5·§2-4). 핵심: (1) 스킬 계약 phase마다 **`effect` 필드**를 둔다. 값은 `reversible` + 보상 스킬 id, 또는 `irreversible`이다(§4.1.1). M9는 보상을 역순으로 실행하고 비가역 경계를 넘어 되돌리지 않으며, M4는 비가역 보기 확정에 W+1을 쓴다. 근거는 사가(1987, 기초 문헌), SagaLLM(PVLDB 18(12), 2025-03-15 공개로 기간 8일 밖), Atomix 2602.14849다(§2.3). (2) 생성 스킬 (b)에 **typed hole 사후 검사 게이트**를 둔다(§4.5 신설). 이것은 **[접목] 우리 접목안**이다. PLDI 2025 원문은 디코딩 중 제약만 평가했다(§2.4). E-M6-2 절제에 −`effect` 추가, E-M6-5(typed hole 게이트) 신설, §7-8 해소.
 > 개정: 2026-09-23 D2 검증·00-interfaces §11 반영 (`D2-verification.md` Part A 정정, Part B·C 해소안. 핵심: 결정 지점 id는 이 문서의 스킬 고정 id가 정본(M2는 골라 쓰고 인자만, M10 키도 이 id), `default_on_timeout` = 직전 확정 행동 유지 + 감속, 확률 게이트는 E1 뒤에만, `dp.critic_accept`는 M9 복구 제안 중 선택만(M7 FAIL을 뒤집지 못함), `dp.grasp_result` 보기 = M7 S5 공유 목록, "기존 스킬" (b)·(a') 동등 조건, BATON은 보조 참고로 내림, GPSFSM 수치 정정.)
 
@@ -161,6 +162,7 @@ metadata:
   - 값: phase마다 `{kind: "reversible", compensate: <스킬 id>}` 또는 `{kind: "irreversible"}`. 보상 스킬 id는 라이브러리에 있는 스킬이어야 하고, 그 스킬도 `entry`/`exit`를 갖는다(검사기가 확인). 예: `place-on` 스킬의 `release` phase는 `irreversible`(놓기), `lower` phase는 `reversible`(보상 = 다시 들어 올리기).
   - 읽는 곳: **M9**는 재개 지점("사전조건이 참인 가장 늦은 지점", 00 §12)까지 가역 phase의 보상을 **역순**으로 실행한다. 경로에 비가역 phase가 있으면 그 너머로는 되돌리지 않고 forward 재시도만 한다. **M4**는 비가역 phase의 보기 확정에 유예 창 W+1을 쓴다(M4 §4.6). **M2** 단계 수준 `irreversible`은 "그 단계 phase 중 하나라도 `irreversible`"과 같게 두는 것을 제안한다([제안], §7-7 [결정 필요]와 묶음).
   - `annotations.irreversible_phases`와의 관계: `effect`가 정본이고 `irreversible_phases`는 `effect`에서 계산되는 파생 값으로 둔다([제안]). 두 값이 다르면 검사기가 거부한다.
+  - **잠정 기본**: `effect`와 보상 역순 재개는 사가(1987)·SagaLLM(기간 8일 밖)에 기대므로 [결정 필요] 4 사용자 승인 전까지 잠정 기본이다(00 §16). 불허하면 기간 안 근거는 Atomix(무학회)만 남는다.
   - `effect`는 **표지(힌트)**다. MCP annotations와 같은 이유로 안전을 넘기지 않는다. 코드 안전 술어가 최종이다. 물리 보상은 원상 복구가 아니므로(물체 자세 변화) 보상 뒤 재개 phase의 `entry`를 반드시 다시 확인한다.
 
 #### 4.1.2 Jev 질문을 꽂는 자리: 단계별 템플릿 [제안]
@@ -174,7 +176,7 @@ metadata:
 | align | `dp.align_commit` (stop 술어 근접 또는 정체) | "Is the gripper ready to descend, or adjust?" | `descend`, `adjust_+x/-x/+y/-y`(≈단계), `rotate_+/-`, `restage`, `NONE_ESCALATE` | 스킬 인자 / M3 D안 미세 이동 |
 | grasp | `dp.grasp_commit` (정렬 stop 참) | "Close the gripper now?" | `close_now`, `lower_more`, `adjust_small`, `restage`, `NONE_ESCALATE` | 되돌릴 수 있음(retry_safe 아님이면 M4 확정 뒤 실행) |
 | grasp | `dp.grasp_result` (**코드 술어가 애매할 때만**: 그리퍼 폭이 "빈 집기"와 "얇은 물체" 경계) | "What is the grasp progress?" | **M7 S5와 한 목록을 공유**(00-interfaces §11.2, D2 B11): `valid_progress`(after: `holding(target)`), `allowed_change`(after: 파지 유지·자세 조금 변함), `failure`(after: `not holding(target)` — 빈 집기·미끄러짐), `recovering`, + `NONE_ESCALATE`(불확실) | M7 입력(S5), 확정은 코드(T1 `holding`) 우선 |
-| lift/transport | `dp.critic_accept` (**M9가 복구 제안 목록을 냈을 때만**: M7 FAIL 뒤 또는 WARN의 모드 제안) | "Which recovery proposal should run for {phase}? Evidence: {evidence}." | **M9 복구 제안 목록**(코드가 채움, 예: `retry_grasp_once`, `regrasp`, `restage`) + `NONE_ESCALATE`(M8로 올림). "거절하고 계속" 보기는 없다 | 제안 중 선택만. **M7 FAIL 판정을 뒤집을 수 없다**(00-interfaces §11.2, D2 B10). Zetta 승인자 자리(접목) |
+| lift/transport | `dp.critic_accept` (**M7 FAIL 뒤 M9가 복구 제안 목록을 냈을 때만**) | "Which recovery proposal should run for {phase}? Evidence: {evidence}." | **M9 복구 제안 목록**(코드가 채움, M9 §4.1 L2와 같은 목록: `continue_lower_layer`(FAIL 채널 해소가 코드로 확인됐을 때만), `resume_ckpt_<k>`, `reset_skill`, `safe_wait`) + `NONE_ESCALATE`(M8로 올림). "거절하고 계속" 보기는 없다 | 제안 중 선택만. **M7 FAIL 판정을 뒤집을 수 없다**(00-interfaces §11.2, D2 B10). Zetta 승인자 자리(접목) |
 | transport | `dp.transport_mode` (경로 막힘 술어) | "Choose how to continue transport." | `continue`, `slow`, `detour_up`, `regrasp`, `place_safe_now` | 스킬 인자 |
 | place | `dp.release` (놓을 자리 위 도달) | "Release now?" | `release_now`, `lower_more`, `adjust_small`, `hold`, `NONE_ESCALATE` | **irreversible**(`effect`): M4 확정 + 코드 안전 술어(접촉·높이) 둘 다 필요. M4 유예 창은 W+1(00-interfaces §14-3, M4 §4.6) |
 | (재진입) | `dp.reentry` (복구 동작 끝) | "Resume the skill from which phase?" | 코드가 계산한 재개 가능 단계만(M9 §4.2) | M9 L2와 공유 |
@@ -202,7 +204,7 @@ metadata:
 | **(a') 래퍼 라이브러리** (본 조건, 동등) | (a)를 단계 래퍼로 감싸 계약을 붙인 것. 스킬 몸체는 그대로, 단계 경계에 훅 | 단계 경계 + 인자 | 사람 작성, Astra는 `lookahead_req`만 계획 시점에 채움 | 래퍼가 안 되는 스킬(학습 정책 한 덩어리)은 대안 A로. 사용자 문장("생성해서")과 거리가 있다 | Harness VLA. **SkillsBench 같은 설정에서 사람이 다듬은 스킬은 +18.2~+24.8pp**(D2 A1) — (a')·(c) 쪽 근거 |
 | (c) 새 라이브러리 | 우리가 단계 FSM·계약을 갖춘 스킬을 새로 작성 | 설계대로 전부 | 사람 | "기존 스킬"이라는 사용자 표현과 멀어짐, 작성 비용, 비교 공정성(우리만 좋은 스킬) | SkillsBench 사람이 다듬은 스킬 +18.2~+24.8pp(같은 근거) |
 
-**사용자 표현("물체를 보고 스킬을 생성해서 잡는 기존 방법들을 기본으로 사용")은 (b)에 가깝다.** 그래서 이 문서는 (a')를 1순위로 두지 않는다(00-interfaces §11.3, D2 C1). **(b)와 (a')를 동등한 조건**으로 둔다: 같은 계약 형식(4.1.1), 같은 결정 지점 id 목록, 같은 실험 조건(§5 E-M6-1·E-M6-2를 두 본 조건 각각에서 실행). 구현 순서를 정해야 하면 사용자 문장에 가까운 **(b)를 먼저** 만든다. (b)면 Astra가 스킬 코드와 계약을 생성하고 코드가 검증한다. **최종 선택은 [결정 필요, 사용자]**.
+**user-log 3 원문은 "물체를 보고 스킬을 생성해서 잡는 방법들이 많지만 실패할 때가 있다. 실패할 때마다 Astra가 개입해서 진행하는 방식을 원한다"이다("기존 방법들을 기본으로 사용"은 첫 세션 초안의 풀어 쓰기, 00 §16). 문제 설정이 생성형을 예로 들므로 (b)를 먼저 한다는 것은 Claude의 해석이다([제안]).** 그래서 이 문서는 (a')를 1순위로 두지 않는다(00-interfaces §11.3, D2 C1). **(b)와 (a')를 동등한 조건**으로 둔다: 같은 계약 형식(4.1.1), 같은 결정 지점 id 목록, 같은 실험 조건(§5 E-M6-1·E-M6-2를 두 본 조건 각각에서 실행). 구현 순서를 정해야 하면 사용자 문장에 가까운 **(b)를 먼저** 만든다. (b)면 Astra가 스킬 코드와 계약을 생성하고 코드가 검증한다. **최종 선택은 [결정 필요, 사용자]**.
 
 ### 4.5 생성 스킬 (b)의 typed hole 사후 검사 게이트 [접목, 원문 미평가] (00-interfaces §14·§15)
 
@@ -219,7 +221,7 @@ metadata:
 
 ## 5. 비교 실험 (판정 기준은 실행 전 고정)
 
-공통: 같은 M1 술어 등록부·같은 Astra 계획(고정 계약 파일 재사용)·Jev 버전 고정. **스킬 몸체는 두 본 조건 (b) 생성 / (a') 래퍼 각각에서 고정**하고, E-M6-1·E-M6-2를 두 본 조건에서 모두 돌린다(동등 조건, D2 C1). 하나만 먼저 돌려야 하면 (b) 먼저. 과제 = 단일 pick-and-place + 2단계 연쇄(pick→narrow place) + 섭동 4종(물체 이동, 방해물 삽입, 미끄러짐 주입, 놓을 자리 좁힘). 시드 ≥ 3(시드 = 장면 배치 + 섭동 시각), **평균 ± 표준편차**. 시뮬(RoboDojo-Sim 또는 LIBERO 계열, plan [결정 필요] 3 따름).
+공통: 같은 M1 술어 등록부·같은 Astra 계획(고정 계약 파일 재사용)·Jev 버전 고정. **스킬 몸체는 두 본 조건 (b) 생성 / (a') 래퍼 각각에서 고정**하고, E-M6-1·E-M6-2를 두 본 조건에서 모두 돌린다(동등 조건, D2 C1). 하나만 먼저 돌려야 하면 (b) 먼저. 과제 = 단일 pick-and-place + 2단계 연쇄(pick→narrow place) + 섭동 4종(물체 이동, 방해물 삽입, 미끄러짐 주입, 놓을 자리 좁힘). 시드 ≥ 3(시드 = 장면 배치 + 섭동 시각), 평균과 **부트스트랩 95% 구간**(M3·M4·M7·E와 같게). 환경은 **단일 팔 자작 장면**(00 §13, E0~E3와 같음). 양팔 스킬은 본 평가(RoboDojo) 이식 때 다룬다.
 
 ### E-M6-1 결합 세밀도 (핵심)
 | 조건 | 내용 |
@@ -233,7 +235,7 @@ metadata:
 지표: 성공률, 섭동별 성공률, **단계별 실패 분해**(approach/align/grasp/transport/place 중 어디서), 결정 수, Jev 호출 수, 로봇 정지 시간, 완료 시간, 복구 성공률.
 판정(사전):
 1. G2가 G0보다 섭동 조건 평균 성공률 **+5%p 이상**이고 비섭동에서 −2%p보다 나빠지지 않으면 "잘게 엮기" 채택.
-2. G2가 R보다 낫지 않으면(차이의 평균 − 표준편차 ≤ 0) E2(plan 마차 시험)와 함께 방향 재검토 보고.
+2. G2 − R 차이의 부트스트랩 95% 상한 < +5%p이면 E2a 판정 2와 함께 방향 재검토 보고. 구간이 +5%p를 걸치면 "결론 유보"(00 §13).
 3. G3이 G2보다 +3%p 이상이거나 복구 성공률 +10%p 이상이면 critic 승인 질문을 기본에 넣음.
 4. SH가 G2보다 grasp·place 단계 실패가 많으면(Show-Harness 원문 관찰과 같은 방향) "접촉 구간은 스킬" 원칙 확정.
 

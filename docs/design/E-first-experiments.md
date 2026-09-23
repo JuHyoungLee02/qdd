@@ -1,5 +1,6 @@
 # E. 첫 실험 프로토콜 (E0 → E0.5 → E1 → E2a → E3) — 실행 수준 설계
 
+> 개정: 2026-09-23 D5 반영 (`D5-consistency.md` 1-11·1-19·2-3·4-2): E1 `QN-accept`(Noul) → `QC-accept`(M9 복구 제안 중 선택 Choice), 진행 질문 보기에 `NONE_ESCALATE` 추가, `QS-dist`를 M3 `dist_cat` 4단계로, effort 표기를 "잠정 기본 high(다른 작업 발언 근거) — 이 프로젝트 적용은 [결정 필요] 5, 00 §16"로.
 > 개정: 2026-09-23 정본 §14–§15 반영 (`00-interfaces.md` §14·§15, `D4-cross-field.md` §2, `D4-cross-field-verification.md` #14): E3에 **질문 앵커 PageRank 줄 순서 조건 A-QPR** 추가(TabGR 2601.08444, 무학회 LOW, 순서 강건성의 직접 근거는 부록 Table 12, §5.2·§5.3·§5.6). §14의 C3'(Adaptive-Consistency식 베이즈 정지, 임계값 명시)·C3''(보기 순서 돌리기)는 **E-M4 조건**이라 이 문서의 실험에 넣지 않는다(§4.12).
 
 > 개정: 2026-09-23 D4 반영 (`D4-devils-advocate.md` F2~F5·F7·F9·D-1·C-1·C-2·C-6·C-10, 00-interfaces §13): E0.5 오프라인 표 재생 추가(§2A), E2를 E2a(룰 대 Jev C1, M4 없이, 결과 기반 라벨, Astra 켠 대응 쌍)로 바꾸고 C5 조건은 E-M4로 이동(§4.12), 방향 재검토는 95% 상한 < +5%p일 때만(그 밖은 "결론 유보"), 환경 역할(E0~E3 = 단일 팔 자작 장면) 확정, Astra effort 기본 high, 방향 질문 두 질문 분할(M3 §4.2) 반영.
@@ -23,7 +24,7 @@
 
 순서와 의존(00 §13): 환경·술어·오라클 플래너 구축 → **스냅샷 풀 생성**(Jev 불필요, 연속 스냅샷 열·시뮬 상태 포함) → E0(병행 가능, 자료 풀 없이도 시작) → **E0.5**(풀 + E0의 `d_p95` + 롤아웃 라벨러) → E1(풀 필요, E2a 질문 형식을 고정) → **E2a**(E0의 `d_p95`, E1의 형식 결론 필요, M4 구현 불필요) → E-M4(C5 포함). E3는 풀이 생기면 언제든(00 §8 "E1·E3 오프라인 병행").
 
-환경 역할(00 §13, D4 C-1): **E0~E3는 단일 팔 자작 장면**(싸고 빠름)에서, **본 평가는 RoboDojo(양팔)**에서 한다. 둘을 섞지 않는다. Astra effort 기본은 **high**(사용자 원칙, 00 §13). RoboDojo 원문 재현용 medium은 EVAL의 재현 조건에서만 쓴다.
+환경 역할(00 §13, D4 C-1): **E0~E3는 단일 팔 자작 장면**(싸고 빠름)에서, **본 평가는 RoboDojo(양팔)**에서 한다. 둘을 섞지 않는다. Astra effort는 **잠정 기본 high(다른 작업 발언 근거) — 이 프로젝트 적용은 [결정 필요] 5, 00 §16**. RoboDojo 원문 재현용 medium은 EVAL의 재현 조건에서만 쓴다.
 
 ---
 
@@ -64,7 +65,7 @@ H=1, D-줌 예(값·문구는 예시, 실제 템플릿은 E1 결과로 고정):
     "ds412.mag_coarse": { "type": "choice", "instructions": "...", "criteria": { "tiny": "about 0.5 cm", "small": "about 1 cm", "medium": "about 2 cm", "large": "about 4 cm", "xlarge": "about 8 cm", "NONE_ESCALATE": "..." } },
     "ds412.mag_fine":   { "type": "choice", "instructions": "...", "criteria": { "...": "9 sub-bins inside the previous step's coarse bin (M3 §4.2 (a))" } },
     "ds412.grip":       { "type": "choice", "instructions": "...", "criteria": { "open": "...", "close": "...", "keep": "...", "NONE_ESCALATE": "..." } },
-    "mon.progress":     { "type": "choice", "instructions": "Considering the change since the last step, how is stage S2 going?", "criteria": { "valid_progress": "...", "allowed_change": "...", "failure": "...", "recovering": "..." } },
+    "mon.progress":     { "type": "choice", "instructions": "Considering the change since the last step, how is stage S2 going?", "criteria": { "valid_progress": "...", "allowed_change": "...", "failure": "...", "recovering": "...", "NONE_ESCALATE": "Cannot tell from the state." } },
     "mon.t3b":          { "type": "noul", "instructions": "Given elapsed = `normal` of expected for step 'place', should this step have been completed by now?" }
   }
 }
@@ -248,11 +249,11 @@ M4 새로움의 절반((a) 합의)은 "시간차로 받은 Jev 표들 사이에 
 | QC-mag | Choice | 5(로그 구간) | 오라클 거리 구간 | M3 D |
 | QC-target | Choice | 관련 물체 + 방해물 | 올바른 목표 ID | M3 G/H |
 | QC-phase | Choice | {continue, next, hold, NONE_ESCALATE} | 오라클 단계 전이 | M3 G/H, M4 |
-| QC-progress | Choice | {valid_progress, allowed_change, failure, recovering} | 코드 진행 라벨 | M7 S5 |
-| QS-dist | Score | 5단계(far…contact) | 오라클 거리 범주 | 순서형 비교용 |
+| QC-progress | Choice | {valid_progress, allowed_change, failure, recovering, NONE_ESCALATE}(`PROGRESS_OPTIONS`, 00 §11.2) | 코드 진행 라벨 | M7 S5 |
+| QS-dist | Score | 4단계(far/mid/near/contact, M3 `dist_cat`) | 오라클 거리 범주 | 순서형 비교용 |
 | QN-pred | Noul | 술어 5종(above, near, holding, aligned_xy, on) | 오라클 술어 참값 | M7, M9 |
 | QN-t3b | Noul | "should have been completed by now?" | 오라클 경과 > 예상 여부 | M8 T3b |
-| QN-accept | Noul | critic 제안 수락 | 오라클이 그 제안을 택했나 | M9, M6 `dp.critic_accept` |
+| QC-accept | Choice | M9 복구 제안 목록({`continue_lower_layer`, `resume_ckpt_<k>`…, `reset_skill`, `safe_wait`}) + `NONE_ESCALATE`. 예/아니오로 묻지 않는다(거절 보기 없음, M7 FAIL 뒤에만, 00 §11.2 B10) | 오라클이 고른 제안 | M9, M6 `dp.critic_accept` |
 
 - 형식 요인(본 운영 형식 = 굵게):
   - 보기 이름: **의미 있는 이름**(`move_left_small`) / 중립(`A`,`B`,`C`… + 설명은 `criteria`에) / 무작위(`k7qz` 같은 4자 + 설명).
@@ -325,7 +326,7 @@ plan §0의 "가장 약한 고리": **Jev가 코드가 만든 술어 위에서 �
 - 환경: §1.4 단일 팔 자작 장면 pick-and-place(00 §13: E0~E3는 이 장면, RoboDojo 본 평가와 섞지 않는다), **오라클 상태**, 벽시계 동기 실시간, 제어기·스킬·IK·M5(L2 RTC식 감쇠 블렌딩 + L3 Ruckig, 00 §9 C3 기본)는 모든 조건에서 같다.
 - 상태: §1.4의 측정용 고정 형식(등록부 술어 줄 표). **룰과 Jev는 같은 텍스트 상태(같은 술어 값)를 받는다.** 룰은 파싱된 술어 값을, Jev는 그 텍스트를 받는다. 룰은 원시 좌표를 보지 않는다(보면 마차 시험이 아니라 플래너 비교가 된다).
 - 행동 공간: 조건 안에서 룰과 Jev의 **보기 집합이 같다**(룰도 같은 보기 목록에서 고른다). 연속 값은 모두 코드가 만든다(M3 §1).
-- Astra: 세션 계약(M2)은 **과제 템플릿당 1회 Astra가 작성하고 모든 조건·시드에서 같은 계약을 재사용**. **effort 기본 = high**(사용자 원칙 "낮추지 않는다", 00 §13. low·medium은 쓰지 않는다). 주 조건에서는 **실행 중 Astra 개입(실패 시 호출)을 끈다.** 이는 [사용자] "실패할 때마다 Astra 개입" 원칙에서 **측정 목적상 벗어나는 것**이며 E2a 주 조건 한정이다. 이유: 결정 층만 분리해 재기 위해. 그래서 **Astra를 켠 대응 조건 쌍(R0+A / J*+A)**을 보조로 둔다(§4.4). 주 조건에서 M7은 신호를 기록만 하고 개입하지 않는다. 종료 = 성공 / 60 s 시간 초과 / 낙하.
+- Astra: 세션 계약(M2)은 **과제 템플릿당 1회 Astra가 작성하고 모든 조건·시드에서 같은 계약을 재사용**. **effort = high**(잠정 기본 high(다른 작업 발언 근거) — 이 프로젝트 적용은 [결정 필요] 5, 00 §16. low·medium은 쓰지 않는다). 주 조건에서는 **실행 중 Astra 개입(실패 시 호출)을 끈다.** 이는 [사용자] "실패할 때마다 Astra 개입" 원칙에서 **측정 목적상 벗어나는 것**이며 E2a 주 조건 한정이다. 이유: 결정 층만 분리해 재기 위해. 그래서 **Astra를 켠 대응 조건 쌍(R0+A / J*+A)**을 보조로 둔다(§4.4). 주 조건에서 M7은 신호를 기록만 하고 개입하지 않는다. 종료 = 성공 / 60 s 시간 초과 / 낙하.
 - JevCall: H=1 고정(M3 원안, H는 E-M4에서 정함). 확률 게이트 전부 끔(00 §6, E1 결과와 무관하게 E2a에서는 끔 — 조건 사이 공정성). 보기 이름·순서는 E1 판정 3·5 결과로 고정. 방향 질문은 두 질문 분할(M3 §4.2). `mag_fine`은 (a) 방식(직전 스텝 거친 구간 기준)만.
 - M4: **쓰지 않는다.** Jev 조건은 모두 C1(단일 in-flight + 직전 행동 유지)이다. C1은 00 §9 C1에 따라 설계 후보가 아니라 비교 조건이며, 사용자 필수 요구인 겹침은 E-M4에서 켠다. 따라서 E2a 결과는 "M4 없는 Jev 결정 층"에 대한 결론으로 한정한다.
 - 병렬: 환경 4개 동시(총 약 12 요청/초 ≤ 한도의 60%). 초과 시 3개로.
@@ -473,7 +474,7 @@ plan §0의 "가장 약한 고리": **Jev가 코드가 만든 술어 위에서 �
 ### 5.8 비용·시간
 - Jev: 7 표현 × 600 × 3회 ≈ 12,600 요청 + 잡음 3조건 × 4표현 × 600 × 3회 ≈ 21,600 요청, 요청당 약 0.7~3k 토큰(A-full이 가장 큼) → 약 4,000~6,000만 토큰 ≈ **$2~3**(3회 반복이 1회로 줄면 1/3).
 - A-QPR 추가분: 600 × 3회 ≈ 1,800 Jev 요청, 약 $0.3~0.5(A와 같은 크기).
-- Astra(V-free 600 + C `astra_note` 600 = 1,200 요청): 입력 = 이미지 1장(640×480이면 32px 패치 20×15=300 × 1.2 ≈ 360 토큰, plan §1 공식) + 텍스트 약 1.5k ≈ 2k → 2.4M × $10 = $24. 출력(effort high, 추론 포함) 요청당 1k~5k **[가정]** → 1.2~6M × $50 = $60~300. **합계 약 $85~325.** 비용을 줄여야 하면 effort가 아니라 **표본을 줄인다**(V-free·C를 300 스냅샷으로, 구간이 넓어짐을 기록) — effort를 낮추지 않는다(plan §1 사용자 발언).
+- Astra(V-free 600 + C `astra_note` 600 = 1,200 요청): 입력 = 이미지 1장(640×480이면 32px 패치 20×15=300 × 1.2 ≈ 360 토큰, plan §1 공식) + 텍스트 약 1.5k ≈ 2k → 2.4M × $10 = $24. 출력(effort high, 추론 포함) 요청당 1k~5k **[가정]** → 1.2~6M × $50 = $60~300. **합계 약 $85~325.** 비용을 줄여야 하면 effort가 아니라 **표본을 줄인다**(V-free·C를 300 스냅샷으로, 구간이 넓어짐을 기록) — effort를 낮추지 않는다(잠정 기본 high(다른 작업 발언 근거) — 이 프로젝트 적용은 [결정 필요] 5, 00 §16).
 - 시간: Jev 부분 수 시간. Astra high는 첫 토큰 약 73 s(plan §1, 날마다 변동) → 1,200 요청을 동시 20개로 약 1.5~2 시간. 분석 1일. 합계 1~2일.
 
 ### 5.9 위험
@@ -519,7 +520,7 @@ Jev 비용은 무시할 만하고, 비용과 시간을 좌우하는 것은 **Ast
 ## 8. [결정 필요] (이 문서에서 새로 생기거나 다시 확인할 것)
 1. E2a 주 조건에서 **실행 중 Astra 개입을 끄는 것**(측정 목적상 [사용자] 원칙에서 벗어남, E2a 주 조건 한정)을 허용할지. 보조로 Astra 켠 대응 쌍(R0+A / J*+A)을 둔다(§4.4).
 2. (정리됨, 00 §13) E0~E3 환경 = 단일 팔 자작 장면, 본 평가 = RoboDojo. 둘을 섞지 않는다.
-2b. 사용자 원칙 세 개의 수치 충돌(실패마다 Astra + 웬만하면 안 멈춤 + effort 낮추지 않음; high 첫 토큰 약 73 s·xhigh 약 198 s가 60 s 시간 제한보다 김) — M9 §7에 묶어 올림. E2a의 Astra 켠 쌍(60 s 절단 대 180 s)과 E0 날의 effort별 첫 토큰 측정이 자료다.
+2b. 사용자 원칙 세 개의 수치 충돌(실패마다 Astra + 웬만하면 안 멈춤 + effort 잠정 기본 high([결정 필요] 5); high 첫 토큰 약 73 s·xhigh 약 198 s가 60 s 시간 제한보다 김) — M9 §7에 묶어 올림. E2a의 Astra 켠 쌍(60 s 절단 대 180 s)과 E0 날의 effort별 첫 토큰 측정이 자료다.
 3. E0 판정 3 (a)(d)(e)에 해당하면 올라가는 결정(겹침 목적 보고, D-줌 결정 빈도, 방향 논의).
 4. E2a 판정 2 발동 시 방향 재검토 선택지 중 무엇. "결론 유보"(판정 2′)일 때 E-M4로 진행하는 것에 동의하는지.
 5. E2a 판정 6: D-줌이 크게 뒤질 때 사용자 원안을 유지할지.

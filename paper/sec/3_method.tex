@@ -29,7 +29,7 @@
   \item \idea{보기 255개 한 번이면 충분할 수 있음(해상도 250 대 1000 차이 작음)}
   \item \idea{반대 증거 있음: 학습 없는 모델은 잘게 여러 번 움직이기보다 목표 지점을 한 번에 가리킬 때 훨씬 잘함(드론 40\%$\rightarrow$100\%, GUI 반복 이동 붕괴)}
   \item \dirn{``목표 지정형''(Jev가 목표 물체·부분을 고르고 크기는 코드)을 원안 옆에 나란히 재 봄. \decide{기본안}}
-  \item \dirn{첫 실험 = Jev 보정 측정(E1) + ``마차 시험''(E2: 같은 텍스트 상태에서 룰 / Jev 촘촘 / Jev 목표 지정 / 겹침 켬·끔)}
+  \item \dirn{첫 실험 = E0 지연 $\rightarrow$ E0.5 표 재생 $\rightarrow$ E1 보정 $\rightarrow$ E2a 마차(같은 텍스트 상태에서 룰 대 Jev 촘촘·목표 지정·혼합, M4 없이). 겹침 켬·끔은 E-M4에서. 방향 재검토는 95\% 상한이 +5\%p 미만일 때만}
 \end{itemize}
 
 \subsection{M4 RTC식 겹침 호출 (가장 중요)}
@@ -39,24 +39,24 @@
   \item \idea{확인을 둘로 나눔: (a) 호출끼리 같은 말을 하나(앞부분 합의) (b) 실제로 그렇게 움직였나(예상 상태 대 측정 상태, 코드)}
   \item \idea{(a)만으론 안 됨. 같은 모델은 같은 오답을 반복}
   \item \chg{``안 멈추고 겹쳐 보내기''는 선행 있음(Slow Brain~\cite{slowbrain2026}: 최신 답만 씀, Jev 데모: 요청 하나 + 직전 행동 유지) $\rightarrow$ 새로움은 (a)+(b)로 확정하는 규칙뿐}
-  \item \dirn{실험: 멈춤 / 요청 하나 / 겹침+최신 답 / (a)만 / (b)만 / (a)+(b). 핵심은 (a)+(b) 대 겹침+최신 답}
+  \item \dirn{실험(E2a와 같은 시드, 첫 칸은 요청 하나 대 (a)+(b)): 멈춤 / 요청 하나 / 겹침+최신 답 / 겹침+감쇠 융합 / (a)만 / (a)만의 베이즈 정지판 / 보기 순서 돌리기 / (b)만 / (b) 범주를 Jev에 안 줌 / (a)+(b) / 겹침 끔(측정용). 핵심은 (a)+(b) 대 겹침+최신 답}
   \item \chg{VLASH~\cite{vlash2025}·A2C2~\cite{a2c2}는 학습형이라 발상만. A2C2는 ICLR 탈락}
-  \item \dirn{RTC의 3구간을 그대로: 고정(길이 = 실측 Jev 지연) / 중간(이전 선택 가중치가 점점 줄어듦) / 끝(새 선택)}
+  \item \dirn{RTC 3구간의 이산판: 고정(길이 = 실측 Jev p95) / 중간(바꾸려면 합의가 필요하고, 고정 경계에 가까울수록 문턱이 엄격 --- 가중 평균은 안 씀) / 끝(가장 새 표를 가확정)}
 \end{itemize}
 
 \subsection{M5 스무딩}
 \begin{itemize}
   \item \intent{두 단계: 먼저 RTC와 비슷한 방법, 다음으로 아주 작은 움직임은 액션 스무딩 등 VLA에서 쓰는 방법으로 부드럽게}
-  \item \idea{겹침 블렌딩 + jerk 최소화~\cite{lipo2025}. 단 겹침 평균은 정밀 작업 성공률을 깎음 $\rightarrow$ 같은 보기끼리만 섞고 마지막에 저크 필터}
+  \item \idea{겹침 평균은 정밀 작업 성공률을 깎음 $\rightarrow$ 같은 보기끼리만 RTC식으로 섞고, 보기가 바뀌면 섞지 않고 관성화(접촉 근처 끔), 마지막에 저크 제한(Ruckig, 잠정). LiPo~\cite{lipo2025}는 비교}
 \end{itemize}
 
 \subsection{M6 스킬 $\leftrightarrow$ Jev}
 \begin{itemize}
   \item \intent{기존 스킬도 Jev와 엄청 연관될수록 좋음. LLM이 스킬을 불러오고 끝이 아니라 잘게 엮은 방식. 1년 이내 GitHub 스타 상위 5개를 참고해 파이프라인을 대충 짜 봄}
   \item \idea{스타 상위: PhyAgentOS, Zetta, Harness VLA, CaP-X, ROSClaw(또는 Show-Harness)}
-  \item \idea{스타 1위는 거칠게 엮음. 잘게 엮는 쪽은 Zetta~\cite{zetta2026}(런타임 critic은 코드, LLM은 오프라인)와 Show-Harness}
+  \item \idea{스타 1위는 거칠게 엮음. 잘게 엮는 쪽은 Zetta~\cite{zetta2026}(런타임 critic은 코드. LLM 승인자가 온라인인지는 원문이 엇갈림)와 Show-Harness}
   \item \idea{Harness VLA 저자 스스로 ``계획기와 하위 사이 루프가 열려 있다''고 함 $\rightarrow$ 우리 M4/M7 자리}
-  \item \idea{상위 6편 모두 상위 모델이 결정하는 동안 로봇이 기다리거나 상위 모델이 루프 밖. 빠른 모델이 비정지 루프 가까이 도는 구조는 없음 $\rightarrow$ 우리 자리}
+  \item \idea{상위 6편은 상위 모델 결정 중 로봇이 기다리거나 상위 모델이 루프 밖. 다만 안 멈추고 겹쳐 부르는 것 자체는 Slow Brain~\cite{slowbrain2026}·Jev 데모에 있음 $\rightarrow$ 우리 자리는 겹친 답을 확정하는 규칙(M4)과 스킬 안 결정 지점(M6)}
   \item \dirn{대략 파이프라인: Astra가 ``세션 계약''(단계 원장·스킬·결정 지점·critic 규칙) $\rightarrow$ Jev 3Hz 겹침 결정 $\rightarrow$ 스킬 100Hz $\rightarrow$ 코드 critic $\rightarrow$ 복구 사다리 $\rightarrow$ 검증된 것만 기억}
   \item \decide{5위 ROSClaw 대 Show-Harness}
 \end{itemize}
@@ -76,8 +76,8 @@
   \item \intent{처음 계획할 때는 멈추는 게 맞지만, 그 이후로는 웬만하면 멈추지 않음. 실패해서 다시 생각해야 할 때만 예외}
   \item \idea{``이때쯤 나왔어야 하는데''의 구현 두 가지를 비교: 코드가 예상 시간으로 마감 계산 / 모델이 경과 시간 보고 스스로 판단 \decide{}}
   \item \chg{v3에서 기본값을 개별 이미지로 바꿨던 것 되돌림 $\rightarrow$ 사용자 예시(격자 한 장에 10프레임)가 기본 조건, 개별 이미지·변화 텍스트는 비교 조건~\cite{kite2026}}
-  \item \chg{effort low 기본안 삭제(사용자: 추론 강도 낮추지 말 것). effort는 실험 축만}
-  \item \idea{effort는 성공률보다 결정 수·시간을 바꿈(Show-Harness 스텝 37$\rightarrow$30). 지표에 결정 수 추가. 단 Astra low로 강한 결과도 있음(Harness VLA) $\rightarrow$ \decide{effort 기본값}}
+  \item \chg{effort low 기본안 삭제. effort 잠정 기본 high(다른 작업 발언 ``추론 강도 낮추지 말 것'' 근거). low·medium은 측정 조건만. 실험 축은 low--max}
+  \item \idea{effort는 성공률보다 결정 수·시간을 바꿈(Show-Harness 스텝 37$\rightarrow$30). 지표에 결정 수 추가. 단 Astra low로 강한 결과도 있음(Harness VLA) $\rightarrow$ \decide{잠정 기본 high를 이 프로젝트에 적용할지(결정 필요 5)}}
   \item \dirn{프레임 비교에 ``무엇이 바뀌었는지 텍스트'' 조건 추가(CaP-X에서 원시 이미지보다 나음)}
 \end{itemize}
 
@@ -86,7 +86,7 @@
   \item \intent{VLA에서 가장 좋은 실패 복구 방법을 찾음. 논문은 무조건 1년 반 이내. VLA에서 실패했을 때 어떻게 되돌아갈지 정하는 프레임워크를 참고}
   \item \chg{v3의 ``Astra는 맨 마지막'' 폐기 $\rightarrow$ 실패 판정 순간 Astra를 비동기로 바로 부르고, 기다리는 동안 아래 층(스킬 재시도 $\rightarrow$ Jev 선택)이 로봇을 움직임}
   \item \chg{FLARE~\cite{flare2026}는 자세 오류/환경 파괴 구분만 가져옴(재시도는 학습형이었음)}
-  \item \dirn{복구 = 언제 / 어디로 / 무엇을 남길지. 어디로 = 사전조건이 다 참인 가장 늦은 체크포인트. Jev가 \{계속, 체크포인트 재개, 리셋, Astra\} 중 고름 (로봇 FaRe, LLM RIR이 같은 달 같은 분해)}
+  \item \dirn{복구 = 언제 / 어디로 / 무엇을 남길지. 어디로 = 사전조건이 다 참인 가장 늦은 체크포인트. Jev가 코드가 낸 복구 제안 \{아래 층 결과 인정, 체크포인트 재개, 리셋, 안전 대기, 모르겠음(올림)\} 중 고름(FAIL은 뒤집지 못함). Astra는 실패 순간 이미 비동기로 불려 있음 (로봇 FaRe, LLM RIR이 같은 달 같은 분해)}
   \item \idea{복구 기법끼리 직접 비교한 벤치마크는 아직 없음 $\rightarrow$ ``최고''는 수치로 못 정함}
 \end{itemize}
 
@@ -104,7 +104,7 @@
   \item M2: \dirn{Astra가 ``세션 계약''을 씀: 목표·가정·단계·결정 지점(스킬에 박힌 id 중에서 고름)·금지 조건}
   \item M3: \dirn{보기는 서로 뚜렷한 몇 개만(보기가 많고 비슷하면 정확도 떨어짐). 사용자 원안(촘촘) 대 혼합안 비교}
   \item M4: \dirn{겹친 답을 ``표''로 모음. 동시통역의 앞부분 합의 + 추측 디코딩의 유예 창 + 실제 움직임 확인}
-  \item M5: \dirn{같은 보기끼리만 RTC식으로 섞고 마지막에 저크 제한}
+  \item M5: \dirn{같은 보기끼리만 RTC식으로 섞고 마지막에 저크 제한(Ruckig, 잠정 기본)}
   \item M6: \dirn{스킬 카드(LLM 도구 스키마식) + 단계별 Jev 질문 틀. ``기존 스킬'' = 생성형 / 보유 라이브러리 둘 다 \decide{}}
   \item M7: \dirn{하드(코드 기하 술어만) + 소프트 채널 두 개 이상이면 실패}
   \item M8: \dirn{``이때쯤 나왔어야'' 두 구현 비교. 모델 스스로 판단은 늦게 울린다는 증거 있음(낙관 편향). 격자 10프레임 기본 유지}

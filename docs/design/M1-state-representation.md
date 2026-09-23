@@ -1,6 +1,7 @@
 # M1. 이미지 → Jev 입력 (상태 표현) — 모듈 설계
 
 > **정본 우선**: 모듈 사이 인터페이스·정지·확정 규칙·확률 게이트·시간 값은 `00-interfaces.md`가 우선한다(2026-09-23 22:00 UTC). 이 문서와 다르면 그쪽을 따른다.
+> 개정: 2026-09-23 D5 반영 (`D5-consistency.md` 1-14·1-15·1-18): E3 데이터를 단일 팔 자작 장면 스냅샷 풀(E3a·E3b)로, `h_lift`·`tilt_max`를 00 §7 설정 표에 올림, §6-6의 `reachable` 등급 표기를 등록부(T2)와 맞춤.
 > 개정: 2026-09-23 D2 검증·00-interfaces §11 반영 (`D2-verification.md` Part A 정정, Part B·C 해소안. 핵심: "임시 기본 A" 삭제 — 다른 모듈은 특정 후보가 아니라 §4.0 **술어 등록부 인터페이스**에만 의존한다. M2·M6·M7·M10 예시의 술어를 모두 등록부에 올리고 등급(T1/T2/T3)을 붙였다. 단계 필드 이름은 `phases`/`entry`/`exit`/`invariants`로 통일.)
 
 
@@ -133,8 +134,8 @@
 | `touch(o)` | `in_contact(gripper 또는 팔, o)` | T1 | M2 `forbidden` |
 | `holding(o)` / `holding(any)` | 그리퍼 폭 + 힘으로 o를 쥠(`held_by_gripper`는 표시 이름) | T1 | M2, M6 `exit`·`invariants`, M7 H1 |
 | `gripper_open` | 그리퍼 폭 ≥ 열림 문턱 | T1 | M6 `entry` |
-| `lifted(o)` | o가 원래 지지면에서 ≥ `h_lift`(설정 표, 초기 3 cm) 떠 있음 | T1 | M2 `exit`, M6 `exit` |
-| `upright(o)` / `tilt_ok(o)` | 기울기 ≤ `tilt_max`(설정 표, 초기 30°) | T1 | M1, M2 `forbidden`(옛 `tilt(o3)>30deg`) |
+| `lifted(o)` | o가 원래 지지면에서 ≥ `h_lift`(00 §7 설정 표, 초기 3 cm) 떠 있음 | T1 | M2 `exit`, M6 `exit` |
+| `upright(o)` / `tilt_ok(o)` | 기울기 ≤ `tilt_max`(00 §7 설정 표, 초기 30°) | T1 | M1, M2 `forbidden`(옛 `tilt(o3)>30deg`) |
 | `contact_under(o)` | 쥔 o의 아래면이 놓을 면에 닿음(`in_contact(o, 놓을 면)`) | T1 | M10 규칙, M6 `dp.release` 안전 술어 |
 | `aligned(a,b)`, `aligned_xy(a,b)`, `aligned_x(a,b)`, `aligned_yaw(a,b)` | 정렬 오차 ≤ 문턱 | T2 | M1, M6 `stop` |
 | `at_pregrasp(o)` | 말단이 o의 사전 파지 자세 허용 오차 안(옛 `dist_to_pregrasp < tol`) | T2 | M6 `stop` |
@@ -222,7 +223,7 @@ astra_note (@f1100, age 6.2s): "Mug is held slightly tilted; tray has a raised r
 
 목적: 사용자가 M1 변환 방법을 고를 때 쓸 근거를 만든다. 결정은 사용자가 한다.
 
-- **데이터**: 시뮬(RoboDojo-Sim 또는 LIBERO-Plus, plan §3) 에피소드에서 결정 시점 스냅샷 N ≥ 600개(과제 유형 3 × 결정 종류 4 × 50). 스냅샷마다 **시뮬 오라클 정답**이 있는 질문:
+- **데이터**: E 문서 §1.4·§5.3의 **단일 팔 자작 장면** 스냅샷 풀(00 §13: E0~E3는 자작 장면, 본 평가 RoboDojo와 섞지 않음). E3a = pick-and-place 스냅샷 600개(E §1.5 POOL), E3b = 관절 물체·뚜껑 과제를 장면에 더한 뒤. 스냅샷마다 **시뮬 오라클 정답**이 있는 질문:
   - Q1 목표 선택(M3 G안 `Q_target`), Q2 단계 완료 판정(M7 `exit_k`), Q3 다음 보기(M3 H안 `Q_fine_dir`, 정답 = 오라클 플래너 방향), Q4 계약 위반 여부(금지 술어).
 - **조건**: A / B / C / A-full / N-num / D-only / V-free(가능한 스냅샷만). 인식은 두 수준: **오라클 인식**(시뮬 상태) / **실제 인식**(SAM 3.1 + 깊이, 같은 프레임). 인식 잡음 주입 하위 조건: ID 교체 5%, 물체 누락 5%, 깊이 +2cm 편향.
 - **Jev 설정**: 버전 고정, 영어, 같은 질문 문구·보기(확률 비교 규칙 #8), 보기 순서 ID 정렬 고정. 호출당 반복 3회(비결정성 측정).
@@ -245,7 +246,7 @@ astra_note (@f1100, age 6.2s): "Mug is held slightly tilted; tray has a raised r
 3. **CaP-X VDM은 VLM이 만든 텍스트**이고 가장 강한 VLM(Gemini-3-Pro)으로 상한을 본 것이다. 코드 diff가 같은 효과를 낸다는 근거는 없다(우리 제안).
 4. **관련도 목록이 계획 시 1회**라 장면 변화(새 방해물)를 놓칠 수 있다. FocusAgent는 매 스텝 검색한다. 규칙 기반 추가(새 ID, 경로 막음)로 보완하지만 검증 안 됨.
 5. **술어 임계값**이 깊이 스케일 오차에 민감(v3/11 위험 7). 히스테리시스는 깜빡임을 줄이지만 판정을 늦춘다.
-6. **T3 술어(open, reachable 등)는 VLM이 해도 90% 미만**(ViPlan). 코드로 대체할 방법이 없는 과제(천, 액체)에서는 A의 장점이 줄어든다.
+6. **T3 술어(open, lid_on 등)는 VLM이 해도 90% 미만**(ViPlan에서 VLM의 reachable·nextto도 90% 미만이지만 우리 `reachable`은 코드 IK라 T2다). 코드로 대체할 방법이 없는 과제(천, 액체)에서는 A의 장점이 줄어든다.
 7. 텍스트화가 정보를 잃는 문제: 이미지를 본 VLM이 쓸 수 있는 단서(미묘한 기울기, 미끄러짐)가 술어 표에서 사라진다. SpatialEval(텍스트 ≥ 비전)은 기간 밖이고 과제가 다르다.
 8. 형식(JSON/줄 표) 효과는 작다는 근거(FloorplanQA ±3%p)가 있지만, 낯선 압축 표기는 손실 보고(TOON/TRON, LOW). 후보 스키마는 흔한 줄 표기로 둔다.
 

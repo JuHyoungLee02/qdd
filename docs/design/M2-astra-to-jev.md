@@ -1,6 +1,7 @@
 # M2. Astra → Jev 전달 (세션 계약) — 모듈 설계
 
 > **정본 우선**: 모듈 사이 인터페이스·정지·확정 규칙·확률 게이트·시간 값은 `00-interfaces.md`가 우선한다. 이 문서의 계약 교체 규칙(§4.2)은 정지를 만들지 않는다(교체 대기 중에도 직전 확정 행동 유지, `00-interfaces.md` §4). E-M2-2의 W(기다림) 조건은 비교용이며 기본안이 아니다.
+> 개정: 2026-09-23 D5 반영 (`D5-consistency.md` 1-2·1-17·2-1, 00-interfaces §7·§15·§16): `contract_patch_rejected`는 M7 `C_assume`로 보낸다(00 §15 확정, R7 (ii)·§7-8). DFA 형식 검증(§4.4)을 기간 밖 기초 문헌에 기댄 **잠정 기본**([결정 필요] 4)으로 표시. R3 교체 시점을 M8 commit 창·M9 적용 시점의 단일 기준으로 명시(비가역 판단은 M6 `effect`). `C_assume` 0.5 s·`tilt_max`·`h_lift`는 00 §7 설정 표.
 > 개정: 2026-09-23 정본 §14–§15 반영 (`00-interfaces.md` §14-4·§15, `D4-cross-field.md` §3, `D4-cross-field-verification.md` #6). 핵심: 계약 수리 왕복(검사기 오류를 Astra에 되돌림)은 **T0(첫 계획)에서만**(§4.1 검사기). 실행 중 재계획 patch는 **검사만** 하고, 실패하면 거부 + M7 신호를 보낸다. 로봇은 멈추지 않는다(§4.2 R7). `forbidden`·순서 제약은 명세 패턴 부분집합으로만 쓰고 DFA로 컴파일해 H5와 `C_assume` 감시를 한 감시기로 통일한다(§4.4 신설). 근거로 Agentproof(LOW, 저자 구성·7형식 위치 정정)와 형식 검증 기초 문헌(기간 밖)을 더했다(§2.3). E-M2-3 지표 추가, §7-8 해소.
 > 개정: 2026-09-23 D2 검증·00-interfaces §11 반영 (`D2-verification.md` Part A 정정, Part B·C 해소안. 핵심: 단계 필드 `pre/done/inv/substeps` → `entry/exit/invariants/phases`, 결정 지점 id는 M6 스킬 고정 id를 **골라 쓰고 인자만 채움**, 가정 술어 거짓 → M7 소프트 채널 `C_assume` + M8 재호출 신호, 계약 버전 교체 → M4 `premise_epoch` +1, PlanAhead는 보조 참고로 내림.)
 
@@ -162,11 +163,11 @@ recent committed: approach, approach, align(+x)
 ### 4.2 낡은 계약 처리 규칙 (AgileThinker 축소판 + 버전)
 - **R1 기다리지 않는다**: 첫 계약 전만 정지 허용([사용자]). 이후 Astra 요청 중에도 Jev는 현재 계약으로 계속 결정한다.
 - **R2 가장 새 유효 버전만**: 계약 저장소는 버전 하나만 활성. 새 버전 게시 = 활성 교체 + **M4 `premise_epoch` +1**(이전 epoch의 미확정 표 폐기, M4 §4.2). 이 규칙은 00-interfaces §11.2("세션 계약 버전이 바뀌면 M4 `premise_epoch`를 올린다", D2 B6)로 확정됐다. 이미 확정·실행된 것은 되돌리지 않는다.
-- **R3 교체 시점**: 결정 스텝 경계에서만 교체(M4 FROZEN 구간 안 스텝은 건드리지 않음). `irreversible` 단계 진행 중이면 그 phase 끝까지 기다린다(추론, 안전 쪽). 기다리는 동안에도 직전 확정 행동 유지 + 감속이며 정지가 아니다. 단계 수준 `irreversible`(Astra)과 M6 phase 수준 `annotations.irreversible_phases`(스킬 작성자)가 두 곳이다 → §7-4 [결정 필요]로 묶음(D2 B7).
+- **R3 교체 시점**: 결정 스텝 경계에서만 교체(M4 FROZEN 구간 안 스텝은 건드리지 않음). `irreversible` 단계 진행 중이면 그 phase 끝까지 기다린다(추론, 안전 쪽). phase가 비가역인지는 M6 `effect`로 읽는다(00 §14-3). **M8 commit 창과 M9의 Astra 계획 적용 시점도 이 R3 하나를 따른다**(D5 2-1). M6 `effect`에서 grasp·lift는 가역(보상 스킬 있음)이므로 "잡기 닫힘~들어올림 시작"을 따로 기다리지 않는다. 그리퍼가 닫히는 순간 자체는 설정 표의 grasp/release 전환 보류(1.0 s)와 결정 스텝 경계 규칙이 보호한다. 기다리는 동안에도 직전 확정 행동 유지 + 감속이며 정지가 아니다. 단계 수준 `irreversible`(Astra)과 M6 phase 수준 `annotations.irreversible_phases`(스킬 작성자)가 두 곳이다 → §7-4 [결정 필요]로 묶음(D2 B7).
 - **R4 낡음 표시**: Jev 조각에 `age`와 `assumptions: all_true` 또는 `<거짓 목록>`을 항상 적는다. 거짓 가정이 있으면 모든 Jev 질문의 `NONE_ESCALATE`가 자연스러운 선택이 되도록 보인다. Jev가 무시해도 코드가 **M7 소프트 채널 `C_assume`**을 올리고 동시에 M8에 재호출 요청 신호를 보낸다(00-interfaces §11.2). FAIL 판정은 M7만 한다(다른 소프트 채널과 겹치면 FAIL, 혼자면 WARN).
 - **R5 순서 뒤바뀜**: 늦게 보낸 요청의 답이 먼저 오면 `based_on_t_state`가 더 새 것만 받는다(Raft term 비유). 같은 기준 시각이면 나중 도착 것.
 - **R6 부분 갱신**: 재계획 때 Astra가 전체 계약 대신 `patch`(바꿀 단계만, `parent_version` 명시)를 낼 수 있다. 검사기는 patch 적용 결과를 전체 검사. 목적: Astra 출력 토큰·지연 감소(추론, 측정 필요).
-- **R7 실행 중 patch는 검사만** (00-interfaces §14-4): 실행 중 재계획으로 온 patch(또는 전체 계약)는 적용 결과에 검사기 1~6을 돌린다. 하나라도 실패하면 (i) patch를 **거부**한다. 활성 계약과 M4 `premise_epoch`는 그대로다. (ii) M7에 `contract_patch_rejected` 사건 신호를 보낸다. 어느 채널로 셀지는 M7이 정한다. 채널을 늘리지 않는다는 00 §14-2 방향에 따라 기존 소프트 채널 `C_assume`에 합치는 것을 제안한다([제안]). (iii) 로봇은 멈추지 않는다. 직전 확정 행동을 유지하며 현재 계약으로 계속 간다. 오류 문장은 로그와, M8이 정한 다음 Astra 호출의 입력에 싣는다. 이 patch를 고치려고 따로 왕복하지는 않는다.
+- **R7 실행 중 patch는 검사만** (00-interfaces §14-4): 실행 중 재계획으로 온 patch(또는 전체 계약)는 적용 결과에 검사기 1~6을 돌린다. 하나라도 실패하면 (i) patch를 **거부**한다. 활성 계약과 M4 `premise_epoch`는 그대로다. (ii) M7에 `contract_patch_rejected` 사건 신호를 보낸다. 이 사건은 M7 소프트 채널 **`C_assume`**로 센다(00 §15, 확정. 새 채널을 만들지 않는다). (iii) 로봇은 멈추지 않는다. 직전 확정 행동을 유지하며 현재 계약으로 계속 간다. 오류 문장은 로그와, M8이 정한 다음 Astra 호출의 입력에 싣는다. 이 patch를 고치려고 따로 왕복하지는 않는다.
 
 ### 4.3 대안
 - **대안 B (절차 포함형)**: 각 단계에 Astra의 절차 서술(`how`: "approach from the near side, lower slowly")을 Jev 조각에도 넣는다. COPE 결과의 반대 방향을 우리 데이터로 확인하는 조건.
@@ -179,7 +180,7 @@ recent committed: approach, approach, align(+x)
 - 7형식 DSL(§2.3 표)의 정책을 DFA로 컴파일한다. 정적으로는 그래프 × DFA 곱으로, 실행 중에는 사건열 위에서 **같은 DFA**로 검사한다.
 - 기초 문헌(기간 밖): 명세 패턴(Dwyer 외 1999)과 LTL → 오토마타 런타임 검증(Bauer 외 2011). 원문 미확인.
 
-우리 접목안
+우리 접목안 (잠정 기본: 근거의 주축이 기간 밖 기초 문헌이라 [결정 필요] 4 사용자 승인 전까지 잠정, 00 §16. 불허하면 `forbidden`은 술어별 감시로 두고 H5·`C_assume` 통일만 뺀다)
 - **허용 패턴**: `forbidden[].check`와 순서 제약은 Agentproof 7형식으로만 쓴다. Forbidden `G !p`, Implication-future `a -> F b`, Until `a U b`, Bounded response `a -> F[<=k] b`, Response chain, 그리고 이들의 Conjunction·Disjunction이다. 원자 명제는 M1 등록부 술어(인자 채움)와 단계 사건(`enter(S2)`, `exit(S1)`)뿐이다. `when`은 앞에 붙는 조건(`G(when -> ...)`)으로 컴파일한다. AgentSpec 모양 `{when, check, enforce}`는 그대로 둔다.
   - 예: `{"when": "always", "check": "G !touch(o8)", "enforce": "fail"}`, `{"when": "stage==S2", "check": "enter(release) -> F[<=2s] not holding(o3)", "enforce": "escalate"}`.
 - **컴파일**: 코드가 제약마다 DFA를 만든다. 게시 전에는 §4.1 검사기 6의 정적 곱 검사를 하고, 실행 중에는 10 Hz 틱마다 술어 전이 사건으로 DFA를 한 칸씩 진행한다.
@@ -243,7 +244,7 @@ recent committed: approach, approach, align(+x)
 5. 열린 질문: 재계획 때 patch 대 전체 계약 — Astra 출력 지연 측정 뒤 결정.
 6. 해소(00-interfaces §11.2, D2 B6): 계약 버전 교체 = M4 `premise_epoch` +1.
 7. 열린 질문: `custom_predicates` 허용 DSL의 범위(거리·각도·포함·접촉·속도). 너무 넓으면 검사·안전 문제, 너무 좁으면 Code-as-Monitor 이득을 잃는다.
-8. 해소(00-interfaces §14-4, D4 §14-4): 계약 정적 검사 실패 시 수리 왕복은 **T0에서만** 허용한다. 실행 중 재계획 patch는 검사만 하고, 실패하면 거부 + M7 신호를 보내며 로봇은 멈추지 않는다(R7). `forbidden`·순서 제약은 DFA로 컴파일해 H5·`C_assume` 감시를 통일한다(§4.4). 메인 세션의 잠정 결정(기술 선택)이며 E-M2-3으로 검증한다. 남은 [결정 필요: 메인 세션]은 `contract_patch_rejected`를 셀 M7 채널 하나다.
+8. 해소(00-interfaces §14-4, D4 §14-4): 계약 정적 검사 실패 시 수리 왕복은 **T0에서만** 허용한다. 실행 중 재계획 patch는 검사만 하고, 실패하면 거부 + M7 신호를 보내며 로봇은 멈추지 않는다(R7). `forbidden`·순서 제약은 DFA로 컴파일해 H5·`C_assume` 감시를 통일한다(§4.4). 메인 세션의 잠정 결정(기술 선택)이며 E-M2-3으로 검증한다. `contract_patch_rejected`는 `C_assume`로 센다(00 §15). DFA 형식 검증은 기간 밖 기초 문헌(명세 패턴·런타임 검증)에 기대므로 [결정 필요] 4 승인 전까지 잠정 기본이다(00 §16).
 
 ## 8. 확인 못 한 것
 - AgentSpec 본문 중 체화 과제 설정·규칙 예의 세부. 초록·§1·§3.2는 D2 검증이 대조(LLM 생성 규칙 정밀도 95.56%·재현율 70.96%).
