@@ -1,7 +1,8 @@
 """Harvest paper figures (style: CVPR/VLA papers such as OpenVLA, pi0 -- pastel rounded boxes,
 thin gray elbow arrows, numbered circles, minimal text, dashed system container, flat icons).
 Content comes only from docs/design (SUMMARY v3.4, 00-interfaces §7, §26, §27).
-Run:  PYTHONPATH=D:/tools/pylib python paper/figures/src/make_figs.py
+Run:  MPLCONFIGDIR=D:/tools/mplcache PYTHONPATH=D:/tools/pylib python paper/figures/src/make_figs.py
+      (D drive only: never let matplotlib write its cache to C:)
 """
 import os
 import numpy as np
@@ -193,8 +194,8 @@ def fig_overview():
     tag(ax, 2.54, 1.27, "M3·M6")
     rbox(ax, 3.90, 0.55, 1.05, 0.72, "rule", "확정 규칙", fs=9, sub="(a) 합의 + (b) 예상 대 측정", sfs=5.7)
     tag(ax, 3.97, 1.27, "M4")
-    rbox(ax, 5.15, 0.55, 0.78, 0.72, "skill", "스킬", fs=9.5, sub="100 Hz", sfs=6.3)
-    tag(ax, 5.22, 1.27, "M5")
+    rbox(ax, 5.15, 0.55, 0.78, 0.72, "skill", "스킬", fs=9.5, sub="100 Hz · 스무딩", sfs=6.1)
+    tag(ax, 5.28, 1.27, "M6·M5")
     rbox(ax, 5.15, 1.45, 0.78, 0.36, "crit", "코드 critic", fs=7.2)
     tag(ax, 5.22, 1.81, "M7")
 
@@ -277,7 +278,7 @@ def fig_m4():
     rbox(ax, dx, 1.72, 1.55, 0.30, "jev", "(a) 호출 사이 합의", fs=7.2)
     rbox(ax, dx, 1.28, 1.55, 0.30, "skill", "(b) 실행 뒤 예상 대 측정", fs=7.2)
     arr(ax, [(dx + 0.78, 1.72), (dx + 0.78, 1.58)])
-    outs = [("OK + 합의", "확정", "skill"), ("LAG", "유지", "gray"), ("DEVIATE", "교체", "fix"),
+    outs = [("OK + 합의", "확정", "skill"), ("LAG + 합의", "늦춰 확정", "gray"), ("DEVIATE", "교체", "fix"),
             ("CONTRADICT", "수리", "fix")]
     for k, (cond, act, kind) in enumerate(outs):
         yy = 1.06 - k * 0.22
