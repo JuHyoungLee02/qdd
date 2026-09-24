@@ -1,6 +1,7 @@
 # M10. 경험 축적 — 모듈 설계 (단계 2)
 
 > **정본 우선**: 모듈 사이 인터페이스·정지·확정 규칙·확률 게이트·시간 값은 `00-interfaces.md`가 우선한다(2026-09-23 22:00 UTC). 이 문서와 다르면 그쪽을 따른다.
+> 개정 2026-09-24 (정본 §26, 사용자 결정 user-log 25): Astra effort 고정값을 "기본 low"로(D5 해소, 옛 "잠정 기본 high"는 폐기). 논문 한 편(D29) → 첫 논문의 M10은 최소판(설계는 그대로).
 > 개정 2026-09-24 (정본 §22, D10a 반영): 교훈 항목에 `applies_when`, `symptom`, `evidence.cells`, `confidence`(RPent `manager.py` 규칙), `falsify`(반증 조건) 필드 추가(§4.1), Astra 주입은 probable 이상만([제안]), RPent와 다른 점 3개(플래너가 grep으로 스스로 검색 / 효용 추적·삭제 없음 / 평가 프롬프트에 seed-0 과제별 수치 하드코딩)와 차별 문장(§6), E-M10에 "과제별 trace 주입" 상한 조건 B11([제안]; 근거 Goal-S 메모리 없음 31.0 대 87.0, Flash 72.63%). 근거 `D10a-harness-capx.md` §1.1·§1.2·§2.2.
 > 개정: 2026-09-23 D5 반영 (00-interfaces §16): effort 표기를 "잠정 기본 high(다른 작업 발언 근거) — [결정 필요] 5"로.
 > 개정: 2026-09-23 정본 §14–§15 반영 (`00-interfaces.md` §14·§15, `D4-cross-field.md` §11, `D4-cross-field-verification.md` #17·#18·#19): CBR 4R의 Revise(적용·검증 뒤에만 Retain, Aamodt·Plaza 1994)를 센서 라벨 규칙의 **기초 문헌 근거**로 추가(새 기전 아님), **역량 보존 사례 삭제**(Smyth·Keane, IJCAI 1995)를 E-M10 조건 B10으로 추가, TLM(ICML 2025)·MemoPilot(ICML 2026)은 가중치 갱신·갱신기 학습이 필요해 **쓸 수 없음**으로 기록.
@@ -182,7 +183,7 @@ hint: at dp.release if contact_under(o3)=no -> avoid release_now
 
 ### 설정
 - 반복 과제 열: 단계 A(같은 물체 범주·장면 배치 변화, 에피소드 40) → 단계 B(새 물체 범주 또는 새 장면, 에피소드 40) → A 재평가 20(망각 측정). 시드 = 과제 순서·장면 배치, **≥ 3개(가능하면 5개), 평균 ± 표준편차**(2606.15017 권고).
-- 같은 M1·M6 계약·Jev 버전·Astra effort(고정, 잠정 기본 high(다른 작업 발언 근거) — 이 프로젝트 적용은 [결정 필요] 5, 00 §16).
+- 같은 M1·M6 계약·Jev 버전·Astra effort(고정, 기본 low — 정본 §26, user-log 25. 옛 "잠정 기본 high"는 폐기).
 
 ### 조건 (E-M10-1 주 비교)
 | id | 조건 |
