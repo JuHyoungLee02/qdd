@@ -3,7 +3,9 @@
   restore-test --seed 0 [--points 10] --out DIR      DEV seed: restore drift at 10 snapshot points (Step 1)
   pool --seeds 2000-2039 --out DIR --confirm-pool     POOL episodes (seed-determined P0/P1/P2), images + state
   check --out DIR                                     counts, intervals, oversampling, ambiguity, split
-  dev --seeds 0-29 --kinds P0,P1,P2 --out DIR         DEV episodes in the pool format (head cam), one folder per kind
+  dev --seeds 0-29 --kinds P0,P1,P2 --out DIR [--variant V] [--wrist]
+                                                      DEV episodes in the pool format (head cam; --wrist adds the
+                                                      right-wrist cam), one folder per kind
 
 Seeds: only DEV 0-29 and POOL 2000-2119 (snapshot.check_seed); TEST / TEST-P5 are refused before anything runs.
 Per POOL episode: ep<seed>.npz (full sim state of every continuous snapshot), ep<seed>.jsonl (one line per
@@ -571,6 +573,7 @@ def main():
     ap.add_argument("--out", default="/data/harvest/data/pool")
     ap.add_argument("--frames", action="store_true")
     ap.add_argument("--confirm-pool", action="store_true", help="POOL generation is gated until the scene is final")
+    ap.add_argument("--wrist", action="store_true", help="dev mode: also save the right-wrist cam (default head only)")
     ap.add_argument("--variant", default="standard", choices=["standard", "random", "dr"],
                     help="scene variant (randomize.py); pool mode refuses 'random' (TEST pool, never training)")
     a = ap.parse_args()
@@ -583,7 +586,9 @@ def main():
     if a.mode == "restore-test":
         restore_test(a.seed, a.points, a.out, a.frames)
     elif a.mode == "dev":
-        dev(_seeds(a.seeds), a.kinds.split(","), a.out, variant=a.variant)
+        from .sim.scene import RECORD_CAMERAS
+        dev(_seeds(a.seeds), a.kinds.split(","), a.out, cams=RECORD_CAMERAS if a.wrist else ("cam_head",),
+            variant=a.variant)
     else:
         seeds = _seeds(a.seeds)
         if any(s in S.POOL_SEEDS for s in seeds) and not a.confirm_pool:

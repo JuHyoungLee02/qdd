@@ -27,6 +27,24 @@ def cluster_mean_ci(values_by_cluster, n=10000, seed=0, level=0.95):
     return float(np.quantile(out, a)), float(np.quantile(out, 1 - a))
 
 
+def cluster_diff_ci(a_by_cluster, b_by_cluster, n=10000, seed=0, level=0.95):
+    """CI of mean(a) - mean(b) (item-weighted means) when a and b share cluster ids (e.g. the same episode under two
+    scene variants): each draw resamples cluster ids from the union once and uses them for both sides."""
+    keys = sorted(set(a_by_cluster) | set(b_by_cluster), key=repr)
+    sa = np.array([float(np.sum(a_by_cluster.get(k, []))) for k in keys])
+    ca = np.array([len(a_by_cluster.get(k, [])) for k in keys], float)
+    sb = np.array([float(np.sum(b_by_cluster.get(k, []))) for k in keys])
+    cb = np.array([len(b_by_cluster.get(k, [])) for k in keys], float)
+    rng = np.random.default_rng(seed)
+    out = []
+    for _ in range(n):
+        pick = rng.choice(len(keys), len(keys), replace=True)
+        na, nb = ca[pick].sum(), cb[pick].sum()
+        out.append(sa[pick].sum() / na - sb[pick].sum() / nb if na and nb else np.nan)  # empty side: draw dropped
+    a = (1 - level) / 2
+    return float(np.nanquantile(out, a)), float(np.nanquantile(out, 1 - a))
+
+
 def holm(pvals, alpha=0.05):
     items = sorted(pvals.items(), key=lambda kv: kv[1])
     m, res, stop = len(items), {}, False

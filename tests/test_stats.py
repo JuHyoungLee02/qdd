@@ -37,3 +37,19 @@ def test_cluster_mean_ci_equals_generic_bootstrap_of_the_mean():
     slow = cluster_bootstrap_ci(by, lambda v: float(np.mean(v)), n=500)
     fast = cluster_mean_ci(by, n=500)
     assert abs(slow[0] - fast[0]) < 1e-12 and abs(slow[1] - fast[1]) < 1e-12
+
+
+def test_cluster_diff_ci_joint_resampling():
+    from harvest.analysis.stats import cluster_diff_ci
+    a = {c: [1, 1] for c in range(10)}
+    b = {c: [0, 0] for c in range(10)}
+    assert cluster_diff_ci(a, b, n=200) == (1.0, 1.0)
+    assert cluster_diff_ci(a, a, n=200) == (0.0, 0.0)
+    # same clusters drawn for both sides: a cluster-level shared effect cancels in the difference
+    a2 = {c: [c % 2, 1] for c in range(10)}
+    b2 = {c: [c % 2, 0] for c in range(10)}
+    lo, hi = cluster_diff_ci(a2, b2, n=500)
+    assert abs(lo - 0.5) < 1e-12 and abs(hi - 0.5) < 1e-12
+    # clusters present on one side only still enter that side's mean (union of cluster ids)
+    lo, hi = cluster_diff_ci({0: [1], 1: [1]}, {0: [0], 2: [0]}, n=300)
+    assert lo == hi == 1.0
