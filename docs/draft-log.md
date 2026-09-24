@@ -392,3 +392,4 @@
 - 10:10 UTC user-log 47: Astra는 위층 계획기로 유지(사용자 선택) — 정본 §44 변경 없음.
 - 10:11 UTC user-log 48: Astra를 첫 계획 + 실패 때만 부르는 구조에 사용자 의문 → Gemini(Robotics) 계열의 상위 계획기 호출 방식(주기·트리거) 조사 D25 착수. M8 호출 규칙이 바뀔 수 있음.
 - 10:25 UTC D25 도착·저장. 메인 재확인: robotics-streaming 문서 하트비트·"1 Hz cadence … while waiting for each turn to complete"·"cancellation loop"·ack 원문, ER 2 모델 카드 "based on Gemini 3" 일치. "제미나이 3.0" 로봇 제품명은 없음(가장 가까운 것 = Gemini Robotics 2 계열, ER 2). 정본 §45 H-cadence(하트비트 N=5 s 잠정 + 단계 경계 + 사건, E-M8c로 N 확정). 교훈: 조사 에이전트가 웹 검색 한도 0에서 시작 — 1차 원문 직접 받기로 대체 가능.
+- 10:51 UTC user-log 49(사용자 동의): 인식 물체 이름은 Astra가 장면을 보고 계약에 적는다 → 정본 §46(`detect_phrase`, 검출 실패 시 하트비트 앞당김).
