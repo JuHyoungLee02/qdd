@@ -7,14 +7,14 @@ Pipeline per episode (pod, GPU):
   -> centroid_3d per object per frame -> stability (mm) + T1 predicates near/above -> flip_rate.
 
 Usage (pod):
-  CUDA_VISIBLE_DEVICES=1 python -m harvest.cli_e3st run --out /data/juhyoung_qdd/out/e3st
-  python -m harvest.cli_e3st aggregate --out /data/juhyoung_qdd/out/e3st
+  CUDA_VISIBLE_DEVICES=1 python -m harvest.cli_e3st run --out /data/harvest/out/e3st
+  python -m harvest.cli_e3st aggregate --out /data/harvest/out/e3st
 
 SAM 3.1 variant (text prompt -> dense video tracking, replaces Grounding DINO + SAM 2.1). FFS and SAM 3.1
 need different torch builds, so the disparities are cached first (venv_e3st), then segmented (venv_sam3):
-  python -m harvest.cli_e3st depth --depth-cache /data/juhyoung_qdd/out/e3st_disp            # venv_e3st
-  python -m harvest.cli_e3st run --seg sam31 --depth-cache /data/juhyoung_qdd/out/e3st_disp \
-      --out /data/juhyoung_qdd/out/e3st_sam31 --ref-out /data/juhyoung_qdd/out/e3st         # venv_sam3
+  python -m harvest.cli_e3st depth --depth-cache /data/harvest/out/e3st_disp            # venv_e3st
+  python -m harvest.cli_e3st run --seg sam31 --depth-cache /data/harvest/out/e3st_disp \
+      --out /data/harvest/out/e3st_sam31 --ref-out /data/harvest/out/e3st         # venv_sam3
 
 --fx (default 367 = ZED Mini VGA 672x376, HFOV 85 deg, canon §47; the first runs used 272.1 = 102 deg sensor-max
 figure, reproducible with --fx 272.1). --mask-cache stores the segmentation per episode, so a rerun with another
@@ -38,8 +38,8 @@ from harvest.stereo.pipeline import (
     stability,
 )
 
-MODELS = os.environ.get("E3ST_MODELS", "/data/juhyoung_qdd/models")
-SRC = os.environ.get("E3ST_SRC", "/data/juhyoung_qdd/src")
+MODELS = os.environ.get("E3ST_MODELS", "/data/harvest/models")
+SRC = os.environ.get("E3ST_SRC", "/data/harvest/src")
 FFS_CKPT = f"{MODELS}/ffs/weights/23-36-37/model_best_bp2_serialize.pth"
 SAM2_CKPT = f"{MODELS}/sam2/sam2.1_hiera_large.pt"
 SAM2_CFG = "configs/sam2.1/sam2.1_hiera_l.yaml"
@@ -575,7 +575,7 @@ def build_parser():
     sp = ap.add_subparsers(dest="cmd", required=True)
     for c in ("run", "aggregate", "depth"):
         p = sp.add_parser(c)
-        p.add_argument("--out", default="/data/juhyoung_qdd/out/e3st")
+        p.add_argument("--out", default="/data/harvest/out/e3st")
         p.add_argument("--root", default=DEFAULT_ROOT)
         p.add_argument("--max-frames", dest="max_frames", type=int, default=300)
         p.add_argument("--force", action="store_true")

@@ -412,7 +412,7 @@ def main():
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--seeds", default="")
     ap.add_argument("--points", type=int, default=10)
-    ap.add_argument("--out", default="/data/juhyoung_qdd/data/pool")
+    ap.add_argument("--out", default="/data/harvest/data/pool")
     ap.add_argument("--frames", action="store_true")
     ap.add_argument("--confirm-pool", action="store_true", help="POOL generation is gated until the scene is final")
     a = ap.parse_args()

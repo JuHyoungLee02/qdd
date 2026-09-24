@@ -89,4 +89,4 @@
 - (2026-09-23 v3 원문 확인) Astra는 effort `none`이 없어 logprob를 쓸 수 없다. effort 지연은 날마다 바뀐다(같은 날 직접 잰다).
 - Astra effort 기본은 **low**, 실험에서는 low와 high를 둘 다 비교한다(사용자 결정 2026-09-24, user-log 25: high는 첫 토큰 약 73초라 너무 느림). 다른 작업의 "effort 낮추지 말 것" 발언은 이 프로젝트에 적용하지 않는다.
 - Astra + Jev 계층 구조 자체는 이미 공개 담론이다(JEV-Star 2609.27331). 새로움은 M4 확정 규칙과 같은 인식 앞단 위 평가에서만 주장하고, M8·M6·M10은 부수 요소(M8 비교·M9·M10은 첫 논문에서 최소판, 정본 §26)로 둔다.
-- H200 파드(`juhyoung-native-7a2a` 등)에서는 **모든 파일을 `/data` 아래에만** 쓴다(user-log 45). 실행 전 `source /data/juhyoung_qdd/env.sh`(HF·torch·pip·matplotlib 캐시, TMPDIR, pyc를 `/data/juhyoung_qdd/` 아래로). 홈(`~/.cache`)·`/tmp`·`/root`에 쓰지 않는다.
+- H200 파드(`juhyoung-native-7a2a` 등)에서는 **모든 파일을 `/data` 아래에만** 쓴다(user-log 45). 실행 전 `source /data/harvest/env.sh`(HF·torch·pip·matplotlib 캐시, TMPDIR, pyc를 `/data/harvest/` 아래로). 홈(`~/.cache`)·`/tmp`·`/root`에 쓰지 않는다.

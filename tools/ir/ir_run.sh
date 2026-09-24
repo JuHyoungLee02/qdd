@@ -15,7 +15,7 @@ esac
 REPO=${IR_REPO:-/data/newproj/rep_v3test}
 NVLIBS=/data/juhyoung_infra/nvidia_libs
 INST=${IR_INST:-ir0}
-CACHE=/data/juhyoung_qdd/ir/kitcache/$IR_ROOT-$INST
+CACHE=/data/harvest/ir/kitcache/$IR_ROOT-$INST
 
 if [ "${_IR_INNER:-}" != "1" ]; then
   mkdir -p "$CACHE/cache" "$CACHE/data" "$CACHE/logs"

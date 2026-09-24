@@ -17,7 +17,7 @@ import numpy as np
 
 MODE = sys.argv[1]
 SIM_S = float(sys.argv[2]) if len(sys.argv) > 2 else 60.0
-OUT = "/data/juhyoung_qdd/ir/rtf"
+OUT = "/data/harvest/ir/rtf"
 CAM = MODE == "cam"
 
 t_boot0 = time.perf_counter()

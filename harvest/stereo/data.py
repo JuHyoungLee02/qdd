@@ -12,7 +12,7 @@ from typing import Iterator
 
 import numpy as np
 
-DEFAULT_ROOT = os.environ.get("E3ST_DATA", "/data/juhyoung_qdd/data/e3st")
+DEFAULT_ROOT = os.environ.get("E3ST_DATA", "/data/harvest/data/e3st")
 LEFT_KEY = "observation.images.cam_head"
 RIGHT_KEY = "observation.images.cam_head_right"
 

@@ -224,3 +224,7 @@
 
 50. 로봇 설정 = 챌린지 레포 그대로 (11:03 UTC 경)
     - "우손목캠 있음 https://github.com/kairobahq/humanoid-challenge-env 여기에 있는 로봇 설정 그대로 가져와서 복사해서 써보자"
+
+51. 파드 폴더 이름 (12:20 UTC 경)
+    - "필요한 큰거나 기본은 전부다 data 경로인건 알지? 쿠베의 h200의"
+    - "폴더 이름은 harvest 여야지"
