@@ -322,3 +322,16 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 ## 34. D35·D36 결정과 expert 역할 조사 (2026-09-24 07:03 UTC, user-log 35) [사용자 결정]
 - **D35 = 도메인 무작위화 넣는다.** 학습 실행기 데이터에 도메인 무작위화를 넣고, 같은 무작위화 데이터를 모든 학습 조건(B 실행기, B3c 등)에 똑같이 준다(§33 공정성). random 시험 장면은 여전히 학습에 쓰지 않는다.
 - **D36 = 주 표 실행기는 스크립트 스킬 S.** 단, 사용자 요청대로 action expert가 주 시스템 안에서 역할을 더할 방법을 찾는다 → 후보: (가) 스크립트 스킬 위 잔차 보정, (나) 실패 뒤 아래 층 복구(L1·L2) 담당, (다) 예상 상태·진행도 예측기로 M4 (b)·M7 보조, (라) Jev 보기 후보 생성. 근거 조사(D20) 뒤 §35에서 정한다.
+
+## 35. action expert 역할 = 구간 제한 잔차 R (2026-09-24 07:16 UTC, `D20-expert-role.md`, user-log 35·36)
+- **사용자 제약**: Jev는 "앞으로, 뒤로 좌우 몇 센티를 판단하는 역할"(user-log 36) — 방향과 크기 구간의 권위는 Jev에 있다. 주 표 실행기는 스크립트 스킬 S(§34).
+- **주 역할 = 구간 제한 잔차 R** (Claude 결정, 근거 D20):
+  - 선행: 잔차 학습은 베이스가 무엇이든 붙는다 — 손으로 설계한 제어기 위(Residual Policy Learning, 기간 밖 기초 문헌: "RPL consistently and substantially improves on the initial controllers"), BC 베이스 위(ResFiT 2509.19301, MED-HIGH: 실물 휴머노이드 "boosted the performance of the base model from 14% to 64%"), 물체 상태 입력 잔차(Object-Centric Residual RL 2606.18953, MED: sim→real "improves the success rate from 42% to 76% zero-shot", 이미지 입력 47/100 대 물체 자세 76/100, "the visual domain gap is the dominant sim-to-real barrier"), 힘 입력 잔차(CR-DAgger 2506.16685, NeurIPS 2025: "both the delta correction data and the force data are crucial"). 잔차는 제한해야 한다(Policy Decorator, 기간 밖 기초 문헌·ICLR 2025: "Bounded residual action is essential"; PLD 2511.00091, ICLR 2026: "bounded within a range of [−ξ, ξ]").
+  - 우리: S가 명령을 내고, R은 접근·접촉 근처(목표 5 cm 이내 또는 contact 술어 참)에서만 작은 병진 잔차를 더한다. 입력 = `skill_id`·`phase_id`, Jev 확정 방향 d̂·크기 구간 [m_lo, m_hi], S 명령, M1 대상 자세·불확실도, 관절·그리퍼·힘/토크, 짧은 이력(**이미지 없음** — 외관 변화는 M1을 거쳐서만 들어가 S와 같은 경로). **코드 투영으로 Jev 권위를 지킨다**: 누적 이동의 d̂ 성분은 [m_lo, m_hi] 안, 방향 반전 불가, 수직 성분 |r_⊥| ≤ ε_⊥(M1 위치 오차의 conformal 분위 [가정]), 마지막은 M5 L3 Ruckig. 원문의 제한은 학습 안정성용이고, Jev 권위 보호에 쓰는 것은 우리 접목이다.
+  - 데이터: 라벨 = 특권 시뮬 상태로 돌린 S 행동 − M1 추정 상태로 돌린 S 행동(투영 후) [접목]; standard + 도메인 무작위화(§34) + 섭동 + DAgger; 선택 2단계로 T1 phase-exit 술어를 희소 보상으로 한 잔차 RL(ResFiT·PLD식) [제안].
+  - 기록: `jev_choice`(권위값), ∫r, 포화 비율, R on/off. M4 (b)의 `ref(t)` = 투영 뒤 실제 명령, `expected_after`는 그대로.
+- **보조 역할 = 그림자 예측기**: 익스퍼트를 실행하지 않고 옆에서 돌려 진행도·phase 끝 확률·OOD 점수를 M7 소프트 채널 **후보**로 넣는다(SAFE·FIPER, NeurIPS 2025식 conformal 보정). 실행하지 않는 모델의 특징이 S 실패를 예측한다는 직접 선례는 없다 → [가정], E-M7 조건 D-AE로 **우리 시스템 내부 절제로만** 평가(Claude 결정: 교차 비교 표에는 넣지 않음). M4 (b)에는 넣지 않는다.
+- **흡수·제외**: 학습 복구 실행기(나)는 단독 채택하지 않는다 — "학습 복구가 스크립트 재시도를 이긴다"는 강한 근거가 없고(FAR 참고: 단순 재시도 +12.1%p, 학습 추가분 +4.3%p, MED-LOW), 복구의 "무엇을"은 Jev·Astra·M9가 정한다. 복구 동작 실행 때도 R이 같은 제한으로 켜진다. 후보 생성(라)은 Jev 역할을 바꾸므로 제외. 학습 추종 실행기(마)는 §33 B와 같고, 선행이 보인 "명령의 맥락 재해석"(Steerable Policies 2602.13193: "servos left towards an object, rather than moving left unconditionally")이 Jev 크기 권위를 넘을 위험이 있어 주 표에 넣지 않는다(E-AE-2의 B 표로만).
+- **공정성**: R은 실행기 부품이라 모든 결정 층 조건에 똑같이 붙인다. B3c가 연속 행동을 내면 같은 방향·크기 격자로 양자화해 R을 붙인다(Claude 결정). 주 표는 S, S+R은 병기 표·절제.
+- **실험**: E-R0 오프라인 라벨 포화율 / E-R1 결정 층 고정, 실행기 {S, S+R-state, S+R-crop, S+R-무제한} × {standard, random} 짝(성공률, 최종 정렬 오차 mm, 접촉 phase 성공률, Jev 권위 위반율, 포화율, jerk, FAIL·Astra 호출 수) / E-R2 오라클 결정 + {S, S+R} 낙폭 / E-R3 결정 층 {LLM, 규칙, B3c(양자화)} × {S, S+R} 상호작용 / E-R4 R 끔·켬 짝과 phase별 절제. S+R을 병기 표로 올리는 조건: standard 성공률 짝 차 95% 하한 > 0 그리고 RD(S+R) − RD(S) 95% 상한 ≤ +δ [가정].
+- 확인 못 한 것: 스크립트 베이스 위 2025–26 잔차 결과(기초 문헌뿐), 그림자 예측기 직접 선례, R 지연 실측.
