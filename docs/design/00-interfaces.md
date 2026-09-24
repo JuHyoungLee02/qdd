@@ -205,3 +205,13 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - M7 판정 기준 1~8의 재현율 = **고정 창 재현율(τ = 2 s)**. CheckVLA 원문판(d_lat = 실측 Astra 지연)은 병기 보고만 한다. 이유: Astra 지연이 날마다 크게 달라(첫 토큰 약 3~352 s, Artificial Analysis 기준 읽음, 2026-09-23) 사전 등록 기준으로 불안정. (D11 정정) 판정문과 지표 목록의 이름은 "고정 창 재현율(τ=2 s)"로 쓰고, "적시 재현율"은 CheckVLA 원문 정의에만 쓴다.
 - M7 대안 "A6 functional CP"는 **A-FCP**로 이름을 바꾼다(M8 E-M8a 조건 A6와 겹침). E-M7 조건 이름 D11은 그대로(→ 아래 D11 정정 줄에서 CD11로 바꿈).
 - (D11 정정, 2026-09-24) E-M7 조건 이름 **D1-CiL → CD1-CiL**, **D11(functional CP) → CD11**로 바꾼다. [결정 필요] D1(주장 문구)·D11(H = 1 대 3), `D1-verification.md`, `D11-final-consistency.md`와 이름이 겹쳤기 때문이다. 설계 문서(plan, SUMMARY, M1~M10, E-first, EVAL)는 새 이름을 쓴다. 옛 D 보고서 본문은 기록이라 그대로 둔다.
+
+## 24. D12 선점 재검사 반영 (2026-09-24 01:52 UTC, `D12-preemption-0901-0924.md`)
+- **C1·C2 강한 선점 없음**(2026-09-23 제출분까지). C2 문구의 색인 기준일을 "2026-09-23 제출분 기준"으로 갱신.
+- **계층은 새로움이 아니다**: JEV-Star(2609.27331)가 "fast JEV action selection" + GPT-6 Astra(medium effort) 비동기 계획을 StarCraft II에서 먼저 했다(게임은 요청 중에도 진행, 계획 실패·지연 시 이전 계획 유지, 계획기는 60 게임초 주기 + 사건 호출, JEV는 초당 1회 제한). **반드시 인용**하고, 우리 차이는 "로봇 실행 중 **실패 판정이 불러내는** Astra 호출 + 겹침 호출 합의와 실행 뒤 확인(M4)"으로만 쓴다. 사용자 원칙("실패할 때마다 Astra 개입")은 그대로.
+- **M4 차별화 문장 보강**: A3 옆에 WCD(2609.02159: 실행 뒤 예측-실제 불일치를 **다음 후보 선택 예측기 학습**에 씀, 같은 시각 샘플)와 SMC(2609.03236: 두 모델 일치로 확정, 비로봇)를 인용. 우리는 실행 뒤 불일치를 합의 원장의 **전제 무효화·확정 판정**에 쓴다. 전제 epoch 설명에 RegenHarness(2609.27612) stale/version-bound 선례 인용. "실행 뒤 확인 자체"의 선례 목록에 EmbodiedSkills(2609.01281) 추가.
+- **(a)만으로는 부족 → (b)가 필요하다는 근거**(반대 증거를 동기로): Type-Safe Is Not Error-Free(2609.26758) — 보기 이름을 0/1 → no/yes로 바꾸면 100개당 70.4개 답이 바뀌고 AUC .94 → .23, hosted 모델도 .8146 → .5806, type-error 0% 유지. 보기 이름에서 오는 체계적 오류는 반복 호출 합의로 걸러지지 않는다. PACT(2609.01662, 08-31 제출 → 기간 안): "Repeated inference over one observation can improve predictions without adding an evidential origin" → 우리 합의는 시간차 관측·실행 뒤 측정이라 증거 출처가 늘어나는 합의라는 차별점.
+- **E0.5 추가**: (i) 보기 이름 치환 대조(의미 있는 이름 대 중립 식별자, 같은 루브릭), (ii) 같은 입력 반복 test-retest flip 바닥. 판정: 치환 flip이 test-retest 바닥보다 크면 M3/M6 보기 이름 규칙을 바꿀 근거.
+- 새 [결정 필요](사용자): (가) Jev 보기를 중립 식별자로 바꾸고 뜻은 루브릭에 적는 규칙을 기본으로 둘지(E0.5 (i) 결과 전/후), (나) M8 비교 조건에 JEV-Star식 주기 + 사건 호출과 REFLEX(2609.26532)식 확신 기반 올려 보내기를 넣을지, (다) this-that-model-1.0(2609.23886, 2B 오픈 typed 결정 모델, [초록만])을 Jev 로컬 기준선 후보로 둘지.
+- 한계 문장: RoboTwin-Phys(2609.26292, [초록만]) "degrade markedly under changes in physical conditions" → 우리 random 조건(시각·배치)만으로는 일반화를 다 못 잰다는 한계를 EVAL에 적는다.
+- 관련 연구 한 줄 후보: VLM-MPPI(2609.18451, 비동기 VLM 후보 선택 + 20 Hz MPPI 비정지), 2609.26084(비동기 VLM copilot, [초록만]), C²Nav(2609.15142, 비교형 질문 > 절댓값형, [초록만]), RoboFind(2609.20330, 검증 다중 에이전트 10/12 대 Astra 단독 5/12, [초록만]), GTA-2(2609.09808, [초록만]).
