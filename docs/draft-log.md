@@ -390,3 +390,4 @@
 - 09:44 UTC 사용자(user-log 46): Jev 사용 불가 확인 + 텍스트 기반 API 자체가 부족할 수 있음 → Jev 대체 방법 조사. 방향 검사 전제 실패로 처리(direction-log), Jev 의존 과제 동결, 대체 조사 D24 착수 + Sol/Luna logprob·이미지·지연 사전 시험(소수 호출). 대체가 정해지면 정본 새 절과 계획 재작성(DC0부터).
 - 09:55 UTC D24 도착·저장. 메인 재확인: Qwen3-VL-8B-Instruct HF 200(2025-10-11, 좋아요 1,143, 비게이트), vLLM batch_invariance 문서 `VLLM_BATCH_INVARIANT` 원문, vLLM 92,596★, Claude logprobs "Ignored"/"Always empty" 인용 확인. 정본 §44: Jev-L(로컬 Qwen3-VL typed 선택기) 1순위, Luna 하이브리드 2순위, 사전 시험으로 확정. 사용자 결정 대기 2건(시뮬 손목캠, 실물 추론 위치). 교훈: 조사 에이전트 웹 검색 한도(200회)가 소진될 수 있다 — 범위를 좁혀 주거나 둘로 나눌 것.
 - 10:10 UTC user-log 47: Astra는 위층 계획기로 유지(사용자 선택) — 정본 §44 변경 없음.
+- 10:11 UTC user-log 48: Astra를 첫 계획 + 실패 때만 부르는 구조에 사용자 의문 → Gemini(Robotics) 계열의 상위 계획기 호출 방식(주기·트리거) 조사 D25 착수. M8 호출 규칙이 바뀔 수 있음.
