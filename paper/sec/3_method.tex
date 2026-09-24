@@ -9,7 +9,7 @@
 
 \subsection{M1 이미지 $\rightarrow$ Jev}
 \begin{itemize}
-  \item \intent{Jev는 이미지를 못 봄. AI 전 분야에서 가장 효율적인 변환을 가져옴}
+  \item \intent{Jev는 이미지를 못 본다. LLM/VLM/VLA 논문뿐 아니라 텍스트와 이미지를 제대로 변환하는 다른 분야 연구에서 가장 효율적인 방법을 찾는다.}
   \item \idea{형식보다 내용. 작업 관련 물체만 + 코드가 계산한 관계·술어}
   \item \chg{``텍스트가 이미지보다 낫다''의 근거(BALROG)는 모델마다 다름. 근거에서 내림}
   \item \decide{변환 방법, 인식 앞단}
@@ -17,16 +17,16 @@
 
 \subsection{M2 Astra $\rightarrow$ Jev}
 \begin{itemize}
-  \item \intent{M1과 거의 같은 문제. Astra는 이미지를 보고 명령하지만 Jev는 못 보니, 효율적으로 전달하는 방법을 더 생각함}
-  \item \idea{물체 번호로 말하게 함(텍스트판 Set-of-Mark). 제약은 Astra가 코드로 쓰고 Jev에는 참/거짓만}
+  \item \intent{1번과 거의 같은 문제다. Astra는 이미지를 보고 명령하지만 Jev는 아니니, 효율적으로 전달하는 방법을 더 생각한다.}
+  \item \idea{(``1번'' = M1) 물체 번호로 말하게 함(텍스트판 Set-of-Mark, 기간 밖, 기초 문헌). 제약은 Astra가 코드로 쓰고 Jev에는 참/거짓만}
   \item \idea{작은 모델에겐 ``어떻게''보다 ``무엇을''(목표형)이 나음. 계획이 본 시각·금지 조건·단계 ID 칸 추가}
 \end{itemize}
 
 \subsection{M3 행동}
 \begin{itemize}
-  \item \intent{촘촘하게 가도 됨. Jev 방식이면 충분히 가능하다고 봄}
+  \item \intent{촘촘하게 가도 된다. Jev 방식이면 충분히 가능하고 할 만하다고 본다.}
   \item \chg{``확률 평균으로 크기''는 Jev 공식 문서가 금지 $\rightarrow$ 이름 붙은 구간을 고름}
-  \item \idea{보기 255개 한 번이면 충분할 수 있음(해상도 250 대 1000 차이 작음)}
+  \item \chg{``보기 255개 한 번이면 충분'' 폐기 $\rightarrow$ 질문당 서로 뚜렷한 보기 $\le$ 약 17개. D255는 비교 조건만}
   \item \idea{반대 증거 있음: 학습 없는 모델은 잘게 여러 번 움직이기보다 목표 지점을 한 번에 가리킬 때 훨씬 잘함(드론 40\%$\rightarrow$100\%, GUI 반복 이동 붕괴)}
   \item \dirn{``목표 지정형''(Jev가 목표 물체·부분을 고르고 크기는 코드)을 원안 옆에 나란히 재 봄. \decide{기본안}}
   \item \idea{RoboDawn(Astra가 cm 숫자로 로봇 조종)에서 성능을 가장 움직인 건 격자 같은 공간 근거(빼면 47$\rightarrow$32\%)와 결정 횟수 $\rightarrow$ 촘촘함은 결정 빈도·공간 근거로 살림. 저자도 ``이산 명령은 미세 보정에 거칠다''고 함 $\rightarrow$ 접촉 근처 미세 조정}
@@ -35,55 +35,61 @@
 
 \subsection{M4 RTC식 겹침 호출 (가장 중요)}
 \begin{itemize}
-  \item \intent{Jev가 빠르다지만 로봇 동작에서는 빠르지 않음. 연속 동작처럼 내뱉게 하는 법을 RTC에서 많이 참고~\cite{black2025rtc}. 1초에 한 번이 아니라 여러 번(예: 3번) 계단식으로 겹쳐 호출}
-  \item \intent{겹친 부분의 움직임이 제대로 반영됐는지 스스로 감지하고 업데이트하는 시스템이 자동으로 반드시 있어야 함. 굉장히 중요}
+  \item \intent{1초에 Jev를 한 번이 아니라 3번 정도 계단식으로 겹쳐 쓴다.}
+  \item \intent{겹치는 부분의 움직임이 제대로 반영됐는지 스스로 감지하고 업데이트하는 시스템이 자동으로 있어야 한다. 이게 굉장히 중요하다.}
+  \item \intent{Jev가 빠르다지만 로봇 동작에서는 빠르지 않으니, 연속 동작처럼 내뱉게 하는 법을 RTC에서 많이 참고한다.}
+  \item \idea{RTC~\cite{black2025rtc}의 고정·중간·끝 구간을 이산판으로 가져옴(아래 방향 줄)}
   \item \idea{확인을 둘로 나눔: (a) 호출끼리 같은 말을 하나(앞부분 합의) (b) 실제로 그렇게 움직였나(예상 상태 대 측정 상태, 코드)}
   \item \idea{(a)만으론 안 됨. 같은 모델은 같은 오답을 반복}
   \item \idea{가장 가까운 선행 A3 저자가 스스로 ``정책 내부 신호만으론 자신 있게 틀린 예측을 못 잡는다, 외부 증거가 향후 과제''라고 씀 $\rightarrow$ 우리 (b)가 바로 그 자리}
-  \item \chg{``안 멈추고 겹쳐 보내기''는 선행 있음(Slow Brain~\cite{slowbrain2026}: 최신 답만 씀, Jev 데모: 요청 하나 + 직전 행동 유지) $\rightarrow$ 새로움은 (a)+(b)로 확정하는 규칙뿐}
-  \item \dirn{실험(E2a와 같은 시드, 첫 칸은 요청 하나 대 (a)+(b)): 멈춤 / 요청 하나 / 겹침+최신 답 / 겹침+감쇠 융합 / (a)만 / (a)만의 베이즈 정지판 / 보기 순서 돌리기 / (b)만 / (b) 범주를 Jev에 안 줌 / (a)+(b) / 겹침 끔(측정용). 핵심은 (a)+(b) 대 겹침+최신 답}
+  \item \chg{``안 멈추고 겹쳐 보내기''는 선행 있음(Slow Brain~\cite{slowbrain2026}: VLM Stream = 최신 답만, Probability Fusion = 최신 답 + 빠른 층 점수 감쇠 융합. Jev 데모: 요청 하나 + 직전 행동 유지). 합의로 앞 구간 확정도 A3가 먼저 함 $\rightarrow$ 새로움은 시간차 호출 합의 + (b) 결합으로 전제 무효화·keep/replace/repair}
+  \item \dirn{E-M4 조건(E2a와 같은 시드): C0 멈춤 / C1 요청 하나 / C2 Slow Brain VLM Stream / C2' Slow Brain Probability Fusion(원문판) / C2'' 우리 변형(표 나이 감쇠 가중 최빈) / C5-A3(같은 시각 여러 샘플 합의만, (b) 없음) / C-FIX(합의 없이 앞 $k$ 스텝 고정 확정, $k$ 격자 탐색) / C3 (a)만 / C3' 베이즈 정지 / C3'' 보기 순서 돌리기 / C4 (b)만 / C5 (a)+(b) / C5' (b) 범주를 Jev에 안 줌 / C6 겹침 끔(측정용)}
+  \item \dirn{핵심 비교: C5 대 C2·C2', C5 대 C5-A3, C5 대 C-FIX. 추가 E-M4-lat: 인공 지연 p95 0.3/0.8/2/5초 스윕}
   \item \chg{VLASH~\cite{vlash2025}·A2C2~\cite{a2c2}는 학습형이라 발상만. A2C2는 ICLR 탈락}
   \item \dirn{RTC 3구간의 이산판: 고정(길이 = 실측 Jev p95) / 중간(바꾸려면 합의가 필요하고, 고정 경계에 가까울수록 문턱이 엄격 --- 가중 평균은 안 씀) / 끝(가장 새 표를 가확정)}
 \end{itemize}
 
 \subsection{M5 스무딩}
 \begin{itemize}
-  \item \intent{두 단계: 먼저 RTC와 비슷한 방법, 다음으로 아주 작은 움직임은 액션 스무딩 등 VLA에서 쓰는 방법으로 부드럽게}
+  \item \intent{두 단계: 먼저 RTC와 유사한 방법, 다음으로 액션 스무딩이나 VLA에서 쓰는 부드럽게 하는 방법으로 아주 작은 움직임을 처리한다.}
   \item \idea{겹침 평균은 정밀 작업 성공률을 깎음 $\rightarrow$ 같은 보기끼리만 RTC식으로 섞고, 보기가 바뀌면 섞지 않고 관성화(접촉 근처 끔), 마지막에 저크 제한(Ruckig, 잠정). LiPo~\cite{lipo2025}는 비교}
 \end{itemize}
 
 \subsection{M6 스킬 $\leftrightarrow$ Jev}
 \begin{itemize}
-  \item \intent{기존 스킬도 Jev와 엄청 연관될수록 좋음. LLM이 스킬을 불러오고 끝이 아니라 잘게 엮은 방식. 1년 이내 GitHub 스타 상위 5개를 참고해 파이프라인을 대충 짜 봄}
+  \item \intent{기존 스킬도 Jev와 엄청 연관될수록 좋다.}
+  \item \intent{1년 이내에 나온 GitHub 스타 상위 5개 중에서, LLM이 스킬을 불러오고 끝이 아니라 잘게 엮어 놓은 논문을 참고해 파이프라인을 대충 짜 본다.}
   \item \idea{스타 상위: PhyAgentOS, Zetta, Harness VLA, CaP-X, ROSClaw(또는 Show-Harness)}
   \item \idea{스타 1위는 거칠게 엮음. 잘게 엮는 쪽은 Zetta~\cite{zetta2026}(런타임 critic은 코드. LLM 승인자가 온라인인지는 원문이 엇갈림)와 Show-Harness}
   \item \dirn{(09-24) Harness VLA~\cite{harnessvla2026} 코드에서: 스킬 성공 여부 한 비트는 틀림(``성공=거짓이어도 영상상 들고 있으면 계속''이 실제 교훈) $\rightarrow$ 스킬 출력에 원자료 진단값(들어올린 높이·그리퍼 간격 등)을 필수로. 결정 지점 후보(자세 잡기·지금 호출·청크 예산·재시도 문장·잡힘 확인)는 원문 탐색 레버에서 가져옴}
   \item \idea{CaP-X~\cite{fu2026capx}의 생성 스킬 9개는 거의 좌표 계산 함수, 조건·자동 검증 없음 $\rightarrow$ 생성 스킬(b)엔 계약 + 실행 기반 검증을 붙임. 사람이 만든 높은 단계 API일수록 성공률이 오름 $\rightarrow$ ``무엇 위에서 생성하나''를 실험 축으로}
   \item \idea{Harness VLA 저자 스스로 ``계획기와 하위 사이 루프가 열려 있다''고 함 $\rightarrow$ 우리 M4/M7 자리}
-  \item \idea{상위 6편은 상위 모델 결정 중 로봇이 기다리거나 상위 모델이 루프 밖. 다만 안 멈추고 겹쳐 부르는 것 자체는 Slow Brain~\cite{slowbrain2026}·Jev 데모에 있음 $\rightarrow$ 우리 자리는 겹친 답을 확정하는 규칙(M4)과 스킬 안 결정 지점(M6)}
+  \item \idea{상위 6편은 상위 모델 결정 중 로봇이 기다리거나 상위 모델이 루프 밖. 다만 안 멈추고 겹쳐 부르는 것 자체는 Slow Brain~\cite{slowbrain2026}·Jev 데모에 있음 $\rightarrow$ 우리 자리는 시간차 호출 합의 + 실행 뒤 예상 대 측정을 결합한 확정 규칙(M4, 합의 확정 자체는 A3에 있음)과 스킬 안 결정 지점(M6)}
   \item \dirn{대략 파이프라인: Astra가 ``세션 계약''(단계 원장·스킬·결정 지점·critic 규칙) $\rightarrow$ Jev 3Hz 겹침 결정 $\rightarrow$ 스킬 100Hz $\rightarrow$ 코드 critic $\rightarrow$ 복구 사다리 $\rightarrow$ 검증된 것만 기억}
   \item \decide{5위 ROSClaw 대 Show-Harness}
 \end{itemize}
 
 \subsection{M7 진행 판별}
 \begin{itemize}
-  \item \intent{프레임별로 확인해서 Astra의 계획대로 되는지 판별. VLA에서 ``계획대로''를 무엇으로 정의했는지 많이 참고(VLA는 로봇을 학술적으로 조종하는 개념 공부를 많이 해 둠)}
-  \item \idea{v2 그대로(센서·술어, 남은 시간). 시간 임계값은 SAFE~\cite{safe2025} 방식, 가끔 Astra로 GVL~\cite{gvl2024}}
+  \item \intent{프레임별로 확인해서 Astra의 계획대로 되고 있는지 판별한다.}
+  \item \intent{VLA에서 ``계획대로''를 무엇으로 정의했는지 많이 참고한다. VLA는 로봇을 학술적으로 조종하는 개념 공부를 많이 해 놓았다.}
+  \item \idea{v2 그대로(센서·술어, 남은 시간). 시간 임계값은 SAFE~\cite{safe2025} 방식, 가끔 Astra로 GVL~\cite{gvl2024}(기간 밖, 기초 문헌)}
   \item \idea{실패 판정은 코드 critic 한 곳에서만(정체 규칙·마감 초과·겹침 불일치·Jev 진행 범주를 모아서)}
   \item \chg{$\pi^*_{0.6}$·$\pi_{0.7}$의 진행 정의는 학습 신호일 뿐, 실행 중 판정엔 안 씀 $\rightarrow$ 술어+남은 시간 유지}
   \item \chg{(09-24) ``적시 재현율''을 CheckVLA~\cite{checkvla2026} 방식이라 적었던 건 틀림 $\rightarrow$ 원문은 되돌릴 수 없는 시점 기준. 우리 고정 창(2초)판과 원문판을 같이 잼. 오경보는 에피소드 단위}
+  \item \dirn{판정 기준은 고정 창 재현율($\tau = 2$ s)로 읽음. CheckVLA 원문판은 병기 보고만(Astra 지연이 날마다 크게 달라 사전 등록 기준으로 불안정)}
   \item \dirn{정체 규칙 원문판(Critic in the Loop~\cite{criticloop2026}: 진행 최고점이 약 9초 갱신 안 되면) 비교 조건 추가, 우리 2초와 스윕}
 \end{itemize}
 
 \subsection{M8 Astra 호출}
 \begin{itemize}
-  \item \intent{적어도 실패 판정이 났을 때는 부름. 그 순간 한 장이 아니라 연속 프레임(예: 한 이미지에 10개)}
-  \item \intent{비교: 일정 주기 / 정한 순간 / ``이때쯤 나왔어야 하는데''}
-  \item \intent{처음 계획할 때는 멈추는 게 맞지만, 그 이후로는 웬만하면 멈추지 않음. 실패해서 다시 생각해야 할 때만 예외}
+  \item \intent{적어도 실패 판정이 났을 때는 Astra를 부른다. 그 순간 한 장이 아니라 연속 프레임을 준다. 예: 이미지 하나에 사진 10개.}
+  \item \intent{호출 방식은 비교 평가한다: Hz 단위 주기 / 정해 둔 필요한 순간마다 / ``이때쯤 결과가 나왔어야 하는데 안 나오네''라는 자체 판단.}
+  \item \intent{Astra가 처음 생각할 때는 멈추는 게 맞지만, 그 이후는 웬만하면 멈추지 않는다. 실패로 생각해야 하는 경우만 어쩔 수 없다.}
   \item \idea{``이때쯤 나왔어야 하는데''의 구현 두 가지를 비교: 코드가 예상 시간으로 마감 계산 / 모델이 경과 시간 보고 스스로 판단 \decide{}}
   \item \chg{v3에서 기본값을 개별 이미지로 바꿨던 것 되돌림 $\rightarrow$ 사용자 예시(격자 한 장에 10프레임)가 기본 조건, 개별 이미지·변화 텍스트는 비교 조건~\cite{kite2026}}
   \item \chg{effort low 기본안 삭제. effort 잠정 기본 high(다른 작업 발언 ``추론 강도 낮추지 말 것'' 근거). low·medium은 측정 조건만. 실험 축은 low--max}
-  \item \idea{effort는 성공률보다 결정 수·시간을 바꿈(Show-Harness 스텝 37$\rightarrow$30). 지표에 결정 수 추가. 단 Astra low로 강한 결과도 있음(Harness VLA) $\rightarrow$ \decide{잠정 기본 high를 이 프로젝트에 적용할지(결정 필요 5)}}
+  \item \idea{effort는 성공률보다 결정 수·시간을 바꿈(Show-Harness 스텝 37$\rightarrow$30). 지표에 결정 수 추가. 단 RPent Astra low 92.63\%라는 강한 값도 있음(논문 아닌 저장소 리더보드 값, 에피소드당 약 7분 멈춰서 생각) $\rightarrow$ \decide{잠정 기본 high를 이 프로젝트에 적용할지(결정 필요 5)}}
   \item \dirn{프레임 비교에 ``무엇이 바뀌었는지 텍스트'' 조건 추가(CaP-X에서 원시 이미지보다 나음)}
   \item \dirn{(09-24) 비교 기준을 원문 그대로: 호출 수 맞춘 주기(CheckVLA), 정체 때 멈추고 부르는 판(Critic in the Loop). ``실패 트리거를 다음 주기까지 미루기''는 절제로만 --- 사용자 원칙은 그대로}
   \item \idea{반대 증거: CheckVLA는 지연 1초에서 이미 ``다음 경계까지 기다림''이 청크 안 수리보다 나았음. Astra는 훨씬 느림 $\rightarrow$ 그동안 아래 층이 버텨야 함(M9)}
@@ -91,7 +97,8 @@
 
 \subsection{M9 실패 복구}
 \begin{itemize}
-  \item \intent{VLA에서 가장 좋은 실패 복구 방법을 찾음. 논문은 무조건 1년 반 이내. VLA에서 실패했을 때 어떻게 되돌아갈지 정하는 프레임워크를 참고}
+  \item \intent{VLA에서 가장 좋은 실패 복구 방법을 찾는다. 논문은 무조건 1년 반 이내.}
+  \item \intent{VLA에서 실패했을 때 어떻게 되돌아갈지 정하는 프레임워크를 참고한다.}
   \item \chg{v3의 ``Astra는 맨 마지막'' 폐기 $\rightarrow$ 실패 판정 순간 Astra를 비동기로 바로 부르고, 기다리는 동안 아래 층(스킬 재시도 $\rightarrow$ Jev 선택)이 로봇을 움직임}
   \item \chg{FLARE~\cite{flare2026}는 자세 오류/환경 파괴 구분만 가져옴(재시도는 학습형이었음)}
   \item \dirn{복구 = 언제 / 어디로 / 무엇을 남길지. 어디로 = 사전조건이 다 참인 가장 늦은 체크포인트. Jev가 코드가 낸 복구 제안 \{아래 층 결과 인정, 체크포인트 재개, 리셋, 안전 대기, 모르겠음(올림)\} 중 고름(FAIL은 뒤집지 못함). Astra는 실패 순간 이미 비동기로 불려 있음 (로봇 FaRe, LLM RIR이 같은 달 같은 분해)}
@@ -102,7 +109,8 @@
 
 \subsection{M10 경험 축적}
 \begin{itemize}
-  \item \intent{경험 축적이 제대로 되어야 함. API로 불러오는 모델의 경험 축적을 어떻게 해야 효율적인지 1년 반 이내 논문에서 찾음}
+  \item \intent{경험 축적이 제대로 되어야 한다.}
+  \item \intent{API로 불러오는 모델의 경험 축적을 어떻게 하는지, 어떻게 해야 효율적인지 논문을 찾는다. 1년 반 이내.}
   \item \idea{Astra: 단순 경험 검색 + 교훈~\cite{ouyang2025reasoningbank,zhang2025ace}. Jev: 교훈 목록 말고 딱 맞는 규칙 0--2개만~\cite{memcompiler2026}}
   \item \chg{``메모리 없는 게 낫다''는 반대 논문이 실재~\cite{budget2026memory} $\rightarrow$ 같은 예산 비교 필수}
   \item \dirn{(09-24) 교훈 항목에 적용 조건·증상·증거 수·신뢰도·``반증 조건'' 칸 추가(RPent 메모리 형식). 여러 셀에서 확인된 것만 Astra에 넣는 안}

@@ -2,10 +2,10 @@
 \label{sec:experiments}
 
 \begin{itemize}
-  \item \intent{비교: Astra만 / Jev만 / VLA / 룰베이스(스킬 다발) / LLM+스킬 기존 논문 / Astra 쓰는 기존 논문}
+  \item 평가 비교 대상: \intent{Astra만 / Jev만 / VLA / 룰베이스(스킬 다발) / LLM+스킬을 연결한 기존 논문 / Astra를 쓰는 기존 논문}
   \item \idea{``Astra 쓰는 기존 논문''이 이제 있음~\cite{agp2026,harnessvla2026} $\rightarrow$ 재현 가능한 것 선택}
   \item \idea{AGNOSTOS~\cite{agnostos2025}의 LLM 방법은 정답 좌표를 받음 $\rightarrow$ 정답 상태 / 인식 상태 두 조건}
-  \item \idea{VLA가 장면 바뀌면 무너지는 건 강한 근거 있음: RoboDojo에서 $\pi_{0.5}$ 20.92$\rightarrow$5.82 ($-$72\%)}
+  \item \idea{과제 데이터로 미세조정한 학습 정책(VLA 포함)이 장면 바뀌면 무너지는 건 강한 근거 있음: RoboDojo에서 $\pi_{0.5}$ 20.92$\rightarrow$5.82 ($-$72\%)}
   \item \chg{공개 원자료로 직접 계산해 보니 Astra는 같은 변화에서 35.3$\rightarrow$31.4 ($-$11\%)만 떨어짐. $\pi_{0.5}$는 $-$72\%. 사용자 주장의 첫 정량 근거. 단 조건이 달라 예비(레시피 정보, 1 seed, 인식 조건)}
   \item \dirn{가장 깨끗한 비교: 같은 인식 상태 위에서 ``학습한 결정 층'' 대 ``LLM 결정 층''}
   \item \idea{같은 Astra가 RoboDojo에서 22.6\%(자체 평가) 대 35.7\%(RoboDawn 하네스) $\rightarrow$ 인터페이스가 점수를 크게 바꾼다. 그래서 앞단을 같게 맞춰야 공정}
