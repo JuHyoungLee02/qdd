@@ -42,6 +42,16 @@ def _cm(x: float) -> int:
     return int(round(x * 100))
 
 
+def _fmt(x: float, step_cm: float, sign: bool = False) -> str:
+    """x [m] on a step_cm grid; step 1 prints integers (the E3-lite S1 format), finer steps one decimal (0.5 cm,
+    1 mm) or two (below 1 mm)."""
+    if step_cm == 1:
+        return f"{_cm(x):+d}" if sign else f"{_cm(x)}"
+    v = round(x * 100 / step_cm) * step_cm
+    nd = 1 if step_cm >= 0.1 else 2
+    return f"{v:+.{nd}f}" if sign else f"{v:.{nd}f}"
+
+
 def _geom(state):
     raw = state["obs"]["raw"]
     g = np.asarray(raw["grip"]["pos"], float)
@@ -49,12 +59,17 @@ def _geom(state):
     return g, {k: np.asarray(raw["objs"][k]["pos"], float) - g for k in ids}
 
 
-def geometry_block(state, bins: bool = False, names=SPEC_NAMES) -> str:
+def geometry_block(state, bins: bool = False, names=SPEC_NAMES, step_cm: float = 1) -> str:
+    """step_cm: print grid (1 = the E3-lite S1 format; labels_v2.md allows a finer grid if its gate fails)."""
     g, rel = _geom(state)
-    lines = [FRAME_LINE, f"  gripper: x={_cm(g[0])} y={_cm(g[1])} z={_cm(g[2])} (z = height above the table top)"]
+
+    def f(x, sign=False):
+        return _fmt(x, step_cm, sign)
+
+    lines = [FRAME_LINE, f"  gripper: x={f(g[0])} y={f(g[1])} z={f(g[2])} (z = height above the table top)"]
     for k, d in rel.items():
-        s = f"  {k} {names.get(k, k)}: dx={_cm(d[0]):+d} dy={_cm(d[1]):+d} dz={_cm(d[2]):+d} " \
-            f"dist={_cm(float(np.linalg.norm(d)))}"
+        s = f"  {k} {names.get(k, k)}: dx={f(d[0], True)} dy={f(d[1], True)} dz={f(d[2], True)} " \
+            f"dist={f(float(np.linalg.norm(d)))}"
         if bins:
             sg = lambda v: "-" if v < 0 else "+"
             s += (f" bins: dx={sg(d[0])}{mag_bin(abs(d[0]))} dy={sg(d[1])}{mag_bin(abs(d[1]))} "
@@ -63,17 +78,22 @@ def geometry_block(state, bins: bool = False, names=SPEC_NAMES) -> str:
     return "\n".join(lines)
 
 
-def state_text(line, S: str) -> str:
+def state_text(line, S: str, step_cm: float = 1) -> str:
     if S == "S0":
         return line["text_state"]
     if S not in ("S1", "S2"):
         raise ValueError(S)
-    return line["text_state"] + "\n" + geometry_block(line["state"], bins=S == "S2")
+    return line["text_state"] + "\n" + geometry_block(line["state"], bins=S == "S2", step_cm=step_cm)
 
 
 # ------------------------------------------------------------------------------------------ code rule (UB)
-_OBJ = re.compile(r"^  (o\d+) [^:]*: dx=([+-]\d+) dy=([+-]\d+) dz=([+-]\d+) dist=(\d+)")
-_GRIP = re.compile(r"^  gripper: x=(-?\d+) y=(-?\d+) z=(-?\d+)")
+_NUM = r"([+-]?\d+(?:\.\d+)?)"
+_OBJ = re.compile(rf"^  (o\d+) [^:]*: dx={_NUM} dy={_NUM} dz={_NUM} dist={_NUM}")
+_GRIP = re.compile(rf"^  gripper: x={_NUM} y={_NUM} z={_NUM}")
+
+
+def _num(v: str):
+    return float(v) if "." in v else int(v)
 
 
 def parse_geometry(text: str) -> dict:
@@ -83,10 +103,10 @@ def parse_geometry(text: str) -> dict:
     for ln in text.split("\n"):
         m = _GRIP.match(ln)
         if m:
-            out["gripper"] = tuple(int(v) for v in m.groups())
+            out["gripper"] = tuple(_num(v) for v in m.groups())
         m = _OBJ.match(ln)
         if m:
-            out[m.group(1)] = tuple(int(v) for v in m.groups()[1:4])
+            out[m.group(1)] = tuple(_num(v) for v in m.groups()[1:4])
     return out
 
 

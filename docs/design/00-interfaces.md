@@ -473,3 +473,10 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
   3. target 질문 문구를 다시 쓴다("which object must the gripper move toward / relative to next") — E3-lite 재측정은 SFT 전후 비교에서 한다.
   4. 이미지 입력은 SFT 조건에서 다시 판정한다(영점에서 무효라는 결과가 학습 뒤에도 성립하는지 — 단계 B·실물 전이를 위해 입력 경로는 유지).
 - **논문 영향**: 핵심 주장 "LLM이 일반화한다"는 **Astra(위층, 영점)**에 걸린다. 빠른 결정층은 학습 모듈로 서술하고, 영점 C 대 A-SFT 대 A-SFT+RL의 standard→random 낙폭을 보고한다(§52). M4 새로움은 영향 없음.
+
+## 54. 결정 질문 정답 v2 채택 + S1 정밀도 1 mm (2026-09-24 15:14 UTC, `docs/stage3/results/labels_v2.md`, §53 결정 2) [Claude 결정]
+- **정의(사전 등록 15:06 UTC)**: g = 실제 손가락 중점, 운동 소단계 M(approach/grasp/lift/carry/place/retreat/wait)을 관측(단계·그리퍼 상태·수평 거리 ALIGN 1.5 cm)으로 고르고 G = 그 소단계 목표점(실제 물체 자세에서 계산), Δ = G − g. dir_xy·dir_z = 성분 부호(데드밴드 1 cm), mag = |Δ|의 MAG 구간(경계 = 기하 중점 0.707/1.414/2.828/5.657 cm), target = 단계(S1 → o3, S2 → o5), phase = hold/next/continue 명시 규칙, progress 그대로.
+- **게이트**: S1 텍스트만 읽는 코드 규칙 — 1 cm 직렬화는 dir_xy 0.944·dir_z 0.856·mag 0.932로 미달, **1 mm 직렬화(재실행 1회) dir_xy 0.995·dir_z 0.991·mag 0.988·target 1.0·phase 0.999 통과**. 잔차는 전부 반올림(데드밴드·구간 경계). → **S1 직렬화 기본 = `step_cm=0.1`(1 mm)**. 사후 기록 2건(progress 게이트 제외, 0.5 cm 대신 1 mm로 한 번에 재실행)은 결과 문서에 시각과 함께.
+- **분포**: 최빈 기준선 5질문 평균 0.641(6질문 0.688). 옛 오라클과 일치: dir_xy 0.816, dir_z 0.894, mag 0.269(옛 = 0.33 s 한 스텝 이동량, 새 = 목표까지 남은 거리 — 뜻이 다른 양), target 0.818(lift 구간), phase 0.678.
+- **주의(정의 유지, 기록)**: carry 중 실제 그리퍼가 명령 높이보다 0.4–1.1 cm 낮아 carry dir_z의 41 %가 데드밴드 경계(Δz 0.8–1.2 cm)에 붙는다 → mm 흔들림에 민감. 결과 기반 라벨과의 일관성(91 스냅샷, 참고)은 mag에서 새 라벨이 확실히 낫고(time0.33: 0.879 대 0.692) dir_z·target·phase는 옛보다 약간 낮다.
+- **SFT 정답(§52)**: labels_v2(관측 정의) = 1차 정답, 결과 기반 라벨(사전 등록 점수식) = 교차 확인·보조. 풀의 `oracle` 필드는 쓰지 않는다.
