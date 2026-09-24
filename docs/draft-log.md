@@ -323,3 +323,4 @@
 - 00:25 UTC D9 Slow Brain·Show-Harness·GPT-as-Policy 정독(본문·부록·코드). 메인 재확인: Slow Brain 부록 E Table 6(τ 5 s, d_scale 0.3 m, λ 1.0/3.0, T_vlm 1.0, 타임아웃 5 s), "newest-by-timestamp". **발견된 우리 오류**: E-M4의 C2'(Slow Brain식 기준)를 "여러 응답의 감쇠 가중 최빈, 반감기 0.33 s"로 정의했는데 원문은 "가장 새 응답 하나 + 빠른 층 점수와 Prob Fusion, τ 5 s" → 정본 §20에서 원문판 C2'로 교체, 우리 변형은 C2''. 정독 보고는 수치를 줄이지 않고 전문 저장(`D9-…md`).
 - 교훈: 가장 강한 기준 방법은 원문대로 재현해야 한다. "~식"으로 우리 해석판을 만들면 심사에서 "약한 기준선" 비판을 받는다.
 - 00:35 UTC 정본 §20을 M3·M4·M7·M9·E-first·EVAL에 반영(C2 계열 원문판·C2''·C2-match·C2'-S, Show-Harness 원문판 SH/SH-wall, GPT-as-Policy B6b/B6b-wall, gate 원문 인용). 메인 판단: E0.5 판정 1·2는 C2'' 기준 유지(원문판 C2'는 합의 정보 질문에 답 못 함), 정본 §20의 "M9 L1 resume_ckpt" 오기를 L2로 정정. [사용자] 줄 삭제 0.
+- 00:36 UTC 라운드 D10 시작: 핵심 선행 정독 2갈래 — (1) Harness VLA + CaP-X(M6·M9·M10, 범주 5·6 기준 방법) (2) Critic in the Loop + CheckVLA(M7·M8, E-M8a 기준 방법). 보고는 수치를 줄이지 않고 전문 저장 예정.
