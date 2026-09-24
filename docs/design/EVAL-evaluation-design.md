@@ -1,5 +1,6 @@
 # EVAL. 평가 설계 (구체화판)
 
+> 개정 2026-09-24 08:07 UTC (정본 §41·§42, D23 반영, `D23-inspect-robots-integration.md`, user-log 41 — 1차 평가 하네스는 사용자 결정, 시계 트랙·정보 동등·몸체·어댑터·기준선 세부는 Claude 결정): §2.6에 **1차 = Inspect Robots + AI Worker SG2 한 팔 시뮬, 2차 = RoboDojo** 행, §3.1에 1차 기준선 **B1a-IR**(agent 충실판·공정판)·**B5-IR**(capx)·**B3b-IR**(π0.5 AI Worker 한 팔 미세조정), §3.2-13 **시계 트랙 두 개**(주 표 = 지연 충실: 우리 simlat, 동기 기준선 `LatencyChargingController` / sync-fair 병기)와 RTF 보고, §3.2-14 오라클 상태 **정보 동등**, §4.2 1차판 짝 규칙(같은 `init_seed`로 std/rnd 짝), §5 **S0' = P0/P1**.
 > 개정 2026-09-24 07:39 UTC (정본 §36~§39, D21 반영, `D21-aiworker-zed.md`, user-log 37~39 — 로봇·카메라·실물 SG2·힘 입력은 사용자 결정, 깊이·격자·장면·정합 세부는 Claude 결정): §2.1에 **(정본 §37) 3층 정합** 줄 — (1) 결정 층 비교(H2·H3, RD)는 RoboDojo-Sim ARX X5 그대로 + 보조 **트랙 D-stereo**, (2) 개발·GT·모듈 실험 = cyclo_lab AI Worker 한 팔 + `ZED_M` 쌍둥이, (3) E-real = 실물 AI Worker(FFW-SG2 베이스 고정, §38) 최소판. 결정 층·술어 등록부·Jev/Astra 계약은 공유, 스킬·M5 한계·R은 로봇별. §3.2-12 신설(실행 층은 로봇별), §4.4 (6) 실물 플랫폼 줄, §8 Q8 해소·Q11(해소)·Q1 보충.
 > 개정 2026-09-24 07:18 UTC (정본 §34·§35, D20 반영, `D20-expert-role.md`, user-log 35·36 — D35·D36은 사용자 결정, R 설계는 Claude 결정): §3.2-9에 D36 해소(**주 표 실행기 = S**, B 표는 E-AE-2 비교 표로만), §3.2-10에 D35 해소(**도메인 무작위화 넣음**, 같은 데이터를 R·B·B3c 모든 학습 조건에), §3.2-11 신설 — **잔차 R 규칙**(R은 모든 결정 층 조건에 똑같이, **주 표 = S, S+R은 병기 표·절제**, 병기 표로 올리는 사전 판정, **B3c 연속 출력은 같은 방향·크기 격자로 양자화해 R을 붙임**, 그림자 예측기는 교차 표에 넣지 않음). §7 R11, §8 Q10 해소.
 > 개정 2026-09-24 06:38 UTC (정본 §32·§33, D19 반영, `D19-action-expert.md`, user-log 33·34 — 사용자 결정 B, 세부는 Claude 설계): §3.2에 공정 조건 9(**같은 실행기** — 주 표 = 스크립트 실행기 S [잠정], B 표 병기, 실행기 단독 낙폭 E-AE-3, 결정 층 × 실행기 상호작용 E-AE-4)·10(**학습 데이터는 standard에서만**, 도메인 무작위화를 쓰면 모든 학습 조건에 같은 데이터). §7 R10, §8 Q10.
@@ -115,11 +116,13 @@
 ### 2.6 요약표 [우리 계획]
 | 벤치 | 설정 부담 | GPU | 우리 스택 꽂기 | 범주 1 | 2 | 3 | 4 | 5 | 6 | 쓰임 |
 |---|---|---|---|---|---|---|---|---|---|---|
+| **Inspect Robots + AI Worker SG2 한 팔 시뮬(정본 §41·§42)** | 중간(v0.59.0·커밋 `7e506e3` 고정·사본 보관, `aiworker` 몸체 새로 작성, Isaac Lab 2.3 호환 [미확인]) | Isaac 렌더(H200 RT 코어 없음 위험) | `OursPolicy` 어댑터(비블로킹 act()) | B1a-IR(`agent` + Astra) | 구현 | B3b-IR(`xpolicylab` π0.5, AI Worker 한 팔 미세조정) | 구현 | B5-IR(`capx`) | 없음 | **1차 평가**(user-log 41) |
 | RoboDojo-Sim | **높음**(Isaac 5.1, RT 코어 위험, 자산 수십 GB) | 작업자당 ≥16 GB VRAM 1장 | XPolicyLab 어댑터, `ee` 경계 | **공개 칸별 자료(N1)** | 구현 | 공개 40종 + 체크포인트 재실행 | 구현 | 재구현 필요 | **RoboProbe, GPT-as-Policy 코드** | **주: 환경 축(Gen) + 작업 축(Open)** |
 | LIBERO-Plus | 낮음 | 작음 | 단일 팔 스킬 필요 | TGL(축 불명) | 구현 | VLA 10종 | 구현 | 없음 | TGL | 보조: 환경 축 세분 |
 | LIBERO-PRO | 낮음 | 작음 | 같음 | RPent Astra | 구현 | VLA 6종 | 구현 | CaP-X, Zetta | RPent | 보조: 기존 방법과 같은 판 |
 | AGNOSTOS | 중간(CoppeliaSim) | 72B 로컬 LLM 시 큼 | 키프레임 자세 출력 | 없음 | 구현 | π0·OpenVLA·RDT(기간 밖, 기초 문헌) | 구현 | X-ICM, D&R | 없음 | 선택: 작업 축 |
 | MolmoSpaces | 중간 | 작음(MuJoCo) | Franka 스킬 새로 | 없음 | 구현 | π0/π0.5-DROID zero-shot | 구현 | 없음 | 없음 | 선택: 새 집 |
+- **(정본 §41, user-log 41) 1차 = Inspect Robots + AI Worker SG2 한 팔 시뮬, 2차 = RoboDojo.** 위 RoboDojo-Sim 행의 "주"는 2차 확장에서의 쓰임이다. §40의 "주 평가 부적합" 판단은 이 결정으로 1차에 한해 바뀐다. 1차 행의 설계·단계·위험은 `D23-inspect-robots-integration.md`와 정본 §42.
 
 ---
 
@@ -138,6 +141,7 @@
 | 8. logprob 선택기 | Jev 자리에 GPT-6 Sol/Luna(`none` effort, logprob) 또는 system-one-adapter를 같은 질문·보기로 | API | 질문 형식 어댑터 | 같은 결정 지점·같은 보기·같은 호출 주기 |
 - **(D6, 00 §17) 범주 3 추가 조건**: **B3c-V** = B3c의 사전학습 VLA 기반 변형. 같은 카메라 이미지와 과제 문장을 **동결 π0.5 표현**(VLM 백본 출력 토큰 풀링)에 넣고, 그 위에 작은 헤드(MLP 또는 작은 행동 헤드)만 standard 시연으로 학습한다. 선택으로 우리 인식 상태 벡터를 헤드 입력에 이어 붙인 판(B3c-V+s)도 둔다. 학습 예산·늘리는 규칙은 B3c와 같다(§4.2 H2). **B3b'** = π0.5에 random 장면 시연 k개(k = 0, 5, 20)로 추가 미세조정한 적응 조건(§4.4 (3)). 둘 다 표의 "적응 예산" 열에 시연 수·학습 GPU 시간을 적는다.
 - **(D6) 범주 8은 E-M4-gen에서도 쓴다**: 같은 확정기를 붙인 C2 대 C5(M4 §5.1 (2)). 질문 형식 어댑터는 한 벌로 공유.
+- **(정본 §41·§42) 1차 평가(Inspect Robots)의 기준선** [범주 1 = 사용자 결정 user-log 41, 세부 = Claude 결정]: **B1a-IR** = Inspect Robots `agent` + Astra — 충실판(effort=medium·max_llm_calls=20·max_speed_frac=0.25 [대응 미확인])과 공정판(effort low·high, 호출 예산 우리와 같게). 기본 isaacsim 몸체는 행동 Box에 경계가 없어(`embodiment.py:215`) agent의 "finite low and high bounds" 요구(`_tools.py:632`)를 못 채우므로 새 `aiworker` 몸체(FFW-SG2 한 팔 joint_pos 8-D, 유한 경계·`dim_labels`) 위에서 돈다. 행동 공간이 Robocurve 보고서(eef_pos)와 달라지는 것을 각주로 적는다(정본 §40). **B5-IR** = `capx`(SAM3·Contact-GraspNet·Pyroki 서버, 컨테이너 격리). **B3b-IR** = `xpolicylab` π0.5(`action_type=joint arms=1 arm_dim=7 ee_dim=1`), AI Worker 한 팔 미세조정 필요(cyclo_lab Mimic → LeRobot, std+DR). Robocurve의 Astra 실물 수치는 신뢰도 규칙(user-log 14)상 근거로 쓰지 않는다(정본 §40).
 
 ### 3.2 공정 조건 체크리스트 (모든 비교에 적용) [우리 계획]
 1. **같은 layout·seed**: RoboDojo `Eval_Layout/arx_x5/<seed>` layout_id 0–24(Gen std/rnd 짝). 모든 시스템이 같은 칸을 돈다.
@@ -153,6 +157,8 @@
 10. **학습 데이터는 standard에서만(정본 §33)**: random은 시험 전용이므로(2번) 학습 실행기 데이터도 standard 장면에서만 만든다. 도메인 무작위화를 쓰면(허용 여부는 SUMMARY §5.1 D35) B3c 등 **모든 학습 조건에 같은 무작위화 데이터**를 준다. → (정본 §34, user-log 35) **D35 해소 = 도메인 무작위화 넣는다.** 같은 무작위화 데이터(standard 장면 + 무작위화)를 모든 학습 조건 — 잔차 R, 비교용 B, B3c — 에 똑같이 준다. random 시험 장면은 여전히 학습에 쓰지 않는다.
 11. **잔차 R과 병기 표(정본 §35, `D20-expert-role.md`)**: 구간 제한 잔차 R(M6 §4.1.4)은 실행기 부품이라 **모든 결정 층 조건에 똑같이** 붙인다(끄면 모두 S). **주 표 = S**, S+R은 병기 표·절제다. S+R을 병기 표로 올리는 사전 판정: standard 성공률 짝 차(S+R − S)의 95% CI 하한 > 0 **그리고** RD(S+R) − RD(S)의 95% CI 상한 ≤ +δ [가정]. 못 채우면 절제 결과로만 보고한다(E-R1·E-R4). **B3c 양자화(Claude 결정)**: B3c가 연속 행동을 내면 Jev 보기와 같은 방향·크기 구간 격자(d̂, [m_lo, m_hi])로 양자화한 뒤 스크립트 스킬 S와 R을 붙인다 — 그래야 R의 투영 규칙이 모든 조건에서 같다. B3c 원래 연속 출력 결과도 함께 적는다 [제안]. 결정 층 × {S, S+R} 상호작용은 E-R3으로 재고, 부호가 같을 때만 "실행기와 무관"이라고 쓴다. R on/off·포화 비율·Jev 권위 위반율은 모든 S+R 표에 기록한다. 그림자 예측기(M7 D-AE)는 우리 시스템 내부 절제로만 쓰고 결정 층 교차 비교 표에는 넣지 않는다.
 12. **실행 층은 로봇별, 결정 층은 공유(정본 §37)**: 결정 층 비교 표(H2·H3, RD)는 RoboDojo-Sim ARX X5에서 만든다(§2.1 3층). AI Worker(시뮬 쌍둥이·실물)의 결과는 같은 결정 층 코드 위에서 실행 층(스킬·M5 한계·R)만 로봇별로 바꾼 것이므로 ARX X5 표와 따로 보고한다. 트랙 D-stereo는 "입력 다름"을 표기해 따로 보고한다. R의 힘 입력은 관절 전류이고(정본 §39) 절제 R-noforce를 함께 보고한다.
+13. **시계 트랙 두 개와 RTF 보고(정본 §42, 1차 평가 Inspect Robots)** [Claude 결정]: 하네스 롤아웃은 단일 스레드 동기 루프다("no wall-clock pacing of its own", `rollout.py:276-280`). 같은 정책 코드에 시계만 주입한다 — sync(세계가 정책을 기다림), simlat(시뮬 시각 t에 보낸 응답을 t + 실측 지연에 전달), wall(몸체가 self_paced로 벽시계에 맞춤, 실물 또는 RTF ≥ 1일 때만). **주 표 = 지연 충실(latency-faithful) 트랙**: 우리 = simlat, 동기 기준선(agent·capx) = `LatencyChargingController`(act() 시간 L만큼 "직전 명령 유지" 행동 ceil(L×hz)개를 앞에 붙임 — 실물에서 생각하는 동안 팔이 서 있는 것과 같음, agent README "the arm stands still while the model thinks"). 근거: 우리 주장(비정지·실시간 지연 흡수)은 지연이 공짜인 조건에서는 정의되지 않는다. **sync-fair 트랙(생각 시간 공짜)을 같은 표에 병기**해 그 조건의 결과도 숨기지 않는다. 시뮬은 `ZED_M` 렌더로 RTF < 1이면 벽시계 박자가 LLM을 빨라 보이게 하므로 wall 대신 simlat를 쓰고, **모든 표에 RTF를 기록**한다. 2차 RoboDojo의 공식 동기 트랙·벽시계 트랙 분리(§6)는 그대로다.
+14. **정보 동등 — 오라클 상태(정본 §42)** [Claude 결정]: agent는 `obs.state`의 모든 키를 프롬프트에 넣는다(`policy.py:1201-1219`). → 오라클 물체 자세는 우리 M1이 오라클일 때(E0 오라클 조건)에만 state에 넣어 양쪽이 같이 받고, 인식 조건에서는 두 쪽 모두 넣지 않는다(2번 "같은 인식", C2 원칙).
 
 ---
 
@@ -169,6 +175,7 @@
 - **H4 (인식 귀속, S1 직후로 당김 — S1.5)**: standard → random에서 인식 술어 정확도 하락(시뮬 정답과 비교, 분석용 기록만, 정책 입력 아님)이 RD의 몇 %를 설명하는지. **S4를 기다리지 않고** S1 스모크의 렌더 프레임으로 먼저 잰다(Jev·정책 없음). 사전 해석: 술어 정확도 하락이 작으면(과제 합산 T1·T2 술어 정확도 하락 < 3%p **[우리 계획: 문턱]**) "환경 강건성은 인식 몫, LLM 몫은 방해물·Open 축·복구에서 찾는다"로 주장 문구를 S4 전에 고쳐 [결정 필요](Q5)로 올린다.
 
 ### 4.2 프로토콜
+- **(정본 §41·§42) 1차판 — Inspect Robots + AI Worker SG2 한 팔 시뮬**: `derive_seed(eval_seed, scene_seed, epoch)`는 scene.id를 쓰지 않으므로 std/rnd 두 장면에 **같은 `init_seed`**를 주면 짝 장면이 된다(모든 시스템이 같은 짝을 돈다). 첫 실행은 P4 짝 파일럿: layout 0–4 × {std, rnd} × epoch 3 × 두 시계 트랙(§3.2-13). 과제 수·에피소드 수와 판정 문턱은 P4 비용·시간 실측 뒤 이 절의 규칙(RD, 짝 부트스트랩)을 그대로 옮겨 확정한다 [가정]. 하네스가 순차이므로 병렬은 프로세스·파드 분할. 아래 줄부터는 2차 확장(RoboDojo)판이다.
 - 과제: RoboDojo Gen 12과제 전부(주). 바닥 효과 과제(standard Score <10)도 빼지 않고 포함하되, 부차 분석으로 "standard Score ≥10 과제만"을 따로 보고(사전 등록).
 - 에피소드: 과제당 standard 25 + random 25(layout 0–24 짝) × seed 0 = **시스템당 600회**. 주 시스템(우리, B4a, B3b, B3c)은 seed 1·2를 더해 1,800회(예산 되면). B1a는 공개 자료 1 seed.
 - 지표: 주 = **상대 하락 RD = 1 − Score_rnd / Score_std**(과제 합산 Score, RoboDojo 표 3과 같은 식). 보조 = SR 기반 RD, 과제별 RD, random 절대 Score, 0% 과제 수, 결정 수·호출 수·지연 p50/p95·비용.
@@ -240,6 +247,7 @@
 ## 5. 단계별 실행 계획 (자원이 적을 때 순서) [우리 계획]
 | 단계 | 내용 | 자원 | 산출·진행 조건 |
 |---|---|---|---|
+| **S0' (정본 §42, 1차 평가 Inspect Robots)** | **P0** 설치·스모크(0.5–1일, v0.59.0·커밋 `7e506e3` 태그 고정, 사본 보관) → **P1** `aiworker` 몸체(4–7일: FFW-SG2 한 팔 joint_pos 8-D(7 + 그리퍼 연속), 유한 경계·`dim_labels`, decimation 1, 카메라는 새 프레임일 때만, 깊이·내부행렬은 extra callable, `extra["sim_time"]`, 성공 술어, RTF 기록). 뒤이어 P2 `OursPolicy` + `LatencyChargingController` + 로그(5–8일) → P3 기준선(3–6일, π0.5 학습 별도) → P4 짝 파일럿(3–5일, §4.2 1차판) [가정: 공수] | CPU → GPU 1장 | P0: 판본 고정 설치·스모크 통과, Isaac Lab 2.3 호환 확인([미확인]). P1: agent 기준선이 유한 경계 행동 Box로 돈다. 아래 S0~S8은 2차 확장(RoboDojo) |
 | S0 (GPU 없음, 반나절) | RoboProbe 칸별 자료 분석(§4.3, 완료), RoboProbe·XPolicyLab 클론, `pytest`, 우리 어댑터 뼈대를 `EVAL_ENV_TYPE=debug`로 배선 점검, **XPolicyLab 평가 루프(`deploy.py` 등)가 정책 응답을 기다리는지(동기 여부)와 에피소드 시간 제한 확인** | CPU | 어댑터가 행동 키·차원 점검 통과 **그리고** 루프 동기 여부 확정(D4 C-5). 동기이면 공식 동기 트랙·벽시계 트랙 두 벌 계획으로 S3·S4 예산을 다시 적는다 |
 | S1 (1~2일) | Isaac Sim 5.1 설치를 클러스터 노드에서 시도(RT 코어 위험 N8, RoboProbe A100 스크립트 참고), `robodojo.sh doctor`, `smoke --only stack_bowls,push_T`, π0.5 체크포인트로 stack_blocks·stack_bowls std/rnd 각 25회 | GPU 1~2장 | π0.5 재실행 RD가 표 3과 ±15%p 안이면 통과. 실패하면 RTX 계열 노드 확보 [결정 필요] |
 | **S1.5 (S1 직후, GPU 몇 시간 + Jev 약 $1~5)** | (1) **H4 선행 측정**: Gen 2~4과제 std/random 짝 layout 렌더 프레임에서 M1 술어 정확도(트랙 O·D 각각)를 시뮬 정답과 비교. Jev·정책 없음. (2) **random 스냅샷 오프라인 룰 대 Jev**: 같은 random 스냅샷(인식 상태)에서 룰(B4a)과 Jev가 같은 결정 질문에 답하고, 결과 기반 라벨(E §4.4b와 같은 짧은 롤아웃 라벨러)로 채점 | GPU 1장 + Jev API | 산출: 트랙별 T1·T2 술어 정확도 표(§2.1 트랙 선택 자료), std→random 술어 정확도 하락(H4), random에서 룰 대 Jev 결과 기반 정답률. 해석은 §4.1 H4 사전 문구대로. 멈춤 조건 아님 |

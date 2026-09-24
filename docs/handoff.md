@@ -1,13 +1,15 @@
 # 인수인계: 새 세션이 가장 먼저 읽을 문서
 
-마지막 갱신: 2026-09-24 07:02 UTC (두 번째 세션. 단계 2 모듈 설계 진행 중 — 설계 1판·검증 D1~D5·모의 심사 D6·선점 재검사 D7 완료, plan v5.6)
+마지막 갱신: 2026-09-24 08:07 UTC (단계 2 설계 확장 — 정본 §1~§42, SUMMARY v3.10, plan v6.8. 단계 3 첫 실험은 사용자 지시 대기)
+
+> 현재 판본: plan **v6.8**, SUMMARY **v3.10**, 정본 §1~§42. 아래 §1의 판본 표기(v5.6)는 옛 기록이고 최신 상태는 §2.6.
 
 ## 1. 먼저 할 일
 1. `dev` 브랜치인지 확인한다. **모든 작업(글, 코드)은 `dev`에서 시작하고 `dev`에만 푸시한다. `main`은 절대 건드리지 않는다**(사용자가 직접 반영).
    - Windows 클론이면 `git -c safe.directory=D:/qdd ...`가 필요할 수 있다.
 2. 다음 순서로 읽는다.
    1. `CLAUDE.md`: 모든 규칙과 제약.
-   2. `docs/user-log.md`: 사용자 발언 전체(1~24번). 의도는 여기서.
+   2. `docs/user-log.md`: 사용자 발언 전체(1~41번). 의도는 여기서.
    3. `docs/plan.md`: 현재 계획 **v5.6** ([사용자] / [제안] / [결정 필요]). §5에 [결정 필요] 10개와 첫 실험.
    4. `docs/draft-log.md`: v0~v4.1 기록과 교훈. **같은 실수를 반복하지 않는다.**
    5. `docs/research/v3/README.md`(에이전트 공통 규칙) + `v3/01~19`(원문 확인 보고서). v2는 참고만(일부 정정됨).
@@ -42,6 +44,14 @@
 - D10에서 바뀐 것: M7 "적시 재현율(CheckVLA 방식)"은 원문 정의가 아니었음 → 고정 창판(판정 기준) + 원문판(병기). E-M8a에 원문 충실 기준 A2-CV·A1-cal·A1-wait·A6-CiL-sync. RPent Astra 92.63%는 논문 아닌 리더보드 값(8칸 T/S, 메모리 두 묶음, 에피소드당 412 s 정지형). 반대 증거 둘: CheckVLA d_lat = 10에서 경계 대기가 청크 안 수리보다 나음, CaP-X 검증 강화 프롬프트 68.29 → 65.43.
 - 남은 계획(마감 전 기록, 완료됨): 단계 2 마감 보고. 이전 계획: 마지막 일관성·사용자 의도 점검 → 단계 2 마감 보고(최소 03:32 UTC 이후).
 - 사용자 [결정 필요]: `SUMMARY.md` §5.1(D1~D28) + plan §8의 18(논문 틀)·19(실물 실험). 결정 전에는 두 안을 대칭으로 둔다.
+
+## 2.6 07:02 UTC 뒤 결정 (정본 §34~§42, user-log 35~41)
+- **§34·§35**: 도메인 무작위화 넣음(D35), 주 표 실행기 = 스크립트 스킬 S(D36), action expert = 구간 제한 잔차 R(`D20-expert-role.md`).
+- **§36~§39** [사용자 결정]: 로봇 = ROBOTIS AI Worker, 카메라 = ZED 스테레오(머리 ZED Mini + 손목 D405), 실물 = FFW-SG2 베이스 고정, R 힘 입력 = 관절 `effort` + 그리퍼 전류(손목 F/T 추가 안 함). GT·모듈 실험 장면 = cyclo_lab AI Worker 한 팔 + `ZED_M` 쌍둥이(`D21-aiworker-zed.md`). 남은 하드웨어 결정 없음.
+- **§40**: Inspect Robots(`robocurve/inspect-robots`, MIT, 논문 없음) 판정 — 선행 겹침 없음, Robocurve Astra 실물 수치는 LOW라 근거로 안 씀(`D22-inspect-robots.md`).
+- **§41** [사용자 결정, user-log 41]: **1차 평가 = Inspect Robots + AI Worker SG2 한 팔 시뮬, 2차 = RoboDojo.** B1a-real 해소(agent + Astra = 범주 1 기준선).
+- **§42** (`D23-inspect-robots-integration.md`): 시계 sync/simlat/wall 주입, 주 표 = 지연 충실 트랙(우리 simlat, 동기 기준선 `LatencyChargingController`) + sync-fair 병기, RTF 기록, 오라클 상태 정보 동등, `aiworker` 몸체·`OursPolicy` 어댑터, 기준선 B1a-IR·B5-IR·B3b-IR, 단계 P0~P4. 반영 문서: EVAL, E-first, SUMMARY v3.10, plan v6.8, 논문 평가 절.
+- **다음(단계 3, 사용자 go 대기)**: E0·E0.5(같은 날, E0.5 먼저) / ROBOTIS HF 데이터로 오프라인 스테레오 안정성 시험(E3-ST, E §5.10) / Inspect Robots **P0** 설치·스모크(v0.59.0·커밋 `7e506e3` 고정). 사용자 지시 전에는 시작하지 않는다.
 
 ## 3. 단계 2 진행 방법 (제안, 자율 진행)
 - 모듈마다 `docs/design/Mx-*.md` 한 개: (1) 역할과 입출력 (2) 분야 전체의 최고 후보 표(어디서 최고, 조건 포함 수치, 신뢰도, 기간) (3) 가져올 것과 접목 방법 (4) 대안과 비교 실험 (5) 반대 증거 (6) 열린 질문·[결정 필요].

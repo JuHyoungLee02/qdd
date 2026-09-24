@@ -1,4 +1,6 @@
-# Harvest 연구 계획 (v6.7, 2026-09-24 07:39 UTC — 플랫폼 = ROBOTIS AI Worker FFW-SG2 + ZED 스테레오(정본 §36~§39, user-log 37~39, `docs/design/D21-aiworker-zed.md`), SUMMARY v3.9)
+# Harvest 연구 계획 (v6.8, 2026-09-24 08:07 UTC — 1차 평가 = Inspect Robots + AI Worker SG2 한 팔 시뮬(정본 §40~§42, user-log 40·41, `docs/design/D23-inspect-robots-integration.md`), 플랫폼 = ROBOTIS AI Worker FFW-SG2 + ZED 스테레오(정본 §36~§39), SUMMARY v3.10)
+
+> 개정 2026-09-24 08:07 UTC (정본 §40~§42, D22·D23 반영, user-log 40·41 — 1차 평가 하네스는 사용자 결정, 시계·정보 동등·몸체·기준선 세부는 Claude 결정): §21 신설 — 1차 평가 = Inspect Robots(2차 = RoboDojo), 주 표 = 지연 충실 트랙 + sync-fair 병기, RTF 기록, 기준선 B1a-IR·B5-IR·B3b-IR, 단계 P0~P4. 머리 줄 v6.7 → v6.8.
 
 > 개정 2026-09-24 07:39 UTC (정본 §36~§39, D21 반영, `D21-aiworker-zed.md`, user-log 37~39 — 로봇·카메라·실물 SG2·힘 입력은 사용자 결정, 깊이·격자·장면·정합 세부는 Claude 결정): §20 신설 — 로봇 = AI Worker(실물 FFW-SG2 베이스 고정), 카메라 = ZED 스테레오(D2c = 스테레오, D30 = AI Worker), M1 깊이 켬, M8 격자, M6 양팔 스킬, M5 로봇별 한계, R 힘 입력 = 관절 전류(손목 F/T 추가 안 함), GT 장면 = cyclo_lab AI Worker 한 팔 + ZED_M, 평가 3층 정합. 남은 하드웨어 [결정 필요] 없음. 머리 줄 v6.6 → v6.7.
 > 개정 2026-09-24 07:18 UTC (정본 §34·§35, D20 반영, `D20-expert-role.md`, user-log 35·36 — D35·D36은 사용자 결정, R 설계는 Claude 결정): §19 신설 — D35 = 도메인 무작위화 넣음, D36 = 주 표 실행기 S, action expert 주 역할 = 구간 제한 잔차 R(코드 투영으로 Jev 방향·크기 구간 권위 유지), 보조 = 그림자 예측기(M7 후보, 내부 절제만), 학습 복구는 R에 흡수, 후보 생성 제외, 학습 실행기 B(§18)는 E-AE-2 비교 표로만. 머리 줄 v6.5 → v6.6.
@@ -357,3 +359,11 @@
 - **GT 생성 시뮬**(Claude 결정): E0–E3, E-M4, E-R, E-AE의 단일 팔 자작 장면 = cyclo_lab AI Worker 한 팔(FFW-SG2 베이스 고정 우선, 한 팔 설정이 안 되면 FFW-BG2 — 동등성 [가정]) + Stereolabs `ZED_M` 디지털 쌍둥이, Isaac Sim 5.1 / Isaac Lab 2.3(RoboDojo와 같은 판본). 데이터 경로 cyclo_lab Mimic → `isaaclab2lerobot.py` → LeRobot, 도메인 무작위화는 우리가 추가.
 - **평가 3층**(Claude 결정, EVAL §2.1): (1) 결정 층 비교(H2·H3, RD) = RoboDojo-Sim ARX X5 그대로 + 보조 트랙 D-stereo(입력 다름 표기) (2) 개발·GT·모듈 실험 = AI Worker 쌍둥이 (3) E-real = 실물 AI Worker FFW-SG2 베이스 고정 최소판(제출 2026-11-16까지 약 7주). 결정 층·술어 등록부·Jev/Astra 계약은 공유, 스킬·M5 한계·R은 로봇별.
 - **[결정 필요] D2c·D30 해소, 정본 §37의 하드웨어 결정 (c)·(d)도 해소**(§38·§39). 남은 하드웨어 [결정 필요]는 없다. 사용자 원칙(실패할 때마다 Astra 개입, T0 뒤 웬만하면 안 멈춤, effort 기본 low + low·high 비교, 겹침 3회/초)은 그대로다.
+
+## 21. 1차 평가 = Inspect Robots (v6.8, 2026-09-24 08:07 UTC, 정본 §40~§42, `docs/design/D22-inspect-robots.md`·`docs/design/D23-inspect-robots-integration.md`, 상세는 `docs/design/SUMMARY.md` v3.10 §3.18)
+- **출처**: user-log 40(Inspect Robots 확인 요청) → 정본 §40(선행 겹침 없음, C1·C2 판단 그대로). user-log 41 "1차적으로는 인스펙트 로보티스로 해야지 … 향후에는 좀더 크게 해야 되는데" → 정본 §41: **1차 평가 = Inspect Robots + AI Worker SG2 한 팔 시뮬, 2차 = RoboDojo**. §40 [결정 필요] B1a-real 해소.
+- **시계 트랙**(정본 §42, Claude 결정): 하네스 루프가 동기라 같은 정책 코드에 시계만 주입(sync / simlat / wall). **주 표 = 지연 충실 트랙**(우리 simlat, 동기 기준선 `LatencyChargingController`), **sync-fair 병기**, RTF 기록(wall은 실물 또는 RTF ≥ 1일 때만).
+- **정보 동등**: 오라클 물체 자세는 M1이 오라클일 때만 state에 넣고, 인식 조건에서는 양쪽 모두 넣지 않는다.
+- **기준선**: B1a-IR(agent + Astra, 충실판·공정판), B5-IR(capx), B3b-IR(xpolicylab π0.5, AI Worker 한 팔 미세조정). 짝 장면 = 같은 `init_seed`로 std/rnd.
+- **단계** [가정: 공수]: P0 설치·스모크(0.5–1일) → P1 aiworker 몸체(4–7일) → P2 OursPolicy + LatencyChargingController + 로그(5–8일) → P3 기준선(3–6일) → P4 짝 파일럿(3–5일). EVAL §5 S0' = P0/P1.
+- **문서 반영**: EVAL §2.6·§3.1·§3.2-13·14·§4.2·§5, E §1.4·§1.6·§4.3·§4.12·§8-11. 새 사용자 [결정 필요]는 없다. 사용자 원칙(실패할 때마다 Astra 개입, T0 뒤 웬만하면 안 멈춤, effort 기본 low + low·high 비교, 겹침 3회/초)은 그대로다.
