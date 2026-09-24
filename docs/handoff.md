@@ -1,6 +1,6 @@
 # 인수인계: 새 세션이 가장 먼저 읽을 문서
 
-마지막 갱신: 2026-09-24 08:07 UTC (단계 2 설계 확장 — 정본 §1~§42, SUMMARY v3.10, plan v6.8. 단계 3 첫 실험은 사용자 지시 대기)
+마지막 갱신: 2026-09-24 21:03 UTC (단계 3 진행 — 정본 §1~§64, 계획 e2e-ready, 사용자 발언 1~66)
 
 > 현재 판본: plan **v6.8**, SUMMARY **v3.10**, 정본 §1~§42. 아래 §1의 판본 표기(v5.6)는 옛 기록이고 최신 상태는 §2.6.
 
@@ -76,3 +76,11 @@
 - `paper/` 컴파일: Tectonic 0.15.0 `D:/tools/tectonic/tectonic.exe`. 절차: `rm -rf D:/tools/texbuild; mkdir -p D:/tools/texbuild; cp -r paper/. D:/tools/texbuild/; cd D:/tools/texbuild; TECTONIC_CACHE_DIR=D:/tools/tectonic/cache D:/tools/tectonic/tectonic.exe main.tex`. PDF 확인은 `PYTHONPATH=D:/tools/pylib` pymupdf. 참고 문헌은 arXiv abs 페이지 메타데이터로 만든다(예: 로컬 `D:/tmp_main/mkbib.py`).
 - 작업 드라이브는 D만 쓴다(C 사용 금지, 사용자 환경 규칙).
 - 사용자에게는 한국어로 짧게 보고한다.
+
+## 2.7 단계 3 이후 상태 (2026-09-24 21:03 UTC, user-log 42~66, 정본 §43~§64)
+- **먼저 읽을 것**: `docs/superpowers/plans/2026-09-25-e2e-ready.md`(현재 계획: 관문 R1–R7 → S-E2E), `docs/design/00-interfaces.md` §43–§64, `docs/stage3/direction-log.md`(방향 검사 기록), 진행 기록(ledger) `.superpowers/sdd/2026-09-24-stage3-experiments/progress.md`, 결과 문서 `docs/stage3/results/`.
+- **핵심 결정**: Jev 사용 불가 → 로컬 VLM Qwen3-VL-4B typed 선택기(§44, §50, Gemma 4 E4B는 지연 탈락) / Astra = 위층 계획기 + 하트비트 5 s·단계 경계·사건(§45) / 인식 이름 `detect_phrase`는 Astra가(§46) / 카메라 = AI Worker 기본, 시뮬 설정은 humanoid-challenge-env 복사, ZED Mini VGA 85°·fx 367(§43·§47) / 시뮬 CPU PhysX(§48) / 실물 추론 = RTX PRO 6000 서버, 지금은 H200에서 가정해 검증(§49·user-log 62) / 영점 선택기는 최빈 미만 → 정답 재정의 labels_v2(§53·§54) / 학습 경로 C→A→B(§51·§52), **융합 원칙: 런타임은 단일 VLA(결정 토큰 + action expert + 확인 헤드)**, 모듈형 스택은 기준선으로 병기(§58·§60) / 입력 = 머리 + 활성 손목 다중 이미지, lead 호출(§57·§59) / S-E2E = ROBOTIS AI Worker 공개 데이터 1,575편·10 Hz(§62·§63) / **M4 (b)·critic 측정 = 세계 쪽 확인 헤드 V1h + 로봇 쪽 고유 감각 T1, critic 경보 = V1h 단독(§61·§64)**.
+- **완료 관문**: R1 인식 기준선(3D 오차 35 mm — 융합의 근거), R3 처리량(6.5–12배), R4 단계 B 코드(KI 기울기 0 확인, GPU 스모크), R5 폐루프(Inspect Robots에서 한 판 성공), E-M4b-meas. **진행 중**: R2 데이터 생성기(30 Hz·다과제·DR·LeRobot 내보내기), R6 평가 스크립트(CAL/TEST 차단 가드), 결과 라벨(T14, GPU 0 장시간). **다음**: R7 객관 검증 순회 2회 연속 무결 → S-E2E 소규모 E2E 학습(사전 등록 뒤).
+- **성격 주의(§56)**: 지금까지의 학습·평가 수치는 모두 파이프라인 확인용 소규모 시험 — 논문 결과로 쓰지 않는다.
+- **운영 규칙(추가)**: 파드 작업 폴더 `/data/harvest`(옛 경로는 링크), 모든 파드 파일은 /data 아래(`source /data/harvest/env.sh`), GPU 0·1 = Isaac 렌더, GPU 2 = 학습·vLLM(렌더 금지, user-log 64 허용), GPU 3 = vLLM; 로컬 임시 파일은 D:\tools\scratch_qdd만(하위 에이전트는 C scratchpad를 기본으로 쓰려 하므로 지시문에 명시), pytest basetemp는 pytest.ini가 D로 고정; 키: HF `/data/.hf_token`, OpenAI `/data/.openai_token`(값 출력 금지); Jev 키는 없음.
+- **사용자 대기 항목**: 없음(주 표 병기 유지 합의, RB1 라이선스는 논문 전 확인).
