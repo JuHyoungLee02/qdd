@@ -184,15 +184,15 @@ def fig_overview():
     icon_doc(ax, 3.35, 2.01, 0.36, 0.48)
     ax.text(3.53, 2.53, "세션 계약", ha="center", va="bottom", fontsize=6.8, color="#444")
     tag(ax, 3.86, 2.08, "M2")
-    rbox(ax, 4.20, 2.01, 1.20, 0.5, "mem", "경험", fs=9.5, sub="Astra: 교훈 · Jev: 규칙 0–2줄", sfs=5.9)
+    rbox(ax, 4.20, 2.01, 1.20, 0.5, "mem", "경험", fs=9.5, sub="Astra: 교훈 · Jev-L: 규칙 0–2줄", sfs=6.0)
     tag(ax, 4.27, 2.51, "M10")
 
     # fast layer
     rbox(ax, 1.20, 0.55, 1.0, 0.72, "perc", "인식 → 텍스트", fs=8.2, sub="술어 등록부\n물체 ID 술어 표", sfs=6.0)
     tag(ax, 1.28, 1.27, "M1")
-    rbox(ax, 2.45, 0.55, 1.20, 0.72, "jev", "Jev", fs=11, sub="typed 객관식 · 약 3 Hz\n겹친 호출", sfs=6.1)
+    rbox(ax, 2.45, 0.55, 1.20, 0.72, "jev", "Jev-L", fs=11, sub="로컬 VLM typed 선택기\n약 3 Hz 겹친 호출", sfs=6.1)
     tag(ax, 2.54, 1.27, "M3·M6")
-    rbox(ax, 3.90, 0.55, 1.05, 0.72, "rule", "확정 규칙", fs=9, sub="(a) 합의 + (b) 예상 대 측정", sfs=5.7)
+    rbox(ax, 3.90, 0.55, 1.05, 0.72, "rule", "확정 규칙", fs=9, sub="(a) 합의 +\n(b) 예상 대 측정", sfs=6.0)
     tag(ax, 3.97, 1.27, "M4")
     rbox(ax, 5.15, 0.55, 0.78, 0.72, "skill", "스킬", fs=9.5, sub="+ 잔차 보정(R)", sfs=6.1)
     tag(ax, 5.28, 1.27, "M6·M5")
@@ -210,8 +210,11 @@ def fig_overview():
     arr(ax, [(3.53, 2.01), (3.53, 1.64), (3.05, 1.64), (3.05, 1.27)])
     ax.text(3.10, 1.46, "현재 단계 조각", fontsize=6.0, color="#555", va="center", ha="left")
     arr(ax, [(4.80, 2.51), (4.80, 2.70), (2.70, 2.70), (2.70, 2.60)], color=PAL["mem"][1])
-    ax.text(3.75, 2.73, "교훈 · 사례", fontsize=5.9, color=PAL["mem"][1], ha="center", va="bottom")
+    ax.text(3.75, 2.73, "교훈 · 사례", fontsize=6.0, color=PAL["mem"][1], ha="center", va="bottom")
     arr(ax, [(2.20, 0.91), (2.45, 0.91)])
+    # head camera frame also goes to Jev-L (text state is the main input, one image is auxiliary)
+    arr(ax, [(0.86, 0.70), (1.13, 0.70), (1.13, 0.40), (2.70, 0.40), (2.70, 0.55)])
+    ax.text(1.90, 0.37, "머리캠 1장", fontsize=6.0, color="#555", ha="center", va="top")
     arr(ax, [(3.65, 0.91), (3.90, 0.91)])
     arr(ax, [(4.95, 0.91), (5.15, 0.91)])
     arr(ax, [(5.93, 0.91), (6.28, 0.91)])
@@ -220,8 +223,10 @@ def fig_overview():
     arr(ax, [(5.54, 1.81), (5.54, 1.90), (2.00, 1.90), (2.00, 1.98)], color=PAL["crit"][1], lw=1.2, ls=(0, (3, 2)))
     ax.text(4.38, 1.86, "실패 → Astra 호출 + M9 복구", fontsize=6.1, color=PAL["crit"][1],
             ha="center", va="top")
+    ax.text(4.30, 1.72, "하트비트(잠정 5 s)·단계 경계 → Astra", fontsize=6.0, color=PAL["astra"][1],
+            ha="center", va="top")
     icon_grid(ax, 1.42, 1.50, 0.50, 0.21)
-    ax.text(1.67, 1.46, "실패 시 연속 프레임\n(10장 격자)", fontsize=5.7, color="#555", ha="center", va="top")
+    ax.text(1.67, 1.46, "실패 시 연속 프레임\n(10장 격자)", fontsize=6.0, color="#555", ha="center", va="top")
     arr(ax, [(1.67, 1.71), (1.67, 1.98)])
     save(fig, "overview")
 
@@ -269,8 +274,8 @@ def fig_m4():
         ax.text(tx + (a + b) / 2 * cw, top + 0.04, lab, ha="center", va="bottom", fontsize=6.6, color="#333")
     ax.text(tx - 0.40, H - 0.12, "(b) 미래 스텝별 표 (option_key 기준, H=3)", fontsize=8, va="top", color=TXT,
             fontweight="bold")
-    ax.text(tx + 3 * cw, ty - 0.30, "고정: Jev p95 지연 길이 · 중간: 바꾸려면 합의 · 끝: 가장 새 표만",
-            ha="center", va="top", fontsize=5.8, color="#555")
+    ax.text(tx + 3 * cw, ty - 0.30, "고정: Jev-L p95 지연 길이 · 중간: 바꾸려면 합의 · 끝: 가장 새 표만",
+            ha="center", va="top", fontsize=6.0, color="#555")
 
     # (c) decision (matches tab:m4rule)
     dx = 5.25
@@ -284,7 +289,7 @@ def fig_m4():
         yy = 1.06 - k * 0.22
         ax.text(dx + 0.02, yy + 0.09, cond, fontsize=6.0, color="#444", ha="left", va="center")
         rbox(ax, dx + 0.92, yy, 0.63, 0.19, kind, act, fs=6.8)
-    ax.text(dx + 0.78, 0.32, "교체·수리: 전제 판본 +1,\n그 전제의 미확정 표 폐기", fontsize=5.6,
+    ax.text(dx + 0.78, 0.32, "교체·수리: 전제 판본 +1,\n그 전제의 미확정 표 폐기", fontsize=6.0,
             color=PAL["fix"][1], ha="center", va="top", linespacing=1.2)
     arr(ax, [(tx + nsteps * cw + 0.05, ty + 2 * chh), (dx - 0.12, ty + 2 * chh), (dx - 0.12, 1.87), (dx, 1.87)])
     save(fig, "m4_commit")
@@ -294,7 +299,7 @@ def fig_m4():
 def fig_recovery():
     W, H = COL_W, 2.0
     fig, ax = canvas(W, H)
-    lanes = [("Astra (M8)", 1.55), ("L1 스킬 재시도", 1.17), ("L2 Jev 복구 선택", 0.79), ("L3 안전 대기", 0.41)]
+    lanes = [("Astra (M8)", 1.55), ("L1 스킬 재시도", 1.17), ("L2 Jev-L 선택", 0.79), ("L3 안전 대기", 0.41)]
     lx = 0.86
     for name, yy in lanes:
         ax.text(lx - 0.07, yy + 0.09, name, ha="right", va="center", fontsize=6.3, color="#333")
@@ -302,19 +307,19 @@ def fig_recovery():
     t0, t1 = lx + 0.05, lx + 1.70
     ax.plot([t0, t0], [0.25, 1.85], color=PAL["crit"][1], lw=1.2, ls=(0, (3, 2)))
     ax.text(t0, 1.88, "실패 판정 (M7)", ha="center", va="bottom", fontsize=6.3, color=PAL["crit"][1])
-    pill(ax, t0, 1.55, 1.30, 0.18, "astra", "비동기 호출 (첫 토큰 low 약 3 s)", fs=5.7)
+    pill(ax, t0, 1.55, 1.30, 0.18, "astra", "비동기 호출 (첫 토큰 low 약 3 s)", fs=6.0)
     ax.annotate("", xy=(t1, 1.64), xytext=(t0 + 1.30, 1.64), arrowprops=dict(arrowstyle="-", lw=0.9,
                 color=PAL["astra"][1], ls=(0, (2, 2))))
-    ax.text(W - 0.06, 1.78, "high: 첫 토큰 약 73 s", ha="right", va="bottom", fontsize=5.7, color=PAL["astra"][1])
-    pill(ax, t0 + 0.03, 1.17, 0.62, 0.18, "skill", "인자 바꿔 1회", fs=5.6)
-    pill(ax, t0 + 0.62, 0.79, 0.72, 0.18, "jev", "코드 제안 중 고름", fs=5.6)
-    ax.add_patch(FancyBboxPatch((t0 + 1.12, 0.41), 0.50, 0.18, boxstyle="round,pad=0,rounding_size=0.09",
+    ax.text(t1 - 0.04, 1.78, "high: 첫 토큰 약 73 s", ha="right", va="bottom", fontsize=6.0, color=PAL["astra"][1])
+    pill(ax, t0 + 0.03, 1.17, 0.62, 0.18, "skill", "인자 바꿔 1회", fs=6.0)
+    pill(ax, t0 + 0.62, 0.79, 0.72, 0.18, "jev", "코드 제안 중 고름", fs=6.0)
+    ax.add_patch(FancyBboxPatch((t0 + 1.06, 0.41), 0.50, 0.18, boxstyle="round,pad=0,rounding_size=0.09",
                                 fc="#F4F4F4", ec="#9A9A9A", lw=0.9, ls=(0, (2, 2))))
-    ax.text(t0 + 1.37, 0.50, "필요할 때만", ha="center", va="center", fontsize=5.6, color="#555")
+    ax.text(t0 + 1.31, 0.50, "필요할 때만", ha="center", va="center", fontsize=6.0, color="#555")
     ax.plot([t1, t1], [0.25, 1.85], color=PAL["astra"][1], lw=0.9)
     ax.text(t1 + 0.05, 1.08, "새 계획 도착 →\n조건이 참인\n가장 늦은\n체크포인트\n에서 재개",
-            fontsize=5.7, color="#333", va="center", ha="left", linespacing=1.25)
-    ax.text(W / 2 + 0.3, 0.12, "시간 (개념도, 길이는 비례 아님)", ha="center", va="center", fontsize=5.8, color="#777")
+            fontsize=6.0, color="#333", va="center", ha="left", linespacing=1.25)
+    ax.text(W / 2 + 0.3, 0.12, "시간 (개념도, 길이는 비례 아님)", ha="center", va="center", fontsize=6.0, color="#777")
     save(fig, "failure_timeline")
 
 
@@ -327,8 +332,8 @@ def fig_eval():
     ax.text(0.325, 1.44, "standard", ha="center", va="bottom", fontsize=6.2, color="#444")
     ax.text(0.325, 0.28, "random", ha="center", va="top", fontsize=6.2, color="#444")
     rbox(ax, 0.82, 0.55, 0.62, 0.62, "perc", "같은\n인식 앞단", fs=7.0)
-    rbox(ax, 1.70, 1.02, 0.80, 0.46, "gray", "학습 결정 층", fs=7.0, sub="같은 입력으로 학습", sfs=5.7)
-    rbox(ax, 1.70, 0.25, 0.80, 0.46, "jev", "LLM 결정 층", fs=7.0, sub="Astra + Jev", sfs=5.8)
+    rbox(ax, 1.70, 1.02, 0.80, 0.46, "gray", "학습 결정 층", fs=7.0, sub="같은 입력으로 학습", sfs=6.0)
+    rbox(ax, 1.70, 0.25, 0.80, 0.46, "jev", "LLM 결정 층", fs=7.0, sub="Astra + Jev-L", sfs=6.0)
     rbox(ax, 2.72, 0.55, 0.48, 0.62, "skill", "같은\n실행기", fs=6.8)
     arr(ax, [(0.60, 1.19), (0.70, 1.19), (0.70, 0.86), (0.82, 0.86)])
     arr(ax, [(0.60, 0.53), (0.70, 0.53), (0.70, 0.86), (0.82, 0.86)], head=False)
@@ -336,7 +341,7 @@ def fig_eval():
     arr(ax, [(1.57, 0.86), (1.57, 0.48), (1.70, 0.48)])
     arr(ax, [(2.50, 1.25), (2.61, 1.25), (2.61, 0.86), (2.72, 0.86)])
     arr(ax, [(2.50, 0.48), (2.61, 0.48), (2.61, 0.86)], head=False)
-    ax.text(2.10, 0.86, "결정 층만 교체", ha="center", va="center", fontsize=5.9, color="#555")
+    ax.text(2.10, 0.86, "결정 층만 교체", ha="center", va="center", fontsize=6.0, color="#555")
     ax.text(W / 2, 0.06, "지표: standard → random 짝지은 상대 하락", ha="center", va="center", fontsize=6.3, color="#333")
     save(fig, "eval_protocol")
 
@@ -352,8 +357,8 @@ def fig_prelim():
     ax.bar(x - w / 2, std, w, color="#C9C9C9", label="standard", zorder=3)
     ax.bar(x + w / 2, rnd, w, color="#6E6E6E", label="random", zorder=3)
     for xi, s, r, d in zip(x, std, rnd, drop):
-        ax.text(xi - w / 2, s + 0.6, f"{s:.2f}", ha="center", va="bottom", fontsize=5.8, color="#333")
-        ax.text(xi + w / 2, r + 0.6, f"{r:.2f}", ha="center", va="bottom", fontsize=5.8, color="#333")
+        ax.text(xi - w / 2, s + 0.6, f"{s:.2f}", ha="center", va="bottom", fontsize=6.0, color="#333")
+        ax.text(xi + w / 2, r + 0.6, f"{r:.2f}", ha="center", va="bottom", fontsize=6.0, color="#333")
         ax.text(xi, max(s, r) + 4.6, d, ha="center", va="bottom", fontsize=6.6, color="#222",
                 fontweight="bold")
     ax.set_xticks(x); ax.set_xticklabels(names, fontsize=6.6)

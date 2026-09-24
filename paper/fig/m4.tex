@@ -1,6 +1,6 @@
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/m4_commit.pdf}
-\caption{\textbf{M4 확정 규칙.} (a) Jev를 약 0.33\,s 간격으로 겹쳐 부른다. 막대 길이는 설명용이며 실제 지연은 E0에서 잰다. (b) 각 호출은 앞으로의 $H$ 스텝(그림은 $H=3$)에 답하고, 답은 \texttt{option\_key} 기준으로 스텝별 표에 쌓인다. RTC의 구간을 이산판으로 옮겨 고정(Jev p95 지연 길이), 중간(바꾸려면 합의 필요), 끝(가장 새 표만)으로 나눈다. (c) 호출 사이 합의(a)와 실행 뒤 코드 예상 상태 대 측정 상태 확인(b)을 결합해 확정(OK+합의), 늦춰 확정(LAG+합의), 교체(DEVIATE), 수리(CONTRADICT)를 고른다. 경합 중에는 현 선택을 유지한다(\cref{tab:m4rule}). 교체와 수리 때는 전제 판본을 올려 그 전제에 기댄 미확정 표를 버린다. FAIL은 M7만 판정한다. 표의 A--C는 설명용 예시다.}
+\caption{\textbf{M4 확정 규칙.} (a) Jev-L을 약 0.33\,s 간격으로 겹쳐 부른다. 막대 길이는 설명용이며 실제 지연은 E0에서 잰다(사전 시험 p95 약 0.26--0.29\,s, \cref{sec:prelim3}). (b) 각 호출은 앞으로의 $H$ 스텝(그림은 $H=3$)에 답하고, 답은 \texttt{option\_key} 기준으로 스텝별 표에 쌓인다. RTC의 구간을 이산판으로 옮겨 고정(Jev-L p95 지연 길이), 중간(바꾸려면 합의 필요), 끝(가장 새 표만)으로 나눈다. (c) 호출 사이 합의(a)와 실행 뒤 코드 예상 상태 대 측정 상태 확인(b)을 결합해 확정(OK+합의), 늦춰 확정(LAG+합의), 교체(DEVIATE), 수리(CONTRADICT)를 고른다. 경합 중에는 현 선택을 유지한다(\cref{tab:m4rule}). 교체와 수리 때는 전제 판본을 올려 그 전제에 기댄 미확정 표를 버린다. FAIL은 M7만 판정한다. 표의 A--C는 설명용 예시다.}
 \label{fig:m4}
 \end{figure*}

@@ -17,4 +17,13 @@
   \item \intent{Sg2야}
   \item \intent{에이아이워커 기본으로}
   \item \chg{(09-24 사용자 결정) 로봇은 ROBOTIS AI Worker(실물 FFW-SG2, 베이스 고정), 카메라는 ZED 스테레오(깊이 켬). 결정 층 비교는 RoboDojo 양팔 로봇 그대로, 개발·정답 궤적·모듈 실험은 AI Worker 시뮬 쌍둥이 한 팔, 실물 확인은 AI Worker 최소판. 손목 힘 센서는 달지 않고 잔차 보정기는 관절 전류를 씀}
+  \item \intent{아니, 카메라를 붙이거나 이러지 말고 그냥 AI 워커의 기본으로 부착되어 있는 카메라들 그대로 쓸 거야. 손목캠도 그렇고 헤드캠도 그렇고.}
+  \item \chg{(09-24 §43) 카메라 추가·교체·이동 없음. ZED\_M 디지털 쌍둥이와 가상 스테레오 보조 트랙(D-stereo)은 폐기}
+  \item \intent{우손목캠 있음 https://github.com/kairobahq/humanoid-challenge-env 여기에 있는 로봇 설정 그대로 가져와서 복사해서 써보자}
+  \item \chg{(09-24 §47) 시뮬 로봇·카메라 = humanoid-challenge-env 설정 복사(로봇은 시뮬 설정 그대로, 카메라만 실물 사양): 머리 ZED Mini 왼쪽 정류 672$\times$376, 85$^\circ$, fx 367 / 우손목 D405 424$\times$240, 87$^\circ$. 스냅샷 풀은 새 장면(v2)으로만 만듦}
+  \item \chg{(09-24 §48) 풀·라벨·폐루프 시뮬은 CPU PhysX(옛 장면 DEV 0--4 P0에서 1.3--3.9배 실시간 대 GPU 0.18--0.56배, 5/5 성공). 조건: v2에서 DEV P0 $\ge$ 90\% 재확인. 한 실험 안에서 물리 장치를 섞지 않음. 라벨 점수식은 v2 자체 점검 전 사전 등록 규칙으로 고름(옛 장면 스모크에서 ``10 s 안 성공 = 1''은 거의 모든 보기 동점)}
+  \item \intent{3단계 실험 계획을 아주 철저하게 짠 다음에 실행에 들어가자 주기적으로 방향성이 맞는지에 대한 검사를 계속 해줘야 돼 틀리면은 그냥 처음부터 돌아가도 돼}
+  \item \intent{필요한 큰거나 기본은 전부다 data 경로인건 알지? 쿠베의 h200의}
+  \item \intent{폴더 이름은 harvest 여야지}
+  \item \idea{(09-24 단계 3 예비 결과, 논문 \S 예비 결과) Inspect Robots v0.59.0: Isaac Sim 5.1 + Isaac Lab 2.3 부팅, sync·simlat·wall 16/16, 오버헤드 57--59 $\mu$s/스텝. 옛 장면(v1): 머리캠 켬 RTF 0.536 $\rightarrow$ simlat 기본, 오라클 플래너 DEV P0 30/30·P1 29/30·P2 30/30, 스냅샷 복원 최대 0.513 mm(쥐는 순간). v2(챌린지 설정·CPU 물리) 재측정은 진행 중}
 \end{itemize}

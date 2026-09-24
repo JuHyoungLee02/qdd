@@ -11,7 +11,7 @@ Show-Harness~\cite{showharness2026}는 스텝마다 LLM이 이산 행동을 고�
 RTC~\cite{black2025rtc}, SmolVLA~\cite{shukor2025smolvla}, VLASH~\cite{vlash2025}, A2C2~\cite{a2c2}는 행동 청크를 비동기로 실행한다. Slow Brain~\cite{slowbrain2026}은 느린 모델을 멈추지 않고 겹쳐 요청한다. 그 가운데 VLM Stream은 가장 최근의 답만 쓰고, Probability Fusion은 가장 최근의 답에 빠른 층의 점수를 감쇠 가중으로 섞는다. A3~\cite{a3commit2026}는 VLA 청크를 같은 시각에 여러 개 뽑아 합의한 앞 구간을 확정하며, 실행 뒤 확인은 하지 않는다. 우리 M4는 시간차 호출 사이의 합의와 실행 뒤 예상 대 측정 비교를 함께 쓴다.
 
 \paragraph{호출 시점.}
-CheckVLA~\cite{checkvla2026}와 Event-triggered~\cite{eventtrig2026} 등은 주기 호출과 이벤트 호출을 비교했다.
+CheckVLA~\cite{checkvla2026}와 Event-triggered~\cite{eventtrig2026} 등은 주기 호출과 이벤트 호출을 비교했다. 배포형 계층 시스템은 주기 확인, 단계 경계, 사건, 비동기 실행을 섞는다. Gemini Robotics 1.5~\cite{geminirobotics15_2025}의 오케스트레이터는 하위 과제 성공 감지로 다음 단계로 넘어갈 때를 정한다. Gemini Robotics-ER 개발자 문서~\cite{geminier_docs2026}는 최신 카메라 프레임과 짧은 질문을 주기적으로 보내 명시적 결정을 강제하는 하트비트를 두며, 진행 중인 추론을 끊지 않도록 한 턴이 끝나기를 기다리면서 약 1\,Hz를 목표로 보낸다. $\pi_{0.5}$~\cite{pi05_2025}는 추론 스텝마다 하위 과제를 예측하고, Hi Robot~\cite{hirobot2025}(기간 밖, 기초 문헌)은 1초마다 또는 사용자 개입이 있을 때 상위 추론을 다시 돌린다. 우리 M8의 하트비트와 단계 경계 호출은 이 설계를 API 계획기에 옮긴 것이다.
 
-\paragraph{Jev.}
-arXiv 2026-09-23 제출분 기준으로 Jev를 로봇에 쓴 논문은 없다. 저장소 데모(Jev-as-Policy, RoboJEV, embodied-jev)만 있으며, 이 가운데 Jev-as-Policy는 요청 하나에 답이 올 때까지 직전 행동을 유지한다.
+\paragraph{빠른 typed 결정 모델.}
+arXiv 2026-09-23 제출분 기준으로 typed 객관식 모델 Jev(TypeSafe AI)를 로봇에 쓴 논문은 없다. 저장소 데모(Jev-as-Policy, RoboJEV, embodied-jev)만 있으며, 이 가운데 Jev-as-Policy는 요청 하나에 답이 올 때까지 직전 행동을 유지한다. 우리는 Jev 대신 로컬 오픈 VLM Qwen3-VL~\cite{qwen3vl2025}을 vLLM~\cite{vllm2026}으로 서빙해 보기 토큰의 로그 확률을 읽는다. 보기 확률을 예측 집합으로 바꾸는 방식은 KnowNo~\cite{knowno2023}(기간 밖, 기초 문헌)를 따른다. 로컬 VLM을 상위 결정기로 쓰는 $\pi_{0.5}$, Hi Robot, HiVLA~\cite{hivla2026}는 학습된 계층 정책이고, 시간차 겹침 호출의 합의와 실행 뒤 예상 대 측정 비교가 없다.

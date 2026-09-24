@@ -5,6 +5,7 @@
 \begin{itemize}
   \item Jev: 텍스트만. 수치·시간 비교 약함. 입력 길면 정확도 하락. \textbf{Score 기댓값으로 크기 보간 금지}, \textbf{질문끼리 확률이 서로 안 맞음}(공식 문서)
   \item Astra: 이미지 OK, 비디오 없음. \textbf{logprob 못 씀}(effort none 없음). effort 지연은 날마다 바뀜
+  \item \chg{(09-24 §44) Jev 사용 불가 $\rightarrow$ Jev-L(로컬 VLM, 이미지 받음). 위 Jev 줄의 ``Score 보간 금지·질문끼리 확률 안 맞음''은 Jev 문서 근거였지만 설계 규칙으로 유지(기하는 코드, 같은 질문 보기끼리만 확률 비교). 모델 고정 = 저장소 리비전 + vLLM 판본 + BF16(\texttt{jev-1.13.0} 대신), \texttt{JevCall} $\rightarrow$ \texttt{DecCall}}
 \end{itemize}
 
 \subsection{M1 이미지 $\rightarrow$ Jev}
@@ -14,6 +15,12 @@
   \item \chg{``텍스트가 이미지보다 낫다''의 근거(BALROG)는 모델마다 다름. 근거에서 내림}
   \item \chg{(09-24) 변환 방법은 Claude가 정함: 기본 = 물체 ID 술어 표 + 변화 절(후보 A). 나머지 두 후보는 오프라인 비교(E3) 조건. ``변환 방법은 사용자가 정한다는 사용자가 한 말이 아니라서 지움} \decide{인식 앞단}
   \item \idea{(09-24 D13) 이미지를 못 보는 모델도 기호 표만 받아 게임 벤치 상위권(lmgame-Bench, 저자도 예비 결과라 함). 가장 강한 VLM(GPT-4.1·GPT-5.2)도 ``옆에 있음·열림'' 판정은 50--77\%(ViPlan~\cite{viplan2025}) $\rightarrow$ 그런 술어는 코드로 계산}
+  \item \chg{(09-24 §44) Jev-L은 이미지를 받지만 작은 VLM의 공간 판단은 못 믿음 $\rightarrow$ M1 텍스트가 주 입력, 머리캠 1장은 보조(텍스트만 조건과 비교)}
+  \item \idea{(E3-ST, fx 367 재계산) 분할기를 바꿔도 정지 흔들림은 거의 같음(같은 에피소드 과제 1: 1.45 대 1.42 mm, 과제 2: 2.41 대 2.47 mm). 성패는 검출 프롬프트: SAM 3.1에 과제 문장 ``box''는 흰 바구니 0/20, ``basket''은 19/20. 정지 p95 9--16 mm라 과제 2는 near 띠(1 cm)를 넘음}
+  \item \idea{(Claude 보고, user-log 49) 물체 이름은 Astra가 계획할 때 장면을 보고 정해 주는 구조가 맞아 보입니다.}
+  \item \intent{나도 이렇게 생각함}
+  \item \chg{(09-24 §46) SAM 3.1 프롬프트 = Astra가 계약 \texttt{objects}에 적은 \texttt{detect\_phrase}. 검출 0건·추적 끊김이면 \texttt{id\_uncertain}(술어 unknown, 소프트 채널)로 올리고 다음 하트비트를 앞당겨 Astra가 이름을 고침(정지 없음). T0에서는 검출 확인 뒤 실행 시작. 계약 검사기에 ``detect\_phrase 비어 있지 않음'' 추가}
+  \item \chg{(09-24 §47) ZED Mini ``102$^\circ$''는 센서 최대 화각. 우리가 쓰는 VGA 672$\times$376은 수평 85$^\circ$, fx 367(실측 364.0) $\rightarrow$ 깊이·흔들림 다시 계산(깊이 1.349배, 흔들림 1.15--1.30배)}
 \end{itemize}
 
 \subsection{M2 Astra $\rightarrow$ Jev}
@@ -111,6 +118,10 @@
   \item \dirn{프레임 비교에 ``무엇이 바뀌었는지 텍스트'' 조건 추가(CaP-X에서 원시 이미지보다 나음)}
   \item \dirn{(09-24) 비교 기준을 원문 그대로: 호출 수 맞춘 주기(CheckVLA), 정체 때 멈추고 부르는 판(Critic in the Loop). ``실패 트리거를 다음 주기까지 미루기''는 절제로만 --- 사용자 원칙은 그대로}
   \item \idea{반대 증거: CheckVLA는 지연 1초에서 이미 ``다음 경계까지 기다림''(34.0)이 청크 안 수리(23.4--31.4)보다 나았음(Table S6에서 우리가 읽은 값). Astra는 훨씬 느림 $\rightarrow$ 그동안 아래 층이 버텨야 함(M9)}
+  \item \intent{근데 처음 계획 세우고 실패할 때만 불러온다는 것 자체도 약간 좀 이상한데 어느 정도 주기로 하든지 뭔가가 있어야 될것 같은데 제미나이 3.0에서 어떤 식으로 했는지 한번 찾아봐봐 상위 계획기를 어떤 식으로 사용했는지 VLA 할때}
+  \item \idea{(D25) Gemini Robotics-ER 문서~\cite{geminier_docs2026}: 최신 프레임 + 짧은 질문을 주기적으로 보내 명시적 결정을 강제하는 하트비트, 턴 완료를 기다리며 약 1 Hz 목표, 타이머만 믿으면 취소 반복 고리 경고. Gemini Robotics 1.5~\cite{geminirobotics15_2025}: 하위 과제 성공 감지로 다음 단계. Hi Robot 1 s 또는 사용자 개입 때(기간 밖, 기초 문헌) $\rightarrow$ 배포형 시스템은 주기 확인 + 단계 경계 + 사건을 섞음}
+  \item \chg{(09-24 §45) H-cadence: T0(정지 허용) + T\_fail(항상) + 하트비트 T\_hb(직전 응답 뒤 $N$초, ack/patch/replace 닫힌 선택, 한 번에 1개, 잠정 $N$ = 5 s, 실효 약 8--9 s) + 단계 경계 T\_sub(기다리지 않음) + 사건(C\_assume·T3a·T\_stag·T\_j5·새 지시)은 하트비트를 앞당김. ack는 전제 판본을 안 올림(M4 표 보호). $N$은 E-M8c(K0--K4, 감시기 밖 실패 섭동 필수)로 정함}
+  \item \idea{(09-24 실측) Astra low 첫 토큰 2.975 s(1회, 짧은 입력). 설계값 아님}
 \end{itemize}
 
 \subsection{M9 실패 복구}
