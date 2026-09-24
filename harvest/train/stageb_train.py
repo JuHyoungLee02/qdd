@@ -104,6 +104,7 @@ def backbone_trainable(bb):
 def make_optimizer(model, lr, lr_heads, total, warmup=0.03):
     bb = [p for p in model.backbone.parameters() if p.requires_grad]
     heads = list(model.expert.parameters()) + (list(model.aux.parameters()) if model.aux is not None else [])
+    heads += list(model.verify.parameters()) if getattr(model, "verify", None) is not None else []
     groups = [{"params": heads, "lr": lr_heads}]
     if bb:
         groups.append({"params": bb, "lr": lr})
@@ -246,7 +247,7 @@ def cmd_smoke(a):
     ek = {"width": a.width, "depth": a.depth, "heads": a.heads}
     model = new_model(bb, tr, hd, mode=a.mode, ki=a.ki, expert_kw=ek,
                       aux_kw={"width": min(512, a.width), "heads": 4 if a.width < 256 else 8},
-                      lam={"dec": a.lam_dec, "act": a.lam_act, "aux": a.lam_aux}).to(device)
+                      lam={"dec": a.lam_dec, "act": a.lam_act, "aux": a.lam_aux, "ver": a.lam_ver}).to(device)
     model.shared = not a.no_share
     enc = HFEncoder(proc)
     log = open(os.path.join(out, "log.jsonl"), "w")
@@ -296,9 +297,15 @@ def cmd_train(a):
         from .stagea_train import _seedset
         dev = _seedset(a.dev_val_seeds)
     samples = []
-    for folder in filter(None, a.pool.split(",")):
-        samples += D.load_stageb(folder, state=a.state, wrist=not a.no_wrist, dev_val_seeds=dev)
+    folders = [f for f in a.pool.split(",") if f]
+    rows = [r or None for r in a.rows.split(",")] if a.rows else [None] * len(folders)
+    if len(rows) != len(folders):
+        raise SystemExit("--rows: one rows file per --pool folder (empty = <folder>.stageb.jsonl)")
+    for folder, rp in zip(folders, rows):
+        samples += D.load_stageb(folder, rows_path=rp, state=a.state, wrist=not a.no_wrist, dev_val_seeds=dev)
     tr, va = D.split_samples(samples)
+    if a.max_train:
+        tr = random.Random(a.seed).sample(tr, min(a.max_train, len(tr)))
     if not tr or not va:
         raise SystemExit(f"no samples: train {len(tr)} val {len(va)}")
     out = os.path.join(a.out_root, a.run)
@@ -311,7 +318,7 @@ def cmd_train(a):
         bb.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
         bb.enable_input_require_grads()
     model = new_model(bb, tr, hd, mode=a.mode, ki=a.ki, lam={"dec": a.lam_dec, "act": a.lam_act, "aux": a.lam_aux,
-                                                             "vqa": 0.0}).to(device)
+                                                             "vqa": 0.0, "ver": a.lam_ver}).to(device)
     model.shared = not a.no_share
     enc = HFEncoder(proc)
     log = open(os.path.join(out, "log.jsonl"), "a")
@@ -339,6 +346,7 @@ def _common(p):
     p.add_argument("--lam-dec", type=float, default=1.0)
     p.add_argument("--lam-act", type=float, default=1.0)
     p.add_argument("--lam-aux", type=float, default=0.1)
+    p.add_argument("--lam-ver", type=float, default=0.1, help="verification head (§61/§64), 0 = off")
     p.add_argument("--lr", type=float, default=1e-4, help="LoRA")
     p.add_argument("--lr-heads", type=float, default=1e-4, help="expert + aux head")
     p.add_argument("--batch", type=int, default=4)
@@ -372,6 +380,8 @@ def main(argv=None):
     t.add_argument("--max-steps", type=int, default=0)
     t.add_argument("--max-val", type=int, default=0)
     t.add_argument("--dev-val-seeds", default="")
+    t.add_argument("--rows", default="", help="R2 rows file per --pool folder (default <folder>.stageb.jsonl)")
+    t.add_argument("--max-train", type=int, default=0, help="random subset of the train samples (smoke)")
     t.add_argument("--grad-ckpt", action="store_true")
     t.add_argument("--overwrite", action="store_true")
     a = ap.parse_args(argv)

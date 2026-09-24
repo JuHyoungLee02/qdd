@@ -51,6 +51,10 @@ AUX_REG = ("g2tgt_dx", "g2tgt_dy", "g2tgt_dz", "g2tgt_dist", "g2goal_dx", "g2goa
 AUX_CLS = ("gripper_open", "holding_tgt", "lifted_tgt", "upright_tgt", "near_tgt_place", "contact_tgt_place",
            "on_tgt_place")
 AUX_REG_SCALE = 0.05  # m -> loss units (a 5 cm error = 1)
+# §61 / §64 verification head V1h targets: the E-M4b-meas test predicates (= m4b.spec.PREDS, world 5 + robot 4),
+# from R2 rows' verify.truth (datagen.rows.truth9); the runtime reads them through runtime.measure
+VERIFY_PREDS = ("on_tp", "contact_tp", "lifted_t", "near_tp", "above_tp", "gripper_open", "holding_t",
+                "lifted_holding", "contact_stall")
 
 
 # ------------------------------------------------------------------------------------------ prompt state
@@ -146,6 +150,14 @@ def aux_vecs(aux: dict):
     c = np.array([0.0 if cls.get(n) is None else float(cls[n]) for n in AUX_CLS], np.float32)
     cm = np.array([cls.get(n) is not None for n in AUX_CLS], np.float32)
     return r, rm, c, cm
+
+
+def verify_vecs(truth: dict | None):
+    """(y[VERIFY_PREDS], mask); a missing row / None value -> masked."""
+    truth = truth or {}
+    y = np.array([0.0 if truth.get(n) is None else float(truth[n]) for n in VERIFY_PREDS], np.float32)
+    m = np.array([truth.get(n) is not None for n in VERIFY_PREDS], np.float32)
+    return y, m
 
 
 # ------------------------------------------------------------------------------------------ vocab / norm
@@ -258,7 +270,7 @@ def make_sample(row: dict, line: dict | None, items: list, state: str = "IMG", w
             (line or {}).get("split"), "items": items, "context": ctx, "committed": committed,
             "skill_id": row["skill_id"], "phase_id": row["phase_id"], "proprio": row["proprio"],
             "action_exec": row["action_exec"], "action_script": row["action_script"], "valid": row["valid"],
-            "aux": row["aux"], "H": row["H"]}
+            "aux": row["aux"], "H": row["H"], "verify": (row.get("verify") or {}).get("truth")}
 
 
 def read_rows(path: str) -> dict:
@@ -337,7 +349,8 @@ def synthetic_rows(n: int, H: int = H_DEFAULT, seed: int = 0, img_dir: str | Non
                "action_exec": exec_.tolist(), "action_script": script.tolist(), "valid": valid,
                "aux": {"reg": {"g2goal_dx": float(g[0]), "g2goal_dy": float(g[1]), "g2goal_dz": float(g[2]),
                                "g2goal_dist": float(np.linalg.norm(g))},
-                       "cls": {"gripper_open": int(grip > 0)}}}
+                       "cls": {"gripper_open": int(grip > 0)}},
+               "verify": {"truth": {"gripper_open": bool(grip > 0), "lifted_t": bool(g[2] > 0)}}}
         text = f"t_state: f{i}  contract: c1  stage: S1 \"pick up mug o3\"\nrobot: gripper=" \
                f"{'open' if grip > 0 else 'closed'} arm=moving"
         ims = []

@@ -38,6 +38,7 @@ MOTION_OBJ = {"approach": "o3", "grasp": "o3", "lift": "o3", "carry": "o5", "pla
 OK_M, LAG_M = 0.015, 0.04  # (b) residual thresholds, TCP command vs measured at the step end [가정]
 WS_X, WS_Y, WS_Z = (0.25, 0.65), (-0.50, 0.10), (0.03, 0.35)  # safety box (world x/y, z above the table)
 GRASP_FLOOR_M = 0.003  # TCP grasp floor below the planner's grasp height
+HOLD_DEBOUNCE_S = 0.15  # planner.HOLD_DEBOUNCE = 3 control steps at 20 Hz (datagen: 5 at 30 Hz)
 
 
 def constraint(dec: dict):
@@ -88,6 +89,7 @@ class PickPlaceSkill:
     def __init__(self, dt: float = 0.01, max_retries: int = 2):
         self.dt, self.max_retries = dt, max_retries
         self.w_open, self.w_close = GRIP_MAX_W, max(0.0, 2 * MUG_R - SQUEEZE)
+        self.stage_gate = "self"  # "astra" (E-M8c K3, Gemini faithful): stage ends only on Astra's instruction
         self.goal_quat = np.array([math.cos(TOP_DOWN_YAW / 2), 0, 0, math.sin(TOP_DOWN_YAW / 2)])
 
     def reset(self, t: float, tcp_pos_w, tcp_quat_w) -> None:
@@ -100,6 +102,7 @@ class PickPlaceSkill:
         self.retries = 0
         self.pending_outcome = None  # CONTRADICT from an expected_after check in this step
         self.events: list = []
+        self._t_hold = None  # last tick with holding(o3) measured true (debounce)
 
     # ------------------------------------------------------------------ decisions
     def begin_slot(self, ds: int, dec: dict) -> None:
@@ -120,6 +123,12 @@ class PickPlaceSkill:
     def tick(self, t: float, raw: dict, pred: dict, tcp_pos_w, table_z: float) -> SkillCmd:
         tcp_pos_w = np.asarray(tcp_pos_w, float)
         g, rel, hm, hr = rel_from_raw(raw)  # the labels' geometry (finger-link midpoint), consistent with decisions
+        # holding debounce (the planner's HOLD_DEBOUNCE, 0.15 s): a one-tick dropout of the gripper applied torque
+        # (DEV seed 1: ~20 -> 0.02 N m for 10 ms, pads still on the mug) is not an object loss (pre-R7 fix 3)
+        if pred.get("holding(o3)"):
+            self._t_hold = t
+        elif self._t_hold is not None and t - self._t_hold < HOLD_DEBOUNCE_S - 1e-9:
+            pred = {**pred, "holding(o3)": True}
         gs = gripper_state(pred)
         if self.wait_until is not None:
             if t < self.wait_until - 1e-9:
@@ -160,7 +169,8 @@ class PickPlaceSkill:
                 self.cmd_w, self.wait_until = self.w_close, t + CLOSE_WAIT_S
                 self._set_phase("close", t, "next+reached")
                 return self._cmd(t, "close", False)
-            if self.stage == "S1" and pred.get("holding(o3)") and pred.get("lifted(o3)"):
+            if (self.stage == "S1" and pred.get("holding(o3)") and pred.get("lifted(o3)")
+                    and self.stage_gate == "self"):
                 self.stage = "S2"
                 self._set_phase("carry", t, "next+exit_S1")
             elif (self.stage == "S2" and gs == "closed_holding" and M == "place"
@@ -168,7 +178,7 @@ class PickPlaceSkill:
                 self.cmd_w, self.wait_until = self.w_open, t + OPEN_WAIT_S
                 self._set_phase("open", t, "next+placed")
                 return self._cmd(t, "open", False)
-            elif self.stage == "S2" and gs == "open" and M == "retreat" and reached:
+            elif self.stage == "S2" and gs == "open" and M == "retreat" and reached and self.stage_gate == "self":
                 self._set_phase("done", t, "next+retreated")
         # bounded motion toward the sub-goal
         c = constraint(self.dec)
@@ -187,6 +197,23 @@ class PickPlaceSkill:
             self.cmd_pos = np.array([np.clip(self.cmd_pos[0], *WS_X), np.clip(self.cmd_pos[1], *WS_Y),
                                      np.clip(self.cmd_pos[2], z_lo, table_z + WS_Z[1])])
         return self._cmd(t, M, allowed)
+
+    def astra_advance(self, decision: str, t: float, pred: dict) -> str:
+        """E-M8c K3 (Gemini streaming faithful variant): Astra's run_instruction / reset end the current step, applied
+        only when the code safety predicate of that transition holds (M6 rule: decision + code safety predicate).
+        Returns applied | rejected | noop."""
+        if decision == "run_instruction":
+            if self.stage == "S1" and pred.get("holding(o3)") and pred.get("lifted(o3)"):
+                self.stage = "S2"
+                self._set_phase("carry", t, "astra_run_instruction")
+                return "applied"
+            return "rejected"
+        if decision == "reset":
+            if self.stage == "S2" and gripper_state(pred) == "open" and self.phase == "retreat":
+                self._set_phase("done", t, "astra_reset")
+                return "applied"
+            return "rejected"
+        return "noop"
 
     def _label(self, M: str, gs: str, t: float) -> None:
         """Prompt phase name (planner vocabulary) from the sub-phase, outside waits and the done state."""

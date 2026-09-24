@@ -103,7 +103,9 @@ def test_aux_and_decision_losses_reach_the_backbone_and_expert_adds_nothing_unde
     assert sum(float(g.abs().sum()) for g in _grads(l_aux, bb)) > 0
     l_dec = m.decision_loss(ss[:3], enc, dev)
     assert sum(float(g.abs().sum()) for g in _grads(l_dec, bb)) > 0
-    # full joint loss: backbone gradient == gradient of (dec + 0.5 aux) alone
+    l_ver = m.verify_loss(ss[:3], ctx, mask, dev)  # §61/§64 verification head also reaches the backbone
+    assert sum(float(g.abs().sum()) for g in _grads(l_ver, bb)) > 0
+    # full joint loss: backbone gradient == gradient of (dec + 0.5 aux + 0.1 verify) alone
     g = torch.Generator().manual_seed(2)
     a, _, _ = m.targets(ss[:3], dev)
     t, noise = E.sample_time(3, dev, g), torch.randn(a.shape, generator=g)
@@ -111,10 +113,10 @@ def test_aux_and_decision_losses_reach_the_backbone_and_expert_adds_nothing_unde
     g_total = _grads(total, bb)
     ctx, mask = m.contexts(ss[:3], enc, dev, grad=True)
     l_aux2, _ = E.aux_loss(m.aux, ctx, mask, r, rm, c, cm)
-    g_ref = _grads(m.decision_loss(ss[:3], enc, dev) + 0.5 * l_aux2, bb)
+    g_ref = _grads(m.decision_loss(ss[:3], enc, dev) + 0.5 * l_aux2 + 0.1 * m.verify_loss(ss[:3], ctx, mask, dev), bb)
     for x, y in zip(g_total, g_ref):
         assert torch.allclose(x, y, atol=1e-6)
-    assert {"fm", "aux", "dec", "total"} <= set(logs)
+    assert {"fm", "aux", "dec", "ver", "total"} <= set(logs)
 
 
 def test_insulate_keeps_forward_values():
@@ -200,6 +202,15 @@ def test_save_load_heads_round_trip_and_predict_equal(tmp_path):
         assert np.array_equal(p1, m2.predict(ss[0], enc, dev, noise=noise))
         assert m2.norm.to_json() == m.norm.to_json() and m2.ki == "stop"
         assert m2.vocabs["dec"].ids == m.vocabs["dec"].ids
+        ctx, mask = m.contexts(ss[:1], enc, dev, grad=False)
+        with torch.no_grad():
+            v1, v2 = m.verify_logits(ctx, mask), m2.verify_logits(ctx, mask)
+        assert v1.shape == (1, len(D.VERIFY_PREDS)) and torch.equal(v1, v2)
+
+
+def test_verify_preds_are_the_m4b_test_predicates():
+    from harvest.m4b import spec as FS
+    assert D.VERIFY_PREDS == FS.PREDS
 
 
 def test_residual_mode_output_stays_within_xi_of_the_scripted_chunk():

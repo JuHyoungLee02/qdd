@@ -17,7 +17,7 @@ import sys
 import time
 
 
-def question_ids(layout: str) -> dict:
+def question_ids(layout: str, state: str = "S1-1mm") -> dict:
     """question_id@vN of the 5 decision questions (canon §28 J1), ds / stage templated, camera layout in the legend
     (canon §59)."""
     import numpy as np  # noqa: F401
@@ -31,7 +31,7 @@ def question_ids(layout: str) -> dict:
     for qid, (q, opts) in shown.items():
         text = re.sub(r"stage S\d", "stage {stage}", re.sub(r"ds\d+", "{ds}", req["questions"][qid]["instructions"]))
         out[q] = question_id(text, [o.key for o in opts], {o.key: o.desc for o in opts}, {o.key: o.name for o in opts},
-                             f"cameras={layout};state=S1-1mm")
+                             f"cameras={layout};state={state}")
     return out
 
 
@@ -39,13 +39,17 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
     ap.add_argument("--backend", default="modular", choices=["modular", "fused"])
-    ap.add_argument("--selector", default="mock", choices=["mock", "jevl", "mock_fused"])
+    ap.add_argument("--selector", default="mock", choices=["mock", "jevl", "mock_fused", "stageb"],
+                    help="stageb = a real stage-B checkpoint served by runtime.fused_model serve (--url)")
+    ap.add_argument("--hb-mode", default="K2", help="E-M8c cadence K0..K4 (astra_hb.py)")
+    ap.add_argument("--hb-budget", type=int, default=None)
+    ap.add_argument("--verify-cal", default="")
     ap.add_argument("--url", default="http://127.0.0.1:8131")
     ap.add_argument("--model", default="")
     ap.add_argument("--model-path", default="")
     ap.add_argument("--layout", default="HW", choices=["H", "HW"])
     ap.add_argument("--mode", default="lead", choices=["lead", "base"])
-    ap.add_argument("--astra", default="auto", choices=["auto", "api", "mock", "none"])
+    ap.add_argument("--astra", default="auto", choices=["auto", "api", "mock", "scripted", "none"])
     ap.add_argument("--clock", default="simlat", choices=["simlat", "sync"])
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--kind", default="P0")
@@ -71,6 +75,9 @@ def main(argv=None):
 
     if a.selector == "jevl":
         model = JevLSelector(a.url, a.model, layout=a.layout, mode=a.mode)
+    elif a.selector == "stageb":
+        from .fused_model import FusedClient
+        model = FusedClient(a.url)
     elif a.selector == "mock_fused":
         model = MockFusedModel(latency_s=a.mock_latency)
     else:
@@ -84,10 +91,14 @@ def main(argv=None):
         raise SystemExit("--astra api but no /data/.openai_token")
     elif a.astra in ("auto", "mock"):
         astra, astra_mode = MockAstra(3.0), "mock"
+    elif a.astra == "scripted":
+        from .astra_hb import ScriptedAstra
+        astra, astra_mode = ScriptedAstra(1.0), "scripted"
     cfg = RuntimeConfig(backend=a.backend, selector=a.selector, model_id=getattr(model, "model_id", a.model),
                         model_path=a.model_path, layout=a.layout if a.selector == "jevl" else "",
                         call_mode=a.mode if a.selector == "jevl" else "", clock=a.clock,
-                        question_ids=question_ids(a.layout), astra_mode=astra_mode)
+                        question_ids=question_ids(a.layout, "IMG" if a.selector == "stageb" else "S1-1mm"),
+                        astra_mode=astra_mode, hb_mode=a.hb_mode, hb_budget=a.hb_budget, verify_cal=a.verify_cal)
     if a.backend == "fused":
         cfg.state_repr = "fused: images (head + active wrist) + task + contract summary + proprio (canon §58)"
     rt = OursRuntime(cfg, model, astra=astra)

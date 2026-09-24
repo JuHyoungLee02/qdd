@@ -44,6 +44,22 @@ def test_run_labels_add_the_heartbeat_period_only_when_swept():
     assert closed.run_labels(["C5"], [0.0, 10.0]) == [("C5", 0.0, "C5|hb0"), ("C5", 10.0, "C5|hb10")]
 
 
+def test_run_labels_sweep_the_cadence_k0_to_k4():
+    """E-M8c (canon §45): the cadence joins the label only when swept; N is swept for K2 only."""
+    got = closed.run_labels(["C5"], [5.0, 10.0], ("K1", "K2", "K3"))
+    assert got == [("C5", 5.0, "C5|K1", "K1"), ("C5", 5.0, "C5|K2|hb5", "K2"), ("C5", 10.0, "C5|K2|hb10", "K2"),
+                   ("C5", 5.0, "C5|K3", "K3")]
+    assert closed.run_labels(["C5"], [5.0], ("K4",)) == [("C5", 5.0, "C5", "K4")]
+
+
+def test_cadence_flags_are_checked(tmp_path):
+    import pytest
+    with pytest.raises(SystemExit, match="K4 needs --hb-budget"):
+        closed.run(closed._args(["--model", "mock", "--out", str(tmp_path / "o"), "--hb-mode", "K4"]))
+    with pytest.raises(SystemExit, match="--hb-mode"):
+        closed.run(closed._args(["--model", "mock", "--out", str(tmp_path / "o"), "--hb-mode", "K9"]))
+
+
 def test_worker_flag_alone_routes_to_the_worker(monkeypatch):
     got = []
     monkeypatch.setattr(closed, "run_worker", lambda p: got.append(p))

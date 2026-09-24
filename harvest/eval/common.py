@@ -81,6 +81,8 @@ def resolve_model(spec: str) -> dict:
         return {"kind": "zero-shot", "path": BASE_MODEL, "spec": spec}
     if spec == "mock":
         return {"kind": "mock", "path": None, "spec": spec}
+    if os.path.isfile(os.path.join(spec, "stageb.json")) and os.path.isdir(os.path.join(spec, "adapter")):
+        return {"kind": "stageb", "path": os.path.abspath(spec), "spec": spec}  # fused model (runtime.fused_model)
     if os.path.isfile(os.path.join(spec, "adapter_config.json")):
         return {"kind": "adapter", "path": os.path.abspath(spec), "spec": spec}
     if os.path.isfile(os.path.join(spec, "config.json")) and glob.glob(os.path.join(spec, "*.safetensors")):
@@ -113,6 +115,9 @@ def training_prompt_config(model_path: str | None) -> dict | None:
     state mode, grid, prompt files sha. None for the base model."""
     if not model_path:
         return None
+    sb = os.path.join(model_path, "stageb.json")
+    if os.path.isfile(sb):  # stage-B checkpoint (stageb_train.prompt_config)
+        return json.load(open(sb, encoding="utf-8")).get("prompt_config")
     mi = os.path.join(model_path, "merge_info.json")
     run = None
     if os.path.isfile(mi):
@@ -188,6 +193,8 @@ class Server:
         if self.info["kind"] == "mock" or self.url:
             self.name = self.name or self.info.get("spec", "")
             return self
+        if self.info["kind"] == "stageb":
+            return self._enter_fused()
         self.name = self.name or ("zero-shot" if self.info["kind"] == "zero-shot" else "r6-model")
         port = _free_port()
         env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(self.gpu), "VLLM_BATCH_INVARIANT": "1",
@@ -214,6 +221,33 @@ class Server:
                 pass
             time.sleep(3)
         raise SystemExit("vLLM did not become healthy in 900 s")
+
+    def _enter_fused(self):
+        """A stage-B checkpoint: the fused-model HTTP server (runtime.fused_model serve, venv_train, HF + CUDA-graph
+        expert) on the model GPU -- never the Isaac render GPU."""
+        import httpx
+        self.name = "stageb-fused"
+        port = _free_port()
+        env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(self.gpu), "PYTHONPATH": REPO,
+               "TORCH_DISABLE_NATIVE_JIT": "1"}
+        os.makedirs(self.out, exist_ok=True)
+        self.log = open(os.path.join(self.out, "fused_server.log"), "w")
+        self.proc = subprocess.Popen([TRAIN_PY, "-m", "harvest.runtime.fused_model", "serve", "--ckpt",
+                                      self.info["path"], "--port", str(port)], env=env, cwd=REPO,
+                                     stdout=self.log, stderr=subprocess.STDOUT, start_new_session=True)
+        self.url = f"http://127.0.0.1:{port}"
+        t0 = time.monotonic()
+        while time.monotonic() - t0 < 900:
+            if self.proc.poll() is not None:
+                raise SystemExit(f"fused server exited ({self.proc.returncode}), see {self.out}/fused_server.log")
+            try:
+                if httpx.get(self.url + "/info", timeout=2).status_code == 200:
+                    self.t_ready = time.monotonic() - t0
+                    return self
+            except httpx.HTTPError:
+                pass
+            time.sleep(3)
+        raise SystemExit("fused server did not come up in 900 s")
 
     def __exit__(self, *exc):
         if self.proc is not None:

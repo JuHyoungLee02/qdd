@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import math
 import time
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
 
@@ -26,9 +27,10 @@ from ..config import CFG
 from ..predicates import PredicateState
 from ..sim.planner import PHASE_TIMEOUT_S
 from ..sim.snapshot import obs_from_json, pred_changes, text_state
-from .astra_hb import EFFORT, HB_PROMPT_ID, MAX_OUT, HeartbeatScheduler, heartbeat_input, parse_decision
+from .astra_hb import EFFORT, HB_PROMPT_ID, MAX_OUT, HeartbeatScheduler, heartbeat_input, parse_decision, prompt_for
 from .clock import DeliveryQueue
 from .m4 import CommitLedger, M4Params, Vote
+from .measure import Critic, HardChannel, ProprioRules, VerifyCal, expected_check, measure, values
 from .models import DECISION_QUESTIONS, build_live_request, fused_state_text, jpeg_bytes
 from .skills import PickPlaceSkill, apply_residual, residual_hook_zero
 
@@ -60,6 +62,9 @@ class RuntimeConfig:
     astra_mode: str = "mock"  # api | mock
     hb_N_s: float = 5.0
     hb_timeout_s: float = 15.0
+    hb_mode: str = "K2"  # E-M8c cadence (astra_hb.CADENCES): K0 events / K1 +T_sub / K2 +heartbeat N / K3 Gemini / K4
+    hb_budget: int | None = None  # K4: matched call budget per episode (None = unlimited)
+    k3_period_s: float = 1.0
     ik_max_dq: float = 0.02  # rad per 10 ms tick
     chunk_lead_s: float = 0.15  # fused: request the chunk of step k+1 this long before it starts (> chunk latency)
     residual_hook: str = "zero (R not trained)"
@@ -71,6 +76,13 @@ class RuntimeConfig:
     j5_alpha: float | None = None
     j5_escalate_after: int = 2  # T_j5 repeat = 2 in a row (canon §31 bracket assumption)
     model_fingerprint: str | None = None
+    # canon §61/§64 measure() source table (runtime/measure.py): verification-head calibration file (verify-cal-v1:
+    # per-predicate temperature, conformal q-hat, critic threshold); "" = uncalibrated default (flagged in the logs)
+    verify_cal: str = ""
+    measure_source: str = ("canon §64: robot T1 (gripper_open, holding, lifted_holding) = proprio code rules (hard); "
+                           "world + contact_stall = verification head V1h (conformal, empty/both = unknown, soft); "
+                           "M7 critic alarm = V1h only")
+    t2_check_max_age_s: float = 2.0  # a step's world-side check waits at most this long for a head output
 
 
 def _pct(xs, q):
@@ -89,6 +101,8 @@ class OursRuntime:
             from .calibration import Calibration
             self.cal = Calibration.load(cfg.calibration, fingerprint=cfg.model_fingerprint,
                                         question_ids=cfg.question_ids or None)
+        self.vcal = VerifyCal.load(cfg.verify_cal) if cfg.verify_cal else VerifyCal.default()
+        self.rules = ProprioRules()
 
     # ------------------------------------------------------------------ lifecycle
     def reset(self) -> None:
@@ -96,7 +110,10 @@ class OursRuntime:
         self.ledger = CommitLedger(p, DECISION_QUESTIONS)
         self.q = DeliveryQueue(self.cfg.clock, wall=self.wall)
         self.skill = PickPlaceSkill(dt=self.dt)
-        self.hb = HeartbeatScheduler(self.cfg.hb_N_s, self.cfg.hb_timeout_s)
+        self.hb = HeartbeatScheduler(self.cfg.hb_N_s, self.cfg.hb_timeout_s, budget=self.cfg.hb_budget,
+                                     mode=self.cfg.hb_mode, k3_period_s=self.cfg.k3_period_s)
+        self.skill.stage_gate = "astra" if self.cfg.hb_mode == "K3" else "self"  # K3: Astra says when a step ends
+        self._stage_seen, self._pred_exec_last = None, {}
         self.ps = PredicateState()
         self.prev_pred, self.stream = {}, []
         self.frames, self.frame_t = {}, {}
@@ -109,6 +126,14 @@ class OursRuntime:
         self._last_sample, self._phase_seen = -1e9, None
         self.j5_streak, self.j5_stats = {}, {"held": 0, "escalated": 0, "passed": 0}
         self.n_stop_ticks = 0
+        # canon §61/§64 measurement state
+        self.critic, self.hard = Critic(self.vcal), HardChannel()
+        self.v1h_last, self.meas_last, self.pending_t2, self.step_phase = None, None, [], {}
+        self.measure_log = []
+        self.measure_stats = {"t1_contradict": 0, "t2_deviate": 0, "t2_checked": 0, "t2_expired": 0,
+                              "critic_alarms": 0, "hard_events": 0, "verify_outputs": 0}
+        self._jp_prev, self._t_prev, self._jp_last, self._t_jp = None, None, None, None
+        self._trace = deque(maxlen=40)
 
     def close(self) -> None:
         self.pool.shutdown(wait=False, cancel_futures=True)
@@ -130,20 +155,29 @@ class OursRuntime:
         self.prev_pred = pred
         return raw, present, pred, support
 
+    def _s0(self, now, pred, present, support):
+        sk = self.skill
+        moving = self.prev_cmd is not None and float(np.linalg.norm(sk.cmd_pos - self.prev_cmd)) > 1e-5
+        return text_state(now, sk.phase, now - sk.t_phase0, PHASE_TIMEOUT_S.get(sk.phase, 60.0), pred, present,
+                          support, bool(pred.get("gripper_open")), bool(pred.get("holding(o3)")), moving,
+                          list(self.stream))
+
     def _decision_ctx(self, now, raw, present, pred, support, obs):
         slots = self.ledger.target_slots(now)
         sk = self.skill
-        moving = self.prev_cmd is not None and float(np.linalg.norm(sk.cmd_pos - self.prev_cmd)) > 1e-5
-        s0 = text_state(now, sk.phase, now - sk.t_phase0, PHASE_TIMEOUT_S.get(sk.phase, 60.0), pred, present,
-                        support, bool(pred.get("gripper_open")), bool(pred.get("holding(o3)")), moving,
-                        list(self.stream))
+        s0 = self._s0(now, pred, present, support)
         req, shown = build_live_request(slots[0], sk.phase, s0, present, raw)
         ctx = {"t_state": now, "ds": slots[0], "slots": slots, "epoch": self.ledger.epoch, "phase": sk.phase,
                "req": req, "shown": shown, "images": {k: v.copy() for k, v in self.frames.items()},
                "joint_pos": np.asarray(obs["joint_pos"], float).copy()}
         if self.cfg.backend == "fused":  # canon §58: no S1 coordinates in the fused model's input
+            from ..serialize import canonicalize
+            from ..train.stageb_data import image_only_state
             ctx["privileged_s1"] = req["state"]  # used by the MOCK fused model only (flagged in its meta)
-            ctx["req"] = {**req, "state": fused_state_text(self.instruction, sk.stage, sk.phase, obs["joint_pos"])}
+            # the stage-B prompt_config state IMG: the DecCall items and the context prompt carry the same text
+            ctx["req"], _ = build_live_request(slots[0], sk.phase, s0, present, raw, state="IMG")
+            ctx["ctx_text"] = canonicalize(image_only_state(s0))
+            ctx["proprio_text"] = fused_state_text(self.instruction, sk.stage, sk.phase, obs["joint_pos"])  # log only
         return ctx
 
     def _submit_decision(self, now, raw, present, pred, support, obs):
@@ -158,14 +192,17 @@ class OursRuntime:
                 "t_state": now, "phase": ctx["phase"], "anchor_g": list(raw["grip"]["pos"])}
         self.q.submit(now, self.pool.submit(run), fixed_latency=getattr(model, "synthetic_latency", None), meta=meta)
 
-    def _submit_hb(self, now, pred):
+    def _submit_hb(self, now, pred, kind: str = "hb"):
         if self.astra is None:
             return
         self.n_hb += 1
+        template, allowed, pid = prompt_for(self.cfg.hb_mode, kind)
         sk, L = self.skill, self.ledger
         dec = {k: L.decision(k, self.cur_k)[0] for k in DECISION_QUESTIONS} if self.cur_k is not None else {}
         outs = [s.get("outcome") for s in self.slots_log[-6:-1]]
-        facts = {k: pred.get(k) for k in ("holding(o3)", "lifted(o3)", "on(o3,o5)", "upright(o3)")}
+        mv = values(self.meas_last) if self.meas_last is not None else {}  # measured facts (canon §64), not oracle
+        facts = {"holding(o3)": mv.get("holding_t"), "lifted_holding(o3)": mv.get("lifted_holding"),
+                 "on(o3,o5)": mv.get("on_tp"), "lifted(o3)": mv.get("lifted_t")}
         summary = (f"t={now:.1f}s stage={sk.stage} phase={sk.phase} gripper_open={pred.get('gripper_open')}\n"
                    f"facts={facts}\ncurrent step decisions={dec}\nlast step checks={outs}\n"
                    f"premise_epoch={L.epoch} grasp_retries={sk.retries}")
@@ -174,14 +211,15 @@ class OursRuntime:
         astra, n = self.astra, self.n_hb
 
         def run():
-            inp = heartbeat_input(summary, jpeg_bytes(head) if head is not None else None)
-            rec = astra.call(inp, EFFORT, MAX_OUT, {"hb_no": n, "prompt_id": HB_PROMPT_ID})
+            inp = heartbeat_input(summary, jpeg_bytes(head) if head is not None else None, template=template)
+            rec = astra.call(inp, EFFORT, MAX_OUT, {"hb_no": n, "prompt_id": pid, "kind": kind,
+                                                    "cadence": self.cfg.hb_mode})
             lat = getattr(astra, "synthetic_latency", None)
             return {"latency_s": lat if lat is not None else rec.t_done - rec.t_send, "rec": rec,
                     "summary": summary}
-        self.hb.sent(now)
+        self.hb.sent(now, kind)
         self.q.submit(now, self.pool.submit(run), fixed_latency=getattr(astra, "synthetic_latency", None),
-                      meta={"kind": "astra", "hb_no": n})
+                      meta={"kind": "astra", "hb_no": n, "call_kind": kind, "allowed": allowed, "prompt_id": pid})
 
     # ------------------------------------------------------------------ deliveries
     def _deliver(self, r, now):
@@ -210,7 +248,45 @@ class OursRuntime:
                              call_id=res.call_id, t_send=m["t_state"], t_recv=r["t_deliver"], t_state=m["t_state"],
                              premise_epoch=m["epoch"], qid=a.get("qid", ""))
                     rec["votes"][q].append(self.ledger.on_vote(v, now, irreversible=irr))
+            if res.verify:
+                rec["verify"] = {p: round(x, 3) for p, x in res.verify.items()}
+                self._on_verify(res.verify, m["t_state"], m["phase"], now, rec)
         self.calls.append(rec)
+
+    def _on_verify(self, logits: dict, t_state: float, phase: str, now: float, rec: dict) -> None:
+        """A verification-head output (observation at t_state): M7 critic (V1h only, canon §64) and the world-side
+        (b)(2) check of every finished step whose end is <= t_state (D28 §3.1: the first head output after the step
+        end judges it); T2 {False} -> DEVIATE for that step (soft, M7 C_m4); unknown -> no verdict."""
+        self.measure_stats["verify_outputs"] += 1
+        if self.v1h_last is None or t_state >= self.v1h_last["t_state"]:
+            self.v1h_last = {"t_state": t_state, "logits": dict(logits)}
+        cr = self.critic.update(t_state, phase, logits)
+        rec["critic"] = cr
+        if cr["alarm"]:  # M7 FAIL stand-in (M9 recovery not built): log + Astra heartbeat now (T_fail rule)
+            self.measure_stats["critic_alarms"] += 1
+            self.events.append({"t": round(now, 4), "event": "m7_critic_alarm", **cr})
+            self.hb.advance(now)
+        keep = []
+        meas = measure(None, logits, self.vcal, self.rules)
+        for p in self.pending_t2:
+            if now - p["t_end"] > self.cfg.t2_check_max_age_s:
+                self.measure_stats["t2_expired"] += 1
+                continue
+            if t_state + 1e-9 < p["t_end"]:
+                keep.append(p)
+                continue
+            chk = expected_check(p["phase"], {k: v for k, v in meas.items() if v["tier"] == "T2"})
+            self.measure_stats["t2_checked"] += 1
+            self.measure_log.append({"ds": p["ds"], "phase": p["phase"], "t_state": round(t_state, 4),
+                                     "t2_false": chk["t2_false"], "unknown": chk["unknown"]})
+            if chk["outcome"] == "DEVIATE":
+                self.measure_stats["t2_deviate"] += 1
+                sig = self.ledger.on_step_executed(p["ds"], "DEVIATE", now)
+                self.events.append({"t": round(now, 4), "event": "b2_world_deviate", "ds": p["ds"],
+                                    "preds": chk["t2_false"], "epoch": sig["epoch"]})
+                if sig["early_call"]:
+                    self.early = True
+        self.pending_t2 = keep
 
     def _j5(self, res, now) -> dict:
         """Calibrated probabilities (per-question temperature) and the J5 conformal gate (canon §31): a singleton
@@ -251,15 +327,21 @@ class OursRuntime:
         if m["hb_no"] in self.dropped_hb:
             self.astra_log.append({"hb_no": m["hb_no"], "late_after_timeout": True, "t": round(now, 3)})
             return
-        dec, note = parse_decision(rec_.output_text)
+        dec, note = parse_decision(rec_.output_text, tuple(m.get("allowed") or ("ack", "patch", "replace")))
         self.hb.responded(now)
-        entry = {"hb_no": m["hb_no"], "t_send": round(r["t_send"], 3), "t_deliver": round(r["t_deliver"], 3),
+        entry = {"hb_no": m["hb_no"], "kind": m.get("call_kind", "hb"), "cadence": self.cfg.hb_mode,
+                 "prompt_id": m.get("prompt_id"), "t_send": round(r["t_send"], 3),
+                 "t_deliver": round(r["t_deliver"], 3),
                  "latency_s": round(r["latency_s"], 3), "decision": dec, "note": note, "error": rec_.error,
                  "model": rec_.model_field, "usage": rec_.usage, "http": rec_.http_status,
                  "first_token_s": round(rec_.t_first_token - rec_.t_send, 3) if rec_.t_first_token else None}
         if dec in ("patch", "replace"):  # contract edit not implemented: premise epoch only (§45 합치기)
             entry["epoch"] = self.ledger.bump_epoch(f"astra_{dec}", now)
             self.early = True
+        elif dec in ("run_instruction", "reset"):  # K3: Astra is the step-success detector (code safety still gates)
+            res = self.skill.astra_advance(dec, now, self._pred_exec_last)
+            entry["applied"] = res
+            self.events.append({"t": round(now, 4), "event": "astra_gemini", "decision": dec, "result": res})
         self.astra_log.append(entry)
 
     # ------------------------------------------------------------------ act
@@ -269,12 +351,26 @@ class OursRuntime:
         now = self._now(obs)
         self.t_last = now
         raw, present, pred, support = self._m1(obs, now)
+        self._raw_last = raw
         for name, img in (obs.get("images") or {}).items():
             self.frames[name], self.frame_t[name] = img, now
         kin, tz = obs["kin"], obs["table_z"]
         tcp_p, tcp_q = kin.tcp_pose()
+        self._m1_last = (raw, present, pred, support)
         if self.cur_k is None and self.skill.__dict__.get("cmd_pos") is None:
             self.skill.reset(now, tcp_p, tcp_q)
+        # canon §61/§64 measure(): robot T1 from the proprio code rules every tick (pad gap, |gripper effort|, TCP
+        # height from FK), world side from the newest verification-head output (none -> unknown)
+        jp = np.asarray(obs["joint_pos"], float)
+        if self._t_jp is not None and now > self._t_jp + 1e-12:
+            self._jp_prev, self._t_prev = self._jp_last, self._t_jp
+        self._jp_last, self._t_jp = jp.copy(), now
+        proprio = {"width": float(jp[7]), "grip_effort": float(raw["grip"].get("effort", 0.0)),
+                   "tcp_z": float(tcp_p[2] - tz)}
+        v = self.v1h_last
+        v1h = v["logits"] if v is not None and now - v["t_state"] <= self.cfg.t2_check_max_age_s else None
+        self.meas_last = measure(proprio, v1h, self.vcal, self.rules)
+        pred_exec = self._exec_pred(pred, self.meas_last)
         # (a) decision calls: staggered every T_c, <= N_max in flight; an early call pulls one periodic slot forward
         infl = sum(1 for it in self.q._items if it["meta"]["kind"] == "dec")
         if infl < self.ledger.n_max() and (now >= self.next_call - 1e-9 or self.early):
@@ -289,8 +385,18 @@ class OursRuntime:
             self.dropped_hb.add(self.n_hb)
             self.astra_log.append({"hb_no": self.n_hb, "timeout": True, "t": round(now, 3)})
             self.hb.drop_inflight(now)
-        if self.astra is not None and self.hb.due(now):
-            self._submit_hb(now, pred)
+        self._pred_exec_last = pred_exec
+        st = (self.skill.stage, self.skill.phase == "done")
+        old = self._stage_seen
+        if old is not None and ((old[0], st[0]) == ("S1", "S2") or (st[1] and not old[1])):
+            # a contract stage completed (forward only; a lost grasp going back to S1 is a T_fail event) -> T_sub
+            self.hb.boundary(now)
+            self.events.append({"t": round(now, 4), "event": "t_sub", "stage": self.skill.stage,
+                                "done": self.skill.phase == "done"})
+        self._stage_seen = st
+        kind = self.hb.next_kind(now) if self.astra is not None else None
+        if kind is not None:
+            self._submit_hb(now, pred_exec, kind)
         # deliveries (clock) -> M4
         got = self.q.poll(now)
         for r in got:
@@ -304,21 +410,54 @@ class OursRuntime:
             self._boundary(k, now, tcp_p)
         if self.cfg.backend == "fused":
             self._maybe_request_chunk(now, obs)
-        # executor
-        a = self._execute(now, obs, raw, pred, tz, tcp_p)
+        # executor (its expected_after checks read the measured predicates, not the privileged state)
+        a = self._execute(now, obs, raw, pred_exec, tz, tcp_p)
         self._sample_frames(now)
         return a, {"ds": self.cur_k, "phase": self.skill.phase, "epoch": self.ledger.epoch}
+
+    @staticmethod
+    def _exec_pred(pred: dict, meas: dict) -> dict:
+        """The executor's predicate view (replaces the privileged holds() path, canon §64): gripper / holding /
+        lifted-while-holding from the T1 proprio rules; in_contact(o3,o5) and on(o3,o5) from the verification head
+        (None = unknown -> the skill falls back to its geometric 'reached'). The M1 geometry keys the modular stack's
+        DecCall text is built from stay the M1 observation."""
+        v = values(meas)
+        return {**pred, "gripper_open": v["gripper_open"], "holding(o3)": v["holding_t"],
+                "lifted(o3)": v["lifted_holding"], "in_contact(o3,o5)": v["contact_tp"], "on(o3,o5)": v["on_tp"]}
 
     def _boundary(self, k, now, tcp_p):
         prev = self.cur_k
         entry = {"ds": k, "t": round(now, 4), "tcp": [round(float(v), 4) for v in tcp_p],
                  "cmd": [round(float(v), 4) for v in self.skill.cmd_pos]}
+        raw = getattr(self, "_raw_last", None)
+        if raw is not None:  # diagnostics (table frame): finger-link midpoint g and the target object centre
+            entry["g_tbl"] = [round(float(v), 4) for v in raw["grip"]["pos"]]
+            entry["w"] = round(float(raw["grip"]["w"]), 4)
+            if "o3" in raw["objs"]:
+                entry["o3_tbl"] = [round(float(v), 4) for v in raw["objs"]["o3"]["pos"]]
         if prev is not None:
             if self.cfg.backend == "fused":
                 out, resid = self._joint_outcome()
             else:
                 out, resid = self.skill.step_outcome(tcp_p)
+            # (b)(2) expected_after of the finished step, robot side T1 now (proprio); only when the step stayed in
+            # one phase (a phase switch inside the step changes the expectation mid-step: transition, not a failure)
+            ph0 = self.step_phase.get(prev)
+            if ph0 is not None and ph0 == self.skill.phase and self.meas_last is not None:
+                chk = expected_check(ph0, {p: m for p, m in self.meas_last.items() if m["tier"] == "T1"})
+                entry["t1_check"] = chk["t1_false"]
+                if chk["outcome"] == "CONTRADICT" and out != "CONTRADICT":
+                    out = "CONTRADICT"
+                    self.measure_stats["t1_contradict"] += 1
+                self.pending_t2.append({"ds": prev, "phase": ph0, "t_end": now})
+            hev = self.hard.update(now, self.skill.phase, self.meas_last) if self.meas_last is not None else None
+            if hev is not None:  # M7 hard channel (T1 only): FAIL stand-in -> Astra now (M9 recovery not built)
+                self.measure_stats["hard_events"] += 1
+                self.events.append({"t": round(now, 4), "event": "m7_hard_t1", **hev})
+                self.hb.advance(now)
             sig = self.ledger.on_step_executed(prev, out, now)
+            if out == "CONTRADICT":  # an existing event call (canon §45): pulls the next Astra call forward
+                self.hb.advance(now)
             entry.update(prev_outcome=out, prev_residual_mm=round(resid * 1e3, 1), signals=sig)
             self.hold_step = sig["hold"]
             if out in ("DEVIATE", "CONTRADICT") and self.cfg.backend != "fused":
@@ -330,6 +469,7 @@ class OursRuntime:
         decs = self.ledger.mark_executed(k, now)
         dec = {} if self.hold_step else {q: c for q, (c, st) in decs.items() if c is not None}
         self.skill.begin_slot(k, dec)
+        self.step_phase[k] = self.skill.phase
         entry.update(decisions={q: list(v) for q, v in decs.items()}, hold=self.hold_step,
                      phase=self.skill.phase, stage=self.skill.stage)
         self.slots_log.append(entry)
@@ -354,7 +494,15 @@ class OursRuntime:
             a = self.last_a if self.last_a is not None else np.concatenate([q_meas[:7], [q_meas[7]]])
             return np.clip(a, obs["low"], obs["high"])
         cmd = self.skill.tick(now, raw, pred, tcp_p, tz)
+        gripped = any("gripper" in c and "o3" in c for c in raw.get("contacts", []))
+        self._trace.append((round(now, 3), self.skill.phase, round(float(raw["grip"]["w"]), 4),
+                            round(float(raw["grip"].get("effort", 0.0)), 3), bool(gripped),
+                            pred.get("holding(o3)"), pred.get("gripper_open")))
         for e in cmd.events:
+            if e.get("event") in ("object_lost", "grasp_miss"):  # diagnostics: the last 0.4 s of grip signals
+                e["trace"] = [list(x) for x in self._trace]
+                e["trace_cols"] = ["t", "phase", "w", "effort", "gripped", "holding", "gripper_open"]
+                self.hb.advance(now)  # T_fail stand-in (M9 recovery = the skill retry): Astra at the next free slot
             self.events.append(e)
         self.prev_cmd = self.skill.cmd_pos.copy()
         if self.cfg.backend == "fused":
@@ -382,8 +530,14 @@ class OursRuntime:
         self.chunk_req.add(kn)
         dec = {q: self.ledger.decision(q, kn) for q in DECISION_QUESTIONS}
         committed = {q: c for q, (c, st) in dec.items() if c is not None}
+        from ..serialize import canonicalize
+        from ..train.stageb_data import image_only_state
+        l1 = self._m1_last
         ctx = {"t_state": now, "ds": kn, "joint_pos": np.asarray(obs["joint_pos"], float).copy(),
-               "images": {k: v.copy() for k, v in self.frames.items()},
+               "joint_pos_prev": None if self._jp_prev is None else self._jp_prev.copy(),
+               "dt_prev": None if self._t_prev is None else now - self._t_prev,
+               "images": {k: v.copy() for k, v in self.frames.items()}, "phase": self.skill.phase,
+               "ctx_text": canonicalize(image_only_state(self._s0(now, l1[2], l1[1], l1[3]))),
                "text": fused_state_text(self.instruction, self.skill.stage, self.skill.phase, obs["joint_pos"])}
         model = self.model
 
@@ -400,7 +554,7 @@ class OursRuntime:
         self.chunk_stats["delivered"] += 1
         self.chunk_log.append({"ds": m["ds"], "t_state": round(m["t_state"], 4), "t_deliver": round(r["t_deliver"], 4),
                                "latency_s": round(res.latency_s, 4), "dec": m["dec"], "status": m["status"],
-                               "error": res.error})
+                               "error": res.error, "meta": res.meta})
         if res.error is None and res.chunk is not None:
             self.chunks[m["ds"]] = {"t_state": m["t_state"], "chunk": np.asarray(res.chunk, float),
                                     "dt": res.chunk_dt, "dec": m["dec"]}
@@ -445,9 +599,14 @@ class OursRuntime:
                 "commit_ratio_mean": round(float(np.mean(cr)), 4) if cr else None, "m4": st,
                 "blocked_s": round(self.q.blocked_s, 3), "astra_calls": len(self.astra_log),
                 "astra_decisions": {d: sum(1 for a in self.astra_log if a.get("decision") == d)
-                                    for d in ("ack", "patch", "replace", "invalid")},
+                                    for d in ("ack", "patch", "replace", "run_instruction", "reset", "invalid")},
+                "hb_mode": self.cfg.hb_mode, "astra_budget": self.cfg.hb_budget,
+                "astra_by_kind": dict(self.hb.n_by_kind),
                 "astra_latency_s": {"p50": _pct(hb_lat, 50), "max": max(hb_lat) if hb_lat else None},
                 "final_phase": self.skill.phase, "final_stage": self.skill.stage,
                 "grasp_retries": self.skill.retries, "chunk": dict(self.chunk_stats),
                 "condition": self.cfg.condition, "stop_ticks": getattr(self, "n_stop_ticks", 0),
-                "j5": dict(self.j5_stats) if self.cal is not None else None}
+                "j5": dict(self.j5_stats) if self.cal is not None else None,
+                "measure": {**self.measure_stats, "verify_calibrated": self.vcal.calibrated,
+                            "verify_cal": self.cfg.verify_cal or "default (uncalibrated)",
+                            "critic_thr": self.vcal.critic_thr}}

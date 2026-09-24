@@ -14,8 +14,10 @@ sidecar JSONL + frames + summary in trial_metadata). The outer aggregates succes
 time to success, decision latency p50/p95, commit ratio, calls, blocked time, RTF, Astra calls, C0 stop ticks, J5
 counts, the paired condition differences (C5 - Cx per variant) and the closed-loop RD = 1 - SR_variant / SR_standard
 (paired by layout seed, bootstrap). Output <out>/closed.json + closed.md + <out>/<variant>/<condition>/ (IR logs).
-Backends: modular = Jev-L selector (vLLM) or the mock code rule; fused = MockFusedModel only (a stage-B FusedModel
-adapter is R5 open item 7 -- a real stage-B checkpoint is refused with that message).
+Backends: modular = Jev-L selector (vLLM) or the mock code rule; fused = MockFusedModel (--model mock_fused) or a REAL
+stage-B checkpoint dir (stageb.json + adapter/): the outer process serves it with runtime.fused_model (HF shared-prefix
+decide + verification head + CUDA-graph expert chunk) on --gpu, the Isaac worker talks to it over HTTP (FusedClient).
+--verify-cal = the verification head's temperature / conformal / critic file (runtime.measure), default uncalibrated.
 """
 from __future__ import annotations
 
@@ -119,9 +121,17 @@ def aggregate(trials, n_boot: int = 2000) -> dict:
     return out
 
 
-def run_labels(conds, hbs) -> list:
-    """(condition, heartbeat N s, cell label): the label carries |hbN only when N is swept (E-M8c K2-N, canon §45)."""
-    return [(c, float(h), c if len(hbs) == 1 else f"{c}|hb{float(h):g}") for c in conds for h in hbs]
+def run_labels(conds, hbs, modes=("K2",)) -> list:
+    """(condition, heartbeat N s, cell label[, cadence]): the label carries |hbN only when N is swept (E-M8c K2-N,
+    canon §45) and |K<m> only when the cadence is swept (K0-K4, runtime/astra_hb.py). N only matters for K2."""
+    out = []
+    for c in conds:
+        for m in modes:
+            for h in (hbs if m == "K2" else hbs[:1]):
+                lab = c + (f"|{m}" if len(modes) > 1 else "") + (f"|hb{float(h):g}" if len(hbs) > 1 and m == "K2"
+                                                                else "")
+                out.append((c, float(h), lab) if tuple(modes) == ("K2",) else (c, float(h), lab, m))
+    return out
 
 
 # ------------------------------------------------------------------------------------------ worker launch
@@ -158,9 +168,14 @@ def run_worker(spec_path: str) -> None:
     from ..runtime.run_r5 import question_ids
     from ..sim.scene import SCENE_SPEC
     rows, t0 = [], time.monotonic()
-    for cond, hb_n, label in run_labels(spec["conditions"], spec.get("hb_n", [5.0])):
+    for lab in run_labels(spec["conditions"], spec.get("hb_n", [5.0]), tuple(spec.get("hb_mode", ["K2"]))):
+        cond, hb_n, label = lab[:3]
+        hb_mode = lab[3] if len(lab) > 3 else "K2"
         if spec["selector"] == "jevl":
             model = JevLSelector(spec["url"], spec["name"], layout=spec["layout"], mode=spec["mode"])
+        elif spec["selector"] == "stageb":
+            from ..runtime.fused_model import FusedClient
+            model = FusedClient(spec["url"])
         elif spec["selector"] == "mock_fused":
             model = MockFusedModel(latency_s=spec["mock_latency"])
         else:
@@ -175,14 +190,21 @@ def run_worker(spec_path: str) -> None:
             raise SystemExit("--astra api but no /data/.openai_token")
         elif spec["astra"] in ("auto", "mock"):
             astra, amode = MockAstra(3.0), "mock"
+        elif spec["astra"] == "scripted":  # K3 pipeline check without a key: text-summary success detector
+            from ..runtime.astra_hb import ScriptedAstra
+            astra, amode = ScriptedAstra(1.0), "scripted"
         m4o, rto = condition(cond)
         cfg = RuntimeConfig(backend=spec["backend"], selector=spec["selector"],
                             model_id=getattr(model, "model_id", spec["name"]), model_path=spec["model_path"] or "",
                             layout=spec["layout"] if spec["selector"] == "jevl" else "",
                             call_mode=spec["mode"] if spec["selector"] == "jevl" else "", clock=spec["clock"],
-                            question_ids=question_ids(spec["layout"] or "H"), astra_mode=amode, condition=cond,
+                            question_ids=question_ids(spec["layout"] or "H",
+                                                      "IMG" if spec["selector"] == "stageb" else "S1-1mm"),
+                            astra_mode=amode, condition=cond,
                             m4={**asdict(M4Params()), **m4o}, calibration=spec["calibration"] or "",
-                            j5_alpha=spec["j5_alpha"], model_fingerprint=spec["fingerprint"], hb_N_s=hb_n, **rto)
+                            j5_alpha=spec["j5_alpha"], model_fingerprint=spec["fingerprint"], hb_N_s=hb_n,
+                            verify_cal=spec.get("verify_cal") or "", hb_mode=hb_mode,
+                            hb_budget=spec.get("hb_budget") if hb_mode == "K4" else None, **rto)
         if spec["backend"] == "fused":
             cfg.state_repr = "fused: images (head + active wrist) + task + contract summary + proprio (canon §58)"
         rt = OursRuntime(cfg, model, astra=astra)
@@ -208,7 +230,8 @@ def run_worker(spec_path: str) -> None:
             terms = getattr(smp, "termination_reasons", None) or []
             for e, tm in enumerate(tms):
                 sm = tm.get("ours_summary") or {}
-                rows.append({"variant": spec["variant"], "condition": label, "hb_n": hb_n, "seed": seed, "epoch": e,
+                rows.append({"variant": spec["variant"], "condition": label, "hb_n": hb_n, "hb_mode": hb_mode,
+                             "seed": seed, "epoch": e,
                              "success": bool(sm.get("env_success")), "sim_time": sm.get("sim_time_end"),
                              "termination": terms[e] if e < len(terms) else None, "summary": sm,
                              "sidecar": tm.get("ours_sidecar"), "frames": tm.get("ours_frames")})
@@ -236,8 +259,10 @@ def _args(argv):
     ap.add_argument("--clock", default="simlat", choices=["simlat", "sync"])
     ap.add_argument("--max-seconds", type=float, default=60.0)
     ap.add_argument("--epochs", type=int, default=1)
-    ap.add_argument("--astra", default="mock", choices=["auto", "api", "mock", "none"])
+    ap.add_argument("--astra", default="mock", choices=["auto", "api", "mock", "scripted", "none"])
     ap.add_argument("--hb-n", default="5", help="Astra heartbeat period N s; a list sweeps it (E-M8c K2-N, §45)")
+    ap.add_argument("--hb-mode", default="K2", help="E-M8c cadence K0|K1|K2|K3|K4; a list sweeps it (astra_hb.py)")
+    ap.add_argument("--hb-budget", type=int, default=None, help="K4: matched Astra call budget per episode")
     ap.add_argument("--isaac-gpu", default="1")
     ap.add_argument("--gpu", default="3", help="vLLM GPU")
     ap.add_argument("--gpu-util", type=float, default=0.30)
@@ -247,9 +272,11 @@ def _args(argv):
     ap.add_argument("--mode", default="lead")
     ap.add_argument("--calibration", default="")
     ap.add_argument("--j5-alpha", type=float, default=None)
+    ap.add_argument("--verify-cal", default="", help="verification-head calibration (runtime.measure verify-cal-v1)")
     ap.add_argument("--mock-latency", type=float, default=0.30)
     ap.add_argument("--timeout", type=int, default=0, help="per worker (s); 0 = auto")
     ap.add_argument("--parallel", action="store_true", help="run the variant workers at the same time (<= 3)")
+    ap.add_argument("--inst-prefix", default="r6", help="Isaac kit instance prefix; give concurrent runs different ones")
     ap.add_argument("--n-boot", type=int, default=2000)
     ap.add_argument("--worker", default="", help=argparse.SUPPRESS)
     return ap.parse_args(argv)
@@ -290,6 +317,12 @@ def run(a) -> dict:
     seeds = check_seeds(sorted(parse_seeds(a.seeds)), a.split)
     from ..runtime.conditions import condition
     conds = [c for c in a.conditions.split(",") if c]
+    from ..runtime.astra_hb import CADENCES
+    modes = [m for m in a.hb_mode.split(",") if m]
+    if not modes or any(m not in CADENCES for m in modes):
+        raise SystemExit(f"--hb-mode {a.hb_mode!r}: from {CADENCES}")
+    if "K4" in modes and a.hb_budget is None:
+        raise SystemExit("--hb-mode K4 needs --hb-budget (the matched call count)")
     for c in conds:
         condition(c)
     if str(a.isaac_gpu) not in ISAAC_GPUS:
@@ -298,11 +331,15 @@ def run(a) -> dict:
     os.makedirs(a.out, exist_ok=True)
     spec_model = "mock" if a.model in ("mock", "mock_fused") else a.model
     info = C.ensure_merged(C.resolve_model(spec_model), a.out)
-    if a.backend == "fused" and a.model != "mock_fused":
-        raise SystemExit("--backend fused: only --model mock_fused (stage-B FusedModel runtime adapter = R5 open item 7)")
-    selector = "mock_fused" if a.model == "mock_fused" else ("mock" if info["kind"] == "mock" else "jevl")
+    if a.backend == "fused" and a.model != "mock_fused" and info["kind"] != "stageb":
+        raise SystemExit("--backend fused: --model mock_fused or a stage-B checkpoint dir (stageb.json + adapter/)")
+    if info["kind"] == "stageb" and a.backend != "fused":
+        raise SystemExit("a stage-B checkpoint runs with --backend fused")
+    selector = ("mock_fused" if a.model == "mock_fused" else "stageb" if info["kind"] == "stageb"
+                else ("mock" if info["kind"] == "mock" else "jevl"))
     pc = C.training_prompt_config(info["path"]) if info["kind"] != "mock" else None
-    layout = (C.default_layout(pc) if a.layout == "auto" else a.layout) if selector == "jevl" else "H"
+    layout = ((C.default_layout(pc) if a.layout == "auto" else a.layout) if selector == "jevl"
+              else "HW" if selector == "stageb" else "H")
     fp = C.model_fingerprint(info["path"]) if info.get("path") else None
     variants = [v for v in a.variants.split(",") if v]
     per_ep = a.max_seconds / 0.3 + 60  # RTF >= 0.3 assumed + reset
@@ -317,11 +354,12 @@ def run(a) -> dict:
                     "name": srv.name, "layout": layout, "mode": a.mode, "clock": a.clock,
                     "max_seconds": a.max_seconds, "epochs": a.epochs, "astra": a.astra,
                     "model_path": info.get("path"), "fingerprint": fp, "calibration": a.calibration,
-                    "j5_alpha": a.j5_alpha, "mock_latency": a.mock_latency,
-                    "hb_n": [float(x) for x in a.hb_n.split(",") if x]}
+                    "j5_alpha": a.j5_alpha, "mock_latency": a.mock_latency, "verify_cal": a.verify_cal,
+                    "hb_n": [float(x) for x in a.hb_n.split(",") if x],
+                    "hb_mode": [m for m in a.hb_mode.split(",") if m], "hb_budget": a.hb_budget}
             sp = os.path.join(a.out, f"spec_{v}.json")
             json.dump(spec, open(sp, "w", encoding="utf-8"), indent=1)
-            cmd = worker_cmd(code, os.path.abspath(sp), a.isaac_gpu, f"r6_{v}", timeout)
+            cmd = worker_cmd(code, os.path.abspath(sp), a.isaac_gpu, f"{a.inst_prefix}_{v}", timeout)
             logf = open(os.path.join(a.out, f"worker_{v}.log"), "w")
             tv = time.monotonic()
             p = subprocess.Popen(cmd, cwd=IR_DIR, stdout=logf, stderr=subprocess.STDOUT)
@@ -349,8 +387,8 @@ def run(a) -> dict:
         "conditions": conds, "clock": a.clock, "epochs": a.epochs, "max_seconds": a.max_seconds, "astra": a.astra,
         "layout": layout, "mode": a.mode, "prompt_config": C.prompt_config_eval(layout), "isaac_gpu": a.isaac_gpu,
         "calibration": a.calibration, "j5_alpha": a.j5_alpha, "hb_n": a.hb_n,
-        "not_in_runtime": "C2'/C2'-S/C2-match, C3', C3'', C5-A3, C-FIX, C5' (conditions.py doc); E-M8c K1 (T_sub) / "
-                          "K3 / K4 need runtime hooks not built (R5 open item 1)",
+        "not_in_runtime": "C2'/C2'-S/C2-match, C3', C3'', C5-A3, C-FIX, C5' (conditions.py doc)",
+        "hb_mode": a.hb_mode, "hb_budget": a.hb_budget, "verify_cal": a.verify_cal or "default (uncalibrated)",
         "runtime_s": {"total": round(time.monotonic() - t0, 1), "workers": wall,
                       "vllm_ready": round(getattr(srv, "t_ready", 0.0), 1)}})
     C.write_outputs(a.out, "closed", {"meta": meta, "result": res}, _md(res, meta))

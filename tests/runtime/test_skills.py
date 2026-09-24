@@ -87,6 +87,34 @@ def test_close_needs_next_and_reached_then_lift_or_contradict():
     assert s2.step_outcome(tcp)[0] == "CONTRADICT"
 
 
+def _holding_skill():
+    g_grasp = (0.40, -0.20, 0.0475 + 0.0475 - 0.018)
+    tcp = np.array(g_grasp) + [0, 0, TZ]
+    s = PickPlaceSkill(dt=0.01)
+    s.reset(0.0, tcp, [1, 0, 0, 0])
+    s.begin_slot(1, {**DEC, "dir_xy": "none_xy", "dir_z": "none_z", "phase": "next"})
+    s.tick(0.33, _raw(g_grasp), OPEN, tcp, TZ)
+    for i in range(62):  # close wait (0.6 s) with the mug held
+        s.tick(0.34 + 0.01 * i, _raw(g_grasp), HOLD, tcp, TZ)
+    assert s.phase == "lift"
+    return s, g_grasp, tcp
+
+
+def test_one_tick_holding_dropout_is_not_an_object_loss():
+    """Pre-R7 fix (R6 issue 6, DEV seed 1, trace in pre_r7_fixes.md): the gripper applied torque drops to ~0 for one
+    100 Hz tick while the pads still touch the mug (width 75 mm, contacts on); a single-sample `holding` = false made
+    the skill re-open and drop the mug. The planner debounces holding (HOLD_DEBOUNCE 0.15 s) -> so does S."""
+    s, g, tcp = _holding_skill()
+    t0 = 0.97
+    EMPTY = {"gripper_open": False, "holding(o3)": False}
+    s.tick(t0, _raw(g), EMPTY, tcp, TZ)  # one-tick dropout
+    s.tick(t0 + 0.01, _raw(g), HOLD, tcp, TZ)
+    assert s.phase == "lift" and s.retries == 0 and s.cmd_w < 0.107
+    for i in range(20):  # a real loss (0.2 s of closed-empty) is still caught
+        s.tick(t0 + 0.02 + 0.01 * i, _raw(g), EMPTY, tcp, TZ)
+    assert s.phase == "approach" and s.retries == 1 and s.cmd_w == pytest.approx(0.107)
+
+
 def test_stage_switch_needs_next_and_exit_predicates():
     g = (0.40, -0.20, 0.12)
     tcp = np.array(g) + [0, 0, TZ]

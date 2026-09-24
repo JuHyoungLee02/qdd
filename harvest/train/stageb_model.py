@@ -83,11 +83,11 @@ def item_images(it):
 
 class StageB(nn.Module):
     def __init__(self, backbone, expert: ActionExpert, aux: AuxGeomHead | None, norm: D.ActionNorm, vocabs: dict,
-                 ki: str = "stop", layer: int = -1, lam=None):
+                 ki: str = "stop", layer: int = -1, lam=None, verify: AuxGeomHead | None = None):
         super().__init__()
-        self.backbone, self.expert, self.aux = backbone, expert, aux
+        self.backbone, self.expert, self.aux, self.verify = backbone, expert, aux, verify
         self.norm, self.vocabs, self.ki, self.layer = norm, vocabs, ki, layer
-        self.lam = {"dec": 1.0, "act": 1.0, "aux": 0.1, "vqa": 0.0, **(lam or {})}
+        self.lam = {"dec": 1.0, "act": 1.0, "aux": 0.1, "vqa": 0.0, "ver": 0.1, **(lam or {})}
         insulate(torch.zeros(1), ki)  # validate
         self.shared = True  # R3: context + questions of a sample share one prefix pass (prefix_share)
         self.last_fw = None  # (ctx, mask, per-sample item log-probs) of the last shared losses() call
@@ -162,8 +162,21 @@ class StageB(nn.Module):
             vals.append(-lp[torch.arange(len(ids)), torch.tensor(ids, device=lg.device)].mean())
         return torch.stack(vals).mean()
 
+    def verify_loss(self, samples, ctx, mask, device):
+        """§61 / §64 verification head: BCE on the E-M4b-meas test predicates (verify.truth), None masked; the
+        gradient reaches the backbone like the aux head (the same backbone must see the world)."""
+        import torch.nn.functional as F
+        y, m = (torch.tensor(np.stack(x), device=device) for x in zip(*[D.verify_vecs(s.get("verify")) for s in samples]))
+        _, lg = self.verify(ctx, mask)
+        return (F.binary_cross_entropy_with_logits(lg, y, reduction="none") * m).sum() / m.sum().clamp_min(1.0)
+
+    def verify_logits(self, ctx, mask) -> torch.Tensor:
+        """[B, len(D.VERIFY_PREDS)] raw logits (runtime: temperature + conformal in runtime.measure)."""
+        return self.verify(ctx, mask)[1]
+
     def losses(self, samples, enc, device, vqa=None, fm_t=None, fm_noise=None):
-        need_grad_ctx = self.aux is not None and self.lam["aux"] > 0 or self.ki != "stop"
+        need_grad_ctx = (self.aux is not None and self.lam["aux"] > 0 or self.ki != "stop"
+                         or self.verify is not None and self.lam.get("ver", 0) > 0)
         lps = None
         if self.shared and hasattr(enc, "p"):  # the shared path needs the HF processor (mock encoders: old path)
             dec = self.lam["dec"] > 0 and any(s["items"] for s in samples)
@@ -182,6 +195,10 @@ class StageB(nn.Module):
             l_aux, lg = aux_loss(self.aux, ctx, mask, r, rm, c, cm)
             total = total + self.lam["aux"] * l_aux
             logs.update(aux=float(l_aux.detach()), **lg)
+        if self.verify is not None and self.lam.get("ver", 0) > 0 and any(s.get("verify") for s in samples):
+            l_ver = self.verify_loss(samples, ctx, mask, device)
+            total = total + self.lam["ver"] * l_ver
+            logs["ver"] = float(l_ver.detach())
         if self.lam["dec"] > 0:
             if lps is None:
                 l_dec = self.decision_loss(samples, enc, device)
@@ -209,6 +226,8 @@ class StageB(nn.Module):
     # ---------------------------------------------------------------------------------- save / load heads
     def head_config(self):
         return {"expert": self.expert.cfg.to_json(), "aux": None if self.aux is None else self.aux.cfg.to_json(),
+                "verify": None if self.verify is None else {**self.verify.cfg.to_json(),
+                                                            "preds": list(D.VERIFY_PREDS)},
                 "norm": self.norm.to_json(), "vocabs": {k: v.to_json() for k, v in self.vocabs.items()},
                 "ki": self.ki, "layer": self.layer, "lam": self.lam}
 
@@ -217,6 +236,8 @@ class StageB(nn.Module):
         sd = {f"expert.{k}": v.detach().cpu().contiguous() for k, v in self.expert.state_dict().items()}
         if self.aux is not None:
             sd.update({f"aux.{k}": v.detach().cpu().contiguous() for k, v in self.aux.state_dict().items()})
+        if self.verify is not None:
+            sd.update({f"verify.{k}": v.detach().cpu().contiguous() for k, v in self.verify.state_dict().items()})
         torch.save(sd, os.path.join(out_dir, "heads.pt"))
         json.dump({**self.head_config(), **(extra or {})}, open(os.path.join(out_dir, "stageb.json"), "w"), indent=1)
 
@@ -224,26 +245,41 @@ class StageB(nn.Module):
 def build_heads(cfg_json: dict, device=None):
     e = ActionExpert(ExpertConfig(**cfg_json["expert"]))
     a = None if cfg_json.get("aux") is None else AuxGeomHead(AuxConfig(**cfg_json["aux"]))
+    vc = cfg_json.get("verify")
+    if vc is not None and list(vc.get("preds", D.VERIFY_PREDS)) != list(D.VERIFY_PREDS):
+        raise ValueError(f"verify head predicates {vc.get('preds')} != {D.VERIFY_PREDS}")
+    v = None if vc is None else AuxGeomHead(AuxConfig(**{k: x for k, x in vc.items() if k != "preds"}))
     if device is not None:
         e.to(device)
         a is not None and a.to(device)
-    return e, a
+        v is not None and v.to(device)
+    return e, a, v
 
 
 def load_heads(out_dir, backbone, device="cpu") -> StageB:
     cfg = json.load(open(os.path.join(out_dir, "stageb.json")))
-    e, a = build_heads(cfg)
+    e, a, v = build_heads(cfg)
     sd = torch.load(os.path.join(out_dir, "heads.pt"), map_location="cpu", weights_only=True)
-    e.load_state_dict({k[7:]: v for k, v in sd.items() if k.startswith("expert.")})
+    e.load_state_dict({k[7:]: x for k, x in sd.items() if k.startswith("expert.")})
     if a is not None:
-        a.load_state_dict({k[4:]: v for k, v in sd.items() if k.startswith("aux.")})
-    vocabs = {k: D.Vocab.from_json(v) for k, v in cfg["vocabs"].items()}
-    m = StageB(backbone, e, a, D.ActionNorm.from_json(cfg["norm"]), vocabs, cfg["ki"], cfg["layer"], cfg["lam"])
+        a.load_state_dict({k[4:]: x for k, x in sd.items() if k.startswith("aux.")})
+    if v is not None:
+        v.load_state_dict({k[7:]: x for k, x in sd.items() if k.startswith("verify.")})
+    vocabs = {k: D.Vocab.from_json(x) for k, x in cfg["vocabs"].items()}
+    m = StageB(backbone, e, a, D.ActionNorm.from_json(cfg["norm"]), vocabs, cfg["ki"], cfg["layer"], cfg["lam"],
+               verify=v)
     return m.to(device)
 
 
+def new_verify_head(ctx_dim, aux_kw=None) -> AuxGeomHead:
+    """V1h architecture (m4b.vhead.make_head: queries 4, width 512, heads 8) with the 9 test-predicate logits."""
+    kw = {"width": 512, "queries": 4, "heads": 8, **{k: x for k, x in (aux_kw or {}).items()
+                                                      if k in ("width", "queries", "heads")}}
+    return AuxGeomHead(AuxConfig(ctx_dim=ctx_dim, n_reg=0, n_cls=len(D.VERIFY_PREDS), **kw))
+
+
 def new_model(backbone, samples, ctx_dim, mode="absolute", ki="stop", layer=-1, expert_kw=None, aux_kw=None,
-              lam=None, xi=None, use_aux=True) -> StageB:
+              lam=None, xi=None, use_aux=True, use_verify=True) -> StageB:
     """Heads sized from the training samples (vocabularies, normalization statistics)."""
     rows = [{"action_exec": s["action_exec"], "valid": s["valid"], "proprio": s["proprio"]} for s in samples]
     norm = D.ActionNorm.fit(rows, mode, xi)
@@ -253,4 +289,5 @@ def new_model(backbone, samples, ctx_dim, mode="absolute", ki="stop", layer=-1, 
                         dec_vocab=len(vocabs["dec"]) + 8, skill_vocab=len(vocabs["skill"]) + 4,
                         phase_vocab=len(vocabs["phase"]) + 4, residual=mode == "residual", **(expert_kw or {}))
     acfg = AuxConfig(ctx_dim=ctx_dim, n_reg=len(D.AUX_REG), n_cls=len(D.AUX_CLS), **(aux_kw or {}))
-    return StageB(backbone, ActionExpert(ecfg), AuxGeomHead(acfg) if use_aux else None, norm, vocabs, ki, layer, lam)
+    return StageB(backbone, ActionExpert(ecfg), AuxGeomHead(acfg) if use_aux else None, norm, vocabs, ki, layer, lam,
+                  verify=new_verify_head(ctx_dim, aux_kw) if use_verify else None)

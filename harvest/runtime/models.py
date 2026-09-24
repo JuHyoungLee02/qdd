@@ -45,15 +45,26 @@ class ModelResult:
     chunk: np.ndarray | None = None  # fused: (n, 8) absolute joint targets from t_state on
     chunk_dt: float | None = None
     meta: dict = field(default_factory=dict)
+    verify: dict | None = None  # fused: verification-head logits {predicate: logit} (canon §61/§64, runtime.measure)
 
 
-def build_live_request(ds: int, phase: str, text_s0: str, present, raw: dict, step_cm: float = 0.1):
-    """DecCall for the live state, built exactly as the stage-A items (stagea_data.build_items): the pool line
-    fields, E3-lite S1 on a 1 mm grid (canon §54), questions restricted to the 5 decision questions."""
+def build_live_request(ds: int, phase: str, text_s0: str, present, raw: dict, step_cm: float = 0.1,
+                       state: str = "S1"):
+    """DecCall for the live state, built exactly as the stage-A / stage-B items (stagea_data.build_items): the pool
+    line fields, questions restricted to the 5 decision questions. state S1 = E3-lite S1 on a 1 mm grid (canon §54,
+    the modular stack); IMG = stageb_data.image_only_state of the S0 text (canon §58 fused model: no coordinates,
+    no predicate facts -- the stage-B prompt_config state)."""
     from .. import e3lite
     line = {"ds_id": f"ds{ds}", "phase": phase, "text_state": text_s0,
             "state": {"present": list(present), "obs": {"raw": raw}}, "oracle": defaultdict(lambda: None)}
-    req, _, shown = build_snapshot_request(line, text_state=e3lite.state_text(line, "S1", step_cm=step_cm))
+    if state == "IMG":
+        from ..train.stageb_data import image_only_state
+        st = image_only_state(text_s0)
+    elif state == "S1":
+        st = e3lite.state_text(line, "S1", step_cm=step_cm)
+    else:
+        raise ValueError(f"state {state!r}: S1 | IMG")
+    req, _, shown = build_snapshot_request(line, text_state=st)
     keep = {qid for qid, (q, _) in shown.items() if q in DECISION_QUESTIONS}
     req = {**req, "questions": {k: v for k, v in req["questions"].items() if k in keep}}
     return req, {k: v for k, v in shown.items() if k in keep}

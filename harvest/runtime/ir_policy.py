@@ -52,7 +52,8 @@ class OursPolicy:
         side = os.path.join(d, stem + ".jsonl")
         with open(side, "w", encoding="utf-8") as f:
             for kind, rows in (("call", rt.calls), ("step", rt.slots_log), ("astra", rt.astra_log),
-                               ("event", rt.events), ("m4", rt.ledger.log), ("chunk", rt.chunk_log)):
+                               ("event", rt.events), ("m4", rt.ledger.log), ("chunk", rt.chunk_log),
+                               ("measure", getattr(rt, "measure_log", []))):
                 for r in rows:
                     f.write(json.dumps({"type": kind, **_jsonable(r)}) + "\n")
         fdir = os.path.join(d, stem + "_frames")
