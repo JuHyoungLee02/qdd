@@ -33,3 +33,4 @@
 | 19:04 | 30분 루프 | 1·4·5: R3 처리량 벤치 GPU2(61%), S-E2E 데이터 3.3 GB, 결과 라벨 계속(load 27), E-M4b-meas 준비 중(파드 프로세스 아직 없음). GPU1·3 유휴. C scratchpad·pytest 임시 0, /data 밖 새 파일 0 | 계속 |
 | 19:32 | 30분 루프 | 1·4·5: FI-DEV 생성 시작(GPU1, E-M4b-meas), S-E2E 8.5 GB(거의 완료), R3 GPU2 메모리 잡혀 있음(벤치 사이), 결과 라벨 계속. load 83(높음). C scratchpad·pytest 임시 0, /data 밖 새 파일 0 | 계속 |
 | 20:03 | 30분 루프 | 1·4·5: FI-DEV 생성 3프로세스(GPU1 65%), 결과 라벨 계속, GPU2·3 유휴(R3 보고 대기). R2 데이터 생성기 착수(GPU0 렌더 ≤2). /data 34T 여유. C 임시 0, /data 밖 새 파일 0 | 계속 |
+| 20:33 | 30분 루프 | 1·4·5: E-M4b-meas 조건 실행 중(V1h 지연 GPU2, V1q GPU3 96%, V0 SAM GPU1), R2 LeRobot 내보내기 작업 중, 결과 라벨 계속(load 47). R6 평가 스크립트 착수(CAL/TEST 차단 가드 포함). C 임시 0, /data 밖 새 파일 0 | 계속 |
