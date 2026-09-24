@@ -9,6 +9,12 @@ Pipeline per episode (pod, GPU):
 Usage (pod):
   CUDA_VISIBLE_DEVICES=1 python -m harvest.cli_e3st run --out /data/juhyoung_qdd/out/e3st
   python -m harvest.cli_e3st aggregate --out /data/juhyoung_qdd/out/e3st
+
+SAM 3.1 variant (text prompt -> dense video tracking, replaces Grounding DINO + SAM 2.1). FFS and SAM 3.1
+need different torch builds, so the disparities are cached first (venv_e3st), then segmented (venv_sam3):
+  python -m harvest.cli_e3st depth --depth-cache /data/juhyoung_qdd/out/e3st_disp            # venv_e3st
+  python -m harvest.cli_e3st run --seg sam31 --depth-cache /data/juhyoung_qdd/out/e3st_disp \
+      --out /data/juhyoung_qdd/out/e3st_sam31 --ref-out /data/juhyoung_qdd/out/e3st         # venv_sam3
 """
 from __future__ import annotations
 
@@ -24,7 +30,8 @@ import numpy as np
 
 from harvest.stereo.data import DEFAULT_ROOT, load_pairs
 from harvest.stereo.pipeline import (
-    above, centroid_3d, disparity_to_depth, fit_plane, flip_rate, intrinsics_from_hfov, near_update, stability,
+    above, centroid_3d, disparity_to_depth, fit_plane, flip_rate, intrinsics_from_hfov, near_update, rank_tracks,
+    stability,
 )
 
 MODELS = os.environ.get("E3ST_MODELS", "/data/juhyoung_qdd/models")
@@ -33,6 +40,7 @@ FFS_CKPT = f"{MODELS}/ffs/weights/23-36-37/model_best_bp2_serialize.pth"
 SAM2_CKPT = f"{MODELS}/sam2/sam2.1_hiera_large.pt"
 SAM2_CFG = "configs/sam2.1/sam2.1_hiera_l.yaml"
 GDINO = f"{MODELS}/gdino-base"
+SAM31_CKPT = f"{MODELS}/sam3.1/sam3.1_multiplex.pt"
 
 BASELINE_M = 0.063   # ZED Mini nominal [assumption]
 HFOV_DEG = 102.0     # ZED Mini spec HFOV [assumption: same for the rectified VGA stream]
@@ -161,15 +169,81 @@ class Tracker:
         return out
 
 
+class Sam31:
+    """SAM 3.1 (Object Multiplex) text-prompted dense video tracking, official facebookresearch/sam3 API.
+
+    One session per episode; per category: reset -> text prompt on frame 0 -> propagate (forward).
+    The detector runs on every frame, so objects appearing later are picked up. At most `kmax` tracks
+    per category are kept (rank_tracks: summed per-frame prob).
+    """
+
+    def __init__(self, use_fa3=False):
+        from sam3.model_builder import build_sam3_multiplex_video_predictor
+        import inspect
+        self.pred = build_sam3_multiplex_video_predictor(checkpoint_path=SAM31_CKPT, use_fa3=use_fa3)
+        # sam3 @2345a4a: Sam3BasePredictor.start_session passes offload_state_to_cpu, which the multiplex
+        # model's init_state does not accept (TypeError). Drop kwargs it does not take (defaults are False).
+        m = self.pred.model
+        init, ok = m.init_state, set(inspect.signature(m.init_state).parameters)
+        m.init_state = lambda **kw: init(**{k: v for k, v in kw.items() if k in ok})
+
+    def segment(self, jpg_dir, n, cats):
+        """Returns (start, labels {oid: {cat, det_score, n_frames_tracked}}, masks {frame: {oid: bool HxW}})."""
+        P = self.pred
+        sid = P.handle_request(dict(type="start_session", resource_path=jpg_dir))["session_id"]
+        labels, masks, oid = {}, {f: {} for f in range(n)}, 0
+        try:
+            for cat, text, kmax in cats:
+                P.handle_request(dict(type="reset_session", session_id=sid))
+                P.handle_request(dict(type="add_prompt", session_id=sid, frame_index=0, text=text))
+                probs, ms = {}, {}
+                for r in P.handle_stream_request(dict(type="propagate_in_video", session_id=sid,
+                                                      propagation_direction="forward")):
+                    o, f = r["outputs"], int(r["frame_index"])
+                    probs[f], ms[f] = {}, {}
+                    for i, p, m in zip(o["out_obj_ids"], o["out_probs"], o["out_binary_masks"]):
+                        m = np.asarray(m, bool)
+                        if m.sum() >= MIN_AREA:
+                            probs[f][int(i)] = float(p); ms[f][int(i)] = m
+                keep = rank_tracks(probs, kmax)
+                for i in keep:
+                    pv = [probs[f][i] for f in probs if i in probs[f]]
+                    labels[oid] = {"cat": cat, "det_score": float(np.mean(pv)), "sam31_id": i,
+                                   "n_frames_tracked": len(pv)}
+                    for f in ms:
+                        if i in ms[f]:
+                            masks[f][oid] = ms[f][i]
+                    oid += 1
+        finally:
+            P.handle_request(dict(type="close_session", session_id=sid))
+        # first frame where every category has a kept track (plane fit frame; mirrors the GDINO start frame)
+        ok = [f for f in range(n) if all(any(labels[o]["cat"] == c and o in masks[f] for o in labels)
+                                         for c, _, _ in cats)]
+        start = ok[0] if ok else None
+        return start, labels, masks
+
+
 # ------------------------------------------------------------------ per episode
 
-def run_episode(repo, ep, task_text, models, out_dir, max_frames, root, tmp):
+def disp_cache_path(cache_dir, repo, ep):
+    return f"{cache_dir}/{repo.split('/')[-1]}_ep{ep:06d}.npz"
+
+
+def run_episode(repo, ep, task_text, models, out_dir, max_frames, root, tmp, seg="gdino_sam2", depth_cache=None,
+                prompt_map=None):
     import cv2
     ffs, det, trk = models
     lefts, disps, t_ffs = [], [], []
-    for t, l, r in load_pairs(repo, ep, max_frames, root):
-        t0 = time.time(); d = ffs.disparity(l, r); models_sync(); t_ffs.append(time.time() - t0)
+    cached = np.load(disp_cache_path(depth_cache, repo, ep)) if ffs is None else None
+    for i, (t, l, r) in enumerate(load_pairs(repo, ep, max_frames, root)):
+        if cached is None:
+            t0 = time.time(); d = ffs.disparity(l, r); models_sync(); t_ffs.append(time.time() - t0)
+        else:
+            d = cached["disp"][i]
         lefts.append(l); disps.append(d.astype(np.float32))
+    if cached is not None:
+        assert len(cached["disp"]) == len(lefts), (repo, ep, len(cached["disp"]), len(lefts))
+        t_ffs = list(cached["ffs_s"])
     n = len(lefts)
     H, W = lefts[0].shape[:2]
     K = intrinsics_from_hfov(W, H, HFOV_DEG)
@@ -184,9 +258,9 @@ def run_episode(repo, ep, task_text, models, out_dir, max_frames, root, tmp):
         invalid_img.append(float(np.mean(~np.isfinite(z))))
 
     # detection on the first frame (every 5th) that has all categories
-    cats = prompts_for(repo, task_text)
+    cats = [(c, (prompt_map or {}).get(t, t), k) for c, t, k in prompts_for(repo, task_text)]
     start, boxes, labels = None, {}, {}
-    for f in range(0, n, 5):
+    for f in (range(0, n, 5) if seg == "gdino_sam2" else []):
         found, oid = {}, 0
         for cat, text, kmax in cats:
             b, s = det.detect(lefts[f], text)
@@ -198,19 +272,27 @@ def run_episode(repo, ep, task_text, models, out_dir, max_frames, root, tmp):
                 for bb, sc in found[cat]:
                     boxes[oid] = bb.tolist(); labels[oid] = {"cat": cat, "det_score": sc}; oid += 1
             break
+    def write_jpgs():
+        if os.path.isdir(tmp):
+            shutil.rmtree(tmp)
+        os.makedirs(tmp)
+        for i, l in enumerate(lefts):
+            cv2.imwrite(f"{tmp}/{i:05d}.jpg", l[:, :, ::-1], [cv2.IMWRITE_JPEG_QUALITY, 95])
+
+    if seg == "sam31":
+        write_jpgs()
+        start, labels, masks = trk.segment(tmp, n, cats)
     res = {"repo": repo, "episode": ep, "task": task_text, "n_frames": n, "H": H, "W": W, "K": K.tolist(),
            "baseline_m": BASELINE_M, "ffs_ms_median": float(np.median(t_ffs) * 1000),
-           "invalid_depth_img": float(np.mean(invalid_img)), "start_frame": start, "objects": labels}
+           "invalid_depth_img": float(np.mean(invalid_img)), "start_frame": start, "objects": labels, "seg": seg,
+           "prompts": [t for _, t, _ in cats]}
     if start is None:
         res["skip"] = "no detection"
         return res, None
 
-    if os.path.isdir(tmp):
-        shutil.rmtree(tmp)
-    os.makedirs(tmp)
-    for i, l in enumerate(lefts):
-        cv2.imwrite(f"{tmp}/{i:05d}.jpg", l[:, :, ::-1], [cv2.IMWRITE_JPEG_QUALITY, 95])
-    masks = trk.track(tmp, start, boxes)
+    if seg != "sam31":
+        write_jpgs()
+        masks = trk.track(tmp, start, boxes)
     ker = np.ones((5, 5), np.uint8)
 
     oids = sorted(labels)
@@ -330,15 +412,40 @@ def save_example(extra, res, path, frame=None):
     return {"frame": f, "depth_range_m": [float(lo), float(hi)]}
 
 
+def cmd_depth(a):
+    """Cache FFS disparities (float32, px) per selected episode so another venv can reuse them."""
+    sel = json.load(open(os.path.join(a.root, "episodes_sel.json"), encoding="utf-8"))
+    os.makedirs(a.depth_cache, exist_ok=True)
+    ffs = FFS()
+    for name, eps in sel.items():
+        repo = f"ROBOTIS/{name}"
+        for e in eps:
+            fn = disp_cache_path(a.depth_cache, repo, e["ep"])
+            if os.path.exists(fn) and not a.force:
+                continue
+            disp, ts = [], []
+            for t, l, r in load_pairs(repo, e["ep"], a.max_frames, a.root):
+                t0 = time.time(); d = ffs.disparity(l, r); models_sync(); ts.append(time.time() - t0)
+                disp.append(d.astype(np.float32))
+            np.savez(fn, disp=np.stack(disp), ffs_s=np.array(ts))
+            print(name, e["ep"], len(disp), flush=True)
+
+
 def cmd_run(a):
     sel = json.load(open(os.path.join(a.root, "episodes_sel.json"), encoding="utf-8"))
     os.makedirs(a.out, exist_ok=True)
     import torch
-    models = (FFS(), Detector(), Tracker())
-    meta = {"gpu": torch.cuda.get_device_name(0), "torch": torch.__version__}
+    if a.seg == "sam31":
+        assert a.depth_cache, "--seg sam31 needs --depth-cache (FFS runs in venv_e3st)"
+        models = (None, None, Sam31(use_fa3=a.fa3))
+    else:
+        models = (FFS(), Detector(), Tracker())
+    meta = {"gpu": torch.cuda.get_device_name(0), "torch": torch.__version__, "seg": a.seg}
     json.dump(meta, open(f"{a.out}/run_meta.json", "w"))
     ex_plan = {T1: [0, 1], T2: [0, 1]}  # which selected-episode positions get example images
     for name, eps in sel.items():
+        if a.only and a.only not in name:
+            continue
         repo = f"ROBOTIS/{name}"
         for pos, e in enumerate(eps):
             fn = f"{a.out}/{name}_ep{e['ep']:06d}.json"
@@ -346,11 +453,18 @@ def cmd_run(a):
                 continue
             t0 = time.time()
             res, extra = run_episode(repo, e["ep"], e["task"], models, a.out, a.max_frames, a.root,
-                                     f"{a.out}/tmp_frames")
+                                     f"{a.out}/tmp_frames", seg=a.seg, depth_cache=a.depth_cache,
+                                     prompt_map=dict(kv.split("=", 1) for kv in a.prompt_map))
             res["wall_s"] = time.time() - t0
             if extra is not None and pos in ex_plan.get(repo, []):
                 tag = "t1" if repo == T1 else "t2"
-                res["example"] = save_example(extra, res, f"{a.out}/e3st_{tag}_ep{e['ep']}.png")
+                if a.seg == "sam31":
+                    tag = "sam31_" + tag
+                frame = None  # same frame as the reference run's example, for side-by-side comparison
+                ref = f"{a.ref_out}/{name}_ep{e['ep']:06d}.json" if a.ref_out else None
+                if ref and os.path.exists(ref):
+                    frame = json.load(open(ref, encoding="utf-8")).get("example", {}).get("frame")
+                res["example"] = save_example(extra, res, f"{a.out}/e3st_{tag}_ep{e['ep']}.png", frame=frame)
             json.dump(res, open(fn, "w"), ensure_ascii=False)
             print(name, e["ep"], res.get("n_frames"), res.get("skip", "ok"), f"{res['wall_s']:.1f}s", flush=True)
 
@@ -418,14 +532,21 @@ def cmd_aggregate(a):
 def main(argv=None):
     ap = argparse.ArgumentParser()
     sp = ap.add_subparsers(dest="cmd", required=True)
-    for c in ("run", "aggregate"):
+    for c in ("run", "aggregate", "depth"):
         p = sp.add_parser(c)
         p.add_argument("--out", default="/data/juhyoung_qdd/out/e3st")
         p.add_argument("--root", default=DEFAULT_ROOT)
         p.add_argument("--max-frames", dest="max_frames", type=int, default=300)
         p.add_argument("--force", action="store_true")
+        p.add_argument("--seg", choices=("gdino_sam2", "sam31"), default="gdino_sam2")
+        p.add_argument("--depth-cache", dest="depth_cache", default=None, help="dir of cached FFS disparities")
+        p.add_argument("--ref-out", dest="ref_out", default=None, help="earlier run dir; reuse its example frames")
+        p.add_argument("--fa3", action="store_true", help="SAM 3.1 with FlashAttention-3 (needs flash-attn-3)")
+        p.add_argument("--prompt-map", dest="prompt_map", nargs="*", default=[],
+                       help="replace text prompts, e.g. box=basket (category names unchanged)")
+        p.add_argument("--only", default=None, help="run only datasets whose name contains this (e.g. Task_0001)")
     a = ap.parse_args(argv)
-    {"run": cmd_run, "aggregate": cmd_aggregate}[a.cmd](a)
+    {"run": cmd_run, "aggregate": cmd_aggregate, "depth": cmd_depth}[a.cmd](a)
 
 
 if __name__ == "__main__":

@@ -15,3 +15,11 @@ def test_stability_mm():
 
 def test_flip_rate_ignores_unknown():
     assert flip_rate([True, True, None, False, False]) == 1 / 3
+
+def test_rank_tracks_persistence_times_confidence():
+    from harvest.stereo.pipeline import rank_tracks
+    frames = {0: {1: 0.9, 2: 0.6}, 1: {1: 0.9, 2: 0.6, 3: 0.95}, 2: {2: 0.6}}
+    # sums: 1 -> 1.8, 2 -> 1.8, 3 -> 0.95 ; tie broken by smaller id
+    assert rank_tracks(frames, 2) == [1, 2]
+    assert rank_tracks(frames, 5) == [1, 2, 3]
+    assert rank_tracks({}, 3) == []

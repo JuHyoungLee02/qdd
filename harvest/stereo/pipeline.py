@@ -85,6 +85,18 @@ def fit_plane(points: np.ndarray, iters: int = 200, tol: float = 0.01, seed: int
     return best_n, best_d
 
 
+def rank_tracks(probs_per_frame: dict, k: int) -> list:
+    """Top-k track ids by summed per-frame score ({frame: {obj_id: prob}}), i.e. persistence x confidence.
+
+    Used to pick at most k instances per text prompt from SAM 3.1 dense tracking. Ties -> smaller id.
+    """
+    tot: dict = {}
+    for d in probs_per_frame.values():
+        for o, p in d.items():
+            tot[o] = tot.get(o, 0.0) + float(p)
+    return sorted(tot, key=lambda o: (-tot[o], o))[:k]
+
+
 def near_update(prev: bool | None, dist_m: float, near_in: float = 0.05, near_out: float = 0.06) -> bool:
     """Hysteresis band as in M1 registry (enter < 5 cm, exit > 6 cm)."""
     if prev:
