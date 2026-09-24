@@ -1,17 +1,44 @@
 \section{Related Work}
 \label{sec:related}
 
+\begin{table*}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}p{0.14\linewidth}p{0.14\linewidth}p{0.12\linewidth}p{0.14\linewidth}p{0.07\linewidth}p{0.15\linewidth}p{0.14\linewidth}@{}}
+\toprule
+방법 & 계층 구조 & 빠른 층 출력 & 상위 호출 시점 & 비정지 & 확정 규칙 & 같은 장면 짝 강건성 평가 \\
+\midrule
+Gemini Robotics 1.5 / ER~\cite{geminirobotics15_2025,geminier_docs2026} & 오케스트레이터 VLM + VLA & 연속 행동 & 하트비트(약 1\,Hz), 하위 과제 성공 감지 & 있음 & 가장 새 지시 & 없음 \\
+$\pi_{0.5}$~\cite{pi05_2025} & 한 모델(하위 과제 문장 $\rightarrow$ 행동) & 연속 행동 & 추론 스텝마다 & --- & 없음 & 없음 \\
+Hi Robot~\cite{hirobot2025} & 상위 VLM + 하위 VLA & 연속 행동 & 1\,s마다 또는 사용자 개입 & --- & 없음 & 없음 \\
+HiVLA~\cite{hivla2026} & 상위 VLM + DiT 행동 익스퍼트 & 연속 행동 & --- & --- & 없음 & 없음 \\
+JEV-Star~\cite{jevstar2026} & Astra + 빠른 typed 모델 (게임) & typed 선택 & 명목 주기 + 사건 & 있음 & 이전 유효 계획 유지 & 없음 \\
+Slow Brain~\cite{slowbrain2026} & 느린 VLM + 빠른 계획기 & 빠른 층 점수 & 겹친 연속 요청 & 있음 & 가장 새 답 / 확률 융합 & 없음 \\
+A3~\cite{a3commit2026} & 단일 VLA & 행동 청크 & --- & --- & 같은 시각 샘플 합의, 실행 뒤 확인 없음 & 없음 \\
+RoboDawn~\cite{robodawn2026} & VLM 하네스 & cm 단위 수치 명령 & 결정마다 & --- & 없음 & 부분(깨끗한 장면 점수 없음) \\
+Harness VLA~\cite{harnessvla2026} & 계획기 + 동결 VLA 프리미티브 & 프리미티브 호출 & 동작 결과마다 & 없음(동기) & 없음 & 없음 \\
+CaP-X~\cite{fu2026capx} & LLM 코드 생성 + 인식 도구 & 코드 & --- & --- & 없음 & 없음 \\
+RoboDojo Astra 평가~\cite{robodojo2026} & Astra 단독 & --- & --- & --- & 없음 & 부분(같은 인식 아님) \\
+\midrule
+\textbf{Harvest (ours)} & Astra + 융합 VLA & 결정 토큰 + 연속 행동 & 하트비트, 단계 경계, 실패 & 있음 & \textbf{M4: 시간차 합의 + 실행 뒤 측정} & \textbf{있음(위층·학습량 축, 계획)} \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{가장 가까운 선행과의 비교.} ``---''는 해당 없음 또는 원문에서 확인하지 못함을 뜻한다. 계층 구조, 비정지 실행, 하트비트는 이미 있으므로 우리는 이것을 새로움으로 주장하지 않는다. 우리 행이 다른 곳은 확정 규칙과 평가 두 열이다. RoboDawn과 RoboDojo Astra 평가는 같은 방향의 비교를 했지만, 깨끗한 장면 점수가 없거나 두 조건의 인식이 같지 않다.}
+\label{tab:related}
+\end{table*}
+
 \paragraph{API 모델로 로봇 제어.}
-AGP~\cite{agp2026}와 RoboDojo Astra 평가~\cite{robodojo2026}는 Astra로 로봇을 제어한다(둘 다 심사 전). Harness VLA~\cite{harnessvla2026}의 저장소(RPent) 리더보드에는 Astra를 계획기로 쓴 결과가 있다(논문 값 아님). RoboDawn~\cite{robodawn2026}은 RoboTwin 2.0 C2R(깨끗한 장면 학습 $\rightarrow$ 랜덤 장면 평가)에서 Astra 0-shot 53.2\%, $\pi_{0.5}$ 46.0\%를 보고했다(둘 다 보고치). 깨끗한 장면 점수가 없어 낙폭은 계산할 수 없고, 같은 인식 조건에서 결정 층만 바꾼 비교도 아니다.
+AGP~\cite{agp2026}와 RoboDojo Astra 평가~\cite{robodojo2026}는 Astra로 로봇을 제어한다(둘 다 심사 전). RoboDawn~\cite{robodawn2026}은 Astra 같은 VLM이 cm 단위 숫자로 로봇을 조종하는 하네스이며, RoboTwin 2.0 C2R(깨끗한 장면 학습 $\rightarrow$ 무작위 장면 평가)에서 Astra 0-shot 53.2\%, $\pi_{0.5}$ 46.0\%를 보고했다. 깨끗한 장면 점수가 없어 하락 폭은 계산할 수 없다. Harness VLA~\cite{harnessvla2026}는 계획기가 동결 VLA 프리미티브를 부르고 결과 파일을 기다리는 동기 방식이며, CaP-X~\cite{fu2026capx}는 코딩 에이전트가 인식 도구와 스킬 함수를 불러 로봇을 제어하는 틀이다. Inspect Robots~\cite{inspectrobots2026}는 LLM 정책, 코드 정책, VLA를 같은 로그로 돌리는 오픈소스 평가 하네스이고, 루프는 동기식이다. 우리는 이 하네스를 1차 평가에 쓰되 시계를 바꿔 지연을 실제대로 반영한다(\cref{sec:setup}).
 
-\paragraph{LLM의 스텝 단위 이산 행동과 스킬 하네스.}
-Show-Harness~\cite{showharness2026}는 스텝마다 LLM이 이산 행동을 고르며, 우리 행동 표현(M3)의 가장 직접적인 선행이다. GitHub 스타 기준 상위의 스킬 하네스로는 PhyAgentOS~\cite{phyagentos2026}, Zetta~\cite{zetta2026}, Harness VLA, CaP-X~\cite{fu2026capx}가 있다.
+\paragraph{계층형 VLA와 상위 호출 주기.}
+Gemini Robotics 1.5~\cite{geminirobotics15_2025}의 오케스트레이터는 하위 과제 성공 감지로 다음 단계로 넘어갈 때를 정한다. Gemini Robotics-ER 개발자 문서~\cite{geminier_docs2026}는 최신 카메라 프레임과 짧은 질문을 주기적으로 보내 모델이 명시적으로 결정하게 하는 하트비트를 두고, 한 턴이 끝나기를 기다리면서 약 1\,Hz를 목표로 보내며, 타이머만 믿고 보내면 취소가 반복되는 고리에 빠질 수 있다고 경고한다. $\pi_{0.5}$~\cite{pi05_2025}는 추론 스텝마다 하위 과제를 다시 예측하고, Hi Robot~\cite{hirobot2025}(기간 밖, 기초 문헌)은 1초마다 또는 사용자 개입 때 상위 추론을 다시 돌린다. $\pi_{0.5}$에서는 학습한 상위 단 대신 영점 GPT-4를 쓰면 가장 나빴다. 즉 분포 안에서는 학습한 결정이 강하다. 우리의 주장은 절대 성능이 아니라 분포가 바뀐 뒤의 하락 폭에 관한 것이며, 이를 같은 장면 짝으로 잰다. CheckVLA~\cite{checkvla2026}와 Event-triggered~\cite{eventtrig2026}는 주기 호출과 사건 호출을 비교했다.
 
-\paragraph{비동기 실행과 느린 모델 호출.}
-RTC~\cite{black2025rtc}, SmolVLA~\cite{shukor2025smolvla}, VLASH~\cite{vlash2025}, A2C2~\cite{a2c2}는 행동 청크를 비동기로 실행한다. Slow Brain~\cite{slowbrain2026}은 느린 모델을 멈추지 않고 겹쳐 요청한다. 그 가운데 VLM Stream은 가장 최근의 답만 쓰고, Probability Fusion은 가장 최근의 답에 빠른 층의 점수를 감쇠 가중으로 섞는다. A3~\cite{a3commit2026}는 VLA 청크를 같은 시각에 여러 개 뽑아 합의한 앞 구간을 확정하며, 실행 뒤 확인은 하지 않는다. 우리 M4는 시간차 호출 사이의 합의와 실행 뒤 예상 대 측정 비교를 함께 쓴다.
+\paragraph{결정과 행동을 한 백본에서.}
+$\pi_{0.5}$는 같은 백본이 하위 과제 문장을 내고 action expert가 flow matching으로 연속 행동을 낸다. Knowledge Insulation(KI)~\cite{kinsulate2025}은 expert를 그냥 붙이면 학습 속도와 지식 전이가 모두 나빠진다고 보고하고, expert에서 백본으로 가는 기울기를 막아 백본의 지식을 보호한다. HiVLA~\cite{hivla2026}는 물체 crop과 스킬 문장을 조건으로 받는 DiT 행동 익스퍼트를 쓴다. 로봇 데이터로 미세조정하면 분포 밖 성능이 떨어질 수 있고, SFT를 오래 하면 분포 밖에서 무너지며 RL은 덜 잊는다는 결과가 있다~\cite{chu2025sftrl}(기간 밖, 기초 문헌). 깨끗한 시연만으로 학습하면 무작위 장면에서 크게 떨어진다~\cite{robotwin2_2025,liberoplus2025}. 우리는 결정을 자연어 문장이 아니라 typed 보기 토큰으로 내게 하여 확률을 보기 집합 안에서 정의하고, 이 확률을 확정 규칙과 보정에 쓴다.
 
-\paragraph{호출 시점.}
-CheckVLA~\cite{checkvla2026}와 Event-triggered~\cite{eventtrig2026} 등은 주기 호출과 이벤트 호출을 비교했다. 배포형 계층 시스템은 주기 확인, 단계 경계, 사건, 비동기 실행을 섞는다. Gemini Robotics 1.5~\cite{geminirobotics15_2025}의 오케스트레이터는 하위 과제 성공 감지로 다음 단계로 넘어갈 때를 정한다. Gemini Robotics-ER 개발자 문서~\cite{geminier_docs2026}는 최신 카메라 프레임과 짧은 질문을 주기적으로 보내 명시적 결정을 강제하는 하트비트를 두며, 진행 중인 추론을 끊지 않도록 한 턴이 끝나기를 기다리면서 약 1\,Hz를 목표로 보낸다. $\pi_{0.5}$~\cite{pi05_2025}는 추론 스텝마다 하위 과제를 예측하고, Hi Robot~\cite{hirobot2025}(기간 밖, 기초 문헌)은 1초마다 또는 사용자 개입이 있을 때 상위 추론을 다시 돌린다. 우리 M8의 하트비트와 단계 경계 호출은 이 설계를 API 계획기에 옮긴 것이다.
+\paragraph{비동기 실행과 확정.}
+RTC~\cite{black2025rtc}, SmolVLA~\cite{shukor2025smolvla}, VLASH~\cite{vlash2025}, A2C2~\cite{a2c2}는 행동 청크를 비동기로 실행한다. Slow Brain~\cite{slowbrain2026}은 느린 모델을 멈추지 않고 겹쳐 요청하며, 가장 새 답만 쓰거나(VLM Stream) 가장 새 답에 빠른 층 점수를 감쇠 가중으로 섞는다(Probability Fusion). A3~\cite{a3commit2026}는 VLA 청크를 같은 시각에 여러 개 뽑아 합의한 앞 구간을 확정하며, 저자는 정책 내부 신호만으로는 자신 있게 틀린 예측을 잡을 수 없고 외부 증거가 향후 과제라고 밝혔다. WCD~\cite{wcd2026}는 실행 뒤 관측과 상상한 결과의 불일치로 다음 후보 선택 예측기를 학습하고, SMC~\cite{smc2026}는 도구 사용 에이전트에서 두 모델의 다음 행동이 일치하면 미리 실행한 단계를 확정한다. 한 관측에 대한 반복 추론은 증거의 출처를 늘리지 않는다는 지적도 있다~\cite{pact2026}. M4는 시간차 합의와 실행 뒤 측정을 결합해 이 빈자리를 채운다.
 
-\paragraph{빠른 typed 결정 모델.}
-arXiv 2026-09-23 제출분 기준으로 typed 객관식 모델 Jev(TypeSafe AI)를 로봇에 쓴 논문은 없다. 저장소 데모(Jev-as-Policy, RoboJEV, embodied-jev)만 있으며, 이 가운데 Jev-as-Policy는 요청 하나에 답이 올 때까지 직전 행동을 유지한다. 우리는 Jev 대신 로컬 오픈 VLM Qwen3-VL~\cite{qwen3vl2025}을 vLLM~\cite{vllm2026}으로 서빙해 보기 토큰의 로그 확률을 읽는다. 보기 확률을 예측 집합으로 바꾸는 방식은 KnowNo~\cite{knowno2023}(기간 밖, 기초 문헌)를 따른다. 로컬 VLM을 상위 결정기로 쓰는 $\pi_{0.5}$, Hi Robot, HiVLA~\cite{hivla2026}는 학습된 계층 정책이고, 시간차 겹침 호출의 합의와 실행 뒤 예상 대 측정 비교가 없다.
+\paragraph{typed 결정, 보정, 서빙.}
+KnowNo~\cite{knowno2023}(기간 밖, 기초 문헌)는 LLM 객관식 계획을 conformal 예측 집합으로 바꾸어 집합이 원소 하나이면 실행하고 아니면 도움을 요청했고, CoFineLLM~\cite{cofinellm2025}은 단계별 집합으로 계획 전체의 커버리지를 보장했다. 온도 조정~\cite{guo2017calib}(기간 밖, 기초 문헌)은 검증 집합 NLL로 확률을 보정한다. 백본은 원본 해상도 다중 이미지 입력을 지원하는 Qwen3-VL~\cite{qwen3vl2025}이고, 서빙은 배치 불변 모드와 접두 캐시를 쓰는 vLLM~\cite{vllm2026}이다.

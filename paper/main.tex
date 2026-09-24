@@ -1,6 +1,7 @@
 % CVPR 2026 Paper Template; see https://github.com/cvpr-org/author-kit
 % [Harvest] 공식 author kit 그대로. 바꾼 곳: 제목, \input 절 목록, preamble.tex 끝의 한국어/색 설정. 컴파일러: XeLaTeX.
 % [Harvest] 2026-09-24 사용자 지시(user-log 26)로 본문을 논문 형식으로 다듬었다. 기존 내용만 썼고 새 내용은 넣지 않았다.
+% [Harvest] 2026-09-25 사용자 지시(user-log 63)로 융합 설계(정본 §58) 기준 논문 형식으로 다시 썼다. 임시 값은 	entative(주황).
 % [Harvest] 빨간 줄(사용자 의도)이 있는 마인드맵 판은 mindmap.tex(mindmap/sec/*.tex)에 그대로 보관한다.
 
 \documentclass[10pt,twocolumn,letterpaper]{article}
@@ -29,7 +30,7 @@
 \def\confYear{2026}
 
 %%%%%%%%% TITLE - PLEASE UPDATE
-\title{Harvest: 느린 API 계획기와 빠른 typed 결정 모델로 멈추지 않는 로봇 실행}
+\title{Harvest: 느린 API 계획기와 typed 결정 토큰 VLA를 잇는\\시간차 확정으로 멈추지 않는 로봇 실행}
 
 %%%%%%%%% AUTHORS - PLEASE UPDATE
 \author{First Author\\
@@ -55,7 +56,10 @@ First line of institution2 address\\
 \input{sec/1_intro}
 \input{sec/2_related}
 \input{sec/3_method}
-\input{sec/4_experiments}
+\input{sec/4_setup}
+\input{sec/5_plan}
+\input{sec/6_prelim}
+\input{sec/7_conclusion}
 {
     \small
     \bibliographystyle{ieeenat_fullname}
@@ -63,6 +67,6 @@ First line of institution2 address\\
 }
 
 % WARNING: do not forget to delete the supplementary pages from your submission 
-% \input{sec/X_suppl}
+\input{sec/X_suppl}
 
 \end{document}

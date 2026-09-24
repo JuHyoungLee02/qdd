@@ -2,16 +2,82 @@
 \setcounter{page}{1}
 \maketitlesupplementary
 
+\appendix
+\section{공통 설정값}
+\label{sec:supp_config}
+모듈이 공유하는 시간 값과 문턱은 한 설정 표에서만 정한다(\cref{tab:config}). 주황색은 가정값이거나 측정으로 정할 값이다.
 
-\section{Rationale}
-\label{sec:rationale}
-% 
-Having the supplementary compiled together with the main paper means that:
-% 
-\begin{itemize}
-\item The supplementary can back-reference sections of the main paper, for example, we can refer to \cref{sec:intro};
-\item The main paper can forward reference sub-sections within the supplementary explicitly (e.g. referring to a particular experiment); 
-\item When submitted to arXiv, the supplementary will already included at the end of the paper.
-\end{itemize}
-% 
-To split the supplementary pages from the main paper, you can use \href{https://support.apple.com/en-ca/guide/preview/prvw11793/mac#:~:text=Delete%20a%20page%20from%20a,or%20choose%20Edit%20%3E%20Delete).}{Preview (on macOS)}, \href{https://www.adobe.com/acrobat/how-to/delete-pages-from-pdf.html#:~:text=Choose%20%E2%80%9CTools%E2%80%9D%20%3E%20%E2%80%9COrganize,or%20pages%20from%20the%20file.}{Adobe Acrobat} (on all OSs), as well as \href{https://superuser.com/questions/517986/is-it-possible-to-delete-some-pages-of-a-pdf-document}{command line tools}.
+\begin{table}[h]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}p{0.40\linewidth}p{0.33\linewidth}p{0.20\linewidth}@{}}
+\toprule
+이름 & 초기값 & 쓰는 곳 \\
+\midrule
+$T_c$ 결정 호출 간격 & 0.33\,s & M4 \\
+$d_{p95}$ 고정 구간 & \tentative{실측 p95 (설계 0.28\,s)} & M4, 실행 \\
+$H$ (호출당 결정 스텝) & 1, 3 비교 & M4 \\
+STALE\_MAX 표 폐기 나이 & 1.5\,s & M4 \\
+잡기·놓기 전환 보류 & 1.0\,s & critic, 복구 \\
+near / contact 구간 & 목표까지 $\le$5\,cm / 접촉 술어 참 & 투영, critic \\
+정체 $N$ / $M$ & 10 / 20 틱 & critic \\
+복구 뒤 cooldown & 2\,s & critic, Astra \\
+확률 게이트 & E1 전 끔 & 전체 \\
+Astra 하트비트 $N$ & \tentative{5\,s} & Astra \\
+Astra 수리 재호출 상한 & \tentative{2회} & Astra \\
+행동 청크 & 15스텝 $\times$ 8차원, 30\,Hz (0.5\,s) & 융합 VLA \\
+LoRA & rank 32, LLM 전 선형층, 비전 동결 & 학습 \\
+SFT & \tentative{lr $10^{-4}$, 1--2 에폭} & 학습 \\
+RL KL 계수 $\beta$ & \tentative{$\{0.05, 0.1, 0.2\}$} & 학습 \\
+보정 판정 & \tentative{ECE $\le$ 0.05, AUROC $\ge$ 0.75} & E1 \\
+\bottomrule
+\end{tabular}
+\caption{공통 설정값. $T_c$는 ``1초에 3번 정도''라는 설계 요구에서 온 값이며 E0와 E-M4로 조정할 수 있다.}
+\label{tab:config}
+\end{table}
+
+\section{모듈형 기준선의 세부}
+\label{sec:supp_modular}
+\paragraph{술어 등록부.} 모듈형 스택의 인식 결과는 하나의 술어 사전으로 관리하며, 값은 \texttt{true}/\texttt{false}/\texttt{unknown}이다. T1(코드 기하·고유 감각, 결정적: \texttt{on}, \texttt{inside}, 방향 6종, \texttt{near}(5\,cm 진입·6\,cm 이탈 히스테리시스), \texttt{in\_contact}, \texttt{holding}, \texttt{lifted}(3\,cm), \texttt{upright}(30$^\circ$)), T2(코드 계산이지만 문턱에 민감: \texttt{aligned\_*}, \texttt{reachable}, \texttt{graspable}, \texttt{contact\_stable} 등), T3(VLM이나 Astra가 필요: \texttt{open}, \texttt{empty} 등)의 세 등급으로 나눈다. critic의 즉시 실패에는 T1만 쓴다. 가장 강한 VLM도 ``옆에 있음''이나 ``열림'' 판정은 50--77\%에 그쳤으므로~\cite{viplan2025}, 이런 술어는 코드로 계산한다. 융합 모델에서는 같은 술어를 보조 헤드의 정답과 결정 토큰의 정답 생성에만 쓴다.
+\paragraph{상태 텍스트.} 물체 ID별 술어 표, 로봇 기준 상대 위치 줄(그리퍼 $\rightarrow$ 각 물체의 $\Delta x$ 앞(+)/뒤, $\Delta y$ 왼(+)/오, $\Delta z$ 위(+)/아래, 1\,mm 단위, 좌표계 설명 한 줄), 최근 변화 절, 현재 단계로 구성한다. 관련 없는 내용은 넣지 않고, 같은 세계 상태는 바이트까지 같은 텍스트가 되게 정규화한다. 인식 앞단의 지연 목표는 \tentative{p50 $\le$ 70\,ms, p95 $\le$ 120\,ms}이다.
+\paragraph{잔차 보정기 $R$.} 스크립트 스킬 $S$의 명령 위에, 접근·접촉 근처에서만 작은 병진 잔차를 더한다. 입력은 스킬·단계 id, 확정 방향과 크기 구간, $S$ 명령, 추정 대상 자세와 불확실도, 관절 전류와 그리퍼 전류, 짧은 이력이며 이미지는 넣지 않는다. 잔차는 본문 \cref{eq:proj}와 같은 투영을 거친다. 손목 힘/토크 센서 대신 관절 전류를 쓰므로 힘 입력 잔차의 근거~\cite{crdagger2025}보다 한 단계 약하며, 힘 입력을 뺀 조건을 절제로 둔다. 라벨은 특권 상태로 돌린 $S$ 행동에서 추정 상태로 돌린 $S$ 행동을 뺀 값이다(우리 접목).
+
+\section{세션 계약과 보기 설계}
+\label{sec:supp_contract}
+\paragraph{계약 필드.} 판본(\texttt{contract\_id}, \texttt{version}, \texttt{parent\_version}, 기준 시각 \texttt{based\_on\_t\_state}), 내용(\texttt{goal}, 관련 물체와 술어, \texttt{objects}의 역할·\texttt{detect\_phrase}, \texttt{assumptions}), 단계(\texttt{skill}, \texttt{entry}, \texttt{exit}, \texttt{invariants}, 예상 시간, \texttt{phases}, \texttt{decision\_points}, \texttt{checkpoint}, \texttt{irreversible}, \texttt{arms}), 제약(\texttt{forbidden}, \texttt{expected\_failures})으로 이루어진다.
+\paragraph{검사.} 게시 전에 (1) 스키마와 필수 칸, (2) 술어 어휘와 결정 지점 id, (3) 기준 시각 이후 바뀐 상태와 가정의 충돌, (4) 첫 단계 진입 조건, (5) 도달 가능성과 $\texttt{exit}_k\Rightarrow\texttt{entry}_{k+1}$, (6) 금지 조건의 DFA 컴파일, (7) 실행 기반 전제·효과(첫 미실행 단계는 현재 상태로, 그 뒤 단계는 앞 단계의 예상 효과로 평가)를 확인한다. 체화 계획 검증 연구에서 판정과 수리를 반복한 결과~\cite{planverify2025}와 실행 전 전제 검사~\cite{verifyllm2025}를 참고했다. 실행 중 수정이 검사에 실패하면 이전 유효 계약을 유지하고 수리는 뒤에서 한다(JEV-Star~\cite{jevstar2026}의 이전 유효 계획 유지와 같은 모양).
+\paragraph{보기 이름 규칙.} (R1) 모든 보기에 설명을 붙이고 이름은 설명의 앞머리를 줄인 것이다. (R2) 2지선다는 중립 ID를 쓰고 뜻은 설명에만 둔다. (R3) 3지선다 이상의 행동 보기는 내용을 적은 이름을 쓴다. 3지선다 이상에서 중립 문자로 바꾸면 정답률이 .5637에서 .2782로 떨어졌다는 보고~\cite{typesafe2026}가 있다. (R4) 순서는 질문별 고정, \texttt{NONE\_ESCALATE}는 마지막. (R5) 원장·합의·라벨은 고정 \texttt{option\_key}로 센다. (R6) 이름 불변성은 오프라인에서만 잰다. 이름 규칙은 E0.5의 이름 치환 대조로 확정한다.
+
+\section{M4 세부}
+\label{sec:supp_m4}
+\paragraph{조기 호출.} 확정된 앞 구간이 필요량의 $g$(\tentative{0.5}에서 시작) 아래로 줄거나, (b)가 DEVIATE·CONTRADICT이거나, 불일치 점수가 문턱을 넘으면 조기 호출한다. 조기 호출은 다음 주기 슬롯을 당겨 쓰므로 초당 호출 예산은 바뀌지 않는다.
+\paragraph{미확정 실행.} 확정하지 못한 스텝이 고정 구간에 들어가면 가확정 보기를 그대로 실행해 멈추지 않는다. 이 스텝은 ``미확정 실행''으로 기록하고 (b) 문턱을 한 단계 엄격하게 둔다.
+\paragraph{불일치 점수.} 한 답과 한 답을 비교하는 방식은 기준 방법보다 나빴다는 절제(기간 밖, 기초 문헌)가 있어, 같은 스텝 표 분포 사이의 총변동 거리를 쓴다. 문턱은 E0.5에서 정하며 그 전에는 끈다.
+\paragraph{선행과의 차이.} WCD~\cite{wcd2026}는 실행 뒤 불일치를 다음 후보 선택 학습에 쓰고, SMC~\cite{smc2026}는 두 모델의 다음 행동 일치로 미리 실행한 단계를 확정한다. 실행 뒤 되먹임 자체는 Show-Harness~\cite{showharness2026}, RoboDawn~\cite{robodawn2026}, EmbodiedSkills~\cite{embodiedskills2026}에도 있으므로, 차별점은 (b)가 있다는 사실이 아니라 (b)를 시간차 합의 원장의 전제 무효화와 확정 판정에 결합했다는 데 있다. 전제가 깨진 답을 판본으로 무효화하는 방식은 RegenHarness~\cite{regenharness2026}의 판본 결합 확정 게이트와 같은 계열이다.
+
+\section{critic, 복구, 경험}
+\label{sec:supp_critic}
+\paragraph{``계획대로''의 정의.} 단계 $k$에서 $\textsc{OnPlan}_k=\textsc{Inv}_k\land\textsc{Order}_k\land\textsc{InDist}_k$로 둔다. 불변 술어가 참이고, 완료 술어가 원장 순서대로 참이 되어 왔으며, 경과 시간이 마감 $D_k$ 안이고 정체가 아니라는 뜻이다. $D_k$는 성공 롤아웃 단계 시간의 conformal 분위($\alpha_{\text{ep}}=0.1$)로 잡는다~\cite{safe2025}.
+\paragraph{판정.} 하드 층: T1 불변 위반 0.2\,s 연속, 스킬 오류 코드, 다음 스킬 시작 때 T1 진입 조건 거짓, M4 CONTRADICT의 T1 모순, T1 금지 조건 위반, 단계 시간 $>2D_k$. 소프트 층: 정체, 마감, 결정 토큰 진행 범주, M4 이탈, 호출 사이 불일치, 계약 가정 위반, T2 술어. 켜진 소프트 채널 집합 $\mathcal{S}$에 대해
+\begin{equation}
+  \text{state}=\begin{cases}\textsc{FAIL} & \text{하드 조건}\lor|\mathcal{S}|\ge2,\\ \textsc{WARN} & |\mathcal{S}|=1,\\ \textsc{OK} & \text{그 밖}.\end{cases}
+\end{equation}
+서로 다른 신호가 함께 넘을 때만 경보하는 구조와 성공 에피소드만으로 문턱을 보정하는 방식은 FIPER~\cite{fiper2025}에서 가져왔다. 지표는 실패 시작 뒤 2\,s 안에 탐지한 비율이며, CheckVLA~\cite{checkvla2026}의 원문 정의와 Critic in the Loop~\cite{criticloop2026}의 정체 규칙도 비교 조건으로 둔다.
+
+\input{fig/recovery}
+
+\paragraph{복구 사다리.} 실패 시각 $t_0$에 새 단계 전이와 되돌릴 수 없는 동작을 잠그고, 0.1\,s 안에 Astra를 연속 프레임과 함께 부르며, 0.2\,s 안에 실패를 분포 안·밖으로 나누고 재개 가능한 체크포인트 목록을 만든다. 그다음 L1 스킬 재시도(분포 안 실행 어긋남일 때만 1회), L2 결정 토큰의 복구 보기 선택(아래 층 결과 인정, 체크포인트 재개, 리셋, 안전 대기, 상위 호출; 실패 판정을 뒤집는 보기는 없음), L3 안전 대기 순으로 간다(\cref{fig:recovery}). 재개 지점은
+\begin{equation}
+  k^\ast=\max\Bigl\{k \;\Bigm|\; \texttt{entry}_{k+1}(x_{\text{now}})\land\bigwedge_{j\le k}\texttt{exit}_j(x_{\text{now}})\Bigr\}
+\end{equation}
+로, 저장된 술어가 아니라 지금 측정한 상태로 판정한다. 되돌릴 때는 가역 단계만 보상 스킬로 역순 실행한다(데이터베이스의 사가, 기간 밖, 기초 문헌). FLARE~\cite{flare2026}에서는 자세 오류와 환경 파괴를 구분하는 방식만 가져왔다. 복구 기법끼리 직접 비교한 벤치마크는 아직 없다.
+\paragraph{Astra 연속 프레임.} 실패 호출에는 한 이미지에 10프레임을 격자로 넣는다. 칸마다 상대 시각과 단계 이름을 덧그리며, 하위 작업 시작, 마지막 정상, 광류 봉우리 5개~\cite{kite2026}, 실패 순간, 현재, 여유 1칸으로 고른다.
+\paragraph{경험 축적(최소판).} Astra에는 경험 검색과 교훈을 준다~\cite{ouyang2025reasoningbank,zhang2025ace}. 교훈 항목에는 적용 조건, 증상, 증거 수, 신뢰도, 반증 조건을 둔다. 결정 모델에는 (스킬, 결정 지점, 조건 술어)가 정확히 일치하는 규칙만 0--2줄 넣는다~\cite{memcompiler2026}. 메모리가 없는 편이 낫다는 반대 결과도 있어~\cite{budget2026memory} 같은 예산으로 비교한다. 센서 술어로 확정된 라벨만 쓰며, 원래 실패를 재생해 결정이 바뀌고 새 seed에서 성공률이 줄지 않는 규칙만 반영한다.
+
+\section{추가 사전 등록 실험}
+\label{sec:supp_plan}
+\paragraph{E0 지연과 결정성.} 실제 호출 크기로 서빙 위치별 지연을 잰다(동시 호출 $N\in\{1,2,4,8\}$, 조건당 200호출, 각 $N$ 전에 워커당 10호출 버림). 통과 기준은 $N=4$에서 p95 $\le$ \tentative{0.15\,s}(목표), $\le0.33$\,s(허용)이다. 운영점 $L$이 $T_c/2$보다 작으면 겹침의 주 목적은 같은 스텝에 여러 표를 받는 자기 확인이고, $T_c$보다 크면 지연 숨기기다. 겹침은 어느 경우에도 끄지 않는다. 고정 입력 20개를 배경 부하 아래 10번씩 반복해 답이 바뀌지 않으면, 호출 사이 불일치는 상태 변화에서만 온다고 해석한다.
+\paragraph{E2a 같은 상태 위의 룰 대 결정 모델.} 결정 모델의 결정이 같은 상태를 읽는 규칙보다 나은지는 가장 약한 고리다. 통제된 조건에서 이를 잰 결과는 찾지 못했으므로, 룰이 풀기 어려운 보류 섭동(P3--P5)을 반드시 포함한다. 결정 모델 조건 하나 이상이 룰보다 \tentative{+5\%p} 이상(Holm 하한 $>0$) 높으면 통과한다. 통과하지 못해도 보류 섭동에서 \tentative{+10\%p} 이상이면 주장을 ``처음 보는 섭동에서의 강건성''으로 좁힌다.
+\paragraph{E-M2 재계획 형식.} patch 전용, 이전 계약을 넣은 전체 재생성, 적응형 patch/replace를 성공률, 출력 토큰, 첫 토큰에서 완료까지의 지연, 약속 보존율로 비교한다~\cite{planact2025,sweedit2026,adaedit2026}. 적응형이 전체 재생성보다 성공률이 2\%p 넘게 낮지 않으면서 토큰이나 지연을 20\% 이상 줄이면 유지한다.
+\paragraph{E-AE 행동 헤드.} 같은 상태에서 결정 토큰만 바꿨을 때 행동 청크가 기대 방향으로 바뀌는 비율(보기 준수)을 잰다. 학습 정책이 언어 지시를 무시하는 경향~\cite{liberoplus2025}이 결정 조건에서도 나타나는지 보기 위함이다. 투영 전 청크가 확정 구간을 벗어나는 비율(포화율)과, 절대 행동 목표 대 잔차 목표도 비교한다. 스크립트 스킬 조합으로 만든 궤적만으로 학습한 모델이 공식 $\pi_0$와 맞먹었다는 보고~\cite{interndataa1_2025}와, 교사 궤적만 모방하면 스스로 실수를 고치지 못한다는 보고~\cite{viral2025}가 있어 DAgger식 학생 롤아웃 섞기를 비교 조건으로 둔다.

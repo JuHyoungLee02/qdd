@@ -1,0 +1,6 @@
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/model.pdf}
+\caption{\textbf{융합 VLA.} 머리 카메라(252 토큰)와 활성 팔 손목 카메라(104 토큰)를 원본 해상도 다중 이미지로 넣고, 과제 문장과 계약의 현재 단계 요약을 붙인다. 백본(LoRA)의 출력에서 세 헤드가 나온다. (1) 결정 토큰: 보기 이름 트라이의 갈림 노드마다 자식 토큰끼리 재정규화해 보기 확률을 얻고(\cref{eq:trie}), M4로 보낸다. (2) action expert: 백본 은닉 상태를 기울기 차단(sg) 뒤 읽어 flow matching으로 0.5\,s 행동 청크를 낸다(KI). (3) 보조 기하 헤드: 시뮬 특권 상태의 상대 위치·술어를 예측하며, 기울기가 백본으로 흐른다. 헤드 크기와 손실 가중치는 \tentative{가정값}이다.}
+\label{fig:model}
+\end{figure}

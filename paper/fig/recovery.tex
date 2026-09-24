@@ -1,6 +1,6 @@
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/failure_timeline.pdf}
-\caption{\textbf{실패 복구 시간표(개념도).} M7이 실패를 판정하면 Astra를 비동기로 바로 부른다. 첫 토큰까지 effort low는 약 3\,s, 비교 조건 high는 약 73\,s이며(Artificial Analysis 공개 측정, 2026-09-23, 우리가 잰 값 아님. 우리가 한 번 잰 low 첫 토큰은 2.975\,s), 계획이 도착하는 시각은 이보다 늦다. 복구가 끝나고 2\,s가 지날 때까지 하트비트 호출은 멈춘다. 기다리는 동안 L1 스킬 재시도, L2 Jev-L의 복구 제안 선택, 필요할 때만 L3 안전 대기 순으로 아래 층이 버틴다. 새 계획이 오면 사전조건이 모두 참인 가장 늦은 체크포인트에서 재개한다. 막대 길이는 시간에 비례하지 않는다.}
+\caption{\textbf{실패 복구 시간표(개념도).} critic이 실패를 판정하면 Astra를 비동기로 바로 부른다. 첫 토큰까지 effort low는 약 3\,s, 비교 조건 high는 약 73\,s이며(공개 측정, 우리가 잰 값 아님), 계획이 도착하는 시각은 이보다 늦다. 기다리는 동안 L1 스킬 재시도, L2 결정 토큰의 복구 보기 선택, 필요할 때만 L3 안전 대기 순으로 아래 층이 버틴다. 새 계획이 오면 사전조건이 모두 참인 가장 늦은 체크포인트에서 재개한다. 막대 길이는 시간에 비례하지 않는다.}
 \label{fig:recovery}
 \end{figure}

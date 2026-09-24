@@ -1,408 +1,152 @@
 \section{Method}
 \label{sec:method}
 
-\subsection{개요와 두 모델의 제약}
-Harvest의 전체 흐름은 \cref{fig:teaser}와 같다. Astra가 단계 원장, 스킬, 결정 지점, critic 규칙, 물체별 검출용 이름을 담은 ``세션 계약''을 쓴다. 빠른 typed 결정 모델 Jev-L은 약 3\,Hz로 겹쳐 호출되며 스킬 안의 결정을 내린다. 스킬은 100\,Hz로 실행된다. Astra는 실행 중에도 하트비트와 단계 경계에서 비동기로 계약을 확인한다. 실행 결과는 코드 critic이 판정하고, 실패하면 복구 사다리를 따른다. 검증된 경험만 기억에 남긴다. 실패 판정은 한 곳(M7)에서만 내린다. 로봇이 멈추는 경우는 첫 계획을 세울 때와 복구 중 안전 대기뿐이다. 확률은 보정을 마치기 전까지 판정에 쓰지 않는다.
+\subsection{문제 설정과 개요}
+\label{sec:overview}
+사용자가 자연어 명령 $\ell$을 주면 로봇은 머리 카메라와 손목 카메라 영상, 고유수용 상태(관절 위치, 그리퍼 폭, 관절 전류)를 받아 팔 관절 명령을 낸다. 목표는 두 가지다. 첫째, 첫 계획을 세우는 순간을 빼고는 로봇을 멈추지 않는다. 둘째, 깨끗한 장면에서 바뀐 장면으로 갈 때 성능이 덜 떨어진다.
 
-시간 척도별로 나누면 다섯 구간이 된다.
+Harvest는 세 시간 척도로 나뉜다(\cref{fig:teaser}).
 \begin{enumerate}
-  \item \textbf{계획 시점(T0, 정지 허용).} Astra가 번호 표시 이미지와 M1 텍스트, 스킬 카드, 술어 어휘, M10 규칙을 받아 세션 계약을 쓴다.
-  \item \textbf{실행(비정지).} 카메라 $\rightarrow$ 인식 앞단 $\rightarrow$ M1 직렬화 $\rightarrow$ 텍스트 상태(와 머리 카메라 한 장) $\rightarrow$ Jev-L 계단식 겹침 호출(M3·M4·M6) $\rightarrow$ (a) 호출 사이 합의와 (b) 측정 상태 확인 $\rightarrow$ 확정 $\rightarrow$ 스킬·제어기(100\,Hz 이상)와 M5 스무딩.
-  \item \textbf{감독(비정지).} Astra가 하트비트(잠정 5\,s)와 단계 경계, 사건 때 비동기로 장면을 보고 계약을 유지·수정·교체한다(M8).
-  \item \textbf{실패.} 코드 critic(M7)만 FAIL을 낸다. FAIL이 나면 Astra 비동기 호출(M8, 연속 프레임)과 아래 층 복구(M9)가 동시에 시작된다.
-  \item \textbf{에피소드 뒤.} 센서 술어로 검증된 것만 기억하고, Astra가 이를 규칙으로 컴파일한다(M10).
+  \item \textbf{초 단위: Astra.} 느린 API 계획기가 세션 계약(단계 원장, 스킬, 결정 지점, 검사 규칙, 물체 이름)을 쓰고, 실행 중에는 하트비트와 단계 경계, 실패 때 비동기로 계약을 유지·수정·교체한다(\cref{sec:astra}).
+  \item \textbf{약 3\,Hz: 결정 토큰.} 융합 VLA가 방향, 센티미터 구간, 대상, 단계 전이를 typed 보기로 고른다. 호출은 $T_c=0.33$\,s마다 겹쳐 나가고, M4가 무엇을 확정할지 정한다(\cref{sec:vla,sec:m4}).
+  \item \textbf{30--100\,Hz: 연속 행동.} 같은 VLA의 action expert가 0.5\,s 행동 청크를 내고, 코드 안전 투영과 저크 제한을 거쳐 팔마다 100\,Hz 위치 명령이 된다(\cref{sec:safety}).
 \end{enumerate}
-정지를 T0와 M9의 안전 대기(L3) 두 곳으로 좁힌 것은 설계 선택이다. M4의 보류나 M5의 감속은 정지가 아니라 ``직전 확정 행동 유지 + 감속''으로 구현하며, 완전 정지가 필요하면 반드시 M7 FAIL을 거친다. 확률 게이트는 보정 실험(E1) 전까지 모든 모듈에서 끄고 최빈 보기만 쓴다. 모듈별 후보 임계값(M5 0.8, M7 0.8, M8 0.7, M9 0.6)은 E1 뒤에 켤 후보로 설정 표에만 둔다.
+정지는 첫 계획(T0)과 복구 중 안전 대기 두 곳에서만 허용한다. 그 밖의 보류와 감속은 정지가 아니라 ``직전 확정 행동 유지 + 감속''으로 구현한다. 실패 판정은 코드 critic 한 곳에서만 내리며, 판정이 나면 Astra를 바로 비동기로 부르고 그동안 아래 층이 로봇을 움직인다.
 
-\paragraph{빠른 typed 결정 모델(Jev-L).}
-하위 결정기 자리에는 처음에 typed 객관식 모델 Jev를 두었다. 그러나 Jev는 쓸 수 없게 되었고, 텍스트만 받는 API라 우리 구조에 부족할 수 있었다. 대안 가운데 API 모델 GPT-6 Luna는 보기 로그 확률과 이미지를 받지만, 한국에서 잰 지연이 중앙값 1.17\,s(4회, 최대 2.91\,s)로 0.33\,s 주기의 결정에는 느렸다. Claude API는 로그 확률을 주지 않는다. 과제 데이터로 결정 머리를 학습하는 안은 학습 정책과 같은 모양이 되어 ``LLM 결정 층은 학습하지 않는다''는 전제와 부딪치므로 상한 조건으로만 둔다. 그래서 H200 GPU 한 장에서 vLLM~\cite{vllm2026}으로 Qwen3-VL-Instruct~\cite{qwen3vl2025}를 돌려 typed 선택기로 쓴다. 생성은 하지 않고(최대 토큰 1), 질문마다 보기 이름을 토큰 트라이로 만들어 갈림 노드마다 자식 토큰의 로그 확률을 읽은 뒤 \emph{보기 집합 안에서} 다시 정규화해 보기 확률을 얻는다. 보기 이름의 첫 토큰이 모두 다르면 한 번의 순전파로 끝난다. 한 호출의 질문들은 같은 앞부분(시스템 문장, 이미지, 상태)을 공유하는 병렬 시퀀스로 보내 접두 캐시를 쓴다. vLLM의 배치 불변 모드를 켜서 같은 입력에는 배치 크기와 순서에 관계없이 같은 확률이 나오게 한다. 입력은 M1 텍스트 상태와 머리 카메라 한 장이며, 이미지를 넣지 않는 조건을 비교 조건으로 둔다. 모델은 지연 사전 시험의 사전 등록 규칙(\cref{sec:prelim3})에 따라 4B를 1순위로 두고, 정답률과 보정은 8B와 함께 스냅샷 풀에서 따로 비교한다. 모델은 저장소 리비전 해시, vLLM 판본(0.30.0), 정밀도(BF16)로 고정한다. 호출 대상만 바뀌었으므로 M4 확정 규칙, 보정(E1), conformal 게이트, M7, Astra 층, 스킬과 잔차 보정기는 그대로다.
+\paragraph{융합 원칙.} 모듈마다 따로 돌며 각 성능에 기대는 파이프라인보다 하나로 융합된 모델이 낫다고 보고, 융합할 수 있는 인식·결정·연속 행동을 한 백본에 둔다. 융합할 수 없는 세 부분만 모델 밖에 둔다. (i) Astra는 API 모델이고 느리므로 분리 자체가 설계 의도다. (ii) M4는 추론 때 서로 다른 시각의 호출 결과를 다루는 규칙이다. (iii) 안전 투영은 학습 모델이 넘으면 안 되는 한계를 코드로 강제한다. 명시적 인식(분할, 깊이, 3D 중심, 술어)과 스크립트 스킬은 런타임 의존에서 빼고, 모듈형 기준선과 학습 데이터의 교사로 둔다(\cref{sec:modular}).
 
-두 모델에는 각각 제약이 있다. Jev-L은 이미지를 받지만 작은 VLM이라 공간·수치 판단을 보장할 수 없다. 그래서 기하는 코드가 계산하고, 질문은 범주화된 술어 위에서 하며, 확률은 같은 질문의 보기끼리만 비교한다. 서로 다른 질문의 확률은 서로 맞지 않고, 확률 기댓값으로 크기를 보간하지 않는다. Astra는 이미지를 받지만 비디오는 받지 않는다. effort에 `none'이 없어 logprob을 쓸 수 없고, effort별 지연은 날마다 달라진다.
+\subsection{융합 VLA}
+\label{sec:vla}
+\input{fig/model}
 
-\paragraph{한 번의 결정 호출.}
-모듈 사이의 기본 단위는 한 번의 Jev-L 호출(\texttt{DecCall})이다. 한 호출에는 미래 결정 스텝 $k,\dots,k{+}H{-}1$에 대한 결정 질문 $H$개와 감시 질문(M7 진행 범주 1개, 필요하면 M8 T3b 1개)을 싣는다. $H$는 1과 3을 비교한다. $H=1$이면 같은 스텝의 여러 표는 호출 시각을 스텝 시작보다 앞당겨 같은 스텝을 2--3회 묻는 방식으로 얻는다. 각 스텝 질문 앞에는 ``그 전 스텝들이 코드 예상대로 끝났다고 가정한 상태''를 바뀐 술어만으로 적는다. 이것이 그 표의 전제다. 상태·질문·보기 설명은 모두 영어로 쓰고, 질문 판본 해시에는 모델 리비전, 채팅 템플릿, 이미지 해상도와 시각 토큰 예산을 넣는다. 입력 길이 상한은 E0 측정 뒤 설정 표에 확정한다.
+\paragraph{입력.}
+백본은 Qwen3-VL-4B-Instruct~\cite{qwen3vl2025}이다. 이미지는 타일로 합치지 않고 모델 기본의 다중 이미지 입력으로 넣는다. 순서는 시스템 문장, 표지 ``head camera:''와 머리 카메라 원본(672$\times$376, 시각 토큰 252개), 표지 ``right wrist camera (active arm):''와 활성 팔 손목 카메라 원본(424$\times$240, 104개), 상태 텍스트, 질문이다. Qwen3-VL은 32$\times$32 화소를 시각 토큰 하나로 쓰는 원본 해상도 모델이라, 두 장을 한 장으로 합치면 여백 때문에 오히려 토큰이 늘었다(672$\times$616 한 장이 399개). 머리 카메라는 항상 넣는다. 손목 카메라는 지금 스킬을 실행 중인 팔의 것만 넣으며, 활성 팔은 Astra 계약의 \texttt{arms}와 현재 스킬에서 정해지므로 따로 추정하지 않는다. 양팔 스킬일 때만 두 손목을 모두 넣는다(시각 토큰 약 466개). 머리 카메라는 물체에서 약 0.77\,m 떨어져 있어 잡기와 접촉의 센티미터 이하 정렬을 보기 어렵고, 손목의 D405는 7--50\,cm 근거리용이기 때문이다. 상태 텍스트는 과제 문장, 계약의 현재 단계 요약, 그리퍼 열림·닫힘이며, 물체 좌표나 술어는 넣지 않는다. 기하는 모델이 이미지에서 배워야 한다.
 
-\paragraph{공통 설정값.}
-모듈이 공유하는 시간 값과 문턱은 한 설정 표에서만 정한다(\cref{tab:config}). 모듈 문서의 값이 이 표와 다르면 이 표를 따른다.
-
-\begin{table}[t]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}p{0.40\linewidth}p{0.33\linewidth}p{0.20\linewidth}@{}}
-\toprule
-이름 & 초기값 & 쓰는 곳 \\
-\midrule
-$T_c$ 호출 간격 & 0.33\,s & M4 \\
-$d_{p95}$ 고정 구간 & E0 측정값 & M3, M4, M5 \\
-잡기·놓기 전환 보류 & 1.0\,s & M7, M9 \\
-near / contact 구간 & 목표까지 $\le$5\,cm / 접촉 술어 참 & M3, M5, M7 \\
-정체 $N$ / $M$ & 10 / 20 틱 & M7 \\
-복구 뒤 cooldown & 2\,s & M7, M8 \\
-확률 게이트 & E1 전 끔 & 전체 \\
-$H$ (호출당 결정 스텝) & 1, 3 비교 & M3, M4 \\
-\texttt{DecCall} 입력 상한 & E0 뒤 확정 & M3, M4 \\
-Jev-L 모델 & Qwen3-VL-4B, BF16, 배치 불변 & M3, M4 \\
-Astra 하트비트 $N$ & 5\,s(잠정) & M8 \\
-$h_{\text{lift}}$ (\texttt{lifted} 문턱) & 3\,cm & M1, M2, M6 \\
-$\text{tilt}_{\max}$ (\texttt{upright}) & 30$^\circ$ & M1, M2 \\
-\texttt{C\_assume} 지속 & 0.5\,s 연속 거짓 & M2, M7 \\
-\texttt{C\_pred} 지속 & T2 위반 0.5\,s / \texttt{unknown} 1.0\,s & M7 \\
-마감 $D_k$ / H6 & conformal($\alpha_{\text{ep}}{=}0.1$), 표본 $<20$이면 $1.5\,T^{\text{exp}}_k$ / $2D_k$ & M7, M8 \\
-STALE\_MAX 표 폐기 나이 & 1.5\,s & M4 \\
-L2 블렌딩 $T_b$ / $T_f$ / 모양 & 0.3\,s / 0\,s / RTC 식 5 & M5 \\
-관성화 감쇠 $T_i$ & 0.3\,s & M5 \\
-\bottomrule
-\end{tabular}
-\caption{모듈 공통 설정값(초기값). $d_{p95}$와 입력 상한은 E0 측정으로 정하고, $T_f=0$과 하트비트 $N$은 가정값이다($N$은 E-M8c로 정한다). $T_c$는 사용자 예시 ``1초에 3번 정도''에서 온 값으로, E0와 E-M4로 조정할 수 있다.}
-\label{tab:config}
-\end{table}
-
-\subsection{상태 표현 (M1)}
-Jev-L은 이미지를 받지만, 작은 VLM의 공간 판단은 믿을 수 없으므로 장면을 코드가 계산한 텍스트로 바꾸어 주 입력으로 준다. 머리 카메라 한 장은 보조 입력이다. 형식보다 내용이 중요하다. 그래서 작업에 관련된 물체와, 코드가 계산한 관계·술어만 넣는다.
-
-\paragraph{입출력.}
-카메라(와 깊이)에서 인식 앞단을 거친 결과를 M1 직렬화기(코드)가 세 가지로 바꾼다. (1) Jev-L에 줄 \texttt{state} 텍스트(관련 부분, 변화 절, 상태 시각 $t_{\text{state}}$), (2) 모든 술어의 참/거짓 표(M4 (b), M7, M9가 읽음), (3) Astra에 줄 번호 표시(Set-of-Mark) 이미지다. Jev-L에는 숫자 계산을 시키지 않고 범주와 참거짓만 준다. 관련 없는 내용은 넣지 않고, 영어로, 평평한 구조로, 판본을 고정해 쓴다. 인식 앞단은 SAM 3.1, 깊이 추정, 3D 중심·크기 계산으로 구성하며, 필요한 물체에만 자세 추정을 쓴다. SAM 3.1의 문장 프롬프트는 과제 문장에서 기계적으로 뽑지 않고, Astra가 계획할 때 장면 이미지를 보고 계약의 \texttt{objects}에 적어 준 검출용 이름(\texttt{detect\_phrase})을 쓴다. 과제 문장의 명사가 실제 물체와 맞지 않으면 검출이 통째로 실패하기 때문이다. 예비 측정에서 과제 문장의 ``box''는 흰 바구니를 한 편도 검출하지 못했고(0/20), ``basket''은 19/20편에서 검출했다(\cref{sec:prelim3}). \texttt{detect\_phrase}의 검출이 0건이거나 추적이 끊기면 그 물체를 \texttt{id\_uncertain}으로 표시해 술어를 \texttt{unknown}으로 두고(M7 소프트 채널로만 들어감), 다음 하트비트를 앞당겨 Astra가 이름을 고치게 한다. 로봇은 멈추지 않는다. 첫 계획(T0) 때는 검출 성공을 확인한 뒤 실행을 시작한다.
-
-카메라는 AI Worker에 기본으로 달린 머리 카메라와 손목 카메라만 쓰며, 시뮬과 실물 모두 카메라를 더하거나 옮기지 않는다. 실물 머리 카메라는 ZED Mini 스테레오 카메라이고 기본 설정은 깊이를 계산하지 않으므로, 깊이를 켜고 ZED SDK의 NEURAL 모드를 1순위로, Fast-FoundationStereo~\cite{fastfs2025}를 같은 파이프라인에 주입한 조건을 비교 조건으로 둔다. 손목은 D405 센서 깊이를 쓰며, 원시 스테레오 영상을 기록해 깊이 방식을 나중에 바꿔 비교한다. 시뮬의 로봇과 카메라는 공개 챌린지 환경(humanoid-challenge-env)의 설정을 그대로 복사해 쓴다. 로봇은 시뮬 설정(USD, 게인, 질량, 관절 한계)을, 카메라는 실물 사양을 따른다. 머리는 ZED Mini의 왼쪽 정류 영상 672$\times$376(VGA 모드, 수평 화각 85$^\circ$, $f_x=367$\,px, 실물 camera\_info 실측 364.0\,px)이고, 오른손목은 D405 컬러 424$\times$240(수평 87$^\circ$)이다. ZED Mini에 흔히 적히는 102$^\circ$는 센서 최대 화각이며 VGA 모드 값이 아니다. 시뮬의 깊이는 렌더러 깊이 출력에서 얻으므로 실물 입력과 다르며, 결과에 이를 표기한다. 인식 앞단의 지연 목표는 합계 p50 $\le$ 70\,ms, p95 $\le$ 120\,ms이다(3\,Hz 주기 333\,ms의 약 1/3, 측정 전 목표값). p95를 넘기면 직전 상태를 $t_{\text{state}}$와 함께 그대로 보낸다.
-
-\paragraph{술어 등록부.}
-술어는 하나의 사전(등록부)으로 관리하며, 모든 모듈은 특정 변환 방식이 아니라 이 등록부에만 의존한다. 값은 \texttt{true}/\texttt{false}/\texttt{unknown} 세 가지다. 술어는 신뢰 등급에 따라 셋으로 나눈다.
-\begin{itemize}
-  \item \textbf{T1(코드 기하·고유 감각, 결정적).} \texttt{on}, \texttt{inside}, \texttt{above}, 방향 6종, \texttt{near}(5\,cm 이내 진입, 6\,cm에서 이탈하는 히스테리시스), \texttt{in\_contact}, \texttt{holding}, \texttt{gripper\_open}, \texttt{lifted}($h_{\text{lift}}$ 3\,cm), \texttt{upright}·\texttt{tilt\_ok}($\text{tilt}_{\max}$ 30$^\circ$) 등.
-  \item \textbf{T2(코드로 계산하지만 임계값에 민감).} \texttt{aligned\_*}, \texttt{at\_pregrasp}, \texttt{reachable}(코드 IK), \texttt{clear}, \texttt{top\_clear}, \texttt{graspable}, \texttt{contact\_stable}, \texttt{collision\_risk} 등.
-  \item \textbf{T3(VLM이나 Astra가 필요).} \texttt{open}, \texttt{lid\_on}, \texttt{empty}, \texttt{material}, 기능 관계.
-\end{itemize}
-수치 인자는 술어 이름에 넣지 않고, 문턱은 설정 표에서만 정한다. 새 술어는 오프라인 경로로만 등록부에 더한다. 등급은 뒤 모듈의 판정 권한을 정한다. M7의 즉시 실패(하드 채널)에는 T1만 쓰고, T2와 \texttt{unknown}은 소프트 채널로만 들어간다.
-
-\paragraph{직렬화 형식.}
-기본 변환은 물체 ID별 술어 표에 변화 절을 붙이는 방식(후보 A)이다. 칸은 \texttt{objects}(관련 ID만), \texttt{robot}, \texttt{facts}, \texttt{changes}(최근 3\,s, 최대 8개), \texttt{stage}이며, 관련 물체가 3--6개일 때 150--350 토큰으로 추정한다. 변화 절은 코드가 술어 표 두 개를 비교해 만든다. 작업 부분 그래프(후보 B)와 영역 캡션·Astra 서술을 더한 형식(후보 C)은 오프라인 비교 실험(E3)의 조건으로 둔다.
-
-이미지를 보지 못하는 모델도 기호 표만 받고 게임 벤치마크에서 상위권에 오른 사례가 있다(lmgame-Bench, 저자는 예비 결과라고 밝힘). 반면 ViPlan~\cite{viplan2025}에서 가장 강한 VLM(GPT-4.1과 GPT-5.2)도 ``옆에 있음''이나 ``열림'' 같은 판정의 정확도는 50--77\%에 그친다. 그래서 이런 술어는 코드로 계산한다. ``텍스트가 이미지보다 낫다''는 근거(BALROG, 기간 밖, 기초 문헌)는 모델마다 결과가 달라 근거로 쓰지 않는다.
-
-\subsection{Astra에서 Jev-L로의 전달 (M2)}
-Astra는 이미지를 보고 명령하지만 Jev-L의 주 입력은 코드가 만든 텍스트 상태다. 두 모델이 같은 물체를 같은 이름으로 불러야 하므로 Astra가 물체를 번호로 지칭하게 한다. 이는 텍스트판 Set-of-Mark(기간 밖, 기초 문헌)에 해당한다. 제약 조건은 Astra가 코드로 쓰고, Jev-L에는 그 참·거짓만 전달한다.
-
-\paragraph{세션 계약.}
-Astra가 쓰는 세션 계약(v1)은 목표 중심에 가정 술어와 판본을 더한 형식이다. 필드는 다음과 같다.
-\begin{itemize}
-  \item 판본: \texttt{contract\_id}, \texttt{version}, \texttt{parent\_version}, 계획의 기준 시각 \texttt{based\_on\_t\_state}.
-  \item 내용: \texttt{goal}, \texttt{relevant\_ids}·\texttt{relevant\_predicates}, \texttt{objects}(역할, T3 초깃값, 인식 앞단이 쓸 검출용 이름 \texttt{detect\_phrase}), \texttt{assumptions}(거짓이 되면 계약이 낡은 것).
-  \item 단계: \texttt{stages[]}. 각 단계는 스킬 인스턴스이며 \texttt{skill}, \texttt{entry}, \texttt{exit}, \texttt{invariants}, \texttt{stop}, 예상 시간 \texttt{T\_exp\_s}, \texttt{phases}, \texttt{decision\_points}, \texttt{checkpoint}, \texttt{irreversible}를 가진다.
-  \item 제약과 예상 실패: \texttt{forbidden[]}(\texttt{when}, \texttt{check}, \texttt{enforce}), \texttt{expected\_failures[]}, 허용 DSL 안의 \texttt{custom\_predicates[]}. \texttt{rationale}은 Jev-L 기본 입력에서 뺀다.
-\end{itemize}
-결정 지점은 Astra가 새로 만들지 않고, 스킬에 고정된 id(M6) 가운데서 골라 인자만 채운다. 모든 술어는 등록부 안에 있어야 한다. Jev-L은 계약 전체가 아니라 현재 단계 조각만 본다. 여기에는 계약 판본과 나이(예: \texttt{contract: ep42 v7 (based\_on f1100, age 6.2s)}), 목표, 현재 단계의 완료 조건, 현재 금지 술어 값, 최근 확정 행동이 들어간다.
-
-\paragraph{검사와 교체.}
-게시 전에 코드 검사기가 (1) 스키마와 필수 칸(각 물체의 \texttt{detect\_phrase}가 비어 있지 않은지 포함), (2) 모든 술어가 등록부에 있는지, 결정 지점 id가 그 스킬 계약 안에 있는지, \texttt{enforce: fail}이 T1 술어만 쓰는지, (3) \texttt{based\_on} 이후 바뀐 상태와 가정이 충돌하는지, (4) 첫 단계 \texttt{entry}가 참인지, (5) 도달 가능성과 막다른 단계, $\texttt{exit}_k \Rightarrow \texttt{entry}_{k+1}$ 같은 구조, (6) \texttt{forbidden}과 순서 제약이 허용 패턴이고 DFA로 컴파일되는지, (7) 실행 기반 전제·효과가 맞는지(아래 계획 확인)를 확인한다. 실행 중 들어온 계약 수정이 검사에 실패하면 적용하지 않고 M7 소프트 채널 \texttt{C\_assume}로 신호를 보내며, 수리는 아래 규칙을 따른다. 로봇은 멈추지 않는다.
-
-낡은 계약은 다음 규칙으로 다룬다. 새 계획을 기다리지 않는다(R1). 가장 새 유효 판본만 쓰며, 새 판본을 게시하면 M4의 전제 판본(\texttt{premise\_epoch})을 하나 올린다(R2). 계약 교체는 결정 스텝 경계에서만 하고, 진행 중인 단계가 되돌릴 수 없는 단계이면 그 단계가 끝난 뒤에 한다. 그동안에는 직전 확정 행동을 유지하며 감속한다(R3). R3는 M8의 적용 창과 M9의 새 계획 적용 시점에도 같은 기준으로 쓰인다. \texttt{based\_on\_t\_state}가 더 새로운 계약만 받는다(R5). 가정 술어와 금지 조건은 DFA 감시기 하나가 함께 감시하며, 감시기는 신호만 낸다(잠정 기본).
-
-계약은 목표 중심으로 쓴다. ``작은 실행기에는 목표만 준다''의 근거로 들었던 COPE는 실제로는 큰 모델의 짧은 절차 계획이 작은 모델을 도운 결과였다. 그래서 그 근거는 뺐고, 목표 중심은 설계 선택으로 둔다. ``목표 + 절차 1--2문장'' 조건으로 따로 확인한다.
-
-\paragraph{계획 확인과 수리.}
-Astra는 로그 확률을 주지 않으므로, 보정 집합에 기대는 보장 방법(conformal 집합, 확신 가중 투표)을 쓸 수 없다. 같은 모델을 여러 번 불러 다수결하는 방식은 최근 문헌에서 비교 기준선으로만 쓰이고, 같은 관측을 반복해도 증거는 늘지 않는다~\cite{pact2026}. 그래서 한 번 부르고($K=1$) 코드로 검사한 뒤, 실패할 때만 고치게 한다. 체화 계획 검증 연구~\cite{planverify2025}(학회 미확인)는 판정 LLM이 계획을 비평하고 계획 LLM이 고치는 반복으로 최대 재현율 90\%, 정밀도 100\%를 얻었고, 96.5\%의 계획이 세 번 이내의 반복으로 끝났다. 다만 이는 오프라인 데이터 정제 조건이다. VerifyLLM~\cite{verifyllm2025}은 실행 전에 계획의 빠진 전제 조건을 형식 검사했다. 우리는 검사 (1)--(6)에 실행 기반 전제·효과 검사 (7)을 더한다. 단계 $i$의 \texttt{entry} 술어를, 첫 미실행 단계이면 현재 측정 상태로, 그 뒤 단계이면 앞 단계의 예상 효과로 평가하고, 연쇄 일관성과 금지 술어를 함께 본다. 검사가 실패하면 위반 목록을 붙여 순차로 다시 부르며, 상한은 2회다(가정; 선행의 3회보다 보수적). T0에서는 통과할 때까지 기다린다. 실행 중 호출에서는 검사가 실패하면 이전 유효 계약을 유지하고 수리를 백그라운드로 한다. 계획 요청이 실패하거나 늦을 때 이전 유효 계획을 유지한 JEV-Star~\cite{jevstar2026}와 같은 모양이며, 로봇은 멈추지 않는다. 다른 모델 계열로 검증하는 편이 자기 검증보다 낫다는 보고~\cite{verifypayoff2025}(워크숍 논문)가 있어, Jev-L의 typed 질문으로 계약을 한 번 더 검증하는 조건을 비교 조건으로 둔다. 추론 모델이 말로 밝힌 확신은 더 잘 보정된다는 결과~\cite{reasonconf2025}가 있지만 보장은 없으므로, Astra의 확신은 기록만 하고 게이트로 쓰지 않는다.
-
-\paragraph{재계획 형식.}
-바뀐 부분만 고치는 patch만 쓰는 방식은 체화·에이전트 계획의 표준이 아니다. Plan-and-Act~\cite{planact2025}는 매 스텝 현재 상태와 이전 계획·행동을 입력으로 새 계획을 생성해 WebArena-Lite에서 성공률을 29.63\%에서 53.94\%로 올렸고(원문 표 대조 전 값), $\pi_{0.5}$는 추론 스텝마다 하위 과제를 다시 예측한다. 코드 편집에서는 찾아 바꾸기와 파일 전체 재작성을 적응형으로 고르는 정책이 편집 성공률을 12.5\%p 올렸고~\cite{sweedit2026}(학회 미확인), 적응형 출력 형식이 전체 생성과 같은 정확도에서 지연과 비용을 30\% 넘게 줄였다~\cite{adaedit2026}. 그래서 재계획 출력을 \texttt{patch}와 \texttt{replace} 가운데서 고른다. 변경이 국소적일 때 지연·토큰 이득과 약속 보존을 얻도록 \texttt{patch}를 기본으로 쓴다(체화 과제의 계획 지역성~\cite{agenticcache2026}). 다만 (i) 실패가 깨뜨린 전제에 기대는 미실행 단계가 절반을 넘거나, (ii) 목표나 물체 역할이 바뀌거나, (iii) patch가 검사를 통과하지 못하면 \texttt{replace}로 강제한다(가정 규칙). \texttt{replace}도 이전 계약을 입력으로 받고, 어느 형식이든 이미 실행한 단계는 바꾸지 않는다. 세 방식(patch 전용, 전체 재생성, 적응형)은 E-M2에서 비교한다.
-
-\subsection{행동 표현 (M3)}
-Jev-L은 숫자를 직접 만들지 않고, 코드가 만든 보기 가운데 하나를 고른다. 확률 평균으로 크기를 정하지 않으므로(Jev 공식 문서가 금지한 방식이며, Jev-L에서도 설계 규칙으로 유지한다), 크기는 이름 붙은 구간 가운데서 고른다. 보기가 많고 서로 비슷하면 정확도가 떨어진다. 그래서 질문당 보기는 서로 뚜렷한 약 17개 이하로 두고, 255개 보기(D255)는 비교 조건으로만 쓴다. 모든 질문에는 \texttt{NONE\_ESCALATE} 보기를 둔다. 이 보기가 최빈이면 그 스텝은 보류되는데, 보류는 정지가 아니라 직전 확정 행동 유지와 감속이다. 순서형 보기도 최빈 보기만 쓰며, 확률 가중이나 Score 보간은 하지 않는다.
-
-\paragraph{결정 스텝 기록.}
-M3는 매 호출의 결과를 결정 스텝 기록 \texttt{DecisionStep}으로 M4에 넘긴다. 칸은 미래 결정 스텝 번호 \texttt{ds\_id}, 입력 상태 시각 \texttt{t\_state}, \texttt{call\_id}와 송수신 시각, 표현 종류 \texttt{variant}, 질문 목록(\texttt{question\_id}, 결정 지점 \texttt{dp\_id}, 보기 \texttt{options[option\_key]}, 고른 보기 \texttt{chosen(option\_key)}, 기록용 확률), 보기 순서 순열 번호 \texttt{perm\_id}, 표시 대응표 \texttt{display\_map}, 코드가 계산한 목표 \texttt{target}, 선택 보기의 예상 결과 술어 \texttt{expected\_after}, 고정 구간 경계 \texttt{commit\_window}(M4가 $d_{p95}$로 채움), \texttt{escalate}이다. \texttt{display\_map}에는 질문마다 표시 이름, 표시 순서, \texttt{display\_id} $\rightarrow$ \texttt{option\_key} 대응을 적는다. M4의 합의와 원장, 결과 라벨은 모두 표시 이름이 아니라 고정 키 \texttt{option\_key}로 센다. \texttt{expected\_after}는 등록부 술어 이름만 쓴다(예: \texttt{aligned\_x(gripper,target)=yes, in\_contact(gripper,target)=no}).
-
-\paragraph{세 가지 표현.}
-결과를 보기 전에는 다음 세 안을 모두 구현한다.
-\begin{itemize}
-  \item \textbf{D안(촘촘한 이동, D-줌).} 사용자의 ``촘촘하게 가도 된다''를 구현한 안이다. 방향은 수평 10개(\texttt{Q\_dir\_xy})와 수직 4개(\texttt{Q\_dir\_z})의 두 질문으로 나눈다. 크기는 로그 간격 5구간(tiny, small, medium, large, xlarge; 약 0.5, 1, 2, 4, 8\,cm, cm 값은 가정)에서 고르고, 필요하면 거친 구간 안을 5--9등분한 세밀 질문을 더해 유효 해상도를 약 45단계로 만든다. 회전(\texttt{Q\_rot})과 그리퍼(\texttt{Q\_grip}) 질문을 더한다.
-  \item \textbf{G안(목표 지정형).} Jev-L이 목표 물체·부분·영역(\texttt{Q\_target}), 이름 붙은 접근 방식 3--6개(\texttt{Q\_approach}), 단계 전이(\texttt{Q\_phase})를 고르고, 목표 자세·경로·보폭은 코드가 정한다.
-  \item \textbf{H안(혼합, 1순위 후보).} 먼 구간에서는 G안을 쓰고, 목표까지 5\,cm 이내이거나 접촉 중이거나 정렬·삽입·놓기 단계이면 미세 조정 질문 \texttt{Q\_fine\_dir}($\pm x$, $\pm y$, $\pm z$, 회전 $\pm$, \texttt{hold}, \texttt{done}, \texttt{NONE\_ESCALATE})을 켠다. 크기는 코드가 거리 범주에 따라 1\,cm 또는 2\,cm로 정한다.
-\end{itemize}
-G안과 H안의 질문은 M6의 고정 결정 지점 id와 대응한다(\texttt{Q\_approach}$\rightarrow$\texttt{dp.approach\_dir}, \texttt{Q\_phase}$\rightarrow$\texttt{dp.next\_skill}, \texttt{Q\_fine\_dir}$\rightarrow$\texttt{dp.align\_commit}). 보기마다 코드가 짧게 굴려 본 예상 결과 술어를 붙인다.
-
-\paragraph{보기 이름 규칙.}
-보기 이름은 일반 관행을 조사해 다음 규칙으로 정했다. 3지선다 이상에서 중립 문자로 바꾸면 정답률이 .5637에서 .2782로 떨어지고 설명보다 위치를 따라간다는 보고(심사 전 프리프린트)가 있는 반면~\cite{typesafe2026}, 중립 식별자 권고는 2지선다에 대한 근거이기 때문이다.
-\begin{enumerate}[label=R\arabic*.]
-  \item 모든 보기에 설명을 붙인다. 이름은 설명 앞머리를 줄인 것이며 설명에 없는 뜻을 담지 않는다. 극성·판정어(yes, no, ok, fail, safe 등)와 조건을 품은 이름은 쓰지 않는다.
-  \item 2지선다는 중립 ID(\texttt{A}/\texttt{B} 또는 무작위 5자)를 쓰고 뜻은 설명에만 둔다.
-  \item 3지선다 이상의 행동 보기(방향, 목표 물체, 크기)는 내용을 적은 이름에 설명을 붙인다. 이 규칙은 E0.5의 이름 치환 대조로 확정한다.
-  \item 보기 순서는 질문별 고정 표준 순서로 두고, \texttt{NONE\_ESCALATE}는 항상 마지막에 둔다. 보기 수는 \texttt{NONE\_ESCALATE}를 빼고 센다.
-  \item 원장, 합의, 결과 라벨은 고정 \texttt{option\_key}로 센다. 표시 이름, 표시 순서, \texttt{perm\_id}, 대응표는 호출마다 기록한다.
-  \item 이름 불변성(이름만 바꿨을 때 답이 바뀌는 비율)은 오프라인(E0.5, E1)에서만 잰다.
-\end{enumerate}
-
-반대 증거도 있다. 학습 없는 모델은 잘게 여러 번 움직일 때보다 목표 지점을 한 번에 가리킬 때 훨씬 잘했다. 드론 과제(SPF~\cite{spf2025})에서는 연속 수치를 글로 내면 7\%, 후보 점을 고르면 40\%, 목표 점을 직접 지정하면 87--100\%였고, GUI(GUI-Cursor~\cite{guicursor2025})에서는 반복 이동이 무너졌다. 그래서 목표 지정형을 촘촘한 원안과 나란히 잰다. RoboDawn~\cite{robodawn2026}은 Astra 같은 VLM이 cm 단위 숫자로 로봇을 조종하는 하네스다. Gemini-3.8-Flash 0-shot으로 하네스 구성 요소를 하나씩 뺀 절제에서는 격자 같은 공간 근거를 뺐을 때 가장 크게 떨어졌고(47.0에서 32.4), 결정 횟수(명령 예산)도 성능을 움직였다. 다만 ``가장 크게''는 하네스 구성 요소 안에서의 비교이며, 샷 수와 모델 선택은 이보다 더 크게 움직였다. 그래서 촘촘함은 결정 빈도와 공간 근거로 살린다. 저자도 이산 명령이 미세 보정에는 거칠다고 밝혔으므로, 접촉 근처에서는 미세 조정을 따로 둔다.
-
-\paragraph{확률 게이트와 conformal 집합.}
-보정 측정(E1) 전에는 확률 게이트를 모두 끄고 최빈 보기만 쓴다. E1 뒤에 켤 후보로 conformal 게이트를 둔다. KnowNo~\cite{knowno2023}(기간 밖, 기초 문헌)는 LLM의 객관식 계획을 conformal 예측 집합으로 바꾸어, 집합이 원소 하나이면 실행하고 아니면 도움을 요청했다. CoFineLLM~\cite{cofinellm2025}(학회 미확인)은 같은 틀에서 단계별 집합의 곱으로 계획 전체의 커버리지를 보장했다. 우리는 질문 판본 \texttt{question\_id@vN}마다 보정 집합으로 문턱 $\hat q$를 잡고, 보정 확률 $\hat p$로 예측 집합
+\paragraph{typed 결정 토큰.}
+한 번의 결정 호출(\texttt{DecCall})은 미래 결정 스텝 $k,\dots,k{+}H{-}1$에 대한 질문을 싣는다. 질문은 수평 방향 \texttt{dir\_xy}, 수직 방향 \texttt{dir\_z}, 이동 크기 \texttt{mag}(tiny, small, medium, large, xlarge의 로그 간격 5구간), 대상 물체 \texttt{target}, 단계 전이 \texttt{phase}이고, 감시 질문으로 진행 범주 하나를 더한다. 모든 질문에는 \texttt{NONE\_ESCALATE} 보기가 있다. 모든 보기에는 설명을 붙이고, 이름은 설명의 앞머리를 줄인 것이며, 판정어(yes, fail, safe 등)나 조건을 품은 이름은 쓰지 않는다. 보기 순서는 질문마다 고정하고 \texttt{NONE\_ESCALATE}는 항상 마지막에 둔다. 모델은 문장을 생성하지 않는다. 질문 $q$의 보기 이름들을 토큰 트라이로 만들고, 갈림 노드 $n$마다 자식 토큰끼리만 softmax를 취해 곱한다.
 \begin{equation}
-  \mathcal{C}(x)=\{\,o : 1-\hat p(o\mid x) \le \hat q\,\}
+  \tilde p(o\mid x,q) \;=\; \prod_{n\in\mathrm{path}(o)} \frac{\exp z_{n,c(n,o)}}{\sum_{c\in\mathrm{child}(n)}\exp z_{n,c}},
+  \label{eq:trie}
+\end{equation}
+여기서 $z_{n,c}$는 노드 $n$에서 자식 토큰 $c$의 로짓이다. 이 값은 보기 집합 안에서 합이 1인 확률이고, 학습 손실과 추론이 같은 양을 쓴다. 보기 이름의 첫 토큰이 모두 다르면 순전파 한 번으로 끝난다. 확률은 같은 질문의 보기끼리만 비교하고, 서로 다른 질문의 확률을 섞거나 확률 기댓값으로 크기를 보간하지 않는다. 크기는 반드시 이름 붙은 구간 가운데 하나로 고른다.
+
+\paragraph{호출과 서빙.}
+한 호출의 질문들은 같은 앞부분(시스템 문장, 이미지, 상태)을 공유하는 병렬 시퀀스로 나간다. 모든 시퀀스를 동시에 보내면 같은 이미지를 든 요청이 한꺼번에 들어가 지연이 커졌다. 그래서 첫 시퀀스를 먼저 보내 접두 캐시와 멀티모달 캐시를 채운 뒤 나머지를 병렬로 보낸다(lead 호출). 두 캐시는 필수다. vLLM~\cite{vllm2026}의 배치 불변 모드를 켜서 같은 입력에는 배치 구성과 관계없이 같은 확률이 나오게 한다. 실물에서는 로봇 옆 GPU 서버(RTX PRO 6000)에서 돌리며, 지금은 H200에서 같은 설정으로 이 조건을 가정해 잰다. 설계 지연값은 동시 호출 4개에서 잰 최악 p95 \tentative{0.28\,s}로 두며, 허용선은 $T_c=0.33$\,s다(\cref{sec:prelim}).
+
+\paragraph{action expert.}
+같은 백본에 flow matching action expert(기본 \tentative{79.5M} 매개변수)를 붙인다. expert는 백본의 은닉 상태를 교차 주의로 읽어 행동 청크 $A=(a_1,\dots,a_{15})$를 낸다. 한 청크는 30\,Hz로 15스텝, 즉 0.5\,s이고, 각 $a_t$는 활성 팔 7관절 위치 목표와 그리퍼 폭의 8차원이다. 학습 손실은 조건부 flow matching이다.
+\begin{equation}
+  \mathcal{L}_{\text{act}} = \mathbb{E}_{\tau,\epsilon}\bigl\|\,v_\theta(A^\tau, \tau \mid \mathrm{sg}[h]) - (\epsilon - A)\,\bigr\|^2,\quad A^\tau = \tau\epsilon + (1-\tau)A,
+  \label{eq:fm}
+\end{equation}
+여기서 $h$는 백본 은닉 상태, $\mathrm{sg}[\cdot]$는 기울기 차단이다. KI~\cite{kinsulate2025}를 따라 expert에서 백본으로 가는 기울기를 막아, 연속 행동 학습이 백본의 언어·시각 지식을 망가뜨리지 않게 한다. 행동 목표는 기본으로 스크립트 스킬 $S$가 낸 명령(교사)이고, $S$ 명령 위의 잔차를 목표로 하는 조건을 절제로 둔다.
+
+\paragraph{보조 기하 헤드.}
+시뮬레이션의 특권 상태로 계산한 기하, 즉 그리퍼에서 각 물체까지의 상대 위치(앞뒤, 좌우, 위아래)와 접촉·잡힘 같은 술어를 백본 은닉 상태에서 예측하는 작은 헤드를 둔다. 이 헤드의 기울기는 백본으로 흐른다. 명시적 인식 파이프라인을 런타임에 두는 대신, 같은 정보를 보조 손실로 주어 모델이 이미지에서 기하를 배우게 하려는 것이다. 헤드 출력은 런타임 결정에 쓰지 않고 진단과 분석에만 쓴다.
+
+\paragraph{전체 손실.}
+\begin{equation}
+  \begin{split}
+  \mathcal{L} = {}& \lambda_{\text{dec}}\sum_{q} -\log \!\!\sum_{o\in\mathcal{Y}_q}\!\! \tilde p(o\mid x,q)\\
+  &+ \lambda_{\text{act}}\mathcal{L}_{\text{act}} + \lambda_{\text{aux}}\mathcal{L}_{\text{aux}} + \lambda_{\text{vqa}}\mathcal{L}_{\text{vqa}},
+  \end{split}
+  \label{eq:loss}
+\end{equation}
+$\mathcal{Y}_q$는 질문 $q$의 정답 보기 집합이다(정답이 하나이면 원소 하나). $\mathcal{L}_{\text{vqa}}$는 일반 VQA 데이터를 섞어 백본의 일반 능력을 지키는 항이며, 데이터 원천을 정하기 전까지 $\lambda_{\text{vqa}}=0$이다. 백본은 LoRA(rank 32, LLM의 모든 선형층)로 학습하고 비전 타워는 얼린다.
+
+\subsection{학습 단계와 정답}
+\label{sec:training}
+\paragraph{세 단계.}
+\input{fig/training}
+학습량을 실험 축으로 쓰기 위해 같은 백본을 세 단계로 둔다(\cref{fig:training}). \textbf{C(영점)}: 학습하지 않은 Qwen3-VL-4B를 \cref{eq:trie}의 선택기로 쓴다. \textbf{A(결정층)}: \cref{eq:loss}의 결정 항만으로 LoRA SFT를 한 뒤, 시뮬 롤아웃 보상으로 RL을 한다. 실행은 스크립트 스킬이 맡는다. \textbf{B(융합)}: A 체크포인트에 action expert와 보조 헤드를 붙여 \cref{eq:loss} 전체로 학습한다. B가 주 시스템이다. 영점 모델이 과제 지식을 갖추지 못하면 RL만으로는 올라가지 못하고, SFT를 길게 하면 분포 밖에서 무너진다는 결과~\cite{chu2025sftrl}가 있어, SFT는 1--2 에폭으로 짧게 하고 표준 장면 검증 NLL로 조기 종료한다.
+
+\paragraph{RL: 스냅샷 분기로 정확한 기대 보상.}
+결정이 보기 토큰 하나이고 시뮬 스냅샷을 복원할 수 있으므로, 한 상태 $s$에서 모든 보기 $a$를 실제로 분기 실행해 보상 $R(s,a)$를 얻는다. 그러면 표집 없이 기대 보상을 정확히 계산할 수 있다.
+\begin{equation}
+  \begin{split}
+  \mathcal{L}_{\text{RL}} = {}& -\sum_s \sum_a \tilde p_\theta(a\mid s)\bigl(R(s,a)-\bar R_\theta(s)\bigr)\\
+  &+ \beta\,\mathrm{KL}\bigl(\tilde p_\theta(\cdot\mid s)\,\|\,\tilde p_{\text{SFT}}(\cdot\mid s)\bigr).
+  \end{split}
+  \label{eq:rl}
+\end{equation}
+KL 정규화의 최적해는 $\tilde p^\ast \propto \tilde p_{\text{SFT}}\exp(R/\beta)$이므로 확률이 한 보기로 무너지지 않고, M4와 보정이 쓰는 확률 정보가 남는다. 상태는 학습된 모델이 M4를 켠 채 스스로 간 궤적에서 모은다(on-policy). 라운드 수와 크기(\tentative{3라운드, 라운드당 150판, 분기 라벨 2천 스냅샷})는 가정값이다. 표집형 GRPO는 절제로 둔다.
+
+\paragraph{정답: 관측으로 정의한 라벨.}
+처음에는 오라클 계획기의 다음 0.33\,s 명령 이동을 정답으로 삼았다. 예비 시험(\cref{sec:prelim})에서 이 정답은 관측 상태로 결정되지 않는 양이었다. 계획기의 명령 위치와 타이머, 스텝 안 단계 전환에 기대기 때문이다. 그래서 정답을 관측 상태에서 결정되는 양으로 바꾸었다(labels\_v2). 실제 손가락 중점 $g$에서, 관측(단계, 그리퍼 상태, 수평 거리)으로 고른 운동 소단계(접근, 잡기, 들기, 나르기, 놓기, 물러나기, 대기)의 목표점 $G$까지 남은 변위 $\Delta=G-g$를 쓴다. \texttt{dir\_xy}와 \texttt{dir\_z}는 성분 부호(데드밴드 1\,cm), \texttt{mag}는 $|\Delta|$의 구간(경계 0.707, 1.414, 2.828, 5.657\,cm), \texttt{target}과 \texttt{phase}는 원장과 술어의 명시 규칙이다. 정의를 받아들이기 전에, 상태만 읽는 코드 규칙이 이 정답을 0.95 이상 맞히는지를 사전 등록 관문으로 확인했다. 한 상태에서 모든 보기를 분기 실행해 지평 안 점수로 매긴 결과 기반 라벨은 교차 확인과 RL 보상에 쓴다. \texttt{NONE\_ESCALATE}의 정답은 모든 보기가 지평 안에서 실패한 스냅샷에만 준다. SFT 뒤 이 보기의 확률이 사라지면, conformal 집합의 크기를 상위 호출 신호로 쓴다.
+
+\paragraph{데이터.}
+시뮬 스냅샷 풀은 스크립트 교사 $S$가 표준 장면과 도메인 무작위화(DR) 장면에서 돈 에피소드에서 만들며, 행동(관절)을 30\,Hz로 기록하고 LeRobot 형식으로 내보낸다. 시험용 무작위 장면(random)과 학습용 DR은 자산, 이름, 색, 수치 구간이 겹치지 않는 별도 풀에서 뽑고, random은 학습에 쓰지 않는다. 실물 쪽으로는 ROBOTIS AI Worker 공개 데이터(같은 기종, 머리 스테레오와 손목 카메라)에서 약 \tentative{10\,GB}를 골라 B의 소규모 end-to-end 학습을 한 번 돌린다(S-E2E). 이 학습은 파이프라인 검증용 소규모 시험으로 표기한다.
+
+\paragraph{보정.}
+학습과 RL은 과신을 만들 수 있다. 보정 시드를 판 단위로 둘로 나누어, 한쪽에서 질문별 온도 $T_q$를 NLL로 맞추고~\cite{guo2017calib}, 다른 쪽에서 conformal 문턱 $\hat q$를 잡는다. 예측 집합은
+\begin{equation}
+  \mathcal{C}(x)=\{\,o : 1-\hat p_{T_q}(o\mid x) \le \hat q\,\}
   \label{eq:cp}
 \end{equation}
-를 만든다. 집합이 원소 하나이면 M4의 확정 후보가 되고, 원소가 둘 이상이거나 \texttt{NONE\_ESCALATE}를 포함하면 확정을 보류한다. 보류는 정지가 아니라 직전 확정 행동 유지와 감속이다. 같은 결정 지점에서 보류가 반복되면 Astra를 부른다. 싼 판정기를 먼저 쓰고 필요할 때만 강한 모델로 올리는 Trust or Escalate~\cite{trustescalate2024}(기간 밖, 기초 문헌, 학회 표기 미확인)와 같은 계단이다. 보장은 결정 스텝마다의 주변 커버리지 $P(o^\ast\in\mathcal{C}(x))\ge 1-\alpha$이며, 에피소드 수준의 보장은 아니다. conformal 보장은 보정과 시험의 교환 가능성을 전제하므로, 보정값을 질문 판본과 모델 ID에 묶고 매일 고정 카나리 세트로 표류를 확인한다. 판본이나 모델이 바뀌면 게이트를 끄고 다시 보정한다.
+이다. 집합이 원소 하나이면 M4의 확정 후보가 되고, 둘 이상이거나 \texttt{NONE\_ESCALATE}를 포함하면 확정을 보류하며, 같은 결정 지점에서 보류가 반복되면 Astra를 부른다~\cite{knowno2023,cofinellm2025}. 보장은 결정 스텝마다의 주변 커버리지 $P(o^\ast\in\mathcal{C})\ge1-\alpha$이며 에피소드 수준 보장은 아니다. 보정값은 질문 판본(문구, 보기, 카메라 구성의 해시)과 모델 판본에 묶고, 모델이 바뀔 때마다 다시 맞춘다. 보정 판정(\tentative{ECE $\le0.05$, AUROC $\ge0.75$})을 통과하기 전에는 확률 게이트를 끄고 최빈 보기만 쓴다.
 
-\subsection{겹침 호출과 확정 규칙 (M4)}
+\subsection{시간차 확정 규칙 (M4)}
 \label{sec:m4}
-Jev-L은 빠르다고 해도 로봇 동작의 속도에는 미치지 못한다. 그래서 1초에 한 번이 아니라 3번 정도 계단식으로 겹쳐 호출한다. 겹쳐 받은 답은 미래 스텝별 ``표''로 모아 원장에 쌓고, 합의(a)와 실행 뒤 확인(b)을 함께 써서 확정한다(\cref{fig:m4}). 동작이 연속되도록 RTC~\cite{black2025rtc}의 고정·중간·끝 구간을 이산판으로 옮긴다. 이 설계는 동시통역의 앞부분 합의(LocalAgreement, 기간 밖, 기초 문헌)와 추측 디코딩의 유예 창에서 가져왔다. M4는 신호만 내며, FAIL 판정과 정지, M9 호출은 하지 않는다.
+결정 호출은 빠르다고 해도 로봇 동작보다 느리다. 그래서 1초에 한 번이 아니라 3번 정도 계단식으로 겹쳐 부르고, 겹쳐 받은 답이 제대로 반영됐는지를 스스로 확인해 갱신한다(\cref{fig:m4}). 겹친 답은 미래 스텝별 ``표''로 원장에 쌓고, 호출 사이 합의(a)와 실행 뒤 확인(b)을 함께 써서 확정한다. 구간 설계는 RTC~\cite{black2025rtc}의 고정·중간·끝 구간을 이산 결정으로 옮긴 것이고, 합의 규칙은 동시통역의 앞부분 합의와 추측 디코딩의 유예 창(둘 다 기간 밖, 기초 문헌)에서 가져왔다. M4는 신호만 내며, 실패 판정과 정지는 하지 않는다.
 
 \input{fig/m4}
 
-\paragraph{스케줄러.}
-$T_c=0.33$\,s마다 진행 중인 호출 수가 상한보다 작으면 새 \texttt{DecCall}을 보낸다. 상한은
-\begin{equation}
-  N_{\max} = \left\lceil \hat d_{p95} / T_c \right\rceil + 1
-  \label{eq:nmax}
-\end{equation}
-로 둔다. $\hat d_{p95}$는 E0 측정값에서 시작해 최근 50회의 p95로 갱신한다(예: p95가 0.81\,s이면 4, 0.3\,s이면 2). 확정된 앞 구간이 필요량의 $g$(0.5에서 시작) 아래로 줄거나, (b) 결과가 DEVIATE나 CONTRADICT이거나, 불일치 점수가 문턱을 넘거나, 장면 변화 점수가 P90을 두 번 연속 넘으면 조기 호출한다. 조기 호출은 다음 주기 슬롯 하나를 당겨 쓰므로 초당 호출 예산은 바뀌지 않는다.
-
-\paragraph{원장과 구간.}
-원장은 표 $v$를 스텝 칸(slot)별로 모은다. 표 하나는 \texttt{ds\_id}, \texttt{question\_id}, \texttt{option\_key}, \texttt{call\_id}, 송수신 시각 $t_{\text{sent}}, t_{\text{recv}}$, 입력 상태 시각 $t_{\text{state}}$, 전제 판본 $e$로 이루어진다. $e$는 표가 기댄 \texttt{premise\_epoch}이다. 스텝 $s$의 시작 시각을 $t_s$라 하면 칸은 세 구간 가운데 하나에 속한다.
-\begin{equation}
-  \text{zone}(s)=
-  \begin{cases}
-    \textsc{Fixed}  & t_s < t_{\text{now}} + d_{p95},\\
-    \textsc{Middle} & \text{확정 전이고 고정 구간 밖},\\
-    \textsc{Tail}   & \text{가장 새 표만 있는 끝 구간}.
-  \end{cases}
-\end{equation}
-고정 구간의 칸은 바꾸지 않는다. 중간 구간은 합의가 있어야 바꿀 수 있고, 고정 경계에 가까울수록 문턱이 엄격해진다. 끝 구간은 가장 새 표를 가확정한다. 가중 평균은 쓰지 않는다. 다음 경우 표를 버린다. 전제 판본이 현재 판본보다 오래된 표($e<e_{\text{now}}$), 그리고 $t_{\text{now}}-t_{\text{state}}>$ STALE\_MAX(1.5\,s)인 표다.
+\paragraph{스케줄러와 원장.}
+$T_c$마다 진행 중인 호출 수가 $N_{\max}=\lceil \hat d_{p95}/T_c\rceil+1$보다 작으면 새 호출을 보낸다. $\hat d_{p95}$는 실측 p95에서 시작해 최근 50회로 갱신한다. 표 하나는 스텝 번호, 질문, \texttt{option\_key}, 송수신 시각, 입력 상태 시각 $t_{\text{state}}$, 전제 판본 $e$로 이루어진다. 스텝 $s$의 시작 시각을 $t_s$라 하면 $t_s<t_{\text{now}}+d_{p95}$인 칸은 고정 구간이라 바꾸지 않고, 중간 구간은 합의가 있어야 바꾸며, 끝 구간은 가장 새 표를 가확정한다. 전제 판본이 현재보다 오래된 표($e<e_{\text{now}}$)와 나이가 1.5\,s를 넘은 표는 버린다. 확률 가중 평균은 쓰지 않는다.
 
 \paragraph{(a) 호출 사이 합의.}
-전제가 살아 있는 표끼리만 센다. 스텝 $s$의 살아 있는 표가 $n_s$개이고 현 선택(incumbent)과 일치하는 표가 $m_s$개일 때, 다음 중 하나이면 확정 후보가 된다.
+스텝 $s$의 살아 있는 표가 $n_s$개이고 현 선택과 일치하는 표가 $m_s$개일 때
 \begin{equation}
-  \text{LA-2}(s)\;\;\lor\;\;\bigl(n_s \ge 3 \;\land\; m_s/n_s \ge \gamma(s)\bigr).
+  \text{LA-2}(s)\;\lor\;\bigl(n_s\ge3\;\land\;m_s/n_s\ge\gamma(s)\bigr)
   \label{eq:agree}
 \end{equation}
-LA-2는 최근 두 표가 같은 경우다. 확정은 스텝 열의 앞에서부터만 하고, 확정된 칸은 바꾸지 않는다. 다른 보기를 고른 도전 표가 오면 유예 창 $W$를 통과해야 교체한다. 경계 직후에는 $W=2$, $\gamma=1.0$이고, 경계에서 멀수록 $W=1$, $\gamma=0.67$이다. 되돌릴 수 없는 보기(M6의 \texttt{effect}가 \texttt{irreversible})가 걸린 칸은 $W{+}1$로 한 단계 더 엄격하게 둔다. 순서형 보기는 $\tau$칸 이내이면 일치로 보며, 접촉 근처에서는 $\tau=0$이다. 증분·순서형 보기는 보기 id뿐 아니라 코드가 계산한 누적 예상 상태로도 일치를 판정한다. 이 기본값(LA-2, $\gamma$)은 기간 밖 문헌에 기댄 잠정 기본이다.
-E1 뒤 conformal 게이트(\cref{eq:cp})를 켠 질문군에서는 예측 집합이 원소 하나인 표만 확정 후보가 되고, 그렇지 않은 표가 오면 그 칸은 보류한다.
+이면 확정 후보가 된다. LA-2는 최근 두 표가 같은 경우다. 확정은 스텝 열의 앞에서부터만 하고, 다른 보기를 고른 도전 표는 유예 창 $W$를 통과해야 현 선택을 바꾼다(경계 직후 $W=2,\gamma=1.0$, 경계에서 멀면 $W=1,\gamma=0.67$, 되돌릴 수 없는 보기는 $W{+}1$). 같은 스텝 표 분포의 이동 $\mathrm{flip}_s=\tfrac12\sum_o|\hat p_s(o)-\hat p^{\,\text{prev}}_s(o)|$가 문턱(성공 실행의 $1-\alpha$ 분위)을 넘는 동안에는 새 확정을 멈춘다.
 
 \paragraph{(b) 실행 뒤 확인.}
-스텝을 실행한 뒤 두 값을 따로 계산한다. 하나는 M5가 공개한 계획 궤적 $\mathrm{ref}(t)$ 대비 연속 잔차 $r(t)=x_{\text{meas}}(t)-\mathrm{ref}(t)$이고, 다른 하나는 \texttt{expected\_after} 술어가 스텝 끝에 성립하는지다. 잔차 경계는 섭동 없는 성공 실행으로 split conformal 보정하고, 짧은 창($w=5$ 제어 주기)으로 모으며, 느린 표류는 CUSUM으로 잡는다. 결과는 네 범주 OK / LAG / DEVIATE / CONTRADICT로 나뉜다. 예상 상태를 $\mathrm{ref}(t)$ 하나로 둔 것은 추종 지연 때문에 생기는 가짜 LAG를 막기 위해서다. 범주는 다음 Jev-L 입력에 한 줄(\texttt{last\_step: LAG} 등)로 들어간다.
+스텝을 실행한 뒤, 확정한 행동 청크가 만든 기준 궤적 $\mathrm{ref}(t)$ 대비 측정한 TCP의 잔차와, 선택 보기의 예상 결과 술어(\texttt{expected\_after}, 예: 잡힘 유지)가 스텝 끝에 성립하는지를 따로 본다. 결과는 OK, LAG(늦지만 방향이 맞음), DEVIATE(이탈), CONTRADICT(예상 술어와 모순)의 넷이다. 잔차 문턱은 섭동 없는 성공 실행으로 보정한다. 고유수용 감각으로 계산할 수 없는 물체 술어를 융합 런타임에서 무엇으로 확인할지는 \tentative{아직 정하지 않았다}(모듈형 기준선에서는 명시적 인식의 술어를 쓴다).
 
 \paragraph{유지·교체·수리.}
-(a)의 상태와 (b)의 범주를 결합해 칸마다 할 일을 정한다(\cref{tab:m4rule}). (b)가 OK이고 (a)가 합의되면 확정한다. 경합 중이면 현 선택을 유지(keep)하고 유예 창을 진행한다. LAG이면 선택을 유지하고 뒤 스텝의 시각만 미룬다. DEVIATE이면 전제 판본을 올리고, 이전 판본의 미확정 표를 버린 뒤, 새 판본의 첫 표를 가확정해 교체(replace)하고 조기 호출한다. CONTRADICT이면 전제 판본을 올리고 미확정 표를 버린 뒤, 직전 확정 행동을 유지하며 감속하고 조기 호출한다. 이것이 수리(repair) 경로이며, 로봇을 멈추지 않는다. 완전 정지나 M9 복구는 M7 FAIL을 거쳐야만 일어난다. 세션 계약 판본이 바뀔 때도 전제 판본을 올린다. 전제가 깨진 표를 판본으로 무효화하는 방식은 RegenHarness~\cite{regenharness2026}의 판본 결합 확정 게이트와 같은 계열의 선례가 있다.
+(a)와 (b)의 조합마다 할 일을 정한다(\cref{tab:m4rule}). OK이고 합의되면 확정한다. LAG이면 선택을 유지하고 뒤 스텝의 시각만 미룬다. DEVIATE이면 전제 판본을 올려 이전 판본의 미확정 표를 버리고 새 판본의 첫 표로 교체하며 조기 호출한다. CONTRADICT이면 판본을 올리고 직전 확정 행동을 유지하며 감속한 뒤 조기 호출한다(수리). 어느 경우에도 로봇을 멈추지 않으며, 완전 정지와 복구는 critic의 실패 판정을 거쳐야만 일어난다. Astra가 계약을 바꿀 때도 전제 판본을 올린다. 같은 모델은 같은 오답을 반복할 수 있으므로 (a)만으로는 부족하고, 이미 실행한 동작의 측정인 (b)가 합의 원장의 전제를 무효화한다는 점이 A3~\cite{a3commit2026}와 다르다.
 
 \begin{table}[t]
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}p{0.17\linewidth}p{0.23\linewidth}p{0.20\linewidth}p{0.27\linewidth}@{}}
+\begin{tabular}{@{}p{0.17\linewidth}p{0.22\linewidth}p{0.19\linewidth}p{0.26\linewidth}@{}}
 \toprule
 (b) \textbackslash{} (a) & 합의 & 경합 & 불일치 급증 \\
 \midrule
 OK & 확정 & 유지, 유예 창 진행 & 확정 중단, 조기 호출 \\
 LAG & 확정, 시각만 뒤로 & 유지 & 조기 호출 \\
-DEVIATE & 판본$+1$, 미확정 표 폐기, 교체, \texttt{C\_m4} & 교체, \texttt{C\_m4} & 교체, 조기 호출, \texttt{C\_m4}·\texttt{C\_flip} \\
-CONTRA\-DICT & \multicolumn{3}{p{0.70\linewidth}@{}}{판본$+1$, 미확정 표 폐기, 직전 확정 행동 유지 + 감속, M7 신호(모순 술어가 T1이면 하드 H4, T2·\texttt{unknown}이면 \texttt{C\_m4})} \\
+DEVIATE & 판본$+1$, 미확정 표 폐기, 교체 & 교체 & 교체, 조기 호출 \\
+CONTRA\-DICT & \multicolumn{3}{p{0.67\linewidth}@{}}{판본$+1$, 미확정 표 폐기, 직전 확정 행동 유지 + 감속, critic에 신호} \\
 \bottomrule
 \end{tabular}
-\caption{M4 결정 표. (a) 호출 사이 합의 상태와 (b) 실행 뒤 확인 범주의 조합마다 유지·교체·수리 가운데 하나를 고른다. M4는 신호만 내고, FAIL은 M7이 판정한다.}
+\caption{\textbf{M4 결정 표.} (a) 호출 사이 합의 상태와 (b) 실행 뒤 확인 범주의 조합마다 유지·교체·수리 가운데 하나를 고른다. M4는 신호만 내고 실패는 critic이 판정한다.}
 \label{tab:m4rule}
 \end{table}
 
-\paragraph{불일치 점수와 미확정 실행.}
-같은 스텝에 쌓인 표 분포 $\hat p_s$와 직전 창의 표 분포 $\hat p^{\,\text{prev}}_s$ 사이의 거리로 불일치 점수를 계산한다. 예컨대 총변동 거리를 쓰면
+\subsection{안전 투영과 실행}
+\label{sec:safety}
+확정된 결정은 action expert의 청크를 제한한다. 청크의 누적 이동에서 확정 방향 $\hat d$ 성분을 확정 크기 구간 $[m_{\text{lo}},m_{\text{hi}}]$ 안으로 자르고, 방향 반전을 막으며, 수직 성분은 작은 한계 $\varepsilon_\perp$ 안으로 자른다.
 \begin{equation}
-  \mathrm{flip}_s = \tfrac{1}{2}\sum_{o} \bigl|\hat p_s(o) - \hat p^{\,\text{prev}}_s(o)\bigr|
+  \Pi(\Delta p) = \mathrm{clip}\bigl(\hat d^{\top}\Delta p,\;\ell,\;m_{\text{hi}}\bigr)\,\hat d + \mathrm{clip}_{\varepsilon_\perp}\!\bigl((I-\hat d\hat d^{\top})\Delta p\bigr).
+  \label{eq:proj}
 \end{equation}
-이다. 문턱 FLIP\_TH는 성공 실행에서 이 점수의 $1-\alpha$ 분위로 정한다. 한 답과 한 답을 비교하는 방식은 기준 방법보다 나빴다는 절제 결과(Sentinel/STAC, 기간 밖, 기초 문헌)가 있어서 분포 사이 거리를 쓴다. 점수가 문턱을 넘는 동안에는 새 확정을 멈추고 M7 소프트 채널 \texttt{C\_flip}으로 신호를 보낸다(잠정 기본). 원장이 이미 스텝별 표를 모으므로 추가 호출은 필요 없다. 확정하지 못한 스텝이 고정 구간에 들어가면 가확정 보기를 그대로 실행해 멈추지 않는다. 이 스텝은 ``미확정 실행''으로 기록하고, (b) 판정 문턱을 한 단계 엄격하게 둔다.
+$\ell$은 이동 중 0(반전 불가), 단계 끝에서 $m_{\text{lo}}$이다. 투영은 모델 밖의 코드이므로 행동 모델은 결정 토큰이 고른 방향을 뒤집거나 다른 크기 구간으로 넘어갈 수 없다. 원래 이 모양의 제한은 잔차 학습의 안정성을 위한 것이었고~\cite{policydecorator2024,pld2025}, 이를 결정의 권위를 지키는 데 쓰는 것은 우리의 접목이다. 투영 뒤에는 관절 한계와 저크 제한 궤적 생성(Ruckig, 기간 밖, 기초 문헌)을 거친다. 청크 경계는 RTC 방식으로 이어 붙인다~\cite{black2025rtc}. $\varepsilon_\perp$ 값과 투영을 관절 공간 청크에 적용하는 구체적 방법은 \tentative{가정 단계}다.
 
-\paragraph{선행과의 차이.}
-겹친 부분이 제대로 반영됐는지는 (a)와 (b) 두 가지로 확인한다. (a)만으로는 부족하다. 같은 모델은 같은 오답을 반복하기 때문이다. 한 관측에 대한 반복 추론은 예측을 다듬을 수는 있어도 증거의 출처를 늘리지는 않는다는 지적도 있다~\cite{pact2026}. 가장 가까운 선행인 A3~\cite{a3commit2026}는 학습된 VLA 한 모델이 같은 관측에서 뽑은 여러 청크의 합의로 실행 전에 확정 길이를 정하며, 저자는 정책 내부 신호만으로는 자신 있게 틀린 예측을 잡을 수 없고 외부 증거가 향후 과제라고 밝혔다. 부분적으로 겹치는 선행도 있다. WCD~\cite{wcd2026}는 실행 뒤 관측과 상상한 결과의 불일치로 다음 후보 선택 예측기를 학습하며(같은 시각 샘플), SMC~\cite{smc2026}는 두 모델의 다음 행동이 일치하면 미리 실행한 단계를 확정한다(로봇이 아닌 도구 사용 에이전트). 우리는 시간차로 겹쳐 부른 블랙박스 typed 결정 호출 사이의 합의에 (b)를 결합하고, (b)를 합의 원장의 전제 무효화와 확정 판정에 쓴다. 실행 뒤 불일치를 다음 후보 선택 학습에 쓰는 WCD와 다른 점이다. 실행 뒤 되먹임 자체는 Show-Harness~\cite{showharness2026}, RoboDawn~\cite{robodawn2026}, EmbodiedSkills~\cite{embodiedskills2026}에도 있으므로, 차별점은 (b)가 있다는 사실이 아니라 (b)를 확정 규칙에 결합했다는 데 있다. VLASH~\cite{vlash2025}와 A2C2~\cite{a2c2}는 학습형이라 발상만 참고한다.
+\subsection{Astra: 계약과 호출 주기}
+\label{sec:astra}
+\paragraph{세션 계약.}
+Astra는 첫 계획(T0) 때 장면 이미지를 보고 목표, 가정 술어, 단계(스킬, 진입·완료 조건, 예상 시간, 결정 지점, 되돌릴 수 있는지), 금지 조건, 물체 목록을 담은 계약을 쓴다. 물체마다 역할과 검출용 이름(\texttt{detect\_phrase})을 적는다. 과제 문장의 명사를 그대로 쓰면 검출이 통째로 실패할 수 있기 때문이다(예비 시험에서 ``box''로는 흰 바구니를 0/20편, ``basket''으로는 19/20편 검출). 결정 지점은 스킬에 고정된 id 가운데서만 고른다. 융합 VLA는 계약 전체가 아니라 현재 단계 요약만 본다. 계약은 코드 검사기(스키마, 술어 어휘, 도달 가능성, 전제와 효과의 연쇄 일관성)를 통과해야 게시되며, 실패하면 위반 목록을 붙여 다시 부른다(최대 \tentative{2회}). 다수결 투표는 쓰지 않는다. 같은 모델의 병렬 다수결은 최근 문헌에서 비교 기준선이고, 같은 관측의 반복은 증거를 늘리지 않기 때문이다~\cite{pact2026}. 재계획은 바뀐 부분만 고치는 \texttt{patch}를 기본으로 하되, 깨진 전제에 기대는 미실행 단계가 절반을 넘거나 목표가 바뀌면 이전 계약을 입력에 넣고 전체를 다시 쓰는 \texttt{replace}로 간다~\cite{planact2025}. 이미 실행한 단계는 바꾸지 않는다.
 
-\subsection{스무딩 (M5)}
-연속 동작은 두 단계로 다룬다. 먼저 RTC와 비슷한 방법(M4)을 쓰고, 그다음 아주 작은 움직임을 부드럽게 처리한다(M5). M5는 M4가 확정한 이산 결정 열을 제어기가 따라갈 설정값(100\,Hz 이상)으로 바꾸며, 모두 코드로 한다. 교체·확정 규칙은 M4에만 두고, M5는 스스로 정지하지 않는다. M5는 계획 궤적 $\mathrm{ref}(t)$를 공개하며, 이것이 M4 (b)와 M7이 쓰는 예상 상태다. M5는 세 층으로 이루어진다.
+\paragraph{호출 주기(H-cadence).}
+첫 계획을 세우고 실패할 때만 부르는 구성은 배포형 계층 시스템과 맞지 않는다~\cite{geminirobotics15_2025,geminier_docs2026}. 그래서 다음 호출을 둔다. \textbf{T0}: 첫 계획. 정지를 허용하는 유일한 호출이다. \textbf{T\_fail}: critic이 실패를 판정하면 항상 부르며, 한 장이 아니라 연속 프레임(10프레임 격자 한 장)을 준다. \textbf{T\_hb}: 직전 응답이 도착하고 $N$초 뒤 최신 머리 카메라 프레임과 원장 요약을 보내 \texttt{ack}, \texttt{patch}, \texttt{replace} 가운데 하나를 받는다. 진행 중인 하트비트는 하나뿐이며(취소 반복 고리 방지), $N$은 \tentative{5\,s}로 잠정했다(실효 주기 \tentative{약 8--9\,s}). \textbf{T\_sub}: 단계 완료가 확정되면 다음 단계 계약이 지금 장면에도 맞는지 묻되, 답을 기다리지 않고 다음 단계를 시작한다. 가정 위반, 마감 초과, 검출 실패 같은 사건은 다음 하트비트를 앞당긴다. \texttt{ack}는 전제 판본을 올리지 않아 M4가 모은 표를 보존하고, \texttt{patch}와 \texttt{replace}는 결정 스텝 경계에서 교체하며 판본을 올린다. effort는 low를 기본으로 하고 실험에서 low와 high를 비교한다.
 
-\paragraph{L1 결정 층.}
-M4가 확정한 결정을 $t_{\text{state}}$ 기준으로 시간 정렬하는 일만 한다. 확정 길이는 $d_{p95}$를 읽기만 한다. 보수적 분위수는 지연을 과소 추정하면 되돌릴 수 없는 위치 점프가 생기고 과대 추정의 손해는 작다는 WAM의 관찰에서 착안했다. WAM은 심사 전 프리프린트이고 조건당 5회만 재어 신뢰도가 낮으므로 근거로 삼지는 않는다.
+\subsection{진행 판별과 복구}
+\label{sec:critic}
+실패 판정은 코드 critic 한 곳에서 10\,Hz로 내린다. 하드 층(스킬 오류 코드, 되돌릴 수 없는 불변 조건 위반, 단계 시간이 마감의 2배 초과)은 즉시 실패를 내고, 소프트 층(정체, 마감 초과, M4의 DEVIATE 반복과 불일치 급증, 계약 가정 위반, 결정 토큰의 진행 범주)은 서로 다른 두 채널 이상이 함께 켜질 때만 실패를 낸다. 채널 문턱은 성공 에피소드만으로 conformal 보정해 오경보율을 묶는다~\cite{fiper2025,safe2025}. 실패가 판정되면 Astra를 비동기로 바로 부르고, 기다리는 동안 스킬 재시도(인자 하나만 바꿔 1회), 결정 토큰의 복구 보기 선택(체크포인트 재개, 리셋, 안전 대기, 상위 호출), 필요할 때만 안전 대기 순으로 아래 층이 버틴다. 재개 지점은 지금 측정한 상태에서 사전조건이 모두 참인 가장 늦은 체크포인트다. 세부는 부록에 둔다. 복구와 경험 축적은 이 논문에서 최소판으로 다룬다.
 
-\paragraph{L2 기준 궤적 층.}
-같은 보기끼리만 겹침 구간 $[t_0, t_0+T_b]$에서 이어 붙인다. 새 궤적 $y_{\text{new}}$와 이전 궤적 $y_{\text{old}}$를
-\begin{equation}
-  y(t) = w(t)\,y_{\text{old}}(t) + \bigl(1-w(t)\bigr)\,y_{\text{new}}(t)
-\end{equation}
-로 섞는다. 가중치는 RTC 식 5를 시간판으로 옮긴 것이다.
-\begin{equation}
-  w(t)=
-  \begin{cases}
-    1, & t < t_0+T_f,\\[2pt]
-    c\,\dfrac{e^{c}-1}{e-1},\;\; c=\dfrac{t_0+T_b-t}{T_b-T_f}, & t_0+T_f \le t < t_0+T_b,\\[6pt]
-    0, & t \ge t_0+T_b.
-  \end{cases}
-  \label{eq:rtcw}
-\end{equation}
-$T_b=0.3$\,s, $T_f=0$(가정)이다. $c$가 1에서 0으로 줄면서 $w$도 1에서 정확히 0이 된다. 지수식 $\exp(-(t-t_0)/0.1)$을 쓰면 $T_b$ 끝에 $e^{-3}\approx0.050$이 남아 약 5\%의 계단이 생기므로 이 모양을 쓴다. 가중치는 확률이 아니라 시간으로만 정한다.
-
-보기가 바뀌면 평균하지 않는다. 겹친 행동을 평균하면 정밀 작업의 성공률이 떨어지기 때문이다. 대신 모드 전환 순간의 위치·속도 차 $\Delta x,\Delta v$를 한 번 계산하고, 이 오프셋을 5차 다항식으로 $T_i=0.3$\,s 안에 0으로 감쇠시키는 관성화(기간 밖, 기초 문헌)를 쓴다. 오프셋은 $\mathrm{ref}(t)$에 포함해 M4 (b)의 기준과 맞춘다. 접촉 근처(near/contact)에서는 관성화와 블렌딩을 모두 끄고 최소 저크 5차 단일 구간을 쓴다. \texttt{NONE\_ESCALATE}나 보류는 직전 확정 목표를 유지하며 속도 상한을 낮춘다.
-
-\paragraph{L3 실행 층.}
-마지막에 저크 한계 궤적 생성기(Ruckig, 기간 밖, 기초 문헌, 잠정 기본)로 관절 공간에서 저크를 제한한다. 초기 한계는 자유 이동에서 $v$ 0.25\,m/s, $a$ 1.0\,m/s$^2$, $j$ 10\,m/s$^3$, 접촉 구간에서 $v$ 0.05, $a$ 0.3, $j$ 3이다. LiPo~\cite{lipo2025}는 비교 대상이다.
-
-WAM(심사 전 프리프린트, 조건당 5회, 신뢰도 낮음)의 ``사후 블렌딩은 이득이 없다''는 결과는 한 과제에서만 나왔다. 다른 과제에서는 20에서 40, 44에서 80으로 올랐으므로 근거로 쓰지 않는다. 전제 판본이 바뀐 직후와 M4 (b) 불일치 경고 중에 블렌딩을 끄는 조건은 따로 비교한다.
-
-\subsection{스킬과 결정 지점 (M6)}
-기존 스킬은 Jev-L과 긴밀하게 연결될수록 좋다. 1년 이내에 나온 GitHub 스타 상위 스킬 하네스로 PhyAgentOS~\cite{phyagentos2026}, Zetta~\cite{zetta2026}, Harness VLA~\cite{harnessvla2026}, CaP-X~\cite{fu2026capx}, ROSClaw(저장소, 논문 없음. 또는 Show-Harness~\cite{showharness2026})를 참고했다. 스타 1위는 LLM과 스킬을 거칠게 엮는다. 잘게 엮는 쪽은 Zetta와 Show-Harness다. Zetta의 런타임 critic은 코드이며, LLM 승인자가 온라인인지는 원문 기술이 엇갈린다. 상위 6편은 상위 모델이 결정하는 동안 로봇이 기다리거나, 상위 모델이 루프 밖에 있다. Harness VLA의 저자도 계획기와 하위 모듈 사이의 루프가 열려 있다고 밝혔다.
-
-\paragraph{잘게 엮기.}
-여기서 ``잘게 엮는다''는 스킬 안의 단계 경계와 결정 지점마다 Jev-L이 typed 선택을 하고, 스킬은 그 선택을 인자로 받아 짧게 실행한 뒤 결과 술어를 돌려준다는 뜻이다. 스킬 하나를 부르고 끝날 때까지 기다리는 방식과 스텝마다 증분 이동하는 방식의 중간이다. 스킬 내부 단계는 작은 유한 상태 기계로 두며, 전이는 코드 술어 사건으로 일어나고, 전이 순간에 확정된 Jev-L 답을 파라미터로 넣는다.
-
-\paragraph{스킬 계약.}
-스킬은 LLM 도구 스키마 형식의 스킬 카드와 계약 파일로 구성한다. 입력은 보기 ID(enum)만 받고, 수치는 코드 표가 바꾼다. 계약 필드는 \texttt{entry}, \texttt{exit}, 단계별 \texttt{invariants}, \texttt{phases}, \texttt{decision\_points}, \texttt{stop}, \texttt{budget}, \texttt{default\_on\_timeout}(직전 확정 행동 유지 + 감속, 정지 아님), \texttt{reentry}, \texttt{effect}, \texttt{outputSchema}이다. \texttt{effect}는 단계마다 가역(보상 스킬 id를 가짐) 또는 비가역을 적는다. 예컨대 잡기와 들기는 가역이고 놓기는 비가역이다. 결정 지점 id는 스킬에 고정되며(\texttt{dp.next\_skill}, \texttt{dp.approach\_dir}, \texttt{dp.align\_commit}, \texttt{dp.grasp\_commit}, \texttt{dp.grasp\_result}, \texttt{dp.critic\_accept}, \texttt{dp.transport\_mode}, \texttt{dp.release}, \texttt{dp.reentry}), 이 id가 정본이다. 질문은 코드 술어로 답이 나오지 않는 것만, 단계 전이 사건 때와 M4 겹침 확인 때만 하며, 같은 문구를 고정해 쓴다. \texttt{dp.release}처럼 되돌릴 수 없는 결정은 M4 확정과 코드 안전 술어가 둘 다 참일 때만 실행한다.
-
-Harness VLA 코드를 보면 스킬의 성공 여부 한 비트는 틀릴 수 있다. 성공이 거짓이어도 영상상 물체를 들고 있으면 계속 진행하라는 것이 실제 교훈이었다. 그래서 스킬 출력에는 출구 술어와 오류 코드에 더해 원자료 진단값(최고 들어 올린 높이, 최소 그리퍼 간격, 사용 청크 수, 종료 신호 등)을 필수로 넣는다. 판정의 정답은 코드 술어이고, 스킬의 자기 보고는 보조다. 결정 지점 후보(자세 잡기, 지금 호출, 청크 예산, 재시도 문장, 잡힘 확인)는 Harness VLA 원문의 탐색 레버에서 가져왔다.
-
-\paragraph{생성 스킬.}
-CaP-X의 생성 스킬 9개는 대부분 좌표 계산 함수이고, 조건이나 자동 검증이 없다. 그래서 생성 스킬에는 같은 추출 과정에 계약(\texttt{entry}, \texttt{exit}, \texttt{effect}), typed hole 검사, 실행 기반 검증(재생과 새 seed에서의 비열화 확인)을 붙인다. typed hole 검사는 결정 자리를 \texttt{jev\_choice(dp\_id, Enum)}로만 허용하고, 생성 직후 타입, id, 철저성(\texttt{NONE\_ESCALATE} 포함), 술어, \texttt{effect}를 검사하는 우리 접목안이다. 오류 되먹임은 T0에서만 1--2회 한다. 사람이 만든 높은 단계 API일수록 성공률이 오르므로, 무엇 위에서 스킬을 생성하는지를 실험 축으로 둔다.
-
-\subsection{학습 보정기(잔차)와 비교용 학습 실행기 (M6·M5)}
-\label{sec:executor}
-스킬 단계(phase)의 실행은 스크립트 스킬 $S$가 맡는다. 행동 익스퍼트(action expert)는 $S$를 대신하지 않고, $S$가 낸 명령 위에 작은 병진 잔차를 더하는 구간 제한 잔차 보정기 $R$로 들어간다. Astra의 계획과 Jev-L의 선택으로 이루어진 결정 층은 학습하지 않는다. Jev-L은 어느 방향으로 몇 센티미터 움직일지, 즉 방향과 크기 구간을 정하는 층이므로, $R$은 Jev-L이 정한 방향과 크기 구간 안에서만 움직인다. 단계 전이, 스킬 계약, 진단값은 계속 코드가 센서 측정으로 계산하며, $R$은 전이를 정하지 않는다. $R$을 끄면 실행기는 $S$ 그대로이므로, 결정 층 비교의 주 표는 $S$로 둔다.
-
-\paragraph{근거.}
-잔차 학습은 베이스가 무엇이든 붙일 수 있다. 손으로 설계한 제어기 위에 잔차를 학습한 Residual Policy Learning(기간 밖, 기초 문헌)은 ``RPL consistently and substantially improves on the initial controllers''라고 보고했다. BC 정책 위의 잔차는 실물 휴머노이드에서 ``boosted the performance of the base model from 14\% to 64\%''였다~\cite{resfit2025}. 물체 상태를 입력으로 받는 잔차는 시뮬레이션에서만 학습해 실물로 옮겼을 때 ``improves the success rate from 42\% to 76\% zero-shot''였고, 같은 절제에서 물체 자세 입력은 76/100, 이미지 입력은 47/100이었다. 저자들은 ``the visual domain gap is the dominant sim-to-real barrier''라고 적었다~\cite{ocrrl2026}. 사람의 교정으로 학습한 접촉 과제의 잔차에서는 ``both the delta correction data and the force data are crucial''이었다~\cite{crdagger2025}. 잔차의 크기는 제한해야 한다. Policy Decorator(기간 밖, 기초 문헌)는 ``Bounded residual action is essential''이라고 했고~\cite{policydecorator2024}, PLD는 잔차 행동을 ``bounded within a range of $[-\xi, \xi]$''로 두었다~\cite{pld2025}. 다만 원문의 제한은 학습 안정성을 위한 것이며, 이를 Jev-L 결정의 권위를 지키는 데 쓰는 것은 우리의 접목이다. 또한 이 결과들은 BC나 VLA 베이스 위의 것이고, 스크립트 베이스 위의 최근(2025--26) 잔차 결과는 찾지 못했다.
-
-\paragraph{입력, 출력, 투영.}
-입력은 스킬·단계 id, Jev-L이 확정한 방향 $\hat{d}$와 크기 구간 $[m_{\mathrm{lo}}, m_{\mathrm{hi}}]$, $S$의 명령, M1이 추정한 대상 자세와 불확실도, 관절·그리퍼 폭, 관절 전류(effort)와 그리퍼 전류, 짧은 이력이다. AI Worker에는 손목 힘/토크 센서가 없고 추가하지도 않으므로 힘 대신 관절 전류를 쓴다. 힘 입력 잔차의 근거~\cite{crdagger2025}는 손목 힘/토크 센서 기준이라 이 대체는 근거가 한 단계 약하며, 힘 입력을 뺀 조건(R-noforce)을 절제로 둔다. 이미지는 넣지 않는다. 외관 변화는 M1을 거쳐서만 들어오므로 $S$와 같은 경로를 탄다. 대상 물체의 crop을 넣는 조건은 절제로만 둔다. 출력은 병진 잔차 $\tilde{r}$이며 회전은 기본으로 없다. $S$의 누적 명령 이동 가운데 $\hat{d}$ 방향 성분을 $s_S(t)=\hat{d}^{\top}\bigl(p_S(t)-p_0\bigr)$라 하면, 실제 명령은
-\begin{equation}
-  p(t) = p_S(t) + g(t)\,\Pi_t\bigl(\tilde{r}(t)\bigr),\quad g(t)=\mathbf{1}\bigl[\text{near}\lor\text{contact}\bigr]
-\end{equation}
-이고, 코드 투영 $\Pi_t$는
-\begin{equation}
-  \begin{aligned}
-  \Pi_t(\tilde{r}) = {}& \mathrm{clip}\bigl(\hat{d}^{\top}\tilde{r},\; \ell(t)-s_S(t),\; m_{\mathrm{hi}}-s_S(t)\bigr)\,\hat{d}\\
-  &+ \mathrm{clip}_{\varepsilon_\perp}\bigl((I-\hat{d}\hat{d}^{\top})\,\tilde{r}\bigr)
-  \end{aligned}
-  \label{eq:rproj}
-\end{equation}
-이다. $\ell(t)$는 이동 중에는 0이고(방향 반전 불가), 단계 끝 목표에서는 $m_{\mathrm{lo}}$이다. 따라서 누적 이동의 $\hat{d}$ 성분은 $[m_{\mathrm{lo}}, m_{\mathrm{hi}}]$ 안에 머문다. $\mathrm{clip}_{\varepsilon_\perp}$는 수직 성분의 노름을 $\varepsilon_\perp$ 이하로 자르며, $\varepsilon_\perp$는 standard와 무작위화 장면에서 잰 M1 위치 오차의 conformal 분위로 정한다(가정). near는 목표까지 5\,cm 이내, contact는 접촉 술어가 참인 경우이며, 그 밖에서는 잔차가 0이다. 투영은 모델 밖의 코드이므로 $R$은 Jev-L이 고른 방향을 뒤집거나 다른 크기 구간으로 넘어갈 수 없다. 합친 명령은 마지막에 M5 L3의 저크 제한을 거친다. $R$은 작은 MLP로 제어 주기마다 돌리며, 지연은 1\,ms 미만을 목표로 한다(가정, 실측 필요).
-
-\paragraph{다른 모듈과의 관계.}
-M4 (b)의 예상 궤적 $\mathrm{ref}(t)$는 투영 뒤의 실제 명령 $p(t)$이다. 따라서 $R$이 더한 이동이 (b)에서 가짜 지연이나 이탈로 잡히지 않는다. \texttt{expected\_after}는 실행기와 무관한 코드 목표 술어로 그대로 둔다. 복구 동작(M9)을 실행할 때도 $R$은 같은 제한으로 켜진다. 학습한 복구 실행기를 따로 두지 않는 것은 학습 복구가 잘 설계된 스크립트 재시도를 이긴다는 강한 근거가 없고, 무엇으로 복구할지는 Jev-L, Astra, M9의 코드 목록이 정하기 때문이다. Jev-L의 보기 후보를 행동 익스퍼트가 생성하는 방식은 Jev-L의 역할을 바꾸므로 쓰지 않는다. 기록에는 Jev-L의 선택(권위값), 잔차의 적분, 포화 비율, $R$의 켬과 끔을 남긴다.
-
-\paragraph{학습 데이터.}
-라벨은 특권 시뮬레이션 상태로 돌린 $S$의 행동에서 M1 추정 상태로 돌린 $S$의 행동을 뺀 값에 투영을 적용한 것이다(우리 접목). 데이터는 standard 장면, 도메인 무작위화, 섭동 주입, DAgger로 만들며, random 시험 장면은 학습에 쓰지 않는다. 같은 무작위화 데이터를 모든 학습 조건에 똑같이 준다. 선택적인 2단계로, 단계 끝 T1 술어를 희소 보상으로 쓰는 잔차 강화학습을 둔다(\cite{resfit2025,pld2025}의 방식, 제안).
-
-\paragraph{그림자 예측기.}
-행동 익스퍼트의 두 번째 역할은 실행하지 않고 옆에서 돌리는 예측기이다. 진행도, 단계 끝 확률, OOD 점수를 M7 소프트 채널의 후보로 내며, 문턱은 성공 에피소드로 conformal 보정한다~\cite{safe2025,fiper2025}. 그러나 두 선행은 실행 중인 정책의 특징을 썼고, 실행하지 않는 모델의 특징이 스크립트 실행의 실패를 예측한다는 직접 선례는 찾지 못했다. 그래서 이 채널은 기본 구성에 넣지 않고 우리 시스템 안의 절제(E-M7)로만 평가하며, 결정 층 비교 표와 M4 (b)에는 넣지 않는다.
-
-\paragraph{비교용 학습 실행기.}
-단계 실행 전체를 학습 실행기 $B$가 맡는 구성은 비교 조건으로만 둔다. $B$는 스크립트 스킬이 만든 정답 궤적(GT)으로 학습하며, 스킬·단계 id, 확정된 보기 키(\texttt{option\_key}), 코드 목표 자세, 대상 물체의 crop과 마스크, 고유수용 상태를 받아 0.5\,s 분량의 행동 청크를 낸다(가정). 이 구성의 근거는 다음과 같다. 물체 crop과 스킬 문장을 조건으로 받는 DiT 행동 익스퍼트에서 스킬 조건을 빼면 Hard 과제에서 성능이 8.8\% 떨어졌다~\cite{hivla2026}. 스크립트 스킬을 조합해 만든 성공 궤적만으로 학습한 모델은 공식 $\pi_0$와 맞먹었다(``18 skills, 70 tasks'', ``matches the official $\pi_0$ across 49 simulation tasks'')~\cite{interndataa1_2025}. 반대로 깨끗한 시연만으로 학습한 정책은 무작위화 장면에서 크게 떨어졌다($\pi_0$ 46.4 $\rightarrow$ 16.3, ``data without domain randomization does not help'')~\cite{robotwin2_2025}. 교사 궤적만 모방한 정책은 ``fails to correct its own mistakes''였고, 학생 롤아웃을 섞으면 나아졌다~\cite{viral2025}. $B$일 때는 M5의 L2 블렌딩을 RTC 인페인팅으로 바꾼다. RTC는 ``applicable to any diffusion- or flow-based VLA out of the box with no re-training''이다~\cite{black2025rtc}.
-
-$B$를 주 시스템에 넣지 않는 이유는 두 가지다. 첫째, 학습 추종 실행기는 명령을 맥락에 맞게 재해석한다. 원문은 ``when prompted to `move left,' it servos left towards an object, rather than moving left unconditionally''라고 적었다~\cite{steerable2026}. 이는 접촉을 인지하는 장점이지만 Jev-L이 정한 크기를 넘을 위험이기도 하다. 둘째, 증류한 정책이 원래의 스크립트 스킬을 넘었다는 강한 근거를 찾지 못했다. 또한 학습된 저수준 정책 위에 zero-shot GPT-4를 상위로 두면 ``attains the worst performance''였고(새 집 환경)~\cite{pi05_2025}, Hi Robot(기간 밖, 기초 문헌)은 GPT-4o보다 지시 정확도가 40\% 이상 높았다~\cite{hirobot2025}. 따라서 $B$는 E-AE 실험의 비교 표로만 보고한다.
-\subsection{진행 판별 (M7)}
-프레임마다 Astra의 계획대로 진행되는지 판별한다. ``계획대로''의 정의는 VLA 문헌을 많이 참고했다. $\pi^*_{0.6}$와 $\pi_{0.7}$의 진행 정의는 아래 OnPlan 정의에 흡수하되, $\pi$ 계열이 실행 중 벗어남을 판정한다고는 쓰지 않는다(학습 신호이기 때문이다). 단계 $k$에서 ``계획대로''를
-\begin{equation}
-  \textsc{OnPlan}_k(t) = \textsc{Inv}_k(t) \land \textsc{Order}_k(t) \land \textsc{InDist}_k(t)
-\end{equation}
-로 정의한다. $\textsc{Inv}_k$는 단계 불변 술어가 모두 참인지, $\textsc{Order}_k$는 완료 술어가 원장 순서대로 참이 되어 왔고 되돌아가지 않았는지, $\textsc{InDist}_k$는 경과 시간이 마감 $D_k$ 안이고 정체 규칙에 걸리지 않았는지다. 마감 $D_k$는 성공 롤아웃의 단계 소요 시간을 conformal 분위수($\alpha_{\text{ep}}=0.1$)로 잡은 것으로, 이 방식은 SAFE~\cite{safe2025}의 conformal 보정에서 착안했다(SAFE는 실패 점수에 시간에 따라 변하는 conformal 띠를 쓴다). 표본이 20개 미만이면 $1.5\,T^{\text{exp}}_k$를 쓴다. 필요하면 Astra로 GVL~\cite{gvl2024}(기간 밖, 기초 문헌)을 쓴다.
-
-\paragraph{두 층 critic.}
-실패 판정은 코드 critic 한 곳에서만 내린다. critic은 10\,Hz로 돌고(Jev-L 채널은 약 3\,Hz), 단계 원장, 코드 기하 진행 대리값 $g(t)$, 경과 시간, M4 신호, Jev-L 진행 범주, 스킬 오류 코드, \texttt{expected\_after}와 $\mathrm{ref}(t)$, M2 가정 술어를 입력으로 받아 $\{\textsc{OK}, \textsc{WARN}, \textsc{FAIL}\}$을 낸다. 하드 층은 투표 없이 즉시 FAIL을 낸다.
-\begin{enumerate}[label=H\arabic*.]
-  \item T1 불변 술어 위반이 2틱(0.2\,s) 연속된다.
-  \item 스킬이 오류 코드(IK 실패, 충돌 정지, 타임아웃)를 낸다.
-  \item 다음 스킬을 시작할 때 T1 \texttt{entry} 술어가 거짓이다.
-  \item M4가 CONTRADICT를 내고 모순된 술어가 T1이다.
-  \item M2의 \texttt{forbidden} 가운데 \texttt{enforce: fail}(T1만 허용)이 위반된다.
-  \item 단계 경과 시간이 $2D_k$를 넘는다.
-\end{enumerate}
-술어를 쓰는 H1·H3·H4·H5는 T1 술어만 쓰고, H2·H6은 오류 코드와 시계처럼 결정적인 코드 신호를 쓴다. H6을 하드 층에 둔 이유는 경과 시간이 시계로 재는 결정적 양이고, $D_k$ 보정의 민감도를 2배 여유로 흡수하며, 이 규칙이 없으면 한 채널만 계속 울릴 때 FAIL이 나지 않아 ``실패할 때마다 Astra를 부른다''가 막히기 때문이다.
-
-소프트 층은 다음 일곱 채널로 이루어진다.
-\begin{itemize}
-  \item \texttt{C\_stag}(정체): 진행 증분 $\Delta g<\varepsilon_k$가 $N=10$틱 연속이거나, 진행 최고점을 $\delta=5\%$ 넘게 $M=20$틱 동안 갱신하지 못한다.
-  \item \texttt{C\_dead}(마감): 단계 경과 시간이 $D_k$를 넘는다.
-  \item \texttt{C\_jev}(Jev-L 진행 범주): 감시 질문의 최빈 답이 실패 범주로 2번 연속 나온다.
-  \item \texttt{C\_m4}(실행 이탈): M4 (b)가 DEVIATE를 3스텝 연속 내거나, CONTRADICT의 모순 술어가 T2이다.
-  \item \texttt{C\_flip}(호출 사이 불일치): M4 불일치 점수가 FLIP\_TH를 넘는다.
-  \item \texttt{C\_assume}(계약 가정): 가정 술어가 0.5\,s 연속 거짓이거나(\texttt{unknown}은 거짓으로 세지 않음), 실행 중 계약 수정이 거부된다. 동시에 M8에 재호출 신호를 보낸다.
-  \item \texttt{C\_pred}(T2 술어): T2 술어 위반이 0.5\,s 연속이거나, T2 \texttt{entry}가 거짓이거나, \texttt{unknown}이 1.0\,s를 넘는다.
-\end{itemize}
-판정 규칙은 다음과 같다. 켜진 소프트 채널의 집합을 $\mathcal{S}(t)$라 하면
-\begin{equation}
-  \text{state}(t)=
-  \begin{cases}
-    \textsc{FAIL} & \exists\, \text{하드 조건} \;\lor\; |\mathcal{S}(t)|\ge 2,\\
-    \textsc{WARN} & |\mathcal{S}(t)| = 1,\\
-    \textsc{OK}   & \text{그 밖}.
-  \end{cases}
-  \label{eq:critic}
-\end{equation}
-소프트 층에는 예외가 없다. \texttt{C\_m4}와 \texttt{C\_flip}은 둘 다 M4에서 나오므로, 오프라인 실험(E-M7) 전까지는 두 채널이 동시에 켜져도 1표로 센다. 서로 다른 신호가 함께 넘을 때만 경보하는 이 AND 구조는 FIPER~\cite{fiper2025}에서 가져왔다. 소프트 채널의 문턱도 FIPER처럼 성공 에피소드만으로 conformal 보정해, 성공 에피소드에서 채널이 켜지는 비율이 $\delta_c$ 이하가 되게 한다. 잡기·놓기 전환 중에는 소프트 판정을 최대 1.0\,s 보류하고, 복구 뒤 2\,s 동안은 소프트 FAIL을 내지 않는다(하드 층은 유지). 복구나 재계획 뒤에는 \texttt{C\_stag}의 최고점과 카운터를 초기화한다. Astra나 Jev-L이 ``잘 되고 있다''고 답해도 OK의 근거로 쓰지 않으며, WARN만으로는 복구를 시작하지 않는다. FAIL 없이 M9가 시작되거나 로봇이 완전히 정지하는 경로는 없다. Jev-L 진행 질문의 보기는 정상 진행, 허용된 변화, 실패, 회복 중, \texttt{NONE\_ESCALATE}의 다섯이며, 코드 술어로 쓸 수 없는 이정표에만 호출당 감시 질문 1개로 묻는다. 매 틱 원장과의 마지막 일치 위치를 M9에 넘긴다.
-
-\paragraph{지표.}
-판정 기준은 고정 창 재현율($\tau = 2$\,s), 즉 실패가 시작된 뒤 $\tau$초 안에 탐지한 비율이다. CheckVLA~\cite{checkvla2026}의 원문 정의는 되돌릴 수 없는 시점을 기준으로 한다($\tau_{\text{on}}\le t^*$이고 $t^*+d_{\text{lat}}<\tau_{\text{irrev}}$). 이 원문판은 함께 보고만 하는데, Astra 지연이 날마다 크게 달라 사전 등록 기준으로는 불안정하기 때문이다. 오경보는 에피소드 단위로 센다. Critic in the Loop~\cite{criticloop2026}의 정체 규칙(진행 최고점이 약 9초(180프레임, 약 20\,Hz 기준 우리 계산) 동안 갱신되지 않으면 정체)도 비교 조건으로 두고, 우리 2초와 함께 스윕한다.
-
-\subsection{Astra 호출 (M8)}
-실패로 판정되면 최소한 그때는 Astra를 부른다. 이때 한 장이 아니라 연속 프레임을 준다. 처음 생각할 때는 로봇이 멈추지만, 그 뒤에는 실패로 판단한 경우를 빼면 되도록 멈추지 않는다. M8은 트리거, 문지기, 호출의 세 단계로 이루어진다. 초기 계획(T0)을 뺀 모든 호출은 비동기이며, 새 계획을 적용할 때도 정지하지 않는다.
-
-첫 계획을 세우고 실패할 때만 Astra를 부르는 구성은 배포형 계층 시스템과 맞지 않는다. Gemini Robotics-ER 개발자 문서~\cite{geminier_docs2026}는 최신 카메라 프레임과 짧은 질문을 주기적으로 보내 모델이 장면을 보고 명시적으로 결정하게 하는 하트비트를 두고, 한 턴이 끝나기를 기다린 뒤 약 1\,Hz를 목표로 보내며, 앞 턴이 끝나기를 기다리지 않고 타이머만 믿고 보내면 모델이 취소가 반복되는 고리에 빠질 수 있다고 경고한다.Gemini Robotics 1.5~\cite{geminirobotics15_2025}의 오케스트레이터는 하위 과제 성공 감지로 다음 단계로 넘어갈 때를 정하고, Hi Robot~\cite{hirobot2025}(기간 밖, 기초 문헌)은 1초마다 또는 사용자 개입 때 상위 추론을 다시 돌린다. 그래서 사용자 원칙(첫 계획만 정지 허용, 실패하면 항상 Astra, effort low)은 그대로 두고, 주기 확인(하트비트)과 단계 경계 호출을 더한다.
-
-\paragraph{트리거.}
-기본 구성의 트리거는 다음과 같다.
-\begin{itemize}
-  \item \textbf{T0}: 초기 계획. 정지를 허용하며 문지기를 거치지 않는다. 계약의 \texttt{detect\_phrase}로 검출이 되는지 확인한 뒤 실행을 시작한다.
-  \item \textbf{T\_fail}: M7 FAIL. 항상 호출하며, 문지기는 입력 묶음만 정한다. T\_fail이 나가면 복구가 끝난 뒤 2\,s까지 하트비트를 멈춘다.
-  \item \textbf{T\_hb}(하트비트): 직전 Astra 응답이 도착하고 $N$초 뒤, 최신 머리 카메라 프레임과 원장 요약을 보내 닫힌 선택 \texttt{ack}(계속), \texttt{patch}(국소 수정), \texttt{replace}(교체) 가운데 하나를 받는다. 진행 중인 하트비트는 하나뿐이고 겹쳐 보내지 않으며, 15\,s 동안 응답이 없으면 기록하고 다시 보낸다. $N$은 잠정 5\,s이다. ``주기는 상위 모델 한 번의 응답 시간 정도''라는 선행의 원칙과 Astra low의 첫 토큰 실측 2.975\,s(1회)를 합쳐 잡은 가정값이며, 실효 주기는 약 8--9\,s가 된다. $N$은 E-M8c로 정한다.
-  \item \textbf{T\_sub}(단계 경계): M7이 단계 완료를 확정하면 다음 단계 계약이 지금 장면에도 맞는지를 비동기로 묻는다. 다음 단계는 답을 기다리지 않고 시작한다.
-  \item \textbf{사건}: T3a(코드 마감. 경과 시간이 $D_k$를 넘어 \texttt{C\_dead} 경고가 날 때, 계획 쪽 기준), T\_stag(정체 시간 초과, 관측 쪽 기준), \texttt{C\_assume}(가정 술어 위반), T\_j5(같은 결정 지점의 보류 반복), 검출 실패(\texttt{id\_uncertain}), 사용자의 새 지시. 사건은 다음 하트비트를 앞당긴다.
-\end{itemize}
-비교 조건으로는 T1(호출 수를 맞춘 고정 주기), T2(미리 정해 둔 순간, 기본은 되돌릴 수 없는 전이 직전), T3b(모델 판단. Jev-L에 ``이 단계는 지금쯤 끝났어야 하는가''를 감시 질문으로 묻고, 경과 시간은 코드가 범주로 주며, 최빈 답이 ``예''로 2번 연속 나오면 호출)를 둔다. 사용자가 제시한 ``이때쯤 결과가 나왔어야 하는데''라는 판단은 T3b에 문자 그대로 가깝고, T3a는 우리 해석이다. 모델 스스로의 판단은 늦게 울릴 것이라는 가설이 있다. LLM 에이전트의 예산 자기 추정이 낙관적이라는 BAGEN(심사 전)의 보고에서 나온 가설이며, 트리거 시점을 잰 결과는 아니다. 계획기를 명목 주기와 관련 사건 때 확인하는 JEV-Star~\cite{jevstar2026}도 같은 모양이다. 확신이 낮을 때 강한 LLM으로 올려 보내는 REFLEX~\cite{reflex2026}(로봇이 아니고 비동기도 없으며, 심사 전이라 신뢰도 낮음)식 호출은 비교 조건 후보이며 아직 넣지 않았다.
-
-\paragraph{하트비트 응답 합치기.}
-새 규칙은 없고 M2 규칙을 그대로 쓴다. 관측 시각이 더 새로운 답만 받는다(R5). \texttt{ack}는 전제 판본(\texttt{premise\_epoch})을 올리지 않으므로 M4가 모은 합의 표를 버리지 않는다. \texttt{patch}와 \texttt{replace}는 계약 검사를 통과해야 하며, R3 경계에서 교체하고 전제 판본을 하나 올린다. 검사에 실패하면 이전 계약을 유지하고 뒤에서 수리한다. 같은 단계에서 서로를 되돌리는 \texttt{patch}가 30\,s 안에 두 번 오면 적용을 보류하고, 에피소드당 하트비트 예산에 상한을 둔다(둘 다 가정).
-
-\paragraph{문지기.}
-실패가 아닌 호출은 진행 중인 요청이 없을 때만 보낸다(최대 1개). 실패 호출은 진행 중인 요청이 있어도 새로 보낸다. 복구 뒤 2\,s cooldown을 두고, 새 계획의 적용 시점은 M2의 R3 규칙(결정 스텝 경계, 비가역 단계가 끝난 뒤)을 따른다. effort는 문지기가 바꾸지 않는다. 입력 예산은 이미지 약 3,000--3,600 토큰과 텍스트 2,000 토큰 이하다. 호출은 한 번만 하며($K=1$) 다수결은 쓰지 않는다. 응답은 M2의 계획 확인과 수리 규칙(코드 검사, 최대 2회 순차 수리, 실행 중에는 이전 유효 계약 유지)으로 처리한다.
-
-\paragraph{연속 프레임.}
-기본 조건은 한 이미지에 10프레임을 격자(5$\times$2 또는 4$\times$3)로 넣는 것이다. 칸마다 상대 시각(\texttt{t=-3.2s})과 단계 이름을 덧그리고, 카메라마다 격자 한 장씩 만든다. 10칸은 하위 작업 시작 1, 마지막 OK 1, 광류 봉우리 5~\cite{kite2026}, FAIL 순간 1, 현재 1, 여유 1로 고른다. 640$\times$480에서 5$\times$2 격자를 원해상도로 보내면 약 3,600 토큰으로, 개별 10장을 high로 보낸 것과 토큰이 같아 공정 비교가 가능하다. 개별 이미지와 변화 텍스트는 비교 조건이다. 변화 텍스트, 즉 무엇이 바뀌었는지를 적은 텍스트는 CaP-X에서 원시 이미지보다 나았다.
-
-\paragraph{호출 방식 비교와 effort.}
-호출 방식은 비교해서 평가한다. 비교할 방식은 Hz 단위 주기, 정해 둔 필요한 순간, 그리고 ``이때쯤 결과가 나왔어야 하는데''라는 판단이며, 하트비트 주기 $N$도 함께 정한다(E-M8c). 비교 기준은 원문 그대로 둔다. 하나는 호출 수를 맞춘 주기 호출(CheckVLA)이고, 다른 하나는 정체 때 멈추고 부르는 방식(Critic in the Loop)이다. 실패 트리거를 다음 주기로 미루는 조건은 절제 실험으로만 쓴다.
-
-effort는 low를 기본으로 한다. Artificial Analysis의 공개 측정(2026-09-23) 기준 첫 토큰까지의 시간은 low 약 3.0초, medium 5.9초, high 약 73초, xhigh 약 198초, max 약 352초다(우리가 잰 값이 아니며 날마다 바뀐다). 우리가 짧은 입력으로 한 번 잰 low의 첫 토큰은 2.975\,s로 이와 맞았다. high는 너무 느리므로, 실험에서는 low와 high를 모두 비교한다. effort는 성공률보다 결정 수와 시간을 바꾼다. Show-Harness에서는 스텝 수가 37에서 30으로 줄었다(GPT-5.6-sol 조건, 프로젝트 페이지 값). 그래서 지표에 결정 수를 넣는다. RPent 저장소 리더보드에는 Astra low로 92.63\%(741/800)를 기록한 값이 있다. 다만 논문 값이 아니고, LIBERO-PRO Task+Swap 8칸, seed 1--10, 메모리 스냅샷 두 묶음(157/200과 584/600) 조건에서 에피소드마다 평균 약 412\,s(약 7분)씩 멈춰서 생각한 결과다. 반대 증거도 있다. CheckVLA에서는 지연이 1초만 되어도 다음 경계까지 기다리는 쪽(34.0\%)이 청크 안에서 수리하는 쪽(23.4--31.4\%)보다 나았다(Table S6에서 우리가 읽은 값이며, 원문은 이 역전을 직접 말하지 않는다). Astra는 이보다 훨씬 느리므로, 그동안 아래 층이 버텨야 한다(M9).
-
-\subsection{실패 복구 (M9)}
-M9는 M7 FAIL로만 시작한다. 실패로 판정되는 순간 Astra를 비동기로 바로 부르고, 기다리는 동안에는 아래 층이 로봇을 움직인다(\cref{fig:recovery}). 복구는 언제, 어디로, 무엇을 남길지로 나누어 정한다. 이 분해는 로봇 쪽 FaRe와 LLM 쪽 RIR이 같은 달에 각각 제시했다. 언제는 M7이, 어디로의 후보는 코드가, 아래 층의 선택은 Jev-L이, 최종 결정은 Astra가 정한다.
-
-\input{fig/recovery}
-
-\paragraph{사다리.}
-FAIL 시각을 $t_0$라 할 때 복구는 다음 순서로 진행한다.
-\begin{enumerate}
-  \item $t_0$: 새 단계 전이와 되돌릴 수 없는 동작(놓기, 삽입 시작)을 잠근다. 진행 중인 동작은 전환 보류(최대 1.0\,s) 안에서 허용한다.
-  \item $t_0+0.1$\,s 이내: M8 T\_fail을 보낸다(격자 프레임과 사건 문맥). 로봇은 계속 움직인다. Astra의 첫 토큰까지 걸리는 시간은 effort에 따라 low 약 3\,s, high 약 73\,s이다(Artificial Analysis 공개 측정, 2026-09-23, 우리가 잰 값 아님).
-  \item $t_0+0.2$\,s 이내: 코드가 실패를 분포 안(ID)과 밖(OOD)으로 나누고, 재개 가능한 체크포인트 목록을 만든다. ID는 사건이 계약의 \texttt{expected\_failures}에 있고 가정 술어가 모두 참인 경우다.
-  \item \textbf{L1 스킬 재시도}: ID이고 실행 어긋남일 때만, 같은 스킬을 파라미터 하나만 바꿔 1회 재시도한다(직전 파라미터는 제외). OOD이면 건너뛴다.
-  \item \textbf{L2 Jev-L 선택}: 결정 지점 \texttt{dp.critic\_accept}로 코드가 만든 복구 제안 가운데 하나를 고른다. 보기는 아래 층 결과 인정(FAIL 채널 해소를 코드가 확인했을 때만), 체크포인트 $k$ 재개(재개 가능한 $k$마다), 스킬 리셋, 안전 대기, \texttt{NONE\_ESCALATE}(Astra로 올림)이다. ``거절하고 계속''하는 보기는 없으므로 Jev-L은 FAIL 판정을 뒤집지 못한다. E1 전에는 최빈 보기만 쓰며, 최빈이 안전 대기나 \texttt{NONE\_ESCALATE}이면 L3로 간다.
-  \item \textbf{L3 안전 대기}: L2가 끝났는데 Astra가 아직 오지 않으면, 쥐고 있을 때는 쥔 채 사전 자세로, 아니면 관찰 자세로 기다린다. 정지가 허용되는 두 곳 가운데 하나다.
-  \item \textbf{Astra 도착}: 아래 층 결과 인정, 체크포인트 $k$로 되돌림, 스킬 리셋, 새 계획 가운데 하나를 낸다. 인정이 아니면 M2 R3 시점에 적용하며, 적용을 기다리는 동안에도 직전 확정 행동 유지 + 감속이다.
-\end{enumerate}
-한도는 L1 1회, 같은 체크포인트 재개 2회이며, 넘으면 L3에서 Astra를 기다린다. 복구가 끝나면 2\,s cooldown을 두고, 센서 술어로 성공이 확인된 시도만 M10 후보로 넘긴다.
-
-\paragraph{재개 규칙.}
-체크포인트는 단계 $\texttt{exit}$가 참이 된 순간에 만들고, 술어 벡터, 시각, 물체 위치 추정과 측정 시각, 프레임 색인을 저장한다. 현재 측정한 상태 $x_{\text{now}}$에서 재개할 지점은
-\begin{equation}
-  k^* = \max\Bigl\{ k \;\Bigm|\; \texttt{entry}_{k+1}(x_{\text{now}}) \land \bigwedge_{j\le k} \texttt{exit}_j(x_{\text{now}}) \Bigr\}
-  \label{eq:resume}
-\end{equation}
-로 정한다. 즉 사전조건이 모두 참인 가장 늦은 체크포인트다. 검사는 M7이 넘긴 마지막 일치 위치에서부터 거꾸로 한다. 저장된 술어가 아니라 지금 측정한 술어로 판정하는데, 정확히 복원해도 기록되지 않은 부수 효과로 무효가 될 수 있기 때문이다. 해당하는 $k$가 없으면 리셋 스킬을 실행한 뒤 다시 계산하고, 그래도 없으면 Astra의 새 계획을 기다린다. 되돌아갈 때는 $k$까지의 가역 단계를 보상 스킬로 역순 실행하고, 비가역 경계를 넘어서는 되돌리지 않는다(그 앞의 $k$는 후보에서 뺀다). 이 규칙은 데이터베이스의 사가(기간 밖, 기초 문헌)에서 가져왔으며 잠정 기본이다. 남길 것은 목표, 측정 시각이 붙은 검증된 환경 지식, 완료 이정표, Astra의 실패 분석, 실패한 (스킬, 파라미터) 목록이고, 현재 상태 서술은 버린다(재개 뒤 인식으로 다시 읽음).
-
-FLARE~\cite{flare2026}에서는 자세 오류와 환경 파괴를 구분하는 방식만 가져온다. 재시도 쪽은 학습형이다. Harness VLA는 동작마다 결과를 진행, 회복 가능, 회복 불가의 셋으로 분류한다. 이는 우리 M7의 정상, WARN·FAIL, 복구 불가(L3)와 대응한다. 다만 플래너가 결과 파일을 기다리는 동기 방식이다. 복구 기법끼리 직접 비교한 벤치마크는 아직 없어서, 어느 방법이 최선인지 수치로 정할 수 없다. CaP-X에서 검증과 디버깅을 강하게 시킨 프롬프트는 오히려 결과가 조금 나빴다(68.29에서 65.43). 그래서 반성 절차는 잠정으로 유지하고 비교 조건을 둔다.
-
-\subsection{경험 축적 (M10)}
-Astra에는 단순 경험 검색과 교훈을 준다~\cite{ouyang2025reasoningbank,zhang2025ace}. Jev-L에는 교훈 목록이 아니라 딱 맞는 규칙 0--2개만 넣고, 맞는 규칙이 없으면 아무것도 넣지 않는다. 이 규칙은 MemCompiler~\cite{memcompiler2026}(심사 전)에서 얻은 착상이다. 메모리가 없는 편이 낫다는 반대 결과도 있으므로~\cite{budget2026memory}, 같은 예산으로 비교한다. 에피소드 안에서 메모리를 고쳐 쓰지 않고, 가중치를 학습하지 않으며(두 모델 모두 API), LLM 판정만으로 성공 라벨을 붙이지 않는다.
-
-\paragraph{교훈 항목.}
-교훈 항목에는 RPent 메모리 형식을 따라 적용 조건(\texttt{applies\_when}), 증상(\texttt{symptom}), 증거 수(\texttt{evidence.cells}), 신뢰도(\texttt{confidence}), 반증 조건(\texttt{falsify}) 칸을 둔다. 신뢰도는 증거 셀이 3개 이상이고 과제가 2개 이상이면 verified, 셀이 2개 이상이면 probable, 그 밖은 single-shot이다. 여러 셀에서 확인된 교훈만, 즉 probable 이상만 Astra에 넣는다(제안).
-
-\paragraph{주입 규칙.}
-Astra 호출에는 키 정확 일치, 범주, (선택) 임베딩 순으로 검색해 교훈 상위 3개와 사례 2개 이하를 약 1,500 토큰 안에서 넣는다. Jev-L에는 (스킬 id, 결정 지점 id, 조건 술어 전부)가 정확히 일치하는 컴파일 규칙만 0--2줄 넣는다(예: \texttt{hint: at dp.approach\_dir if next\_skill=place-narrow and top\_clear(o3)=yes -> prefer side\_front}). 규칙은 보기 순서를 바꾸지 않는다.
-
-\paragraph{에피소드 뒤 처리.}
-오프라인에서 (1) 코드로 라벨을 붙이고, (2) Astra가 교훈을 추출하고, (3) 전체를 다시 쓰지 않고 변경분만 큐레이션하고, (4) Astra가 교훈을 typed 규칙 후보로 컴파일하고, (5) 원래 실패를 재생해 결정이 바뀌는지와 새 seed에서 성공률이 줄지 않는지를 확인하는 비열화 게이트를 통과한 것만 (6) 규칙표에 반영한다. (7) 최소 3회 꺼낸 뒤 꺼낸 횟수 대비 성공 비율이 0.5 이하이면 퇴출한다(제안 값). 라벨은 센서 술어로 확정된 것만 교훈·규칙 재료로 쓰고, Astra 다중 프레임 판정은 ``미검증''으로 참고만 하며, 판정할 수 없는 것은 저장하지 않는다. Harness VLA는 메모리가 없으면 위치를 바꾼 과제에서 성공률이 87에서 31로 떨어진다. 과제별 기록이 성능의 큰 몫을 차지한다는 뜻이다.
-
-\subsection{로봇 밖 분야에서 가져온 것}
-복구는 데이터베이스의 사가에서 가져왔다. 되돌릴 수 있는 단계만 보상 동작으로 되돌린다. 확정 규칙은 동시통역의 앞부분 합의와 추측 디코딩의 유예 창에서, 스무딩은 게임 애니메이션의 관성화에서, 스킬은 타입 있는 빈칸 검사에서, 계약은 형식 검증에서 가져왔다.
+\subsection{모듈형 기준선과 교사}
+\label{sec:modular}
+융합 전의 모듈형 스택을 기준선이자 교사로 유지한다. (i) 명시적 인식: 머리 카메라에 SAM 3.1을 Astra의 \texttt{detect\_phrase}로 걸고, 깊이(실물은 ZED SDK NEURAL 1순위, Fast-FoundationStereo~\cite{fastfs2025} 비교, 시뮬은 렌더러 깊이)로 3D 중심을 구해, 로봇 기준 상대 위치를 1\,mm 단위로 적은 상태 텍스트와 술어 표를 만든다. (ii) 결정: 같은 typed 질문을 인식 상태 텍스트와 이미지를 받는 Qwen3-VL(영점 또는 결정층 학습)에 묻는다. (iii) 실행: 스크립트 스킬 $S$와, 확정 방향·크기 구간 안에서만 접근·접촉 근처의 잔차를 더하는 작은 보정기 $R$~\cite{resfit2025,ocrrl2026}. 이 스택은 융합 모델의 행동 교사이고, 명시적 인식의 기여를 떼어 보는 비교 행이다. 주 표에는 융합 모델과 모듈형 스택을 둘 다 둔다(\tentative{어느 쪽을 주 행으로 둘지 확정 전}).

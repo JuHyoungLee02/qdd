@@ -85,3 +85,9 @@
 \newcommand{\chg}[1]{\textbf{바뀐 점:} #1}
 \newcommand{\dirn}[1]{\textbf{방향:} #1}
 \newcommand{\decide}[1]{\textbf{[결정 필요]} #1}
+%% [Harvest] 논문 판(2026-09-25, user-log 63): 아직 확실하지 않은 수치·주장은 주황색으로 둔다.
+\definecolor{tentorange}{RGB}{226,112,0}
+\newcommand{\tentative}[1]{\textcolor{tentorange}{#1}}   % 임시: 계획값, 가정값, 파이프라인 시험 값
+\newcommand{\todoexp}[1][---]{\textcolor{tentorange}{#1}} % 결과 예정 칸(표의 빈 칸)
+\usepackage{multirow}
+\usepackage{makecell}
