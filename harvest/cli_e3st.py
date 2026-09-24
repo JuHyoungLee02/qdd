@@ -1,7 +1,7 @@
 """E3-ST offline stereo stability (plan Task 16).
 
 Pipeline per episode (pod, GPU):
-  left/right head frames -> Fast-FoundationStereo disparity -> depth (ZED Mini nominal K, B=63 mm [assumption])
+  left/right head frames -> Fast-FoundationStereo disparity -> depth z = fx*B/d (ZED Mini VGA fx 367, B=63 mm)
   -> Grounding DINO boxes from task-text nouns on the first frame with detections
   -> SAM 2.1 video propagation (masks, stable object ids)
   -> centroid_3d per object per frame -> stability (mm) + T1 predicates near/above -> flip_rate.
@@ -15,6 +15,10 @@ need different torch builds, so the disparities are cached first (venv_e3st), th
   python -m harvest.cli_e3st depth --depth-cache /data/juhyoung_qdd/out/e3st_disp            # venv_e3st
   python -m harvest.cli_e3st run --seg sam31 --depth-cache /data/juhyoung_qdd/out/e3st_disp \
       --out /data/juhyoung_qdd/out/e3st_sam31 --ref-out /data/juhyoung_qdd/out/e3st         # venv_sam3
+
+--fx (default 367 = ZED Mini VGA 672x376, HFOV 85 deg, canon §47; the first runs used 272.1 = 102 deg sensor-max
+figure, reproducible with --fx 272.1). --mask-cache stores the segmentation per episode, so a rerun with another
+fx reuses the masks and only redoes depth/3D/metrics.
 """
 from __future__ import annotations
 
@@ -30,7 +34,7 @@ import numpy as np
 
 from harvest.stereo.data import DEFAULT_ROOT, load_pairs
 from harvest.stereo.pipeline import (
-    above, centroid_3d, disparity_to_depth, fit_plane, flip_rate, intrinsics_from_hfov, near_update, rank_tracks,
+    above, centroid_3d, disparity_to_depth, fit_plane, flip_rate, intrinsics_from_fx, near_update, rank_tracks,
     stability,
 )
 
@@ -43,7 +47,7 @@ GDINO = f"{MODELS}/gdino-base"
 SAM31_CKPT = f"{MODELS}/sam3.1/sam3.1_multiplex.pt"
 
 BASELINE_M = 0.063   # ZED Mini nominal [assumption]
-HFOV_DEG = 102.0     # ZED Mini spec HFOV [assumption: same for the rectified VGA stream]
+HEAD_FX = 367.0      # ZED Mini VGA 672x376 mode, HFOV 85 deg (humanoid-challenge-env FFW_SG2_REAL_cameras.py; canon §47)
 ZNEAR, ZFAR = 0.1, 9.0
 MIN_AREA = 100
 STATIC_PX = 1.0
@@ -229,8 +233,36 @@ def disp_cache_path(cache_dir, repo, ep):
     return f"{cache_dir}/{repo.split('/')[-1]}_ep{ep:06d}.npz"
 
 
+def save_masks(fn, start, labels, masks, n, H, W):
+    """Segmentation cache: start frame, labels, per-object bit-packed (n, H, W) masks (absent frame = empty)."""
+    oids = sorted(labels)
+    arr = {}
+    for o in oids:
+        st = np.zeros((n, H, W), bool)
+        for f in range(n):
+            m = masks.get(f, {}).get(o)
+            if m is not None:
+                st[f] = m
+        arr[f"m{o}"] = np.packbits(st)
+    meta = {"start": start, "labels": {str(o): labels[o] for o in oids}, "oids": oids, "shape": [n, H, W]}
+    np.savez_compressed(fn, meta=np.array(json.dumps(meta)), **arr)
+
+
+def load_masks(fn):
+    z = np.load(fn)
+    meta = json.loads(str(z["meta"]))
+    n, H, W = meta["shape"]
+    labels = {int(o): v for o, v in meta["labels"].items()}
+    masks = {f: {} for f in range(n)}
+    for o in meta["oids"]:
+        st = np.unpackbits(z[f"m{o}"], count=n * H * W).reshape(n, H, W).astype(bool)
+        for f in range(n):
+            masks[f][o] = st[f]
+    return meta["start"], labels, masks
+
+
 def run_episode(repo, ep, task_text, models, out_dir, max_frames, root, tmp, seg="gdino_sam2", depth_cache=None,
-                prompt_map=None):
+                prompt_map=None, fx=HEAD_FX, mask_cache=None):
     import cv2
     ffs, det, trk = models
     lefts, disps, t_ffs = [], [], []
@@ -246,8 +278,7 @@ def run_episode(repo, ep, task_text, models, out_dir, max_frames, root, tmp, seg
         t_ffs = list(cached["ffs_s"])
     n = len(lefts)
     H, W = lefts[0].shape[:2]
-    K = intrinsics_from_hfov(W, H, HFOV_DEG)
-    fx = K[0, 0]
+    K = intrinsics_from_fx(W, H, fx)
     uu = np.arange(W)[None, :].repeat(H, 0)
     depths, invalid_img = [], []
     for d in disps:
@@ -260,7 +291,11 @@ def run_episode(repo, ep, task_text, models, out_dir, max_frames, root, tmp, seg
     # detection on the first frame (every 5th) that has all categories
     cats = [(c, (prompt_map or {}).get(t, t), k) for c, t, k in prompts_for(repo, task_text)]
     start, boxes, labels = None, {}, {}
-    for f in (range(0, n, 5) if seg == "gdino_sam2" else []):
+    mfn = f"{mask_cache}/{repo.split('/')[-1]}_ep{ep:06d}.npz" if mask_cache else None
+    have_masks = bool(mfn and os.path.exists(mfn))
+    if have_masks:
+        start, labels, masks = load_masks(mfn)
+    for f in (range(0, n, 5) if seg == "gdino_sam2" and not have_masks else []):
         found, oid = {}, 0
         for cat, text, kmax in cats:
             b, s = det.detect(lefts[f], text)
@@ -279,10 +314,17 @@ def run_episode(repo, ep, task_text, models, out_dir, max_frames, root, tmp, seg
         for i, l in enumerate(lefts):
             cv2.imwrite(f"{tmp}/{i:05d}.jpg", l[:, :, ::-1], [cv2.IMWRITE_JPEG_QUALITY, 95])
 
-    if seg == "sam31":
+    if seg == "sam31" and not have_masks:
         write_jpgs()
         start, labels, masks = trk.segment(tmp, n, cats)
+    if seg != "sam31" and not have_masks and start is not None:
+        write_jpgs()
+        masks = trk.track(tmp, start, boxes)
+    if mfn and not have_masks:
+        os.makedirs(mask_cache, exist_ok=True)
+        save_masks(mfn, start, labels, masks if start is not None else {}, n, H, W)
     res = {"repo": repo, "episode": ep, "task": task_text, "n_frames": n, "H": H, "W": W, "K": K.tolist(),
+           "fx": float(fx), "masks_from_cache": have_masks,
            "baseline_m": BASELINE_M, "ffs_ms_median": float(np.median(t_ffs) * 1000),
            "invalid_depth_img": float(np.mean(invalid_img)), "start_frame": start, "objects": labels, "seg": seg,
            "prompts": [t for _, t, _ in cats]}
@@ -290,9 +332,6 @@ def run_episode(repo, ep, task_text, models, out_dir, max_frames, root, tmp, seg
         res["skip"] = "no detection"
         return res, None
 
-    if seg != "sam31":
-        write_jpgs()
-        masks = trk.track(tmp, start, boxes)
     ker = np.ones((5, 5), np.uint8)
 
     oids = sorted(labels)
@@ -438,9 +477,10 @@ def cmd_run(a):
     if a.seg == "sam31":
         assert a.depth_cache, "--seg sam31 needs --depth-cache (FFS runs in venv_e3st)"
         models = (None, None, Sam31(use_fa3=a.fa3))
-    else:
-        models = (FFS(), Detector(), Tracker())
-    meta = {"gpu": torch.cuda.get_device_name(0), "torch": torch.__version__, "seg": a.seg}
+    else:  # with --depth-cache the disparities come from the cache (FFS not loaded)
+        models = (None if a.depth_cache else FFS(), Detector(), Tracker())
+    meta = {"gpu": torch.cuda.get_device_name(0), "torch": torch.__version__, "seg": a.seg, "fx": a.fx,
+            "depth_cache": a.depth_cache, "mask_cache": a.mask_cache}
     json.dump(meta, open(f"{a.out}/run_meta.json", "w"))
     ex_plan = {T1: [0, 1], T2: [0, 1]}  # which selected-episode positions get example images
     for name, eps in sel.items():
@@ -454,7 +494,8 @@ def cmd_run(a):
             t0 = time.time()
             res, extra = run_episode(repo, e["ep"], e["task"], models, a.out, a.max_frames, a.root,
                                      f"{a.out}/tmp_frames", seg=a.seg, depth_cache=a.depth_cache,
-                                     prompt_map=dict(kv.split("=", 1) for kv in a.prompt_map))
+                                     prompt_map=dict(kv.split("=", 1) for kv in a.prompt_map), fx=a.fx,
+                                     mask_cache=a.mask_cache)
             res["wall_s"] = time.time() - t0
             if extra is not None and pos in ex_plan.get(repo, []):
                 tag = "t1" if repo == T1 else "t2"
@@ -529,7 +570,7 @@ def cmd_aggregate(a):
     print(json.dumps(out, indent=1))
 
 
-def main(argv=None):
+def build_parser():
     ap = argparse.ArgumentParser()
     sp = ap.add_subparsers(dest="cmd", required=True)
     for c in ("run", "aggregate", "depth"):
@@ -545,7 +586,15 @@ def main(argv=None):
         p.add_argument("--prompt-map", dest="prompt_map", nargs="*", default=[],
                        help="replace text prompts, e.g. box=basket (category names unchanged)")
         p.add_argument("--only", default=None, help="run only datasets whose name contains this (e.g. Task_0001)")
-    a = ap.parse_args(argv)
+        p.add_argument("--fx", type=float, default=HEAD_FX,
+                       help="head focal length px (fx = fy, principal point = image centre); first runs used 272.1")
+        p.add_argument("--mask-cache", dest="mask_cache", default=None,
+                       help="dir of cached segmentation masks (reused if present, written otherwise)")
+    return ap
+
+
+def main(argv=None):
+    a = build_parser().parse_args(argv)
     {"run": cmd_run, "aggregate": cmd_aggregate, "depth": cmd_depth}[a.cmd](a)
 
 

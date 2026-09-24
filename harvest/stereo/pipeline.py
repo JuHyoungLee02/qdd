@@ -58,9 +58,13 @@ def disparity_to_depth(disp: np.ndarray, fx: float, baseline_m: float, min_disp:
     return out
 
 
-def intrinsics_from_hfov(width: int, height: int, hfov_deg: float) -> np.ndarray:
-    fx = (width / 2.0) / np.tan(np.radians(hfov_deg) / 2.0)
+def intrinsics_from_fx(width: int, height: int, fx: float) -> np.ndarray:
+    """Pinhole K with fx = fy and the principal point at the image centre (no calibration in the data)."""
     return np.array([[fx, 0, width / 2.0], [0, fx, height / 2.0], [0, 0, 1.0]])
+
+
+def intrinsics_from_hfov(width: int, height: int, hfov_deg: float) -> np.ndarray:
+    return intrinsics_from_fx(width, height, (width / 2.0) / np.tan(np.radians(hfov_deg) / 2.0))
 
 
 def fit_plane(points: np.ndarray, iters: int = 200, tol: float = 0.01, seed: int = 0):
