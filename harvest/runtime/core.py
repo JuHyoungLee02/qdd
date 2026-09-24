@@ -63,6 +63,14 @@ class RuntimeConfig:
     ik_max_dq: float = 0.02  # rad per 10 ms tick
     chunk_lead_s: float = 0.15  # fused: request the chunk of step k+1 this long before it starts (> chunk latency)
     residual_hook: str = "zero (R not trained)"
+    # R6: M4 comparison condition (conditions.py; the m4 dict carries its overrides), C0 stop-while-waiting, and the
+    # E1 calibration file (calibration.py) with the J5 gate at alpha j5_alpha (None = gate off, canon §6 before E1)
+    condition: str = "C5"
+    stop_wait: bool = False
+    calibration: str = ""
+    j5_alpha: float | None = None
+    j5_escalate_after: int = 2  # T_j5 repeat = 2 in a row (canon §31 bracket assumption)
+    model_fingerprint: str | None = None
 
 
 def _pct(xs, q):
@@ -76,6 +84,11 @@ class OursRuntime:
         self.residual_hook, self.instruction = residual_hook, instruction
         self.pool = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="ours")
         self.dt = 1.0 / cfg.control_hz
+        self.cal = None
+        if cfg.calibration:
+            from .calibration import Calibration
+            self.cal = Calibration.load(cfg.calibration, fingerprint=cfg.model_fingerprint,
+                                        question_ids=cfg.question_ids or None)
 
     # ------------------------------------------------------------------ lifecycle
     def reset(self) -> None:
@@ -94,6 +107,8 @@ class OursRuntime:
         self.chunk_stats = {"played": 0, "held": 0, "requested": 0, "delivered": 0, "stale_dec": 0}
         self.last_a, self.prev_cmd, self.t0_wall, self.t_last, self.q_meas = None, None, None, 0.0, None
         self._last_sample, self._phase_seen = -1e9, None
+        self.j5_streak, self.j5_stats = {}, {"held": 0, "escalated": 0, "passed": 0}
+        self.n_stop_ticks = 0
 
     def close(self) -> None:
         self.pool.shutdown(wait=False, cancel_futures=True)
@@ -183,15 +198,52 @@ class OursRuntime:
                            for q, a in res.answers.items()}, "votes": {}}
         if res.error is None:
             self.ledger.record_latency(res.latency_s)
+            gate = self._j5(res, now) if self.cal is not None else {}
             irr = self.skill.irreversible
             for q, a in res.answers.items():
                 rec["votes"][q] = []
+                if q in gate:  # J5 set size != 1 (or NONE_ESCALATE in it): no vote, the slot keeps what it has
+                    rec["votes"][q].append(f"j5_{gate[q]}")
+                    continue
                 for ds in m["slots"]:
                     v = Vote(ds=ds, question=q, choice=a["choice"], p_chosen=a.get("p_chosen"),
                              call_id=res.call_id, t_send=m["t_state"], t_recv=r["t_deliver"], t_state=m["t_state"],
                              premise_epoch=m["epoch"], qid=a.get("qid", ""))
                     rec["votes"][q].append(self.ledger.on_vote(v, now, irreversible=irr))
         self.calls.append(rec)
+
+    def _j5(self, res, now) -> dict:
+        """Calibrated probabilities (per-question temperature) and the J5 conformal gate (canon §31): a singleton
+        set -> that option votes; a larger set or one holding NONE_ESCALATE -> no vote (M4 keeps the last committed
+        action, never a stop), and after j5_escalate_after such answers in a row for a question the next Astra
+        heartbeat is pulled forward (Trust-or-Escalate shape). Returns {question: "hold" | "escalate"}."""
+        from .calibration import NE as NE_KEY
+        out = {}
+        for q, a in res.answers.items():
+            if not a.get("probs"):
+                continue
+            pc = self.cal.apply(q, a["probs"])
+            a["probs_cal"], a["p_chosen"] = pc, pc.get(a["choice"], a.get("p_chosen"))
+            al = self.cfg.j5_alpha
+            if al is None or not self.cal.j5_on(q, al):
+                continue
+            S = self.cal.set_for(q, pc, al)
+            if len(S) == 1 and NE_KEY not in S:
+                a["choice"] = next(iter(S))
+                self.j5_streak[q] = 0
+                self.j5_stats["passed"] += 1
+                continue
+            self.j5_stats["held"] += 1
+            self.j5_streak[q] = self.j5_streak.get(q, 0) + 1
+            if self.j5_streak[q] >= self.cfg.j5_escalate_after:
+                self.j5_streak[q] = 0
+                self.j5_stats["escalated"] += 1
+                self.hb.advance(now)
+                self.events.append({"t": round(now, 4), "event": "j5_escalate", "question": q, "set": sorted(S)})
+                out[q] = "escalate"
+            else:
+                out[q] = "hold"
+        return out
 
     def _deliver_hb(self, r, now):
         m = r["meta"]
@@ -297,6 +349,10 @@ class OursRuntime:
         kin = obs["kin"]
         q_meas = np.asarray(obs["joint_pos"], float)
         self.q_meas = q_meas
+        if self.cfg.stop_wait and any(it["meta"]["kind"] == "dec" for it in self.q._items):
+            self.n_stop_ticks = getattr(self, "n_stop_ticks", 0) + 1  # C0: the arm waits for the answer
+            a = self.last_a if self.last_a is not None else np.concatenate([q_meas[:7], [q_meas[7]]])
+            return np.clip(a, obs["low"], obs["high"])
         cmd = self.skill.tick(now, raw, pred, tcp_p, tz)
         for e in cmd.events:
             self.events.append(e)
@@ -392,4 +448,6 @@ class OursRuntime:
                                     for d in ("ack", "patch", "replace", "invalid")},
                 "astra_latency_s": {"p50": _pct(hb_lat, 50), "max": max(hb_lat) if hb_lat else None},
                 "final_phase": self.skill.phase, "final_stage": self.skill.stage,
-                "grasp_retries": self.skill.retries, "chunk": dict(self.chunk_stats)}
+                "grasp_retries": self.skill.retries, "chunk": dict(self.chunk_stats),
+                "condition": self.cfg.condition, "stop_ticks": getattr(self, "n_stop_ticks", 0),
+                "j5": dict(self.j5_stats) if self.cal is not None else None}

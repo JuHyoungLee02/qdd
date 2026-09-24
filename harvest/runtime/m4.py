@@ -44,6 +44,11 @@ class M4Params:
     d_p95_init: float = 0.307  # stageA_sft.md (c): merged BF16 text+image N=4 p95
     d_window: int = 50
     ordinal: tuple = (("mag_coarse", MAG_ORDER),)
+    # R6 comparison conditions (conditions.py, M4 §5): agree = consensus (a) | newest (C2/C4: the vote with the
+    # newest request time wins, no commit); feedback_b = the (b) epoch / reopen / hold signals; max_inflight caps N_max
+    agree: str = "consensus"
+    feedback_b: bool = True
+    max_inflight: int | None = None
 
 
 @dataclass
@@ -74,6 +79,7 @@ class Slot:
     t_incumbent: float = -1.0
     votes: list = field(default_factory=list)
     outcome: str = "-"
+    t_state_inc: float = -1e9
 
 
 class CommitLedger:
@@ -107,7 +113,8 @@ class CommitLedger:
         self.lat.append(float(s))
 
     def n_max(self) -> int:
-        return int(math.ceil(self.d_hat / self.p.T_c - 1e-9)) + 1
+        n = int(math.ceil(self.d_hat / self.p.T_c - 1e-9)) + 1
+        return n if self.p.max_inflight is None else min(n, int(self.p.max_inflight))
 
     def target_slots(self, t_send: float) -> list[int]:
         k = int(math.ceil((t_send + self.d_hat) / self.p.T_c - 1e-9))
@@ -147,6 +154,11 @@ class CommitLedger:
             return "log_only"
         self._update_flip(v)
         s.votes.append(v)
+        if self.p.agree == "newest":  # C2 / C4: newest valid vote by request time, no agreement
+            if v.t_state >= s.t_state_inc:
+                s.incumbent, s.status, s.t_incumbent, s.t_state_inc = v.choice, "TENTATIVE", now, v.t_state
+                return "newest"
+            return "older"
         if s.status == "OPEN":
             s.incumbent, s.status, s.t_incumbent = v.choice, "TENTATIVE", now
             return "tentative"
@@ -181,6 +193,8 @@ class CommitLedger:
     def try_commit_prefix(self, q: str, now: float) -> list[int]:
         """Commit future slots of question q from the front only (#1); returns the newly committed ds."""
         out = []
+        if self.p.agree == "newest":
+            return out
         if self.p.flip_th is not None and self.flip_score[q] > self.p.flip_th:
             return out
         for (qq, ds), s in sorted(self.slots.items(), key=lambda kv: kv[0][1]):
@@ -229,6 +243,7 @@ class CommitLedger:
         for s in self.slots.values():
             if s.t_start > now + 1e-9 and s.status != "COMMITTED":
                 s.votes, s.incumbent, s.challenger, s.defer_left, s.status = [], None, None, 0, "OPEN"
+                s.t_state_inc = -1e9
                 n += 1
         return n
 
@@ -242,6 +257,8 @@ class CommitLedger:
             if s is not None:
                 s.outcome = outcome
         res = {"epoch": self.epoch, "early_call": False, "hold": False, "reopened": 0}
+        if not self.p.feedback_b:  # C2 / C3: outcome logged only
+            return res
         if outcome != "OK":
             self.last_bad_t = now
         if outcome in ("DEVIATE", "CONTRADICT"):

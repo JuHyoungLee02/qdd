@@ -13,7 +13,7 @@ variant standard / random / dr) as one FFW-SG2 right arm.
   static gravity offset of the PD arm, the planner's; a real robot would use its URDF IK), table_z, rtf.
 - success: planner.success_from_history (on(o3,o5) & not holding(o3) & upright(o3) held 1 s) -> terminated "success";
   mug below the floor -> terminated "off_table". self_paced only when asked (wall clock); the sim uses simlat.
-Seeds: DEV (0-29) only here.
+Seeds: DEV (0-29); CAL/TEST only behind HARVEST_ALLOW_SPLIT (check_layout_seed, R6 guard).
 """
 from __future__ import annotations
 
@@ -32,6 +32,22 @@ DOCS = ("AI Worker FFW-SG2, fixed base, RIGHT arm only (left arm, head, lift hel
         "joint targets arm_r_joint1..7 (rad, positive = joint axis per the ROBOTIS URDF) + gripper_r_width = target "
         "pad gap in metres (0 = closed, 0.107 = fully open). World frame: +x forward, +y robot left, +z up; table top "
         "at z = 0.85 m in front of the robot. 100 Hz control; head camera 672x376, right wrist camera 424x240.")
+
+
+def check_layout_seed(ls: int, env=None) -> int:
+    """DEV 0-29 always; CAL / TEST / TEST-P5 layout seeds only when HARVEST_ALLOW_SPLIT names that split (set by the
+    main session at the pre-registered time, harvest/eval/splits.py); everything else is refused."""
+    import os
+
+    from ..eval.splits import ENV, PROTECTED, split_of
+    env = os.environ if env is None else env
+    s = int(ls)
+    if s in DEV_SEEDS:
+        return s
+    sp = split_of(s)
+    if sp in PROTECTED and env.get(ENV) == sp:
+        return s
+    raise ValueError(f"layout seed {s}: DEV 0-29 only (CAL/TEST need {ENV}=<split>, main session only)")
 
 
 def clip_action(a, low, high) -> np.ndarray:
@@ -106,8 +122,7 @@ class AIWorkerEmbodiment:
         from ..sim.snapshot import capture
         md = dict(scene.metadata or {})
         ls = int(md.get("layout_seed", scene.init_seed))
-        if ls not in DEV_SEEDS:
-            raise ValueError(f"layout seed {ls}: DEV 0-29 only (CAL/TEST are never run here)")
+        check_layout_seed(ls)
         if md.get("variant", "standard") != self.variant:
             raise ValueError(f"scene variant {md.get('variant')} != embodiment variant {self.variant} (one per process)")
         kind = md.get("kind", "P0")
