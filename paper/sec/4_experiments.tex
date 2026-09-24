@@ -1,16 +1,52 @@
-\section{Experiments --- 평가 방향}
+\section{Evaluation Design}
 \label{sec:experiments}
 
+\paragraph{비교 대상.}
+비교 대상은 Astra만 쓰는 시스템, Jev만 쓰는 시스템, VLA, 룰베이스(스킬 다발), LLM과 스킬을 연결한 기존 방법, Astra를 쓰는 기존 방법~\cite{agp2026,harnessvla2026}이다. 기존 방법은 재현 가능한 것을 고른다. AGNOSTOS~\cite{agnostos2025}의 LLM 방법은 정답 좌표를 입력으로 받는다. 그래서 정답 상태 조건과 인식 상태 조건을 나누어 평가한다.
+
+\paragraph{같은 인식 앞단.}
+같은 Astra도 RoboDojo 자체 평가에서는 22.6\%, RoboDawn 하네스에서는 35.7\%를 기록했다. 인터페이스가 점수를 크게 바꾼다는 뜻이다. 그래서 가장 깨끗한 비교는 같은 인식 상태 위에서 학습한 결정 층과 LLM 결정 층을 맞대는 것이다. 우리는 ``모두 무너진다'' 같은 전칭 주장 대신 상대 하락 폭이 작다는 주장만 한다. 절대 성공률의 우위는 주장하지 않는다. Astra의 성공률도 20--30\%대에 머문다.
+
+\paragraph{예비 분석.}
+공개 원자료로 RoboDojo의 깨끗한 장면(standard)과 바뀐 장면(random) 점수를 계산했다(\cref{tab:prelim}). 과제를 다시 뽑는 부트스트랩으로 구한 Astra 점수 하락의 95\% 신뢰구간은 2.2--22.2\%이다. 이 결과는 예비적이다. Astra만 레시피 정보를 받았고, seed가 1개이며, 두 조건 모두 RGB를 직접 입력받아 같은 인식 조건이 아니다.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+시스템 & standard & random & 상대 하락 \\
+\midrule
+GPT-6 Astra & 35.32 & 31.40 & $-$11.1\% \\
+$\pi_{0.5}$ & 20.92 & 5.82 & $-$72.2\% \\
+Spatial Forcing & 21.25 & 6.98 & $-$67.2\% \\
+X-VLA & 17.92 & 3.04 & $-$83.0\% \\
+\bottomrule
+\end{tabular}
+\caption{RoboDojo Gen 12과제의 공개 원자료로 계산한 예비 점수. 인식 조건이 서로 달라 예비 결과로만 본다.}
+\label{tab:prelim}
+\end{table}
+
+\paragraph{벤치마크와 실험 구성.}
+주 벤치마크는 RoboDojo-Sim이다. 환경 축(Gen)과 작업 축(Open)을 쓰며, 보조로 LIBERO-Plus를 쓴다. 환경 축은 인식 상태 조건에서만 잰다. 초기 실험과 모듈 실험은 단일 팔 자작 장면에서, 본 평가는 RoboDojo에서 하며 두 환경을 섞지 않는다. 논문을 한 편으로 구성하므로 두 실험을 필수로 둔다. 하나는 RoboDojo 새 장면 실시간 트랙에서 M4를 켜고 끄는 실험(E-link)이고, 다른 하나는 인공 지연을 p95 0.3/0.8/2/5초로 바꾸는 지연 스윕(E-M4-lat)이다. Astra effort는 low를 기본으로 하고 low와 high를 모두 보고한다.
+
+\paragraph{M4 비교 조건.}
+E-M4는 E2a와 같은 seed를 쓰며 다음 조건을 비교한다.
 \begin{itemize}
-  \item 평가 비교 대상: \intent{Astra만 / Jev만 / VLA / 룰베이스(스킬 다발) / LLM+스킬을 연결한 기존 논문 / Astra를 쓰는 기존 논문}
-  \item \idea{``Astra 쓰는 기존 논문''이 이제 있음~\cite{agp2026,harnessvla2026} $\rightarrow$ 재현 가능한 것 선택}
-  \item \idea{AGNOSTOS~\cite{agnostos2025}의 LLM 방법은 정답 좌표를 받음 $\rightarrow$ 정답 상태 / 인식 상태 두 조건}
-  \item \idea{과제 데이터로 미세조정한 학습 정책(VLA 포함)이 장면 바뀌면 무너지는 건 강한 근거 있음: RoboDojo에서 $\pi_{0.5}$ 20.92$\rightarrow$5.82 ($-$72\%)}
-  \item \chg{공개 원자료로 직접 계산해 보니 Astra는 같은 변화에서 35.3$\rightarrow$31.4 ($-$11\%)만 떨어짐. $\pi_{0.5}$는 $-$72\%. 사용자 주장의 첫 정량 근거. 단 조건이 달라 예비(레시피 정보, 1 seed, 인식 조건)}
-  \item \dirn{가장 깨끗한 비교: 같은 인식 상태 위에서 ``학습한 결정 층'' 대 ``LLM 결정 층''}
-  \item \idea{같은 Astra가 RoboDojo에서 22.6\%(자체 평가) 대 35.7\%(RoboDawn 하네스) $\rightarrow$ 인터페이스가 점수를 크게 바꾼다. 그래서 앞단을 같게 맞춰야 공정}
-  \item \chg{전칭 주장 대신 ``상대 하락폭이 작다''로. 절대 성공률 우위는 주장 안 함 (Astra도 20--30\%대)}
-  \item \dirn{주 벤치마크 RoboDojo-Sim(환경 축 Gen + 작업 축 Open), 보조 LIBERO-Plus. 환경 축은 인식 상태 조건에서만}
-  \item \dirn{초기·모듈 실험은 단일 팔 자작 장면, 본 평가는 RoboDojo(섞지 않음)} \decide{본 평가 정보 경계(트랙 O/D), 주장 문구}
-  \item \chg{(09-24 사용자 결정: 논문 한 편) RoboDojo 새 장면 실시간 트랙에서 M4 켬/끔(E-link)과 M4 지연 스윕이 필수. Astra effort는 low 기본, low·high 둘 다 보고}
+  \item C0: 멈춤
+  \item C1: 요청 하나
+  \item C2: Slow Brain VLM Stream
+  \item C2$'$: Slow Brain Probability Fusion(원문판)
+  \item C2$''$: 표 나이로 감쇠 가중한 최빈값
+  \item C5-A3: 같은 시각 여러 샘플의 합의만 쓰고 (b)는 없음
+  \item C-FIX: 합의 없이 앞 $k$ 스텝을 고정 확정
+  \item C3: (a)만 / C3$'$: 베이즈 정지 / C3$''$: 보기 순서 돌리기
+  \item C4: (b)만
+  \item C5: (a)+(b)
+  \item C5$'$: (b) 범주를 Jev에 주지 않음
+  \item C6: 겹침 끔(측정용)
 \end{itemize}
+핵심 비교는 C5 대 C2·C2$'$, C5 대 C5-A3, C5 대 C-FIX다.
+
+\paragraph{첫 실험 순서.}
+E0(지연 측정) $\rightarrow$ E0.5(표 재생) $\rightarrow$ E1(보정) $\rightarrow$ E2a 순으로 진행한다. E2a는 같은 텍스트 상태에서 룰과 Jev를 비교하며, Jev 쪽은 촘촘한 안·목표 지정 안·혼합 안을 M4 없이 돌린다. 이 비교는 ``같은 술어 위에서 Jev 결정이 룰보다 낫다''는, 아직 아무도 재지 않은 가장 약한 고리를 먼저 확인한다. 겹침을 켜고 끄는 비교는 E-M4에서 한다. 방향 재검토는 95\% 상한이 +5\%p 미만일 때만 한다.

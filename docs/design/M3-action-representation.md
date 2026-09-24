@@ -1,6 +1,7 @@
 # M3. 행동 표현 — 모듈 설계 (단계 2)
 
 > **정본 우선**: 모듈 사이 인터페이스·정지·확정 규칙·확률 게이트·시간 값은 `00-interfaces.md`가 우선한다(2026-09-23 22:00 UTC). 이 문서와 다르면 그쪽을 따른다.
+> 개정 2026-09-24 (정본 §27, D14 반영): §4.1 보기 이름 줄 아래에 **보기 이름 규칙 R1~R6**(2지선다 = 중립 ID + 설명, 3지선다 이상 행동 보기 = 내용 이름 + 설명, R3는 E0.5 (i) 결과로 확정), §4.5 `DecisionStep`에 `option_key`·`display_map`(표시 이름·표시 순서·`display_id → option_key`) 기록 필드, §6 보기 이름 편향 줄과 §7-9 D32를 **해소**(정본 §27)로.
 > 개정 2026-09-24 (정본 §26, 사용자 결정 user-log 25): §7-9 D32에 사용자 답 반영 — "일반적으로는 어떻게 하는지 한번 찾아봐서 적용을 해보면 좋을 것 같아" → 일반 관행을 찾아 적용, 조사 D14 진행 중(결과 전까지 설계는 그대로, E0.5 (i)는 확인 실험). 실험 순서에 E-link(필수, 논문 한 편) 자리 표시.
 > 개정 2026-09-24 (정본 §24, D12 반영): §4.1 보기 이름 줄 아래에 Type-Safe(2609.26758) 보기 이름 편향과 중립 식별자 규칙을 [결정 필요] D32로(지금 설계는 바꾸지 않음), §6에 Type-Safe·C²Nav(2609.15142, [초록만], 비교형 질문 > 절댓값형) 줄, §7-9 D32.
 > 개정 2026-09-24 (D11 일관성 점검 반영, `D11-final-consistency.md` I-4·I-10·C-8): "사용자 원안" 표기를 "촘촘한 원안(D-줌 — 사용자 '촘촘하게 가도 된다'를 Claude가 구현한 안)"으로 바꿈(D-줌과 "≤255"는 Claude의 구현·[제안]이고 user-log에는 "촘촘하게 가도 된다"만 있다), E-M3-2 판정 2 문구를 "D-줌 기본(사용자 '촘촘하게' 방향에 가장 가까운 안, 잠정)"으로, §7-2(D255 위치)를 사용자 [결정 필요]에서 메인 세션 기술 결정(SUMMARY §5.2)으로 옮김, §0 [사용자] 줄을 원문대로("할 만하다고 본다" 복원), 실험 순서에 E0.5 같은 날·E-M4-gen·E-M4-lat.
@@ -99,8 +100,15 @@
 
 ### 4.1 세 안의 공통 뼈대
 - 한 번의 Jev 요청 = `JevCall`(00-interfaces §2): **결정 질문 H개(미래 결정 스텝 k..k+H−1) + 감시 질문**(M7 진행 범주 1개, 필요 시 M8 T3b 1개. 호출 N번에 한 번만 싣는 안은 M4 설정). **H는 1과 3을 비교한다(E-M4).** 이 문서의 원안 "한 요청 = 한 결정 스텝"은 **H=1 조건**이다. H=1일 때 같은 스텝에 여러 표가 필요하면 M4가 "같은 스텝을 호출 시각을 앞당겨 여러 번 묻기"로 얻는다. 질문 개수 상한은 공식에 없지만, 입력이 길면 정확도가 떨어지므로(plan §1) 입력 길이 상한을 설정 표에 둔다. 질문마다 `question_id`(문구·보기 목록의 해시)를 붙인다. 같은 `question_id`끼리만 M4 합의·확률 비교를 한다(plan §1 #8 규칙).
-- 보기 이름: 짧은 영어 식별자 + 예상 결과 술어(영어, 공식 "영어가 가장 정확"). 숫자는 이름 속 대략 값(`≈2cm`)까지만, 계산은 코드.
-  - **(00 §24, D12) 보기 이름 편향 — [결정 필요] D32**: Type-Safe Is Not Error-Free(2609.26758, 09-22, D12 메인 재확인): "renaming the two options from 0/1 to no/yes changes 70.4 more answers per hundred ... shifts AUC from .94 to .23", "The hosted model exhibits the same behavior: the swap changes AUC from .8146 to .5806 and produces 24x as many answer flips as its test-retest floor", "the type-error rate remains 0%". 권고: "Use neutral option identifiers and carry the meaning in the rubric". 보기 이름을 중립 식별자로 바꾸고 뜻은 루브릭에 적는 규칙을 기본으로 둘지(E0.5 (i) 결과 전/후)는 사용자가 정한다(SUMMARY §5.1 D32). 결정 전까지 위 규칙(짧은 영어 식별자)은 그대로 두고, 자료는 E0.5 (i) 보기 이름 치환 대조(의미 있는 이름 대 중립 식별자, 같은 루브릭)와 (ii) test-retest flip 바닥이다(E 문서 §2A). 치환 flip이 test-retest 바닥보다 크면 이 규칙을 바꿀 근거가 된다.
+- 보기 이름: 짧은 영어 식별자 + 예상 결과 술어(영어, 공식 "영어가 가장 정확"). 숫자는 이름 속 대략 값(`≈2cm`)까지만, 계산은 코드. (정본 §27) 이름은 아래 규칙 R1~R6을 따른다.
+  - **(00 §24, D12) 보기 이름 편향 — [결정 필요] D32**: Type-Safe Is Not Error-Free(2609.26758, 09-22, D12 메인 재확인): "renaming the two options from 0/1 to no/yes changes 70.4 more answers per hundred ... shifts AUC from .94 to .23", "The hosted model exhibits the same behavior: the swap changes AUC from .8146 to .5806 and produces 24x as many answer flips as its test-retest floor", "the type-error rate remains 0%". 권고: "Use neutral option identifiers and carry the meaning in the rubric". 보기 이름을 중립 식별자로 바꾸고 뜻은 루브릭에 적는 규칙을 기본으로 둘지(E0.5 (i) 결과 전/후)는 사용자가 정한다(SUMMARY §5.1 D32). 결정 전까지 위 규칙(짧은 영어 식별자)은 그대로 두고, 자료는 E0.5 (i) 보기 이름 치환 대조(의미 있는 이름 대 중립 식별자, 같은 루브릭)와 (ii) test-retest flip 바닥이다(E 문서 §2A). 치환 flip이 test-retest 바닥보다 크면 이 규칙을 바꿀 근거가 된다. → (정본 §27) **해소**: 아래 규칙.
+  - **(정본 §27, D14) 보기 이름 규칙 R1~R6 — D32 해소**: 조사 결론(`D14-option-naming.md`): "모든 보기를 중립 식별자로"는 일반 관행이 아니다. Type-Safe(2609.26758)의 중립 식별자 권고는 **2지선다** 근거이고, 같은 논문 §4.5(3지선다 이상, n = 683)는 중립 문자로 바꾸면 정답률 .5637 → .2782, 답 52.42% 변경, 설명이 거의 무시되고 위치를 따라간다(저자는 "directional support"로만 둠, 호스트 Jev 측정 아님으로 추정). 업체 지침(Pydantic TypeSafe 문서): "name Literal and Enum options for what they mean", "reordering them can move the answer. If a classification matters, test it with the options in more than one order."
+    - 지금 기본으로 적용(호출 추가 없음): R1 모든 보기에 설명(Choices 매핑·docstring) 필수. 이름은 설명 앞머리를 줄인 것이고 설명에 없는 뜻을 담지 않는다. 이름 금지어: 극성·판정어(yes/no/true/false/ok/fail/accept/reject/good/bad/safe/correct 등), 조건을 품은 이름(`descend_if_aligned` 등 — 조건은 설명에만).
+    - R2 **2지선다 Choice는 중립 ID**(`A`/`B` 또는 5자 무작위 문자열), 뜻은 설명에만(호스트 Jev: 이름 맞바꿈 32.50% 대 중립 2.08%·1.67%, test-retest 바닥 1.33%). Noul은 기준 문장을 부정 없이 긍정형으로.
+    - R4 순서: `question_id`별 고정 표준 순서, `NONE_ESCALATE`는 항상 마지막. 순서 순환(C3'')은 E-M4 조건 그대로.
+    - R5 원장·M4 합의·결과 라벨은 고정 `option_key`로 센다. 표시 이름·표시 순서·`perm_id`·`display_id → option_key` 대응표는 호출마다 기록. 확률 평균 없이 최빈 보기만. 기록 필드는 §4.5 `DecisionStep`.
+    - R6 이름 불변성 flip은 오프라인(E0.5·E1)에서만 잰다.
+    - R3 (**E0.5 (i) 결과로 확정**) 3지선다 이상 행동 보기(방향·목표 물체·크기, ≤ 약 17개)는 내용을 그대로 적은 이름 + 설명을 유지(중립 문자로 바꾸지 않음). M3의 방향(`+x` 등)·크기(`≈2cm`)·목표(`cup_red` 등)·접근 원형 질문은 모두 여기에 든다. `side_front`처럼 행위를 담은 이름도 R1 금지어에 걸리지 않으면 유지한다.
 - 순서형 보기(크기·거리)도 **최빈 보기만** 쓴다. 확률 가중 평균·Score 기댓값 보간은 쓰지 않는다(#2(c)). v3/04의 "봉우리 검사 후 평균" 제안은 **E1 전까지 끈다**.
 - 모든 질문에 `NONE_ESCALATE`. 이것이 최빈이면 그 결정 스텝은 "보류"로 M4에 넘긴다. 보류는 **정지가 아니다**: 로봇은 직전 확정 행동을 유지하며 감속한다(00-interfaces §4, M5 L2 규칙 4). 완전 정지는 M7 FAIL을 거칠 때만.
 
@@ -140,8 +148,9 @@ DecisionStep {
   t_state          # Jev 입력 상태의 시각·프레임 번호 (시간 정렬, WAM 교훈)
   call_id, sent_at, recv_at
   variant          # D | D255 | G | H
-  questions: [ {question_id, dp_id, options[], chosen, p_chosen, p_second} ]   # p는 기록용 (E1 전 게이트 끔). dp_id = M6 고정 결정 지점 id(아래 대응표), 없으면 null
+  questions: [ {question_id, dp_id, options[option_key], chosen(option_key), p_chosen, p_second} ]   # p는 기록용 (E1 전 게이트 끔). dp_id = M6 고정 결정 지점 id(아래 대응표), 없으면 null
   perm_id          # 보기 순서 순열 번호. 기본 0(고정 순서). E-M4 C3''에서만 0..2 (§4.6). question_id는 순서와 무관하게 같다
+  display_map      # (정본 §27 R5) 질문마다 표시 이름[]·표시 순서·`display_id → option_key` 대응표. 호출마다 기록. M4 합의·원장·결과 라벨은 option_key로 센다
   target           # 코드가 계산한 목표 자세/제어점 (Jev가 만든 숫자 아님)
   expected_after   # 선택 보기의 예상 결과 술어 → M4(b) 술어 일치 판정과 M7 입력 둘 다로
   commit_window    # 고정 구간 경계 시각. M4가 d_p95(E0 실측 Jev p95 지연)로 채운다. M3는 읽기만
@@ -202,7 +211,7 @@ DecisionStep {
 - H안의 모드 전환(먼 → 근접) 경계에서 결정 모양이 바뀌면 M4 합의 표가 끊긴다 → 전환 자체를 `Q_phase` 결정으로 두어 M4가 합의하게 한다.
 - **RoboDawn(#18)의 근거 한계**(00 §19): 같은 인식 비교가 아니다(하네스 주석 카메라·cm 상태·탁자 높이·명령당 계획기 실행). 자유 수치 명령이라 Jev 보기 조건과 다르다. 절제·예산 수치는 설계 방향의 지지로만 쓰고 기본값 근거로 쓰지 않는다.
 - RIA는 세계 모델이 학습형이고 주행이다. 우리 "코드 굴리기"는 짧은 기하 계산이라 같은 효과를 보장하지 않는다.
-- **보기 이름 편향(00 §24, D12)**: typed 모델에서도 보기 이름만 바꾸면 답이 체계적으로 바뀐다(Type-Safe 2609.26758: 100개당 70.4개, AUC .94 → .23, type-error 0%). 이런 오류는 M4 반복 합의로 걸러지지 않는다. 우리 보기 이름(`side_front`, `descend`, `≈2cm` 등)도 뜻을 이름에 싣고 있어 같은 위험이 있다 → [결정 필요] D32, E0.5 (i).
+- **보기 이름 편향(00 §24, D12)**: typed 모델에서도 보기 이름만 바꾸면 답이 체계적으로 바뀐다(Type-Safe 2609.26758: 100개당 70.4개, AUC .94 → .23, type-error 0%). 이런 오류는 M4 반복 합의로 걸러지지 않는다. 우리 보기 이름(`side_front`, `descend`, `≈2cm` 등)도 뜻을 이름에 싣고 있어 같은 위험이 있다 → [결정 필요] D32, E0.5 (i). → (정본 §27) D32 해소: 보기 이름 규칙 R1~R6(§4.1), 3지선다 이상(R3)은 E0.5 (i)로 확정.
 - **질문 형태(00 §24, D12, [초록만])**: C²Nav(2609.15142) "the VLM compares controller-constructed alternatives, while geometry, thresholds, action magnitude, and execution remain on the physical side". 같은 VLM에서 비교형 질문을 절댓값형으로 바꾸면 SR이 12~28%로 떨어진다. 코드가 만든 후보 중 고르게 하는 우리 typed 질문(G/H안, 예상 결과 술어) 설계의 근거 후보로 인용한다. 초록만 읽었다.
 - **보기 순서 돌리기(C3'')의 근거 한계**: 기간 안 근거는 RecSys 2026 **Short** 한 편(MED)이고 모델 3B~7B, 추천 과제다. "줄어들지만 없어지지 않는다"가 원문 결론이다. NAACL 2024는 기간 밖이다. 순서를 돌리면 M4 합의의 "같은 입력" 전제가 약해지고 `flip_score`가 부풀 수 있다(§4.6).
 
@@ -215,7 +224,7 @@ DecisionStep {
 6. [결정 필요] `JevCall`의 H(1 대 3): E-M4 결과로 정한다(00-interfaces §2). H=3이면 D-줌 세밀 질문은 첫 스텝에만 둔다.
 7. 해소(00-interfaces §14-1): D4의 [결정 필요] "보기 순서 순환을 M4 표 합의에 넣을지"는 메인 세션이 잠정 결정했다. **기본값이 아니고 E-M4 조건 C3''로 비교한다.** 최빈 선택만 비교하므로 Jev #8과 충돌하지 않는 것으로 본다. 기본 전환은 C3'' 결과로(M4 §5 판정 9).
 8. 해소(00-interfaces §19, D8): RoboDawn식 `D-axis-multi`·`D-rot15p`를 E-M3-1 비교 조건으로 넣었다(기본값 아님, 판정 5·6).
-9. [결정 필요] D32(00 §24, SUMMARY §5.1): Jev 보기를 중립 식별자로 바꾸고 뜻은 루브릭에 적는 규칙을 (i) E0.5 (i) 결과 전에 기본으로 둘지 / (ii) E0.5 (i) 결과를 본 뒤 정할지 / (iii) 지금 이름(짧은 영어 식별자)을 유지할지. M6 결정 지점 보기와 한 항목이다. 결정 전까지 설계는 바꾸지 않는다. → (정본 §26) 사용자: "일반적으로는 어떻게 하는지 한번 찾아봐서 적용을 해보면 좋을 것 같아"(user-log 25) → 일반 관행을 찾아 적용한다. 조사 D14 진행 중이며 결과 전까지 지금 이름을 쓴다. E0.5 (i)는 확인 실험으로 남긴다.
+9. [결정 필요] D32(00 §24, SUMMARY §5.1): Jev 보기를 중립 식별자로 바꾸고 뜻은 루브릭에 적는 규칙을 (i) E0.5 (i) 결과 전에 기본으로 둘지 / (ii) E0.5 (i) 결과를 본 뒤 정할지 / (iii) 지금 이름(짧은 영어 식별자)을 유지할지. M6 결정 지점 보기와 한 항목이다. 결정 전까지 설계는 바꾸지 않는다. → (정본 §26) 사용자: "일반적으로는 어떻게 하는지 한번 찾아봐서 적용을 해보면 좋을 것 같아"(user-log 25) → 일반 관행을 찾아 적용한다. 조사 D14 진행 중이며 결과 전까지 지금 이름을 쓴다. E0.5 (i)는 확인 실험으로 남긴다. → (정본 §27, D14) **해소**: 보기 이름 규칙 R1~R6(§4.1). 2지선다는 중립 ID + 설명(R2), 3지선다 이상 행동 보기는 내용 이름 + 설명(R3, E0.5 (i) 결과로 확정), 합의·원장은 `option_key`로(R5).
 
 ## 8. 확인 못 한 것
 - 인용 수·스타(API 금지, 미측정). #4·#5·#6·#7의 학회 채택 여부.

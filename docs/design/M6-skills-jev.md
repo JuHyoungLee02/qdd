@@ -1,6 +1,7 @@
 # M6. 스킬과 Jev 결합 — 모듈 설계 (단계 2)
 
 > **정본 우선**: 모듈 사이 인터페이스·정지·확정 규칙·확률 게이트·시간 값은 `00-interfaces.md`가 우선한다(2026-09-23 22:00 UTC). 이 문서와 다르면 그쪽을 따른다.
+> 개정 2026-09-24 (정본 §27, D14 반영): §4.1.2 보기 이름 규칙 줄 아래에 **R1~R6**(2지선다 결정 지점 = 중립 ID + 설명, 3개 이상 = 내용 이름 + 설명, R3는 E0.5 (i)로 확정)과 `jev_choice` 호출 기록 필드(`option_key`·`perm_id`·`display_id → option_key` 대응표), R1 금지어에 걸리는 지금 보기 이름 표시, §6 보기 이름 편향 줄과 §7-9 D32를 **해소**(정본 §27)로. §4.1.2 표 자체는 바꾸지 않음.
 > 개정 2026-09-24 (정본 §26, 사용자 결정 user-log 25): 전제 줄의 M1 변환 방법을 "기본 = 후보 A(Claude 결정, B·C는 E3 비교)"로 — "변환 방법은 사용자가 정한다"는 사용자가 한 말이 아니라 폐기. §7-9 D32에 사용자 답 반영(일반 관행을 찾아 적용, 조사 D14 진행 중).
 > 개정 2026-09-24 (정본 §24, D12 반영): §4.1.2 원칙 아래에 결정 지점 보기 이름의 편향(Type-Safe 2609.26758)과 중립 식별자 규칙을 [결정 필요] D32로(M3와 한 항목, 지금 설계는 바꾸지 않음), §6에 Type-Safe·C²Nav(2609.15142, [초록만]) 줄, §7-9 D32.
 > 개정 2026-09-24 (D11 일관성 점검 반영, `D11-final-consistency.md` I-9): §4.4 [사용자] 문제 설정 인용을 user-log 3 원문으로(첫 판의 "기존 방법"은 원문에 없음, 00 §16).
@@ -189,7 +190,16 @@ metadata:
 
 - 한 요청에 여러 질문 묶기(Jev 질문 수 상한 없음, plan §1): 진입 시 `dp.approach_dir` + `dp.next_skill` 확인을 한 요청에.
 - M10 규칙은 결정 지점 키가 정확히 맞을 때만 1~2줄 `hint:`로 붙는다(M10 문서).
-- **(00 §24, D12) 보기 이름 규칙 — [결정 필요] D32**: 위 표의 보기(`close_now`, `release_now`, `side_front` 등)는 뜻을 이름에 싣는다. Type-Safe Is Not Error-Free(2609.26758, 09-22, D12 메인 재확인): "renaming the two options from 0/1 to no/yes changes 70.4 more answers per hundred ... shifts AUC from .94 to .23", "The hosted model exhibits the same behavior: the swap changes AUC from .8146 to .5806 and produces 24x as many answer flips as its test-retest floor", "the type-error rate remains 0%". 권고: "Use neutral option identifiers and carry the meaning in the rubric". 결정 지점 보기를 중립 식별자로 바꾸고 뜻은 루브릭(질문 템플릿)에 적을지는 M3와 한 항목으로 사용자가 정한다(SUMMARY §5.1 D32). 결정 지점 id(`dp.*`)는 스킬 고정 id 규칙 그대로이고, 바뀔 수 있는 것은 보기 이름뿐이다. 결정 전까지 위 표는 바꾸지 않는다. 자료는 E0.5 (i)·(ii)(E 문서 §2A).
+- **(00 §24, D12) 보기 이름 규칙 — [결정 필요] D32**: 위 표의 보기(`close_now`, `release_now`, `side_front` 등)는 뜻을 이름에 싣는다. Type-Safe Is Not Error-Free(2609.26758, 09-22, D12 메인 재확인): "renaming the two options from 0/1 to no/yes changes 70.4 more answers per hundred ... shifts AUC from .94 to .23", "The hosted model exhibits the same behavior: the swap changes AUC from .8146 to .5806 and produces 24x as many answer flips as its test-retest floor", "the type-error rate remains 0%". 권고: "Use neutral option identifiers and carry the meaning in the rubric". 결정 지점 보기를 중립 식별자로 바꾸고 뜻은 루브릭(질문 템플릿)에 적을지는 M3와 한 항목으로 사용자가 정한다(SUMMARY §5.1 D32). 결정 지점 id(`dp.*`)는 스킬 고정 id 규칙 그대로이고, 바뀔 수 있는 것은 보기 이름뿐이다. 결정 전까지 위 표는 바꾸지 않는다. 자료는 E0.5 (i)·(ii)(E 문서 §2A). → (정본 §27) **해소**: 아래 규칙.
+  - **(정본 §27, D14) 보기 이름 규칙 R1~R6 — D32 해소**(M3 §4.1과 같은 규칙): 조사 결론(`D14-option-naming.md`): "모든 보기를 중립 식별자로"는 일반 관행이 아니다. Type-Safe(2609.26758)의 중립 식별자 권고는 **2지선다** 근거이고, 같은 논문 §4.5(3지선다 이상, n = 683)는 중립 문자로 바꾸면 정답률 .5637 → .2782, 답 52.42% 변경, 설명이 거의 무시되고 위치를 따라간다(저자는 "directional support"로만 둠, 호스트 Jev 측정 아님으로 추정). 업체 지침(Pydantic TypeSafe 문서): "name Literal and Enum options for what they mean", "reordering them can move the answer. If a classification matters, test it with the options in more than one order."
+    - 지금 기본으로 적용(호출 추가 없음): R1 모든 보기에 설명(Choices 매핑·docstring) 필수. 이름은 설명 앞머리를 줄인 것이고 설명에 없는 뜻을 담지 않는다. 이름 금지어: 극성·판정어(yes/no/true/false/ok/fail/accept/reject/good/bad/safe/correct 등), 조건을 품은 이름(`descend_if_aligned` 등 — 조건은 설명에만).
+    - R2 **2지선다 Choice는 중립 ID**(`A`/`B` 또는 5자 무작위 문자열), 뜻은 설명에만(호스트 Jev: 이름 맞바꿈 32.50% 대 중립 2.08%·1.67%, test-retest 바닥 1.33%). Noul은 기준 문장을 부정 없이 긍정형으로. 결정 지점 중 Choice 2개로 묻는 것(예: §4.1.2a `dp.invoke_now`·`dp.retry_prompt`·`dp.grasp_verify`)이 여기에 든다.
+    - R4 순서: `question_id`별 고정 표준 순서, `NONE_ESCALATE`는 항상 마지막. 순서 순환(C3'')은 E-M4 조건 그대로.
+    - R5 원장·M4 합의·결과 라벨은 고정 `option_key`로 센다. 표시 이름·표시 순서·`perm_id`·`display_id → option_key` 대응표는 호출마다 기록. 확률 평균 없이 최빈 보기만.
+    - R6 이름 불변성 flip은 오프라인(E0.5·E1)에서만 잰다.
+    - R3 (**E0.5 (i) 결과로 확정**) 3지선다 이상 행동 보기(방향·목표 물체·크기, ≤ 약 17개)는 내용을 그대로 적은 이름 + 설명을 유지(중립 문자로 바꾸지 않음). 위 표의 3개 이상 보기(`side_front`, `close_now`, `release_now`, `descend` 등)는 이름을 유지한다. 결정 지점 id(`dp.*`)는 바뀌지 않는다.
+    - **기록 필드(R5)**: `jev_choice(dp_id, Enum)`(§4.5) 호출마다 `option_key`(Enum 멤버의 고정 키), 표시 이름, 표시 순서, `perm_id`, `display_id → option_key` 대응표를 M3 §4.5 `DecisionStep`(`questions[].options[option_key]`, `chosen(option_key)`, `display_map`)에 적는다. M4 합의·M10 규칙 키·결과 라벨은 `option_key`로 센다.
+    - **R1 점검 필요 [우리 판단]**: 지금 표에서 판정어에 걸리는 이름 — `dp.grasp_result`의 `failure`·`valid_progress`(M7 S5와 한 목록), `dp.transport_mode`의 `place_safe_now`, `dp.critic_accept`의 `safe_wait`(M9 목록). 이름 교체는 M7·M9 목록과 함께 해야 해서 이 문서에서 바로 바꾸지 않는다(메인 세션 확인).
 
 #### 4.1.2a typed 결정 지점 후보 (Harness 탐색 레버에서 도출, 00-interfaces §22) [접목]
 Harness VLA §2.2 원문 탐색 레버("staging orders, pre-contact poses, invocation timings for vla_act, and early-return termination thresholds")와 RPent 메모리 교훈의 레버에서 뽑은 후보다. **원문은 typed 보기 없이 자유 JSON 수치 인자를 플래너가 준다.** 우리는 이를 enum(보기 ID)으로 바꾼다. 결정 지점 id 등록은 §4.1.2 표 규칙 그대로(스킬 고정 id, 00-interfaces §11.1). 모두 [접목]이다.
@@ -286,7 +296,7 @@ Astra 계획에 (i) 카드만(메타 ~100토큰/스킬) 대 (ii) 본문 전부. 
 - **MCP annotations는 힌트다**(명세: untrusted). `irreversible` 선언을 믿고 안전을 넘기면 안 된다. 코드 안전 술어가 최종.
 - BATON은 심사 전·인용 1이라 보조 참고로만 둔다(D2 A1이 초록·본문 문장은 확인). GPSFSM의 BTGenBot 대비 우위는 GPT 모델에서만이고 로컬 모델에서는 BTGenBot이 낫다(Table I) — FSM 선택의 근거로 과장하지 않는다.
 - **MCP idempotent ≠ 로봇 재시도 안전**: 뜻이 바뀌므로 `retry_safe`는 우리 정의로 둔다(§3).
-- **보기 이름 편향(00 §24, D12)**: Type-Safe(2609.26758)는 typed 모델의 보기 이름 편향이 type-error 0%인 채로 생긴다는 것을 보였다(0/1 → no/yes, 100개당 70.4개 답 변경). M4 반복 합의로는 안 걸러진다 → [결정 필요] D32.
+- **보기 이름 편향(00 §24, D12)**: Type-Safe(2609.26758)는 typed 모델의 보기 이름 편향이 type-error 0%인 채로 생긴다는 것을 보였다(0/1 → no/yes, 100개당 70.4개 답 변경). M4 반복 합의로는 안 걸러진다 → [결정 필요] D32. → (정본 §27) D32 해소: 보기 이름 규칙 R1~R6(§4.1.2), 3개 이상(R3)은 E0.5 (i)로 확정.
 - **질문 형태(00 §24, D12, [초록만])**: C²Nav(2609.15142)는 VLM이 제어기가 만든 대안을 비교하게 하고 기하·문턱·행동 크기는 물리 쪽에 두었다. 비교형 질문을 절댓값형으로 바꾸면 SR이 12~28%로 떨어진다. "코드 술어로 답이 나오는 것은 묻지 않고, 코드가 만든 보기 중 고르게 한다"는 §4.1.2 원칙의 근거 후보로 인용한다. 초록만 읽었다.
 - Zetta 원문 불일치(온라인 LLM 승인자 대 인프라 절 "온라인 에이전트 없음", v3/16 #23).
 - **typed hole 게이트는 원문이 평가하지 않은 접목안이다**(00-interfaces §15): PLDI 2025 결과는 디코딩 중 제약이다. 사후 검사 + 수리로 바꾸면 같은 효과가 난다는 근거가 없다. 수리 왕복은 T0 지연을 늘린다.
@@ -306,7 +316,7 @@ Astra 계획에 (i) 카드만(메타 ~100토큰/스킬) 대 (ii) 본문 전부. 
 6. `dp.grasp_result`처럼 코드 술어가 애매한 곳의 경계(그리퍼 폭 임계)는 M7 보정과 같이 정한다.
 7. [결정 필요] 되돌릴 수 없음을 누가 정하나: `annotations.irreversible_phases`(스킬 작성자) / M2 계약 단계 수준 `irreversible`(Astra) / 사용자 목록. M2 §7-4와 **한 [결정 필요]**로 묶는다(D2 B7). 어느 안이든 코드 안전 규칙이 최종.
 8. 해소(00-interfaces §14-3, D4 §14-3): 스킬 계약 phase별 `effect`(가역 + 보상 스킬 id / 비가역)를 **채택**한다. M9는 보상 역순, 비가역 경계 너머 되돌리기 금지, M4는 비가역 보기 W+1. 메인 세션 잠정 결정이며 E-M6-2(−`effect` 절제)와 E-M9로 검증한다. 누가 표지를 붙이느냐는 7번 [결정 필요]에 그대로 남는다. 생성 스킬 (b)의 typed hole 게이트(§4.5)도 00-interfaces §14에 따라 넣었고, 원문 미평가 접목안이라 E-M6-5로 검증한다.
-9. [결정 필요] D32(00 §24, SUMMARY §5.1, M3 §7-9와 한 항목): 결정 지점 보기를 중립 식별자로 바꾸고 뜻은 루브릭에 적는 규칙을 (i) E0.5 (i) 결과 전에 기본으로 둘지 / (ii) E0.5 (i) 결과를 본 뒤 정할지 / (iii) 지금 이름을 유지할지. 결정 전까지 §4.1.2 표는 바꾸지 않는다. → (정본 §26) 사용자: 일반 관행을 찾아 적용(user-log 25). 조사 D14 진행 중이며 결과 전까지 표는 그대로.
+9. [결정 필요] D32(00 §24, SUMMARY §5.1, M3 §7-9와 한 항목): 결정 지점 보기를 중립 식별자로 바꾸고 뜻은 루브릭에 적는 규칙을 (i) E0.5 (i) 결과 전에 기본으로 둘지 / (ii) E0.5 (i) 결과를 본 뒤 정할지 / (iii) 지금 이름을 유지할지. 결정 전까지 §4.1.2 표는 바꾸지 않는다. → (정본 §26) 사용자: 일반 관행을 찾아 적용(user-log 25). 조사 D14 진행 중이며 결과 전까지 표는 그대로. → (정본 §27, D14) **해소**: 보기 이름 규칙 R1~R6(§4.1.2). 2지선다 결정 지점은 중립 ID + 설명(R2), 3개 이상은 내용 이름 + 설명(R3, E0.5 (i) 결과로 확정), 기록은 `option_key`·`perm_id`·대응표(R5).
 
 ## 8. 확인 못 한 것
 - Agent Skills 공개 표준화 날짜(2025-12-18)는 2차 출처(firecrawl 블로그)만 봤다.

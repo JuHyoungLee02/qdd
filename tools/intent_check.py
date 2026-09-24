@@ -10,7 +10,7 @@ def norm(s):
 L = norm(log)
 n = bad = 0
 key = BS + 'intent{'
-for f in glob.glob('D:/qdd/paper/sec/*.tex') + ['D:/qdd/paper/fig/teaser.tex']:
+for f in glob.glob('D:/qdd/paper/sec/*.tex') + glob.glob('D:/qdd/paper/mindmap/sec/*.tex') + ['D:/qdd/paper/fig/teaser.tex', 'D:/qdd/paper/mindmap/fig/teaser.tex']:
     t = open(f, encoding='utf-8').read()
     k = 0
     while True:

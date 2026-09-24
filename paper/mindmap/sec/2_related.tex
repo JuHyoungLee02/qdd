@@ -1,0 +1,14 @@
+\section{Related Work --- 선점 지도}
+\label{sec:related}
+
+\begin{itemize}
+  \item Astra로 로봇 제어: AGP~\cite{agp2026}, RoboDojo~\cite{robodojo2026} 등(모두 미심사). Harness VLA~\cite{harnessvla2026}도 Astra를 계획기로 씀
+  \item 스텝마다 LLM이 이산 행동을 고름: Show-Harness~\cite{showharness2026} $\rightarrow$ M3의 직접 선행이라 반드시 인용
+  \item 스킬 하네스(GitHub 스타 상위): PhyAgentOS~\cite{phyagentos2026}, Zetta~\cite{zetta2026}, Harness VLA, CaP-X~\cite{fu2026capx}
+  \item 주기 호출 대 이벤트 호출: CheckVLA~\cite{checkvla2026}, Event-triggered~\cite{eventtrig2026} 등
+  \item 비동기 실행: RTC~\cite{black2025rtc}, SmolVLA~\cite{shukor2025smolvla}, VLASH~\cite{vlash2025}, A2C2~\cite{a2c2}
+  \item 멈추지 않고 느린 모델 부르기: Slow Brain~\cite{slowbrain2026}(겹쳐 요청. VLM Stream은 가장 새 답만 쓰고, Probability Fusion은 가장 새 답에 빠른 층 점수를 감쇠 가중으로 섞음)
+  \item 합의로 앞 구간 확정: A3(VLA 청크를 같은 시각에 여러 개 뽑아 합의, 실행 뒤 확인은 없음) $\rightarrow$ 우리 M4는 시간차 호출 합의와 실행 뒤 예상 대 측정 비교를 둘 다 씀
+  \item 환경 변화에서 LLM 대 VLA: RoboDawn(깨끗한 장면으로 학습한 $\pi_{0.5}$ 46.0\% 대 학습 없는 Astra 53.2\%) $\rightarrow$ 사용자 주장의 두 번째 근거. 우리 빈칸은 ``같은 인식 위에서 결정 층만 바꾼 비교''
+  \item Jev를 로봇에 쓴 논문은 아직 없음. 저장소 데모만 있음(Jev-as-Policy: 요청 하나마다 직전 행동을 유지, 계속 감시 중)
+\end{itemize}

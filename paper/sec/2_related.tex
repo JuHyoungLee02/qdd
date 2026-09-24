@@ -1,14 +1,17 @@
-\section{Related Work --- 선점 지도}
+\section{Related Work}
 \label{sec:related}
 
-\begin{itemize}
-  \item Astra로 로봇: AGP~\cite{agp2026}, RoboDojo~\cite{robodojo2026} 등(모두 미심사). Harness VLA~\cite{harnessvla2026}도 Astra 계획기 사용
-  \item 스텝마다 LLM이 이산 행동: Show-Harness~\cite{showharness2026} $\rightarrow$ M3 직접 선행, 반드시 인용
-  \item 스킬 하네스(스타 상위): PhyAgentOS~\cite{phyagentos2026}, Zetta~\cite{zetta2026}, Harness VLA, CaP-X~\cite{fu2026capx}
-  \item 주기 대 이벤트 호출: CheckVLA~\cite{checkvla2026}, Event-triggered~\cite{eventtrig2026} 등
-  \item 비동기 실행: RTC~\cite{black2025rtc}, SmolVLA~\cite{shukor2025smolvla}, VLASH~\cite{vlash2025}, A2C2~\cite{a2c2}
-  \item 안 멈추는 느린 모델 호출: Slow Brain~\cite{slowbrain2026}(겹침 요청. VLM Stream = 최신 답만, Probability Fusion = 최신 답 + 빠른 층 점수 감쇠 융합)
-  \item 합의 → 앞 구간 확정: A3(VLA 청크, 같은 시각 샘플 합의, 실행 뒤 확인 없음) $\rightarrow$ 우리 M4는 시간차 호출 합의 + 실행 뒤 예상 대 측정 둘 다
-  \item 환경 변화에서 LLM 대 VLA: RoboDawn(깨끗한 장면 학습 $\pi_{0.5}$ 46.0\% 대 Astra 무학습 53.2\%) $\rightarrow$ 사용자 주장의 두 번째 근거. 우리 빈칸은 ``같은 인식 위에서 결정 층만 바꾼 비교''
-  \item Jev를 로봇에 쓴 논문은 아직 없음. 저장소 데모만(Jev-as-Policy: 요청 하나 + 직전 행동 유지, 감시 중)
-\end{itemize}
+\paragraph{API 모델로 로봇 제어.}
+AGP~\cite{agp2026}와 RoboDojo~\cite{robodojo2026}는 Astra로 로봇을 제어한다(둘 다 심사 전). Harness VLA~\cite{harnessvla2026}도 Astra를 계획기로 쓴다. RoboDawn에서는 깨끗한 장면으로 학습한 $\pi_{0.5}$가 46.0\%, 학습 없이 쓴 Astra가 53.2\%를 기록했다. 이는 환경 변화에서 LLM이 유리하다는 우리 동기를 뒷받침한다. 다만 같은 인식 조건에서 결정 층만 바꾼 비교는 아니다.
+
+\paragraph{LLM의 스텝 단위 이산 행동과 스킬 하네스.}
+Show-Harness~\cite{showharness2026}는 스텝마다 LLM이 이산 행동을 고르며, 우리 행동 표현(M3)의 가장 직접적인 선행이다. GitHub 스타 기준 상위의 스킬 하네스로는 PhyAgentOS~\cite{phyagentos2026}, Zetta~\cite{zetta2026}, Harness VLA, CaP-X~\cite{fu2026capx}가 있다.
+
+\paragraph{비동기 실행과 느린 모델 호출.}
+RTC~\cite{black2025rtc}, SmolVLA~\cite{shukor2025smolvla}, VLASH~\cite{vlash2025}, A2C2~\cite{a2c2}는 행동 청크를 비동기로 실행한다. Slow Brain~\cite{slowbrain2026}은 느린 모델을 멈추지 않고 겹쳐 요청한다. 그 가운데 VLM Stream은 가장 최근의 답만 쓰고, Probability Fusion은 가장 최근의 답에 빠른 층의 점수를 감쇠 가중으로 섞는다. A3는 VLA 청크를 같은 시각에 여러 개 뽑아 합의한 앞 구간을 확정하며, 실행 뒤 확인은 하지 않는다. 우리 M4는 시간차 호출 사이의 합의와 실행 뒤 예상 대 측정 비교를 함께 쓴다.
+
+\paragraph{호출 시점.}
+CheckVLA~\cite{checkvla2026}와 Event-triggered~\cite{eventtrig2026} 등은 주기 호출과 이벤트 호출을 비교했다.
+
+\paragraph{Jev.}
+Jev를 로봇에 쓴 논문은 아직 없다. 저장소 데모(Jev-as-Policy)만 있으며, 이 데모는 요청 하나에 답이 올 때까지 직전 행동을 유지한다.
