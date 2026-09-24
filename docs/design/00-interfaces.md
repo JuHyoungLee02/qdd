@@ -368,3 +368,10 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - **주 평가(RoboDojo)에는 쓰지 않는다**: RoboDojo 몸체가 없고, 동기 루프라 우리 비동기·벽시계 조건을 표현할 수 없고, 공개 수치와의 같은 기준이 깨진다.
 - **도구로서**: E-real 로그 필드 설계(설정·git 리비전·판본·transcript·사람 판정 출처, Rerun 기록)를 참고한다(의존성 추가는 안 함).
 - **[결정 필요] (사용자)**: E-real(AI Worker SG2)에 범주 1 기준선 "B1a-real = Inspect Robots `agent` + Astra"를 넣을지. 넣으려면 ROS 2 몸체(`joint_pos`만 지원)와 AI Worker 관절 매핑을 먼저 점검해야 하고, 행동 공간이 Robocurve 보고서(eef_pos)와 달라진다.
+
+## 41. 1차 평가 = Inspect Robots (2026-09-24 07:51 UTC, user-log 41) [사용자 결정]
+- **1차 평가는 Inspect Robots에서 한다**(빠르고 쉽게 돌릴 수 있게 잘 만들어져 있음). 향후 더 큰 평가(RoboDojo 등)로 넓힌다. §40의 "주 평가 부적합" 판단은 이 결정으로 **1차에 한해 바뀐다**(RoboDojo는 2차 확장).
+- 이점: 같은 하네스·같은 로그로 기준선을 바로 붙일 수 있다 — 범주 1 Astra만(`agent`), 범주 5 CaP-X식(`capx`), VLA(`xpolicylab`, π0.5·GR00T 등 40여 종).
+- 풀어야 할 점: 하네스 루프는 동기(시뮬이 정책을 기다림)이고 우리 시스템은 비동기·비정지다. 설계 문서의 "an embodiment that needs real-time cadence paces itself inside step()"을 이용해 몸체 쪽에서 벽시계 박자를 맞추고, 정책 안에서 Astra를 비동기로 돌리는 방식을 검토한다(D23 코드 조사).
+- 몸체: 1차는 Isaac Lab(하네스 기본 Franka 7자유도 → AI Worker SG2 한 팔로 매핑 훅), 실물은 ROS 2 몸체로 AI Worker SG2(베이스 고정).
+- §40의 [결정 필요] B1a-real은 이 결정으로 해소 — Inspect Robots `agent` + Astra를 1차 평가의 범주 1 기준선으로 쓴다.
