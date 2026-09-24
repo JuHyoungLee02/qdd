@@ -1,6 +1,7 @@
 # M2. Astra → Jev 전달 (세션 계약) — 모듈 설계
 
 > **정본 우선**: 모듈 사이 인터페이스·정지·확정 규칙·확률 게이트·시간 값은 `00-interfaces.md`가 우선한다. 이 문서의 계약 교체 규칙(§4.2)은 정지를 만들지 않는다(교체 대기 중에도 직전 확정 행동 유지, `00-interfaces.md` §4). E-M2-2의 W(기다림) 조건은 비교용이며 기본안이 아니다.
+> 개정 2026-09-24 (정본 §28, D17 반영, `D17-api-consistency.md`): §2.4 신설 — API 일관성·재계획 고정 근거 행(HIGH/MED만. D17 §2의 LOW 12편은 근거로 쓰지 않음, MED-LOW 보조 4편도 넣지 않음). §4.5 신설 — **Astra 일관성 규약 A1~A6**: A1 템플릿 해시 `astra_prompt_id`, A2 입력 정규화, A3 출력 = 계약 JSON + 검사기 1–6 유지(2턴 변환은 첫 시도 통과율 < 80%일 때만 비교), A4 재계획 고정 = **잠정 기본**(R6 승격: 기본 출력 `patch`, 단계마다 `change_reason`, 이미 실행한 단계 변경 금지, 편집 거리 기록), A5 T0 전용 K = 3 투표 = **잠정 기본**(비정지 호출 K = 1, effort high에서는 투표 안 함), A6 재현 기록. §4.2 R6 승격 표시, E-M2-3 지표·조건 추가, §6-10, §7-5 갱신. A4·A5는 Claude 설계 선택이고 사용자 원칙("실패할 때마다 Astra 개입", T0 뒤 웬만하면 안 멈춤, effort 기본 low + low·high 비교)은 그대로다.
 > 개정 2026-09-24 (정본 §26, 사용자 결정 user-log 25): M1 변환 방법 줄 갱신 — "변환 방법은 사용자가 정한다"는 사용자가 한 말이 아니라 폐기, M1 기본 = 후보 A(Claude 결정, B·C는 E3 비교). §0 전제 줄과 §7-1. 이 문서는 여전히 등록부 인터페이스에만 의존한다. E-M2-2의 Astra 지연 분포는 low·high 둘 다에서 뽑는다(effort 기본 low).
 > 개정 2026-09-24 (정본 §25, D13 반영, `D13-m1-m2-m5-deepread.md` §3~§5·§8): COPE 근거 정정 — 큰 → 작은 이득(Llama-3B 42.8 → 53.0)은 **절차형(guideline)** 계획이었고 목표형 우위(30.2 대 23.2)는 1B 자기 계획뿐, 본 방법 Stage 2도 큰 모델 절차형이다 → COPE를 v1(목표 중심 조각)의 근거에서 뺀다. v1 기본값은 **설계 선택**으로 유지(M4·M7·M9가 술어를 읽음, AgentSpec 모양). E-M2-1에 **B-COPE** 조건 추가. AgentSpec 지표 정정(집행률 95.56%, "recall" 70.96%는 정의 모호, 과차단 포함) + E-M2-3 `forbidden` 과차단률. AgileThinker 등급 HIGH → MED(학회 [미확인]), Table 10 네 열, 16k 역전, E-M2-2 지연 구간별 보고. WAM 등급 LOW-MED로 통일. 근거 약화는 사용자에게 알림(SUMMARY).
 > 개정: 2026-09-23 D5 반영 (`D5-consistency.md` 1-2·1-17·2-1, 00-interfaces §7·§15·§16): `contract_patch_rejected`는 M7 `C_assume`로 보낸다(00 §15 확정, R7 (ii)·§7-8). DFA 형식 검증(§4.4)을 기간 밖 기초 문헌에 기댄 **잠정 기본**([결정 필요] 4)으로 표시. R3 교체 시점을 M8 commit 창·M9 적용 시점의 단일 기준으로 명시(비가역 판단은 M6 `effect`). `C_assume` 0.5 s·`tilt_max`·`h_lift`는 00 §7 설정 표.
@@ -59,6 +60,25 @@
 |---|---|---|---|---|---|---|
 | **Agentproof** (2603.20356) | LLM 에이전트 워크플로 정적 검증 | 워크플로 그래프를 공통 추상 그래프로 뽑아 구조 검사(막다른 노드, 도달 불가 출구 등) + **7형식 시간 정책 DSL**을 DFA로 컴파일. 7형식은 모두 **본문 DSL 절**에 있다: (1) Forbidden `G !a` (2) Implication-future `a -> F b`(a가 다시 오기 전에 b) (3) Until `a U b` (4) Bounded response `a -> F[<=k] b` (5) Response chain (6) Conjunction (7) Disjunction. 부록 B는 BNF 전체다. 정적 검사는 그래프 × DFA 곱, 실행 중 검사는 사건열 위에서 같은 DFA로. 작성자가 만든 워크플로 18개 중 27%에 구조 결함, 55%에 사람 승인 정책 위반. 정책 15개가 모두 7형식 안에 들어갔고, 5,000 노드까지 1초 미만(초록). 원문 스스로 "유병률 연구가 아니다"라고 한정한다 | LOW (무학회, 인용 10. 저자는 1저자 Luleå 공대 + 독립 연구자 3명 — D4 첫 판의 "독립 연구자"와 "6·7번 형식은 부록 B"는 D4 검증 #6에서 정정) | 2026-03-20, 기간 안 | 예(검증기, 학습 없음) | 아니오 |
 | 명세 패턴 + 런타임 검증 (Dwyer 외 ICSE 1999; LTL → 오토마타 감시, Bauer·Leucker·Schallhart TOSEM 2011) | 형식 검증 | 시간 논리 명세를 소수 패턴으로 제한하고 오토마타로 감시하는 기초 이론 | 기초 문헌(이번 라운드와 D4 검증 모두 원문은 읽지 않음) | **기간 밖, 기초 문헌** | 예 | 로봇 LTL 계획에는 있음. 우리 Jev 계약 검사로 쓴 사례는 확인 못 함 |
+
+### 2.4 API 일관성·재계획 고정 (정본 §28, `D17-api-consistency.md`)
+등급은 D17 조사 기준(user-log 14)을 그대로 옮겼다. 메인이 원문을 다시 확인한 것은 이 표의 2506.09501·2604.24039·2506.14852(그 밖에 2512.03816·2509.01790)뿐이고, 나머지 인용문은 조사 에이전트가 요약 도구로 뽑은 것이라 본문 반영 전 원문 대조가 필요하다(D17 머리). D17 §2의 LOW 12편은 근거로 쓰지 않는다. MED-LOW 보조(2603.19022·2602.04297·2609.19654·2511.02603)도 이 표에 넣지 않았다.
+
+| 이름 | 분야 | 어디서 최고였나 (조건) | 신뢰도 | 기간 | 학습 없이 | 로봇 |
+|---|---|---|---|---|---|---|
+| **Yuan 외** (2506.09501) | LLM 추론 재현성 | "under bfloat16 precision with greedy decoding, a reasoning model like DeepSeek-R1-Distill-Qwen-7B can exhibit up to 9% variation in accuracy and 9,000 tokens difference in response length due to differences in GPU count, type, and evaluation batch size." 추론 모델일수록 심하고 초기 토큰의 반올림 차이가 번져 나간다. 서버 쪽 해결(LayerCast)은 우리가 쓸 수 없다 | HIGH(NeurIPS 2025 Oral — 저자 저장소 README에서 확인, abs에는 표기 없음. HF 20, 코드 118★) | 안(v1 2025-06-11) | — | 아니오 |
+| Atil 외 (2408.04667) | LLM 반복성 | "accuracy variations up to 15% across naturally occurring runs", "none of the LLMs consistently delivers repeatable accuracy across all tasks." 결정적 설정의 반복 불일치 지표 TARr@N/TARa@N | MED(S2 인용 126) | **기간 밖(2024-08-06), 기초 문헌** | — | 아니오 |
+| Messina·Scotta (2604.22411) | LLM 반복성 측정 | T=0의 "background temperature" 추정: 프롬프트마다 T=0으로 M ≥ 50회, exact-match 비율과 K-S 거리. 시범값 gpt-4.1-nano 0.075, gemini-2.0-flash 0.065, claude-sonnet-4 0("identical") | MED(journal-ref TMLR 2026-02, RAI CRITS) | 안(v1 2026-04-24) | — | 아니오 |
+| Bjarnason·Silva·Monperrus (2602.07150) | LLM 에이전트 평가 | "single-run pass@1 estimates vary by 2.2 to 6.0 percentage points". T=0에서도 표준편차 > 1.5pp. 2%p 차이 검출에 약 9회, 1%p면 36회 | MED(KTH, ICLR 2026 Workshop Agents in the Wild, HF 2, 9★) | 안(v1 2026-02-06) | — | 아니오 |
+| ReasonBENCH (2512.07795) | LLM 추론 분산 | "the inter-quartile range at T=0 is comparable to—and in several cells wider than—the range at T=0.7", "Spending more on test-time reasoning reliably increases cost, but buys neither higher quality nor lower variance." 권장 반복 n = 30(최소 n ≥ 9) | MED(Aarhus·EPFL·IIT Delhi, 학회 없음, HF 1) | 안(v1 2025-12-08) | — | 아니오 |
+| Chen·Zaharia·Zou (2307.09009) | 호스트 모델 표류 | "GPT-4 (March 2023) … 84% accuracy … GPT-4 (June 2023) … 51%", "highlighting the need for continuous monitoring of LLMs." | HIGH-기초 | **기간 밖(2023-07-18), 기초 문헌** | — | 아니오 |
+| FormatSpread (Sclar 외, 2310.11324) | 프롬프트 형식 민감도 | "performance differences of up to 76 accuracy points when evaluated using LLaMA-2-13B". 형식 하나가 아니라 여러 형식에 걸친 범위를 보고하라고 권함 | HIGH-기초(ICLR 2024) | **기간 밖, 기초 문헌** | — | 아니오 |
+| Mind the Gap (2509.15020) | 객관식 라벨 토큰화 | 라벨 문자 앞 공백을 어떻게 토큰화하느냐만으로 정답률 최대 11%, 보기 순서를 바꾼 효과보다 큼 | HIGH(EMNLP 2025 Main, HF 4) | 안 | — | 아니오 |
+| Rosenfeld·Glazer·Fetaya (2511.11206) | VQA 안정성 | GPT-4o는 패딩·크롭만으로 인스턴스의 0.08이 답을 바꿨고 섭동 전체로는 0.14. 모든 섭동에 안정한 표본의 정답률 0.91 대 기준 0.78 | MED(Bar-Ilan, 학회 없음, HF 1) | 안(v1 2025-11-14) | — | 아니오 |
+| **The Format Tax** (Lee·D'Antoni·Berg-Kirkpatrick, 2604.03616) | 구조화 출력 | "format-requesting instructions alone cause most of the accuracy loss, before any decoder constraint is applied". 오픈 가중치 평균 −3.9pp, GCD 추가 −1.6pp. 자유 서술 후 2턴째 형식 변환이 72개 비교 중 42개에서 유의하게 나음(평균 +6.8pp), extended thinking 평균 +9.2pp. "most recent closed-weight models show little to no format tax" | MED(UCSD, 학회 없음, HF 0) | 안(v1 2026-04-04) | — | 아니오 |
+| **AgenticCache** (2604.24039) | 체화 에이전트 계획 캐시 | "embodied tasks exhibit strong plan locality, where the next plan is largely predictable from the current one". 예: "go grasp target" 다음이 "put into container"인 경우 59.7%. 성공률 +22%, 지연 −65%, 토큰 −50%. 백그라운드 LLM이 k스텝 뒤 실제 실행 궤적과 비교해 캐시를 검증 | HIGH(MLSys 2026, SNU·Stanford) | 안(v1 2026-04-27) | — | 체화 과제 |
+| **Agentic Plan Caching** (2506.14852) | LLM 에이전트 | 구조화된 계획 템플릿을 저장·적응·재사용해 비용 −50.31%, 지연 −27.28% | HIGH(NeurIPS 2025) | 안(v1 2025-06-17) | — | 아니오 |
+| From Plan to Action (Liu 외, 2604.12147) | LLM 에이전트 궤적 분석 | 궤적 21,120개. "periodic plan reminders can mitigate plan violations". 초반에 모델 전략과 맞지 않는 단계를 넣으면 성능이 떨어짐 | MED-HIGH(UIUC·IBM, ACM DOI 10.1145/3832783.3834400, 학회 이름 미확인) | 안(v1 2026-04-13) | — | 아니오 |
 
 ---
 
@@ -168,7 +188,7 @@ recent committed: approach, approach, align(+x)
 - **R3 교체 시점**: 결정 스텝 경계에서만 교체(M4 FROZEN 구간 안 스텝은 건드리지 않음). `irreversible` 단계 진행 중이면 그 phase 끝까지 기다린다(추론, 안전 쪽). phase가 비가역인지는 M6 `effect`로 읽는다(00 §14-3). **M8 commit 창과 M9의 Astra 계획 적용 시점도 이 R3 하나를 따른다**(D5 2-1). M6 `effect`에서 grasp·lift는 가역(보상 스킬 있음)이므로 "잡기 닫힘~들어올림 시작"을 따로 기다리지 않는다. 그리퍼가 닫히는 순간 자체는 설정 표의 grasp/release 전환 보류(1.0 s)와 결정 스텝 경계 규칙이 보호한다. 기다리는 동안에도 직전 확정 행동 유지 + 감속이며 정지가 아니다. 단계 수준 `irreversible`(Astra)과 M6 phase 수준 `annotations.irreversible_phases`(스킬 작성자)가 두 곳이다 → §7-4 [결정 필요]로 묶음(D2 B7).
 - **R4 낡음 표시**: Jev 조각에 `age`와 `assumptions: all_true` 또는 `<거짓 목록>`을 항상 적는다. 거짓 가정이 있으면 모든 Jev 질문의 `NONE_ESCALATE`가 자연스러운 선택이 되도록 보인다. Jev가 무시해도 코드가 **M7 소프트 채널 `C_assume`**을 올리고 동시에 M8에 재호출 요청 신호를 보낸다(00-interfaces §11.2). FAIL 판정은 M7만 한다(다른 소프트 채널과 겹치면 FAIL, 혼자면 WARN).
 - **R5 순서 뒤바뀜**: 늦게 보낸 요청의 답이 먼저 오면 `based_on_t_state`가 더 새 것만 받는다(Raft term 비유). 같은 기준 시각이면 나중 도착 것.
-- **R6 부분 갱신**: 재계획 때 Astra가 전체 계약 대신 `patch`(바꿀 단계만, `parent_version` 명시)를 낼 수 있다. 검사기는 patch 적용 결과를 전체 검사. 목적: Astra 출력 토큰·지연 감소(추론, 측정 필요).
+- **R6 부분 갱신**: 재계획 때 Astra가 전체 계약 대신 `patch`(바꿀 단계만, `parent_version` 명시)를 낼 수 있다. 검사기는 patch 적용 결과를 전체 검사. 목적: Astra 출력 토큰·지연 감소(추론, 측정 필요). (정본 §28 A4) 실행 중 재계획의 **잠정 기본** 출력으로 승격했다 — 입력·`change_reason`·실행한 단계 변경 금지·편집 거리 기록은 §4.5 A4. 전체 계약 재요청은 예외·비교 조건으로 남는다(E-M2-3 추가 판정 (2)).
 - **R7 실행 중 patch는 검사만** (00-interfaces §14-4): 실행 중 재계획으로 온 patch(또는 전체 계약)는 적용 결과에 검사기 1~6을 돌린다. 하나라도 실패하면 (i) patch를 **거부**한다. 활성 계약과 M4 `premise_epoch`는 그대로다. (ii) M7에 `contract_patch_rejected` 사건 신호를 보낸다. 이 사건은 M7 소프트 채널 **`C_assume`**로 센다(00 §15, 확정. 새 채널을 만들지 않는다). (iii) 로봇은 멈추지 않는다. 직전 확정 행동을 유지하며 현재 계약으로 계속 간다. 오류 문장은 로그와, M8이 정한 다음 Astra 호출의 입력에 싣는다. 이 patch를 고치려고 따로 왕복하지는 않는다.
 
 ### 4.3 대안
@@ -194,6 +214,15 @@ recent committed: approach, approach, align(+x)
   - 감시기는 **신호만** 낸다. FAIL은 M7만 내고 정지는 M7 FAIL을 거친다(00-interfaces §4).
 - 한정 응답 `a -> F[<=k] b`는 M8 T3a "예상 시간 마감"과 모양이 같다. **표기만 공유**하고 마감 판정의 소유(M7 마감 채널, M8 T3a)는 바꾸지 않는다.
 - 옮길 때 깨지는 가정: 원문은 사람이 쓴 워크플로의 이산 사건이다. 우리 사건은 술어 전이라 인식 잡음이 섞이므로, T2 술어에는 지금 규칙대로 지속 시간 조건을 둔다. 7형식이 Astra가 쓰고 싶은 제약을 다 담는지는 모른다 → E-M2-3에서 "패턴 밖 제약 비율"을 잰다.
+
+### 4.5 Astra 일관성 규약 A1~A6 (정본 §28, D17)
+전제(정본 §28): API 모델은 temperature 0·seed로 결정성을 얻을 수 없다(추론 모델은 greedy에서도 정확도 최대 9% 변동 — 2506.09501, NeurIPS 2025 Oral). 효과 크기가 작은 비교는 반복 실행이 필요하다(2%p 차이 검출에 약 9회 — 2602.07150, MED). effort를 올려도 분산이 준다는 보장은 없다(2512.07795, MED) → 사용자 결정 "effort 기본 low, low·high 비교"는 그대로 두고 비교 때 분산도 보고한다.
+- **A1 템플릿 고정**: `astra_prompt_id` = 해시(시스템 문장 + 계약 스키마 + 스킬 카드 + 술어 어휘 + 예시 계약 + 격자 렌더러 판본). 실험 도중 불변, 판본은 실험 사이에만 올린다. 매 호출 기록. 모델은 날짜 박힌 스냅샷 ID(가능하면, 별칭 대신), 응답의 모델 식별 필드를 기록한다([가정]: 필드 유무 미확인).
+- **A2 입력 정규화**: 물체 id 순, 술어는 등록부 순, 숫자 고정 자릿수, 시각은 상대 범주. 격자 이미지(M8 §4.3)는 배치·해상도·패딩·덧그림 글꼴을 바이트 단위로 고정하고 프레임은 시간순. 정적 부분(시스템·스키마·카드)을 앞, 동적 부분(상태·프레임·실패 문맥)을 뒤에 둔다. 근거: 형식 민감도 FormatSpread(기간 밖 기초 문헌), 라벨 앞 공백만으로 최대 11%(2509.15020, EMNLP 2025), 패딩·크롭만으로 답이 바뀜(2511.11206, MED). §1 입력 표의 M1 상태 텍스트는 M1 직렬화기 정규화(정본 §28 J2)를 그대로 쓴다.
+- **A3 출력**: 계약 JSON(§4.1) + 검사기 1–6 유지. "자유 계획 → 2턴 스키마 변환"은 E-M2-3 첫 시도 통과율 < 80%일 때만 비교 조건으로 넣는다(Format Tax 2604.03616, MED: 최근 폐쇄 모델은 형식 손실이 거의 없음).
+- **A4 재계획 고정(잠정 기본, R6 승격)**: T0 이후 재계획은 활성 계약 + `based_on` 이후 변한 사실 목록 + 이미 VERIFIED·EXECUTING 단계를 입력으로 받고, 기본 출력은 `patch`다. 바꾸는 단계마다 근거 변화 사실 id(`change_reason`)를 붙이고, 이미 실행한 단계는 변경 금지, 편집 거리(바뀐 단계 수)를 기록한다. patch 적용 결과의 검사·거부는 R7 그대로. 근거: 체화 과제의 계획 지역성(AgenticCache 2604.24039, MLSys 2026), 계획 템플릿 재사용(2506.14852, NeurIPS 2025). 계약 요약을 Jev 조각에 계속 싣는 지금 설계(§4.1 조각)는 "periodic plan reminders"(2604.12147, MED-HIGH)와 같은 방향이다. 사용자 원칙("실패할 때마다 Astra 개입")은 그대로 — 부르는 방식이 아니라 받는 형식의 규칙이다.
+- **A5 투표(잠정 기본)**: T0(정지 허용)에서만 effort low로 K = 3 병렬 호출하고, 계획 서명(단계 스킬 열 + 결정 지점 id + 물체 역할) 다수결로 고른다. 셋 다 다르면 검사기 통과 첫 번째 + `plan_unstable` 기록(추가 호출 없음). 비정지 호출(T_fail·T3)은 K = 1(지연을 늘리지 않음, 오류는 검사기·M4 (b)가 잡음). effort high 조건에서는 투표 안 함. K = 3은 설계 선택([가정])이고 E0 Astra 반복 결과로 확정한다(E 문서 §2). 같은 관측 반복은 분산만 줄이고 증거를 늘리지 않는다(PACT, 정본 §24). 호출 쪽 규칙은 M8 §4.2.
+- **A6 재현 기록**: 요청 원문(이미지 바이트 해시 + 원본), `astra_prompt_id`, 모델 ID, effort, 최대 토큰, 사용량, 첫 토큰·완료 시각, 원응답, 검사기 결과, 계획 서명, patch 편집 거리.
 
 ---
 
@@ -227,6 +256,7 @@ recent committed: approach, approach, align(+x)
 - (§25 D13) **`forbidden` 과차단률**: 정상 성공 에피소드 중 `forbidden` DFA가 거부 상태에 들어간 에피소드의 비율(에피소드 단위). AgentSpec 원문의 과차단 사례(pour 전면 금지)가 근거. 판정 후보([제안]): 과차단률 > 5%이면 `enforce: fail` 규칙을 `escalate`로 낮추는 규칙을 검토한다.
 - 추가 측정(00-interfaces §14-4): T0 수리 왕복 횟수와 왕복 뒤 통과율, 구조 검사(검사기 5) 실패 유형, **패턴 밖 제약 비율**(검사기 6 거부 중 7형식으로 못 쓴 것), 실행 중 patch 거부율(R7)과 거부 뒤 M7 FAIL로 이어진 수. 오프라인 재생에서는 DFA 감시기와 기존 술어별 감시의 경보가 얼마나 일치하는지도 본다.
 - 추가 판정([제안], 실행 전 고정): (1) 패턴 밖 제약 비율이 10%를 넘으면 허용 패턴 확장을 [결정 필요: 메인 세션]으로 올린다. (2) 실행 중 patch 거부율이 10%를 넘으면 E-M2-2에 "patch 대신 전체 계약 재요청" 조건을 더한다. (3) 오프라인 재생에서 DFA 감시와 기존 감시의 경보 불일치가 1%를 넘으면 원인을 나눠 보고한다(컴파일 오류 대 표기 차이).
+- (정본 §28) 추가 측정: patch 편집 거리 분포, `change_reason` 없는 변경 수, 이미 실행한 단계를 바꾸려 한 patch 수, T0 투표의 계획 서명 일치율과 `plan_unstable` 비율, `astra_prompt_id`·모델 ID별로 나눈 통과율. 추가 조건: 첫 시도 통과율 < 80%일 때만 "자유 계획 → 2턴 스키마 변환"을 비교 조건으로 넣는다(A3). Astra 조건 사이 비교는 반복 실행 수와 검정력 계산을 사전 등록한다(2%p 검출에 약 9회 기준, 정본 §28). 단일 실행 비교로 결론 내지 않는다.
 
 ---
 
@@ -240,13 +270,14 @@ recent committed: approach, approach, align(+x)
 7. **Slow Brain식 융합(F)이 더 단순하고 더 나을 수 있다**. 선행이므로 반드시 비교 조건으로 둔다.
 8. 계약·사전·사후조건 문헌 다수가 LOW(2608.02645, 2602.22302 등). "계약 형식이 실행기를 좋게 한다"를 HIGH 근거로 말할 수 없다(v3/14 결론 유지). HIGH 근거는 AgentSpec(집행 쪽)과 Code-as-Monitor(감시 쪽, 기간 밖)뿐이다. 그 AgentSpec도 LLM(o1)이 규칙을 쓰면 체화 "recall" 70.96%다. (§25 D13 정정) 이 값은 안전 짝 사례로 낸 것이고 원문 정의가 모호하며 놓침과 과차단을 함께 설명한다(처음 보는 위험 사례 집행률은 95.56%). "위험의 약 3할을 놓친다"로 읽지 않는다. Astra가 쓴 `forbidden`은 놓침과 **과차단**을 둘 다 낼 수 있다고 보고 설계한다(E-M2-3 과차단률).
 9. **DFA 감시·수리 왕복의 근거 등급** (00-interfaces §14-4·§15): 기간 안 사례 Agentproof는 LOW다(무학회, 작성자 제작 워크플로 18개, 유병률 연구 아님). 설계의 주축은 기간 밖 기초 문헌(명세 패턴, 런타임 검증)이고 이번에 원문을 읽지 않았다. LLM 계획기에 검사 오류를 되먹이면 통과율이 오른다는 기간 안 로봇 수치는 없다. 패턴을 7형식으로 제한하면 Astra가 쓸 수 있는 제약의 표현력이 줄어든다. 실행 중 patch를 거부하면 낡은 계약으로 계속 가게 되는데, 이 위험은 R4(`C_assume`)와 M7이 막는다.
+10. **A4·A5 근거의 한계** (정본 §28): AgenticCache·APC는 계획 캐시·템플릿 재사용 연구라 "patch 고정이 계획 품질을 올린다"는 직접 근거가 아니다 [우리 판단]. patch 고정은 첫 계획의 잘못을 끌고 갈 수 있다(바꾸려면 `change_reason`이 필요하므로, [우리 추론]) → E-M2-2·E-M2-3에서 편집 거리와 성공률을 함께 본다. K = 3, 계획 서명 정의는 논문 값이 아니라 설계 선택([가정])이고 E0 Astra 반복으로 확정한다. Astra에 seed·응답 식별 필드·prompt caching이 있는지는 확인하지 못했다(D17 §6) — 어느 경우든 temperature 0이나 seed로 결정성을 얻을 수 없다는 전제는 유지한다.
 
 ## 7. 열린 질문, [결정 필요]
 1. 해소(정본 §26, user-log 25): M1 기본 = 후보 A가 M2 술어 칸을 정한다(E3 결과로 B·C로 바뀔 수 있음, M1 §7-1).
 2. [결정 필요] `rationale`(Astra 자유 서술)을 Jev에 줄지 — E-M2-1 판정 1로 정하자는 제안.
 3. 해소(00-interfaces §11.1, D2 B1): 결정 지점 id는 M6 스킬 계약에 고정된 id가 정본이다. Astra는 골라 쓰고 인자만 채운다. M10 규칙 키도 이 id.
 4. [결정 필요] 되돌릴 수 없음을 누가 정하나: 계약의 단계 수준 `irreversible`(Astra) / M6 phase 수준 `annotations.irreversible_phases`(스킬 작성자) / 사용자 목록(M8 T2 순간, M8 §7과 같은 질문). D2 B7에 따라 M6 §7의 같은 질문과 **한 [결정 필요]로 묶는다**. 어느 안이든 코드 안전 규칙이 최종이다.
-5. 열린 질문: 재계획 때 patch 대 전체 계약 — Astra 출력 지연 측정 뒤 결정.
+5. 잠정 기본(정본 §28 A4, Claude 설계 선택): 재계획 때 기본 출력 = `patch`(R6 승격, §4.5). 전체 계약 재요청은 예외·비교 조건으로 남고(E-M2-3 추가 판정 (2)), Astra 출력 지연·편집 거리 측정 뒤 다시 본다. 사용자 원칙은 바뀌지 않는다.
 6. 해소(00-interfaces §11.2, D2 B6): 계약 버전 교체 = M4 `premise_epoch` +1.
 7. 열린 질문: `custom_predicates` 허용 DSL의 범위(거리·각도·포함·접촉·속도). 너무 넓으면 검사·안전 문제, 너무 좁으면 Code-as-Monitor 이득을 잃는다.
 8. 해소(00-interfaces §14-4, D4 §14-4): 계약 정적 검사 실패 시 수리 왕복은 **T0에서만** 허용한다. 실행 중 재계획 patch는 검사만 하고, 실패하면 거부 + M7 신호를 보내며 로봇은 멈추지 않는다(R7). `forbidden`·순서 제약은 DFA로 컴파일해 H5·`C_assume` 감시를 통일한다(§4.4). 메인 세션의 잠정 결정(기술 선택)이며 E-M2-3으로 검증한다. `contract_patch_rejected`는 `C_assume`로 센다(00 §15). DFA 형식 검증은 기간 밖 기초 문헌(명세 패턴·런타임 검증)에 기대므로 [결정 필요] 4 승인 전까지 잠정 기본이다(00 §16).
@@ -261,3 +292,4 @@ recent committed: approach, approach, align(+x)
 - Astra가 이 스키마로 구조화 출력을 낼 때의 지연·통과율(미측정, E-M2-3).
 - 명세 패턴(Dwyer 외 ICSE 1999)·런타임 검증(Bauer·Leucker·Schallhart TOSEM 2011) 원문: 이번 라운드와 D4 검증 모두 읽지 않았다. Agentproof 7형식·저자 구성은 D4 검증 #6의 본문 확인에 기댄다. 이번에 다시 읽지 않았다.
 - LLM 계획기에 형식 검증 오류를 되먹이는 수리 왕복의 로봇 사례(기간 안): 이번에 따로 검색하지 않았다. 부재 주장 안 함.
+- (정본 §28, D17) §2.4 인용문 중 메인이 원문을 다시 확인한 것은 2506.09501·2604.24039·2506.14852뿐이다. 나머지는 요약 도구 추출이라 원문 PDF 대조가 남았다. 인용 수는 Atil(126) 말고는 미확인(Semantic Scholar 429). Astra API의 seed·응답 식별 필드·prompt caching 유무 미확인.
