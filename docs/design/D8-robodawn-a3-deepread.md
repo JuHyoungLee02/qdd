@@ -1,5 +1,7 @@
 # D8 RoboDawn(2609.22966)·A3(2605.11567) 원문 정독 요약
 
+> 정정 2026-09-24 04:54 UTC (D16 W1): 아래 원 보고의 "Astra RoboDojo 자체 평가 28.97/22.58"과 "자체 평가 22.58%"는 원문 값이 아니다. 원문(2609.24170)은 "22.48% average success rate and 28.97 Score"(표 1도 28.97/22.48)이고, 22.58은 RoboDawn Table 4(2609.22966)가 옮겨 적은 2차 인용 값이다. 원 보고 문장은 기록으로 두고 고치지 않는다.
+
 작성: 2026-09-24 00:20 UTC. (00:25 보강: 요약 때 빠뜨린 C2R 7개 항목·시드 제공 범위·턴 45·Table 4 값 형식을 원 보고에서 되살림.) 정독 에이전트(두 논문 HTML 전문 + 부록, RoboDawn 프로젝트 페이지·GitHub Hugo-AGI/RoboDawn 코드, A3 프로젝트 페이지·GitHub INCEPTIONwang/A3 코드) 보고를 메인 세션이 요약·저장. 메인 세션 원문 재확인: RoboDawn 절제 "Removing reasoning … 47.0% to 34.8% … removing grid-based localization … 32.4%", §3.2 "executed until the robot reaches a stationary state"; A3 §6 "all verification signals are derived from the underlying policy, A3 cannot identify confidently incorrect predictions … Incorporating explicit world models or independently learned state-transition predictors could complement self-consistency with external evidence".
 
 ## RoboDawn (Tsinghua·Tencent Hunyuan, 2026-09-19, 코드 09-22 공개)
