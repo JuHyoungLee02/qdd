@@ -35,7 +35,7 @@
 - **03:37 뒤 연장·추가 작업(05:03 UTC 기준)**: user-log 26–31.
   - Overleaf: `paper/main.tex`는 논문형 글(16쪽), 그림 5장(`paper/figures/`, 스크립트 `figures/src/make_figs.py`, 실행 `MPLCONFIGDIR=D:/tools/mplcache PYTHONPATH=D:/tools/pylib`), 마인드맵은 `paper/mindmap.tex`(빨간 줄 36, `tools/intent_check.py`).
   - 점검: D15(오류)·D16(자료·신뢰도, bib 39편 서지 확인) 반영. 22.58 → 원문 22.48 등.
-  - API 일관성: 정본 §28(Astra A1–A6, Jev J1–J4, E0 반복·매일 카나리). §29 다수결(A5) 보류. §30 D18 결과 — **사용자 결정 대기 3개**: A5′ 검사→수리, A4 적응형 patch|replace, J5 Jev conformal 게이트.
+  - API 일관성: 정본 §28(Astra A1–A6, Jev J1–J4, E0 반복·매일 카나리). §29 다수결(A5) 보류. §30 D18 결과 — 3개는 §31에서 결정됨(user-log 32, Claude 결정·근거 포함): A5′ 검사→수리(다수결 삭제), A4′ 적응형 patch|replace, J5 Jev conformal 게이트(E1 뒤). 설계 문서·논문 반영 완료(05:24 UTC).
   - 규칙 위반 1건 발견·수정: C 드라이브 사용 → 임시 파일은 `D:\tools\scratch_qdd`만.
 - 다음(제안, 사용자 지시 대기): 단계 3 첫 실험 E0·E0.5(같은 날) → E1 → E2a, 병행 EVAL S0·S1. 남은 사용자 결정은 SUMMARY §5.1 "나중" 묶음과 실물 실험(D30). E0 전 할 일: R1 금지어 보기 이름 교체(정본 §27 끝).
 - D10에서 바뀐 것: M7 "적시 재현율(CheckVLA 방식)"은 원문 정의가 아니었음 → 고정 창판(판정 기준) + 원문판(병기). E-M8a에 원문 충실 기준 A2-CV·A1-cal·A1-wait·A6-CiL-sync. RPent Astra 92.63%는 논문 아닌 리더보드 값(8칸 T/S, 메모리 두 묶음, 에피소드당 412 s 정지형). 반대 증거 둘: CheckVLA d_lat = 10에서 경계 대기가 청크 안 수리보다 나음, CaP-X 검증 강화 프롬프트 68.29 → 65.43.
