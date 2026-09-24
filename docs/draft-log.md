@@ -316,3 +316,5 @@
 - 23:55 UTC D7 선점 재검사(검색어 43개 + cs.RO new + GitHub). 메인 원문 확인: A3(2605.11567) 초록 "trajectory-wise consensus … self-speculative prefix verification", RoboDawn(2609.22966) "53.2% zero-shot to 73.6% one-shot, exceeding … π0.5 (46.0%)", RoboDojo 35.67→47.17%. → 정본 §18, plan v5.6 §9, Overleaf related 갱신. M4 새로움은 (a)+(b) 결합으로 더 좁힘, 평가 "처음" 문구 금지, C5-A3 조건, RoboTwin C2R 선택지.
 - 교훈: 선점 검색은 한 번으로 끝나지 않는다. 이 분야는 주 단위로 새 논문이 나온다(RoboDawn은 9/19). 또 이전 검색이 5월 논문(A3)을 놓쳤다 — "consensus AND action chunk" 같은 방법 용어로도 검색한다.
 - 00:08 UTC 정본 §18을 M4·E-first·EVAL에 반영(새로움 문장, A3 선행 표, C5-A3 + 판정 17, E2a 반례 인용 + 모호함 보류 조건 P5 신설[에이전트 제안, 채택], 평가 "처음" 금지 규칙, RoboDawn·LIBERO-VPro·RoboFollow, RoboTwin 2.0 C2R 후보 §2.5b). 메인 확인: [사용자] 줄 삭제 0.
+- 00:14 UTC D8 RoboDawn·A3 정독(본문·부록·코드). 메인 원문 재확인 2건(RoboDawn 격자 절제 32.4, 정지형 실행 / A3 §6 외부 증거 향후 과제). 정본 §19, plan v5.7 §10, `D8-robodawn-a3-deepread.md`. 정정: EVAL N11 "RoboDawn VLM은 원본 이미지" → 하네스 주석 카메라·계획기 실행(같은 인식 아님).
+- 교훈: 초록 수준 선점 판단(D7)은 "우리와 같은가"를 과대평가하기 쉽다. 가장 가까운 선행은 본문·코드까지 읽어야 실제 차이(A3 §6의 향후 과제, RoboDawn의 하네스 특권)가 보인다.
