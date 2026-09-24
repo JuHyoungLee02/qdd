@@ -425,3 +425,4 @@
 - 18:34 UTC 일반화·이미지 절제(파이프라인 시험, §56): SFT standard 0.930 / random 0.931 / dr 0.932 — 낙폭 없음(외관을 거의 안 씀), 이미지 기여 +0.010(학습 분포 문제로 해석 제한). 새 문제: VLLM_BATCH_INVARIANT=1이어도 서버 세션 간 비트 비재현(max |Δp| 0.185 영점·0.091 SFT) → 원인 조사 과제로 등록(M4 재현성·로그).
 - 18:47 UTC user-log 65: 주 표 병기 유지(정리 뒤 융합), M4 (b)·critic 측정원 필수 해결 → 정본 §60, 조사 D28 착수.
 - 19:02 UTC R5 폐루프 통과(파이프라인 시험, §56): SFT 결정층 DEV 0 P0 한 판 Inspect Robots eval 성공(16.8 s, 결정 3/s, p95 0.293 s, 확정 0.80, 실제 Astra 하트비트 2회), 영점은 실패(같은 답 반복 — §53과 같은 모양), 모의 판 결정성 비트 일치. 고친 결함: 종료 멈춤, 정답-계획기 잡기 기준 불일치, M4 활성 잠김(DEVIATE 반복 → 측정 TCP로 기준 재설정). 지연 설계 = 결정 vLLM lead + 행동 HF 서버(약 120 ms). 규칙 위반 발견·수정: 로컬 pytest 기본 임시 폴더가 C(AppData\Temp\pytest-of-USER, 600 KB)였다 → pytest.ini에 --basetemp=D:/tools/scratch_qdd/pytest_tmp, C 폴더 삭제. 교훈: 도구의 기본 임시 경로도 D 규칙 점검 대상.
+- 19:03 UTC D28 도착·메인 재확인 3건 → 정본 §61: 로봇 쪽 = 고유 감각 T1, 세계 쪽 = 같은 백본 확인 헤드 T2, E-M4b-meas 사전 등록 시험 착수(FI-DEV 생성 GPU 1, 확인 헤드 학습 GPU 2).
