@@ -106,7 +106,7 @@ def icon_cloud(ax, x, y, s=1.0, fc="#FFFFFF", ec="#E08A3C"):
         ax.add_patch(Circle((x + dx * s, y + dy * s), r * s, fc=fc, ec=ec, lw=1.0))
     ax.add_patch(Rectangle((x - 0.10 * s, y - 0.08 * s), 0.21 * s, 0.08 * s, fc=fc, ec="none", zorder=3))
     ax.plot([x - 0.18 * s, x + 0.19 * s], [y - 0.08 * s, y - 0.08 * s], color=ec, lw=1.0, zorder=4)
-    ax.text(x, y - 0.015 * s, "API", ha="center", va="center", fontsize=5.5 * s, color=ec, zorder=5, fontweight="bold")
+    ax.text(x, y - 0.015 * s, "API", ha="center", va="center", fontsize=6.3, color=ec, zorder=5, fontweight="bold")
 
 
 def icon_grid(ax, x, y, w, h, nx=5, ny=2, c="#9A9A9A"):
@@ -153,62 +153,75 @@ def save(fig, name):
 
 
 # ================================================================ Fig 1: overview (teaser)
-def fig_overview():
-    W, H = FULL_W, 2.9
-    fig, ax = canvas(W, H)
-    container(ax, 1.05, 0.08, 5.02, 2.76, "Harvest")
+PAL["rule"] = ("#ECECEC", "#6F6F6F")    # M4 commit rule (code) -- neutral, not a failure color
+PAL["fix"] = ("#F3E6DA", "#9C6B45")     # replace / repair (not failure)
 
-    # inputs (left)
-    rbox(ax, 0.02, 1.95, 0.92, 0.5, "gray", "“{과제}”", fs=9)
-    ax.text(0.48, 1.84, "사용자 명령", ha="center", va="top", fontsize=6.8, color="#444")
+
+def tag(ax, x, y, s):
+    """module tag on a box corner (replaces bare numbers; paper uses M-numbers)"""
+    w = 0.075 * len(s) + 0.06
+    ax.add_patch(FancyBboxPatch((x - w / 2, y - 0.07), w, 0.14, boxstyle="round,pad=0,rounding_size=0.07",
+                                fc="white", ec="#555555", lw=0.8, zorder=5))
+    ax.text(x, y - 0.003, s, ha="center", va="center", fontsize=6.3, color="#333", zorder=6)
+
+
+def fig_overview():
+    W, H = FULL_W, 2.95
+    fig, ax = canvas(W, H)
+    container(ax, 1.05, 0.08, 5.02, 2.84, "Harvest")
+
+    # inputs
+    rbox(ax, 0.02, 1.98, 0.92, 0.5, "gray", "“{과제}”", fs=9)
+    ax.text(0.48, 1.87, "사용자 명령", ha="center", va="top", fontsize=6.8, color="#444")
     icon_scene(ax, 0.1, 0.62, 0.76, 0.56, "std")
     ax.text(0.48, 0.55, "카메라 관측", ha="center", va="top", fontsize=6.8, color="#444")
 
     # slow layer
-    rbox(ax, 1.55, 1.95, 1.55, 0.62, "astra", "Astra", fs=11, sub="느린 계획기 · effort 기본 low", sfs=6.3)
-    icon_cloud(ax, 1.78, 2.40, s=0.9)
-    num(ax, 1.55, 2.57, 1)
-    icon_doc(ax, 3.35, 1.98, 0.36, 0.48)
-    ax.text(3.53, 2.50, "세션 계약", ha="center", va="bottom", fontsize=6.8, color="#444")
-    rbox(ax, 4.05, 1.98, 1.25, 0.5, "mem", "경험", fs=9.5, sub="검증된 교훈·규칙만", sfs=6.1)
-    num(ax, 4.05, 2.48, 6)
+    rbox(ax, 1.55, 1.98, 1.55, 0.62, "astra", "Astra", fs=11, sub="느린 계획기 · effort 기본 low", sfs=6.3)
+    icon_cloud(ax, 1.78, 2.43, s=0.9)
+    tag(ax, 1.62, 2.60, "M8")
+    icon_doc(ax, 3.35, 2.01, 0.36, 0.48)
+    ax.text(3.53, 2.53, "세션 계약", ha="center", va="bottom", fontsize=6.8, color="#444")
+    tag(ax, 3.86, 2.08, "M2")
+    rbox(ax, 4.20, 2.01, 1.20, 0.5, "mem", "경험", fs=9.5, sub="Astra: 교훈 · Jev: 규칙 0–2줄", sfs=5.9)
+    tag(ax, 4.27, 2.51, "M10")
 
     # fast layer
-    rbox(ax, 1.20, 0.55, 1.0, 0.72, "perc", "텍스트 상태", fs=8.5, sub="술어 등록부\n물체 ID 술어 표", sfs=6.0)
-    num(ax, 1.20, 1.27, 2)
-    rbox(ax, 2.45, 0.55, 1.20, 0.72, "jev", "Jev", fs=11, sub="typed 객관식 · 약 3 Hz", sfs=6.3)
-    for k in range(3):
-        pill(ax, 2.60 + k * 0.32, 1.10, 0.26, 0.11, "jev")
-    num(ax, 2.45, 1.27, 3)
-    rbox(ax, 3.90, 0.55, 1.05, 0.72, "jev", "확정 규칙", fs=9, sub="(a) 합의 + (b) 예상 대 측정", sfs=5.7)
-    num(ax, 3.90, 1.27, 4)
+    rbox(ax, 1.20, 0.55, 1.0, 0.72, "perc", "인식 → 텍스트", fs=8.2, sub="술어 등록부\n물체 ID 술어 표", sfs=6.0)
+    tag(ax, 1.28, 1.27, "M1")
+    rbox(ax, 2.45, 0.55, 1.20, 0.72, "jev", "Jev", fs=11, sub="typed 객관식 · 약 3 Hz\n겹친 호출", sfs=6.1)
+    tag(ax, 2.54, 1.27, "M3·M6")
+    rbox(ax, 3.90, 0.55, 1.05, 0.72, "rule", "확정 규칙", fs=9, sub="(a) 합의 + (b) 예상 대 측정", sfs=5.7)
+    tag(ax, 3.97, 1.27, "M4")
     rbox(ax, 5.15, 0.55, 0.78, 0.72, "skill", "스킬", fs=9.5, sub="100 Hz", sfs=6.3)
+    tag(ax, 5.22, 1.27, "M5")
     rbox(ax, 5.15, 1.45, 0.78, 0.36, "crit", "코드 critic", fs=7.2)
-    num(ax, 5.15, 1.81, 5)
+    tag(ax, 5.22, 1.81, "M7")
 
     # output
     icon_robot(ax, 6.40, 0.62, s=1.1)
     ax.text(6.47, 0.52, "로봇", ha="center", va="top", fontsize=6.8, color="#444")
 
     # arrows
-    arr(ax, [(0.94, 2.2), (1.55, 2.2)])
+    arr(ax, [(0.94, 2.23), (1.55, 2.23)])
     arr(ax, [(0.86, 0.9), (1.20, 0.9)])
-    arr(ax, [(3.10, 2.22), (3.35, 2.22)])
-    arr(ax, [(3.53, 1.98), (3.53, 1.62), (3.05, 1.62), (3.05, 1.27)])
-    ax.text(3.10, 1.44, "현재 단계 조각", fontsize=6.0, color="#555", va="center", ha="left")
-    arr(ax, [(4.05, 2.23), (3.71, 2.23)])
+    arr(ax, [(3.10, 2.25), (3.35, 2.25)])
+    arr(ax, [(3.53, 2.01), (3.53, 1.64), (3.05, 1.64), (3.05, 1.27)])
+    ax.text(3.10, 1.46, "현재 단계 조각", fontsize=6.0, color="#555", va="center", ha="left")
+    arr(ax, [(4.80, 2.51), (4.80, 2.70), (2.70, 2.70), (2.70, 2.60)], color=PAL["mem"][1])
+    ax.text(3.75, 2.73, "교훈 · 사례", fontsize=5.9, color=PAL["mem"][1], ha="center", va="bottom")
     arr(ax, [(2.20, 0.91), (2.45, 0.91)])
     arr(ax, [(3.65, 0.91), (3.90, 0.91)])
     arr(ax, [(4.95, 0.91), (5.15, 0.91)])
     arr(ax, [(5.93, 0.91), (6.28, 0.91)])
     arr(ax, [(5.54, 1.27), (5.54, 1.45)])
-    # failure -> Astra (async)
-    arr(ax, [(5.54, 1.81), (5.54, 1.92), (2.60, 1.92), (2.60, 1.95)], color=PAL["crit"][1], lw=1.2, ls=(0, (3, 2)))
-    ax.text(4.55, 1.87, "실패 → Astra 비동기 호출", fontsize=6.2, color=PAL["crit"][1],
+    # failure -> Astra (async) with multi-frame grid; lower layers recover meanwhile (M9)
+    arr(ax, [(5.54, 1.81), (5.54, 1.90), (2.00, 1.90), (2.00, 1.98)], color=PAL["crit"][1], lw=1.2, ls=(0, (3, 2)))
+    ax.text(4.38, 1.86, "실패 → Astra 호출 + M9 복구", fontsize=6.1, color=PAL["crit"][1],
             ha="center", va="top")
-    icon_grid(ax, 1.62, 1.50, 0.55, 0.22)
-    ax.text(1.895, 1.46, "연속 프레임 (10장 격자)", fontsize=5.6, color="#555", ha="center", va="top")
-    arr(ax, [(1.895, 1.72), (1.895, 1.95)])
+    icon_grid(ax, 1.42, 1.50, 0.50, 0.21)
+    ax.text(1.67, 1.46, "실패 시 연속 프레임\n(10장 격자)", fontsize=5.7, color="#555", ha="center", va="top")
+    arr(ax, [(1.67, 1.71), (1.67, 1.98)])
     save(fig, "overview")
 
 
@@ -216,60 +229,63 @@ def fig_overview():
 def fig_m4():
     W, H = FULL_W, 2.55
     fig, ax = canvas(W, H)
-    # (left) staggered calls on a time axis
-    x0, y0, sx = 0.35, 0.55, 1.05  # 1 s = 1.05 in
-    ax.plot([x0, x0 + 2.0 * sx], [y0 - 0.12, y0 - 0.12], color="#777", lw=0.9)
+    # (a) staggered calls on a time axis (bar length is illustrative; latency is measured in E0)
+    x0, y0, sx = 0.35, 0.60, 1.05
+    ax.plot([x0, x0 + 1.95 * sx], [y0 - 0.12, y0 - 0.12], color="#777", lw=0.9)
     for t in [0, 0.5, 1.0, 1.5]:
         ax.plot([x0 + t * sx] * 2, [y0 - 0.15, y0 - 0.09], color="#777", lw=0.9)
         ax.text(x0 + t * sx, y0 - 0.2, f"{t:g}", ha="center", va="top", fontsize=6, color="#555")
-    ax.text(x0 + 1.0 * sx, y0 - 0.36, "시간 (s)", ha="center", va="top", fontsize=6.3, color="#555")
-    lat = 0.45
-    for i in range(5):
-        t0 = i * 0.33
-        pill(ax, x0 + t0 * sx, y0 + i * 0.28, lat * sx, 0.19, "jev", f"호출 {i+1}", fs=6.2)
-    ax.annotate("", xy=(x0 + 0.33 * sx, y0 - 0.03), xytext=(x0, y0 - 0.03),
+    ax.text(x0 + 0.95 * sx, y0 - 0.36, "시간 (s)", ha="center", va="top", fontsize=6.3, color="#555")
+    for i in range(4):
+        pill(ax, x0 + i * 0.33 * sx, y0 + i * 0.30, 0.45 * sx, 0.20, "jev", f"호출 {i+1}", fs=6.2)
+    ax.annotate("", xy=(x0 + 0.33 * sx, y0 + 1.30), xytext=(x0, y0 + 1.30),
                 arrowprops=dict(arrowstyle="<->", lw=0.8, color="#555"))
-    ax.text(x0 + 0.38 * sx, y0 - 0.03, "0.33 s", ha="left", va="center", fontsize=6.0, color="#444")
+    ax.text(x0 + 0.38 * sx, y0 + 1.30, "간격 0.33 s", ha="left", va="center", fontsize=6.0, color="#444")
     ax.text(x0, H - 0.12, "(a) 1초에 약 3번 겹쳐 호출", fontsize=8, va="top", color=TXT, fontweight="bold")
 
-    # (middle) vote table: future steps x calls, regions
-    tx, ty, cw, chh = 2.95, 0.55, 0.30, 0.26
-    votes = [["A", "A", "A", "B", "B", "B", "C", "C"],
-             ["A", "A", "A", "B", "B", "C", "C", "C"],
-             ["",  "A", "A", "B", "B", "B", "C", "D"],
-             ["",  "",  "A", "B", "B", "B", "C", "C"]]
-    reg = ["fix"] * 2 + ["mid"] * 4 + ["tail"] * 2
+    # (b) ledger: call i answers H=3 future steps (t+i-1 .. t+i+1); staircase
+    tx, ty, cw, chh = 2.95, 0.60, 0.33, 0.27
+    nsteps, ncalls, Hs = 6, 4, 3
+    votes = {0: "AAA", 1: "AAB", 2: "ABB", 3: "BBC"}
+    zone = ["fix", "fix", "mid", "mid", "mid", "tail"]
     fcol = {"fix": "#E4E4E4", "mid": PAL["jev"][0], "tail": "#FFFFFF"}
-    for i, row in enumerate(votes):
-        for j, v in enumerate(row):
-            ax.add_patch(Rectangle((tx + j * cw, ty + (3 - i) * chh), cw, chh, fc=fcol[reg[j]], ec="#B5B5B5", lw=0.6))
-            if v:
-                ax.text(tx + j * cw + cw / 2, ty + (3 - i) * chh + chh / 2, v, ha="center", va="center", fontsize=7)
-        ax.text(tx - 0.06, ty + (3 - i) * chh + chh / 2, f"호출 {i+1}", ha="right", va="center", fontsize=6.0, color="#444")
-    for j in range(8):
-        ax.text(tx + j * cw + cw / 2, ty - 0.07, f"t+{j}", ha="center", va="top", fontsize=5.8, color="#555")
-    top = ty + 4 * chh + 0.05
-    for lab, a, b in [("고정", 0, 2), ("중간", 2, 6), ("끝", 6, 8)]:
+    for j in range(nsteps):
+        for i in range(ncalls):
+            yy = ty + (ncalls - 1 - i) * chh
+            filled = i <= j <= i + Hs - 1
+            ax.add_patch(Rectangle((tx + j * cw, yy), cw, chh, fc=fcol[zone[j]] if filled else "white",
+                                   ec="#C4C4C4", lw=0.6))
+            if filled:
+                ax.text(tx + j * cw + cw / 2, yy + chh / 2, votes[i][j - i], ha="center", va="center", fontsize=7)
+    for i in range(ncalls):
+        ax.text(tx - 0.06, ty + (ncalls - 1 - i) * chh + chh / 2, f"호출 {i+1}", ha="right", va="center",
+                fontsize=6.0, color="#444")
+    for j in range(nsteps):
+        ax.text(tx + j * cw + cw / 2, ty - 0.07, f"s{j+1}", ha="center", va="top", fontsize=6.0, color="#555")
+    top = ty + ncalls * chh + 0.05
+    for lab, a, b in [("고정", 0, 2), ("중간", 2, 5), ("끝", 5, 6)]:
         ax.plot([tx + a * cw + 0.03, tx + b * cw - 0.03], [top, top], color="#777", lw=0.9)
         ax.text(tx + (a + b) / 2 * cw, top + 0.04, lab, ha="center", va="bottom", fontsize=6.6, color="#333")
-    ax.text(tx - 0.35, H - 0.12, "(b) 미래 스텝별 표 (보기 id 기준)", fontsize=8, va="top", color=TXT, fontweight="bold")
-    ax.text(tx + 4 * cw, ty - 0.30, "고정: Jev p95 지연 길이 · 중간: 바꾸려면 합의 · 끝: 최신 표 가확정",
+    ax.text(tx - 0.40, H - 0.12, "(b) 미래 스텝별 표 (option_key 기준, H=3)", fontsize=8, va="top", color=TXT,
+            fontweight="bold")
+    ax.text(tx + 3 * cw, ty - 0.30, "고정: Jev p95 지연 길이 · 중간: 바꾸려면 합의 · 끝: 가장 새 표만",
             ha="center", va="top", fontsize=5.8, color="#555")
 
-    # (right) decision
-    dx = 5.55
-    ax.text(dx - 0.15, H - 0.12, "(c) 확정", fontsize=8, va="top", color=TXT, fontweight="bold")
-    rbox(ax, dx, 1.62, 1.25, 0.36, "jev", "합의 (a)", fs=7.6)
-    rbox(ax, dx, 1.14, 1.25, 0.36, "skill", "예상 대 측정 (b)", fs=7.6)
-    rbox(ax, dx, 0.60, 0.58, 0.36, "skill", "유지", fs=7.6)
-    rbox(ax, dx + 0.67, 0.60, 0.58, 0.36, "crit", "교체·수리", fs=7.3)
-    arr(ax, [(dx + 0.62, 1.62), (dx + 0.62, 1.50)])
-    arr(ax, [(dx + 0.30, 1.14), (dx + 0.30, 0.96)])
-    arr(ax, [(dx + 0.95, 1.14), (dx + 0.95, 0.96)], color=PAL["crit"][1])
-    ax.text(dx + 0.25, 1.06, "맞음", fontsize=5.8, ha="right", va="center", color="#444")
-    ax.text(dx + 1.00, 1.06, "어긋남", fontsize=5.8, ha="left", va="center", color=PAL["crit"][1])
-    ax.text(dx + 0.96, 0.53, "전제 epoch 무효화", fontsize=5.6, ha="center", va="top", color=PAL["crit"][1])
-    arr(ax, [(tx + 8 * cw + 0.05, ty + 2 * chh), (dx - 0.12, ty + 2 * chh), (dx - 0.12, 1.80), (dx, 1.80)])
+    # (c) decision (matches tab:m4rule)
+    dx = 5.25
+    ax.text(dx - 0.10, H - 0.12, "(c) 결정", fontsize=8, va="top", color=TXT, fontweight="bold")
+    rbox(ax, dx, 1.72, 1.55, 0.30, "jev", "(a) 호출 사이 합의", fs=7.2)
+    rbox(ax, dx, 1.28, 1.55, 0.30, "skill", "(b) 실행 뒤 예상 대 측정", fs=7.2)
+    arr(ax, [(dx + 0.78, 1.72), (dx + 0.78, 1.58)])
+    outs = [("OK + 합의", "확정", "skill"), ("LAG", "유지", "gray"), ("DEVIATE", "교체", "fix"),
+            ("CONTRADICT", "수리", "fix")]
+    for k, (cond, act, kind) in enumerate(outs):
+        yy = 1.06 - k * 0.22
+        ax.text(dx + 0.02, yy + 0.09, cond, fontsize=6.0, color="#444", ha="left", va="center")
+        rbox(ax, dx + 0.92, yy, 0.63, 0.19, kind, act, fs=6.8)
+    ax.text(dx + 0.78, 0.32, "교체·수리: 전제 판본 +1,\n그 전제의 미확정 표 폐기", fontsize=5.6,
+            color=PAL["fix"][1], ha="center", va="top", linespacing=1.2)
+    arr(ax, [(tx + nsteps * cw + 0.05, ty + 2 * chh), (dx - 0.12, ty + 2 * chh), (dx - 0.12, 1.87), (dx, 1.87)])
     save(fig, "m4_commit")
 
 
@@ -277,23 +293,23 @@ def fig_m4():
 def fig_recovery():
     W, H = COL_W, 2.0
     fig, ax = canvas(W, H)
-    lanes = [("Astra", 1.55), ("L1 스킬 재시도", 1.17), ("L2 Jev 복구 선택", 0.79), ("L3 안전 대기", 0.41)]
+    lanes = [("Astra (M8)", 1.55), ("L1 스킬 재시도", 1.17), ("L2 Jev 복구 선택", 0.79), ("L3 안전 대기", 0.41)]
     lx = 0.86
     for name, yy in lanes:
-        ax.text(lx - 0.07, yy + 0.09, name, ha="right", va="center", fontsize=6.4, color="#333")
+        ax.text(lx - 0.07, yy + 0.09, name, ha="right", va="center", fontsize=6.3, color="#333")
         ax.plot([lx, W - 0.05], [yy + 0.09, yy + 0.09], color="#E3E3E3", lw=0.8, zorder=0)
-    t0, t1 = lx + 0.05, lx + 1.60
+    t0, t1 = lx + 0.05, lx + 1.70
     ax.plot([t0, t0], [0.25, 1.85], color=PAL["crit"][1], lw=1.2, ls=(0, (3, 2)))
-    ax.text(t0, 1.88, "실패 판정", ha="center", va="bottom", fontsize=6.4, color=PAL["crit"][1])
-    pill(ax, t0, 1.55, t1 - t0, 0.18, "astra", "비동기 호출 · low 약 3 s", fs=5.9)
-    ax.annotate("", xy=(W - 0.08, 1.64), xytext=(t1, 1.64), arrowprops=dict(arrowstyle="-|>", lw=0.8,
+    ax.text(t0, 1.88, "실패 판정 (M7)", ha="center", va="bottom", fontsize=6.3, color=PAL["crit"][1])
+    pill(ax, t0, 1.55, 1.30, 0.18, "astra", "비동기 호출 (첫 토큰 low 약 3 s)", fs=5.7)
+    ax.annotate("", xy=(t1, 1.64), xytext=(t0 + 1.30, 1.64), arrowprops=dict(arrowstyle="-", lw=0.9,
                 color=PAL["astra"][1], ls=(0, (2, 2))))
-    ax.text(W - 0.08, 1.76, "high 약 73 s", ha="right", va="bottom", fontsize=5.8, color=PAL["astra"][1])
-    pill(ax, t0 + 0.03, 1.17, 0.55, 0.18, "skill", "인자 바꿔 1회", fs=5.6)
-    pill(ax, t0 + 0.58, 0.79, 0.72, 0.18, "jev", "코드 제안 중 고름", fs=5.6)
-    ax.add_patch(FancyBboxPatch((t0 + 1.02, 0.41), 0.55, 0.18, boxstyle="round,pad=0,rounding_size=0.09",
+    ax.text(W - 0.06, 1.78, "high: 첫 토큰 약 73 s", ha="right", va="bottom", fontsize=5.7, color=PAL["astra"][1])
+    pill(ax, t0 + 0.03, 1.17, 0.62, 0.18, "skill", "인자 바꿔 1회", fs=5.6)
+    pill(ax, t0 + 0.62, 0.79, 0.72, 0.18, "jev", "코드 제안 중 고름", fs=5.6)
+    ax.add_patch(FancyBboxPatch((t0 + 1.12, 0.41), 0.50, 0.18, boxstyle="round,pad=0,rounding_size=0.09",
                                 fc="#F4F4F4", ec="#9A9A9A", lw=0.9, ls=(0, (2, 2))))
-    ax.text(t0 + 1.295, 0.50, "필요할 때만", ha="center", va="center", fontsize=5.6, color="#555")
+    ax.text(t0 + 1.37, 0.50, "필요할 때만", ha="center", va="center", fontsize=5.6, color="#555")
     ax.plot([t1, t1], [0.25, 1.85], color=PAL["astra"][1], lw=0.9)
     ax.text(t1 + 0.05, 1.08, "새 계획 도착 →\n조건이 참인\n가장 늦은\n체크포인트\n에서 재개",
             fontsize=5.7, color="#333", va="center", ha="left", linespacing=1.25)
@@ -310,8 +326,8 @@ def fig_eval():
     ax.text(0.325, 1.44, "standard", ha="center", va="bottom", fontsize=6.2, color="#444")
     ax.text(0.325, 0.28, "random", ha="center", va="top", fontsize=6.2, color="#444")
     rbox(ax, 0.82, 0.55, 0.62, 0.62, "perc", "같은\n인식 앞단", fs=7.0)
-    rbox(ax, 1.70, 1.02, 0.80, 0.46, "gray", "학습 정책", fs=7.2, sub="VLA 포함", sfs=5.8)
-    rbox(ax, 1.70, 0.25, 0.80, 0.46, "jev", "LLM 결정 층", fs=7.2, sub="Astra + Jev", sfs=5.8)
+    rbox(ax, 1.70, 1.02, 0.80, 0.46, "gray", "학습 결정 층", fs=7.0, sub="같은 입력으로 학습", sfs=5.7)
+    rbox(ax, 1.70, 0.25, 0.80, 0.46, "jev", "LLM 결정 층", fs=7.0, sub="Astra + Jev", sfs=5.8)
     rbox(ax, 2.72, 0.55, 0.48, 0.62, "skill", "같은\n실행기", fs=6.8)
     arr(ax, [(0.60, 1.19), (0.70, 1.19), (0.70, 0.86), (0.82, 0.86)])
     arr(ax, [(0.60, 0.53), (0.70, 0.53), (0.70, 0.86), (0.82, 0.86)], head=False)
@@ -332,13 +348,13 @@ def fig_prelim():
     drop = ["−11.1%", "−72.2%", "−67.2%", "−83.0%"]
     fig, ax = plt.subplots(figsize=(COL_W, 1.85))
     x = np.arange(4); w = 0.36
-    ax.bar(x - w / 2, std, w, color="#A7C4E5", label="standard", zorder=3)
-    ax.bar(x + w / 2, rnd, w, color="#E8A07A", label="random", zorder=3)
+    ax.bar(x - w / 2, std, w, color="#C9C9C9", label="standard", zorder=3)
+    ax.bar(x + w / 2, rnd, w, color="#6E6E6E", label="random", zorder=3)
     for xi, s, r, d in zip(x, std, rnd, drop):
         ax.text(xi - w / 2, s + 0.6, f"{s:.2f}", ha="center", va="bottom", fontsize=5.8, color="#333")
         ax.text(xi + w / 2, r + 0.6, f"{r:.2f}", ha="center", va="bottom", fontsize=5.8, color="#333")
-        ax.text(xi, max(s, r) + 4.6, d, ha="center", va="bottom", fontsize=6.6,
-                color="#2F5E9E" if xi == 0 else "#B04A2A", fontweight="bold")
+        ax.text(xi, max(s, r) + 4.6, d, ha="center", va="bottom", fontsize=6.6, color="#222",
+                fontweight="bold")
     ax.set_xticks(x); ax.set_xticklabels(names, fontsize=6.6)
     ax.set_ylabel("RoboDojo Gen 점수", fontsize=6.6)
     ax.set_ylim(0, 46); ax.set_yticks([0, 10, 20, 30, 40])
