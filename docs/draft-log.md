@@ -377,3 +377,4 @@
 - 07:19 UTC 사용자 결정(user-log 37): 로봇 ROBOTIS AI Worker, 카메라 ZED 스테레오(깊이·이미지). 정본 §36, D2c·D30 해소 방향, D21 조사(사양·시뮬·ZED·벤치마크 정합) 착수.
 - 07:28 UTC D21 저장. 메인이 원 출처(사양 페이지·ai_worker yaml)를 curl로 받아 재확인: ZED Mini·D405×2·7자유도·RH-P12-RN·Orin·F/T 없음·depth_mode NONE·VGA 30fps. 정본 §37: 깊이 켬(ZED NEURAL 1순위·Fast-FS 비교), GT 장면 = cyclo_lab FFW-BG2 + ZED_M 쌍둥이, RoboDojo 결정 층 비교는 ARX X5 그대로 + D-stereo 보조, E-real 최소판, R 힘 입력 = 관절 전류. 사용자 결정 대기 (c) BG2 대 SG2 고정, (d) F/T 추가 여부.
 - 07:29 UTC §34·§35 반영(M3·M4·M5·M6·M7·M9·EVAL·E-first·SUMMARY v3.8·plan v6.6·STAGE2-CLOSE, 논문 절 '학습 보정기(잔차)와 비교용 학습 실행기'·투영 식 eq:rproj·E-R 실험, bib 6편, 마인드맵 빨간 줄 2(user-log 35·36 원문), 개요도 '스킬 + 잔차 보정(R)'). 확인: 빨간 줄 41 일치, [사용자] 삭제 0, 컴파일 오류 0.
+- 07:34 UTC 사용자 결정(user-log 38) "Sg2야" → 정본 §38: 실물 FFW-SG2 베이스 고정, 시뮬도 SG2 모델 우선. 진행 중 편집자에 전달. (d) 힘 입력은 대기.

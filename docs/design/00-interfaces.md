@@ -352,3 +352,8 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - **GT 생성 시뮬** [Claude 결정]: 공식 Isaac 모델(cyclo_lab, Isaac Sim 5.1 / Isaac Lab 2.3 — RoboDojo와 같은 판본)이 있다 → **E0–E3, E-M4, E-R, E-AE의 "단일 팔 자작 장면"을 FFW-BG2 한 팔(7자유도 + RH-P12-RN)로 고정**한다. 카메라는 Stereolabs ZED Isaac Sim 확장의 `ZED_M` 디지털 쌍둥이(오라클 = 렌더러 GT 깊이, 인식 조건 = 스트리밍 경로의 ZED SDK 깊이 또는 Fast-FS). 데이터 경로 cyclo_lab Mimic → `isaaclab2lerobot.py` → LeRobot, 도메인 무작위화는 우리가 추가(§34). 액추에이터 게인은 실물 계단 응답으로 다시 맞춘다 [가정].
 - **RoboDojo와의 정합** [Claude 결정, 3층]: (1) 결정 층 비교(H2·H3, 낙폭 RD)는 **RoboDojo-Sim ARX X5 그대로**(공개 수치와 같은 열). 보조로 "트랙 D-stereo"(머리 카메라 옆 63 mm 가상 카메라로 스테레오 쌍을 렌더해 AI Worker와 같은 Fast-FS/M1 경로, "입력 다름" 표기). (2) 개발·GT·모듈 실험 = cyclo_lab FFW-BG2 + ZED_M 쌍둥이. (3) E-real = 실물 AI Worker(최소판, 제출 2026-11-16까지 약 7주). 결정 층·술어 등록부·Jev/Astra 계약은 두 로봇이 같은 코드, 스킬·M5 한계·R은 로봇별.
 - **[결정 필요] (사용자, 하드웨어)**: (c) 실물을 FFW-BG2(고정 베이스, 국내 판매)로 할지 FFW-SG2(이동 베이스를 고정해 사용)로 할지. (d) R의 힘 입력 — 관절 전류로 갈지(기본값, 추가 장비 없음) 손목 F/T 센서를 추가 장착할지(기계 인터페이스 [미확인]).
+
+## 38. 실물 = FFW-SG2 (2026-09-24 07:34 UTC, user-log 38) [사용자 결정]
+- §37 (c) 해소: 실물 로봇은 **FFW-SG2**(스워브 이동 베이스, 총 25자유도). 이동 베이스는 범위 밖으로 두고 **베이스를 고정**해 팔 7자유도 × 2, 그리퍼, 머리 2자유도, 리프트만 쓴다.
+- 시뮬도 가능하면 SG2 모델(cyclo_lab `FFW_SG2.usd`, `Cyclo-Real-Pick-Place-FFW-SG2-v0` Sim2Real 과제)로 맞춘다. 개발 장면은 한 팔 설정을 유지한다.
+- 남은 결정: (d) 잔차 R의 힘 입력 — 관절 전류(기본안) 대 손목 F/T 추가.
