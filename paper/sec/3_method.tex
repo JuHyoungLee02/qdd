@@ -247,24 +247,41 @@ Harness VLA 코드를 보면 스킬의 성공 여부 한 비트는 틀릴 수 �
 \paragraph{생성 스킬.}
 CaP-X의 생성 스킬 9개는 대부분 좌표 계산 함수이고, 조건이나 자동 검증이 없다. 그래서 생성 스킬에는 같은 추출 과정에 계약(\texttt{entry}, \texttt{exit}, \texttt{effect}), typed hole 검사, 실행 기반 검증(재생과 새 seed에서의 비열화 확인)을 붙인다. typed hole 검사는 결정 자리를 \texttt{jev\_choice(dp\_id, Enum)}로만 허용하고, 생성 직후 타입, id, 철저성(\texttt{NONE\_ESCALATE} 포함), 술어, \texttt{effect}를 검사하는 우리 접목안이다. 오류 되먹임은 T0에서만 1--2회 한다. 사람이 만든 높은 단계 API일수록 성공률이 오르므로, 무엇 위에서 스킬을 생성하는지를 실험 축으로 둔다.
 
-\subsection{학습 실행기 (M6·M5)}
+\subsection{학습 보정기(잔차)와 비교용 학습 실행기 (M6·M5)}
 \label{sec:executor}
-스킬 단계(phase)의 실행은 작은 학습 실행기 하나가 맡는다. 모든 스킬의 모든 단계를 한 실행기가 실행하며, 스크립트 스킬은 학습용 정답 궤적(GT)을 만드는 생성기이자 백업 실행기로 남는다. Astra의 계획과 Jev의 선택으로 이루어진 결정 층은 학습하지 않고 실행기 바깥에 둔다. 단계 전이는 계속 코드 술어 사건이 정하며, 실행기는 전이를 정하지 않는다. 스킬 계약과 진단값(최고 들어 올린 높이, 최소 그리퍼 간격 등)도 센서 측정으로 코드가 계산한다.
+스킬 단계(phase)의 실행은 스크립트 스킬 $S$가 맡는다. 행동 익스퍼트(action expert)는 $S$를 대신하지 않고, $S$가 낸 명령 위에 작은 병진 잔차를 더하는 구간 제한 잔차 보정기 $R$로 들어간다. Astra의 계획과 Jev의 선택으로 이루어진 결정 층은 학습하지 않는다. Jev는 어느 방향으로 몇 센티미터 움직일지, 즉 방향과 크기 구간을 정하는 층이므로, $R$은 Jev가 정한 방향과 크기 구간 안에서만 움직인다. 단계 전이, 스킬 계약, 진단값은 계속 코드가 센서 측정으로 계산하며, $R$은 전이를 정하지 않는다. $R$을 끄면 실행기는 $S$ 그대로이므로, 결정 층 비교의 주 표는 $S$로 둔다.
 
 \paragraph{근거.}
-물체 crop과 스킬 문장을 조건으로 받는 DiT 행동 익스퍼트에서 스킬 조건을 빼면 Hard 과제에서 성능이 8.8\% 떨어졌다~\cite{hivla2026}. 스크립트 스킬을 조합해 만든 성공 궤적만으로 학습한 모델은 공식 $\pi_0$와 맞먹었다(``18 skills, 70 tasks'', ``matches the official $\pi_0$ across 49 simulation tasks'')~\cite{interndataa1_2025}. 반대로 깨끗한 시연만으로 학습한 정책은 무작위화 장면에서 크게 떨어졌다($\pi_0$ 46.4 $\rightarrow$ 16.3, ``data without domain randomization does not help'')~\cite{robotwin2_2025}. 교사 궤적만 모방한 정책은 ``fails to correct its own mistakes''였고, 학생 롤아웃을 섞으면 나아졌다~\cite{viral2025}.
+잔차 학습은 베이스가 무엇이든 붙일 수 있다. 손으로 설계한 제어기 위에 잔차를 학습한 Residual Policy Learning(기간 밖, 기초 문헌)은 ``RPL consistently and substantially improves on the initial controllers''라고 보고했다. BC 정책 위의 잔차는 실물 휴머노이드에서 ``boosted the performance of the base model from 14\% to 64\%''였다~\cite{resfit2025}. 물체 상태를 입력으로 받는 잔차는 시뮬레이션에서만 학습해 실물로 옮겼을 때 ``improves the success rate from 42\% to 76\% zero-shot''였고, 같은 절제에서 물체 자세 입력은 76/100, 이미지 입력은 47/100이었다. 저자들은 ``the visual domain gap is the dominant sim-to-real barrier''라고 적었다~\cite{ocrrl2026}. 사람의 교정으로 학습한 접촉 과제의 잔차에서는 ``both the delta correction data and the force data are crucial''이었다~\cite{crdagger2025}. 잔차의 크기는 제한해야 한다. Policy Decorator(기간 밖, 기초 문헌)는 ``Bounded residual action is essential''이라고 했고~\cite{policydecorator2024}, PLD는 잔차 행동을 ``bounded within a range of $[-\xi, \xi]$''로 두었다~\cite{pld2025}. 다만 원문의 제한은 학습 안정성을 위한 것이며, 이를 Jev 결정의 권위를 지키는 데 쓰는 것은 우리의 접목이다. 또한 이 결과들은 BC나 VLA 베이스 위의 것이고, 스크립트 베이스 위의 최근(2025--26) 잔차 결과는 찾지 못했다.
 
-\paragraph{입력과 출력.}
-입력은 스킬·단계 id, 확정된 Jev 보기 키(\texttt{option\_key}), 코드가 계산한 목표 자세, 공유 인식 앞단(M1)이 만든 대상·관련 물체의 crop과 마스크(손목·머리 카메라), 고유수용 상태, 짧은 행동 이력이다. 전체 장면 원본 이미지는 넣지 않는다(가정). 출력은 0.5\,s 분량의 행동 청크(약 10\,Hz로 생성해 100\,Hz로 보간, 가정)와 보조 머리 셋, 즉 단계 진행도, 단계 끝 술어 예측, flow 샘플 분산이다. 보조 머리는 M7의 소프트 채널로만 들어가며, 하드 채널과 FAIL 판정은 코드만 낸다. 술어 등록부는 바뀌지 않으므로 Jev 입력과 M7의 T1 판정은 그대로 코드가 계산한다. 규모는 동결한 소형 시각 인코더(Knowledge Insulating~\cite{kinsulate2025} 방향)와 약 50--100M 규모의 flow DiT로, 청크당 30\,ms 이하를 목표로 한다(가정). 참고로 $\pi_{0.5}$의 행동 익스퍼트는 300M~\cite{pi05_2025}, SmolVLA는 전체 0.45B이다~\cite{shukor2025smolvla}.
+\paragraph{입력, 출력, 투영.}
+입력은 스킬·단계 id, Jev가 확정한 방향 $\hat{d}$와 크기 구간 $[m_{\mathrm{lo}}, m_{\mathrm{hi}}]$, $S$의 명령, M1이 추정한 대상 자세와 불확실도, 관절·그리퍼 폭·힘/토크, 짧은 이력이다. 이미지는 넣지 않는다. 외관 변화는 M1을 거쳐서만 들어오므로 $S$와 같은 경로를 탄다. 대상 물체의 crop을 넣는 조건은 절제로만 둔다. 출력은 병진 잔차 $\tilde{r}$이며 회전은 기본으로 없다. $S$의 누적 명령 이동 가운데 $\hat{d}$ 방향 성분을 $s_S(t)=\hat{d}^{\top}\bigl(p_S(t)-p_0\bigr)$라 하면, 실제 명령은
+\begin{equation}
+  p(t) = p_S(t) + g(t)\,\Pi_t\bigl(\tilde{r}(t)\bigr),\quad g(t)=\mathbf{1}\bigl[\text{near}\lor\text{contact}\bigr]
+\end{equation}
+이고, 코드 투영 $\Pi_t$는
+\begin{equation}
+  \begin{aligned}
+  \Pi_t(\tilde{r}) = {}& \mathrm{clip}\bigl(\hat{d}^{\top}\tilde{r},\; \ell(t)-s_S(t),\; m_{\mathrm{hi}}-s_S(t)\bigr)\,\hat{d}\\
+  &+ \mathrm{clip}_{\varepsilon_\perp}\bigl((I-\hat{d}\hat{d}^{\top})\,\tilde{r}\bigr)
+  \end{aligned}
+  \label{eq:rproj}
+\end{equation}
+이다. $\ell(t)$는 이동 중에는 0이고(방향 반전 불가), 단계 끝 목표에서는 $m_{\mathrm{lo}}$이다. 따라서 누적 이동의 $\hat{d}$ 성분은 $[m_{\mathrm{lo}}, m_{\mathrm{hi}}]$ 안에 머문다. $\mathrm{clip}_{\varepsilon_\perp}$는 수직 성분의 노름을 $\varepsilon_\perp$ 이하로 자르며, $\varepsilon_\perp$는 standard와 무작위화 장면에서 잰 M1 위치 오차의 conformal 분위로 정한다(가정). near는 목표까지 5\,cm 이내, contact는 접촉 술어가 참인 경우이며, 그 밖에서는 잔차가 0이다. 투영은 모델 밖의 코드이므로 $R$은 Jev가 고른 방향을 뒤집거나 다른 크기 구간으로 넘어갈 수 없다. 합친 명령은 마지막에 M5 L3의 저크 제한을 거친다. $R$은 작은 MLP로 제어 주기마다 돌리며, 지연은 1\,ms 미만을 목표로 한다(가정, 실측 필요).
 
 \paragraph{다른 모듈과의 관계.}
-확정된 행동 청크가 M4 (b)의 예상 궤적 $\mathrm{ref}(t)$가 된다. \texttt{expected\_after}는 실행기와 무관한 코드 목표 술어로 두므로, 스크립트 실행기와 학습 실행기 조건에서 같다. M5의 L2 블렌딩은 RTC 인페인팅으로 바꾼다. RTC는 ``applicable to any diffusion- or flow-based VLA out of the box with no re-training''이며, 실행이 보장된 행동을 고정하고 나머지를 인페인팅한다~\cite{black2025rtc}. L1 시간 정렬과 L3 저크 제한은 그대로 둔다. flow 샘플 분산이 보정 문턱을 넘거나 M4 (b)가 DEVIATE를 2회 연속 내면(가정) 그 단계를 스크립트 스킬로 넘긴다. 이 폴백은 청크 경계에서 관성화로 이어 붙이며, FAIL이 아니므로 Astra 호출 규칙을 바꾸지 않는다. 폴백 비율은 모든 표에 기록한다.
+M4 (b)의 예상 궤적 $\mathrm{ref}(t)$는 투영 뒤의 실제 명령 $p(t)$이다. 따라서 $R$이 더한 이동이 (b)에서 가짜 지연이나 이탈로 잡히지 않는다. \texttt{expected\_after}는 실행기와 무관한 코드 목표 술어로 그대로 둔다. 복구 동작(M9)을 실행할 때도 $R$은 같은 제한으로 켜진다. 학습한 복구 실행기를 따로 두지 않는 것은 학습 복구가 잘 설계된 스크립트 재시도를 이긴다는 강한 근거가 없고, 무엇으로 복구할지는 Jev, Astra, M9의 코드 목록이 정하기 때문이다. Jev의 보기 후보를 행동 익스퍼트가 생성하는 방식은 Jev의 역할을 바꾸므로 쓰지 않는다. 기록에는 Jev의 선택(권위값), 잔차의 적분, 포화 비율, $R$의 켬과 끔을 남긴다.
 
 \paragraph{학습 데이터.}
-스킬·단계·보기마다 (1) standard 장면에서 스크립트 스킬을 실행해 성공 에피소드만 남기고, (2) 물체 자세, 시작 자세, 실행 중 밀기의 섭동을 주입하며, (3) 실행기 롤아웃 상태에서 스크립트 스킬이 라벨을 주는 DAgger(혼합 비율 0.5에서 시작, VIRAL의 값, 가정)를 쓰고, (4) 복구 구간은 섞어서만 쓴다. random 장면은 시험 전용이므로 학습 데이터는 standard 장면에서만 만든다.
+라벨은 특권 시뮬레이션 상태로 돌린 $S$의 행동에서 M1 추정 상태로 돌린 $S$의 행동을 뺀 값에 투영을 적용한 것이다(우리 접목). 데이터는 standard 장면, 도메인 무작위화, 섭동 주입, DAgger로 만들며, random 시험 장면은 학습에 쓰지 않는다. 같은 무작위화 데이터를 모든 학습 조건에 똑같이 준다. 선택적인 2단계로, 단계 끝 T1 술어를 희소 보상으로 쓰는 잔차 강화학습을 둔다(\cite{resfit2025,pld2025}의 방식, 제안).
 
-\paragraph{한계.}
-증류한 정책이 원래의 스크립트 스킬을 넘었다는 강한 근거는 찾지 못했다. 따라서 학습 실행기의 이득(세밀한 보정, 연속성, 지연 흡수)은 가설이며 E-AE 실험으로 확인한다. 또한 학습된 저수준 정책 위에 zero-shot GPT-4를 상위로 두면 ``attains the worst performance''였고(새 집 환경)~\cite{pi05_2025}, Hi Robot(기간 밖, 기초 문헌)은 GPT-4o보다 지시 정확도가 40\% 이상 높았다~\cite{hirobot2025}. 보기 목록과 코드 목표로 이루어진 우리의 typed 인터페이스가 이 차이를 줄이는지는 실험으로 확인한다.
+\paragraph{그림자 예측기.}
+행동 익스퍼트의 두 번째 역할은 실행하지 않고 옆에서 돌리는 예측기이다. 진행도, 단계 끝 확률, OOD 점수를 M7 소프트 채널의 후보로 내며, 문턱은 성공 에피소드로 conformal 보정한다~\cite{safe2025,fiper2025}. 그러나 두 선행은 실행 중인 정책의 특징을 썼고, 실행하지 않는 모델의 특징이 스크립트 실행의 실패를 예측한다는 직접 선례는 찾지 못했다. 그래서 이 채널은 기본 구성에 넣지 않고 우리 시스템 안의 절제(E-M7)로만 평가하며, 결정 층 비교 표와 M4 (b)에는 넣지 않는다.
+
+\paragraph{비교용 학습 실행기.}
+단계 실행 전체를 학습 실행기 $B$가 맡는 구성은 비교 조건으로만 둔다. $B$는 스크립트 스킬이 만든 정답 궤적(GT)으로 학습하며, 스킬·단계 id, 확정된 보기 키(\texttt{option\_key}), 코드 목표 자세, 대상 물체의 crop과 마스크, 고유수용 상태를 받아 0.5\,s 분량의 행동 청크를 낸다(가정). 이 구성의 근거는 다음과 같다. 물체 crop과 스킬 문장을 조건으로 받는 DiT 행동 익스퍼트에서 스킬 조건을 빼면 Hard 과제에서 성능이 8.8\% 떨어졌다~\cite{hivla2026}. 스크립트 스킬을 조합해 만든 성공 궤적만으로 학습한 모델은 공식 $\pi_0$와 맞먹었다(``18 skills, 70 tasks'', ``matches the official $\pi_0$ across 49 simulation tasks'')~\cite{interndataa1_2025}. 반대로 깨끗한 시연만으로 학습한 정책은 무작위화 장면에서 크게 떨어졌다($\pi_0$ 46.4 $\rightarrow$ 16.3, ``data without domain randomization does not help'')~\cite{robotwin2_2025}. 교사 궤적만 모방한 정책은 ``fails to correct its own mistakes''였고, 학생 롤아웃을 섞으면 나아졌다~\cite{viral2025}. $B$일 때는 M5의 L2 블렌딩을 RTC 인페인팅으로 바꾼다. RTC는 ``applicable to any diffusion- or flow-based VLA out of the box with no re-training''이다~\cite{black2025rtc}.
+
+$B$를 주 시스템에 넣지 않는 이유는 두 가지다. 첫째, 학습 추종 실행기는 명령을 맥락에 맞게 재해석한다. 원문은 ``when prompted to `move left,' it servos left towards an object, rather than moving left unconditionally''라고 적었다~\cite{steerable2026}. 이는 접촉을 인지하는 장점이지만 Jev가 정한 크기를 넘을 위험이기도 하다. 둘째, 증류한 정책이 원래의 스크립트 스킬을 넘었다는 강한 근거를 찾지 못했다. 또한 학습된 저수준 정책 위에 zero-shot GPT-4를 상위로 두면 ``attains the worst performance''였고(새 집 환경)~\cite{pi05_2025}, Hi Robot(기간 밖, 기초 문헌)은 GPT-4o보다 지시 정확도가 40\% 이상 높았다~\cite{hirobot2025}. 따라서 $B$는 E-AE 실험의 비교 표로만 보고한다.
 \subsection{진행 판별 (M7)}
 프레임마다 Astra의 계획대로 진행되는지 판별한다. ``계획대로''의 정의는 VLA 문헌을 많이 참고했다. $\pi^*_{0.6}$와 $\pi_{0.7}$의 진행 정의는 아래 OnPlan 정의에 흡수하되, $\pi$ 계열이 실행 중 벗어남을 판정한다고는 쓰지 않는다(학습 신호이기 때문이다). 단계 $k$에서 ``계획대로''를
 \begin{equation}
