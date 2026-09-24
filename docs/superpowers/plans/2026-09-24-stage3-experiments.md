@@ -4,6 +4,8 @@
 
 작성 2026-09-24 UTC, Claude(메인 세션). 사용자 지시(user-log 42): "3단계 실험 계획을 아주 철저하게 짠 다음에 실행에 들어가자 주기적으로 방향성이 맞는지에 대한 검사를 계속 해줘야 돼 틀리면은 그냥 처음부터 돌아가도 돼"
 
+> 개정 user-log 44(정본 §43): 카메라는 AI Worker 기본 그대로 — T11 Step 2 교체.
+
 **Goal:** 사전 등록된 첫 실험 E0(Jev 지연)·E0.5(오프라인 표 재생)·E3-ST(오프라인 스테레오 안정성)를 실제로 돌려 판정을 내고, 1차 평가 하네스 Inspect Robots를 P0(설치·스모크)까지 세운다. 매 관문마다 방향성 검사를 통과해야 다음으로 간다.
 
 **Architecture:** 순수 파이썬 패키지 `harvest/`(술어·직렬화·Jev/Astra 클라이언트·부하 발생기·분석)는 로컬(D:)과 파드에서 같은 코드로 돈다. 시뮬 의존 부분(`harvest/sim/`: 장면·오라클 플래너·스냅샷·라벨러)은 파드 `juhyoung-native-7a2a`의 Isaac Sim 5.1 chroot에서만 돈다. 모든 판정은 `harvest/analysis/`의 코드로 계산하고, 판정 절 해시를 실행 기록 첫 줄에 남긴다.
@@ -1327,7 +1329,7 @@ def test_first_token_time_recorded():
   - `SCENE_SPEC`: 대상 `o3 mug red`, 놓을 곳 `o5 tray blue`, 방해물 0–2개(`o8`, `o9`), 초기 배치 = 시드로 결정
 
 - [ ] **Step 1: 로봇 모델 결정 순서(정본 §38 → §37)** — cyclo_lab에서 `grep -rn "FFW_SG2\|FFW-SG2\|FFW_BG2" source/ | head`로 과제 등록 이름을 확인. SG2 한 팔로 팔 관절만 제어하는 설정이 되면 SG2, 안 되면 BG2. 선택과 근거를 `scene_bringup.md`에.
-- [ ] **Step 2: ZED_M 확장** — Stereolabs ZED Isaac Sim 확장이 5.1에서 로드되는지 확인. 안 되면 **머리 위치에 기선 63 mm 두 카메라를 직접 붙여** 좌우 RGB + 렌더러 GT 깊이를 얻는다(ZED_M 화각 102°×57°, VGA). 어느 쪽인지 기록.
+- [ ] **Step 2: 기본 카메라 그대로 (정본 §43, user-log 44)** — 카메라를 추가·교체·이동하지 않는다. cyclo_lab 모델에 기본으로 달린 머리캠·손목캠 목록(이름·prim 경로·해상도·화각·깊이 출력 가능 여부·머리 좌우 쌍 여부)을 `scene_bringup.md`에 표로 적고, `make_env(cameras=…)`는 그 기본 카메라 이름만 받는다. 오라클 깊이는 기본 카메라의 렌더러 깊이 출력만 켠다. (첫 판의 ZED_M 확장·기선 63 mm 카메라 추가안은 폐기.)
 - [ ] **Step 3: 머그·트레이 에셋** — Isaac 기본 에셋 또는 `/data/juhyoung_infra/isaac_assets`에서 고른다. 충돌 모양·질량·마찰을 `scene_bringup.md`에.
 - [ ] **Step 4: 순수 로직 테스트(로컬)** — `tests/sim/test_snapshot_logic.py`에 `oracle_state`의 좌표 변환(월드 → 탁상 윗면 원점) 함수만 Isaac 없이 테스트:
 
