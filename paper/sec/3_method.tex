@@ -13,6 +13,7 @@
   \item \idea{형식보다 내용. 작업 관련 물체만 + 코드가 계산한 관계·술어}
   \item \chg{``텍스트가 이미지보다 낫다''의 근거(BALROG)는 모델마다 다름. 근거에서 내림}
   \item \decide{변환 방법, 인식 앞단}
+  \item \idea{(09-24 D13) 이미지를 못 보는 모델도 기호 표만 받아 게임 벤치 상위권(lmgame-Bench, 저자도 예비 결과라 함). 가장 강한 VLM도 ``옆에 있음·열림'' 판정은 50--77\% $\rightarrow$ 그런 술어는 코드로 계산}
 \end{itemize}
 
 \subsection{M2 Astra $\rightarrow$ Jev}
@@ -20,6 +21,7 @@
   \item \intent{1번과 거의 같은 문제다. Astra는 이미지를 보고 명령하지만 Jev는 아니니, 효율적으로 전달하는 방법을 더 생각한다.}
   \item \idea{(``1번'' = M1) 물체 번호로 말하게 함(텍스트판 Set-of-Mark, 기간 밖, 기초 문헌). 제약은 Astra가 코드로 쓰고 Jev에는 참/거짓만}
   \item \idea{작은 모델에겐 ``어떻게''보다 ``무엇을''(목표형)이 나음. 계획이 본 시각·금지 조건·단계 ID 칸 추가}
+  \item \chg{(09-24 D13) ``작은 실행기엔 목표만'' 근거였던 COPE는 실제로 큰 모델의 짧은 \emph{절차} 계획이 도왔음 $\rightarrow$ 근거에서 뺌. 목표 중심은 설계 선택으로 두고 ``목표 + 절차 1--2문장'' 조건으로 확인}
 \end{itemize}
 
 \subsection{M3 행동}
@@ -53,6 +55,8 @@
 \begin{itemize}
   \item \intent{두 단계: 먼저 RTC와 유사한 방법, 다음으로 액션 스무딩이나 VLA에서 쓰는 부드럽게 하는 방법으로 아주 작은 움직임을 처리한다.}
   \item \idea{겹침 평균은 정밀 작업 성공률을 깎음 $\rightarrow$ 같은 보기끼리만 RTC식으로 섞고, 보기가 바뀌면 섞지 않고 관성화(접촉 근처 끔), 마지막에 저크 제한(Ruckig, 잠정). LiPo~\cite{lipo2025}는 비교}
+  \item \chg{(09-24 D13) RTC 원문 가중은 끝에서 정확히 0이 되는 모양 --- 우리 지수식은 블렌드 끝에 약 5\% 계단이 남아 원문 모양으로 바꿈. 블렌딩 기본 유지는 그대로}
+  \item \idea{``사후 블렌딩은 이득 없음''은 한 과제만의 결과였음(다른 과제는 20$\rightarrow$40, 44$\rightarrow$80) $\rightarrow$ 근거에서 뺌. 가정이 바뀐 직후엔 블렌딩 끄는 조건을 비교}
 \end{itemize}
 
 \subsection{M6 스킬 $\leftrightarrow$ Jev}
