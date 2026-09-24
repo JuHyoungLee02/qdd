@@ -1,6 +1,6 @@
 """Jev-L pre-test (1) latency + determinism (canon §44, D24 §5). Runs on the pod next to vLLM.
 
-usage: python jevl_bench.py l1|l2|sanity --model M --port P --bi 0|1 --image PNG --out JSONL
+usage: python jevl_bench.py l1|l2|sanity --model M --port P --bi 0|1 --image PNG --out JSONL [--end-token T]
 """
 import argparse
 import asyncio
@@ -103,9 +103,10 @@ async def main():
     p.add_argument("--image", required=True)
     p.add_argument("--out")
     p.add_argument("--calls", type=int, default=200)
+    p.add_argument("--end-token", default="<|im_end|>", help="end-of-turn token (Gemma 4: <turn|>)")
     a = p.parse_args()
     img = open(a.image, "rb").read()
-    c = JevLClient(f"http://127.0.0.1:{a.port}", a.model)
+    c = JevLClient(f"http://127.0.0.1:{a.port}", a.model, end_token=a.end_token)
     if a.what == "sanity":
         await sanity(c, img, a)
     else:

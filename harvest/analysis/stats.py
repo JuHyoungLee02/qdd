@@ -23,3 +23,26 @@ def holm(pvals, alpha=0.05):
         else:
             res[k] = True
     return res
+
+
+def ece(p, correct, bins=15):
+    """Expected calibration error: equal-width bins on [0, 1] (1.0 in the last bin), count-weighted |acc - conf|."""
+    p, c = np.asarray(p, float), np.asarray(correct, float)
+    idx = np.minimum((p * bins).astype(int), bins - 1)
+    out = 0.0
+    for b in range(bins):
+        m = idx == b
+        if m.any():
+            out += m.sum() / len(p) * abs(c[m].mean() - p[m].mean())
+    return float(out)
+
+
+def auroc(score, label):
+    """P(score of a positive > score of a negative), ties count 1/2. None when one class is missing."""
+    s, y = np.asarray(score, float), np.asarray(label, bool)
+    pos, neg = s[y], s[~y]
+    if len(pos) == 0 or len(neg) == 0:
+        return None
+    gt = (pos[:, None] > neg[None, :]).sum()
+    eq = (pos[:, None] == neg[None, :]).sum()
+    return float((gt + 0.5 * eq) / (len(pos) * len(neg)))

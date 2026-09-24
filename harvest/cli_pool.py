@@ -3,6 +3,7 @@
   restore-test --seed 0 [--points 10] --out DIR      DEV seed: restore drift at 10 snapshot points (Step 1)
   pool --seeds 2000-2039 --out DIR --confirm-pool     POOL episodes (seed-determined P0/P1/P2), images + state
   check --out DIR                                     counts, intervals, oversampling, ambiguity, split
+  dev --seeds 0-29 --kinds P0,P1,P2 --out DIR         DEV episodes in the pool format (head cam), one folder per kind
 
 Seeds: only DEV 0-29 and POOL 2000-2119 (snapshot.check_seed); TEST / TEST-P5 are refused before anything runs.
 Per POOL episode: ep<seed>.npz (full sim state of every continuous snapshot), ep<seed>.jsonl (one line per
@@ -183,6 +184,68 @@ def attach_oracle(res: dict) -> None:
                              cmd_disp_m=[round(float(v), 5) for v in d])
 
 
+class _Stop(Exception):
+    pass
+
+
+def canonical_prefix(env) -> None:
+    """Fixed PhysX history before every pool episode and every replay (T13 Step 1, v2 CPU).
+
+    Measured (DEV 0 P0, reset + rerun in one process): the next episode is bit-identical whatever ran before AS LONG
+    AS the previous run had gripper-mug contact; after a run without that contact (the first run after make_env, or
+    a run cut before the grasp) the grasp diverges (state max|diff| 0.075 at close, 1.97 at lift). So every episode
+    is preceded by the same short run: DEV 0 P0 until its first lift snapshot (gripper holding the mug), then cut."""
+    def on(env_, pl, rec, s, imgs):
+        if rec["phase"] == "lift":
+            raise _Stop
+        return False
+    try:
+        run_snapshot_episode(env, 0, "P0", on_snapshot=on)
+    except _Stop:
+        pass
+
+
+def warmup(env) -> None:
+    """One canonical run right after make_env: the process's first run is never replay-exact, and a canonical
+    prefix that is itself a first run leaves a different history (measured: pool episodes made first in their
+    process replayed with max|diff| 0.002-0.016; the second ones 0.0)."""
+    canonical_prefix(env)
+
+
+def replay_test(env, seed: int, kind: str, picks, hold_s: float = 0.5) -> list:
+    """Exact-restore check: for each snapshot k, run the episode to k and hold hold_s (reference), then replay the
+    episode to k again, compare the replayed state with the first one and hold the same way. Returns per-k
+    (state max |diff|, max object deviation mm)."""
+    rows = []
+    for k in picks:
+        got = {}
+
+        def on(env_, pl, rec, s, imgs, tag=None):
+            if rec["k"] != k:
+                return False
+            sub = int(round(rec["t"] / S.PHYS_DT))
+            first = (S.DECIM - sub % S.DECIM) or S.DECIM
+            got.setdefault("s", []).append(s)
+            got.setdefault("tr", []).append(S.hold_trace(env_, s["action"], hold_s, first_chunk=first))
+            got["phase"] = rec["phase"]
+            raise _Stop
+
+        for _ in range(2):
+            canonical_prefix(env)
+            try:
+                run_snapshot_episode(env, seed, kind, on_snapshot=on)
+            except _Stop:
+                pass
+        if len(got.get("s", [])) < 2:
+            continue
+        a, b = got["tr"]
+        dev = max(max(float(np.linalg.norm(x[o] - y[o])) for o in x) for (_, x), (_, y) in zip(a, b))
+        rows.append({"k": k, "phase": got["phase"], "state_maxabs": S.state_maxabs(*got["s"]),
+                     "hold_dev_mm": round(dev * 1e3, 6)})
+        print("REPLAY " + json.dumps(rows[-1]), flush=True)
+    return rows
+
+
 # --------------------------------------------------------------------------------------- restore test
 def restore_test(seed: int, n_points: int, out: str, frames: bool):
     """Step 1 of T13: at n_points snapshots of DEV seed `seed` (P0) — hold the saved target 0.5 s on the original
@@ -193,8 +256,10 @@ def restore_test(seed: int, n_points: int, out: str, frames: bool):
     if seed not in S.DEV_SEEDS:
         raise SystemExit("restore-test: DEV seeds only")
     os.makedirs(out, exist_ok=True)
-    cams = ("cam_head",)
+    from .sim import scene
+    cams = tuple(getattr(scene, "RECORD_CAMERAS", ("cam_head",)))
     env = make_env(seed, headless=True, cameras=cams, depth=False)
+    warmup(env)
     # plain reference run (no restores)
     plain = run_snapshot_episode(env, seed, "P0")
     plain_pos = {r["k"]: r["obj_pos"] for r, _ in plain["snaps"]}
@@ -202,23 +267,35 @@ def restore_test(seed: int, n_points: int, out: str, frames: bool):
     picks = [int(x) for x in np.linspace(2, K - 4, n_points).round()]
     rows, sheets = [], []
 
-    snap_states, snap_imgs = {}, {}
+    snap_states, snap_imgs, wsheets = {}, {}, {}
 
     def on_snap(env_, pl, rec, s, imgs):
         k = rec["k"]
         snap_states[k], snap_imgs[k] = s, imgs["cam_head"]
+        wr = [c for c in cams if c != "cam_head"]
         if k not in picks:
             return False
         sub = int(round(rec["t"] / S.PHYS_DT))
         first = (S.DECIM - sub % S.DECIM) or S.DECIM
         img0 = imgs["cam_head"]
         ref = S.hold_trace(env_, s["action"], 0.5, first_chunk=first)
-        img_ref = S.capture(env_, cams)["cam_head"]
+        c_ref = S.capture(env_, cams)
+        img_ref = c_ref["cam_head"]
         S.restore_state(env_, s)
-        img_rs = S.capture(env_, cams)["cam_head"]  # right after the write, before any physics step
+        c_rs = S.capture(env_, cams)  # right after the write, before any physics step
+        img_rs = c_rs["cam_head"]
         tr = S.hold_trace(env_, s["action"], 0.5, first_chunk=first)
-        img_rs_end = S.capture(env_, cams)["cam_head"]
+        c_rs_end = S.capture(env_, cams)
+        img_rs_end = c_rs_end["cam_head"]
+        for w in wr:
+            wsheets.setdefault(k, (k, rec["phase"], imgs[w], c_rs[w], c_ref[w], c_rs_end[w]))
         dev_ref = max(max(float(np.linalg.norm(a[o] - b[o])) for o in a) for (_, a), (_, b) in zip(tr, ref))
+        by_prime = {}
+        for pr in (0, 1, 2, 5):  # restore variants (restore_state prime substeps), same reference
+            S.restore_state(env_, s, prime=pr)
+            tp = S.hold_trace(env_, s["action"], 0.5, first_chunk=first)
+            by_prime[pr] = round(max(max(float(np.linalg.norm(a[o] - b[o])) for o in a)
+                                     for (_, a), (_, b) in zip(tp, ref)) * 1e3, 4)
         per_obj = {o: round(max(float(np.linalg.norm(a[o] - b[o])) for (_, a), (_, b) in zip(tr, ref)) * 1e3, 4)
                    for o in env_.present}
         rest = [o for o in env_.present if float(np.linalg.norm(s["obj_vel"][o][:3])) < 0.01]
@@ -227,6 +304,7 @@ def restore_test(seed: int, n_points: int, out: str, frames: bool):
         row = {"k": k, "t": rec["t"], "phase": rec["phase"], "boundary": rec["boundary"],
                "holding": rec["pred"].get("holding(o3)"),
                "restore_drift_vs_ref_mm": round(dev_ref * 1e3, 4), "per_object_vs_ref_mm": per_obj,
+               "drift_by_prime_mm": by_prime,
                "rest_objects_settle_mm": settle,
                "moving_objects": [o for o in env_.present if o not in rest],
                "img_diff_at_restore": round(float(np.abs(img_rs.astype(int) - img0.astype(int)).mean()), 3),
@@ -253,6 +331,7 @@ def restore_test(seed: int, n_points: int, out: str, frames: bool):
         S.restore_state(env_, s)  # continue the episode from the snapshot
         return rec["boundary"]
 
+    replay_rows = replay_test(env, seed, "P0", picks)
     tested = run_snapshot_episode(env, seed, "P0", cams=cams, on_snapshot=on_snap)
     div = []
     for r, _ in tested["snaps"]:
@@ -268,12 +347,17 @@ def restore_test(seed: int, n_points: int, out: str, frames: bool):
             "episode_obj_divergence_at_last_mm": round(div[-1] * 1e3, 3) if div else None,
             "n_snapshots": len(tested["snaps"]),
             "intervals": S.interval_stats([r["t"] for r, _ in tested["snaps"]]),
-            "rtf_plain": round(plain["sim_time_s"] / max(plain["wall_s"], 1e-6), 3)}
+            "rtf_plain": round(plain["sim_time_s"] / max(plain["wall_s"], 1e-6), 3),
+            "replay_max_state_diff": max([r["state_maxabs"] for r in replay_rows] or [None]),
+            "replay_max_hold_dev_mm": max([r["hold_dev_mm"] for r in replay_rows] or [None])}
     print("RT_SUMMARY " + json.dumps(summ), flush=True)
     with open(f"{out}/restore_test_seed{seed}.json", "w") as f:
-        json.dump({"summary": summ, "points": rows}, f, indent=1)
+        json.dump({"summary": summ, "points": rows, "replay": replay_rows}, f, indent=1)
     if frames and sheets:
         _save_sheet(sheets, f"{out}/restore_frames_seed{seed}.png")
+        ws = [wsheets[k] for k, *_ in sheets if k in wsheets]
+        if ws:
+            _save_sheet(ws, f"{out}/restore_frames_wrist_seed{seed}.png")
 
 
 def red_centroid(img):
@@ -304,17 +388,22 @@ def _save_sheet(sheets, path):
 
 
 # -------------------------------------------------------------------------------------------- pool
+def choose_decisions(res: dict) -> tuple[list, dict]:
+    """Decision snapshots of one episode (after attach_oracle): 10, 30 % from the ambiguous stratum."""
+    cands = [i for i, (r, _) in enumerate(res["snaps"]) if r["oracle"] is not None]
+    rng = np.random.default_rng([res["seed"], 29, S.POOL_KINDS.index(res["kind"])])
+    sel = S.select_decision([bool(res["snaps"][i][0]["ambiguous_predicates"]) for i in cands], rng=rng)
+    return cands, {cands[i]: (o, w) for i, o, w in sel}
+
+
 def write_episode(res: dict, out: str, cams) -> dict:
     from PIL import Image
 
     from .sim.planner import PHASE_TIMEOUT_S
-    from .sim.snapshot import pack_states, pool_split, select_decision, text_state
+    from .sim.snapshot import pack_states, pool_split, text_state
     seed = res["seed"]
     attach_oracle(res)
-    cands = [i for i, (r, _) in enumerate(res["snaps"]) if r["oracle"] is not None]
-    sel = select_decision([bool(res["snaps"][i][0]["ambiguous_predicates"]) for i in cands],
-                          rng=np.random.default_rng([seed, 29]))
-    chosen = {cands[i]: (o, w) for i, o, w in sel}
+    cands, chosen = choose_decisions(res)
     img_dir = f"{out}/img/ep{seed}"
     os.makedirs(img_dir, exist_ok=True)
     states = [s for _, s in res["snaps"]]
@@ -361,10 +450,33 @@ def pool(seeds, out: str):
         kind = S.pool_kind(s)
         if env is None:
             env = make_env(s, headless=True, cameras=cams, depth=False)
+            warmup(env)  # the canonical run itself must not be the process's first run (replay exactness)
+        canonical_prefix(env)
         res = run_snapshot_episode(env, s, kind, cams=cams)
         meta = write_episode(res, out, cams)
         print("EP " + json.dumps({k: meta[k] for k in ("seed", "kind", "split", "success", "stage", "sim_time_s",
                                                        "wall_s", "n_snapshots")}), flush=True)
+
+
+def dev(seeds, kinds, out: str, cams=("cam_head",)):
+    """DEV episodes (seeds 0-29 x P0/P1/P2) in the pool format, one folder per perturbation (jevl_model_select.md)."""
+    from .sim.scene import make_env
+    env = None
+    for kind in kinds:
+        if kind not in S.POOL_KINDS:
+            raise SystemExit("DEV perturbations P0-P2 only")
+        d = f"{out}/{kind}"
+        os.makedirs(d, exist_ok=True)
+        for s in seeds:
+            if s not in S.DEV_SEEDS:
+                raise SystemExit("dev: DEV seeds 0-29 only")
+            if os.path.exists(f"{d}/ep{s}.meta.json"):
+                continue  # resumable
+            if env is None:
+                env = make_env(s, headless=True, cameras=cams, depth=False)
+            meta = write_episode(run_snapshot_episode(env, s, kind, cams=cams), d, cams)
+            print("EP " + json.dumps({k: meta[k] for k in ("seed", "kind", "success", "stage", "sim_time_s", "wall_s",
+                                                           "n_snapshots")}), flush=True)
 
 
 def check(out: str) -> dict:
@@ -408,7 +520,8 @@ def check(out: str) -> dict:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["restore-test", "pool", "check"])
+    ap.add_argument("mode", choices=["restore-test", "pool", "check", "dev"])
+    ap.add_argument("--kinds", default="P0,P1,P2")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--seeds", default="")
     ap.add_argument("--points", type=int, default=10)
@@ -421,6 +534,8 @@ def main():
         return
     if a.mode == "restore-test":
         restore_test(a.seed, a.points, a.out, a.frames)
+    elif a.mode == "dev":
+        dev(_seeds(a.seeds), a.kinds.split(","), a.out)
     else:
         seeds = _seeds(a.seeds)
         if any(s in S.POOL_SEEDS for s in seeds) and not a.confirm_pool:

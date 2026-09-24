@@ -9,3 +9,21 @@ def test_bootstrap_ci_contains_mean():
 def test_holm_step_down():
     r = holm({"a": 0.001, "b": 0.04, "c": 0.03})
     assert r == {"a": True, "c": False, "b": False}
+
+
+def test_ece_perfectly_calibrated_is_zero_and_overconfident_is_positive():
+    from harvest.analysis.stats import ece
+    # bin [0.8, 0.866..): 5 items at p=0.8, 4 correct -> gap 0
+    assert ece([0.8] * 5, [1, 1, 1, 1, 0], bins=15) == 0.0
+    # all p=1.0 (last bin includes 1.0), half correct -> gap 0.5
+    assert abs(ece([1.0] * 4, [1, 0, 1, 0], bins=15) - 0.5) < 1e-12
+    # two bins weighted by count: 2 items p=0.1 all wrong (gap 0.1), 2 items p=0.9 all right (gap 0.1)
+    assert abs(ece([0.1, 0.1, 0.9, 0.9], [0, 0, 1, 1], bins=15) - 0.1) < 1e-12
+
+
+def test_auroc_basic_and_ties():
+    from harvest.analysis.stats import auroc
+    assert auroc([0.9, 0.8, 0.2, 0.1], [1, 1, 0, 0]) == 1.0
+    assert auroc([0.1, 0.2, 0.8, 0.9], [1, 1, 0, 0]) == 0.0
+    assert auroc([0.5, 0.5], [1, 0]) == 0.5  # ties count one half
+    assert auroc([0.5, 0.7], [1, 1]) is None  # one class only
