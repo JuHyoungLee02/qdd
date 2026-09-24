@@ -404,3 +404,14 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - **확정 절차(사전 시험, D24 §5)**: (1) 지연·결정성 — Qwen3-VL-8B/4B를 GPU 3에서 vLLM으로, 텍스트만 대 텍스트+머리캠, 동시성 1–8, p50/p95, 같은 입력 반복 flip(배치 불변 켬/끔). (2) 정답률·보정 — 스냅샷 풀(T13) 뒤 약 1,500 스냅샷, 결과 기반 라벨, ECE·AUROC, 순서 flip, Luna 300개 부분 표본. 판정 기준은 실행 전 `docs/stage3/prereg.json`에 새 절로 고정.
 - **[결정 필요] (사용자)**: (a) cyclo_lab SG2 시뮬 모델에는 손목캠이 없다(D24·T11 확인 중). 실물 기본 구성에는 D405 손목캠이 있으므로, 시뮬에 실물과 같은 위치의 손목캠을 둘지(§43 "추가 금지"의 예외) / 시뮬은 머리캠만 쓸지. (b) 실물 추론 위치 — LAN GPU 서버(권장) / Orin 단독 / 클러스터 H200.
 - 영향: 계획(`docs/superpowers/plans/2026-09-24-stage3-experiments.md`)의 E0·E0.5·E1 과제는 Jev-L 기준으로 다시 쓴다(DC0부터, user-log 42 되돌아가기 규칙). T0–T7 도구는 그대로 쓴다(클라이언트만 추가).
+
+## 45. Astra 호출 주기 = 하트비트 + 단계 경계 + 사건 (2026-09-24 10:25 UTC, `D25-planner-cadence.md`, user-log 48) [Claude 결정, 주기 N은 실험으로 확정]
+- **사용자 의문**(user-log 48): "첫 계획 + 실패 때만" 부르는 것은 이상하다, 어느 정도 주기가 있어야 한다 → Gemini 방식 조사.
+- **원문(메인 재확인, ai.google.dev robotics-streaming)**: Gemini Robotics-ER은 하트비트로 "periodically send the latest camera frame followed by a short text prompt that forces the model to inspect the scene and make an explicit decision", "opportunistically targets a 1 Hz cadence … while waiting for each turn to complete", 하트비트 선택지 = 진행 중이면 `ack`, 단계 완료면 `run_instruction`(다음 단계), 목표 달성이면 `reset`. 타이머만 믿고 보내면 "cancellation loop" 경고. 저수준 VLA는 기다리지 않고 계속 실행("The robot continues executing until you call run_instruction again", 공식 예제). ER 2는 Gemini 3 계열 기반(모델 카드). GR 1.5 보고서: 오케스트레이터가 "success detection to decide when to switch to the next step". 비교: π0.5 매 스텝 하위 과제 예측, Hi Robot 1 s 또는 사용자 개입 때(기간 밖 기초 문헌) — 배포형 시스템은 주기 확인 + 단계 경계 + 사건 + 비동기 실행을 섞는다. "첫 계획 + 실패 때만"은 선행 설계와 맞지 않는다.
+- **결정 [Claude, 근거 D25] — H-cadence**: 사용자 원칙(T0만 정지 허용, 실패하면 항상 Astra, effort low)은 그대로 두고 두 호출을 더한다.
+  - **T_hb 하트비트**: 직전 Astra 응답 도착 후 N초 뒤 최신 머리캠 프레임 + 원장 요약으로 닫힌 선택 `ack` / `patch` / `replace`를 묻는다. in-flight 1개(겹쳐 보내지 않음, Gemini 경고), 15 s 무응답이면 기록 후 재송신. **잠정 N = 5 s**(Gemini·Hi Robot의 "주기 ≈ 상위 모델 한 번 응답 시간" 원칙 + Astra low 첫 토큰 실측 2.975 s 1회 → 실효 주기 약 8–9 s) [가정].
+  - **T_sub 단계 경계**: M7이 단계 완료를 확정하면 "다음 단계 계약이 지금 장면에도 맞나"를 비동기로 묻는다. 다음 단계는 기다리지 않고 시작한다.
+  - 기존 사건 호출(C_assume·T3a·T_stag·T_j5·사용자 새 지시)은 다음 하트비트를 앞당긴다. T_fail이 나가면 복구 끝 + 2 s까지 하트비트를 멈춘다.
+  - **합치기**: 새 규칙 없음. M2 R5(관측 시각이 더 새 답만), `ack`는 `premise_epoch`를 올리지 않는다(M4 합의 표 보호), `patch`/`replace`는 A5′ 검사 → M2 R3 경계에서 교체 + epoch +1, 실패 시 이전 계약 유지(R7) + 백그라운드 수리. [가정] 같은 단계에서 서로 되돌리는 patch가 30 s 안에 두 번이면 적용 보류, 에피소드당 하트비트 예산 상한.
+- **N 확정 실험 E-M8c(사전 등록)**: K0 현행 / K1 + 단계 경계 / K2-N(N ∈ {0, 5, 10, 20} s) / K3 Gemini 하트비트 원문 충실판 / K4 호출 수 맞춘 사건 전용 대조. **M7이 FAIL을 내지 않는 감시기 밖 실패 섭동을 반드시 포함**. 판정: K2-N − K1 ≥ +3%p이고 95% 하한 > 0이면 하트비트 채택, 최고 대비 −2%p 안의 가장 큰 N을 기본으로. 반복·검정력은 §28.
+- 이 절은 M8 [결정 필요] D33("주기 + 사건을 넣을지")을 해소한다(사용자 제기 → Claude가 근거로 결정). M8·M9·E-first·EVAL·논문 방법 절은 다음 편집 묶음에서 반영한다.
