@@ -360,3 +360,11 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 
 ## 39. 힘 입력 = AI Worker 기본 구성 (2026-09-24 07:34 UTC, user-log 39) [사용자 결정]
 - §37 (d) 해소: 손목 F/T 센서를 추가하지 않는다. 잔차 R의 힘 입력은 **관절 `effort`(전류 기반)와 그리퍼 전류**. 절제 조건 R-noforce 유지. 남은 하드웨어 결정 없음.
+
+## 40. Inspect Robots 판정 (2026-09-24 07:46 UTC, `D22-inspect-robots.md`, user-log 40)
+- 정체: Robocurve의 오픈소스 로봇 평가 하네스 `robocurve/inspect-robots`(MIT, 600★, 2026-06-26 생성, 논문 없음). UK AISI Inspect의 구조를 로봇으로 옮긴 것("this is that for robotics"). LLM 정책(`agent`, 도구 호출로 `move_to`/`move_by` 등)·CaP-X식·VLA(XPolicyLab)를 여러 로봇·Isaac Lab에서 같은 로그로 돌린다. 루프는 **동기**(시뮬이 LLM을 기다림, "no wall-clock pacing of its own").
+- **선행 겹침 없음**: 빠른 typed 결정(Jev), 겹침 호출 확정(M4), 실패가 부르는 비동기 Astra, 같은 인식 비교가 없다 → C1·C2 판단 그대로(§24). 관련 연구에 소프트웨어로 한 줄 인용한다.
+- **근거로 쓰지 않는 것**: Robocurve의 Astra 실물 수치(보고서 조건: medium effort·20호출·25% 속도, 과제당 20회, 모델을 아는 사람 채점 — 원문이 편향 가능성을 밝힘)는 신뢰도 규칙(user-log 14)상 LOW → 본문 근거로 쓰지 않는다.
+- **주 평가(RoboDojo)에는 쓰지 않는다**: RoboDojo 몸체가 없고, 동기 루프라 우리 비동기·벽시계 조건을 표현할 수 없고, 공개 수치와의 같은 기준이 깨진다.
+- **도구로서**: E-real 로그 필드 설계(설정·git 리비전·판본·transcript·사람 판정 출처, Rerun 기록)를 참고한다(의존성 추가는 안 함).
+- **[결정 필요] (사용자)**: E-real(AI Worker SG2)에 범주 1 기준선 "B1a-real = Inspect Robots `agent` + Astra"를 넣을지. 넣으려면 ROS 2 몸체(`joint_pos`만 지원)와 AI Worker 관절 매핑을 먼저 점검해야 하고, 행동 공간이 Robocurve 보고서(eef_pos)와 달라진다.

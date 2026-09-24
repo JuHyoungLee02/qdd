@@ -380,3 +380,4 @@
 - 07:34 UTC 사용자 결정(user-log 38) "Sg2야" → 정본 §38: 실물 FFW-SG2 베이스 고정, 시뮬도 SG2 모델 우선. 진행 중 편집자에 전달. (d) 힘 입력은 대기.
 - 07:34 UTC 사용자 결정(user-log 39) "에이아이워커 기본으로" → 정본 §39: F/T 추가 안 함, R 힘 입력 = 관절·그리퍼 전류. 편집자에 전달.
 - 07:41 UTC §36–§39 반영(M1·M3·M5·M6·M8·E-first·EVAL·SUMMARY v3.9·plan v6.7·STAGE2-CLOSE, 논문 M1 깊이·R 힘 입력·실험 '플랫폼' 문단, bib fastfs2025, 마인드맵 빨간 줄 user-log 37·38·39 원문). 확인: 빨간 줄 44 일치, [사용자] 삭제 0, 두 판 컴파일 오류 0. 하드웨어 결정 모두 해소.
+- 07:46 UTC 사용자 요청(user-log 40): Inspect Robots → D22 조사, Robocurve `inspect-robots`(MIT, 600★, 동기 LLM/VLA 로봇 평가 하네스)로 확정, 메인이 README·설계 문서·API·보고서로 재확인. 정본 §40: 선행 겹침 없음, Astra 수치는 LOW라 근거 아님, 주 평가 부적합, 로그 설계 참고, B1a-real 기준선 여부는 사용자 결정.
