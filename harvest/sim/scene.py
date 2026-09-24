@@ -233,9 +233,12 @@ def _place_layout_event(env, env_ids):
         p[:, :3] += env.scene.env_origins[env_ids]
         o.write_root_pose_to_sim(p, env_ids=env_ids)
         o.write_root_velocity_to_sim(torch.zeros((len(env_ids), 6), device=env.device), env_ids=env_ids)
+    if _LAYOUT.get("rand"):  # variant random / dr: this seed's tabletop distractors (randomize.py)
+        from .randomize import write_distractor_poses
+        write_distractor_poses(env, env_ids, _LAYOUT["rand"])
 
 
-def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu"):
+def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu", variant: str = "standard"):
     import isaaclab.envs.mdp as mdp
     import isaaclab.sim as sim_utils
     from isaaclab.assets import AssetBaseCfg, RigidObjectCfg
@@ -300,6 +303,10 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
     for k in obj_ids:
         scene_attrs[k] = obj_cfg(k)
         scene_attrs[f"contact_{k}"] = contact_cfg(k)
+    if variant != "standard":  # random / dr: one parked rigid body per pool distractor (their own colliders only)
+        from .randomize import distractor_scene_cfgs, randomized_table_cfg
+        scene_attrs.update(distractor_scene_cfgs(variant))
+        scene_attrs["table"] = randomized_table_cfg(scene_attrs["table"])  # same table + own material (visual)
     for n, c in _default_camera_cfgs(cameras, depth).items():
         scene_attrs[n] = c
     @configclass
@@ -392,7 +399,10 @@ def _measure_finger_offsets(arm: str):
 class Env:
     """Thin wrapper over an Isaac Lab ManagerBasedRLEnv. step() takes 7 arm joint targets + gripper width (m)."""
 
-    def __init__(self, seed: int, headless=True, cameras=DEFAULT_CAMERAS, arm="right", depth=True, sim_device="cpu"):
+    def __init__(self, seed: int, headless=True, cameras=DEFAULT_CAMERAS, arm="right", depth=True, sim_device="cpu",
+                 variant="standard"):
+        from . import randomize
+        self.variant = randomize.check_variant(variant)
         cameras = tuple(cameras or ())
         _ensure_app(headless, bool(cameras))
         import torch
@@ -400,9 +410,12 @@ class Env:
 
         self.torch = torch
         self.seed, self.arm, self.cameras = int(seed), arm, cameras
-        cfg, self.layout = _build_cfg(seed, cameras, arm, depth, sim_device)
+        cfg, self.layout = _build_cfg(seed, cameras, arm, depth, sim_device, variant)
         self.sim_device = cfg.sim.device
         _LAYOUT["layout"] = self.layout
+        self.randomization = randomize.sample_randomization(seed, variant, self.layout)
+        _LAYOUT["rand"] = self.randomization
+        self.rand_settle = None
         self.env = ManagerBasedRLEnv(cfg=cfg)
         self.scene = self.env.scene
         self.robot = self.scene["robot"]
@@ -421,6 +434,9 @@ class Env:
         self.perturb_state = None
         self.table_top_z = TABLE_TOP_Z
         self.tcp_offset, self.tip_offset = _measure_finger_offsets(arm)
+        if self.variant != "standard":
+            randomize.setup_visuals(self)
+            self.rand_mesh_fit = dict(randomize.MESH_FIT)
 
 
     # ---- time / stepping
@@ -430,13 +446,20 @@ class Env:
 
     def set_seed(self, seed: int):
         """Reuse this env for another seed: new layout, applied by the next reset() (one write at reset)."""
+        from .randomize import sample_randomization
         self.seed = int(seed)
         self.layout = sample_layout(seed)
         _LAYOUT["layout"] = self.layout
+        self.randomization = sample_randomization(seed, self.variant, self.layout)
+        _LAYOUT["rand"] = self.randomization
 
     def reset(self, settle_s: float = 1.0):
         """Reset once (write default state once), then let objects settle with the arm holding its pose."""
         _LAYOUT["layout"] = self.layout
+        _LAYOUT["rand"] = self.randomization
+        if self.variant != "standard":
+            from .randomize import apply_visuals
+            apply_visuals(self, self.randomization)
         self.present = [k for k in ("o3", "o5", "o8", "o9") if k in self.layout]
         self.perturb_state = None
         if hasattr(self, "carry_start_xy"):
@@ -447,6 +470,10 @@ class Env:
         hold = np.concatenate([q[self.arm_ids].cpu().numpy(), [GRIP_MAX_W]])
         for _ in range(int(round(settle_s / self.step_dt))):
             self.step(hold)
+        if self.variant != "standard":  # distractor offset from its sampled pose after settling (spawn check)
+            from .randomize import distractor_positions, distractor_report
+            self.rand_settle = distractor_report(self)
+            self.rand_settle_pos = distractor_positions(self)
         self._steps = 0  # episode clock starts after settling
         return hold
 
@@ -503,7 +530,9 @@ class Env:
 
 
 def make_env(seed: int, headless: bool = True, cameras=DEFAULT_CAMERAS, arm: str = "right", depth: bool = True,
-             sim_device: str = "cpu") -> Env:
+             sim_device: str = "cpu", variant: str = "standard") -> Env:
     """cameras: names from KNOWN_CAMERAS (real robot cameras); () for no rendering.
-    sim_device: 'cpu' (PhysX on CPU, default, canon §48) or 'cuda' (GPU PhysX, the v1 setting)."""
-    return Env(seed, headless=headless, cameras=cameras, arm=arm, depth=depth, sim_device=sim_device)
+    sim_device: 'cpu' (PhysX on CPU, default, canon §48) or 'cuda' (GPU PhysX, the v1 setting).
+    variant: 'standard' (today's scene, unchanged), 'random' (5 axes from the TEST pool, evaluation only) or 'dr'
+    (5 axes from the disjoint TRAIN pool, training-time domain randomization); randomize.py, canon §34/§52."""
+    return Env(seed, headless=headless, cameras=cameras, arm=arm, depth=depth, sim_device=sim_device, variant=variant)

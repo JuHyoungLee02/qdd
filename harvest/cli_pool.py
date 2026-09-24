@@ -47,7 +47,8 @@ def run_snapshot_episode(env, seed: int, kind: str, cams=(), on_snapshot=None, l
     from .config import CFG
     from .sim.oracle_state import oracle_objects
     from .sim.perturb import apply_pending, perturb
-    from .sim.planner import FAIL_STAGE, SUCCESS_KEYS, OraclePlanner, mug_tray_metrics, success_from_history
+    from .sim.planner import (FAIL_STAGE, SUCCESS_KEYS, OraclePlanner, mug_tray_metrics, randomization_meta,
+                              success_from_history)
 
     S.check_seed(seed)
     if env.seed != seed:
@@ -133,6 +134,7 @@ def run_snapshot_episode(env, seed: int, kind: str, cams=(), on_snapshot=None, l
     res["events"] = events
     res["phases"] = [(round(a, 3), b) for a, b in pl.phase_log]
     res.update(mug_tray_metrics(env))
+    randomization_meta(env, res)  # variant + sampled 5 axes (randomize.py) into ep<seed>.meta.json
     res["planner"] = pl
     res["snaps"] = snaps
     return res
@@ -191,12 +193,14 @@ class _Stop(Exception):
 def canonical_prefix(env) -> None:
     """Fixed PhysX history before every pool episode and every replay (T13 Step 1, v2 CPU).
 
-    Measured (DEV 0 P0, reset + rerun in one process): the next episode is bit-identical whatever ran before AS LONG
-    AS the previous run had gripper-mug contact; after a run without that contact (the first run after make_env, or
-    a run cut before the grasp) the grasp diverges (state max|diff| 0.075 at close, 1.97 at lift). So every episode
-    is preceded by the same short run: DEV 0 P0 until its first lift snapshot (gripper holding the mug), then cut."""
+    PhysX keeps per-shape-pair contact data across a reset when the two shapes' bounds overlap before and after the
+    teleport (mug-table, tray-table, finger-mug), so the next episode depends on how the previous run ended.
+    Measured (v2 CPU): cutting this prefix at the first LIFT snapshot left residual differences (pool ep2000 replay
+    max|diff| up to 0.0099); cut at the first CARRY snapshot (mug held ~12 cm above the table, so its table pair is
+    gone) the next run was bit-identical after 6 different histories (aborted at k2/k3/k9/k20, complete, prefix
+    only). The first run after make_env is still different -> warmup()."""
     def on(env_, pl, rec, s, imgs):
-        if rec["phase"] == "lift":
+        if rec["phase"] == "carry":
             raise _Stop
         return False
     try:
@@ -206,10 +210,13 @@ def canonical_prefix(env) -> None:
 
 
 def warmup(env) -> None:
-    """One canonical run right after make_env: the process's first run is never replay-exact, and a canonical
-    prefix that is itself a first run leaves a different history (measured: pool episodes made first in their
-    process replayed with max|diff| 0.002-0.016; the second ones 0.0)."""
+    """Run once right after make_env, before the first canonical_prefix. The first run in a process is never
+    replay-exact, and a canonical prefix that follows only another prefix leaves a different history than one that
+    follows an episode (measured v2 CPU, DEV 0: tray/box poses 1e-8 apart at t=0, mug 6 mm apart at open). So:
+    one prefix (absorbs the first-run effect) and one complete DEV 0 P0 episode; every pool episode, self-check
+    episode and replay then sees "episode, prefix" before its reset."""
     canonical_prefix(env)
+    run_snapshot_episode(env, 0, "P0")
 
 
 def replay_test(env, seed: int, kind: str, picks, hold_s: float = 0.5) -> list:
@@ -388,12 +395,43 @@ def _save_sheet(sheets, path):
 
 
 # -------------------------------------------------------------------------------------------- pool
+def choose_from(seed: int, kind: str, preds, ambiguous, has_oracle) -> tuple[list, dict, list]:
+    """Decision snapshots of one episode: 10, 30 % from the boundary stratum (snapshot.boundary_flags).
+    Returns (candidate indices, {index: (oversampled, w_natural)}, boundary flag per snapshot)."""
+    bnd = S.boundary_flags(preds, ambiguous)
+    cands = [i for i, h in enumerate(has_oracle) if h]
+    rng = np.random.default_rng([seed, 29, S.POOL_KINDS.index(kind)])
+    sel = S.select_decision([bnd[i] for i in cands], rng=rng)
+    return cands, {cands[i]: (o, w) for i, o, w in sel}, bnd
+
+
 def choose_decisions(res: dict) -> tuple[list, dict]:
-    """Decision snapshots of one episode (after attach_oracle): 10, 30 % from the ambiguous stratum."""
-    cands = [i for i, (r, _) in enumerate(res["snaps"]) if r["oracle"] is not None]
-    rng = np.random.default_rng([res["seed"], 29, S.POOL_KINDS.index(res["kind"])])
-    sel = S.select_decision([bool(res["snaps"][i][0]["ambiguous_predicates"]) for i in cands], rng=rng)
-    return cands, {cands[i]: (o, w) for i, o, w in sel}
+    recs = [r for r, _ in res["snaps"]]
+    cands, chosen, bnd = choose_from(res["seed"], res["kind"], [r["pred"] for r in recs],
+                                     [bool(r["ambiguous_predicates"]) for r in recs],
+                                     [r["oracle"] is not None for r in recs])
+    for r, b in zip(recs, bnd):
+        r["boundary_case"] = b
+    return cands, chosen
+
+
+def reselect(out: str) -> None:
+    """Re-run the decision selection on an existing pool (pure JSON, no Isaac): decision / oversampled /
+    w_natural / w_oversample / boundary_case fields are rewritten in place (continuous snapshots unchanged)."""
+    for p in sorted(glob.glob(f"{out}/ep*.jsonl")):
+        lines = [json.loads(x) for x in open(p)]
+        seed, kind = lines[0]["seed"], lines[0]["kind"]
+        _, chosen, bnd = choose_from(seed, kind, [x["pred"] for x in lines], [x["ambiguous"] for x in lines],
+                                     [x["oracle"] is not None for x in lines])
+        for i, x in enumerate(lines):
+            ov, w = chosen.get(i, (False, 0.0))
+            x.update(decision=i in chosen, oversampled=bool(ov), boundary_case=bnd[i],
+                     w_natural=round(float(w), 6) if i in chosen else None,
+                     w_oversample=1.0 if i in chosen else None)
+        with open(p, "w") as f:
+            for x in lines:
+                f.write(json.dumps(x) + "\n")
+    print("RESELECT " + json.dumps({"episodes": len(glob.glob(f"{out}/ep*.jsonl")), "utc": _utc()}), flush=True)
 
 
 def write_episode(res: dict, out: str, cams) -> dict:
@@ -428,6 +466,7 @@ def write_episode(res: dict, out: str, cams) -> dict:
                     "w_natural": round(float(w), 6) if i in chosen else None,
                     "w_oversample": 1.0 if i in chosen else None,
                     "ambiguous": bool(rec["ambiguous_predicates"]), "ambiguous_predicates": rec["ambiguous_predicates"],
+                    "boundary_case": rec.get("boundary_case"),
                     "phase": rec["phase"], "boundary_step": rec["boundary"], "text_state": txt,
                     "oracle": rec["oracle"], "pred": rec["pred"], "images": paths, "state": j}
             f.write(json.dumps(S._jsonable(line)) + "\n")
@@ -438,9 +477,11 @@ def write_episode(res: dict, out: str, cams) -> dict:
     return meta
 
 
-def pool(seeds, out: str):
+def pool(seeds, out: str, variant: str = "standard"):
     from .sim import scene
+    from .sim.randomize import check_train_variant
     from .sim.scene import make_env
+    check_train_variant(variant)  # training data: standard or dr only, never the random TEST pool (D35)
     os.makedirs(out, exist_ok=True)
     cams = tuple(getattr(scene, "RECORD_CAMERAS", ("cam_head",)))
     env = None
@@ -449,7 +490,7 @@ def pool(seeds, out: str):
             continue  # resumable
         kind = S.pool_kind(s)
         if env is None:
-            env = make_env(s, headless=True, cameras=cams, depth=False)
+            env = make_env(s, headless=True, cameras=cams, depth=False, variant=variant)
             warmup(env)  # the canonical run itself must not be the process's first run (replay exactness)
         canonical_prefix(env)
         res = run_snapshot_episode(env, s, kind, cams=cams)
@@ -458,7 +499,7 @@ def pool(seeds, out: str):
                                                        "wall_s", "n_snapshots")}), flush=True)
 
 
-def dev(seeds, kinds, out: str, cams=("cam_head",)):
+def dev(seeds, kinds, out: str, cams=("cam_head",), variant: str = "standard"):
     """DEV episodes (seeds 0-29 x P0/P1/P2) in the pool format, one folder per perturbation (jevl_model_select.md)."""
     from .sim.scene import make_env
     env = None
@@ -473,7 +514,7 @@ def dev(seeds, kinds, out: str, cams=("cam_head",)):
             if os.path.exists(f"{d}/ep{s}.meta.json"):
                 continue  # resumable
             if env is None:
-                env = make_env(s, headless=True, cameras=cams, depth=False)
+                env = make_env(s, headless=True, cameras=cams, depth=False, variant=variant)
             meta = write_episode(run_snapshot_episode(env, s, kind, cams=cams), d, cams)
             print("EP " + json.dumps({k: meta[k] for k in ("seed", "kind", "success", "stage", "sim_time_s", "wall_s",
                                                            "n_snapshots")}), flush=True)
@@ -481,7 +522,7 @@ def dev(seeds, kinds, out: str, cams=("cam_head",)):
 
 def check(out: str) -> dict:
     eps = sorted(glob.glob(f"{out}/ep*.jsonl"))
-    n_dec = n_ov = n_amb_all = n_all = n_amb_dec = 0
+    n_dec = n_ov = n_amb_all = n_all = n_amb_dec = n_bnd_all = 0
     iv, splits, kinds, succ, missing_img = [], {}, {}, 0, 0
     for p in eps:
         lines = [json.loads(x) for x in open(p)]
@@ -498,6 +539,7 @@ def check(out: str) -> dict:
         orc = [x for x in lines if x["oracle"] is not None]
         n_all += len(orc)
         n_amb_all += sum(x["ambiguous"] for x in orc)
+        n_bnd_all += sum(bool(x.get("boundary_case")) for x in orc)
         dec = [x for x in lines if x["decision"]]
         n_dec += len(dec)
         n_ov += sum(x["oversampled"] for x in dec)
@@ -510,6 +552,7 @@ def check(out: str) -> dict:
          "oversampled_frac": round(n_ov / max(n_dec, 1), 4),
          "ambiguous_frac_decision": round(n_amb_dec / max(n_dec, 1), 4),
          "ambiguous_frac_natural": round(n_amb_all / max(n_all, 1), 4), "continuous_with_oracle": n_all,
+         "boundary_frac_natural": round(n_bnd_all / max(n_all, 1), 4),
          "interval_mean": round(float(iv.mean()), 6), "interval_min": round(float(iv.min()), 6),
          "interval_max": round(float(iv.max()), 6), "splits": splits, "kinds": kinds, "missing_images": missing_img}
     r["pass"] = {"n1200": n_dec == 1200, "interval_033": bool(abs(iv - 0.33).max() <= 0.01),
@@ -520,7 +563,7 @@ def check(out: str) -> dict:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["restore-test", "pool", "check", "dev"])
+    ap.add_argument("mode", choices=["restore-test", "pool", "check", "dev", "reselect"])
     ap.add_argument("--kinds", default="P0,P1,P2")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--seeds", default="")
@@ -528,19 +571,24 @@ def main():
     ap.add_argument("--out", default="/data/harvest/data/pool")
     ap.add_argument("--frames", action="store_true")
     ap.add_argument("--confirm-pool", action="store_true", help="POOL generation is gated until the scene is final")
+    ap.add_argument("--variant", default="standard", choices=["standard", "random", "dr"],
+                    help="scene variant (randomize.py); pool mode refuses 'random' (TEST pool, never training)")
     a = ap.parse_args()
     if a.mode == "check":
         check(a.out)
         return
+    if a.mode == "reselect":
+        reselect(a.out)
+        return
     if a.mode == "restore-test":
         restore_test(a.seed, a.points, a.out, a.frames)
     elif a.mode == "dev":
-        dev(_seeds(a.seeds), a.kinds.split(","), a.out)
+        dev(_seeds(a.seeds), a.kinds.split(","), a.out, variant=a.variant)
     else:
         seeds = _seeds(a.seeds)
         if any(s in S.POOL_SEEDS for s in seeds) and not a.confirm_pool:
             raise SystemExit("POOL generation needs --confirm-pool (on hold until the robot config port is done)")
-        pool(seeds, a.out)
+        pool(seeds, a.out, variant=a.variant)
     os._exit(0)  # SimulationApp.close() hangs in this chroot; results are already flushed
 
 

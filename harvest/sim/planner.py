@@ -404,5 +404,18 @@ def run_episode(env, kind: str = "P0", seed: int | None = None, limit_s: float =
     res["grasp_rel_mm"] = [round(v * 1e3, 1) for v in pl.grasp_rel] if pl.grasp_rel else None
     res.update(mug_tray_metrics(env))
     res["n_decision_points"] = len(decision_points(pl))
+    randomization_meta(env, res)
     res["planner"] = pl
     return res
+
+
+def randomization_meta(env, res: dict) -> None:
+    """Episode metadata: the variant's sampled 5 axes (randomize.py) and, for random/dr, how far each tabletop
+    distractor sat from its sampled pose after settling and moved during the episode (collision check)."""
+    meta = getattr(env, "randomization", None)
+    res["variant"] = getattr(env, "variant", "standard")
+    res["randomization"] = meta
+    if meta and meta.get("distractors") and getattr(env, "rand_settle", None) is not None:
+        from .randomize import distractor_report
+        res["rand_settle"] = env.rand_settle
+        res["rand_moved"] = distractor_report(env, env.rand_settle_pos)

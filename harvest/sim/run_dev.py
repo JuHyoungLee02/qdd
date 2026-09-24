@@ -100,17 +100,17 @@ def boot(out: str, cams, tag: str = "v2", sim_device: str = "cpu"):
         json.dump(res, f, indent=1)
 
 
-def dev(out: str, kind: str, seeds, frames: bool, sim_device: str = "cpu"):
+def dev(out: str, kind: str, seeds, frames: bool, sim_device: str = "cpu", variant: str = "standard"):
     from .planner import run_episode
     from .scene import make_env
     os.makedirs(out, exist_ok=True)
     from .scene import RECORD_CAMERAS
     cams = RECORD_CAMERAS if frames else ()
     env = None
-    path = f"{out}/dev_{kind}.jsonl"
+    path = f"{out}/dev_{kind}.jsonl" if variant == "standard" else f"{out}/dev_{kind}_{variant}.jsonl"
     for s in seeds:
         if env is None:
-            env = make_env(s, headless=True, cameras=cams, depth=False, sim_device=sim_device)
+            env = make_env(s, headless=True, cameras=cams, depth=False, sim_device=sim_device, variant=variant)
         else:
             env.set_seed(s)
         shots = []
@@ -143,20 +143,137 @@ def dev(out: str, kind: str, seeds, frames: bool, sim_device: str = "cpu"):
                 sheet.save(f"{out}/frames_{kind}_s{s}_{SHORT[c]}.png", optimize=True)
 
 
+def _luma(img: np.ndarray) -> float:
+    x = img.astype(np.float64)
+    return float((0.299 * x[..., 0] + 0.587 * x[..., 1] + 0.114 * x[..., 2]).mean())
+
+
+def r5frames(out: str, variant: str, seeds, kind: str = "P0"):
+    """random5.md frames: P0 episodes with head + right-wrist cameras; PNGs of the first step and of the first
+    'lift' step (mug in hand), one EP line per seed (success, RTF with rendering, randomization)."""
+    from PIL import Image
+    from .planner import run_episode
+    from .scene import RECORD_CAMERAS, make_env
+    os.makedirs(out, exist_ok=True)
+    cams = RECORD_CAMERAS
+    env = None
+    for s in seeds:
+        if env is None:
+            env = make_env(s, headless=True, cameras=cams, depth=False, variant=variant)
+        else:
+            env.set_seed(s)
+        shots = {}
+
+        def on_step(e, pl):
+            tag = "start" if "start" not in shots else ("lift" if pl.phase == "lift" and "lift" not in shots else None)
+            if tag:
+                shots[tag] = {c: e.camera_rgb(c) for c in cams}
+
+        r = run_episode(env, kind=kind, seed=s, on_step=on_step)
+        r.pop("planner")
+        r["luma"] = {}
+        for tag, imgs in shots.items():
+            for c, img in imgs.items():
+                Image.fromarray(img).save(f"{out}/r5_{variant}_s{s}_{tag}_{SHORT[c]}.png", optimize=True)
+                r["luma"][f"{tag}_{SHORT[c]}"] = round(_luma(img), 1)
+        if hasattr(env, "rand_mesh_fit"):
+            r["mesh_fit"] = env.rand_mesh_fit
+        print("EP " + json.dumps(r), flush=True)
+        with open(f"{out}/r5frames_{variant}.jsonl", "a") as f:
+            f.write(json.dumps(r) + "\n")
+
+
+def r5calib(out: str, variant: str):
+    """Calibrate the base intensities of randomization_pools.json: each HDR dome alone and each key-light type
+    alone is solved (bisection on log intensity, luma is monotone in intensity) to give the head-camera mean luma
+    of the standard lighting (dome 2500, colour 0.9) in the same scene. Writes r5calib_<variant>.json."""
+    import math as _m
+
+    from . import randomize as R
+    from .scene import GRIP_MAX_W, make_env
+    os.makedirs(out, exist_ok=True)
+    env = make_env(0, headless=True, cameras=("cam_head",), depth=False, variant=variant)
+    env.reset(settle_s=0.2)
+    import omni.usd  # after the app is up
+    from pxr import Gf, Sdf, UsdLux
+    stage = omni.usd.get_context().get_stage()
+    pools = R.load_pools()
+    pool = R.pool_of(variant, pools)
+    c = pools["common"]
+    dome = UsdLux.DomeLight(stage.GetPrimAtPath("/World/light"))
+    keys = {t: stage.GetPrimAtPath(f"{R.ROOT}/Key_{t}") for t in R.LIGHT_TYPES}
+    hold = np.concatenate([env.arm_q(), [GRIP_MAX_W]])
+
+    def lum(n=10):
+        for _ in range(n):
+            env.step(hold)
+        return _luma(env.camera_rgb("cam_head"))
+
+    def keys_off():  # intensity 0 only: visibility toggles of lights are not rendered reliably
+        for p in keys.values():
+            UsdLux.LightAPI(p).GetIntensityAttr().Set(0.0)
+
+    def solve(set_i, lo, hi, iters=9):
+        trace = []
+        for _ in range(iters):
+            mid = _m.sqrt(lo * hi)
+            set_i(mid)
+            lm = lum()
+            trace.append((round(mid, 1), round(lm, 1)))
+            lo, hi = (mid, hi) if lm < res["L_std"] else (lo, mid)
+        i_fit = _m.sqrt(lo * hi)
+        set_i(i_fit)
+        return {"I_fit": round(i_fit, 1), "L_fit": round(lum(), 2), "trace": trace}
+
+    keys_off()
+    dome.GetTextureFileAttr().Set(Sdf.AssetPath(""))
+    dome.GetIntensityAttr().Set(2500.0)
+    dome.GetColorAttr().Set(Gf.Vec3f(0.9, 0.9, 0.9))
+    res = {"variant": variant, "table": env.randomization["table_material"]["name"],
+           "floor": env.randomization["floor_material"]["name"], "L_std": round(lum(20), 2), "hdr": {}, "key": {}}
+    dome.GetColorAttr().Set(Gf.Vec3f(1.0, 1.0, 1.0))
+    for h in pool["hdr_maps"]:
+        dome.GetTextureFileAttr().Set(Sdf.AssetPath(h["file"]))
+        lum(10)  # texture load
+        res["hdr"][h["name"]] = solve(lambda i: dome.GetIntensityAttr().Set(float(i)), 10.0, 1e5)
+        print("CAL " + json.dumps({h["name"]: res["hdr"][h["name"]]}), flush=True)
+    dome.GetIntensityAttr().Set(0.0)
+    tgt = np.asarray(c["light_target"], float)
+    az, el, dist = _m.radians(45.0), _m.radians(55.0), 1.6
+    pos = tgt + dist * np.array([_m.cos(el) * _m.cos(az), _m.cos(el) * _m.sin(az), _m.sin(el)])
+    for t in R.LIGHT_TYPES:
+        keys_off()
+        p = keys[t]
+        UsdLux.LightAPI(p).CreateEnableColorTemperatureAttr().Set(True)
+        UsdLux.LightAPI(p).CreateColorTemperatureAttr().Set(6500.0)
+        R._set_pose(p, pos.tolist(), R.look_at_quat(pos, tgt))
+        rng = (10.0, 1e6) if t == "distant" else (1e3, 1e9)
+        res["key"][t] = solve(lambda i, p=p: UsdLux.LightAPI(p).GetIntensityAttr().Set(float(i)), *rng)
+        print("CAL " + json.dumps({t: res["key"][t]}), flush=True)
+    print("CALIB " + json.dumps(res), flush=True)
+    with open(f"{out}/r5calib_{variant}.json", "w") as f:
+        json.dump(res, f, indent=1)
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["boot", "dev"])
+    ap.add_argument("mode", choices=["boot", "dev", "r5frames", "r5calib"])
     ap.add_argument("--out", default="/data/harvest/out/t11_12")
     ap.add_argument("--kind", default="P0", choices=["P0", "P1", "P2"])
     ap.add_argument("--seeds", default="0-29")
     ap.add_argument("--frames", action="store_true")
     ap.add_argument("--sim-device", default="cpu", choices=["cpu", "cuda"])
     ap.add_argument("--cams", default="cam_head,cam_wrist_right", help="boot: cameras to render")
+    ap.add_argument("--variant", default="standard", choices=["standard", "random", "dr"])
     a = ap.parse_args()
     if a.mode == "boot":
         boot(a.out, tuple(a.cams.split(",")), sim_device=a.sim_device)
+    elif a.mode == "r5frames":
+        r5frames(a.out, a.variant, _seeds(a.seeds), kind=a.kind)
+    elif a.mode == "r5calib":
+        r5calib(a.out, a.variant)
     else:
-        dev(a.out, a.kind, _seeds(a.seeds), a.frames, sim_device=a.sim_device)
+        dev(a.out, a.kind, _seeds(a.seeds), a.frames, sim_device=a.sim_device, variant=a.variant)
     os._exit(0)  # SimulationApp.close() hangs in this chroot; results are already flushed
 
 
