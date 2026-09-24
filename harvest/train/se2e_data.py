@@ -1,0 +1,249 @@
+"""S-E2E real-robot data: ROBOTIS AI Worker LeRobot v2.1 episodes -> stage-B rows (R2 contract of stageb_data).
+
+Source (plan e2e-ready S-E2E, user-log 61): HF ROBOTIS/Task_0001_CoffeeClassification_lerobot (kind "RB1", 16-D)
+and ROBOTIS/Task_0002_OrderPicking_lerobot (kind "RB2", 19-D = 16 + head_joint1/2 + lift_joint); 10 fps; cameras
+cam_head (ZED left, 672x376), cam_head_right, cam_wrist_left / cam_wrist_right (D405, 424x240) = the §59 native
+sizes, so frames are used as they are.
+
+One row per sampled frame k (stride), same fields as stageb_data.check_row plus extras:
+  hz = 30, H = 15           the 10 fps action stream is linearly resampled to 30 Hz (joint position targets);
+                            valid = 0 past the last recorded action (held value)
+  arm                       active arm = larger end-effector path length over the next 1 s (FK of the measured
+                            state); bimanual = both arms move >= 2 cm and the smaller >= half the larger
+  action_exec / _script     8-D of the active arm (7 joints rad + gripper joint value as recorded); equal (teleop,
+                            no scripted skill)
+  proprio                   q, qd (finite difference of the 10 fps state), tau = 0 (not recorded,
+                            proprio_mask.tau = 0), grip = [gripper joint value, its velocity] (joint units, NOT
+                            the sim's width in m)
+  action_full [H][D]        all recorded action dims (bimanual expert option), state_full [D]
+  committed (labels mode)   HEURISTIC decision tokens (LABEL_SRC): Δ = FK(state at t + 0.33 s) - FK(state at t) of
+                            the active arm's end_effector link in arm_base_link (x forward, y left, z up); signs
+                            with the labels_v2 1 cm dead band and the labels_v2 MAG bins. Not a typed decision
+                            label -- the data has none. labels=False = "actions only" mode (no committed, no items).
+  aux                       empty (no privileged geometry in real data)
+"""
+from __future__ import annotations
+
+import json
+import math
+import os
+import xml.etree.ElementTree as ET
+import zlib
+
+import numpy as np
+
+from ..jevcall import DIR_XY, DIR_Z, MAG, build_choice
+from ..clients.jevl import question_text
+from ..labels_v2 import dir_xy_label, dir_z_label, mag_label
+
+HZ = 30
+H_DEFAULT = 15
+LABEL_SRC = "se2e_heur_ee033@v1"
+HORIZON_S = 1.0 / 3.0
+ARM_WINDOW_S = 1.0
+MOVE_MIN_M = 0.02
+ARM_NAMES = {a: [f"arm_{a[0]}_joint{i}" for i in range(1, 8)] + [f"gripper_{a[0]}_joint1"] for a in ("left", "right")}
+FEATURE_NAMES_16 = ARM_NAMES["left"] + ARM_NAMES["right"]
+FEATURE_NAMES_19 = FEATURE_NAMES_16 + ["head_joint1", "head_joint2", "lift_joint"]
+QUESTIONS = ("dir_xy", "dir_z", "mag_coarse")
+_OPTS = {"dir_xy": DIR_XY, "dir_z": DIR_Z, "mag_coarse": MAG}
+_QTEXT = {"dir_xy": "Which horizontal direction should the active gripper move during the next 0.33 s?",
+          "dir_z": "Which vertical direction should the active gripper move during the next 0.33 s?",
+          "mag_coarse": "How far should the active gripper move during the next 0.33 s?"}
+
+
+# ------------------------------------------------------------------------------------------ kinematics
+def _rpy(r, p, y):
+    cr, sr, cp, sp, cy, sy = math.cos(r), math.sin(r), math.cos(p), math.sin(p), math.cos(y), math.sin(y)
+    return np.array([[cy * cp, cy * sp * sr - sy * cr, cy * sp * cr + sy * sr],
+                     [sy * cp, sy * sp * sr + cy * cr, sy * sp * cr - cy * sr],
+                     [-sp, cp * sr, cp * cr]])
+
+
+def _axis_rot(axis, q):
+    """Batched Rodrigues: axis (3,), q (N,) -> (N, 3, 3)."""
+    k = np.asarray(axis, float) / np.linalg.norm(axis)
+    K = np.array([[0, -k[2], k[1]], [k[2], 0, -k[0]], [-k[1], k[0], 0]])
+    s, c = np.sin(q)[:, None, None], np.cos(q)[:, None, None]
+    return np.eye(3) + s * K + (1 - c) * (K @ K)
+
+
+def load_arm_chain(urdf: str, arm: str, base: str = "arm_base_link") -> list:
+    """Joints from `base` to end_effector_{r|l}_link: [(type, xyz, R_origin, axis)]. `urdf` = XML text or path."""
+    root = ET.fromstring(urdf) if urdf.lstrip().startswith("<") else ET.parse(urdf).getroot()
+    by_child = {j.find("child").get("link"): j for j in root.findall("joint")}
+    link, out = f"end_effector_{arm[0]}_link", []
+    while link != base:
+        j = by_child.get(link)
+        if j is None:
+            raise ValueError(f"no joint chain from {base} to end_effector_{arm[0]}_link (stuck at {link})")
+        o = j.find("origin")
+        xyz = [float(v) for v in (o.get("xyz", "0 0 0") if o is not None else "0 0 0").split()]
+        rpy = [float(v) for v in (o.get("rpy", "0 0 0") if o is not None else "0 0 0").split()]
+        ax = j.find("axis")
+        axis = [float(v) for v in ax.get("xyz").split()] if ax is not None else None
+        out.append((j.get("type"), np.array(xyz), _rpy(*rpy), axis))
+        link = j.find("parent").get("link")
+    out = out[::-1]
+    if sum(t == "revolute" for t, *_ in out) != 7:
+        raise ValueError("expected 7 revolute arm joints")
+    return out
+
+
+def fk_ee(chain: list, q) -> np.ndarray:
+    """End-effector position in the base link; q (7,) or (N, 7) -> (3,) or (N, 3)."""
+    q = np.asarray(q, float)
+    single = q.ndim == 1
+    q = q.reshape(-1, 7)
+    n = len(q)
+    R = np.broadcast_to(np.eye(3), (n, 3, 3)).copy()
+    p = np.zeros((n, 3))
+    i = 0
+    for typ, xyz, Ro, axis in chain:
+        p = p + R @ xyz
+        R = R @ Ro
+        if typ in ("revolute", "continuous"):
+            R = R @ _axis_rot(axis, q[:, i])
+            i += 1
+    return p[0] if single else p
+
+
+# ------------------------------------------------------------------------------------------ time series
+def interp_at(x, t: float) -> np.ndarray:
+    """Linear interpolation of rows of x at fractional index t (clamped to [0, T-1])."""
+    x = np.asarray(x, float)
+    t = min(max(t, 0.0), len(x) - 1.0)
+    i = int(math.floor(t))
+    if i >= len(x) - 1:
+        return x[-1].copy()
+    w = t - i
+    return (1 - w) * x[i] + w * x[i + 1]
+
+
+def resample_chunk(a, src_hz: float, t0_index: int, dst_hz: float = HZ, H: int = H_DEFAULT):
+    """H targets at t0 + i/dst_hz from a src_hz stream (linear); valid = 0 past the last sample (held)."""
+    a = np.asarray(a, float)
+    ts = t0_index + np.arange(H) * (src_hz / dst_hz)
+    ch = np.stack([interp_at(a, t) for t in ts])
+    valid = (ts <= len(a) - 1 + 1e-9).astype(int)
+    return ch, valid
+
+
+def finite_velocity(x, hz: float) -> np.ndarray:
+    x = np.asarray(x, float)
+    if len(x) < 2:
+        return np.zeros_like(x)
+    return np.gradient(x, axis=0) * hz
+
+
+# ------------------------------------------------------------------------------------------ labels
+def decision_labels(delta) -> dict:
+    """HEURISTIC (LABEL_SRC) decision tokens from an end-effector displacement (m), labels_v2 bins/dead band."""
+    return {"dir_xy": dir_xy_label(delta), "dir_z": dir_z_label(delta), "mag_coarse": mag_label(delta)}
+
+
+def _travel(p):
+    p = np.asarray(p, float)
+    return float(np.linalg.norm(np.diff(p, axis=0), axis=1).sum()) if len(p) > 1 else 0.0
+
+
+def active_arm(ee_left, ee_right, move_min: float = MOVE_MIN_M):
+    """(arm, bimanual) from the two end-effector paths over a window; right when neither moves."""
+    tl, tr = _travel(ee_left), _travel(ee_right)
+    if max(tl, tr) < move_min:
+        return "right", False
+    arm = "left" if tl > tr else "right"
+    return arm, bool(min(tl, tr) >= move_min and min(tl, tr) >= 0.5 * max(tl, tr))
+
+
+def arm_index(names, arm: str) -> list:
+    return [list(names).index(n) for n in ARM_NAMES[arm]]
+
+
+def split_of(kind: str, episode: int, val_pct: int = 5) -> str:
+    """Deterministic per-episode split (hash), ~val_pct % val within every dataset."""
+    return "val" if zlib.crc32(f"{kind}:{episode}".encode()) % 100 < val_pct else "train"
+
+
+# ------------------------------------------------------------------------------------------ rows
+def episode_rows(state, action, fps: float, chain: dict, seed: int, kind: str, task: str, stride: int = 1,
+                 labels: bool = True, H: int = H_DEFAULT, hz: int = HZ, names=None, image_ref=None,
+                 timestamps=None) -> list:
+    """R2 rows (stageb_data.check_row) for frames 0, stride, 2*stride, ... of one episode."""
+    st, act = np.asarray(state, float), np.asarray(action, float)
+    names = list(names or (FEATURE_NAMES_19 if st.shape[1] == 19 else FEATURE_NAMES_16))
+    idx = {a: arm_index(names, a) for a in ("left", "right")}
+    ee = {a: fk_ee(chain[a], st[:, idx[a][:7]]) for a in ("left", "right")}
+    vel = finite_velocity(st, fps)
+    win, hor = int(round(ARM_WINDOW_S * fps)), HORIZON_S * fps
+    split = split_of(kind, seed)
+    rows = []
+    for k in range(0, len(st), stride):
+        arm, both = active_arm(ee["left"][k:k + win + 1], ee["right"][k:k + win + 1])
+        ix = idx[arm]
+        full, valid = resample_chunk(act, fps, k, hz, H)
+        r = {"seed": int(seed), "kind": kind, "k": int(k), "hz": hz, "H": H, "arm": arm, "bimanual": both,
+             "skill_id": "teleop", "phase_id": "na", "split": split, "task": task, "fps_src": fps,
+             "t_src": float(timestamps[k]) if timestamps is not None else k / fps,
+             "proprio": {"q": st[k, ix[:7]].tolist(), "qd": vel[k, ix[:7]].tolist(), "tau": [0.0] * 7,
+                         "grip": [float(st[k, ix[7]]), float(vel[k, ix[7]])]},
+             "proprio_mask": {"q": 1, "qd": 1, "tau": 0, "grip": 1},
+             "action_exec": full[:, ix].tolist(), "action_script": full[:, ix].tolist(), "valid": valid.tolist(),
+             "action_full": full.tolist(), "state_full": st[k].tolist(), "names_full": names,
+             "aux": {"reg": {}, "cls": {}}}
+        d = interp_at(ee[arm], k + hor) - ee[arm][k]
+        r["ee_delta"] = [round(float(v), 5) for v in d]
+        if labels:
+            r["committed"] = decision_labels(d)
+            r["labels_src"] = LABEL_SRC
+        if image_ref is not None:
+            r["images"] = image_ref(k)
+        rows.append(r)
+    return rows
+
+
+# ------------------------------------------------------------------------------------------ samples
+GRIP_CLOSED = 0.5  # gripper joint value above which the prompt says "closed" [assumption: 0 open .. ~1.1 closed]
+
+
+def context_text(row: dict) -> str:
+    g = "closed" if row["proprio"]["grip"][0] > GRIP_CLOSED else "open"
+    return f'task: "{row["task"]}"\nrobot: gripper={g} arm={row["arm"]}'
+
+
+def decision_items(committed: dict, ctx: str, split: str, key: str) -> list:
+    out = []
+    for q in QUESTIONS:
+        if committed.get(q) is None:
+            continue
+        qid, spec = build_choice(f"se2e.{q}@v1", _QTEXT[q], _OPTS[q])
+        out.append({"key": key, "question": q, "split": split, "text": question_text(ctx, qid, spec),
+                    "images": [], "names": [o.name for o in _OPTS[q]], "target": [committed[q]], "ne": False,
+                    "source": LABEL_SRC})
+    return out
+
+
+def load_se2e(rows_path: str, image_root: str = "", labels: bool = True, wrist: bool = True) -> list:
+    """Stage-B samples (stageb_data.make_sample format) from a converted rows file."""
+    from .stageb_data import images_of, make_sample
+    out = []
+    for x in open(rows_path, encoding="utf-8"):
+        r = json.loads(x)
+        if not labels:
+            r.pop("committed", None)
+        ctx = context_text(r)
+        key = f"{r['kind']}_ep{r['seed']}_k{r['k']}"
+        ims = images_of({"images": r["images"]}, "both" if r.get("bimanual") else r["arm"], wrist, image_root) \
+            if r.get("images") else []
+        items = decision_items(r.get("committed") or {}, ctx, r["split"], key) if labels else []
+        for it in items:
+            it["images"] = ims
+        s = make_sample(r, None, items)
+        s["context"] = {"text": ctx, "images": ims}
+        s["split"] = r["split"]
+        out.append(s)
+    return out
+
+
+def rows_path(root: str, kind: str) -> str:
+    return os.path.join(root, f"{kind}.stageb.jsonl")
