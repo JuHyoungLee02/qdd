@@ -56,7 +56,7 @@ L2 블렌딩 $T_b$ / $T_f$ / 모양 & 0.3\,s / 0\,s / RTC 식 5 & M5 \\
 Jev는 이미지를 볼 수 없으므로 장면을 텍스트로 바꾸어 준다. 형식보다 내용이 중요하다. 그래서 작업에 관련된 물체와, 코드가 계산한 관계·술어만 넣는다.
 
 \paragraph{입출력.}
-카메라(와 깊이)에서 인식 앞단을 거친 결과를 M1 직렬화기(코드)가 세 가지로 바꾼다. (1) Jev에 줄 \texttt{state} 텍스트(관련 부분, 변화 절, 상태 시각 $t_{\text{state}}$), (2) 모든 술어의 참/거짓 표(M4 (b), M7, M9가 읽음), (3) Astra에 줄 번호 표시(Set-of-Mark) 이미지다. Jev에는 숫자 계산을 시키지 않고 범주와 참거짓만 준다. 관련 없는 내용은 넣지 않고, 영어로, 평평한 구조로, 판본을 고정해 쓴다. 인식 앞단은 SAM 3.1, 깊이 추정, 3D 중심·크기 계산으로 구성하며, 필요한 물체에만 자세 추정을 쓴다. 지연 목표는 합계 p50 $\le$ 70\,ms, p95 $\le$ 120\,ms이다(3\,Hz 주기 333\,ms의 약 1/3, 측정 전 목표값). p95를 넘기면 직전 상태를 $t_{\text{state}}$와 함께 그대로 보낸다.
+카메라(와 깊이)에서 인식 앞단을 거친 결과를 M1 직렬화기(코드)가 세 가지로 바꾼다. (1) Jev에 줄 \texttt{state} 텍스트(관련 부분, 변화 절, 상태 시각 $t_{\text{state}}$), (2) 모든 술어의 참/거짓 표(M4 (b), M7, M9가 읽음), (3) Astra에 줄 번호 표시(Set-of-Mark) 이미지다. Jev에는 숫자 계산을 시키지 않고 범주와 참거짓만 준다. 관련 없는 내용은 넣지 않고, 영어로, 평평한 구조로, 판본을 고정해 쓴다. 인식 앞단은 SAM 3.1, 깊이 추정, 3D 중심·크기 계산으로 구성하며, 필요한 물체에만 자세 추정을 쓴다. 실물 플랫폼인 AI Worker의 머리 카메라는 ZED Mini 스테레오 카메라이고 기본 설정은 깊이를 계산하지 않으므로, 깊이를 켜고 ZED SDK의 NEURAL 모드를 1순위로, Fast-FoundationStereo~\cite{fastfs2025}를 같은 파이프라인에 주입한 조건을 비교 조건으로 둔다. 손목은 D405 센서 깊이를 쓰며, 원시 스테레오 영상을 기록해 깊이 방식을 나중에 바꿔 비교한다. 지연 목표는 합계 p50 $\le$ 70\,ms, p95 $\le$ 120\,ms이다(3\,Hz 주기 333\,ms의 약 1/3, 측정 전 목표값). p95를 넘기면 직전 상태를 $t_{\text{state}}$와 함께 그대로 보낸다.
 
 \paragraph{술어 등록부.}
 술어는 하나의 사전(등록부)으로 관리하며, 모든 모듈은 특정 변환 방식이 아니라 이 등록부에만 의존한다. 값은 \texttt{true}/\texttt{false}/\texttt{unknown} 세 가지다. 술어는 신뢰 등급에 따라 셋으로 나눈다.
@@ -255,7 +255,7 @@ CaP-X의 생성 스킬 9개는 대부분 좌표 계산 함수이고, 조건이�
 잔차 학습은 베이스가 무엇이든 붙일 수 있다. 손으로 설계한 제어기 위에 잔차를 학습한 Residual Policy Learning(기간 밖, 기초 문헌)은 ``RPL consistently and substantially improves on the initial controllers''라고 보고했다. BC 정책 위의 잔차는 실물 휴머노이드에서 ``boosted the performance of the base model from 14\% to 64\%''였다~\cite{resfit2025}. 물체 상태를 입력으로 받는 잔차는 시뮬레이션에서만 학습해 실물로 옮겼을 때 ``improves the success rate from 42\% to 76\% zero-shot''였고, 같은 절제에서 물체 자세 입력은 76/100, 이미지 입력은 47/100이었다. 저자들은 ``the visual domain gap is the dominant sim-to-real barrier''라고 적었다~\cite{ocrrl2026}. 사람의 교정으로 학습한 접촉 과제의 잔차에서는 ``both the delta correction data and the force data are crucial''이었다~\cite{crdagger2025}. 잔차의 크기는 제한해야 한다. Policy Decorator(기간 밖, 기초 문헌)는 ``Bounded residual action is essential''이라고 했고~\cite{policydecorator2024}, PLD는 잔차 행동을 ``bounded within a range of $[-\xi, \xi]$''로 두었다~\cite{pld2025}. 다만 원문의 제한은 학습 안정성을 위한 것이며, 이를 Jev 결정의 권위를 지키는 데 쓰는 것은 우리의 접목이다. 또한 이 결과들은 BC나 VLA 베이스 위의 것이고, 스크립트 베이스 위의 최근(2025--26) 잔차 결과는 찾지 못했다.
 
 \paragraph{입력, 출력, 투영.}
-입력은 스킬·단계 id, Jev가 확정한 방향 $\hat{d}$와 크기 구간 $[m_{\mathrm{lo}}, m_{\mathrm{hi}}]$, $S$의 명령, M1이 추정한 대상 자세와 불확실도, 관절·그리퍼 폭·힘/토크, 짧은 이력이다. 이미지는 넣지 않는다. 외관 변화는 M1을 거쳐서만 들어오므로 $S$와 같은 경로를 탄다. 대상 물체의 crop을 넣는 조건은 절제로만 둔다. 출력은 병진 잔차 $\tilde{r}$이며 회전은 기본으로 없다. $S$의 누적 명령 이동 가운데 $\hat{d}$ 방향 성분을 $s_S(t)=\hat{d}^{\top}\bigl(p_S(t)-p_0\bigr)$라 하면, 실제 명령은
+입력은 스킬·단계 id, Jev가 확정한 방향 $\hat{d}$와 크기 구간 $[m_{\mathrm{lo}}, m_{\mathrm{hi}}]$, $S$의 명령, M1이 추정한 대상 자세와 불확실도, 관절·그리퍼 폭, 관절 전류(effort)와 그리퍼 전류, 짧은 이력이다. AI Worker에는 손목 힘/토크 센서가 없고 추가하지도 않으므로 힘 대신 관절 전류를 쓴다. 힘 입력 잔차의 근거~\cite{crdagger2025}는 손목 힘/토크 센서 기준이라 이 대체는 근거가 한 단계 약하며, 힘 입력을 뺀 조건(R-noforce)을 절제로 둔다. 이미지는 넣지 않는다. 외관 변화는 M1을 거쳐서만 들어오므로 $S$와 같은 경로를 탄다. 대상 물체의 crop을 넣는 조건은 절제로만 둔다. 출력은 병진 잔차 $\tilde{r}$이며 회전은 기본으로 없다. $S$의 누적 명령 이동 가운데 $\hat{d}$ 방향 성분을 $s_S(t)=\hat{d}^{\top}\bigl(p_S(t)-p_0\bigr)$라 하면, 실제 명령은
 \begin{equation}
   p(t) = p_S(t) + g(t)\,\Pi_t\bigl(\tilde{r}(t)\bigr),\quad g(t)=\mathbf{1}\bigl[\text{near}\lor\text{contact}\bigr]
 \end{equation}

@@ -3,6 +3,9 @@
 
 평가는 두 단계로 나눈다. 첫 실험(E0--E3)과 모듈 실험(E-M*)은 단일 팔 자작 장면에서 하고, 본 평가(EVAL)는 RoboDojo~\cite{robodojobench2026}에서 한다. 두 환경을 섞지 않는다. 아래 판정 기준은 모두 실행 전에 고정하는 사전 등록안이다. 실행 뒤 기준을 바꾸려면 이유를 적고 원래 기준의 결과도 함께 보고한다. 이 절의 수치 가운데 예비 분석을 뺀 것은 모두 계획값이며, 아직 얻은 결과는 없다.
 
+\paragraph{플랫폼.}
+실물 기준 플랫폼은 ROBOTIS AI Worker이며, 스워브 이동 베이스를 가진 FFW-SG2 모델을 베이스를 고정해 쓴다(이동은 범위 밖). 7자유도 팔 두 개, 1자유도 평행 그리퍼(RH-P12-RN), 2자유도 머리, 0--500\,mm 리프트를 쓰며, 머리에 ZED Mini 스테레오 카메라(기선 63\,mm), 손목에 RealSense D405 두 대가 달려 있다. 손목 힘/토크 센서는 없고, 팔마다 100\,Hz 위치 명령으로 제어한다(ROS 2). 머리 깊이는 ZED SDK의 NEURAL 모드를 1순위로, Fast-FoundationStereo~\cite{fastfs2025}를 비교 조건으로 둔다. 첫 실험과 모듈 실험의 단일 팔 자작 장면은 공식 Isaac 모델(cyclo\_lab)의 AI Worker 한 팔과 ZED Mini 디지털 쌍둥이로 고정하며, RoboDojo와 같은 Isaac Sim 5.1과 Isaac Lab 2.3에서 돌린다. AI Worker는 RoboDojo 지원 로봇이 아니므로 평가를 세 층으로 나눈다. 결정 층 비교(H2, H3, 상대 낙폭)는 공개 수치와 같은 열에 두기 위해 RoboDojo-Sim의 ARX X5 양팔 로봇 그대로 하고, 보조로 머리 카메라 옆 63\,mm에 가상 카메라를 더해 스테레오 쌍을 렌더하는 트랙(D-stereo, 입력 다름 표기)을 둔다. 개발, 정답 궤적 생성, 모듈 실험은 AI Worker 쌍둥이에서, 실물 확인(E-real)은 AI Worker 최소판으로 한다. 결정 층, 술어 등록부, Jev와 Astra의 계약은 두 로봇에서 같은 코드이고, 스킬, M5 한계, 잔차 보정기는 로봇별로 둔다.
+
 \subsection{첫 실험}
 
 \paragraph{공통 규칙.}

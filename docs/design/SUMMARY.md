@@ -1,5 +1,7 @@
-# Harvest 설계서 (현재 상태 정리본, v3.8)
+# Harvest 설계서 (현재 상태 정리본, v3.9)
 
+> v3.9, 2026-09-24 07:39 UTC 기준. v3.8 뒤 정본 §36(로봇·카메라 결정, user-log 37)·§37(AI Worker·ZED 반영, `D21-aiworker-zed.md`)·§38(실물 = FFW-SG2 베이스 고정, user-log 38)·§39(힘 입력 = AI Worker 기본 구성, user-log 39)만 더했다. 바뀐 곳: 머리 기준 시각, §0 플랫폼 줄, §2 M1 [결정 필요] 줄 아래, §3.17(새), §5.1 v3.9 줄과 D2c·D30·D37·D38 해소 행.
+> 개정 2026-09-24 07:39 UTC (정본 §36~§39, D21 반영, `D21-aiworker-zed.md`, user-log 37~39 — 로봇·카메라·실물 SG2·힘 입력은 사용자 결정, 깊이·격자·장면·정합 세부는 Claude 결정): **로봇 = ROBOTIS AI Worker, 카메라 = ZED 스테레오**(user-log 37). D2c 해소 = 스테레오(머리 ZED Mini + 손목 D405 × 2, 깊이 켬 — ZED SDK NEURAL 1순위·Fast-FS 비교, SVO 기록), D30 해소 = 실물 AI Worker **FFW-SG2 베이스 고정**(user-log 38, E-real 최소판), R 힘 입력 = 관절 전류 + 그리퍼 전류·손목 F/T 추가 안 함(user-log 39, 절제 R-noforce). GT·모듈 실험 장면 = cyclo_lab AI Worker 한 팔(SG2 우선, 안 되면 BG2) + `ZED_M` 쌍둥이(Isaac Sim 5.1 / Isaac Lab 2.3), 결정 층 비교 = RoboDojo-Sim ARX X5 그대로 + 보조 트랙 D-stereo, Astra 격자 = ZED 왼쪽 영상만, 양팔 스킬 `look_at`·`set_lift`·`handover`·`bimanual_hold`, M5 로봇별 한계표 두 벌. 남은 하드웨어 [결정 필요]는 없다.
 > v3.8, 2026-09-24 07:18 UTC 기준. v3.7 뒤 정본 §34(D35·D36 결정, user-log 35 사용자 결정)·§35(action expert 역할 = 구간 제한 잔차 R, `D20-expert-role.md`, user-log 35·36)만 더했다. 바뀐 곳: 머리 기준 시각, §0 실행기 줄, §3.16(새), §5.1 D35·D36 해소 행.
 > 개정 2026-09-24 07:18 UTC (정본 §34·§35, D20 반영, `D20-expert-role.md`, user-log 35·36 — D35·D36은 사용자 결정, R 설계는 Claude 결정): **D35 = 도메인 무작위화 넣음**(모든 학습 조건에 같은 데이터), **D36 = 주 표 실행기 S**. **주 시스템의 phase 실행 = 스크립트 스킬 S**, action expert의 주 역할 = S 위의 **구간 제한 잔차 R**(이미지 없는 입력, Jev 방향 d̂·크기 구간을 코드 투영으로 지킴, 접근·접촉 근처에서만, M5 L3 통과), 보조 = 그림자 예측기(M7 후보, 내부 절제만), 학습 복구는 R에 흡수, 후보 생성 제외, 학습 실행기 B(§33)는 E-AE-2 비교 표로만. 주 표 S, S+R 병기 표 규칙, B3c 연속 출력은 같은 격자로 양자화, E-R0~E-R4.
 > v3.7, 2026-09-24 06:38 UTC 기준. v3.6 뒤 정본 §32(학습 실행기 B 채택, user-log 33·34 사용자 결정)·§33(B 세부 설계, `D19-action-expert.md`)만 더했다. 바뀐 곳: 머리 기준 시각, §0 실행기·공정성 줄, §3.15, §5.1 D9 해소·D35·D36.
@@ -21,7 +23,7 @@
 > v3, 2026-09-24 01:03 UTC 기준. v2(2026-09-23 23:30 UTC 기준) 뒤에 들어온 정본 §17~§23(D6 모의 심사, D7 선점 재검사, D8·D9·D10a·D10b 원문 정독, 메인 세션 정리)을 반영했다. 바뀐 곳은 바로 아래 "v2 → v3 변경 요약".
 > 개정 2026-09-24 (D11 일관성 점검 반영, `D11-final-consistency.md` 범주 1~4): 머리 정보 plan v5.8, M1 [사용자] 줄 원문 복원·"변환 방법은 사용자가 정한다" 출처 표지, D-줌 "사용자 원안" → "촘촘한 원안(Claude 구현)", D6b를 §5.1에서 §5.2로 옮김, 재현율 이름 "고정 창 재현율(τ=2 s)", max 352 s 출처(Artificial Analysis 기준 읽음), E-M7 조건 이름 CD1-CiL·CD11, REACH 공개일 [미확인], 안전 줄 [사용자] 원문과 우리 해석 분리, 스무딩 인용 원문 전체, §6.3의 낡은 메모(T_c 비고·plan D9/D10 절) 갱신.
 
-- 기준 시각: 2026-09-24 07:18 UTC(v3.8). 기준 문서: `plan.md` v6.6(§5 [결정 필요] 1~17, §8 [결정 필요] 18·19, §11 D9·D10 반영, §12 D12 반영, §13 D13 반영, §14 사용자 결정 반영, §15 D14 반영, §16 D17 반영·§29, §17 D18·§31 반영, §18 D19·§32·§33 반영, §19 D20·§34·§35 반영), `00-interfaces.md`(정본 §1~§35, 뒤 절이 앞 절을 덮음), `D20-expert-role.md`, `D19-action-expert.md`, `D18-confidence-patch.md`, `D17-api-consistency.md`, `D14-option-naming.md`, `D13-m1-m2-m5-deepread.md`, `D12-preemption-0901-0924.md`, `D5-consistency.md`, `D6-mock-review.md`, `D7-preemption-rescan.md`, `D8-robodawn-a3-deepread.md`, `D9-slowbrain-showharness-gptpolicy.md`, `D10a-harness-capx.md`, `D10b-critic-checkvla.md`, `M1`~`M10`(2026-09-24 개정본), `E-first-experiments.md`, `EVAL-evaluation-design.md`, `user-log.md`, `CLAUDE.md`.
+- 기준 시각: 2026-09-24 07:39 UTC(v3.9). 기준 문서: `plan.md` v6.7(§5 [결정 필요] 1~17, §8 [결정 필요] 18·19, §11 D9·D10 반영, §12 D12 반영, §13 D13 반영, §14 사용자 결정 반영, §15 D14 반영, §16 D17 반영·§29, §17 D18·§31 반영, §18 D19·§32·§33 반영, §19 D20·§34·§35 반영, §20 D21·§36~§39 반영), `00-interfaces.md`(정본 §1~§39, 뒤 절이 앞 절을 덮음), `D21-aiworker-zed.md`, `D20-expert-role.md`, `D19-action-expert.md`, `D18-confidence-patch.md`, `D17-api-consistency.md`, `D14-option-naming.md`, `D13-m1-m2-m5-deepread.md`, `D12-preemption-0901-0924.md`, `D5-consistency.md`, `D6-mock-review.md`, `D7-preemption-rescan.md`, `D8-robodawn-a3-deepread.md`, `D9-slowbrain-showharness-gptpolicy.md`, `D10a-harness-capx.md`, `D10b-critic-checkvla.md`, `M1`~`M10`(2026-09-24 개정본), `E-first-experiments.md`, `EVAL-evaluation-design.md`, `user-log.md`, `CLAUDE.md`.
 - 이 문서는 **지금 상태만** 적는다. 바뀐 이력은 `draft-log.md`와 각 문서 머리의 "개정" 줄에 있다. 이 문서와 원 문서가 다르면 **`00-interfaces.md` → 각 모듈 문서** 순으로 원 문서가 맞다.
 - 표기: **[사용자]** = 사용자가 정한 것(줄이지 않는다) / **[제안]** = Claude 제안(사용자 확정 전) / **[잠정]** = 메인 세션이 기술 선택으로 잠정 결정, 실험으로 검증 / **잠정 기본** = 기간 밖 문헌에 기댄 기본값 또는 사용자 확인 전 기본값(사용자 승인 전까지) / **[결정 필요]** = 사용자가 정할 것 / **[접목]** = 원문에 없는 우리 접목안 / **기간 밖** = arXiv 첫 공개 2025-03-23 이전(기초 문헌 예외로만 사용).
 - 모든 수치는 원 문서에서 조건과 함께 옮겼다. 원 문서가 "확인 못 함"으로 적은 것은 여기서도 확인 못 한 것이다.
@@ -59,6 +61,7 @@
   - **공정성(C2)**: 결정 층 비교 표 안에서는 실행기를 모든 조건에 똑같이 둔다. 사전 등록 주 표는 스크립트 실행기 S [잠정, Claude 결정], B 표는 병기, 실행기 단독 낙폭(E-AE-3)과 결정 층 × 실행기 상호작용(E-AE-4)을 따로 잰다. 학습 데이터는 standard에서만 만든다. 이 선택은 §5.1 D36에서 사용자 확인을 받는다.
 - (v3.8, 정본 §34·§35) **바뀜: 주 시스템의 실행기는 스크립트 스킬 S, action expert는 구간 제한 잔차 R**: 사용자 답(user-log 35 "무작위, 스킬로해도 좋긴한데 엑션 익스퍼트가 역할을 부가할방법")으로 D35 = 도메인 무작위화 넣음, D36 = 주 표 실행기 S. action expert는 S 명령 위에 작은 병진 잔차를 더하는 R로 들어간다(Claude 결정, D20). Jev는 방향과 크기 구간을 정하고(user-log 36 "Jev는 앞으로, 뒤로 좌우 몇 센티를 판단하는 역할임 알지?") R은 코드 투영으로 그 안에서만 움직인다. **결정 층(Astra, Jev)은 여전히 학습하지 않는다.** 위 v3.7 줄의 B는 이제 E-AE-2의 비교 표로만 남는다.
   - **공정성**: R은 모든 결정 층 조건에 똑같이 붙는 실행기 부품이다. 주 표 = S, S+R은 병기 표·절제(사전 판정을 채울 때만 병기). B3c가 연속 행동을 내면 같은 방향·크기 격자로 양자화해 R을 붙인다. 같은 무작위화 데이터를 R·B·B3c에 준다.
+- (v3.9, 정본 §36~§39) **플랫폼 = ROBOTIS AI Worker + ZED 스테레오**: 사용자 결정(user-log 37 "AI 워커를 기준으로 할 거고 그러면 스테레오캠이니까 뭐 뎁스나 이런 것도 가능은 할것 같고", user-log 38 "Sg2야", user-log 39 "에이아이워커 기본으로"). 실물 = FFW-SG2 베이스 고정(이동 베이스는 범위 밖), 머리 ZED Mini + 손목 D405 × 2, 깊이 켬(ZED SDK NEURAL 1순위, Fast-FoundationStereo 비교), 손목 F/T 없음 → R 힘 입력 = 관절 전류. 3층 정합(Claude 결정): 결정 층 비교 = RoboDojo-Sim ARX X5 그대로(+ 보조 트랙 D-stereo), 개발·GT·모듈 실험 = cyclo_lab AI Worker 한 팔 + `ZED_M` 쌍둥이, E-real = 실물 AI Worker 최소판. 결정 층·술어 등록부·Jev/Astra 계약은 공유, 스킬·M5 한계·R은 로봇별.
 
 ### 핵심 기여 두 개 [제안]
 - **계층은 새로움이 아니다(v3.1, 정본 §24, D12)**: JEV-Star(2609.27331, 2026-09-23)가 "combining fast JEV action selection with persistent GPT-6 planning"을 StarCraft II에서 먼저 했다(GPT-6 Astra medium effort, 게임은 요청 중에도 진행, "A failed or delayed planning request leaves the previous valid plan available.", 계획기는 60 게임초 주기 + 사건 호출, JEV 요청은 초당 1회 제한). **반드시 인용**하고 "빠른 typed 선택 + 느린 Astra 비동기 계획"을 새로움으로 쓰지 않는다. 우리 차이는 "로봇 실행 중 **실패 판정이 불러내는** Astra 호출 + 겹침 호출 합의와 실행 뒤 확인(M4 (a)+(b))"으로만 쓴다. 이 구조는 원래 아래 기여 목록에 없으므로 기여 두 개는 그대로 선다(D12 결론). 사용자 원칙("실패할 때마다 Astra 개입")은 그대로.
@@ -212,6 +215,7 @@
 - **반대 증거**: 강한 모델에는 자세한 원본이 14~17%p 좋았다(Read More, 두 모델만), lmgame 기호 상태는 오라클, CaP-X VDM은 VLM 텍스트라 코드 diff가 같은 효과라는 근거 없음, T3 술어는 VLM도 <90%, 텍스트화가 미묘한 기울기·미끄러짐 단서를 잃을 수 있음.
 - **(v3.5, 정본 §28 J2) 직렬화 정규화**: 같은 세계 상태 → 바이트까지 같은 텍스트(id·등록부 순, 고정 구간 숫자, 나이 범주, 공백·구두점 고정). 직렬화기 판본은 Jev `question_id@vN`(J1)에 들어가고, Astra 입력(A2)도 같은 텍스트를 쓴다(M1 §4.1).
 - **[결정 필요]**: D2 해소(기본 A, Claude 결정, user-log 25 — E3가 확인), D2b(V-free를 후보에서 뺀 것), D2c(카메라 구성).
+- **(v3.9, 정본 §36·§37) D2c 해소 = 스테레오**: 머리 ZED Mini(깊이 1순위 ZED SDK NEURAL, 비교 Fast-FS를 ZED SDK `CUSTOM`으로 주입) + 손목 D405 센서 깊이, SVO(원시 스테레오) 기록. ROBOTIS 기본 `depth_mode: 'NONE'`을 바꾼다. 오차 추정 VGA 0.6 m 약 5 mm·1.0 m 약 15 mm(우리 계산) → T1 문턱(cm)에 대체로 충분. 로봇 없이 E3-ST(ROBOTIS HF 스테레오 쌍, 안정성만). M1 §4·§7-8.
 
 ### M2. Astra → Jev 전달 (세션 계약)
 - **[사용자]** 1번과 거의 같은 문제다. Astra는 이미지를 보고 명령하지만 Jev는 아니니, 효율적으로 전달하는 방법을 더 생각한다. (user-log 11 (2), "1번" = M1)
@@ -656,6 +660,14 @@ E0 지연(실제 `JevCall` 크기) → **E0.5 표 재생(오프라인, E0와 같
 - **평가**(EVAL §3.2-9·10·11): 주 표 S, S+R 병기 조건 = standard 성공률 짝 차 95% CI 하한 > 0 그리고 RD(S+R) − RD(S) 95% CI 상한 ≤ +δ [가정], 못 채우면 절제만. B3c 연속 출력은 같은 격자로 양자화해 R을 붙임(Claude 결정). 실험 E-R0~E-R4(`E-first-experiments.md` §4.16), E-AE는 B 비교 표로 유지.
 - **신뢰도**: PLD·CR-DAgger·SAFE·FIPER는 HIGH, ResFiT는 MED-HIGH, Object-Centric Residual RL·Steerable Policies는 MED, FAR는 MED-LOW(참고만), Residual Policy Learning·Policy Decorator는 기간 밖 기초 문헌. D20 §5의 제외 출처(신뢰도 낮음)는 근거로 쓰지 않는다. 스크립트 베이스 위 2025–26 잔차 결과와 그림자 예측기의 직접 선례는 찾지 못했다 → R의 이득과 그림자 채널은 가설.
 
+### 3.17 §36~§39에서 더해진 공통 규칙 (v3.9, D21 · user-log 37~39)
+- **출처**: user-log 37(07:19 UTC 경) "스테레오캠을 쓸 생각이고 그 로보티즈에 AI 워커가 있어 그거를 사용할 생각이야" … "AI 워커를 기준으로 할 거고 그러면 스테레오캠이니까 뭐 뎁스나 이런 것도 가능은 할것 같고" → 정본 §36(로봇 = AI Worker, 카메라 = ZED, D2c = 스테레오, D30 = AI Worker) → D21 → 정본 §37 → user-log 38(07:34 UTC 경) "Sg2야" → 정본 §38(실물 = FFW-SG2 베이스 고정) → user-log 39(07:34 UTC 경) "에이아이워커 기본으로" → 정본 §39(손목 F/T 추가 안 함).
+- **확인된 사양**(공식 사양 페이지·ai_worker 저장소): 팔 7자유도 × 2, 그리퍼 RH-P12-RN(1자유도 평행, 0–107.6 mm), 머리 2자유도(pitch −50°~30°, yaw −20°~20°), 리프트 0–500 mm, 머리 ZED Mini(102°×57°, 기선 63 mm), 손목 RealSense D405 × 2(7–50 cm), Jetson AGX Orin 32GB, ROS 2 Jazzy, 팔마다 100 Hz JointTrajectoryController(위치 명령), 상태에 관절 `effort`(전류 기반). **손목 힘/토크 센서 없음.** 기본 ZED 설정은 **깊이 끔**(`depth_mode: 'NONE'`), VGA 30 fps. SG2는 총 25자유도(이동 6 포함), 베이스 고정으로 이동 6자유도는 쓰지 않는다.
+- **모듈별**: M1 깊이 켬(머리 ZED SDK NEURAL 1순위·Fast-FS 비교 `CUSTOM` 주입, 손목 D405 센서 깊이, SVO 기록, E3-ST) / M8 ZED 왼쪽 영상만 격자, 깊이 컬러맵은 절제, 손목 격자 3×2 이하 또는 1장, 칸 덧그림에 머리 각 / M6 `arms` 유지 + `look_at`·`set_lift`·`handover`·`bimanual_hold`, 이동 베이스 범위 밖 / M5 서보 내부 프로파일 계단 응답 → 끄거나 `ref(t)`에 모델링, URDF 4.8 rad/s는 자리표시로 보고 실측·서보 사양 50%에서 시작 [가정], 로봇별 한계표 두 벌(ARX X5, AI Worker) / M3·M6 R 힘 입력 = 관절 `effort`(전류) + 그리퍼 전류, 손목 F/T 추가 안 함, 절제 R-noforce(CR-DAgger 근거는 손목 F/T 기준이라 한 단계 약함).
+- **GT 생성 시뮬**(Claude 결정): E0–E3, E-M4, E-R, E-AE의 단일 팔 자작 장면 = cyclo_lab AI Worker 한 팔(7자유도 + RH-P12-RN; 실물과 같은 FFW-SG2 베이스 고정 우선, 한 팔 설정이 안 되면 §37 원안 FFW-BG2 — 팔·그리퍼·머리 동등성은 [가정]) + Stereolabs `ZED_M` 쌍둥이(오라클 = 렌더러 GT 깊이, 인식 조건 = 스트리밍 경로 ZED SDK 깊이 또는 Fast-FS), Isaac Sim 5.1 / Isaac Lab 2.3(RoboDojo와 같은 판본). 데이터 경로 cyclo_lab Mimic → `isaaclab2lerobot.py` → LeRobot, 도메인 무작위화는 우리가 추가, 액추에이터 게인은 실물 계단 응답으로 다시 맞춤 [가정].
+- **평가 정합**(Claude 결정, 3층, EVAL §2.1·§3.2-12): (1) 결정 층 비교(H2·H3, RD) = RoboDojo-Sim ARX X5 그대로 + 보조 트랙 D-stereo(머리 옆 63 mm 가상 카메라, 같은 Fast-FS/M1 경로, "입력 다름" 표기) (2) 개발·GT·모듈 실험 = cyclo_lab AI Worker 한 팔 + `ZED_M` 쌍둥이 (3) E-real = 실물 AI Worker FFW-SG2 베이스 고정, 최소판(제출 2026-11-16까지 약 7주).
+- **신뢰도**: 사양·설정은 1차 출처(공식 사양 페이지, ai_worker yaml·URDF, cyclo_lab README, Stereolabs 문서)를 메인이 curl로 재확인. Fast-FoundationStereo는 HIGH(arXiv 2512.11130, README "accepted to CVPR 2026"). Lite Any Stereo V2(LOW-MED)는 대안 1순위로 올리지 않는다. 확인 못 한 것: ZED Mini 지연·Orin에서의 NEURAL FPS, Fast-FS의 Orin 실측, DYNAMIXEL-Y 프로파일 단위, D405/D401 이름 차이, HF 데이터 보정값·라이선스, SG2 과제의 한 팔 설정 가능 여부.
+
 ## 4. 실험 로드맵 (순서대로)
 
 순서(정본 §13, §17 보강): **E0·E0.5(같은 날, E0.5를 가장 먼저) → E1 → E2a → E-M4 → E-M4-gen → E-M4-lat → E-M3-2 → E-M5-1 → E-M8a → E-M9 → E-M6·E-M10**, 오프라인 E3·E-M3-1·E-M7·E-M8b 병행. 본 평가는 EVAL S0~S8(S1.5 포함). **E-link는 필수**(D29 = 한 편, 정본 §26 — E-M4·E-M4-lat 뒤, EVAL S3 파일럿 뒤), E-real은 [결정 필요] D30에 달림.
@@ -716,6 +728,7 @@ E0 지연(실제 `JevCall` 크기) → **E0.5 표 재생(오프라인, E0와 같
 - (v3.4, 정본 §27) **해소**: D32(보기 이름 규칙 R1~R6, 조사 D14 — 사용자 지시대로 일반 관행 적용, 남은 R3는 E0.5 (i)가 확정). 아래 표 D32 행.
 - (v3.7, 정본 §32·§33) **해소(user-log 34)**: D9(로컬 학습 모델 허용) = **허용**(학습 실행기 B 채택). **새 항목**: D35(도메인 무작위화 허용), D36(주 표 실행기 S 대 B). 아래 표.
 - (v3.8, 정본 §34) **해소(user-log 35)**: D35 = **(i) 넣는다**, D36 = **(i) 주 표 S**. 아래 표의 해소 행. 새 사용자 [결정 필요]는 없다.
+- (v3.9, 정본 §36~§39) **해소(user-log 37~39)**: D2c = **스테레오**(ZED Mini + D405), D30 = **실물 AI Worker**(E-real 최소판), 정본 §37의 하드웨어 결정 두 개도 해소 — D37(실물 베이스) = **FFW-SG2 베이스 고정**, D38(R의 힘 입력) = **관절 전류, 손목 F/T 추가 안 함**. 아래 표의 해소 행. 남은 하드웨어 [결정 필요]는 없다.
 
 | # | 항목 | 선택지 | 현재 잠정 기본 | 이유 |
 |---|---|---|---|---|
@@ -766,6 +779,10 @@ E0 지연(실제 `JevCall` 크기) → **E0.5 표 재생(오프라인, E0와 같
 | **D36** | **주 표 실행기: 스크립트 S 대 학습 B** (v3.7, 정본 §33, EVAL §3.2-9·Q10) | (i) 주 표 S, B 표 병기 / (ii) 주 표 B, S 표 병기 / (iii) 두 표를 동등 주 표로 | **(i) 잠정**(Claude 결정) | 학습 실행기가 random에서 무너질 위험(RoboTwin 2.0·LIBERO-Plus) 때문에 핵심 주장을 실행기 효과와 섞지 않기 위함. (ii)는 사용자 결정 B를 앞에 세우지만 실행기 낙폭이 결정 층 비교에 섞일 수 있다. E-AE-4 부호가 같으면 어느 쪽이든 결론은 같다 |
 | D35 해소 | (v3.8, 정본 §34, user-log 35 "무작위") 도메인 무작위화 | — | **(i) 넣는다**: 같은 무작위화 데이터를 잔차 R·비교용 B·B3c 모든 학습 조건에 | random 시험 장면은 여전히 학습에 쓰지 않는다 |
 | D36 해소 | (v3.8, 정본 §34, user-log 35 "스킬로해도 좋긴한데") 주 표 실행기 | — | **(i) 주 표 S**: B는 E-AE-2 비교 표로만. action expert는 잔차 R(정본 §35)로 S+R 병기 표·절제 | Jev 권위(방향·크기 구간)는 코드 투영으로 지킨다 |
+| D2c 해소 | (v3.9, 정본 §36, user-log 37 "스테레오캠을 쓸 생각이고") 카메라 구성 | — | **스테레오**: 머리 ZED Mini + 손목 D405 × 2, 깊이 켬(ZED SDK NEURAL 1순위, Fast-FS 비교), SVO 기록 | 오차 추정 VGA 0.6 m 약 5 mm·1.0 m 약 15 mm(우리 계산) → T1 문턱(cm)에 대체로 충분 |
+| D30 해소 | (v3.9, 정본 §36·§38, user-log 37 "AI 워커를 기준으로 할 거고") 실물 로봇 | — | **ROBOTIS AI Worker FFW-SG2, 베이스 고정**, E-real 최소판(제출까지 약 7주) | 시뮬 쌍둥이 cyclo_lab이 RoboDojo와 같은 Isaac 판본 |
+| D37 해소 | (v3.9, 정본 §37 (c) → §38, user-log 38 "Sg2야") 실물 베이스: FFW-BG2 대 FFW-SG2 고정 | (i) FFW-BG2(고정 베이스, 국내 판매) / (ii) FFW-SG2(이동 베이스를 고정해 사용) | **(ii) FFW-SG2, 베이스 고정** | 이동 베이스는 범위 밖(총 25자유도 중 이동 6 안 씀). 시뮬도 가능하면 SG2 모델, 한 팔 설정 유지 |
+| D38 해소 | (v3.9, 정본 §37 (d) → §39, user-log 39 "에이아이워커 기본으로") R의 힘 입력 | (i) 관절 `effort`(전류) + 그리퍼 전류 / (ii) 손목 F/T 센서 추가 장착 | **(i) AI Worker 기본 구성**(손목 F/T 추가 안 함) | CR-DAgger 근거는 손목 F/T 기준이라 한 단계 약해짐. 절제 R-noforce 유지 |
 
 ### 5.2 메인 세션이 잠정으로 정한 기술 선택 (사용자 결정 목록과 분리)
 사용자 의도가 아니라 기술 선택이라 메인 세션이 잠정 결정했고, 각각 실험으로 검증한다(00 §11.2·§12·§14·§15·§16). 되돌릴 조건은 각 모듈 판정에 있다. 기간 밖 근거에 기댄 것은 동시에 [결정 필요] D4에도 걸린다(잠정 기본).

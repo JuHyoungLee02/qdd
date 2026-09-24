@@ -1,5 +1,6 @@
 # E. 첫 실험 프로토콜 (E0 → E0.5 → E1 → E2a → E3) — 실행 수준 설계
 
+> 개정 2026-09-24 07:39 UTC (정본 §36~§39, D21 반영, `D21-aiworker-zed.md`, user-log 37~39 — 로봇·카메라·실물 SG2·힘 입력은 사용자 결정, 깊이·격자·장면·정합 세부는 Claude 결정): §1.4에 **(정본 §37·§38) 단일 팔 자작 장면 고정** 줄 — cyclo_lab AI Worker 모델 한 팔(§38대로 **FFW-SG2 베이스 고정**을 우선, 한 팔 설정이 안 되면 §37 원안 **FFW-BG2** 한 팔 — BG2·SG2의 팔·그리퍼·머리 동등성은 [가정]) + Stereolabs ZED Isaac Sim 확장 **`ZED_M` 디지털 쌍둥이**(오라클 = 렌더러 GT 깊이, 인식 조건 = 스트리밍 경로 ZED SDK 깊이 또는 Fast-FS), Isaac Sim 5.1 / Isaac Lab 2.3(RoboDojo와 같은 판본), 데이터 경로 cyclo_lab Mimic → `isaaclab2lerobot.py` → LeRobot, 도메인 무작위화는 우리가 추가, 액추에이터 게인은 실물 계단 응답으로 다시 맞춤 [가정]. 적용 범위 E0–E3, E-M4, E-R, E-AE. §4.16에 **절제 R-noforce** 줄. §5.10 신설 — **E3-ST 오프라인 스테레오 안정성 시험**(ROBOTIS HF 데이터). §8-10.
 > 개정 2026-09-24 07:18 UTC (정본 §34·§35, D20 반영, `D20-expert-role.md`, user-log 35·36 — D35·D36은 사용자 결정, R 설계는 Claude 결정): §4.16 신설 — **E-R0~E-R4**(구간 제한 잔차 R: 오프라인 라벨 포화율 / 실행기 {S, S+R-state, S+R-crop, S+R-무제한} × {standard, random} / 오라클 결정 + {S, S+R} 낙폭 / 결정 층 {LLM, 규칙, B3c(양자화)} × {S, S+R} 상호작용 / R 끔·켬 짝과 phase별 절제) + 병기 표 사전 판정 + E-M7 조건 D-AE. 예산은 모두 [가정]. §4.15 E-AE는 **B 비교 표**로 유지. §8-9.
 > 개정 2026-09-24 06:38 UTC (정본 §32·§33, D19 반영, `D19-action-expert.md`, user-log 33·34 — 사용자 결정 B, 세부는 Claude 설계): §4.15 신설 — **E-AE-0~5**(학습 실행기 B: 오프라인 모방·커버리지·데이터 규모 / 보기 준수 / 실행기 {S, A, B, B−폴백} × {standard, random} / 실행기 단독 낙폭 / 결정 층 × 실행기 상호작용 / M5 L2 대 RTC 인페인팅). 예산은 모두 [가정]. §8-8.
 > 개정 2026-09-24 (정본 §31, D18 반영, `D18-confidence-patch.md`, user-log 32 — Claude 결정): §2.7 판정 8 아래 — A5(다수결)는 **삭제**, 결과는 A5′ 수리 상한과 E-M2-4 반복 수 산정 자료. §3.5 — **J5 conformal 집합 지표**(`question_id@vN`별 α ∈ {0.05, 0.1, 0.2}: 경험적 커버리지, 집합 크기 분포·원소 하나 비율·`NONE_ESCALATE` 포함 비율, 원소 하나일 때 정확도, 질문군별 커버리지 편차). §3.7 판정 8 신설 — J5 켬 조건. §4.14 신설 — **E-M2-4 재계획 형식 3자 비교**({patch 전용, 이전 계약 넣고 전체 재생성, 적응형})와 **A5′ 기록**(모든 Astra 호출의 수리 재호출 횟수·검사기별 실패 목록·수리 뒤 통과·이전 계약 유지 시간·`mode`·`astra_conf`).
@@ -100,6 +101,7 @@ H=1, D-줌 예(값·문구는 예시, 실제 템플릿은 E1 결과로 고정):
 ### 1.4 환경과 상태 원천
 - **첫 환경(00 §13으로 확정): 시뮬 단일 팔 탁상 pick-and-place.** E0~E3 전용이며 RoboDojo 본 평가와 섞지 않는다. 7자유도 팔 + 평행 그리퍼, 탁상 1개, 대상 물체 1(머그/블록), 놓을 곳 1(트레이), 방해물 0~2개. 과제 문장: "Put the red mug on the blue tray."
   - 엔진: RoboDojo-Sim과 같은 Isaac Sim 위 자작 장면(00 §13: 초기 실험은 자작 장면, 본 평가는 RoboDojo. 첫 판의 "벤치마크가 정해지면 그 안으로 옮긴다"는 쓰지 않는다). 요구 조건만 고정한다: (1) 참 자세 접근(오라클), (2) 시드로 초기 배치·섭동이 결정됨, (3) 섭동 주입 훅, (4) **벽시계 동기 실시간 실행**(시뮬 시간을 벽시계에 묶어 실제 Jev 지연이 그대로 작용).
+  - **(정본 §37·§38) 장면 고정 — cyclo_lab AI Worker 한 팔 + `ZED_M` 쌍둥이** (Claude 결정, 실물 모델은 사용자 결정): 공식 Isaac 모델(ROBOTIS-GIT/cyclo_lab, Isaac Sim 5.1.0 / Isaac Lab 2.3.0 — RoboDojo와 같은 판본이라 같은 설치에서 두 로봇을 돌릴 수 있다)이 있으므로 E0–E3, E-M4, E-R, E-AE의 "단일 팔 자작 장면"을 AI Worker **한 팔(7자유도 + RH-P12-RN)**로 고정한다. 모델은 실물과 같게 **FFW-SG2(`FFW_SG2.usd`)를 베이스 고정**으로 쓰는 것을 우선한다(정본 §38, user-log 38 "Sg2야"). SG2 과제(`Cyclo-Real-Pick-Place-FFW-SG2-v0`, Sim2Real)를 한 팔 설정으로 돌릴 수 있는지는 [미확인]이며, 안 되면 §37 원안인 **FFW-BG2**(고정 베이스, `Cyclo-PickPlace-FFW-BG2-IK-Rel-v0`) 한 팔로 둔다. 사양상 두 모델의 팔·그리퍼·머리는 같다(SG2 "Total: 25 DOF"에서 이동 6자유도를 뺀 것이 BG2 "Total: 19 DOF") — 동역학까지 같다는 것은 [가정]. 위 요구 조건 (1)~(4)와 "7자유도 팔 + 평행 그리퍼"에 그대로 맞고, 실물 E-real까지 같은 로봇이 된다. 카메라는 cyclo_lab 카메라(SG2 머리 단안 RGB 672×376, 수평 화각 약 90° — ZED Mini 102°와 다름) 대신 **Stereolabs ZED Isaac Sim 확장의 `ZED_M` 디지털 쌍둥이**(원문 "Every ZED camera as a calibrated digital twin", "Ground-truth depth streaming")를 붙인다. 오라클 = 렌더러 GT 깊이, 인식 조건 = 스트리밍 경로의 ZED SDK 깊이 또는 Fast-FS(원문 주의: "Only the streaming path involves the ZED SDK and its stereo-matched depth; the other two deliver Isaac Sim's ground-truth renderer depth."). 데이터 경로: cyclo_lab 기록 → Isaac Lab Mimic(SG2는 `Cyclo-Real-Mimic-Pick-Place-FFW-SG2-v0`, `action_data_converter.py`로 ik ↔ joint 변환) → `isaaclab2lerobot.py` → LeRobot. 도메인 무작위화는 우리가 추가한다(정본 §34). 시뮬 설정 `sim.dt = 0.01`(100 Hz), `decimation = 5`. 액추에이터 게인(cyclo_lab stiffness 600 등)은 실물 서보와 같다는 근거가 없어 실물 계단 응답으로 다시 맞춘다 [가정].
   - 성공: `on(o3,o5) ∧ ¬holding(o3) ∧ upright(o3)`가 1 s 연속 참(T1 술어). 시간 제한 60 s. 물체가 탁상 밖으로 떨어지면 즉시 실패.
 - **상태 원천**: E0.5·E1·E2a·E3a는 **오라클 상태**(시뮬 참 자세 → M1 술어 등록부 계산기 → 텍스트). 인식 앞단(SAM 3.1 + 깊이)은 이 단계에서 쓰지 않는다. 이유: 마차 시험은 **결정 층**을 재는 것이고, 인식 오류가 섞이면 결정 층 차이를 가린다. 인식 조건은 E3의 잡음 주입 하위 조건과 뒤 단계(E3-P, 환경 일반화 평가)에서 다룬다.
 - M1 변환: 기본 후보 A(정본 §26)이며, E0~E2a는 **등록부 술어를 그대로 줄 표로 쓴 최소 직렬화**(M1 후보 A와 모양이 같다)를 **측정용 고정 형식**으로 쓴다. 이것은 M1 결정이 아니다. E3 결과로 기본 후보가 바뀌면 E2a 핵심 조건만 재실행한다(§4.9).
@@ -542,6 +544,7 @@ plan §0의 "가장 약한 고리": **Jev가 코드가 만든 술어 위에서 �
 - **병기 표 사전 판정**: S+R을 병기 표로 올리는 조건은 standard 성공률 짝 차의 95% CI 하한 > 0 **그리고** RD(S+R) − RD(S)의 95% CI 상한 ≤ +δ [가정]. 못 채우면 절제 결과로만 보고한다(EVAL §3.2-11).
 - **B3c 양자화**: E-R3의 B3c는 연속 출력을 Jev 보기와 같은 방향·크기 격자로 양자화해 S와 R을 붙인다(Claude 결정, EVAL §3.2-11).
 - **기록**: `jev_choice`(권위값), ∫r, 포화 비율, R on/off, R 지연(목표 1 ms 미만 [가정], 실측 필요).
+- **(정본 §37·§39) 절제 R-noforce**: AI Worker에 손목 F/T가 없고 추가하지 않으므로(user-log 39) R의 힘 입력은 관절 `effort`(전류) + 그리퍼 전류다. E-R1에 조건 S+R-noforce(힘 입력 뺌)를 더한다. CR-DAgger 근거는 손목 F/T 기준이라 한 단계 약하다. 시뮬에서는 관절 토크에 전류 잡음 모델을 씌운다 [가정].
 - **보조 역할(그림자 예측기)**: E-M7에 조건 D-AE(M7 §5)를 더한다. 그림자 머리 채널 켬/끔에서 탐지 선행 시간, 오경보율(성공 에피소드 기준 δ_c), AUROC. 우리 시스템 내부 절제로만 쓰고 교차 비교 표에는 넣지 않는다.
 - **근거 요약(D20, 등급 그대로)**: ResFiT(2509.19301, MED-HIGH) "boosted the performance of the base model from 14% to 64%", Object-Centric Residual RL(2606.18953, MED) "improves the success rate from 42% to 76% zero-shot"(물체 자세 76/100 대 이미지 47/100), CR-DAgger(2506.16685, NeurIPS 2025, HIGH) "both the delta correction data and the force data are crucial", Policy Decorator(2412.13630, 기간 밖 기초 문헌) "Bounded residual action is essential", PLD(2511.00091, ICLR 2026, HIGH) "bounded within a range of [−ξ, ξ]".
 
@@ -608,6 +611,13 @@ M1 기본 후보 A(Claude 결정, 정본 §26, user-log 25)를 확인하고 B·C
 
 ---
 
+### 5.10 E3-ST — 오프라인 스테레오 안정성 시험 (정본 §37, `D21-aiworker-zed.md`) [제안]
+- **목적**: 로봇 없이 지금, 실물 AI Worker 영상에서 M1 인식 앞단(스테레오 깊이 → 3D 중심 → 술어)이 프레임 사이에서 얼마나 **안정**한지 잰다.
+- **데이터**: ROBOTIS 공개 데이터(HF, LeRobot v2.1) `ROBOTIS/Task_0001_CoffeeClassification`(718편, `ffw_bg2_rev4_custom`, 10 fps)·`Task_0002_OrderPicking`(857편, `ffw_bg2_rev4`, 10 fps)의 머리 좌우 스테레오 쌍(376×672, `cam_head`와 `cam_head_right`).
+- **절차**: Fast-FS → SAM 3.1 → 3D 중심 → M1 등록부 T1 술어.
+- **지표 [제안]**: 3D 중심의 프레임 간 변동(mm), T1 술어의 프레임 간 뒤집힘 비율. 탐색적 측정이며 사전 판정 문턱은 두지 않는다.
+- **한계**: 정답 자세가 없어 **정확도는 못 재고 안정성만** 잰다. mp4 압축이 정합을 해칠 수 있음 [가정], 보정값(기선·내부 행렬)이 데이터에 없음 [미확인], 라이선스 [미확인].
+
 ## 6. 일정·비용 합계 [가정: 구현 완료 시점 기준]
 
 | 주 | 할 일 |
@@ -653,6 +663,7 @@ Jev 비용은 무시할 만하고, 비용과 시간을 좌우하는 것은 **Ast
 7. (00 §24, D12) [결정 필요] D32: Jev 보기를 중립 식별자로 바꾸고 뜻은 루브릭에 적는 규칙을 E0.5 (i) 결과 전에 기본으로 둘지 / 결과를 본 뒤 정할지 / 지금 이름을 유지할지(SUMMARY §5.1, M3 §7-9, M6 §7-9). 자료 = §2A.6 판정 8. → (정본 §26) 사용자: 일반 관행을 찾아 적용(user-log 25), 조사 D14 진행 중. E0.5 (i)는 확인 실험으로 유지. → (정본 §27, D14) **해소**: R1·R2·R4·R5·R6은 지금 기본, R3(3지선다 이상 이름 방식)만 §2A.6 판정 9로 확정.
 8. (정본 §33) E-AE 관련 사용자 확인 항목: 도메인 무작위화 허용 여부(SUMMARY §5.1 D35), 주 표 실행기 S [잠정] 대 B(D36). E-AE 예산·표본은 모두 [가정]이라 실행 전 확정한다.
 9. (정본 §34·§35) 8번 해소(user-log 35): D35 = 무작위화 넣음, D36 = 주 표 S. E-AE는 B 비교 표로 유지, 주 시스템 학습 부품 실험은 E-R0~E-R4(§4.16). 병기 판정의 δ와 E-R 예산·표본은 [가정]이라 실행 전 확정한다(새 사용자 [결정 필요]는 아님).
+10. (정본 §36~§39) 단일 팔 자작 장면 = cyclo_lab AI Worker 한 팔(FFW-SG2 베이스 고정 우선, 안 되면 FFW-BG2) + `ZED_M` 쌍둥이로 고정(§1.4, Claude 결정). E3-ST(§5.10)와 절제 R-noforce(§4.16) 추가. 실물 = FFW-SG2 베이스 고정(user-log 38), R 힘 입력 = 관절 전류·손목 F/T 추가 안 함(user-log 39). 남은 하드웨어 [결정 필요]는 없다.
 
 ## 9. 확인 못 한 것
 - Jev 한국발 지연, 보정 곡선: 아직 아무도 공개 측정 없음(v3/01) — 이 문서의 E0·E1이 그것을 잰다.
