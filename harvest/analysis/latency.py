@@ -37,9 +37,10 @@ def _n_max(by, L1, T_c):
     cand = math.ceil(L1 / T_c) + 1
     base = censored_quantile(by.get(("S1", 1), []), 0.95)
     measured = sorted((n for (s, n) in by if s == "S1" and n <= cand), reverse=True)
+    # largest measured N <= candidate whose concurrency penalty p95(N)/p95(1) is <= 1.25 (judgment 2)
     for n in measured:
         if n == 1 or censored_quantile(by[("S1", n)], 0.95) / base <= 1.25:
-            return n if n < cand or ("S1", cand) in by else cand
+            return n
     return cand
 
 
