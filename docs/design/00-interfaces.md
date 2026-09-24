@@ -197,3 +197,7 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - **EVAL**: §2.3 "RPent Astra low 92.63% 섭동 축 확인 필요" → **해소**: LIBERO-PRO Task(T) + Swap(S) × Spatial/Object/Goal/Long 8칸, seed 1~10, 메모리 스냅샷 두 묶음(Long 157/200 + 나머지 584/600), **논문이 아니라 저장소 리더보드 값**, 에피소드당 평균 412.14 s 정지형. 논문 본문 플래너는 Codex(리더보드상 GPT-5.5 xhigh)와 Claude Code(Opus-4.7 max). 인용 시 이 조건을 반드시 병기. B6c-0(메모리 없음, Table 5 조건), B6c-S(RPent 루프에 우리 스킬 등록, 같은 스킬·같은 인식), B6c-S-wall, B5a(CaP-X 공개 코드, 구성은 "우리 가정" 표기), B5b-H / B5b-L(우리 스킬 위 / 술어 + IK만), 앙상블 끔·켬 따로 보고. RPent 평가 프롬프트의 "PROVEN LEVERS"는 과제별 정보 → 우리에게 안 주면 "입력 정보 다름" 각주.
 - 인용 정정: Harness VLA RoboCasa365 향상은 본문 Table 4 기준 **+27.1pp**(57.1 − 30.0), abs 페이지 초록은 +25.4pp → 불일치 병기. CaP-X LIBERO-PRO "12~26%"는 과제당 50회 기준(Harness Table 3의 Cap-X 행은 이 값을 옮긴 것, 프로토콜 다름).
 - 차별 문장: D10a §1.2·§2.2 "차별 문장 초안" 4개를 M6·M9·M10·EVAL 관련 연구 절 후보로.
+
+## 23. 메인 세션 정리 (2026-09-24 00:55 UTC)
+- M7 판정 기준 1~8의 "적시 재현율" = **고정 창판(τ = 2 s)**. CheckVLA 원문판(d_lat = 실측 Astra 지연)은 병기 보고만 한다. 이유: Astra 지연이 날마다 크게 달라(첫 토큰 약 3~352 s) 사전 등록 기준으로 불안정.
+- M7 대안 "A6 functional CP"는 **A-FCP**로 이름을 바꾼다(M8 E-M8a 조건 A6와 겹침). E-M7 조건 이름 D11은 그대로.
