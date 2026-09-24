@@ -176,4 +176,6 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - M4 차별 문장 보강: 실행 뒤 명령 대 측정 되먹임 자체는 Show-Harness("lowered X of Y cm")와 RoboDawn(reached/partial)에도 있다 → 우리 차별점은 그것을 **합의 원장의 전제 무효화와 확정 판정**에 쓰는 것.
 - EVAL: B6b(GPT-as-Policy 원문판: 같은 π0.5 체크포인트, Astra xhigh, 청크 경계 동기 게이트, gate 원문) + **B6b-wall**(Astra 생각 중에도 시뮬 진행). GPT-as-Policy 10과제는 표준 41 + 무작위 9(무작위 3과제) — 해결.
 - M3: Show-Harness 기준선 원문판(단위 목록, 2/4 cm, 청크 3, WRIST 신호, 정지형 루프, 50 스텝, 빈 집기 5 mm), 1 cm 수치 본문 82 / 그림 80 병기.
-- M9·M7: GPT-as-Policy gate 규칙("불확실만으로는 개입 금지", 직전 결과/다음 의도 분리)을 M7 FAIL·M9 L2의 원문 근거로 인용. Show-Harness 빈 집기 되돌림을 M9 L1 `resume_ckpt` 구조의 원문 근거로 인용.
+- M9·M7: GPT-as-Policy gate 규칙("불확실만으로는 개입 금지", 직전 결과/다음 의도 분리)을 M7 FAIL·M9 L2의 원문 근거로 인용. Show-Harness 빈 집기 되돌림을 M9 L2 보기 `resume_ckpt_<k>` 구조의 원문 근거로 인용(정정 00:40: L1은 파라미터를 바꾼 재시도, `resume_ckpt_<k>`는 L2 보기).
+
+- (00:40) E0.5 판정 1·2는 "여러 표 사이 합의에 정보가 있는가"를 묻는 판정이라 가장 새 표 하나만 쓰는 원문판 C2'로는 답할 수 없다 → 판정 1·2의 비교 대상은 C2''(감쇠 가중 최빈), 원문판 C2'는 E0.5 판정 7(보고용)과 E-M4 본 판정에 쓴다(편집 에이전트 제안 채택).

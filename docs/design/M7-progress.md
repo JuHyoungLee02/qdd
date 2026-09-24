@@ -1,6 +1,7 @@
 # M7. 진행 판별 ("계획대로인가"와 실패 판정) — 모듈 설계
 
 > **정본 우선**: 모듈 사이 인터페이스·정지·확정 규칙·확률 게이트·시간 값은 `00-interfaces.md`가 우선한다(2026-09-23 22:00 UTC). 이 문서와 다르면 그쪽을 따른다.
+> 개정: 2026-09-24 D9(정독) 반영 (`D9-slowbrain-showharness-gptpolicy.md`, 00-interfaces §20): §3 표에 **GPT-as-Policy gate 규칙** 행 — "An edit/eef takeover requires execution_status=failed or intent_status=misaligned. Uncertainty alone … is not a takeover reason. After recovery, hand back."(gate_prompt.md 원문)과 직전 청크 결과 / 다음 청크 의도 분리를 M7 FAIL 기준(불확실·`unknown`은 위반으로 세지 않음, WARN만으로는 복구 안 함)의 원문 근거로 인용. 원문은 매 청크 경계에서 Astra를 동기로 부른다(에피소드당 약 75.5회, xhigh) → 우리 "M7 FAIL 때만 비동기" 설계와 대비. §8 갱신.
 > 개정: 2026-09-23 D6(모의 심사) 반영 (`D6-mock-review.md` R3 질문, 00-interfaces §17): §5 E-M7 기록에 **epoch 교체 빈도·미확정 실행 비율·번복률**을 에피소드 단위로 남기고 **성공/실패 분리 분포**로 보고하는 항목과 판정 8을 추가(E-M4 §5.1 (3)과 같은 기록 형식).
 > 개정: 2026-09-23 D5 반영 (`D5-consistency.md` 1-2·1-3·1-4·1-5·1-8·1-16·2-4·2-5, 00-interfaces §7·§11.2·§13·§15): **`C_dead` 단독 FAIL 예외를 소프트 층에서 없애고 하드 채널 H6(단계 경과 > 2×`D_k`)으로 옮김**(이유는 §4.2 H6). 하드 층 목록에 H2를 명시, `C_assume` 발동 조건에 M2 `contract_patch_rejected` 사건을 더함(00 §15), `C_pred`는 정본 §11.2 채택으로 정리, 이정표 질문 보기를 `PROGRESS_OPTIONS`로 통일, 실험 순서 00 §13판, `C_m4`·`C_flip` 동시 발동은 E-M7 전 기본 1표, `T_exp_k` = M2 `T_exp_s`.
 > 개정: 2026-09-23 정본 §14–§15 반영 (`00-interfaces.md` §14-2·§15, `D4-cross-field.md` §8, `D4-cross-field-verification.md` #15·#16): **새 채널 `C_order`는 두지 않는다.** 기존 마일스톤 원장 계산(§4.1 "순서")에 "건너뜀 / 계획 밖 사건" 구분을 넣고(프로세스 마이닝 정렬 적합성 — 기간 밖 기초 문헌 + 2511.10876), 마지막 일치 위치를 M9 재개 지점 계산과 공유한다(§4.2). 채널 추가 여부는 E-M7 조건 D4o로 판단. 조건부 conformal test martingale(2602.13848)은 대안 A5·E-M7 조건 D10으로만(§4.3·§5).
@@ -68,6 +69,7 @@
 | Robo-Dopamine 2.0 | 부호 있는 진행 범주 | S5 보기 = {유효 진행, 허용 변화, 실패, 복구 중}(plan v4.3과 같음). 이 목록은 M6 `dp.grasp_result`와 **한 목록으로 공유**한다(§4.2 `PROGRESS_OPTIONS`) |
 | 2608.02464 (LOW) | 결정적 검증이 오탐 0으로 절반 이상 잡음, 통계 감시기는 환경마다 재보정 필요 | **하드 FAIL 층을 먼저 둔다**: **T1(결정적) 술어**의 불변 위반·사전조건 거짓과 스킬 오류 코드는 창·투표 없이 즉시 FAIL. "결정적 검증"이라는 원문 조건에 맞춰 임계값 민감한 T2는 하드 층에서 뺀다. LOW라 근거가 아니라 설계 참고 |
 | 2607.25152 (LOW), AgentRewardBench (MED) | 자기 판정은 근거가 산출물 밖에 있으면 무의미, 판정기 하나로 모든 경우를 못 이김 | Astra·Jev의 "잘 되고 있다"는 **OK 근거로 쓰지 않는다**(FAIL 쪽 채널로만). OK는 코드 술어·진행으로만 |
+| GPT-as-Policy gate(Galbot 기술 보고서 + 코드, arXiv·심사 없음, 2026-09-13, gate_prompt.md, D9 정독) | [원문] 직전 청크 실행 결과와 다음 청크 의도를 **따로** 평가(execution not_started/progressing/failed/uncertain/recovered, intent aligned/misaligned/uncertain). "An edit/eef takeover requires execution_status=failed or intent_status=misaligned. Uncertainty alone … is not a takeover reason. After recovery, hand back." 되돌리기 금지, 물체 참값 사용 금지. 이 게이트는 **매 청크 경계**에서 Astra(xhigh)를 **동기**로 불러 적용한다(결정 3,776회 ≈ 에피소드당 75.5회, 기다리는 동안 시뮬 정지) | [접목안] FAIL 기준의 **원문 근거로만** 인용한다. (1) "불확실만으로는 개입 금지" ↔ `unknown`은 위반으로 세지 않고(§4.2 술어 등급 규칙) WARN만으로는 복구를 시작하지 않는 규칙. (2) 직전 결과 / 다음 의도 분리 ↔ [우리 해석] 실행 결과 채널(H1·H2·H4·`C_m4`)과 계획 정합 채널(H3·`C_assume`·§4.1 "순서")을 나눈 구조. 호출 방식은 가져오지 않는다 — 원문은 매 청크 동기 호출, 우리는 M7 FAIL 때만 Astra를 비동기로 부르고 그동안 아래 층이 계속 움직인다(M9 §4.1) |
 | ReflAct | "상태 대 목표"를 먼저 쓰게 함 | Astra 호출 프롬프트 첫 줄(M8)로. M7 판정 자체에는 안 씀 |
 | π*0.6 / π0.7 / R²VLM | 남은 시간 / 프롬프트 조건 / 단계 원장 | "계획대로"의 정의(§4.1)에 흡수. π 계열은 학습 신호라 **"PI가 이렇게 벗어남을 판정한다"라고 쓰지 않는다**(v3/12 §4-7) |
 | 정렬 적합성 검사(기초) + 2511.10876 | 계획 모델과 사건 로그를 정렬해 사건마다 동기 이동 / 로그만 이동 / 모델만 이동으로 나눈다. 2511.10876은 이것을 설명 가능한 제어 흐름 이상 탐지기로 썼다(LLM은 계측 코드만) | **새 채널을 만들지 않는다**(00 §14-2). M2 단계 원장(`phases` + `entry`/`exit`)을 선형 + 허용 분기 순서 모델로, M1 술어 전이를 사건으로 보고 §4.1 "순서" 조건 계산 안에서 매 틱 증분 정렬한다. 편차 두 종류("건너뜀" = 모델만 이동 / "계획 밖 사건" = 로그만 이동)를 원장·사건 문맥에 기록하고, 마지막 동기 이동 위치를 M9 재개 지점 계산과 공유한다(§4.2) |
@@ -171,5 +173,6 @@ VLA 쪽 정의(π*0.6: 남은 시간 / π0.7: 조건 + 실수 구간 / R²VLM: �
 - 모든 신규 항목의 인용 수·스타(API 금지).
 - LLM 에이전트 정체 감지의 학회 채택 논문(검색 1회로 못 찾음, 부재 주장 아님).
 - 2608.02464의 코드·데이터 실재 여부.
+- (D9) GPT-as-Policy gate 문구·호출 횟수는 D9 정독 보고(gate_prompt.md, data.json)에 기댄다. 이 문서에서 원문을 다시 읽지 않았다. 호출당 지연은 원문에 보고 없음.
 - Web-Shepherd Table 1의 조건별 수치(체크리스트 유무 차이 크기).
 - 정렬 기반 적합성 검사 기초 문헌(Adriansyah 외 2011) 원문은 읽지 않았다(D4 검증 §4). 2511.10876·2602.13848은 D4 검증이 초록과 학회 페이지(DOI)로 확인한 범위만 옮겼다.
