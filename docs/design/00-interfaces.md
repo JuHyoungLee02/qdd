@@ -231,3 +231,14 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - **Astra effort 기본 = low**(user-log 25 D14 답: high는 첫 토큰 약 73 s라 "너무 느린 것 같아" → "로우로"). **실험에서는 high와 low를 둘 다 비교**(user-log 25 "둘다 비교"). 따라서 D5·D14 해소: 잠정 기본 high는 폐기, 실패 호출·첫 계획 모두 기본 low, E-M8a·E0·E2a의 effort 축은 최소 {low, high}(medium·xhigh·max는 여력 있으면). 다른 작업의 "effort 낮추지 말 것" 발언은 이 프로젝트에 적용하지 않는다(사용자 결정). §13·§16·§23의 "잠정 기본 high" 서술은 이 절이 덮는다.
 - **D32 보기 이름 규칙**: "일반적으로는 어떻게 하는지 찾아봐서 적용"(user-log 25) → 조사 D14(진행 중) 결과의 일반 관행을 기본 규칙으로 적용하고, E0.5 (i) 치환 대조는 확인 실험으로 유지.
 - **M1 "변환 방법은 사용자가 정한다" 삭제**: 사용자가 한 말이 아니다(user-log 25). 변환 방법은 Claude가 정해 진행한다 → **기본 = 후보 A(ID 술어 표 + 변화 절, 근거 수 1위)**, 후보 B·C는 E3 비교 조건. CLAUDE.md·plan·M1·SUMMARY·§11.3의 해당 줄과 D2(사용자 결정 항목)는 이 절로 해소.
+
+## 27. D32 보기 이름 규칙 (2026-09-24 03:29 UTC, `D14-option-naming.md`, user-log 25 "일반적으로는 어떻게 하는지 한번 찾아봐서 적용")
+- 조사 결론: "모든 보기를 중립 식별자로"는 일반 관행이 아니다. Type-Safe(2609.26758)의 중립 식별자 권고는 **2지선다** 근거이고, 같은 논문 §4.5(3지선다 이상, n = 683)는 중립 문자로 바꾸면 정답률 .5637 → .2782, 답 52.42% 변경, 설명이 거의 무시되고 위치를 따라간다(저자는 "directional support"로만 둠, 호스트 Jev 측정 아님으로 추정). 업체 지침(Pydantic TypeSafe 문서): "name Literal and Enum options for what they mean", "reordering them can move the answer. If a classification matters, test it with the options in more than one order."
+- **지금 기본으로 적용(호출 추가 없음)**:
+  - R1 모든 보기에 설명(Choices 매핑·docstring) 필수. 이름은 설명 앞머리를 줄인 것이고 설명에 없는 뜻을 담지 않는다. 이름 금지어: 극성·판정어(yes/no/true/false/ok/fail/accept/reject/good/bad/safe/correct 등), 조건을 품은 이름(`descend_if_aligned` 등 — 조건은 설명에만).
+  - R2 **2지선다 Choice는 중립 ID**(`A`/`B` 또는 5자 무작위 문자열), 뜻은 설명에만(호스트 Jev: 이름 맞바꿈 32.50% 대 중립 2.08%·1.67%, test-retest 바닥 1.33%). Noul은 기준 문장을 부정 없이 긍정형으로.
+  - R4 순서: `question_id`별 고정 표준 순서, `NONE_ESCALATE`는 항상 마지막. 순서 순환(C3'')은 E-M4 조건 그대로.
+  - R5 원장·M4 합의·결과 라벨은 고정 `option_key`로 센다. 표시 이름·표시 순서·`perm_id`·`display_id → option_key` 대응표는 호출마다 기록. 확률 평균 없이 최빈 보기만.
+  - R6 이름 불변성 flip은 오프라인(E0.5·E1)에서만 잰다.
+- **E0.5 (i) 결과로 확정**: R3 3지선다 이상 행동 보기(방향·목표 물체·크기, ≤ 약 17개)는 내용을 그대로 적은 이름 + 설명을 유지(중립 문자로 바꾸지 않음). E0.5 (i) 판: A0 지금 이름 / A1 중립 문자 / A2 무작위 5자 / A3 이름을 설명과 한 칸 어긋나게(진단) / A4 순서만 한 칸 순환 / (ii) A0 반복. 층: 2지선다·Noul / k = 3~6 / k = 7~17. 지표: `option_key` 기준 flip, 결과 라벨 정답률, A3 이름 추종률, 첫 자리 선택률 대 정답 첫 자리 비율. 판정(층별): 중립 전환 = A1 정답률 ≥ A0 − 2pt(짝 부트스트랩 하한) 그리고 A3 이름 추종률이 (ii) 바닥보다 유의하게 큼 / 이름 유지 = A1이 A0보다 낮고 차의 95% 하한 > 0 / A4 flip ≥ 5%면 C3''를 필수 조건으로. 약 9천 요청, 약 $1 미만(우리 계산).
+- D32는 이 절로 해소(사용자 지시대로 일반 관행 적용, 남은 부분은 E0.5가 확정).
