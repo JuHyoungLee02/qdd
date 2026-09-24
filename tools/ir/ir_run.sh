@@ -38,6 +38,11 @@ bf /etc/resolv.conf                  "$R/etc/resolv.conf"
 b "$CACHE/cache" "$R/isaac-sim/kit/cache"
 b "$CACHE/data"  "$R/isaac-sim/kit/data"
 b "$CACHE/logs"  "$R/isaac-sim/kit/logs"
+# user-log 45: nothing outside /data. Kit/carb write to /tmp and $HOME/.nvidia-omniverse inside the chroot;
+# overlay them with per-instance /data dirs (only inside this private mount namespace, shared rootfs untouched).
+mkdir -p "$CACHE/tmp" "$CACHE/omniverse"
+b "$CACHE/tmp"       "$R/tmp"
+b "$CACHE/omniverse" "$R/root/.nvidia-omniverse"
 
 declare -a E=()
 if [ -n "$ENVF" ]; then
