@@ -1,7 +1,7 @@
 # R7 객관 검증 전 알려진 열린 문제 수정 (pre-R7 fixes)
 
 - 계획: `docs/superpowers/plans/2026-09-25-e2e-ready.md`(R7 순회 전). 근거 정본: `00-interfaces.md` §45(E-M8c), §58–§65. 대상 열린 문제: `r4_stageB.md` §8, `r5_closed_loop.md` §6(7번), `r6_eval.md` §5(1·6·7번), `e_m4b_meas.md` §7·§11(측정원 반영).
-- 실행: 2026-09-25(파드 `p-test2/juhyoung-native-7a2a`, 파드 시계는 하루 뒤진 2026-09-24 22:0x–22:5x UTC로 찍힘 — 이전 문서들과 같은 시계 차). 코드 파드 사본 `/data/harvest/code_pre_r7`(작업용), `code_pre_r7_run`·`code_pre_r7_run2`(긴 실행용 고정 사본, `tools/pre_r7/sync.sh DEST=...`). 산출물 `/data/harvest/out/pre_r7/`. **git 커밋 안 함.**
+- 실행: 2026-09-24 UTC(파드 `p-test2/juhyoung-native-7a2a`; 파드 시계는 정확 — 앞선 판의 "파드 시계가 하루 뒤졌다"는 틀린 서술이었다, R7 1회차 C1 정정)
 - GPU: Isaac = **GPU 1**(동시 ≤ 3 프로세스), 학습·융합 모델 서버 = **GPU 2**(렌더 없음), GPU 3 안 씀, **GPU 0은 건드리지 않음**(라벨러·데이터 생성 작업이 사용 중). 다른 에이전트 프로세스·파드는 건드리지 않았다.
 - 시드: **DEV만**(0–9). CAL·TEST·TEST-P5는 만들지도 열지도 않았다(`splits.check_seeds`·`aiworker.check_layout_seed` 보호 그대로). 풀 `oracle` 필드는 정답으로 쓰지 않았다(작은 체크포인트의 결정 정답 = labels_v2, 확인 헤드 정답 = 특권 술어 `pool_truth`).
 - **§56 규칙**: 아래 수치는 모두 "끝까지 도는지" 확인용 소규모 판이다. 성공률·지연·손실을 결과로 인용하지 않는다(작은 체크포인트는 20스텝·합성 행동).
