@@ -92,6 +92,7 @@ def perturb(env, kind: str, seed: int) -> None:
 def apply_pending(env, t: float, near_target: bool, phase: str):
     """Fire the armed perturbation if its trigger holds now. One pose write, never repeated. Returns the event."""
     from .scene import OBJ_GEOM, SCENE_SPEC, TABLE_TOP_Z
+    from .tasks import TASKS
 
     st = getattr(env, "perturb_state", None)
     if st is None:
@@ -99,22 +100,26 @@ def apply_pending(env, t: float, near_target: bool, phase: str):
     ev = st.poll(t, near_target, phase)
     if ev is None:
         return None
+    spec = TASKS[getattr(env, "task", "mug_tray")]  # R2: the task's target / place (default mug o3 -> tray o5)
     if st.kind == "P1":
-        p, q = env.object_pose("o3")
+        p, q = env.object_pose(spec.target)
         d = p1_offset(st.seed)
-        env.write_object_pose("o3", (p[0] + d[0], p[1] + d[1], p[2]), tuple(q))
+        env.write_object_pose(spec.target, (p[0] + d[0], p[1] + d[1], p[2]), tuple(q))
         ev["dxy_m"] = d.tolist()
+        ev["obj"], ev["pose"] = spec.target, [float(p[0] + d[0]), float(p[1] + d[1]), float(p[2]), *map(float, q)]
     elif st.kind == "P2":
         k = SCENE_SPEC["p2_object"]
         g = OBJ_GEOM[k]
-        mug, _ = env.object_pose("o3")
-        tray, _ = env.object_pose("o5")
+        mug, _ = env.object_pose(spec.target)
+        tray, _ = env.object_pose(spec.place)
         obst = {j: (env.object_pose(j)[0][:2], OBJ_GEOM[j]["footprint_r"]) for j in env.present}
         xy = p2_spawn_xy(st.seed, env.carry_start_xy if hasattr(env, "carry_start_xy") else mug[:2], tray[:2],
                          obst, g["footprint_r"])
-        env.write_object_pose(k, (xy[0], xy[1], TABLE_TOP_Z + g["half_extents"][2] + 0.001))
+        z = TABLE_TOP_Z + g["half_extents"][2] + 0.001
+        env.write_object_pose(k, (xy[0], xy[1], z))
         env.present.append(k)
         ev["xy"] = xy.tolist()
+        ev["obj"], ev["pose"] = k, [float(xy[0]), float(xy[1]), float(z), 1.0, 0.0, 0.0, 0.0]  # replay (R2)
     return ev
 
 

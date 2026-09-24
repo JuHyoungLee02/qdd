@@ -52,17 +52,24 @@ def mag_label(d) -> str:
     return MAG_BINS[-1][0]
 
 
-def target_label(stage: str) -> str:
-    return "o3" if stage == "S1" else "o5"
+def target_label(stage: str, tgt: str = "o3", place: str = "o5") -> str:
+    return tgt if stage == "S1" else place
 
 
-def phase_label(stage: str, gstate: str, facts: dict, d) -> str:
+def _exit(stage: str, tgt: str = "o3", place: str = "o5") -> tuple:
+    if (tgt, place) == ("o3", "o5"):
+        return EXIT[stage]
+    return (f"holding({tgt})", f"lifted({tgt})") if stage == "S1" else (f"on({tgt},{place})",)
+
+
+def phase_label(stage: str, gstate: str, facts: dict, d, tgt: str = "o3", place: str = "o5") -> str:
     """hold: closed_empty, or S2 with holding(o3) and on(o3,o5) both not true. next: every exit predicate of the
-    stage true, or the sub-goal reached (none_xy and none_z). Otherwise continue."""
-    if gstate == "closed_empty" or (stage == "S2" and facts.get("holding(o3)") is not True
-                                     and facts.get("on(o3,o5)") is not True):
+    stage true, or the sub-goal reached (none_xy and none_z). Otherwise continue. (R2: o3 / o5 = the task's
+    target / place.)"""
+    if gstate == "closed_empty" or (stage == "S2" and facts.get(f"holding({tgt})") is not True
+                                     and facts.get(f"on({tgt},{place})") is not True):
         return "hold"
-    if all(facts.get(p) is True for p in EXIT[stage]):
+    if all(facts.get(p) is True for p in _exit(stage, tgt, place)):
         return "next"
     if dir_xy_label(d) == "none_xy" and dir_z_label(d) == "none_z":
         return "next"
@@ -70,86 +77,99 @@ def phase_label(stage: str, gstate: str, facts: dict, d) -> str:
 
 
 # ------------------------------------------------------------------------------------------ sub-phase and goal
-def gripper_state(pred: dict) -> str:
+def gripper_state(pred: dict, tgt: str = "o3") -> str:
     if pred.get("gripper_open"):
         return "open"
-    return "closed_holding" if pred.get("holding(o3)") else "closed_empty"
+    return "closed_holding" if pred.get(f"holding({tgt})") else "closed_empty"
 
 
-def _motion(stage: str, gstate: str, rel: dict) -> str:
+def _motion(stage: str, gstate: str, rel: dict, tgt: str = "o3", place: str = "o5") -> str:
     """rel: {obj: centre - gripper [m]}."""
     if gstate == "closed_empty":
         return "wait"
     if stage == "S1":
         if gstate == "open":
-            return "approach" if math.hypot(rel["o3"][0], rel["o3"][1]) > ALIGN_XY_M else "grasp"
+            return "approach" if math.hypot(rel[tgt][0], rel[tgt][1]) > ALIGN_XY_M else "grasp"
         return "lift"
     if gstate == "open":
         return "retreat"
-    return "carry" if math.hypot(rel["o5"][0], rel["o5"][1]) > ALIGN_XY_M else "place"
+    return "carry" if math.hypot(rel[place][0], rel[place][1]) > ALIGN_XY_M else "place"
 
 
-def _delta(M: str, grip_z: float, rel: dict, hm: float = MUG_HALF_H, hr: float = TRAY_HALF_H) -> np.ndarray:
-    """Δ = G - g for sub-phase M (goal geometry of planner._goal on actual poses)."""
+def _delta(M: str, grip_z: float, rel: dict, hm: float = MUG_HALF_H, hr: float = TRAY_HALF_H, tgt: str = "o3",
+           place: str = "o5") -> np.ndarray:
+    """Δ = G - g for sub-phase M (goal geometry of planner._goal on actual poses). hm / hr: half heights of the
+    target / place object."""
     if M == "wait":
         return np.zeros(3)
     if M in ("lift", "retreat"):
-        z = CARRY_Z_M - grip_z if M == "lift" else rel["o3"][2] + hm - GRASP_BELOW_TOP_M + RETREAT_UP_M
+        z = CARRY_Z_M - grip_z if M == "lift" else rel[tgt][2] + hm - GRASP_BELOW_TOP_M + RETREAT_UP_M
         return np.array([0.0, 0.0, z])
     if M in ("approach", "grasp"):
-        m = rel["o3"]
+        m = rel[tgt]
         up = hm + APPROACH_ABOVE_TOP_M if M == "approach" else hm - GRASP_BELOW_TOP_M
         return np.array([m[0], m[1], m[2] + up])
-    r = rel["o5"]
+    r = rel[place]
     if M == "carry":
         return np.array([r[0], r[1], CARRY_Z_M - grip_z])
     if M == "place":
-        gap = (rel["o3"][2] - hm) - (r[2] + hr)  # mug bottom above the tray top
+        gap = (rel[tgt][2] - hm) - (r[2] + hr)  # target bottom above the place object's top
         return np.array([r[0], r[1], -gap + PLACE_CLEAR_M])
     raise ValueError(M)
 
 
-def _obs(state):
+def task_objs(line) -> tuple:
+    """(target, place) of the line's task (R2 field `task`; pool lines without it = mug o3 -> tray o5)."""
+    from .sim.tasks import TASKS, check_task
+    t = TASKS[check_task(line.get("task", "mug_tray"))]
+    return t.target, t.place
+
+
+def _obs(state, tgt: str = "o3", place: str = "o5"):
     raw = state["obs"]["raw"]
     g = np.asarray(raw["grip"]["pos"], float)
     rel = {k: np.asarray(raw["objs"][k]["pos"], float) - g for k in state["present"] if k in raw["objs"]}
-    he = {k: raw["objs"][k].get("he") for k in ("o3", "o5") if k in raw["objs"]}
-    hm = he["o3"][2] if he.get("o3") else MUG_HALF_H
-    hr = he["o5"][2] if he.get("o5") else TRAY_HALF_H
+    he = {k: raw["objs"][k].get("he") for k in (tgt, place) if k in raw["objs"]}
+    hm = he[tgt][2] if he.get(tgt) else MUG_HALF_H
+    hr = he[place][2] if he.get(place) else TRAY_HALF_H
     return g, rel, hm, hr
 
 
-def goal_point(phase: str, state) -> np.ndarray:
+def goal_point(phase: str, state, tgt: str = "o3", place: str = "o5") -> np.ndarray:
     """G for sub-phase `phase` (approach/grasp/lift/carry/place/retreat/wait) from the snapshot state's poses."""
-    g, rel, hm, hr = _obs(state)
-    return g + _delta(phase, float(g[2]), rel, hm, hr)
+    g, rel, hm, hr = _obs(state, tgt, place)
+    return g + _delta(phase, float(g[2]), rel, hm, hr, tgt, place)
 
 
 def motion_phase(line) -> str:
-    g, rel, _, _ = _obs(line["state"])
-    return _motion(stage_of(line["phase"]), gripper_state(line["pred"]), rel)
+    tgt, place = task_objs(line)
+    g, rel, _, _ = _obs(line["state"], tgt, place)
+    return _motion(stage_of(line["phase"]), gripper_state(line["pred"], tgt), rel, tgt, place)
 
 
 def delta(line):
     """(sub-phase, Δ = G - g [m]) of one snapshot line."""
+    tgt, place = task_objs(line)
     M = motion_phase(line)
-    g, rel, hm, hr = _obs(line["state"])
-    return M, _delta(M, float(g[2]), rel, hm, hr)
+    g, rel, hm, hr = _obs(line["state"], tgt, place)
+    return M, _delta(M, float(g[2]), rel, hm, hr, tgt, place)
 
 
-def _answers(stage, gstate, facts, M, d) -> dict:
+def _answers(stage, gstate, facts, M, d, tgt: str = "o3", place: str = "o5") -> dict:
     return {"dir_xy": dir_xy_label(d), "dir_z": dir_z_label(d), "mag_coarse": mag_label(d),
-            "target": target_label(stage), "phase_choice": phase_label(stage, gstate, facts, d), "motion_phase": M}
+            "target": target_label(stage, tgt, place),
+            "phase_choice": phase_label(stage, gstate, facts, d, tgt, place), "motion_phase": M}
 
 
 def labels(line) -> dict:
     """v2 answers (oracle-field names) + sub-phase and Δ for one snapshot line; progress = the old oracle value."""
-    stage, gstate = stage_of(line["phase"]), gripper_state(line["pred"])
+    tgt, place = task_objs(line)
+    stage, gstate = stage_of(line["phase"]), gripper_state(line["pred"], tgt)
     M, d = delta(line)
-    out = _answers(stage, gstate, line["pred"], M, d)
+    out = _answers(stage, gstate, line["pred"], M, d, tgt, place)
     out["progress"] = (line.get("oracle") or {}).get("progress")
     out["delta_m"] = [round(float(v), 5) for v in d]
-    out["goal_m"] = [round(float(v), 5) for v in goal_point(M, line["state"])]
+    out["goal_m"] = [round(float(v), 5) for v in goal_point(M, line["state"], tgt, place)]
     return out
 
 

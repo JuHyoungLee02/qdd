@@ -30,7 +30,8 @@ SCENE_SPEC = {
     "place": "o5",  # tray blue
     "distractors": ("o8", "o9"),  # 0-2 per seed
     "p2_object": "o10",  # DEV perturbation P2 only: parked off-table until it "appears"
-    "names": {"o3": "mug red", "o5": "tray blue", "o8": "bottle green", "o9": "box yellow", "o10": "box purple"},
+    "names": {"o3": "mug red", "o5": "tray blue", "o8": "bottle green", "o9": "box yellow", "o10": "box purple",
+              "o11": "marker magenta"},
 }
 
 TABLE_TOP_Z = 0.85  # world z of the table surface (table frame z = 0). Chosen so that the default head camera
@@ -46,9 +47,15 @@ OBJ_GEOM = {
     "o8": dict(shape="cylinder", radius=0.025, height=0.10, mass=0.15, friction=(0.8, 0.8), color=(0.10, 0.65, 0.20)),
     "o9": dict(shape="cuboid", size=(0.05, 0.05, 0.07), mass=0.10, friction=(0.8, 0.8), color=(0.90, 0.80, 0.10)),
     "o10": dict(shape="cuboid", size=(0.06, 0.05, 0.08), mass=0.10, friction=(0.8, 0.8), color=(0.55, 0.20, 0.70)),
+    # R2 (task box_marker): flat VISUAL-ONLY target marker (no collider, no rigid body, no contact sensor); parked
+    # behind the robot unless a task layout puts it on the table. Its "contact" is virtual (tasks.marker_contacts).
+    # magenta: orange (1.0, 0.45, 0) rendered yellow in the bright standard scene (= the yellow box o9), DEV frames
+    "o11": dict(shape="marker", radius=0.05, height=0.002, color=(0.85, 0.0, 0.65)),
 }
+VISUAL_ONLY = ("o11",)
+PRESENT_IDS = ("o3", "o5", "o8", "o9", "o11")  # objects in play when the layout has them (o10 joins after P2 fires)
 for _g in OBJ_GEOM.values():
-    if _g["shape"] == "cylinder":
+    if _g["shape"] in ("cylinder", "marker"):
         _g["half_extents"] = (_g["radius"], _g["radius"], _g["height"] / 2)
     else:
         _g["half_extents"] = tuple(s / 2 for s in _g["size"])
@@ -60,7 +67,8 @@ WS_X = (0.36, 0.48)
 WS_Y = (-0.40, -0.06)
 DISTRACTOR_X = (0.34, 0.56)
 DISTRACTOR_Y = (-0.46, 0.08)
-PARK_XY = {"o8": (-3.0, 3.0), "o9": (-3.3, 3.0), "o10": (-3.6, 3.0)}  # parked behind the robot (out of the head view)
+PARK_XY = {"o8": (-3.0, 3.0), "o9": (-3.3, 3.0), "o10": (-3.6, 3.0),  # parked behind the robot (out of the head view)
+           "o11": (-3.0, -3.0)}
 
 # RH-P12-RN: gripper_r_joint1 (0 = open, 1.1 = closed; joints 2-4 mimic). Inner pad gap measured in sim
 # (probe2, 2026-09-24): finger link2 origin distance minus 7.7 mm (pad inner faces from the USD bbox).
@@ -239,7 +247,7 @@ def _place_layout_event(env, env_ids):
 
 
 def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu", variant: str = "standard",
-               decimation: int = 5, render_interval: int | None = None):
+               decimation: int = 5, render_interval: int | None = None, task: str = "mug_tray"):
     import isaaclab.envs.mdp as mdp
     import isaaclab.sim as sim_utils
     from isaaclab.assets import AssetBaseCfg, RigidObjectCfg
@@ -255,7 +263,8 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
 
     if arm != "right":
         raise NotImplementedError("single right arm only (T11)")
-    layout = sample_layout(seed)
+    from .tasks import task_layout
+    layout = task_layout(seed, task)  # mug_tray = sample_layout(seed)
     robot_prefix = "{ENV_REGEX_NS}/Robot/ffw_sg2_follower"
     finger_paths = [f"{robot_prefix}/right_gripper/{b}" for b in FINGER_BODIES[arm]]
     obj_ids = ["o3", "o5", "o8", "o9", "o10"]
@@ -308,6 +317,12 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
         from .randomize import distractor_scene_cfgs, randomized_table_cfg
         scene_attrs.update(distractor_scene_cfgs(variant))
         scene_attrs["table"] = randomized_table_cfg(scene_attrs["table"])  # same table + own material (visual)
+    mk = OBJ_GEOM["o11"]  # R2 visual-only task marker (no collider / rigid body): parked, moved at reset (USD pose)
+    scene_attrs["marker"] = AssetBaseCfg(
+        prim_path="{ENV_REGEX_NS}/Marker",
+        spawn=sim_utils.CylinderCfg(radius=mk["radius"], height=mk["height"], axis="Z",
+                                    visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=mk["color"])),
+        init_state=AssetBaseCfg.InitialStateCfg(pos=(*PARK_XY["o11"], mk["height"] / 2)))
     for n, c in _default_camera_cfgs(cameras, depth).items():
         scene_attrs[n] = c
     @configclass
@@ -401,9 +416,11 @@ class Env:
     """Thin wrapper over an Isaac Lab ManagerBasedRLEnv. step() takes 7 arm joint targets + gripper width (m)."""
 
     def __init__(self, seed: int, headless=True, cameras=DEFAULT_CAMERAS, arm="right", depth=True, sim_device="cpu",
-                 variant="standard", decimation: int = 5, render_interval: int | None = None):
+                 variant="standard", decimation: int = 5, render_interval: int | None = None, task: str = "mug_tray"):
         from . import randomize
+        from .tasks import check_task
         self.variant = randomize.check_variant(variant)
+        self.task = check_task(task)
         cameras = tuple(cameras or ())
         _ensure_app(headless, bool(cameras))
         import torch
@@ -411,10 +428,11 @@ class Env:
 
         self.torch = torch
         self.seed, self.arm, self.cameras = int(seed), arm, cameras
-        cfg, self.layout = _build_cfg(seed, cameras, arm, depth, sim_device, variant, decimation, render_interval)
+        cfg, self.layout = _build_cfg(seed, cameras, arm, depth, sim_device, variant, decimation, render_interval,
+                                      task)
         self.sim_device = cfg.sim.device
         _LAYOUT["layout"] = self.layout
-        self.randomization = randomize.sample_randomization(seed, variant, self.layout)
+        self.randomization = randomize.sample_randomization(seed, variant, self.layout, path=self.task_path())
         _LAYOUT["rand"] = self.randomization
         self.rand_settle = None
         self.env = ManagerBasedRLEnv(cfg=cfg)
@@ -424,7 +442,7 @@ class Env:
             raise RuntimeError("robot base is not fixed")
         self.objects = {k: self.scene[k] for k in ("o3", "o5", "o8", "o9", "o10")}
         self.contact = {k: self.scene[f"contact_{k}"] for k in self.objects}
-        self.present = [k for k in ("o3", "o5", "o8", "o9") if k in self.layout]  # o10 joins after P2 fires
+        self.present = [k for k in PRESENT_IDS if k in self.layout]  # o10 joins after P2 fires
         jn = self.robot.joint_names
         self.arm_ids = [jn.index(n) for n in ARM_JOINTS[arm]]
         self.grip_id = jn.index(GRIP_JOINT[arm])
@@ -445,14 +463,36 @@ class Env:
     def sim_time(self) -> float:
         return self._steps * self.step_dt
 
-    def set_seed(self, seed: int):
-        """Reuse this env for another seed: new layout, applied by the next reset() (one write at reset)."""
+    def task_path(self):
+        from .tasks import TASKS
+        return TASKS[self.task].target, TASKS[self.task].place
+
+    def set_seed(self, seed: int, task: str = "mug_tray"):
+        """Reuse this env for another seed (and task, R2): new layout, applied by the next reset() (one write at
+        reset). Callers that do not name a task get the original mug -> tray task (pool / labeler / prefix)."""
         from .randomize import sample_randomization
-        self.seed = int(seed)
-        self.layout = sample_layout(seed)
+        from .tasks import check_task, task_layout
+        self.seed, self.task = int(seed), check_task(task)
+        self.layout = task_layout(seed, self.task)
         _LAYOUT["layout"] = self.layout
-        self.randomization = sample_randomization(seed, self.variant, self.layout)
+        self.randomization = sample_randomization(seed, self.variant, self.layout, path=self.task_path())
         _LAYOUT["rand"] = self.randomization
+
+    def _place_marker(self):
+        """Visual-only marker o11: USD pose (no physics prim), on the table when the layout has it, else parked."""
+        import omni.usd
+
+        from .randomize import _set_pose
+        prim = omni.usd.get_context().get_stage().GetPrimAtPath("/World/envs/env_0/Marker")
+        if prim.IsValid():
+            _set_pose(prim, tuple(float(v) for v in self._marker_pos()))
+
+    def _marker_pos(self) -> np.ndarray:
+        g = OBJ_GEOM["o11"]
+        if "o11" in self.layout:
+            x, y = self.layout["o11"][:2]
+            return np.array([x, y, TABLE_TOP_Z + g["height"] / 2])
+        return np.array([*PARK_XY["o11"], g["height"] / 2])
 
     def reset(self, settle_s: float = 1.0):
         """Reset once (write default state once), then let objects settle with the arm holding its pose."""
@@ -461,7 +501,8 @@ class Env:
         if self.variant != "standard":
             from .randomize import apply_visuals
             apply_visuals(self, self.randomization)
-        self.present = [k for k in ("o3", "o5", "o8", "o9") if k in self.layout]
+        self._place_marker()
+        self.present = [k for k in PRESENT_IDS if k in self.layout]
         self.perturb_state = None
         if hasattr(self, "carry_start_xy"):
             del self.carry_start_xy
@@ -506,6 +547,8 @@ class Env:
         return float(self.robot.data.applied_torque[0, self.grip_id].abs())
 
     def object_pose(self, k):
+        if k in VISUAL_ONLY:  # the marker is not a physics body: its pose is the layout pose
+            return self._marker_pos(), np.array([1.0, 0.0, 0.0, 0.0])
         d = self.objects[k].data
         return d.root_pos_w[0].cpu().numpy(), d.root_quat_w[0].cpu().numpy()
 
@@ -532,12 +575,13 @@ class Env:
 
 def make_env(seed: int, headless: bool = True, cameras=DEFAULT_CAMERAS, arm: str = "right", depth: bool = True,
              sim_device: str = "cpu", variant: str = "standard", decimation: int = 5,
-             render_interval: int | None = None) -> Env:
+             render_interval: int | None = None, task: str = "mug_tray") -> Env:
     """cameras: names from KNOWN_CAMERAS (real robot cameras); () for no rendering.
+    task: tasks.TASK_IDS (R2); the default is the original mug -> tray task with the standard layout.
     sim_device: 'cpu' (PhysX on CPU, default, canon §48) or 'cuda' (GPU PhysX, the v1 setting).
     variant: 'standard' (today's scene, unchanged), 'random' (5 axes from the TEST pool, evaluation only) or 'dr'
     (5 axes from the disjoint TRAIN pool, training-time domain randomization); randomize.py, canon §34/§52.
     decimation: physics substeps (10 ms) per env step, 5 = the 20 Hz pool/label setting; the closed-loop runtime (R5,
     D23 §3) uses 1 (100 Hz). render_interval: physics substeps per render (default = decimation)."""
     return Env(seed, headless=headless, cameras=cameras, arm=arm, depth=depth, sim_device=sim_device, variant=variant,
-               decimation=decimation, render_interval=render_interval)
+               decimation=decimation, render_interval=render_interval, task=task)

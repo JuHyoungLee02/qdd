@@ -179,7 +179,8 @@ def oracle_progress(t: float, fail_t, events, window_s: float = 1.0) -> str:
 
 
 # ----------------------------------------------------------------------------- text state (pure, cand. A)
-SPEC_NAMES = {"o3": "mug red", "o5": "tray blue", "o8": "bottle green", "o9": "box yellow", "o10": "box purple"}
+SPEC_NAMES = {"o3": "mug red", "o5": "tray blue", "o8": "bottle green", "o9": "box yellow", "o10": "box purple",
+              "o11": "marker magenta"}
 STAGES = {
     "S1": {"text": "pick up mug o3", "exit": "holding(o3) lifted(o3)", "invariants": []},
     "S2": {"text": "place mug o3 on tray o5", "exit": "on(o3,o5)", "invariants": ["holding(o3)"]},
@@ -200,13 +201,15 @@ def _yn(v):
 
 
 def text_state(t: float, phase: str, t_in_phase: float, timeout: float, pred: dict, present, support: dict,
-               grip_open: bool, holding: bool, arm_moving: bool, changes, names=SPEC_NAMES, contract="c1") -> str:
-    """Minimal serialization (E §1.4 measurement format, candidate-A shape) of one oracle snapshot."""
+               grip_open: bool, holding: bool, arm_moving: bool, changes, names=SPEC_NAMES, contract="c1",
+               stages=None, tgt: str = "o3") -> str:
+    """Minimal serialization (E §1.4 measurement format, candidate-A shape) of one oracle snapshot.
+    stages / tgt: the task's contract stages and target (R2 tasks.stages; default = the mug -> tray STAGES)."""
     from ..serialize import serialize_state
 
     sid = stage_of(phase)
-    st = dict(STAGES[sid], id=sid, elapsed=elapsed_cat(t_in_phase, timeout))
-    gripper = "open" if grip_open else ("closed_holding(o3)" if holding else "closed_empty")
+    st = dict((stages or STAGES)[sid], id=sid, elapsed=elapsed_cat(t_in_phase, timeout))
+    gripper = "open" if grip_open else (f"closed_holding({tgt})" if holding else "closed_empty")
     robot = f"gripper={gripper} arm={'moving' if arm_moving else 'still'}"
     objs = []
     for k in sorted(present, key=lambda x: int(x[1:])):

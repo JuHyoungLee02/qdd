@@ -23,12 +23,13 @@ def _success_now(p: dict) -> bool:
     return p.get("on(o3,o5)") is True and p.get("holding(o3)") is False and p.get("upright(o3)") is True
 
 
-def success_from_history(hist) -> bool:
+def success_from_history(hist, tgt: str = "o3", place: str = "o5") -> bool:
     """hist: [(sim_time, predicates)] ascending. True iff the success predicate holds ≥ success_hold_s continuously.
-    unknown (None) never counts as satisfied."""
+    unknown (None) never counts as satisfied. tgt / place: the task's objects (R2 tasks.py; default mug -> tray)."""
+    from .tasks import success_now
     start = None
     for t, p in hist:
-        if _success_now(p):
+        if (_success_now(p) if (tgt, place) == ("o3", "o5") else success_now(p, tgt, place)):
             start = t if start is None else start
             if t - start >= CFG.success_hold_s - 1e-9:
                 return True
@@ -165,6 +166,11 @@ def _quat_rot(q, v):
     return R @ np.asarray(v, float)
 
 
+def _yaw_of(q) -> float:
+    w, x, y, z = (float(v) for v in q)
+    return math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z))
+
+
 def _slerp_step(q0, q1, max_angle):
     q0, q1 = np.asarray(q0, float), np.asarray(q1, float)
     d = float(np.dot(q0, q1))
@@ -180,7 +186,12 @@ def _slerp_step(q0, q1, max_angle):
 
 
 class OraclePlanner:
-    """Scripted top-down pick-and-place on oracle state; step() -> 8-D target (7 arm joints + gripper width)."""
+    """Scripted top-down pick-and-place on oracle state; step() -> 8-D target (7 arm joints + gripper width).
+
+    R2: the objects come from env.task (tasks.py; default mug o3 -> tray o5, unchanged). `dt` is the control period
+    the next step() command is held for (default env.step_dt = the 20 Hz pool setting); the 30 Hz recorder sets it
+    per tick (0.03 / 0.04 s). Speeds are per second, the joint-step clamp MAX_DQ_RAD is per 50 ms and scales with dt,
+    `hold_debounce` counts control steps (3 at 20 Hz = 0.15 s; the recorder uses 5 at 30 Hz)."""
 
     def __init__(self, env):
         import torch
@@ -188,22 +199,29 @@ class OraclePlanner:
 
         from ..predicates import PredicateState
         from .scene import GRIP_MAX_W, OBJ_GEOM
+        from .tasks import TASKS, close_width, grasp_yaw
 
         self.env, self.torch = env, torch
         self.ik = DifferentialIKController(
             DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls",
                                         ik_params={"lambda_val": 0.05}), num_envs=1, device=env.env.device)
-        self.mug_h = OBJ_GEOM["o3"]["height"]
-        self.tray_h = OBJ_GEOM["o5"]["size"][2]
+        spec = TASKS[getattr(env, "task", "mug_tray")]
+        self.tgt, self.place = spec.target, spec.place
+        gt, gp = OBJ_GEOM[self.tgt], OBJ_GEOM[self.place]
+        self.mug_h = gt["height"] if "height" in gt else gt["size"][2]  # target height (name kept: mug task)
+        self.tray_h = gp["height"] if "height" in gp else gp["size"][2]  # place object height
         self.w_open = GRIP_MAX_W
         # squeeze target: mug diameter minus GRIP_SQUEEZE_M (PD then presses with ~stiffness x error, not the
         # effort limit; full-close targets drove the fingers 14 mm into the mug and PhysX threw the arm)
-        self.w_close = max(0.0, 2 * OBJ_GEOM["o3"]["radius"] - GRIP_SQUEEZE_M)
+        self.w_close = close_width(self.tgt)
+        self.dt = env.step_dt
+        self.hold_debounce = HOLD_DEBOUNCE
         self.ps = PredicateState()
         self.phase, self.t_phase0 = "approach", env.sim_time
         p, q = self.tcp_pose()
         self.cmd_pos, self.cmd_quat, self.cmd_w = p, q, GRIP_MAX_W
-        self.goal_quat = np.array([math.cos(TOP_DOWN_YAW / 2), 0, 0, math.sin(TOP_DOWN_YAW / 2)])
+        yaw = grasp_yaw(self.tgt, _yaw_of(env.object_pose(self.tgt)[1]))
+        self.goal_quat = np.array([math.cos(yaw / 2), 0, 0, math.sin(yaw / 2)])
         self.history = []  # (t, cmd_pos table frame, cmd_w, phase)
         self.phase_log = [(env.sim_time, "approach")]
         self.pred, self.objs, self.grip = {}, {}, None
@@ -219,12 +237,12 @@ class OraclePlanner:
         return p + _quat_rot(q, (0, 0, -self.env.tcp_offset)), q
 
     def _mug(self):
-        return self.env.object_pose("o3")[0]
+        return self.env.object_pose(self.tgt)[0]
 
     def _goal(self):
         z0 = self.env.table_top_z
         mug = self._mug()
-        tray = self.env.object_pose("o5")[0]
+        tray = self.env.object_pose(self.place)[0]
         ph = self.phase
         if ph == "approach":
             return np.array([mug[0], mug[1], z0 + self.mug_h + APPROACH_ABOVE_TOP_M]), V_FAST
@@ -251,7 +269,7 @@ class OraclePlanner:
         objs, grip, contacts, support = oracle_objects(self.env)
         self.pred = self.ps.update(objs, grip, contacts, support)
         self.objs, self.grip, self.contacts = objs, grip, contacts
-        self.near_target = bool(np.linalg.norm(grip.pos - objs["o3"].pos) < CFG.near_in_m)
+        self.near_target = bool(np.linalg.norm(grip.pos - objs[self.tgt].pos) < CFG.near_in_m)
         return self.pred
 
     def step(self) -> np.ndarray:
@@ -259,15 +277,16 @@ class OraclePlanner:
         if not self.pred:
             self.observe()
         p = self.pred
-        hold_now = p.get("holding(o3)") is True
+        hold_now = p.get(f"holding({self.tgt})") is True
         self._not_hold = 0 if hold_now else self._not_hold + 1
-        mug = self.objs["o3"]
+        mug = self.objs[self.tgt]
         goal, _ = self._goal()
         tcp, _ = self.tcp_pose()
         tol = REACH_TOL_M if self.phase in ("descend", "place_descend") else REACH_TOL_FAST_M
         sig = dict(reached=bool(np.linalg.norm(goal - tcp) < tol and np.linalg.norm(goal - self.cmd_pos) < 1e-4),
-                   t_in_phase=t - self.t_phase0, holding=self._not_hold < HOLD_DEBOUNCE,
-                   lift_h=float(mug.pos[2] - mug.half_extents[2]), contact_under=p.get("in_contact(o3,o5)") is True)
+                   t_in_phase=t - self.t_phase0, holding=self._not_hold < self.hold_debounce,
+                   lift_h=float(mug.pos[2] - mug.half_extents[2]),
+                   contact_under=p.get(f"in_contact({self.tgt},{self.place})") is True)
         new = next_phase(self.phase, sig)
         if new != self.phase:
             if new == "fail":
@@ -286,16 +305,16 @@ class OraclePlanner:
             goal, v = self._goal()
             d = goal - self.cmd_pos
             n = float(np.linalg.norm(d))
-            step = v * env.step_dt
+            step = v * self.dt
             self.cmd_pos = goal if n <= step else self.cmd_pos + d * (step / n)
-            self.cmd_quat = _slerp_step(self.cmd_quat, self.goal_quat, W_MAX * env.step_dt)
+            self.cmd_quat = _slerp_step(self.cmd_quat, self.goal_quat, W_MAX * self.dt)
             if self.phase in ("close", "lift", "carry", "place_descend"):
                 self.cmd_w = self.w_close
             elif self.phase in ("open", "retreat", "done", "approach", "descend"):
                 self.cmd_w = self.w_open
         from .oracle_state import to_table_frame
         self.history.append((t, to_table_frame(self.cmd_pos, env.table_top_z), self.cmd_w, self.phase))
-        q_des = self._ik(self.cmd_pos, self.cmd_quat)
+        q_des = self._ik(self.cmd_pos, self.cmd_quat, MAX_DQ_RAD * (self.dt / env.step_dt))
         return np.concatenate([q_des, [self.cmd_w]]).astype(np.float32)
 
     def _ik(self, pos_w, quat_w, max_dq: float = MAX_DQ_RAD):
@@ -351,6 +370,28 @@ def mug_tray_metrics(env) -> dict:
             "mug_z_table_mm": round((m[2] - env.table_top_z) * 1e3, 1)}
 
 
+def success_keys(tgt: str = "o3", place: str = "o5") -> tuple:
+    return (f"on({tgt},{place})", f"holding({tgt})", f"upright({tgt})")
+
+
+def place_metrics(env, tgt: str, place: str) -> dict:
+    """mug_tray_metrics for any (target, place) pair (R2 tasks): centre distance, how far outside the place
+    object's footprint (tray: half extents; marker: tasks.MARKER_ON_R disc), tilt, height above the table."""
+    from ..predicates import _tilt_deg
+    from .scene import OBJ_GEOM
+    from .tasks import MARKER_ON_R
+    m, mq = env.object_pose(tgt)
+    t, _ = env.object_pose(place)
+    dx, dy = m[0] - t[0], m[1] - t[1]
+    if OBJ_GEOM[place]["shape"] == "marker":
+        out = max(math.hypot(dx, dy) - MARKER_ON_R, 0.0)
+    else:
+        he = OBJ_GEOM[place]["half_extents"]
+        out = max(abs(dx) - he[0], abs(dy) - he[1], 0.0)
+    return {"tgt_place_xy_mm": round(math.hypot(dx, dy) * 1e3, 1), "tgt_outside_place_mm": round(out * 1e3, 1),
+            "tgt_tilt_deg": round(_tilt_deg(mq), 1), "tgt_z_table_mm": round((m[2] - env.table_top_z) * 1e3, 1)}
+
+
 def run_episode(env, kind: str = "P0", seed: int | None = None, limit_s: float = CFG.episode_limit_s,
                 done_grace_s: float = 3.0, on_step=None) -> dict:
     """One episode: reset (one state write + settle), arm the DEV perturbation, run the oracle planner until
@@ -371,10 +412,10 @@ def run_episode(env, kind: str = "P0", seed: int | None = None, limit_s: float =
         t = env.sim_time
         pred = pl.observe()
         hist.append((t, pred))
-        if pl.objs["o3"].pos[2] < -0.05:
+        if pl.objs[pl.tgt].pos[2] < -0.05:
             res.update(stage=FAIL_STAGE.get(pl.phase, "release"), info={"reason": "off_table", "phase": pl.phase})
             break
-        if success_from_history(hist):
+        if success_from_history(hist, pl.tgt, pl.place):
             res["success"] = True
             break
         if pl.phase == "fail":
@@ -384,7 +425,7 @@ def run_episode(env, kind: str = "P0", seed: int | None = None, limit_s: float =
             t_done = t if t_done is None else t_done
             if t - t_done > done_grace_s:
                 res.update(stage="release", info={"reason": "no_success_after_done",
-                                                  **{k: pred.get(k) for k in SUCCESS_KEYS}})
+                                                  **{k: pred.get(k) for k in success_keys(pl.tgt, pl.place)}})
                 break
         if t >= limit_s:
             res.update(stage=FAIL_STAGE.get(pl.phase, "release"), info={"reason": "time_limit", "phase": pl.phase})
@@ -402,7 +443,8 @@ def run_episode(env, kind: str = "P0", seed: int | None = None, limit_s: float =
     res["phases"] = [(round(a, 2), b) for a, b in pl.phase_log]
     res["events"] = events
     res["grasp_rel_mm"] = [round(v * 1e3, 1) for v in pl.grasp_rel] if pl.grasp_rel else None
-    res.update(mug_tray_metrics(env))
+    res.update(mug_tray_metrics(env) if (pl.tgt, pl.place) == ("o3", "o5") else {})
+    res.update(task=getattr(env, "task", "mug_tray"), **place_metrics(env, pl.tgt, pl.place))
     res["n_decision_points"] = len(decision_points(pl))
     randomization_meta(env, res)
     res["planner"] = pl

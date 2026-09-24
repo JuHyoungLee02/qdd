@@ -100,12 +100,13 @@ def _seg_dist(p, a, b) -> float:
     return float(np.linalg.norm(p - (a + t * u)))
 
 
-def placement_ok(xy, r: float, layout: dict, placed: list, common: dict) -> bool:
+def placement_ok(xy, r: float, layout: dict, placed: list, common: dict, path=("o3", "o5")) -> bool:
     """Keep-out for one random distractor of footprint radius r at xy:
     - on the table (edge margin) and inside the placement box;
     - outside the planner path + P2 spawn band: the mug->tray segment (P2 spawns beside it, perturb.p2_spawn_xy)
       widened by P2_LATERAL_M[1] + o10 footprint + r + margin (P1's 2 cm shift of the mug is inside the band);
-    - clear of every layout object (mug, tray, o8, o9) and of the distractors already placed."""
+    - clear of every layout object (mug, tray, o8, o9) and of the distractors already placed.
+    path = (target, place) of the task (tasks.py); the default is the mug -> tray task."""
     x, y = xy
     em = common["table_edge_margin_m"]
     x0, x1 = TABLE_CENTER_XY[0] - TABLE_SIZE[0] / 2, TABLE_CENTER_XY[0] + TABLE_SIZE[0] / 2
@@ -115,7 +116,7 @@ def placement_ok(xy, r: float, layout: dict, placed: list, common: dict) -> bool
     if not (common["place_x"][0] <= x <= common["place_x"][1] and common["place_y"][0] <= y <= common["place_y"][1]):
         return False
     band = P2_LATERAL_M[1] + OBJ_GEOM["o10"]["footprint_r"] + r + common["keepout_margin_m"]
-    if _seg_dist(xy, layout["o3"][:2], layout["o5"][:2]) < band:
+    if _seg_dist(xy, layout[path[0]][:2], layout[path[1]][:2]) < band:
         return False
     for k, p in layout.items():
         if math.dist(xy, p[:2]) < OBJ_GEOM[k]["footprint_r"] + r + common["object_clearance_m"]:
@@ -156,7 +157,8 @@ def _r(v, n=4):
     return round(float(v), n)
 
 
-def sample_randomization(seed: int, variant: str, layout: dict | None = None, pools: dict | None = None) -> dict:
+def sample_randomization(seed: int, variant: str, layout: dict | None = None, pools: dict | None = None,
+                         path=("o3", "o5")) -> dict:
     """The five axes for (seed, variant). 'standard' -> no randomization (metadata only). Deterministic: every axis
     has its own RNG stream from (seed, variant, axis); nothing depends on earlier episodes of the process."""
     check_variant(variant)
@@ -213,7 +215,7 @@ def sample_randomization(seed: int, variant: str, layout: dict | None = None, po
         col = None if d.get("has_material") else cols[int(rng.integers(len(cols)))]["name"]
         for _ in range(3000):
             xy = (float(rng.uniform(*c["place_x"])), float(rng.uniform(*c["place_y"])))
-            if placement_ok(xy, g["footprint_r"], layout, placed, c):
+            if placement_ok(xy, g["footprint_r"], layout, placed, c, path):
                 placed.append({"name": d["name"], "kind": d["kind"], "xy": [_r(xy[0], 5), _r(xy[1], 5)],
                                "yaw": _r(rng.uniform(-math.pi, math.pi), 5), "footprint_r": _r(g["footprint_r"], 5),
                                "height": _r(g["dims"][2], 5), "half_height": _r(g["half_height"], 5),
