@@ -1,6 +1,7 @@
 # M6. 스킬과 Jev 결합 — 모듈 설계 (단계 2)
 
 > **정본 우선**: 모듈 사이 인터페이스·정지·확정 규칙·확률 게이트·시간 값은 `00-interfaces.md`가 우선한다(2026-09-23 22:00 UTC). 이 문서와 다르면 그쪽을 따른다.
+> 개정 2026-09-24 (정본 §24, D12 반영): §4.1.2 원칙 아래에 결정 지점 보기 이름의 편향(Type-Safe 2609.26758)과 중립 식별자 규칙을 [결정 필요] D32로(M3와 한 항목, 지금 설계는 바꾸지 않음), §6에 Type-Safe·C²Nav(2609.15142, [초록만]) 줄, §7-9 D32.
 > 개정 2026-09-24 (D11 일관성 점검 반영, `D11-final-consistency.md` I-9): §4.4 [사용자] 문제 설정 인용을 user-log 3 원문으로(첫 판의 "기존 방법"은 원문에 없음, 00 §16).
 > 개정 2026-09-24 (정본 §22, D10a 반영): 스킬 출력에 원자료 진단 필드 필수(§4.1.1), typed 결정 지점 후보 5개(§4.1.2a), §2.1 Harness VLA·CaP-X 행 정정(공개 코드 `pi0_pick`/`pi0_doubled` 수치 임계 인자, CaP-X 9개는 대부분 기하 유틸·스크립트에 자동 검증 없음), (b) 생성 스킬 = 추출 + 계약 + typed hole + 실행 기반 검증(§4.4a), E-M6-3에 "생성 기반 API 단계" 축, Harness VLA는 (a)/(a') 근거이지 (b) 근거 아님, 차별 문장(§6a). 근거 `D10a-harness-capx.md` §1.2·§2.2·§3-3·§3-4.
 > 개정: 2026-09-23 D5 반영 (`D5-consistency.md` 1-9·1-10·1-12·1-15·1-17·4-1, 00-interfaces §11.2·§13·§16): `dp.critic_accept`는 M7 FAIL 뒤 M9 제안 목록이 있을 때만(WARN 발동 삭제), 보기를 M9 §4.1 L2 목록과 같게. E-M6-1 판정 2를 00 §13 방향 재검토 규칙(95% 상한 < +5%p)으로, 통계를 부트스트랩 95% 구간으로. 실험 환경을 단일 팔 자작 장면으로. `effect`(사가)를 잠정 기본([결정 필요] 4)으로 표시. §4.4의 사용자 문장 인용을 user-log 3 원문으로 고침(00 §16).
@@ -187,6 +188,7 @@ metadata:
 
 - 한 요청에 여러 질문 묶기(Jev 질문 수 상한 없음, plan §1): 진입 시 `dp.approach_dir` + `dp.next_skill` 확인을 한 요청에.
 - M10 규칙은 결정 지점 키가 정확히 맞을 때만 1~2줄 `hint:`로 붙는다(M10 문서).
+- **(00 §24, D12) 보기 이름 규칙 — [결정 필요] D32**: 위 표의 보기(`close_now`, `release_now`, `side_front` 등)는 뜻을 이름에 싣는다. Type-Safe Is Not Error-Free(2609.26758, 09-22, D12 메인 재확인): "renaming the two options from 0/1 to no/yes changes 70.4 more answers per hundred ... shifts AUC from .94 to .23", "The hosted model exhibits the same behavior: the swap changes AUC from .8146 to .5806 and produces 24x as many answer flips as its test-retest floor", "the type-error rate remains 0%". 권고: "Use neutral option identifiers and carry the meaning in the rubric". 결정 지점 보기를 중립 식별자로 바꾸고 뜻은 루브릭(질문 템플릿)에 적을지는 M3와 한 항목으로 사용자가 정한다(SUMMARY §5.1 D32). 결정 지점 id(`dp.*`)는 스킬 고정 id 규칙 그대로이고, 바뀔 수 있는 것은 보기 이름뿐이다. 결정 전까지 위 표는 바꾸지 않는다. 자료는 E0.5 (i)·(ii)(E 문서 §2A).
 
 #### 4.1.2a typed 결정 지점 후보 (Harness 탐색 레버에서 도출, 00-interfaces §22) [접목]
 Harness VLA §2.2 원문 탐색 레버("staging orders, pre-contact poses, invocation timings for vla_act, and early-return termination thresholds")와 RPent 메모리 교훈의 레버에서 뽑은 후보다. **원문은 typed 보기 없이 자유 JSON 수치 인자를 플래너가 준다.** 우리는 이를 enum(보기 ID)으로 바꾼다. 결정 지점 id 등록은 §4.1.2 표 규칙 그대로(스킬 고정 id, 00-interfaces §11.1). 모두 [접목]이다.
@@ -283,6 +285,8 @@ Astra 계획에 (i) 카드만(메타 ~100토큰/스킬) 대 (ii) 본문 전부. 
 - **MCP annotations는 힌트다**(명세: untrusted). `irreversible` 선언을 믿고 안전을 넘기면 안 된다. 코드 안전 술어가 최종.
 - BATON은 심사 전·인용 1이라 보조 참고로만 둔다(D2 A1이 초록·본문 문장은 확인). GPSFSM의 BTGenBot 대비 우위는 GPT 모델에서만이고 로컬 모델에서는 BTGenBot이 낫다(Table I) — FSM 선택의 근거로 과장하지 않는다.
 - **MCP idempotent ≠ 로봇 재시도 안전**: 뜻이 바뀌므로 `retry_safe`는 우리 정의로 둔다(§3).
+- **보기 이름 편향(00 §24, D12)**: Type-Safe(2609.26758)는 typed 모델의 보기 이름 편향이 type-error 0%인 채로 생긴다는 것을 보였다(0/1 → no/yes, 100개당 70.4개 답 변경). M4 반복 합의로는 안 걸러진다 → [결정 필요] D32.
+- **질문 형태(00 §24, D12, [초록만])**: C²Nav(2609.15142)는 VLM이 제어기가 만든 대안을 비교하게 하고 기하·문턱·행동 크기는 물리 쪽에 두었다. 비교형 질문을 절댓값형으로 바꾸면 SR이 12~28%로 떨어진다. "코드 술어로 답이 나오는 것은 묻지 않고, 코드가 만든 보기 중 고르게 한다"는 §4.1.2 원칙의 근거 후보로 인용한다. 초록만 읽었다.
 - Zetta 원문 불일치(온라인 LLM 승인자 대 인프라 절 "온라인 에이전트 없음", v3/16 #23).
 - **typed hole 게이트는 원문이 평가하지 않은 접목안이다**(00-interfaces §15): PLDI 2025 결과는 디코딩 중 제약이다. 사후 검사 + 수리로 바꾸면 같은 효과가 난다는 근거가 없다. 수리 왕복은 T0 지연을 늘린다.
 - **`effect`의 근거와 한계**: 사가(1987)는 기초 문헌이고 원문을 읽지 않았다. SagaLLM은 PVLDB 18(12)로 확정됐지만 2025-03-15 공개라 기간 8일 밖이고 수치는 확인하지 못했다. Atomix는 무학회다. 모두 소프트웨어 효과가 대상이다. 로봇의 보상 스킬은 원상 복구를 보장하지 못한다(물체가 움직임). 그래서 보상 뒤 `entry` 재확인이 필수다. 가역/비가역 표지를 잘못 붙이면 M9가 되돌릴 수 없는 것을 되돌리려 할 수 있다 → 코드 안전 술어가 최종이다.
@@ -301,6 +305,7 @@ Astra 계획에 (i) 카드만(메타 ~100토큰/스킬) 대 (ii) 본문 전부. 
 6. `dp.grasp_result`처럼 코드 술어가 애매한 곳의 경계(그리퍼 폭 임계)는 M7 보정과 같이 정한다.
 7. [결정 필요] 되돌릴 수 없음을 누가 정하나: `annotations.irreversible_phases`(스킬 작성자) / M2 계약 단계 수준 `irreversible`(Astra) / 사용자 목록. M2 §7-4와 **한 [결정 필요]**로 묶는다(D2 B7). 어느 안이든 코드 안전 규칙이 최종.
 8. 해소(00-interfaces §14-3, D4 §14-3): 스킬 계약 phase별 `effect`(가역 + 보상 스킬 id / 비가역)를 **채택**한다. M9는 보상 역순, 비가역 경계 너머 되돌리기 금지, M4는 비가역 보기 W+1. 메인 세션 잠정 결정이며 E-M6-2(−`effect` 절제)와 E-M9로 검증한다. 누가 표지를 붙이느냐는 7번 [결정 필요]에 그대로 남는다. 생성 스킬 (b)의 typed hole 게이트(§4.5)도 00-interfaces §14에 따라 넣었고, 원문 미평가 접목안이라 E-M6-5로 검증한다.
+9. [결정 필요] D32(00 §24, SUMMARY §5.1, M3 §7-9와 한 항목): 결정 지점 보기를 중립 식별자로 바꾸고 뜻은 루브릭에 적는 규칙을 (i) E0.5 (i) 결과 전에 기본으로 둘지 / (ii) E0.5 (i) 결과를 본 뒤 정할지 / (iii) 지금 이름을 유지할지. 결정 전까지 §4.1.2 표는 바꾸지 않는다.
 
 ## 8. 확인 못 한 것
 - Agent Skills 공개 표준화 날짜(2025-12-18)는 2차 출처(firecrawl 블로그)만 봤다.

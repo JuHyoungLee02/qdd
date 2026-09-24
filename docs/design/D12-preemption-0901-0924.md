@@ -1,6 +1,6 @@
 # D12 선점 재검사 (2026-09-01~09-24 게시분)
 
-작성: 2026-09-24 01:50 UTC. 조사 에이전트 보고 전문을 메인 세션이 저장(줄이지 않음). 메인 원문 재확인(abs·HTML curl): JEV-Star 2609.27331(23 Sep 2026) 인용 5개 일치 / Type-Safe Is Not Error-Free 2609.26758(22 Sep 2026) 70.4·.94→.23·.8146·type-error 0%·neutral option identifiers 일치 / World-Coherent Decoding 2609.02159(2 Sep 2026) "realized observation audits" 일치. 나머지 [초록만] 표시 항목은 메인이 재확인하지 않았다.
+작성: 2026-09-24 01:41 UTC(처음 01:50으로 잘못 적음 — 짐작 시각). 조사 에이전트 보고 전문을 메인 세션이 저장(줄이지 않음). 메인 원문 재확인(abs·HTML curl): JEV-Star 2609.27331(23 Sep 2026) 인용 5개 일치 / Type-Safe Is Not Error-Free 2609.26758(22 Sep 2026) 70.4·.94→.23·.8146·type-error 0%·neutral option identifiers 일치 / World-Coherent Decoding 2609.02159(2 Sep 2026) "realized observation audits" 일치. 나머지 [초록만] 표시 항목은 메인이 재확인하지 않았다.
 
 
 ## 결론

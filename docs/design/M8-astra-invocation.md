@@ -1,6 +1,7 @@
 # M8. Astra 호출 시점과 다중 프레임 — 모듈 설계
 
 > **정본 우선**: 모듈 사이 인터페이스·정지·확정 규칙·확률 게이트·시간 값은 `00-interfaces.md`가 우선한다(2026-09-23 22:00 UTC). 이 문서와 다르면 그쪽을 따른다.
+> 개정 2026-09-24 (정본 §24, D12 반영): §2에 **JEV-Star**(2609.27331, 계층 강한 선행 — 반드시 인용)·**REFLEX**(2609.26532, 확신 기반 올려 보내기) 행, §6.1에 "계층은 새로움이 아니다" 주의 줄, §7에 [결정 필요] D33(JEV-Star식 주기 + 사건 호출·REFLEX식 확신 기반 올려 보내기를 E-M8a 비교 조건으로 넣을지 — 아직 넣지 않음). 사용자 원칙 "실패할 때마다 Astra 개입"은 바꾸지 않았다.
 > 개정 2026-09-24 (D11 일관성 점검 반영, `D11-final-consistency.md` I-1·C-1·C-2): §1 effort 줄의 표지를 [사용자]에서 "[다른 작업 발언, CLAUDE.md 경유 — 잠정 기본 high, 이 프로젝트 적용은 [결정 필요] 5]"로(00 §16), E-M8a 지표·판정 2의 "적시 재현율"을 "고정 창 재현율(τ=2 s)"로(원문 정의는 M7 §5 (b)), max 첫 토큰을 "미측정"에서 "352 s(Artificial Analysis 기준 읽음, 2026-09-23)"로.
 > 개정 2026-09-24 (정본 §21, D10b 반영): §2 CheckVLA 행 보강·Critic in the Loop 행 추가, §5 E-M8a에 **A2-CV·A1-cal·A1-wait·A6-CiL-sync·A2-CiL(참고)** 조건(간격·문턱은 검증 분할에서만 조정, 맞춤 정밀도 원문 약 1% 대 우리 ±10% 병기)과 rescue/harm 지표, §6 반대 증거(CheckVLA Table S6 d_lat = 10 역전, Critic in the Loop Dual-System 진동), 차별화 문장 4개 + 주의. 사용자 원칙 "실패할 때마다 Astra 개입"은 **불변**(A1-wait는 그 이득을 재는 절제).
 > 개정: 2026-09-23 D5 반영 (`D5-consistency.md` 1-1·1-6·1-20·2-1·2-4·4-2·4-5, 00-interfaces §4·§16): 정지 문구를 "T0과 M9 L3 안전 대기뿐"으로 통일(Astra 재계획 적용은 정지가 아님), effort 표기를 "잠정 기본 high(다른 작업 발언 근거) — 이 프로젝트 적용은 [결정 필요] 5(00 §16)"로 통일, commit 창을 M2 R3 단일 기준으로(비가역 판단은 M6 `effect`), `T_exp_k` = M2 `T_exp_s`.
@@ -56,6 +57,10 @@
 | RouteNLP (2604.23577) | LLM 서빙 라우팅 | §3.2: conformal risk control로 위임 임계값을 **초기화**(이후 운영 감시). 원문 한정: 보장은 질의별이 아니라 주변(marginal), 교환 가능성 필요, 분포 이동에서 깨짐. 부록 D: 위반율 n=100 **7.2%**(CI 3.4–14.4%), n=250 5.8%, n=500 4.2%(CI 상한 6.6%) → **작업·단계당 보정 약 500개**일 때 보장. 도메인 이동 때 위반 8.1%(§5). 8주 파일럿(초록 비용 −58% 등)은 A/B 없는 그림자 배치, 고객 상담 한 분야(Limitations) | MED (OpenReview venue "ACL 2026 Industry Track Poster"; **ACL Anthology 2026.acl-industry 목록에는 없음**, 2026-09-24 확인. 인용 2) | 2026-04-26 | 라우터는 학습, 임계값 설정은 학습 없음 | 아니오 |
 | Inter-Cascade (2509.22984) | LLM 캐스케이드 | 강한 모델이 위임받아 푼 문제에서 전략을 만들어 저장, 약한 모델이 비슷한 질의에서 검색해 문맥에 넣음. 약한 모델 정확도 최대 +33.06%, 전체 +6.35%, 강한 모델 호출 최대 −48.05%(모두 최대치, 초록). 임계값 = §2 Algorithm 1(fixed-sequence testing, conformal 아님), **신뢰도 = 정규화 토큰 확률(logprob 필요)**. 효과는 구조 변형이 많은 GSM 계열에서 크고 NASA-History에서는 작음(§3.3) | LOW-MED (심사 중, 인용 1) | 2025-09-26 | 예 | 아니오 |
 | Routing, Cascades, and User Choice (2602.09902) | 이론(슈탱켈베르크 게임) | 초록: "in nearly all cases, the optimal routing policy involves a static policy with no cascading". 최적 = **공급자 최적**(서비스 비용 + 사용자 이탈 벌점 최소). 모형 = **모델 2개(표준·추론) + 다시 묻거나 포기하는 사용자**. 가정 = 성공 i.i.d., 사용자가 공급자 정책을 관찰, 정상 이탈 정책. "정적" = 실패 뒤 더 강한 모델로 **올리지 않는** 1회 라우팅. 캐스케이드는 두 모델의 사용자 순가치가 갈리는 좁은 구간에서만 최적(Thm 4–5) | HIGH (ICLR 2026 공식 목록, 인용 2) | 2026-02-10 | — | 아니오 |
+| **JEV-Star** (2609.27331, 09-23) ★ D12(메인이 인용 5개 재확인) | 게임 에이전트(StarCraft II) | [원문] "combining fast JEV action selection with persistent GPT-6 planning". §3.3 "Full-game control is asynchronous: the game continues while requests are in flight. JEV requests are rate-limited to at most one per wall-clock second. The planner is checked on a nominal 60-game-second interval and at relevant events". §3.2 "A failed or delayed planning request leaves the previous valid plan available." 모델 "JEV 1.13, GPT-6 Astra with medium reasoning effort", JEV는 "selects among structured alternatives". 저자: "planning's contribution is not isolated by a controlled ablation" | D12 판정: 계층 겹침 **강함**, C1·C2 없음. 반드시 인용 | 2026-09 | 예 | 아니오 |
+| └ 우리에게 | | **계층("빠른 typed 선택 + 느린 Astra 비동기 계획")은 새로움이 아니다**(00 §24). 차이: 게임 영역(로봇·인식 앞단 없음), 계획기를 실패 때가 아니라 주기 + 사건으로 부름, JEV 요청 초당 1개 제한(겹침 호출 없음), 호출 사이 합의·예상 대 측정 비교 없음. 우리 차이는 "로봇 실행 중 **실패 판정이 불러내는** Astra 호출 + 겹침 호출 합의와 실행 뒤 확인(M4)"으로만 쓴다. 주기 + 사건 호출을 E-M8a 비교 조건으로 넣을지는 [결정 필요] D33(§7, 아직 넣지 않음) | | | | |
+| **REFLEX** with Jev (2609.26532, 09-22) D12 | LLM 도구 사용 에이전트 | [원문] "uses Jev as a fast, typed decision layer and calls a strong LLM when confidence is low, or generation is required". 본문 robot 언급 0회, 비동기 없음. 한계: "reliability depends on action-set size and near-valid alternatives near authorization boundaries" | D12 판정: 계층 **부분** | 2026-09 | 예 | 아니오 |
+| └ 우리에게 | | 강한 모델 호출 조건이 실패가 아니라 **낮은 확신**이다. 인용한다. 확신 기반으로 올려 보내는 조건(escalation)을 비교 기준선 후보로 넣을지는 [결정 필요] D33(§7, 아직 넣지 않음). 사용자 원칙 "실패할 때마다 Astra 개입"은 그대로 | | | | |
 
 ## 3. 가져올 것과 접목 방법
 
@@ -182,12 +187,14 @@
 3. "CheckVLA는 호출 수를 맞춘 주기 재계획과 비교해 시점의 몫(+3.9%p)을 분리했지만 호출 모델과 추론량은 하나였다. 우리는 호출 수를 맞춘 뒤 추론 강도(low~max)를 두 번째 축으로 둔다."
 4. "기존 트리거는 관측 쪽 신호다(정체, 행동 조건 예측 불일치). 우리는 계획 쪽 마감(T3a: 성공 롤아웃 conformal 마감 `D_k`)과 모델 자체 판단(T3b)을 같은 호출 수에서 비교해, 사용자가 말한 '이때쯤 나왔어야 하는데'가 관측 쪽 정체와 다른 정보인지 확인한다."
 - 주의: "멈추지 않는다" 자체는 CheckVLA에도 있다(트리거 뒤에도 청크 계속 실행). 차별점은 "느린 **별도** API 모델 + 수 초 이상 지연 + effort 축 + 계획 쪽 마감(T3a)·모델 자체 판단(T3b)을 관측 쪽 정체와 같은 호출 수에서 비교".
+- 주의(00 §24, D12): **계층 자체는 새로움이 아니다.** JEV-Star(2609.27331)가 "빠른 JEV 선택 + GPT-6 Astra 비동기 계획"을 StarCraft II에서 먼저 했다(계획기 60 게임초 주기 + 사건 호출, 실패·지연 시 이전 계획 유지). 위 차별화 문장 1~4와 함께 JEV-Star를 반드시 인용하고, 우리 차이는 "로봇 실행 중 실패 판정이 불러내는 Astra 호출 + 겹침 호출 합의와 실행 뒤 확인(M4)"으로 좁혀 쓴다.
 
 ## 7. 열린 질문, [결정 필요]
 - [결정 필요] 모드 (3)의 대표 구현: T3a(코드 마감) 대 T3b(모델 판단). 기본은 둘 다 조건으로 두고 E-M8a 판정 기준 2로 정한다.
 - [결정 필요] 다중 프레임 기본값: 사용자 예시(격자 한 장) 유지를 기본으로 두고, E-M8b 판정 기준으로만 바꾼다.
 - [결정 필요] 5(plan §5-5) effort: 잠정 기본 high(다른 작업 발언 근거). 이 프로젝트에 적용할지는 사용자가 정한다(00 §16). 실험 축은 low~max 다섯 값 전부가 후보이며, 빼는 값은 이유를 적는다(C5).
 - [결정 필요] 정해 둔 순간(T2)의 목록을 사용자가 정할지, Astra가 세션 계약에 적게 할지.
+- [결정 필요] D33(SUMMARY §5.1, 00 §24): E-M8a 비교 조건에 (i) JEV-Star식 주기 + 사건 호출(계획기 60 게임초 주기 + 사건, 게임)을 넣을지, (ii) REFLEX식 확신 기반 올려 보내기(확신이 낮거나 생성이 필요할 때 강한 LLM 호출)를 넣을지, (iii) 둘 다, (iv) 둘 다 넣지 않을지. **아직 넣지 않았다.** 어느 안이든 비교·절제 조건일 뿐이고 사용자 원칙 "실패할 때마다 Astra 개입"은 바뀌지 않는다.
 - 열린 질문: 진행 중 비실패 요청을 실패 호출이 왔을 때 취소할지(비용) 둘지(정보).
 
 ## 8. 확인 못 한 것
