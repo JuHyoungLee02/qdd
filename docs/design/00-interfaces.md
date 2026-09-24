@@ -340,3 +340,15 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - **로봇 = ROBOTIS AI Worker 기준. 카메라 = ZED 스테레오 카메라(AI Worker가 쓰는 것과 같게).** 스테레오라 깊이 추정이 가능하고 이미지도 그대로 쓴다.
 - 해소: 카메라 구성(D2c) = 스테레오. M1 인식 앞단은 스테레오 깊이 경로(원래 후보 "스테레오면 스테레오 깊이 추정")로 간다. 실물 기준 플랫폼(D30)은 AI Worker.
 - 확인할 것(D21 조사): AI Worker 사양(팔 자유도·그리퍼·손목 카메라·제어 주기·ROS 2·LeRobot 연동), 쓰는 ZED 모델과 깊이 방식, 시뮬 모델 유무(Isaac Sim·MuJoCo 등), 본 평가 벤치마크(RoboDojo)와 로봇이 다를 때의 정합.
+
+## 37. AI Worker·ZED 반영 (2026-09-24 07:28 UTC, `D21-aiworker-zed.md`, §36)
+- **확인된 사양**(공식 사양 페이지·ai_worker 저장소): 팔 7자유도 × 2, 그리퍼 RH-P12-RN(1자유도 평행, 0–107.6 mm), 머리 2자유도(pitch −50°~30°, yaw −20°~20°), 리프트 0–500 mm, 머리 ZED Mini(102°×57°, 기선 63 mm), 손목 RealSense D405 × 2(7–50 cm), Jetson AGX Orin 32GB, ROS 2 Jazzy, 팔마다 100 Hz JointTrajectoryController(위치 명령), 상태에 관절 `effort`(전류 기반). **손목 힘/토크 센서 없음.** 기본 ZED 설정은 **깊이 끔**(`depth_mode: 'NONE'`), VGA 30 fps.
+- **M1 인식 앞단** [Claude 결정]: 기본 설정의 깊이 끔을 바꾼다. 머리 깊이 1순위 = ZED SDK NEURAL(Orin 공식 30 FPS 수치는 ZED X 기준, ZED Mini 실측 필요), 비교 조건 = Fast-FoundationStereo(CVPR 2026, NVIDIA, 1,497★; ZED SDK `CUSTOM` 모드로 같은 경로 주입). 손목은 D405 센서 깊이(근거리, 접촉 근처 담당). 기록은 SVO(원시 스테레오)로 남겨 깊이 모드를 나중에 바꿔 비교한다. 오차 추정(우리 계산): VGA에서 0.6 m 약 5 mm, 1.0 m 약 15 mm → T1 술어 문턱(cm 단위)에 대체로 충분.
+- **지금 로봇 없이 할 수 있는 시험** [제안]: ROBOTIS 공개 데이터(HF `ROBOTIS/Task_0001` 718편·`Task_0002` 857편)에 머리 좌우 스테레오 쌍이 있다 → Fast-FS → SAM 3.1 → 3D 중심 → 술어의 프레임 간 **안정성**을 잰다(정답 자세가 없어 정확도는 못 잼, 보정값 [미확인]).
+- **Astra 격자**: ZED 왼쪽 영상만 격자로(카메라별 한 장, M8 규칙 그대로), 깊이 컬러맵은 절제 조건. 손목 격자는 3×2 이하 또는 현재 프레임 1장. 머리가 움직이므로 칸 덧그림에 머리 각을 표시하고 M6에 `look_at` 스킬을 둔다.
+- **M5 한계**: 100 Hz 위치 명령 → DYNAMIXEL 내부 프로파일(서보가 한 번 더 평활화할 수 있음 [추정]). 실물에서 계단 응답을 재고, 내부 프로파일을 끄거나 그 지연을 `ref(t)`에 넣는다(M4 (b) 가짜 LAG 방지). URDF 속도 한계(4.8 rad/s 일괄)는 자리표시로 보여 쓰지 않고 실측·서보 사양의 50%로 시작 [가정]. 로봇별 한계표를 두 벌(ARX X5, AI Worker) 둔다.
+- **스킬(양팔)**: 기존 pick/place FSM·`arms: left|right|both` 결정 지점 유지, 추가 `look_at`(머리 2축), `set_lift`, `handover`, `bimanual_hold`. 이동 베이스는 범위 밖.
+- **잔차 R의 힘 입력**: 손목 F/T가 없으므로 "힘/토크" → **관절 `effort`(전류)와 그리퍼 전류**로 바꾼다. CR-DAgger 근거는 손목 F/T 기준이라 근거가 한 단계 약해짐을 표기하고, 절제 조건 R-noforce를 추가한다.
+- **GT 생성 시뮬** [Claude 결정]: 공식 Isaac 모델(cyclo_lab, Isaac Sim 5.1 / Isaac Lab 2.3 — RoboDojo와 같은 판본)이 있다 → **E0–E3, E-M4, E-R, E-AE의 "단일 팔 자작 장면"을 FFW-BG2 한 팔(7자유도 + RH-P12-RN)로 고정**한다. 카메라는 Stereolabs ZED Isaac Sim 확장의 `ZED_M` 디지털 쌍둥이(오라클 = 렌더러 GT 깊이, 인식 조건 = 스트리밍 경로의 ZED SDK 깊이 또는 Fast-FS). 데이터 경로 cyclo_lab Mimic → `isaaclab2lerobot.py` → LeRobot, 도메인 무작위화는 우리가 추가(§34). 액추에이터 게인은 실물 계단 응답으로 다시 맞춘다 [가정].
+- **RoboDojo와의 정합** [Claude 결정, 3층]: (1) 결정 층 비교(H2·H3, 낙폭 RD)는 **RoboDojo-Sim ARX X5 그대로**(공개 수치와 같은 열). 보조로 "트랙 D-stereo"(머리 카메라 옆 63 mm 가상 카메라로 스테레오 쌍을 렌더해 AI Worker와 같은 Fast-FS/M1 경로, "입력 다름" 표기). (2) 개발·GT·모듈 실험 = cyclo_lab FFW-BG2 + ZED_M 쌍둥이. (3) E-real = 실물 AI Worker(최소판, 제출 2026-11-16까지 약 7주). 결정 층·술어 등록부·Jev/Astra 계약은 두 로봇이 같은 코드, 스킬·M5 한계·R은 로봇별.
+- **[결정 필요] (사용자, 하드웨어)**: (c) 실물을 FFW-BG2(고정 베이스, 국내 판매)로 할지 FFW-SG2(이동 베이스를 고정해 사용)로 할지. (d) R의 힘 입력 — 관절 전류로 갈지(기본값, 추가 장비 없음) 손목 F/T 센서를 추가 장착할지(기계 인터페이스 [미확인]).
