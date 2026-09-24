@@ -4,8 +4,11 @@
   parity  --dev DIR --acc JSONL [--adapter DIR] --n N          HF option probs vs the recorded vLLM Jev-L probs
   load    --adapter DIR --pool DIR --rule R                    reload a saved adapter and score a few val items
 
-Prompt = jevl.JevLClient._body exactly: system jevl.SYSTEM, user [head image, jevl.question_text(...)], generation
-prompt; state text = E3-lite S1 on a 1 mm grid by default (canon §53-§54); the option probabilities are jevl's trie
+Prompt = the Jev-L request exactly: --cameras HW (default, canon §59) = jevl.JevLClient._body_mm layout HW (system
+jevl.SYSTEM, user ["head camera:", head 672x376, "right wrist camera (active arm):", wrist 424x240,
+jevl.question_text(...)]); --cameras H = jevl._body (head image only, the §55 smoke prompt); + generation prompt.
+The camera configuration goes into config.json prompt_config (question_id hash input, §59). R3 throughput: the
+questions of a snapshot share one forward (prefix_share, --micro snapshots per forward; --no-share = old path); state text = E3-lite S1 on a 1 mm grid by default (canon §53-§54); the option probabilities are jevl's trie
 decomposition (stagea_loss). Targets (--target-source): labels_v2 (default, canon §54: observation-defined answers,
 file <folder>.labels_v2.jsonl), outcome (labeler best set under --rule, auxiliary), or py:<module>:<factory> with
 factory(pool_dir, seed) -> stagea_data source. Never the pool oracle.
@@ -43,47 +46,59 @@ def file_sha(paths):
 
 PROMPT_FILES = ("harvest/clients/jevl.py", "harvest/deccall_snap.py", "harvest/jevcall.py", "harvest/options.py",
                 "harvest/e3lite.py",
-                "harvest/serialize.py", "harvest/train/stagea_data.py", "harvest/train/stagea_loss.py")
+                "harvest/serialize.py", "harvest/train/stagea_data.py", "harvest/train/stagea_loss.py",
+                "harvest/train/prefix_share.py")
 
 
-class Scorer:
-    """Processor + tokenized option tries; item -> {name: log p~} with a given model."""
+def Scorer(processor, image_root):
+    """Processor + tokenized option tries (stageb_model.HFEncoder): item -> {name: log p~} (old per-item path via
+    .logprobs; the R3 shared path is prefix_share.items_logprobs). Items carry `images` ([[label, path]], §59
+    layout) or `image` (legacy head-only prompt = jevl._body)."""
+    from .stageb_model import HFEncoder
+    return HFEncoder(processor, image_root)
 
-    def __init__(self, processor, image_root):
-        from ..clients.jevl import SYSTEM
-        self.p, self.root, self.system = processor, image_root, SYSTEM
-        tk = processor.tokenizer
-        e = tk.encode(END_TOKEN, add_special_tokens=False)
-        if len(e) != 1:
-            raise ValueError(f"end token {END_TOKEN!r} is not one token: {e}")
-        self.end, self.pad = e[0], tk.pad_token_id if tk.pad_token_id is not None else e[0]
-        self._tries = {}
 
-    def trie(self, names):
-        from ..clients.jevl import option_trie
-        key = tuple(names)
-        if key not in self._tries:
-            tok = {n: self.p.tokenizer.encode(n, add_special_tokens=False) for n in names}
-            self._tries[key] = (tok, option_trie(tok, self.end))
-        return self._tries[key]
+def item_batches(items, micro):
+    """Consecutive runs of at most `micro` snapshots (groups of items with one shared prefix)."""
+    out, cur, keys = [], [], set()
+    for it in items:
+        if it["key"] not in keys and len(keys) == micro:
+            out.append(cur)
+            cur, keys = [], set()
+        cur.append(it)
+        keys.add(it["key"])
+    if cur:
+        out.append(cur)
+    return out
 
-    def inputs(self, text, image_path, device):
-        from PIL import Image
-        msgs = [{"role": "system", "content": self.system}, {"role": "user", "content": []}]
-        imgs = None
-        if image_path is not None:
-            msgs[1]["content"].append({"type": "image"})
-            imgs = [Image.open(os.path.join(self.root, image_path)).convert("RGB")]
-        msgs[1]["content"].append({"type": "text", "text": text})
-        prompt = self.p.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
-        x = self.p(text=[prompt], images=imgs, return_tensors="pt")
-        return {k: v.to(device) for k, v in x.items()}
 
-    def logprobs(self, model, item, device):
-        from .stagea_loss import item_logprobs
-        tok, trie = self.trie(item["names"])
-        return item_logprobs(model, self.inputs(item["text"], item.get("image"), device), tok, trie, self.end,
-                             self.pad)
+def batch_logprobs(model, scorer, items, device, share=True, micro=8, canonical=False):
+    """[{name: log p~}] for items (same order): shared-prefix batches of `micro` snapshots, or one forward per
+    item (share=False, the old path). canonical: batch in (snapshot, question) order whatever the input order,
+    so an evaluation of the same item set packs the same batches (bit-identical across train / load)."""
+    if not share:
+        return [scorer.logprobs(model, it, device) for it in items]
+    from .prefix_share import items_logprobs
+    idx = sorted(range(len(items)), key=lambda i: (items[i]["key"], items[i].get("qid", ""))) if canonical \
+        else list(range(len(items)))
+    got = []
+    for b in item_batches([items[i] for i in idx], micro):
+        got += items_logprobs(model, scorer, b, device)
+    out = [None] * len(items)
+    for i, lp in zip(idx, got):
+        out[i] = lp
+    return out
+
+
+def prompt_config(items, a):
+    """Training-side record of what inference must match (question_id@vN hash input, canon §59): camera
+    configuration(s), state mode and grid, system prompt, prompt-building files; sha = hash of all of it."""
+    from ..clients.jevl import SYSTEM
+    from .stagea_data import camera_of
+    cfg = {"camera": sorted({camera_of(x) for x in items}), "state": a.state, "step_cm": a.step_cm,
+           "system_sha": hashlib.sha256(SYSTEM.encode()).hexdigest()[:12], "files_sha": file_sha(PROMPT_FILES)}
+    cfg["sha"] = hashlib.sha256(json.dumps(cfg, sort_keys=True).encode()).hexdigest()[:12]
+    return cfg
 
 
 def load_model(model_dir, device, adapter=None, lora=None):
@@ -111,15 +126,15 @@ def select_val(va, n, seed):
     return va[:n]
 
 
-def evaluate(model, scorer, items, device):
+def evaluate(model, scorer, items, device, share=True, micro=8):
     import torch
     from .stagea_loss import set_nll
     was = model.training
     model.eval()
     nll, acc, pset, per_q = [], [], [], {}
     with torch.no_grad():
-        for it in items:
-            lp = scorer.logprobs(model, it, device)
+        lps = batch_logprobs(model, scorer, items, device, share, micro, canonical=True)
+        for it, lp in zip(items, lps):
             v = float(set_nll(lp, it["target"]))
             nll.append(v)
             top = max(lp, key=lambda n: float(lp[n]))
@@ -161,7 +176,8 @@ def _items(a):
     items = []
     for folder in filter(None, a.pool.split(",")):
         items += load_pool(folder, state=a.state, partial=a.partial, step_cm=a.step_cm, dev_val_seeds=dev,
-                           source_factory=source_factory(a.target_source, a.rule, a.partial, a.labels_v2 or None))
+                           source_factory=source_factory(a.target_source, a.rule, a.partial, a.labels_v2 or None),
+                           cameras=a.cameras)
     return items
 
 
@@ -194,6 +210,7 @@ def cmd_train(a):
     bad = [n for n, p in model.named_parameters() if p.requires_grad and ("visual" in n or "lora" not in n)]
     if bad:
         raise RuntimeError(f"non-LoRA or vision params trainable: {bad[:5]}")
+    share = not a.no_share
     if a.grad_ckpt:
         model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
         model.enable_input_require_grads()
@@ -208,6 +225,7 @@ def cmd_train(a):
            "multi_target_train": sum(len(x["target"]) > 1 for x in tr),
            "questions": sorted({x["question"] for x in tr}),
            "target_sources": sorted({x["source"] for x in tr}), "prompt_files_sha": file_sha(PROMPT_FILES),
+           "prompt_config": prompt_config(tr + va, a),
            "versions": {"torch": torch.__version__, "transformers": transformers.__version__,
                         "peft": peft.__version__, "python": sys.version.split()[0]},
            "device": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"}
@@ -220,7 +238,7 @@ def cmd_train(a):
         log.flush()
         print(json.dumps(rec), flush=True)
 
-    ev = evaluate(model, scorer, va, device)
+    ev = evaluate(model, scorer, va, device, share, a.micro)
     write({"event": "eval", "step": 0, **ev})
     best, bad_evals, step, t0, tok_seen = ev["nll"], 0, 0, time.time(), 0
     model.save_pretrained(os.path.join(out, "best"))  # step 0 = zero-shot adapter (LoRA B = 0)
@@ -228,15 +246,19 @@ def cmd_train(a):
     model.train()
     done = False
     for epoch in range(a.epochs):
-        order = list(range(len(tr)))
-        rng.shuffle(order)
+        if share:  # R3: snapshots shuffled, a snapshot's questions contiguous (they share one prefix pass)
+            from .prefix_share import snapshot_order
+            order = snapshot_order(tr, rng)
+        else:
+            order = list(range(len(tr)))
+            rng.shuffle(order)
         for j in range(0, len(order), a.accum):
             chunk = [tr[i] for i in order[j:j + a.accum]]
-            for it in chunk:
-                lp = scorer.logprobs(model, it, device)
-                loss = set_nll(lp, it["target"])
-                (loss / len(chunk)).backward()
-                run_loss, run_n = run_loss + float(loss), run_n + 1
+            for mb in item_batches(chunk, a.micro) if share else [[it] for it in chunk]:
+                lps = batch_logprobs(model, scorer, mb, device, share, a.micro)
+                losses = [set_nll(lp, it["target"]) for lp, it in zip(lps, mb)]
+                (torch.stack(losses).sum() / len(chunk)).backward()
+                run_loss, run_n = run_loss + sum(float(x.detach()) for x in losses), run_n + len(losses)
             gn = float(torch.nn.utils.clip_grad_norm_(trainable, 1.0))
             opt.step()
             sched.step()
@@ -251,7 +273,7 @@ def cmd_train(a):
                        if torch.cuda.is_available() else None})
                 run_loss, run_n = 0.0, 0
             if step % a.eval_every == 0 or step == total:
-                ev = evaluate(model, scorer, va, device)
+                ev = evaluate(model, scorer, va, device, share, a.micro)
                 improved = ev["nll"] < best - 1e-6
                 write({"event": "eval", "step": step, "epoch": epoch, "improved": improved, **ev})
                 if improved:
@@ -332,7 +354,7 @@ def cmd_load(a):
     items = select_val([x for x in _items(a) if x["split"] == "val"], a.n, a.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model, proc = load_model(a.model, device, adapter=a.adapter)
-    ev = evaluate(model, Scorer(proc, ""), items, device)
+    ev = evaluate(model, Scorer(proc, ""), items, device, not a.no_share, a.micro)
     print("LOAD " + json.dumps({"adapter": a.adapter, **ev}), flush=True)
 
 
@@ -383,6 +405,10 @@ def main(argv=None):
         x.add_argument("--step-cm", type=float, default=0.1, help="S1 print grid (canon §54 = 0.1 cm)")
         x.add_argument("--dev-val-seeds", default="", help="smoke on DEV folders: val seeds, e.g. 24-29")
         x.add_argument("--partial", action="store_true", help="smoke: also read label files without .done")
+        x.add_argument("--cameras", default="HW", choices=("H", "HW"),
+                       help="HW = canon §59 head + active wrist (default); H = head only (the §55 smoke prompt)")
+        x.add_argument("--micro", type=int, default=4, help="snapshots per shared-prefix forward (R3; 4 = 63 GB on H200, HW)")
+        x.add_argument("--no-share", action="store_true", help="old path: one forward per item")
     a = ap.parse_args(argv)
     {"train": cmd_train, "parity": cmd_parity, "load": cmd_load}[a.cmd](a)
 

@@ -55,6 +55,8 @@ class HFEncoder:
         """images: [[label, path], ...] (§59: label text then the native-resolution image, in order) or plain
         paths (no label, stage-A single-image form)."""
         from PIL import Image
+        if isinstance(images, str):
+            images = [images]
         content, imgs = [], []
         for im in images or []:
             label, path = im if isinstance(im, (list, tuple)) else (None, im)
@@ -67,6 +69,12 @@ class HFEncoder:
         prompt = self.p.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
         x = self.p(text=[prompt], images=imgs or None, return_tensors="pt")
         return {k: v.to(device) for k, v in x.items()}
+
+    def logprobs(self, model, item, device):
+        """Old per-item path: {option name: log p~} of one item (its own full forward)."""
+        tok, trie = self.trie(item["names"])
+        return item_logprobs(model, self.inputs(item["text"], item_images(item), device), tok, trie, self.end,
+                             self.pad)
 
 
 def item_images(it):
@@ -81,6 +89,8 @@ class StageB(nn.Module):
         self.norm, self.vocabs, self.ki, self.layer = norm, vocabs, ki, layer
         self.lam = {"dec": 1.0, "act": 1.0, "aux": 0.1, "vqa": 0.0, **(lam or {})}
         insulate(torch.zeros(1), ki)  # validate
+        self.shared = True  # R3: context + questions of a sample share one prefix pass (prefix_share)
+        self.last_fw = None  # (ctx, mask, per-sample item log-probs) of the last shared losses() call
 
     # ---------------------------------------------------------------------------------- backbone features
     def context(self, inputs, grad: bool = True):
@@ -98,6 +108,20 @@ class StageB(nn.Module):
             ctx[i, :h.shape[0]] = h
             mask[i, :h.shape[0]] = 1
         return ctx, mask
+
+    def forward_shared(self, samples, enc, device, grad=True):
+        """R3 path: (ctx [B, T, D], mask [B, T], [[item lp dicts] per sample]) from one prefix pass per sample
+        (system + images + state) and one batched pass of the context tail and every question's option rows."""
+        from .prefix_share import samples_forward
+        with torch.set_grad_enabled(grad and torch.is_grad_enabled()):
+            hs, lps = samples_forward(self.backbone, enc, samples, device, self.layer)
+        T = max(h.shape[0] for h in hs)
+        ctx = hs[0].new_zeros(len(hs), T, hs[0].shape[1])
+        mask = torch.zeros(len(hs), T, dtype=torch.long, device=device)
+        for i, h in enumerate(hs):
+            ctx[i, :h.shape[0]] = h
+            mask[i, :h.shape[0]] = 1
+        return ctx, mask, lps
 
     # ---------------------------------------------------------------------------------- conditions / targets
     def cond(self, samples, ctx, mask, device):
@@ -140,7 +164,13 @@ class StageB(nn.Module):
 
     def losses(self, samples, enc, device, vqa=None, fm_t=None, fm_noise=None):
         need_grad_ctx = self.aux is not None and self.lam["aux"] > 0 or self.ki != "stop"
-        ctx, mask = self.contexts(samples, enc, device, grad=need_grad_ctx)
+        lps = None
+        if self.shared and hasattr(enc, "p"):  # the shared path needs the HF processor (mock encoders: old path)
+            dec = self.lam["dec"] > 0 and any(s["items"] for s in samples)
+            ctx, mask, lps = self.forward_shared(samples, enc, device, grad=need_grad_ctx or dec)
+            self.last_fw = (ctx, mask, lps)
+        else:
+            ctx, mask = self.contexts(samples, enc, device, grad=need_grad_ctx)
         a, valid, sat = self.targets(samples, device)
         cond = self.cond(samples, ctx, mask, device)
         l_fm = fm_loss(self.expert, cond, a, valid, t=fm_t, noise=fm_noise)
@@ -153,7 +183,11 @@ class StageB(nn.Module):
             total = total + self.lam["aux"] * l_aux
             logs.update(aux=float(l_aux.detach()), **lg)
         if self.lam["dec"] > 0:
-            l_dec = self.decision_loss(samples, enc, device)
+            if lps is None:
+                l_dec = self.decision_loss(samples, enc, device)
+            else:
+                vals = [set_nll(lp, it["target"]) for s, lp_s in zip(samples, lps) for it, lp in zip(s["items"], lp_s)]
+                l_dec = torch.stack(vals).mean() if vals else None
             if l_dec is not None:
                 total = total + self.lam["dec"] * l_dec
                 logs["dec"] = float(l_dec.detach())

@@ -130,17 +130,20 @@ def evaluate(model, enc, val, device, seed=0, steps=10):
         fm.append(logs["fm"])
         if "aux" in logs:
             aux.append(logs["aux"])
+        fw = model.last_fw if model.shared and hasattr(enc, "p") else None  # R3: reuse the shared pass of losses()
         if "dec" in logs:
             dec.append(logs["dec"])
-            from .stageb_model import item_images
-            from .stagea_loss import item_logprobs
-            for it in s["items"]:
-                tok, trie = enc.trie(it["names"])
-                lp = item_logprobs(model.backbone, enc.inputs(it["text"], item_images(it), device), tok, trie,
-                                   enc.end, enc.pad)
+            if fw:
+                lps = fw[2][0]
+            else:
+                from .stageb_model import item_images
+                from .stagea_loss import item_logprobs
+                lps = [item_logprobs(model.backbone, enc.inputs(it["text"], item_images(it), device),
+                                     *enc.trie(it["names"]), enc.end, enc.pad) for it in s["items"]]
+            for it, lp in zip(s["items"], lps):
                 acc.append(max(lp, key=lambda n: float(lp[n])) in it["target"])
         n0 = torch.randn(a.shape, generator=g).to(device)
-        ctx, mask = model.contexts([s], enc, device, grad=False)
+        ctx, mask = (fw[0], fw[1]) if fw else model.contexts([s], enc, device, grad=False)
         z = sample_actions(model.expert, model.cond([s], ctx, mask, device), steps, n0)
         m = valid[..., None]
         mse_n.append(float((((z - a) ** 2) * m).sum() / (m.sum() * a.shape[-1])))
@@ -244,6 +247,7 @@ def cmd_smoke(a):
     model = new_model(bb, tr, hd, mode=a.mode, ki=a.ki, expert_kw=ek,
                       aux_kw={"width": min(512, a.width), "heads": 4 if a.width < 256 else 8},
                       lam={"dec": a.lam_dec, "act": a.lam_act, "aux": a.lam_aux}).to(device)
+    model.shared = not a.no_share
     enc = HFEncoder(proc)
     log = open(os.path.join(out, "log.jsonl"), "w")
 
@@ -308,6 +312,7 @@ def cmd_train(a):
         bb.enable_input_require_grads()
     model = new_model(bb, tr, hd, mode=a.mode, ki=a.ki, lam={"dec": a.lam_dec, "act": a.lam_act, "aux": a.lam_aux,
                                                              "vqa": 0.0}).to(device)
+    model.shared = not a.no_share
     enc = HFEncoder(proc)
     log = open(os.path.join(out, "log.jsonl"), "a")
 
@@ -339,6 +344,7 @@ def _common(p):
     p.add_argument("--batch", type=int, default=4)
     p.add_argument("--eval-every", type=int, default=10)
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--no-share", action="store_true", help="old path: separate forward per context / question")
 
 
 def main(argv=None):

@@ -201,10 +201,25 @@ def state_fn(state: str, step_cm: float):
     return lambda ln: e3lite.state_text(ln, state, step_cm=step_cm)
 
 
+def camera_of(item: dict) -> str:
+    """Camera configuration string of an item's prompt (question_id hash input, canon §59): 'H:cam_head' = the
+    legacy single head image without label (= jevl._body), else stageb_data.camera_config of its labelled list."""
+    if item.get("images"):
+        from .stageb_data import camera_config
+        return camera_config(item["images"])
+    return "H:cam_head" if item.get("image") else "T"
+
+
 def load_pool(pool_dir: str, rule: str | None = None, state: str = "S1", shift: int = 0, partial: bool = False,
-              source_factory=None, step_cm: float = 0.1, dev_val_seeds=None) -> list[dict]:
+              source_factory=None, step_cm: float = 0.1, dev_val_seeds=None, cameras: str = "H",
+              arm: str = "right") -> list[dict]:
     """All items of one episode folder. source_factory(pool_dir, seed) -> source or None (skip the episode);
-    default = outcome labels under `rule`. S1 default grid 1 mm (canon §54)."""
+    default = outcome labels under `rule`. S1 default grid 1 mm (canon §54).
+    cameras: H = head image only, no label (the §55 smoke prompt, = jevl._body); HW = canon §59 layout (labelled
+    head 672x376 + active-arm wrist 424x240, native, = jevl._body_mm layout HW); `arm` = the active arm (the
+    POOL task is single-arm right; stageb rows carry their own)."""
+    if cameras not in ("H", "HW"):
+        raise ValueError(f"cameras {cameras!r}: H | HW")
     if source_factory is None:
         if rule is None:
             raise ValueError("rule is required for outcome labels")
@@ -217,7 +232,14 @@ def load_pool(pool_dir: str, rule: str | None = None, state: str = "S1", shift: 
         if src is None:
             continue
         lines = [json.loads(x) for x in open(p, encoding="utf-8")]
+        imgs = {}
+        if cameras == "HW":
+            from .stageb_data import images_of
+            imgs = {(ln["seed"], ln.get("kind"), ln["k"]): images_of(ln, arm, True, pool_dir)
+                    for ln in lines if ln.get("decision")}
         for it in build_items(lines, src, sfn, shift, dev_val_seeds):
             it["image"] = os.path.join(pool_dir, it["image"])  # folders may differ (DEV P0/P1/P2)
+            if cameras == "HW":
+                it["images"] = imgs[(it["seed"], it["kind"], it["k"])]
             items.append(it)
     return items

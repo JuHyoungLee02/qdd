@@ -182,7 +182,7 @@ def test_train_cli_end_to_end_tiny_model(tmp_path, monkeypatch):
         (pool / "labels" / f"ep{seed}.jsonl.done").write_text("{}")
     monkeypatch.setattr("torch.cuda.is_available", lambda: False)
     T.main(["train", "--pool", str(pool), "--rule", "plan", "--run", "t", "--out-root", str(tmp_path / "ck"),
-            "--model", str(base), "--state", "S0", "--target-source", "outcome", "--accum", "2", "--epochs", "1", "--eval-every", "1",
+            "--model", str(base), "--state", "S0", "--target-source", "outcome", "--cameras", "H", "--accum", "2", "--epochs", "1", "--eval-every", "1",
             "--lr", "1e-2"])
     run = tmp_path / "ck" / "t"
     log = [json.loads(x) for x in open(run / "log.jsonl")]
@@ -197,6 +197,6 @@ def test_train_cli_end_to_end_tiny_model(tmp_path, monkeypatch):
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
         T.main(["load", "--adapter", str(run / "best"), "--pool", str(pool), "--rule", "plan", "--model", str(base),
-                "--state", "S0", "--target-source", "outcome"])
+                "--state", "S0", "--target-source", "outcome", "--cameras", "H"])
     got = json.loads(buf.getvalue().split("LOAD ", 1)[1])
     assert math.isclose(got["nll"], best, rel_tol=1e-5)
