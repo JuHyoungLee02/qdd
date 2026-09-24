@@ -278,3 +278,21 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - M7: 소프트 채널 문턱을 성공 에피소드로 conformal 보정(FIPER NeurIPS 2025식, 오경보 ≤ δ) [접목] — 기존 CD11(functional CP)과 같은 방향.
 - 신뢰도 주의: JRA(COLM 2026)·Trust-or-Escalate(ICLR 2025)·RoboMonkey(CoRL 2025)의 학회 표기는 arXiv abs에서 확인되지 않았다(인용 시 표기). LOW 10편은 근거에서 제외(D18 §5).
 - 결정 전까지: A5는 보류(§29, K = 1), A4는 잠정 patch, J5는 꺼짐.
+
+## 31. §30 결정 (2026-09-24 05:06 UTC, user-log 32 "너가 옳다고 생각하는 것대로 … 근거가 있어야 돼") — Claude 결정, 근거는 `D18-confidence-patch.md`
+형식: "선행은 이렇게 했다 → 우리도 이렇게 한다". §29로 보류한 A5는 아래 A5′로 대체한다.
+
+- **A5′ Astra 계획은 "1회 호출 → 코드 검사 → 수리 재호출"로 확인한다(다수결 삭제).**
+  - 선행: LLM 체화 계획 검증 연구(2509.02761, UIUC, MED)는 Judge가 계획을 비평하고 Planner가 고치는 반복 수리로 "up to 90% recall and 100% precision", "96.5% of sequences requiring at most three iterations"를 보고했다(오프라인 TEACh 정제 조건). VerifyLLM(2507.05118, IROS 2025, MED)은 실행 전에 계획의 빠진 전제 조건을 형식 검사했다. 다른 계열 검증이 자기 검증보다 낫다는 결과도 있다(2512.02304, NYU, ICLR 2026 워크숍, MED: "verification across model families is more effective than either self-verification or verification within the same family"). JEV-Star(§24)는 계획 요청이 실패하거나 늦으면 "the previous valid plan available"로 이전 계획을 유지했다.
+  - 우리: Astra를 effort low로 1회 부른다 → 검사기 1–6에 **실행 기반 전제·효과 검사**를 더한다(단계 i의 전제 술어를 현재 측정 상태 또는 앞 단계 `expected_after`로 코드 평가, 연쇄 일관성, 금지 술어) → 실패하면 위반 목록을 붙여 **순차 수리 재호출**(최대 2회 [가정], 선행의 "≤3회 96.5%"보다 보수적). T0(정지 허용)에서는 통과할 때까지 기다린다. 비정지 호출(T_fail·T3)에서는 검사 실패 시 **이전 유효 계약을 유지**하고 수리는 백그라운드로 한다(로봇은 계속 — 사용자 원칙 불변). 다른 계열 검증(Jev typed 질문)은 E-M2 비교 조건으로만 둔다(Jev와 Astra가 다른 계열인지 미확인).
+  - 왜 다수결이 아닌가: 같은 모델 병렬 다수결은 2025–26 문헌에서 비교 기준선이다(CISC·DeepConf가 majority vote를 기준선으로 둠). 같은 관측 반복은 증거를 늘리지 않는다(PACT, §24). 확신 가중 투표는 logprob가 필요해 Astra에 쓸 수 없다.
+  - Astra가 말로 한 확신은 계약에 **기록만** 한다(추론 모델의 말로 한 확신이 더 잘 보정된다는 결과 2505.14489 NeurIPS 2025 HIGH; 에이전트 수준에서는 이득이 없다는 반대 결과는 MED-LOW라 참고만). 게이트로 쓰지 않는다.
+
+- **A4′ 재계획 형식은 적응형 `patch | replace`로 한다.**
+  - 선행: Plan-and-Act(2503.09572, ICML 2025, UC Berkeley)는 매 스텝 "the Planner takes in the current state as well as the previous plans and actions and generates a new plan"으로 이전 계획을 입력에 넣고 다시 생성해, 동적 재계획으로 WebArena-Lite 29.63% → 53.94%를 얻었다(요약 도구 경유 수치). π0.5(2504.16054)는 추론 스텝마다 하위 과제를 다시 예측한다. 코드 편집에서는 SWE-Edit(2604.26102, Microsoft)이 "adaptive find-replace/whole-file-rewrite policy improves edit success by 12.5 pp"를, AdaEdit(2604.27296, Findings ACL 2026)가 전체 생성과 같은 정확도에 지연·비용 30% 이상 감소를 보고했다. patch 전용을 표준으로 쓰는 강한 로봇·에이전트 논문은 찾지 못했다(D18 §3).
+  - 우리: 출력 `mode ∈ {patch, replace}`. 기본은 `patch`(변경이 국소적일 때 지연·토큰 이득과 약속 보존 — AgenticCache MLSys 2026의 "plan locality"). 다음이면 `replace`로 강제한다 [가정 규칙]: (i) 실패가 깨뜨린 전제 술어에 기대는 미실행 단계가 절반 초과, (ii) 목표·물체 역할 변경, (iii) patch가 A5′ 검사를 통과하지 못함. `replace`도 이전 계약을 입력에 넣는다(Plan-and-Act식). 두 경우 모두 이미 실행한 단계는 바꾸지 않고, `change_reason`·편집 거리를 기록한다. E-M2에 {patch 전용, 이전 계약 넣고 전체 재생성, 적응형} 비교를 둔다(지표: 성공률, 출력 토큰, 첫 토큰~완료 지연, 약속 보존율).
+
+- **J5 Jev conformal 게이트를 E1 뒤 켤 후보로 채택한다.**
+  - 선행: KnowNo(2307.01928, CoRL 2023 Oral, 기간 밖 기초 문헌)는 LLM 객관식 계획을 conformal 예측 집합으로 바꿔, 집합이 하나면 실행하고 아니면 도움을 요청했다. CoFineLLM(2511.06575, WashU, MED)은 같은 틀에서 "wrapping LLM outputs into prediction sets that contain the correct action with a user-defined confidence. When the prediction set is a singleton, the planner executes that action; otherwise, it requests help"로 계획 전체 커버리지를 단계 집합의 곱으로 보장했다. Trust or Escalate(2407.18370, 기간 밖 기초 문헌, 학회 표기 abs 미확인)는 싼 판정기를 먼저 쓰고 필요할 때만 강한 모델로 올려 "over 80% human agreement with almost 80% test coverage"를 보장했다.
+  - 우리: E1에서 `question_id@vN`별 보정 집합으로 문턱을 잡는다. 예측 집합이 원소 하나면 M4 확정 후보, 집합이 둘 이상이거나 `NONE_ESCALATE`를 포함하면 확정을 보류(직전 확정 행동 유지 + 감속, §4)하고, 같은 결정 지점에서 반복되면 Astra로 올린다(싼 Jev → 비싼 Astra 계단은 Trust or Escalate와 같은 모양). 보장은 단계별 주변 커버리지다(에피소드 수준 아님). conformal은 교환 가능성을 전제하므로 §28의 버전 묶기(`question_id@vN` × 모델 ID)와 매일 카나리로 그 조건을 지킨다. E1 전에는 §6대로 게이트를 끄고 최빈 선택만 쓴다. 보정 집합 크기는 [가정](선행: CoFineLLM 400개).
+- M7 소프트 채널 문턱은 성공 에피소드로 conformal 보정한다(FIPER 2510.09459 NeurIPS 2025 HIGH: 성공 롤아웃만으로 오경보 확률 ≤ δ) — 기존 CD11과 같은 방향.
