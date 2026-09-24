@@ -1,6 +1,7 @@
 # M6. 스킬과 Jev 결합 — 모듈 설계 (단계 2)
 
 > **정본 우선**: 모듈 사이 인터페이스·정지·확정 규칙·확률 게이트·시간 값은 `00-interfaces.md`가 우선한다(2026-09-23 22:00 UTC). 이 문서와 다르면 그쪽을 따른다.
+> 개정 2026-09-24 (정본 §22, D10a 반영): 스킬 출력에 원자료 진단 필드 필수(§4.1.1), typed 결정 지점 후보 5개(§4.1.2a), §2.1 Harness VLA·CaP-X 행 정정(공개 코드 `pi0_pick`/`pi0_doubled` 수치 임계 인자, CaP-X 9개는 대부분 기하 유틸·스크립트에 자동 검증 없음), (b) 생성 스킬 = 추출 + 계약 + typed hole + 실행 기반 검증(§4.4a), E-M6-3에 "생성 기반 API 단계" 축, Harness VLA는 (a)/(a') 근거이지 (b) 근거 아님, 차별 문장(§6a). 근거 `D10a-harness-capx.md` §1.2·§2.2·§3-3·§3-4.
 > 개정: 2026-09-23 D5 반영 (`D5-consistency.md` 1-9·1-10·1-12·1-15·1-17·4-1, 00-interfaces §11.2·§13·§16): `dp.critic_accept`는 M7 FAIL 뒤 M9 제안 목록이 있을 때만(WARN 발동 삭제), 보기를 M9 §4.1 L2 목록과 같게. E-M6-1 판정 2를 00 §13 방향 재검토 규칙(95% 상한 < +5%p)으로, 통계를 부트스트랩 95% 구간으로. 실험 환경을 단일 팔 자작 장면으로. `effect`(사가)를 잠정 기본([결정 필요] 4)으로 표시. §4.4의 사용자 문장 인용을 user-log 3 원문으로 고침(00 §16).
 > 개정: 2026-09-23 정본 §14–§15 반영 (`00-interfaces.md` §14-3·§14 M6 항·§15, `D4-cross-field.md` §7·§10, `D4-cross-field-verification.md` #1·#2·#5·§2-4). 핵심: (1) 스킬 계약 phase마다 **`effect` 필드**를 둔다. 값은 `reversible` + 보상 스킬 id, 또는 `irreversible`이다(§4.1.1). M9는 보상을 역순으로 실행하고 비가역 경계를 넘어 되돌리지 않으며, M4는 비가역 보기 확정에 W+1을 쓴다. 근거는 사가(1987, 기초 문헌), SagaLLM(PVLDB 18(12), 2025-03-15 공개로 기간 8일 밖), Atomix 2602.14849다(§2.3). (2) 생성 스킬 (b)에 **typed hole 사후 검사 게이트**를 둔다(§4.5 신설). 이것은 **[접목] 우리 접목안**이다. PLDI 2025 원문은 디코딩 중 제약만 평가했다(§2.4). E-M6-2 절제에 −`effect` 추가, E-M6-5(typed hole 게이트) 신설, §7-8 해소.
 > 개정: 2026-09-23 D2 검증·00-interfaces §11 반영 (`D2-verification.md` Part A 정정, Part B·C 해소안. 핵심: 결정 지점 id는 이 문서의 스킬 고정 id가 정본(M2는 골라 쓰고 인자만, M10 키도 이 id), `default_on_timeout` = 직전 확정 행동 유지 + 감속, 확률 게이트는 E1 뒤에만, `dp.critic_accept`는 M9 복구 제안 중 선택만(M7 FAIL을 뒤집지 못함), `dp.grasp_result` 보기 = M7 S5 공유 목록, "기존 스킬" (b)·(a') 동등 조건, BATON은 보조 참고로 내림, GPSFSM 수치 정정.)
@@ -50,7 +51,7 @@
 |---|---|---|---|---|---|---|
 | **Agent Skills 명세** (SKILL.md, agentskills.io) ◎ | LLM 에이전트 표준 | 성능 수치가 아니라 **사실상 표준**: Anthropic이 만들어 2025-12-18 공개 표준으로 냄(2차 출처 firecrawl 블로그, 날짜는 원문 미확인). 명세: 필수 `name`(≤64자, 소문자·숫자·하이픈), `description`(≤1024자, "무엇을·언제"), 선택 `license`, `compatibility`(≤500자), `metadata`(문자열→문자열 맵), `allowed-tools`(실험). **점진 공개 3단**: 메타데이터 ~100토큰은 시작 때 전부, 본문 <5000토큰 권장은 활성화 때, `scripts/`·`references/`·`assets/`는 필요할 때. 본문 500줄 이하 | HIGH(표준, 다수 제품 채택) — 논문 아님 | 2025-12 | 예 | 아니오(PhyAgentOS가 SKILL.md를 절차 기억으로 씀 ◎) |
 | **MCP Tools 명세 2025-06-18** ◎ | LLM 도구 표준 | `inputSchema`(JSON Schema), 선택 `outputSchema`(있으면 서버는 반드시(MUST) 준수, **클라이언트 검증은 SHOULD(권장)** — D2 A1 정정), `structuredContent`, 오류 두 층(프로토콜 오류 대 `isError: true` 실행 오류), `annotations`: `readOnlyHint`, `destructiveHint`(기본 true), `idempotentHint`(기본 false; 둘 다 `readOnlyHint==false`일 때만 의미), `openWorldHint`(schema.ts). "clients MUST consider tool annotations to be **untrusted** unless they come from trusted servers" | HIGH(표준) | 2025-06 | 예 | ROSClaw 등 로봇 MCP 서버 있음(v3/06) |
-| **Harness VLA** 프리미티브 호출 △ | 로봇 | 고정 어휘 JSON 호출, `vla_act{prompt, max_chunks, stop 술어}`, post-condition까지 실행, "planner cannot invent new primitives". LIBERO-Pro +38.6%p 등(v3/06, 가장 강한 관련 기준 대비) | MED-HIGH(칭화, 962★, 인용 23) | 2026-07 | 예 | 예(시뮬만) |
+| **Harness VLA** 프리미티브 호출 △◎ | 로봇 | 고정 어휘 JSON 호출, `vla_act{prompt, max_chunks, stop 술어}`, post-condition까지 실행, "planner cannot invent new primitives". LIBERO-Pro +38.6%p 등(v3/06, 가장 강한 관련 기준 대비). **추가(D10a §3-3)**: 논문 어휘는 위와 맞다. 공개 LIBERO 코드(`robots/libero/tools.py`)에서는 `vla_act`가 `pi0_pick`과 `pi0_doubled` 둘로 나뉘고, stop은 수치 임계 인자다(`pi0_pick(prompt, max_chunks=24, lift_thresh=0.05 m, gripper_closed_thresh=0.06, gripper_open_thresh=0.0, descent_thresh=0.10 m)`). `pi0_pick` 반환 = success, chunks_used, peak_lift_m, min/final_gripper_opening, diagnostics. `pi0_doubled`는 "success=false does not necessarily mean the contact interaction failed" | MED-HIGH(칭화, 962★, 인용 23) | 2026-07 | 예 | 예(시뮬만) |
 | **PhyAgentOS** 세션 계약 + SKILLRUNTIME.md ◎△ | 로봇 | 세션 계약 = 목표, 런타임·타깃, **사전조건, 실행 한계, 수용 기준**(§3.3). SKILLRUNTIME.md = "required observations, produced action forms, orchestration mode, configurable parameters, and adapter requirements". 판정 {success, failure, replan} | MED(2,481★, 인용 4, 저장소가 논문보다 4개월 먼저) | 2026-07 | 예 | 예 |
 | **Zetta** 재진입 계약·critic 제안 △ | 로봇 | critic 제안 = (증거, 제안 모드), Orchestrator가 승인할 때만 개입(§2.1.3). 재진입 = "실패 증거 해소 AND 접촉 안정"(§2.5.1). LIBERO-Pro 90.8%, RoboCasa 93.6%(현재 rollout 예산 기준 단서) | MED(칭화 AIR, 1,252★) | 2026-08 | 예(오프라인 진화는 롤아웃 필요) | 예 |
 | **BATON** 전이 인지 계약 ◎ | 로봇 | "VLA primitive carries an **exit** condition but no **entry** condition" 을 지적. 세 전이: invocation(손목 카메라로 준비 확인 뒤에만 VLA 호출), handoff(앞 단계 잔여물이 흐트린 진입 상태 복구), **lookahead**(뒤 단계가 요구하는 조건이 지금 단계의 실행 방식을 정함). RoboMemArena 과제 성공 +11.6, 누적 +14.9(SoTA 대비, 초록 "%", 본문 "points" → %p) | LOW-MED(USC, 심사 전, 2026-08-17, 인용 1). **보조 참고**: 계약 필드를 좌우하는 근거로 쓰지 않는다(00-interfaces §11.3, D2 C5). 필드는 HIGH 근거나 우리 실험으로 정한다(§3) | 2026-08 | 예(파라미터 갱신 없음) | 예 |
@@ -59,7 +60,7 @@
 | VLM 행동 트리 조건 노드 (Wake, 2501.03968) ○ | 로봇 | VLM이 조건을 **자유 텍스트 조건 노드**로 BT에 넣고, 실행 때 다른 VLM이 이미지로 참/거짓 판정 | MED(Microsoft) | **기간 밖(2025-01), 기초 문헌** | 예 | 예 |
 | 행동 트리 reactive sequence / PA-BT (Colledanchise·Ögren) | 로봇 | 매 틱 조건 재확인, 사전조건 거짓이면 그 조건을 만드는 하위 트리로 확장 | 기초 | **기간 밖, 기초 문헌**(M9 문서와 같음, 원문 재확인 안 함) | 예 | 예 |
 | SkillWrapper (2511.18203) ○ | 로봇 TAMP | 기반 모델로 **블랙박스 스킬의 사전조건·효과 술어를 생성·학습**, "provably sound and complete planning", 실물 장기 과제 | MED(Brown, Tellex. 학회 미확인, v7까지 개정) | 2025-11 | 데이터 수집 필요(학습 없음이지만 능동 수집) | 예 |
-| CaP-X 코드 턴 △ | 로봇 | 턴 = 프로그램 한 편 끝까지 실행, 성공 롤아웃에서 스킬 9개 추출(CaP-Agent0) | HIGH(ICML 2026, 819★) | 2026-03 | 예 | 예 |
+| CaP-X 코드 턴 △◎ | 로봇 | 턴 = 프로그램 한 편 끝까지 실행, 성공 롤아웃에서 스킬 9개 추출(CaP-Agent0). **추가(D10a §3-4)**: 9개는 대부분 좌표·기하 유틸리티이고(조작 스킬은 `select_top_down_grasp` 하나 정도), 사전·사후조건 필드가 없으며, 컴파일 스크립트(`compile_skill_library.py`)에 자동 테스트·실행 검증 단계가 없다. 논문의 "9 verified"의 뜻은 원문에서 확인 못 함 | HIGH(ICML 2026, 819★) | 2026-03 | 예 | 예 |
 | Show-Harness 의미 행동 단위 △ | 로봇 | 결정론 interpreter가 단위당 한계 강제, 위반은 실행 전 차단, 선택적 청킹 96% 대 항상 청킹 74% | MED(NUS Show Lab, 451★) | 2026-09 | 예 | 예 |
 | Agent Skills 서베이 (2602.12430) ○ | LLM | 커뮤니티 스킬의 26.1%에 취약점, 4단 게이트 권한 모델 제안 | LOW-MED(ACM CAIS 2026 **워크숍**) | 2026-02 | – | 아니오 |
 
@@ -109,7 +110,7 @@
 | Wake(기간 밖) | 자유 텍스트 조건 노드를 실행 때 VLM이 판정 | 코드로 못 쓰는 조건만(예: "천이 펴졌다") Jev Noul 조건 노드로. **코드 술어가 있으면 코드가 정답**(M7 규칙과 같음) |
 | SkillWrapper | 블랙박스 스킬의 사전조건·효과를 기반 모델로 발명·학습 | "기존 스킬 = 라이브러리(a)"일 때 `entry`/`exit` 술어가 없는 스킬에 **오프라인으로 술어를 붙이는 방법** 후보(대안). 기본은 사람이 쓰고 Astra가 제안 |
 | Show-Harness | interpreter가 단위 한계 강제, 위반 실행 전 차단 | 스킬 파라미터 enum의 각 값은 코드가 한계 안의 수치로 바꾼다(Jev는 수치를 쓰지 않음). 스킬 밖 자유 이동 구간만 Show-Harness식 단위(M3 D안) |
-| CaP-X | 코드 턴, 성공 롤아웃에서 스킬 추출 | "기존 스킬 = 생성(b)"일 때: 생성 코드 안에 `jev_choice(dp_id)` 호출만 허용하는 API(v2부터 우리 제안, 원문 아님) |
+| CaP-X | 코드 턴, 성공 롤아웃에서 스킬 추출(정규식 추출 → 2회 이상 + 이름 필터 → LLM 큐레이션, 결과는 기하 유틸 9개, 사전·사후조건 없음, 스크립트에 자동 검증 없음. D10a §2.1). 사람이 만든 높은 단계 API일수록 성공률↑(단조, Takeaway 2) | "기존 스킬 = 생성(b)"일 때: 생성 코드 안에 `jev_choice(dp_id)` 호출만 허용하는 API(v2부터 우리 제안, 원문 아님). 추출 절차는 같게 쓰고 계약·typed hole·실행 기반 검증을 더한다(§4.4a) |
 | 사가(기초) · SagaLLM · Atomix (§2.3) | [원문] 하위 단계마다 보상 짝(사가). 효과를 가역 / 버퍼 가능 / 비가역 게이트로 나누고, 비가역은 커밋 게이트 전에 방출하지 않는다(Atomix §2). 가역 효과는 중단 시 역방향 의존 순서로 보상한다 | [접목] 스킬 계약 phase마다 `effect`: `{kind: reversible, compensate: <스킬 id>}` 또는 `{kind: irreversible}`(§4.1.1). M9 재개 = 재개 지점까지 가역 phase의 보상 스킬을 **역순**으로 실행하고, 비가역 경계를 넘어 되돌리지 않는다(그 너머는 forward 재시도만). M4 = 비가역 보기의 유예 창 W+1(00-interfaces §14-3). 물리 보상은 원상 복구가 아니므로 보상 뒤 `entry`를 다시 확인한다 |
 | PLDI 2025 타입 제약 생성 (§2.4) | [원문] 디코딩 중 타입 제약(로짓 필요). 사후 검사는 평가하지 않음 | [접목] **원문 미평가 접목안**: 생성 스킬 (b)의 결정 자리를 typed hole `jev_choice(dp_id, Enum)`으로만 허용하고, 생성 뒤 코드가 타입·철저성·id·술어·`effect`를 검사해 오류 문장을 되먹인다(§4.5). 원문의 "타입을 생성의 합격 조건으로 쓴다"는 발상만 옮긴다 |
 
@@ -152,9 +153,11 @@ metadata:
     "grasp":    { "kind": "reversible", "compensate": "open-and-retreat" },
     "lift":     { "kind": "reversible", "compensate": "lower-and-release-in-place" } },
   "outputSchema": { "result": "enum[ok, stopped_early, budget_exceeded, precondition_false, error]",
-                    "exit_predicates": "map<predicate,bool>" }
+                    "exit_predicates": "map<predicate,bool>",
+                    "diagnostics": "map<name,raw value>" }                // 필수 원자료 진단 필드 (00 §22, RPent pi0_pick 반환 dict)
 }
 ```
+- **원자료 진단 필드 필수** (00-interfaces §22, D10a §1.2) [접목]: 스킬 출력은 출구 술어 + 오류 코드에 더해 `diagnostics`에 원자료 값을 반드시 담는다. 예: 최고 들어올림 높이, 최소 그리퍼 간격, 사용 청크 수, 종료 신호(RPent `pi0_pick` 반환의 `peak_lift_m`, `min_gripper_opening`, `chunks_used`, `terminated`에 대응). 근거: RPent 전역 메모리가 "`pi0_pick.success`=false여도 영상상 들고 있으면 계속"을 교훈으로 가질 만큼 스킬 불리언 하나는 틀린다. 이것은 M7 "코드 술어가 정답, 스킬 자기 보고는 보조" 규칙의 원문 사례다. `result`·`exit_predicates`는 보조이고 M7은 등록부 술어와 이 원자료로 판정한다.
 - 파라미터 범위: **enum(보기 ID)만**. 순서형은 M3의 보기 수 실험(E-M3-1) 결과 N을 따른다. 코드 표가 enum 값을 수치로 바꾼다(Jev 수치 약함, plan §1).
 - 술어: 모두 M1 술어 등록부 이름(수치 인자 없음). `reachable`·`aligned_*`·`at_pregrasp`·`contact_stable`은 T2라 M7 하드 채널(즉시 FAIL)에 쓰이지 않고 소프트 채널로만 간다(00-interfaces §11.2). `holding`·`gripper_open`·`lifted`는 T1.
 - Astra 권한: 계약에 있는 스킬·보기·**결정 지점 id**만 고른다(Harness VLA "cannot invent"). 결정 지점 id는 이 스킬 계약에 고정된 것이 정본이고, M2 세션 계약은 그 id를 골라 쓰고 인자(예: `target`)만 채운다. M10 Jev 규칙 키도 같은 id를 쓴다(00-interfaces §11.1). 새 스킬·새 결정 지점 제안은 오프라인 경로(M10 검증 게이트)로만.
@@ -184,6 +187,17 @@ metadata:
 - 한 요청에 여러 질문 묶기(Jev 질문 수 상한 없음, plan §1): 진입 시 `dp.approach_dir` + `dp.next_skill` 확인을 한 요청에.
 - M10 규칙은 결정 지점 키가 정확히 맞을 때만 1~2줄 `hint:`로 붙는다(M10 문서).
 
+#### 4.1.2a typed 결정 지점 후보 (Harness 탐색 레버에서 도출, 00-interfaces §22) [접목]
+Harness VLA §2.2 원문 탐색 레버("staging orders, pre-contact poses, invocation timings for vla_act, and early-return termination thresholds")와 RPent 메모리 교훈의 레버에서 뽑은 후보다. **원문은 typed 보기 없이 자유 JSON 수치 인자를 플래너가 준다.** 우리는 이를 enum(보기 ID)으로 바꾼다. 결정 지점 id 등록은 §4.1.2 표 규칙 그대로(스킬 고정 id, 00-interfaces §11.1). 모두 [접목]이다.
+
+| id 후보 | 보기 | 출처 레버 |
+|---|---|---|
+| `dp.stage_pose` | 사전 자세: `default_home` / `over_target` / `offset_rim` | pre-contact poses |
+| `dp.invoke_now` | 지금 스킬 호출 / 한 번 더 staging | invocation timings for vla_act |
+| `dp.chunk_budget` | `short(≤8)`, `mid(12–16)`, `long(24)` — 값은 RPent 교훈 수치에서 가져온 [가정] | early-return termination thresholds, `max_chunks` |
+| `dp.retry_prompt` | `grasp-only` / `full-task` | 교훈 "missed pick 뒤 full task 문장 금지" |
+| `dp.grasp_verify` | 스킬 불리언 / 영상 증거 | 교훈 "`pi0_pick.success`=false여도 영상상 들고 있으면 계속" |
+
 #### 4.1.3 스킬 실행 쪽 (코드)
 단계 FSM(GPSFSM식): 상태 = phase, 전이 = 코드 술어 사건(stop 참, budget 초과, `invariants` 위반, M7 FAIL 뒤 M9 복구 제안). 전이 순간에 해당 결정 지점의 **확정된** Jev 답(M4 출력)을 파라미터로 주입. 확정 답이 없으면 계약의 `default_on_timeout` = **"직전 확정 행동 유지 + 감속"**(`hold_last_committed_slow`). 정지가 아니다. 완전 정지가 필요하면 M7 FAIL을 거친다(00-interfaces §4·§11.2, D2 B8·C6). 이 필드는 §4.1.1 `contract.json`에 있다.
 
@@ -205,6 +219,12 @@ metadata:
 | (c) 새 라이브러리 | 우리가 단계 FSM·계약을 갖춘 스킬을 새로 작성 | 설계대로 전부 | 사람 | "기존 스킬"이라는 사용자 표현과 멀어짐, 작성 비용, 비교 공정성(우리만 좋은 스킬) | SkillsBench 사람이 다듬은 스킬 +18.2~+24.8pp(같은 근거) |
 
 **user-log 3 원문은 "물체를 보고 스킬을 생성해서 잡는 방법들이 많지만 실패할 때가 있다. 실패할 때마다 Astra가 개입해서 진행하는 방식을 원한다"이다("기존 방법들을 기본으로 사용"은 첫 세션 초안의 풀어 쓰기, 00 §16). 문제 설정이 생성형을 예로 들므로 (b)를 먼저 한다는 것은 Claude의 해석이다([제안]).** 그래서 이 문서는 (a')를 1순위로 두지 않는다(00-interfaces §11.3, D2 C1). **(b)와 (a')를 동등한 조건**으로 둔다: 같은 계약 형식(4.1.1), 같은 결정 지점 id 목록, 같은 실험 조건(§5 E-M6-1·E-M6-2를 두 본 조건 각각에서 실행). 구현 순서를 정해야 하면 사용자 문장에 가까운 **(b)를 먼저** 만든다. (b)면 Astra가 스킬 코드와 계약을 생성하고 코드가 검증한다. **최종 선택은 [결정 필요, 사용자]**.
+
+#### 4.4a (b) 생성 스킬 경로와 근거 위치 (00-interfaces §22, D10a §1.2·§2.2)
+- **Harness VLA는 (a)/(a') 근거이지 (b) 근거가 아니다.** 원문은 코드를 생성하지 않고 고정 어휘만 쓴다(§2.3 "the planner cannot invent new primitives at deployment time", §4 "our agentic planner does not synthesize executable code or new control programs"). 저자도 향후 과제로 ASPIRE식 "propose, validate, and admit a new reusable skill"을 적었다 → (b) + 검증 게이트(§4.5)가 이 빈칸에 들어간다.
+- **CaP-X 원문 추출 절차** [원문]: 성공 롤아웃 코드 → 정규식으로 함수 추출 → 2회 이상 등장(`min_occurrences=2`) + 이름 필터(과제 특화 패턴 제외) → LLM 큐레이션. 결과는 **기하 유틸 9개, 사전·사후조건 없음, 스크립트에 자동 검증 없음**.
+- **우리 (b)** [접목]: 같은 추출 + 계약(`entry`/`exit`/`effect`, §4.1.1) + typed hole(`jev_choice(dp_id, Enum)`, §4.5) + **실행 기반 검증**(재생 + 새 seed 비열화, M10 게이트와 같은 장치). 원문 "verified"의 뜻이 불분명하므로 검증을 실행 기반으로 정의한다.
+- **무엇 위에서 생성하나**: CaP-X의 가장 강한 결과는 "사람이 만든 높은 단계 API일수록 성공률↑, 빼면↓(단조)"와 "저수준은 다회 + VDM으로 높은 단계 다회(M3)와 동등까지"다. 그래서 E-M6-3에 "생성 기반 API 단계" 축을 둔다(§5). 원문 권고("primitive-level performance로 평가")와 우리 설계("접촉 구간은 스킬")가 방향이 달라 이 비교가 필요하다.
 
 ### 4.5 생성 스킬 (b)의 typed hole 사후 검사 게이트 [접목, 원문 미평가] (00-interfaces §14·§15)
 
@@ -244,6 +264,7 @@ G2에서 하나씩 뺀다: −예상 결과 술어 / −`entry` / −`lookahead_
 
 ### E-M6-3 "기존 스킬" 정의
 (b)(Astra 생성 + `jev_choice` 삽입) 대 (a')(래퍼 + 같은 결정 지점) 대 (b) 원형(생성 코드만, Jev 없음 = CaP-X식 기준) 대 (a') 원형(래퍼 없이 부르고 끝). 지표에 **생성 코드 형식 오류율, 계약 검증 거부율, 래퍼 작성 시간(사람)** 추가. 판정(대칭, 사전): (b)가 (a')보다 3%p 이상 낮으면 SkillsBench 자기 생성 경고가 우리에게도 해당된다고 보고. (a')가 (b)보다 3%p 이상 낮으면 SkillsBench "사람이 다듬은 스킬" 이득이 우리 래퍼에는 나오지 않는다고 보고. 부트스트랩 95% 구간이 겹치면 "차이 없음". 어느 쪽이든 본 조건 선택은 사용자에게 올린다.
+- **축 추가: 생성 기반 API 단계** (00-interfaces §22, D10a §2.2) [제안]: (b)를 두 판으로 나눈다. **높은 단계** = 우리 스킬 다발 위에서 생성(CaP-X S2/M3 대응) / **저수준** = M1 술어 + IK만 위에서 생성(CaP-X S3/M4 대응). 같은 지표로 보고한다.
 
 ### E-M6-4 Astra 스킬 카드 점진 공개
 Astra 계획에 (i) 카드만(메타 ~100토큰/스킬) 대 (ii) 본문 전부. 지표: 계획 성공률(계약 검증 통과율), 입력 토큰, 첫 계획 지연. 판정: (i)가 계획 통과율 −2%p 이내면 (i).
@@ -264,6 +285,11 @@ Astra 계획에 (i) 카드만(메타 ~100토큰/스킬) 대 (ii) 본문 전부. 
 - Zetta 원문 불일치(온라인 LLM 승인자 대 인프라 절 "온라인 에이전트 없음", v3/16 #23).
 - **typed hole 게이트는 원문이 평가하지 않은 접목안이다**(00-interfaces §15): PLDI 2025 결과는 디코딩 중 제약이다. 사후 검사 + 수리로 바꾸면 같은 효과가 난다는 근거가 없다. 수리 왕복은 T0 지연을 늘린다.
 - **`effect`의 근거와 한계**: 사가(1987)는 기초 문헌이고 원문을 읽지 않았다. SagaLLM은 PVLDB 18(12)로 확정됐지만 2025-03-15 공개라 기간 8일 밖이고 수치는 확인하지 못했다. Atomix는 무학회다. 모두 소프트웨어 효과가 대상이다. 로봇의 보상 스킬은 원상 복구를 보장하지 못한다(물체가 움직임). 그래서 보상 뒤 `entry` 재확인이 필수다. 가역/비가역 표지를 잘못 붙이면 M9가 되돌릴 수 없는 것을 되돌리려 할 수 있다 → 코드 안전 술어가 최종이다.
+
+### 6a. 차별 문장 후보 (D10a §1.2·§2.2 초안, 00-interfaces §22)
+- "Harness VLA는 프리미티브 하나가 끝날 때마다 플래너가 결과 파일을 기다렸다가 다음 JSON 호출을 고르는 동기 REPL이며(부록 A 'The planner waits for these files before selecting the next primitive'), 저자 스스로 플래너와 하위 VLA 사이가 열린 고리라고 적었다(§5). VLA 실행 중에는 플래너가 정한 stop 술어와 청크 예산만 작동한다. 우리는 스킬 안 단계 경계마다 typed 결정 지점을 두고 Jev가 로봇을 멈추지 않은 채 겹쳐 답하며, Astra는 실패 신호가 날 때만 비동기로 부른다."
+- "CaP-X의 한 턴은 생성한 프로그램 한 편을 끝까지 실행한 뒤, stdout/stderr와 VLM 시각 차분 텍스트를 보고 프로그램 전체를 다시 생성할지(REGENERATE) 끝낼지(FINISH)를 정한다(§2, §3.2). 성공 롤아웃에서 뽑은 스킬 라이브러리는 사전·사후조건이 없는 기하 유틸리티 9개다(부록 H.1). 우리는 생성 스킬에 진입·출구·효과 계약과 typed 결정 지점을 붙여 실행 중 결정 지점 단위로 고르고, 실패하면 전체 재생성이 아니라 사전조건이 참인 가장 늦은 체크포인트에서 재개한다."
+- "CaP-X는 접촉이 많은 과제(삽입·붓기)에서 코드 제어가 약하다고 적고 코딩 에이전트 + VLA 혼합을 향후 과제로 남겼다(부록 A). Harness VLA가 그 혼합을 동기 루프로 구현했다. 우리는 같은 분업을 비동기 typed 결정으로 한다."
 
 ## 7. 열린 질문, [결정 필요]
 1. [결정 필요, 사용자] "기존 스킬"의 정의: (b) 생성과 (a') 래퍼를 동등 조건으로 둘 다 실험(구현은 (b) 먼저) 뒤 선택, 또는 처음부터 한쪽(4.4).

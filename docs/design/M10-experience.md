@@ -1,6 +1,7 @@
 # M10. 경험 축적 — 모듈 설계 (단계 2)
 
 > **정본 우선**: 모듈 사이 인터페이스·정지·확정 규칙·확률 게이트·시간 값은 `00-interfaces.md`가 우선한다(2026-09-23 22:00 UTC). 이 문서와 다르면 그쪽을 따른다.
+> 개정 2026-09-24 (정본 §22, D10a 반영): 교훈 항목에 `applies_when`, `symptom`, `evidence.cells`, `confidence`(RPent `manager.py` 규칙), `falsify`(반증 조건) 필드 추가(§4.1), Astra 주입은 probable 이상만([제안]), RPent와 다른 점 3개(플래너가 grep으로 스스로 검색 / 효용 추적·삭제 없음 / 평가 프롬프트에 seed-0 과제별 수치 하드코딩)와 차별 문장(§6), E-M10에 "과제별 trace 주입" 상한 조건 B11([제안]; 근거 Goal-S 메모리 없음 31.0 대 87.0, Flash 72.63%). 근거 `D10a-harness-capx.md` §1.1·§1.2·§2.2.
 > 개정: 2026-09-23 D5 반영 (00-interfaces §16): effort 표기를 "잠정 기본 high(다른 작업 발언 근거) — [결정 필요] 5"로.
 > 개정: 2026-09-23 정본 §14–§15 반영 (`00-interfaces.md` §14·§15, `D4-cross-field.md` §11, `D4-cross-field-verification.md` #17·#18·#19): CBR 4R의 Revise(적용·검증 뒤에만 Retain, Aamodt·Plaza 1994)를 센서 라벨 규칙의 **기초 문헌 근거**로 추가(새 기전 아님), **역량 보존 사례 삭제**(Smyth·Keane, IJCAI 1995)를 E-M10 조건 B10으로 추가, TLM(ICML 2025)·MemoPilot(ICML 2026)은 가중치 갱신·갱신기 학습이 필요해 **쓸 수 없음**으로 기록.
 > 개정: 2026-09-23 D2 검증·00-interfaces §11 반영 (`D2-verification.md` Part A 정정, Part B·C 해소안. 핵심: Jev 규칙 키 = M6 스킬 고정 결정 지점 id, 술어는 M1 등록부 이름, L1 LAG는 `ref(t)` 기준, 삭제 규칙 "최소 n회 꺼낸 뒤", GEPA Pareto 뜻 정정(우리 게이트는 "비열화 게이트"), PragmaBot·Proactive Memory Agent 수치·조건 정정, SkillsBench 사람이 다듬은 스킬 +18.2~+24.8pp 추가, BATON 보조로 내림.)
@@ -57,6 +58,7 @@
 | **PragmaBot** (2507.16713) ◎ | 로봇(실물) | VLM이 결과를 시각 판정·반성 → STM(과제 중) → 과제 뒤 LTM 요약 → RAG. STM 35→84%. **LTM 12개 실물 시나리오(8개 처음 봄) 단일 시도 80%, 비교값 22%는 다른 방법(COME, LTM 없음)**이지 같은 시스템의 LTM 끔이 아니다(D2 정정). **LTM 100항목 중 96개는 단순 과제의 교시용(instructional) 경험**이고 과제에서 얻은 것은 4개(§V-C). RAG 대 전체 LTM 통째 프롬프트는 **첫 행동 정확도** 89% 대 74%(실행 없음, Fig. 7) | MED-HIGH(**RA-L 채택**, ETH Hutter, 인용 3) | 2025-07 | 예 | 예 |
 | Analytic Concept-Centric Memory (2606.29774) ○ | 로봇 | 물체 부분·템플릿·자세·어포던스·조작 상태 + 전이 메모리 + 스킬 메모리, **거친→세밀 구조 검색**이 비구조·임베딩 메모리보다 나음(초록) | MED(SJTU Cewu Lu, 심사 전) | 2026-06 | 확인 못 함 | 예 |
 | Kintsugi (2605.09487) △ | 로봇(기호) | typed 실행 KB(술어·연산자·모니터·복구 규칙) + 결정론 검증 게이트, **실행 시 LLM 0회** | MED-LOW(TU Darmstadt, 인용 2) | 2026-05 | 예 | 예 |
+| **Harness VLA / RPent 메모리** (2607.08448 부록 A·E, RPent `manager.py`, HF `RLinf/RPent-memory`) ◎(D10a 정독) | 로봇(시뮬) | Task Specific Memory(절차 JSONL trace + 의미 JSON summary, "never replay literal coordinates") + Global Memory(success rules + failure models). 코드: 전역 leaf 필수 필드 `title`, `applies_when`, `kind`, `confidence`, `evidence.cells`. **confidence = cells ≥ 3이고 과제 ≥ 2면 verified, cells ≥ 2면 probable, 그 밖은 single-shot**. leaf 본문에 **Falsify**(반증 조건). 효용 카운터·삭제 규칙 없음. 검색은 플래너가 `MEMORY.md` 색인 + `grep`으로 스스로. 효과(CC, LIBERO-Pro Goal): Goal-S 메모리 없음 31.0 대 메모리 87.0, Goal-T 79.0 대 87.0(Table 5). Flash(LLM 없이 기록 재생 + 앵커 재위치) 72.63% 대 Codex high 78.50% / no-reasoning 62.50% | MED-HIGH(칭화, 심사 표기 없음) | 2026-07 | 예 | 예(시뮬) |
 | Dynamic Cheatsheet △ | LLM | 비교 기준 | MED(EACL 2026) | 2025-04 | 예 | 아니오 |
 | TLM (2505.20633) / MemoPilot (2606.08656) | 동결 LLM 테스트 시점 학습 | TLM: 입력 perplexity 최소화 + LoRA 갱신. MemoPilot: 메모리 갱신기를 multi-turn GRPO로 학습해 동결 LLM 플레이어 개선, Elo LHE 1762 / RPS 1590(초록) | HIGH (TLM ICML 2025, PMLR 267:24823–24849 / MemoPilot ICML 2026 공식 목록) | 2025-05-27 / 2026-06-07 | **아니오**(가중치 갱신 / 갱신기 학습) → Astra·Jev(API)에 **쓸 수 없음** | 아니오 |
 
@@ -107,6 +109,7 @@
 | 2604.27003 | 추상 > 원시, 음의 전이는 어려운 사례에 | 원시 궤적은 저장만(디버깅·재생용), 주입 금지. 결과는 **쉬운/어려운 부분집합으로 나눠 보고** |
 | CBR 4R (기초) | Revise = 재사용한 해를 실제로 적용·검증한 뒤에만 Retain | 새 기전이 아니다. 센서 라벨 규칙("센서 술어로 확정한 (a)등급만 교훈·규칙 재료", §4.2)이 이미 Revise다 → **기초 문헌 근거 상향**으로만 표기(00 §14) |
 | Smyth·Keane 1995 (기초) | coverage·reachability로 4분류, 다른 사례가 덮는 것부터 삭제, 유일하게 덮는 사례(pivotal)는 보존 | Jev 규칙의 coverage = 정확 일치 키(skill_id, dp_id, 조건 술어). **같은 키를 다른 규칙이 이미 덮으면 먼저 삭제 후보, 그 키를 유일하게 덮는 규칙은 보존**(삭제 대신 재게이트). 2505.16067식 이력 기반 삭제의 **비교 조건**(E-M10 B10)으로만 둔다. Astra 교훈은 scope로 coverage를 근사해야 해 정의가 느슨하다 → Jev 규칙표에만 적용 |
+| RPent 전역 leaf(D10a §1.1·§1.2) | `applies_when`, `symptom` 목록, `evidence.cells`, `confidence`(cells ≥ 3이고 과제 ≥ 2 → verified, cells ≥ 2 → probable, 그 밖 single-shot), 본문 **Falsify**. 병합은 증거 합산만, 본문 충돌 시 `_internal/conflicts/`에 보관 | [접목] 교훈 항목에 같은 필드를 더한다(§4.1). `falsify`는 이력 기반 삭제(최소 n회 꺼낸 뒤 β 이하)와 별도로 "이 조건이 관측되면 폐기"를 작성 시점에 적게 하는 장치. `confidence` 규칙은 (a)등급 센서 라벨 게이트와 결합: Astra 주입은 probable 이상만([제안]) |
 | TLM, MemoPilot | 가중치 갱신 / 갱신기 학습 | 쓰지 않는다. MemoPilot의 "메모리 갱신을 다단계 결정으로 보고 뒤 결과로 평가"는 발상만: E-M10에서 규칙 추가·삭제마다 뒤 N 사건의 성공 변화를 기록(측정만, 학습 없음) |
 
 ---
@@ -132,8 +135,17 @@
  "content":"Choose side approach at dp.approach_dir if next skill is place-narrow; verify clearance before release.",
  "scope":{"skill":"pick-*","transition":"handoff:pick->place_narrow","object_cat":"rigid_small"},
  "provenance":{"episodes":["e17","e23"],"label":"sensor_confirmed"},
+ "applies_when":"next skill is place-narrow and target opening is narrow",
+ "symptom":["top grasp collides at release"],
+ "evidence":{"cells":["taskA_s1","taskA_s3"]},
+ "confidence":"probable",
+ "falsify":"side approach also collides at release on place-narrow",
  "counters":{"retrieved":5,"then_success":4,"then_fail":1}}
 ```
+- **추가 필드** (00-interfaces §22, D10a §1.2) [접목]: `applies_when`, `symptom`, `evidence.cells`, `confidence`, `falsify`(반증 조건). 형식은 RPent 전역 leaf에서 가져왔다(위 JSON의 값은 예시).
+  - `confidence` 규칙 = RPent `manager.py`: cells ≥ 3이고 과제 ≥ 2 → `verified`, cells ≥ 2 → `probable`, 그 밖 `single-shot`. cells는 (a)등급 센서 라벨(§4.2)로 확인된 것만 센다([제안], D10a "confidence 규칙은 (a)등급 센서 라벨 게이트와 결합").
+  - **Astra 주입은 `probable` 이상만** [제안].
+  - `falsify`: 이력 기반 삭제(⑦, 최소 n회 꺼낸 뒤 β 이하)와 별도로, "이 조건이 관측되면 폐기"를 교훈 작성 시점에 적는다. M10 교훈 항목에 없던 필드다.
 **Jev 규칙** [제안] (영어, 범주형만, 보기 ID로)
 ```
 hint: at dp.approach_dir if next_skill=place-narrow and top_clear(o3)=yes -> prefer side_front
@@ -186,6 +198,7 @@ hint: at dp.release if contact_under(o3)=no -> avoid release_now
 | B8 | Dynamic Cheatsheet |
 | B9 | B4에서 게이트(⑤) 끔 |
 | B10 | [제안] B4에서 삭제 정책만 **역량 보존 삭제**(Smyth·Keane IJCAI 1995식)로 교체: 규칙표를 키 coverage로 분류해, 효용 조건(최소 n회 꺼낸 뒤 `then_success / retrieved` ≤ β)에 걸린 규칙 중 **같은 키를 다른 규칙이 덮는 것은 삭제**, 그 키를 유일하게 덮는 규칙은 삭제 대신 재게이트(⑤)로 보냄. 결정 지점당 2줄 상한을 넘을 때도 덮이는 규칙부터 뺀다. n·β는 B4와 같게 |
+| B11 | [제안] **과제별 trace 주입 상한 조건**(00-interfaces §22, D10a §1.2): B4에 더해 같은 과제의 성공 절차 trace(Harness VLA Task Specific Memory식, 좌표는 재grounding)를 Astra에 준다. 우리 "추상 교훈만" 원칙을 일부러 어기는 **상한 측정용**이며 본 조건이 아니다. 근거: Harness VLA LIBERO-Pro Goal-S 메모리 없음 31.0 대 있음 87.0(Table 5, CC), Flash(LLM 없이 기록 재생 + 앵커 재위치) 72.63% |
 
 ### 지표
 성공률(A, B, A 재평가), **전방 전이**(B의 학습 곡선 기울기·B 첫 10편 성공률), **BWT**(A 재평가 − A 끝), **쉬운/어려운 부분집합**(B0 기준 성공/실패 시드별로 나눠 음의 전이 위치, 2604.27003), 에피소드당 Astra 토큰·호출·벽시계, Jev 입력 토큰·지연 p50/p95, 메모리 크기, 규칙 수, 규칙 발동률, 규칙 발동 시 결정이 바뀐 비율, 라벨 오염률(B3의 LLM 라벨 대 센서 라벨 불일치).
@@ -212,6 +225,9 @@ hint: at dp.release if contact_under(o3)=no -> avoid release_now
 - **LLM 판정 라벨을 쓰는 시스템도 실물에서 통했다**(PragmaBot RA-L, 단일 시도 80%, 비교 기준은 다른 방법 COME 22%). 단 LTM 100항목 중 96개가 교시용 경험이라 자기 판정 라벨의 몫은 작다(D2). 센서 라벨 원칙의 절대 근거도, 반대 근거도 아니다. 센서 술어가 못 다루는 과제(변형 물체)에선 (b)등급이 늘어 메모리 재료가 줄어든다.
 - **큰 모델은 메모리를 덜 쓴다**(ExpWeaver) / **Astra가 꺼낸 기억을 무시할 수 있다**(PragmaBot 실패 사례).
 - **Kintsugi식 rules-only가 충분하면** "빠른 결정 모델이 왜 필요한가" 반론(v3/07) → B7로 정면 측정.
+- **RPent(Harness VLA) 메모리와 다른 점** (D10a §1.2): (1) RPent 검색은 **플래너가 index·grep으로 스스로** 한다. 우리는 코드가 키 정확 일치로 0~2개를 고른다. (2) RPent에는 효용 카운터·삭제가 없다. 병합은 증거 합산만 하고, 본문이 충돌하면 보관함에 넣는다. (3) RPent 평가 프롬프트에는 seed-0 과제별 수치("PROVEN LEVERS & LESSONS")가 하드코딩돼 있다. 이는 우리 "원시 궤적·좌표 주입 금지, 추상 교훈만"보다 훨씬 강한 과제 특화 주입이다.
+- **경험 효과 크기의 반대 방향 신호**: LIBERO-Pro Goal-S 메모리 없음 31.0 대 메모리 87.0(CC), Flash(LLM 없이 기록 재생) 72.63%. 해석: LIBERO-Pro T/S 성능의 상당 부분이 **과제별 기록 구조**에서 온다(D10a §1.2). [해석] 우리 "추상 교훈만" 설계는 이 상한을 일부 포기할 수 있다 → B11로 상한을 잰다.
+- **차별 문장 후보**(D10a §1.2 초안): "Harness VLA의 전역 메모리는 성공 규칙·실패 모델을 사람이 읽는 문서로 쌓고 플래너가 스스로 찾아 읽는다. 증거 셀 수로 신뢰도만 올리고 효용 추적·삭제는 없다(RPent `manager.py`). 우리는 센서 술어로 확정한 경험만 (스킬, 결정 지점) 키 정확 일치로 0~2개 주입하고, 재생·새 seed 비열화 게이트와 이력 기반 삭제를 둔다."
 - 선행: 경험 → typed 규칙 컴파일(Kintsugi, AutoRefine, MemCompiler 등, v3/07). 새로움은 **확률 결정 모델(Jev)의 결정 지점에 정확 일치로 붙이고 비열화 게이트로 채택**하는 부분뿐(좁음, plan §4-5).
 - GEPA·Training-Free GRPO·Proactive Memory Agent는 로봇 미적용(확인한 범위). Proactive Memory Agent 이득은 약한 행동 에이전트(Sonnet 4.5)에서 컸고 강한 쪽(Opus 4.6)은 +2.4/+2.5 — Astra가 강한 모델이면 이득이 작을 수 있다. BATON·2604.27003은 심사 전.
 - **SkillsBench 양면**: 자기 생성 스킬 −8.1~−11.5pp, 사람이 다듬은 스킬 +18.2~+24.8pp. Astra가 만든 교훈·규칙은 "자기 생성" 쪽에 가깝다 → 게이트 없이 넣으면 해로울 수 있다(B9 조건).

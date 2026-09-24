@@ -1,6 +1,7 @@
 # M9. 실패 복구 — 모듈 설계
 
 > **정본 우선**: 모듈 사이 인터페이스·정지·확정 규칙·확률 게이트·시간 값은 `00-interfaces.md`가 우선한다(2026-09-23 22:00 UTC). 이 문서와 다르면 그쪽을 따른다.
+> 개정 2026-09-24 (정본 §22, D10a 반영): Harness VLA 매 프리미티브 뒤 {progress, recoverable failure, unrecoverable failure} 3분류 ↔ M7 대응 표(§4.1a), L1 재시도 원문 사례(빈 집기 → 재위치·re-stage, full prompt 금지, 한 레버만 변경), "반성 유지"의 반대 증거에 CaP-X H.4(68.29 → 65.43) 추가(§6-9), CaP-X REGENERATE = 전체 프로그램 재생성 대 우리 가장 늦은 체크포인트 재개(§3), 차별 문장(§6a). 근거 `D10a-harness-capx.md` §1.2·§2.2·§3-6.
 > 개정: 2026-09-24 D9(정독) 반영 (`D9-slowbrain-showharness-gptpolicy.md`, 00-interfaces §20): §3 표에 **Show-Harness 빈 집기 되돌림**(폭 ≤ 5 mm → RELEASE → 가장 가까운 GRASP 하위 목표, 빼면 96→72%)을 `resume_ckpt_<k>` 재개 구조(00 §20 표기 "M9 L1 `resume_ckpt`", 이 문서에서는 L2 보기)의 원문 근거로, **GPT-as-Policy gate**("An edit/eef takeover requires execution_status=failed or intent_status=misaligned. Uncertainty alone … is not a takeover reason. After recovery, hand back.")를 L2 `dp.critic_accept`·M7 FAIL 뒤에만 개입하는 규칙의 원문 근거로 인용. GPT-as-Policy는 매 청크 Astra 동기 호출(에피소드당 약 75.5회, xhigh)이라 우리 실패 시 비동기 설계와 반대임을 적음. §8 갱신.
 > 개정: 2026-09-23 D5 반영 (`D5-consistency.md` 1-1·1-12·1-17·2-1·4-2, 00-interfaces §4·§11.1·§11.2·§16): Astra 도착 행의 "재계획이면 정지"를 지움 — 새 계획 적용은 정지가 아니고(M2 R3 시점, 직전 확정 행동 유지 + 감속), 정지는 L3 안전 대기 안에서만이며 그 자체가 [결정 필요] 13에 묶인다(00 §16). L2 Jev 질문을 M6 고정 id `dp.critic_accept`로 적고 보기를 M9 복구 제안 목록 + `NONE_ESCALATE`로 맞춤(FAIL을 뒤집는 보기 없음). 사가 되돌림을 잠정 기본([결정 필요] 4)으로 표시. effort 표기 통일.
 > 개정: 2026-09-23 정본 §14–§15 반영 (`00-interfaces.md` §14-2·§14-3·§15, `D4-cross-field.md` §10, `D4-cross-field-verification.md` #1·#2): **사가식 복구** — 가역 단계는 보상 스킬을 역순으로 실행해 되돌리고, 비가역 경계(M6 스킬 단계 `effect` 필드)를 넘어서는 되돌리지 않는다(§4.2). 재개 지점 검사는 M7이 매 틱 넘기는 **마지막 일치 위치**에서 시작한다(§4.2). 근거: Sagas(1987, 기간 밖 기초 문헌), SagaLLM = PVLDB 18(12)(2025-03-15, 기간 8일 밖), Atomix(2602.14849)는 "physical actions"를 비가역 게이트 대상으로 직접 분류.
@@ -67,6 +68,8 @@
 | AgileThinker, Slow Brain | 느린 쪽을 기다리지 않음 | Astra 응답 전 아래 층 진행, 도착 시 덮어쓰기 |
 | Show-Harness 빈 집기 복구(2609.10522 §5.4.3, recovery 플러그인, D9 정독) | [원문] 측정 그리퍼 폭 ≤ 5 mm면 RELEASE → **가장 가까운 GRASP 하위 목표로 되돌림**, 기록 삭제, 프롬프트 메모. 닫았는데 열린 폭이면 STOP 최대 3 스텝 대기. GRASP 단계 DONE이 폭 검증 실패면 거부, 들고 가다 잃으면 되돌림. 이미지·VLM 없는 폭 규칙. 빼면 96 → 72%(주 실패 = 감지 안 된 빈 집기) | [접목안] `resume_ckpt_<k>`(§4.1 L2 보기, §4.2 체크포인트 재개) 구조의 원문 근거: 측정 규칙이 실패를 잡고 → 가장 가까운 재개 가능 체크포인트(잡기 하위 단계 경계, §4.2 세밀 단계)로 되돌린다. 차이: 원문은 VLM 없이 규칙이 바로 되돌리고, 우리는 M7 FAIL → 코드 후보 목록 → Jev `dp.critic_accept` 선택을 거친다. 00 §20은 이것을 "M9 L1 `resume_ckpt`"로 적었으나 이 문서에서 `resume_ckpt_<k>`는 L2 보기다(표기 차이, 구조 근거는 같음) |
 | GPT-as-Policy gate(Galbot 기술 보고서 + 코드, arXiv·심사 없음, gate_prompt.md, D9 정독) | [원문] "An edit/eef takeover requires execution_status=failed or intent_status=misaligned. Uncertainty alone … is not a takeover reason. After recovery, hand back." 직전 청크 실행 결과와 다음 청크 의도를 따로 평가, 되돌리기 금지. Astra(`gpt-6-astra`, **xhigh 고정**, Codex CLI 에이전트)를 **매 청크 경계에서 동기로** 부른다(결정 3,776회 ≈ 에피소드당 75.5회, 기다리는 동안 시뮬 정지, Table 3 "Physical duration … excludes model-response latency"). 교정 비율 14.4%(42,750 스텝 중 6,174) | [접목안] L2 `dp.critic_accept`의 원문 근거: 복구 선택(개입)은 실패 판정 뒤에만(M7 FAIL), 불확실만으로는 개입하지 않고(`NONE_ESCALATE`·E1 전 확률 게이트 끔과 같은 방향), 복구 뒤 원 계획으로 넘겨준다("hand back" ↔ `continue_lower_layer`·체크포인트 재개). **호출 방식은 반대다**: 원문은 매 청크 동기 호출(xhigh, 에피소드당 약 75회, 시뮬 정지), 우리는 M7 FAIL 때만 Astra를 비동기로 부르고 그동안 아래 층이 로봇을 움직인다(§4.1) |
+| Harness VLA(2607.08448 부록 A, RPent 메모리·평가 프롬프트, D10a 정독) | [원문] 동기 staging → attempt → observe → re-stage + re-invoke. 매 프리미티브 뒤 플래너가 결과를 **progress / recoverable failure / unrecoverable failure** 셋 중 하나로 분류. 전역 교훈: 빈 집기 → 재위치 파악·re-stage, full prompt 금지("pick up the <object>"만), 사전 위치 1~3 cm 이동 또는 max_chunks 12~16 중 **한 레버만** 변경. 평가 프롬프트: "if lift isn't reached within 8 chunks, RE-ISSUE pi0_pick rather than raising max_chunks". Fig. 7: `move_to` 중 VLA가 실제로 잡지 못했음을 알아채고 돌아가 재시도. "Do not terminate from visual proximity alone. Check the benchmark success signal" | [접목안] 3분류를 M7 판정과 대응시킨다(§4.1a). L1 "같은 스킬을 파라미터 바꿔 1회 재시도"의 원문 사례로 인용(직전 파라미터 제외 + 한 레버만). 운반 중 빈 집기 감지 = "잡기 하위 단계로 되돌림" 구조의 또 다른 선행(Show-Harness 폭 규칙과 같은 계열). 완료 판정은 코드 T1 술어(M7)와 같은 규칙. **차이**: 원문은 이 선택을 LLM 플래너가 동기로 한다(로봇은 파일을 기다림). 우리는 코드 후보 + Jev `dp.critic_accept`로 멈추지 않고 한다 |
+| CaP-X(2603.22435 §2·§3.2·부록 F.2.1·H.4, D10a 정독) | [원문] 복구 = 다음 턴에 **전체 프로그램 재생성(REGENERATE)** 또는 FINISH. 부분 재개 지점 개념이 없다. F.2.1 사례: 목표 조건(z_object > z_table) 미충족을 다음 턴에 확인하고 복구 분기를 합성 | [접목안 아님, 대비] 우리 재개는 사전조건이 참인 **가장 늦은 체크포인트**(§4.2)다. CaP-X는 이보다 거친 단위(프로그램 전체)다. H.4 검증 강화 프롬프트는 반대 증거로 §6-9에 둔다 |
 | WebRollback | 되돌리기를 명시 행동으로 | Astra 출력 스키마에 `rollback_to=<체크포인트 id>`, `reset_skill=<id>`, `new_plan=[...]`, `continue` 네 선택지를 분리 |
 | VRL-Bench (LOW), 2606.15017 | 반성 메모리가 단순 재시도보다 나쁠 수 있음 | 기준 방법에 "메모리 없는 재시도" 필수 |
 | 사가(기초) + SagaLLM + Atomix | 가역 효과는 역순(역방향 의존 순서)으로 보상, 비가역 효과는 커밋 게이트 전 방출 금지. 보상은 외부 효과가 모두 가역일 때만 돕는다. Atomix는 물리 행동을 비가역 게이트 대상으로 직접 꼽음 | [접목안, 00 §14-3 채택. 사가·SagaLLM이 기간 밖이라 [결정 필요] 4 승인 전까지 **잠정 기본**(00 §16). 불허 시 근거는 Atomix(기간 안)만 남고 규칙은 유지] M6 스킬 카드 단계의 `effect`(가역 + 보상 스킬 id / 비가역)를 읽어 재개 경로를 만든다: 현재 위치에서 재개 지점 k까지 **가역 단계의 보상 스킬을 역순 실행**(backward recovery). 경로에 비가역 단계가 있으면 **그 경계를 넘어 되돌리지 않고** 경계 뒤 체크포인트만 후보로 둔다(경계 앞은 forward recovery = 재시도·리셋·Astra `new_plan`). 보상 뒤 재개 가능 조건은 다시 측정한 술어로 확인 |
@@ -89,6 +92,17 @@
 | 복구 완료 | M7 cooldown 2초(설정 표), 이번 시도 기록을 M10 후보로(센서 술어로 성공 확인된 것만) | 진행 |
 
 시도 한도(초기값): L1 1회, L2 선택 뒤 같은 체크포인트 재개 2회까지. 한도 초과면 Astra 결정을 기다린다(L3).
+
+### 4.1a Harness VLA 3분류 ↔ M7 대응 (00-interfaces §22, D10a §1.2) [접목]
+Harness VLA 부록 A: 매 프리미티브 뒤 플래너가 결과를 셋 중 하나로 분류한다. 원문은 LLM 플래너가 동기로 분류하고, 우리는 M7 코드 판정이 같은 자리를 맡는다.
+
+| Harness VLA 분류 | M7 판정 | M9 동작 |
+|---|---|---|
+| progress | 정상 | 복구 없음, 다음 단계 진행 |
+| recoverable failure | WARN·FAIL | WARN은 M7 소프트 채널(M9 시작 안 함). FAIL이면 §4.1 사다리 L1 → L2(`dp.critic_accept`) + Astra 비동기 |
+| unrecoverable failure | 복구 불가(L3) | L3 안전 대기, Astra `new_plan`을 기다림 |
+
+- L1 재시도 원문 사례(RPent 전역 교훈·평가 프롬프트): 빈 집기 → 재위치 파악·re-stage, full prompt 금지, 한 레버만 변경(사전 위치 1~3 cm 또는 max_chunks 12~16). 우리 L1의 "직전 파라미터 제외"에 "한 번에 한 레버만"을 원문 사례로 붙인다.
 
 ### 4.2 체크포인트 정의
 - **생성**: 원장 단계 k의 완료 술어 `exit`(단계 k)가 참이 된 순간. 저장 = (단계 id, 그 순간의 술어 벡터, 시각, 물체 위치 추정과 측정 시각, 프레임 색인).
@@ -138,6 +152,11 @@
 6. **체크포인트 정의가 M1에 달려 있다**: 술어가 없으면 재개 가능 판정이 불가능하다.
 7. 핵심 근거(FaRe·RIR)가 모두 MED-LOW, 심사 전이다. "세 결정 분해"는 설계 정리 도구로 쓰고 성능 근거로 인용하지 않는다(v3/17 B8).
 8. **사가 근거는 소프트웨어 효과에서 나왔다**: DB 사가·SagaLLM·Atomix의 보상은 소프트웨어 상태다. 로봇 보상 스킬(내려놓기·후퇴)은 물체 자세를 바꿀 수 있어 정확한 역연산이 아니다 → 보상 뒤 재측정 필수. SagaLLM은 기간 8일 밖, Atomix는 무학회.
+9. **"반성 유지"(D3 잠정)의 반대 증거 추가 — CaP-X H.4**(00-interfaces §22, D10a §2.1·§3-6): 디버깅·검증을 강하게 시키는 프롬프트가 평균 68.29 → 65.43으로 오히려 약간 나빴다("did not empirically improve success rate"). 조건: 7과제 × 100회, 3M 앙상블(Gemini-3-Pro, Claude-Opus-4.5, GPT-5.2 각 3회). 3번(VRL-Bench)과 같은 방향의 증거다.
+
+### 6a. 차별 문장 후보 (D10a §1.2·§2.2 초안, 00-interfaces §22)
+- "CaP-X의 한 턴은 생성한 프로그램 한 편을 끝까지 실행한 뒤, stdout/stderr와 VLM 시각 차분 텍스트를 보고 프로그램 전체를 다시 생성할지(REGENERATE) 끝낼지(FINISH)를 정한다(§2, §3.2). … 우리는 … 실패하면 전체 재생성이 아니라 사전조건이 참인 가장 늦은 체크포인트에서 재개한다."
+- "Harness VLA는 프리미티브 하나가 끝날 때마다 플래너가 결과 파일을 기다렸다가 다음 JSON 호출을 고르는 동기 REPL이며(부록 A 'The planner waits for these files before selecting the next primitive'), 저자 스스로 플래너와 하위 VLA 사이가 열린 고리라고 적었다(§5). … Astra는 실패 신호가 날 때만 비동기로 부른다."(전문은 M6 §6a)
 
 ## 7. 열린 질문, [결정 필요]
 - [결정 필요] 정밀 접촉 구간의 정지(동기) 허용 여부(plan §5-10).
