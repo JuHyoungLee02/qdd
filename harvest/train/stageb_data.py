@@ -103,14 +103,15 @@ def camera_config(images) -> str:
 
 
 # ------------------------------------------------------------------------------------------ contract checks
-def check_row(r: dict) -> None:
-    """Raise ValueError if an R2 row breaks the contract."""
+def check_row(r: dict, hz: int = HZ) -> None:
+    """Raise ValueError if an R2 row breaks the contract. `hz` = the dataset's action rate (§62: our data 30 Hz,
+    S-E2E public data 10 Hz)."""
     for k in ("seed", "kind", "k", "hz", "H", "skill_id", "phase_id", "proprio", "action_exec", "action_script",
               "valid", "aux"):
         if k not in r:
             raise ValueError(f"missing field {k!r}")
-    if r["hz"] != HZ:
-        raise ValueError(f"hz {r['hz']} != {HZ}")
+    if r["hz"] != hz:
+        raise ValueError(f"hz {r['hz']} != {hz}")
     H = r["H"]
     for k in ("action_exec", "action_script"):
         a = np.asarray(r[k], float)
@@ -240,10 +241,10 @@ class ActionNorm:
 
 # ------------------------------------------------------------------------------------------ samples
 def make_sample(row: dict, line: dict | None, items: list, state: str = "IMG", wrist: bool = True,
-                image_root: str = "") -> dict:
+                image_root: str = "", hz: int = HZ) -> dict:
     """Join one R2 row with its pool line and the stage-A decision items of that snapshot. The committed
     decisions default to the (single) decision labels of the items (training = teacher forcing)."""
-    check_row(row)
+    check_row(row, hz)
     committed = dict(row.get("committed") or {})
     for it in items:
         if it["question"] not in committed and len(it["target"]) == 1:

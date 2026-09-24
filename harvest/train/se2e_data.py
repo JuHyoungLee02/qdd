@@ -5,9 +5,9 @@ and ROBOTIS/Task_0002_OrderPicking_lerobot (kind "RB2", 19-D = 16 + head_joint1/
 cam_head (ZED left, 672x376), cam_head_right, cam_wrist_left / cam_wrist_right (D405, 424x240) = the §59 native
 sizes, so frames are used as they are.
 
-One row per sampled frame k (stride), same fields as stageb_data.check_row plus extras:
-  hz = 30, H = 15           the 10 fps action stream is linearly resampled to 30 Hz (joint position targets);
-                            valid = 0 past the last recorded action (held value)
+One row per sampled frame k (stride), same fields as stageb_data.check_row(row, hz=10) plus extras:
+  hz = 10, H = 5            §62 (user-log 66): the native 10 Hz is kept, no resampling; chunk = 0.5 s = the next
+                            5 recorded actions a[k..k+4]; valid = 0 past the last recorded action (held value)
   arm                       active arm = larger end-effector path length over the next 1 s (FK of the measured
                             state); bimanual = both arms move >= 2 cm and the smaller >= half the larger
   action_exec / _script     8-D of the active arm (7 joints rad + gripper joint value as recorded); equal (teleop,
@@ -16,7 +16,8 @@ One row per sampled frame k (stride), same fields as stageb_data.check_row plus 
                             proprio_mask.tau = 0), grip = [gripper joint value, its velocity] (joint units, NOT
                             the sim's width in m)
   action_full [H][D]        all recorded action dims (bimanual expert option), state_full [D]
-  committed (labels mode)   HEURISTIC decision tokens (LABEL_SRC): Δ = FK(state at t + 0.33 s) - FK(state at t) of
+  committed (labels mode)   HEURISTIC decision tokens (LABEL_SRC): Δ = FK(state[k + 3]) - FK(state[k]) (0.33 s ->
+                            nearest step count, 3 steps = 0.30 s at 10 Hz, `label_steps`) of
                             the active arm's end_effector link in arm_base_link (x forward, y left, z up); signs
                             with the labels_v2 1 cm dead band and the labels_v2 MAG bins. Not a typed decision
                             label -- the data has none. labels=False = "actions only" mode (no committed, no items).
@@ -36,10 +37,9 @@ from ..jevcall import DIR_XY, DIR_Z, MAG, build_choice
 from ..clients.jevl import question_text
 from ..labels_v2 import dir_xy_label, dir_z_label, mag_label
 
-HZ = 30
-H_DEFAULT = 15
+CHUNK_S = 0.5  # action chunk length in time (D19 §33); steps = round(CHUNK_S * fps)
 LABEL_SRC = "se2e_heur_ee033@v1"
-HORIZON_S = 1.0 / 3.0
+HORIZON_S = 1.0 / 3.0  # decision label window; steps = round(HORIZON_S * fps)
 ARM_WINDOW_S = 1.0
 MOVE_MIN_M = 0.02
 ARM_NAMES = {a: [f"arm_{a[0]}_joint{i}" for i in range(1, 8)] + [f"gripper_{a[0]}_joint1"] for a in ("left", "right")}
@@ -47,9 +47,9 @@ FEATURE_NAMES_16 = ARM_NAMES["left"] + ARM_NAMES["right"]
 FEATURE_NAMES_19 = FEATURE_NAMES_16 + ["head_joint1", "head_joint2", "lift_joint"]
 QUESTIONS = ("dir_xy", "dir_z", "mag_coarse")
 _OPTS = {"dir_xy": DIR_XY, "dir_z": DIR_Z, "mag_coarse": MAG}
-_QTEXT = {"dir_xy": "Which horizontal direction should the active gripper move during the next 0.33 s?",
-          "dir_z": "Which vertical direction should the active gripper move during the next 0.33 s?",
-          "mag_coarse": "How far should the active gripper move during the next 0.33 s?"}
+_QTEXT = {"dir_xy": "Which horizontal direction should the active gripper move during the next {w:.2f} s?",
+          "dir_z": "Which vertical direction should the active gripper move during the next {w:.2f} s?",
+          "mag_coarse": "How far should the active gripper move during the next {w:.2f} s?"}
 
 
 # ------------------------------------------------------------------------------------------ kinematics
@@ -120,7 +120,7 @@ def interp_at(x, t: float) -> np.ndarray:
     return (1 - w) * x[i] + w * x[i + 1]
 
 
-def resample_chunk(a, src_hz: float, t0_index: int, dst_hz: float = HZ, H: int = H_DEFAULT):
+def resample_chunk(a, src_hz: float, t0_index: int, dst_hz: float, H: int):
     """H targets at t0 + i/dst_hz from a src_hz stream (linear); valid = 0 past the last sample (held)."""
     a = np.asarray(a, float)
     ts = t0_index + np.arange(H) * (src_hz / dst_hz)
@@ -167,15 +167,19 @@ def split_of(kind: str, episode: int, val_pct: int = 5) -> str:
 
 # ------------------------------------------------------------------------------------------ rows
 def episode_rows(state, action, fps: float, chain: dict, seed: int, kind: str, task: str, stride: int = 1,
-                 labels: bool = True, H: int = H_DEFAULT, hz: int = HZ, names=None, image_ref=None,
+                 labels: bool = True, H: int | None = None, hz: int | None = None, names=None, image_ref=None,
                  timestamps=None) -> list:
-    """R2 rows (stageb_data.check_row) for frames 0, stride, 2*stride, ... of one episode."""
+    """R2 rows (stageb_data.check_row(row, hz)) for frames 0, stride, 2*stride, ... of one episode. Default
+    hz = the dataset fps (§62, no resampling), H = round(CHUNK_S * hz)."""
+    hz = int(round(fps)) if hz is None else hz
+    H = int(round(CHUNK_S * hz)) if H is None else H
+    lsteps = int(round(HORIZON_S * fps))
     st, act = np.asarray(state, float), np.asarray(action, float)
     names = list(names or (FEATURE_NAMES_19 if st.shape[1] == 19 else FEATURE_NAMES_16))
     idx = {a: arm_index(names, a) for a in ("left", "right")}
     ee = {a: fk_ee(chain[a], st[:, idx[a][:7]]) for a in ("left", "right")}
     vel = finite_velocity(st, fps)
-    win, hor = int(round(ARM_WINDOW_S * fps)), HORIZON_S * fps
+    win = int(round(ARM_WINDOW_S * fps))
     split = split_of(kind, seed)
     rows = []
     for k in range(0, len(st), stride):
@@ -191,8 +195,9 @@ def episode_rows(state, action, fps: float, chain: dict, seed: int, kind: str, t
              "action_exec": full[:, ix].tolist(), "action_script": full[:, ix].tolist(), "valid": valid.tolist(),
              "action_full": full.tolist(), "state_full": st[k].tolist(), "names_full": names,
              "aux": {"reg": {}, "cls": {}}}
-        d = interp_at(ee[arm], k + hor) - ee[arm][k]
+        d = interp_at(ee[arm], k + lsteps) - ee[arm][k]
         r["ee_delta"] = [round(float(v), 5) for v in d]
+        r["label_steps"], r["label_window_s"] = lsteps, lsteps / fps
         if labels:
             r["committed"] = decision_labels(d)
             r["labels_src"] = LABEL_SRC
@@ -211,34 +216,44 @@ def context_text(row: dict) -> str:
     return f'task: "{row["task"]}"\nrobot: gripper={g} arm={row["arm"]}'
 
 
-def decision_items(committed: dict, ctx: str, split: str, key: str) -> list:
+def decision_items(committed: dict, ctx: str, split: str, key: str, window_s: float) -> list:
     out = []
     for q in QUESTIONS:
         if committed.get(q) is None:
             continue
-        qid, spec = build_choice(f"se2e.{q}@v1", _QTEXT[q], _OPTS[q])
+        qid, spec = build_choice(f"se2e.{q}@v1", _QTEXT[q].format(w=window_s), _OPTS[q])
         out.append({"key": key, "question": q, "split": split, "text": question_text(ctx, qid, spec),
                     "images": [], "names": [o.name for o in _OPTS[q]], "target": [committed[q]], "ne": False,
                     "source": LABEL_SRC})
     return out
 
 
+def needed_cams(row: dict, wrist: bool = True) -> list:
+    """§57: head always + active wrist (both wrists for bimanual rows)."""
+    if not wrist:
+        return ["cam_head"]
+    return ["cam_head"] + ([f"cam_wrist_{a}" for a in ("right", "left")] if row.get("bimanual")
+                           else [f"cam_wrist_{row['arm']}"])
+
+
 def load_se2e(rows_path: str, image_root: str = "", labels: bool = True, wrist: bool = True) -> list:
-    """Stage-B samples (stageb_data.make_sample format) from a converted rows file."""
+    """Stage-B samples (stageb_data.make_sample format) from a converted rows file. Rows missing a needed camera
+    (e.g. Task_0002 episodes 617-816 have no wrist videos) are skipped."""
     from .stageb_data import images_of, make_sample
     out = []
     for x in open(rows_path, encoding="utf-8"):
         r = json.loads(x)
+        if not set(needed_cams(r, wrist)) <= set(r.get("images") or {}):
+            continue
         if not labels:
             r.pop("committed", None)
         ctx = context_text(r)
         key = f"{r['kind']}_ep{r['seed']}_k{r['k']}"
-        ims = images_of({"images": r["images"]}, "both" if r.get("bimanual") else r["arm"], wrist, image_root) \
-            if r.get("images") else []
-        items = decision_items(r.get("committed") or {}, ctx, r["split"], key) if labels else []
+        ims = images_of({"images": r["images"]}, "both" if r.get("bimanual") else r["arm"], wrist, image_root)
+        items = decision_items(r.get("committed") or {}, ctx, r["split"], key, r["label_window_s"]) if labels else []
         for it in items:
             it["images"] = ims
-        s = make_sample(r, None, items)
+        s = make_sample(r, None, items, hz=r["hz"])
         s["context"] = {"text": ctx, "images": ims}
         s["split"] = r["split"]
         out.append(s)

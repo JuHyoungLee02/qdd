@@ -102,13 +102,19 @@ def test_episode_rows_meet_stageb_contract():
                           task="pick the order items", stride=5, labels=True)
     assert [r["k"] for r in rows] == [0, 5, 10, 15, 20, 25, 30, 35]
     for r in rows:
-        D.check_row(r)
-        assert r["hz"] == 30 and r["H"] == 15 and r["arm"] in ("left", "right")
+        D.check_row(r, hz=10)  # §62: S-E2E stays at the native 10 Hz
+        assert r["hz"] == 10 and r["H"] == 5 and r["arm"] in ("left", "right")  # 0.5 s chunk = 5 steps
+        assert r["label_steps"] == 3  # 0.33 s -> nearest step count at 10 Hz
         assert set(r["committed"]) == {"dir_xy", "dir_z", "mag_coarse"}
         assert r["labels_src"] == S.LABEL_SRC
-        assert len(r["action_full"]) == 15 and len(r["action_full"][0]) == 16
+        assert len(r["action_full"]) == 5 and len(r["action_full"][0]) == 16
         assert r["proprio_mask"]["tau"] == 0
-    assert rows[-1]["valid"][-1] == 0  # the last chunk runs past the episode end
+        np.testing.assert_allclose(r["action_full"][0], act[r["k"]])  # no resampling: chunk = recorded actions
+    with pytest.raises(ValueError):
+        D.check_row(rows[0])  # the default (our 30 Hz data) still refuses a 10 Hz row
+    assert rows[-1]["valid"] == [1, 1, 1, 1, 1] and rows[-1]["k"] == 35
+    last = S.episode_rows(st, act, 10, {"right": _chain(), "left": _chain()}, 7, "RB2", "x", stride=37)[-1]
+    assert last["k"] == 37 and last["valid"] == [1, 1, 1, 0, 0]  # the chunk runs past the episode end
     off = S.episode_rows(st, act, 10, {"right": _chain(), "left": _chain()}, 7, "RB2", "x", stride=5,
                          labels=False)
     assert all("committed" not in r for r in off)
@@ -130,10 +136,43 @@ def test_split_is_deterministic_and_stratified():
 
 
 def test_items_for_committed_use_option_names():
-    items = S.decision_items({"dir_xy": "plus_x", "dir_z": "up", "mag_coarse": "small"}, "ctx", "train", "RB2_ep1_k0")
+    items = S.decision_items({"dir_xy": "plus_x", "dir_z": "up", "mag_coarse": "small"}, "ctx", "train", "RB2_ep1_k0",
+                             window_s=0.3)
     assert [it["question"] for it in items] == ["dir_xy", "dir_z", "mag_coarse"]
     for it in items:
         # same option lists as the DecCall (NONE_ESCALATE shown, never a heuristic target)
         assert it["target"][0] in it["names"] and it["names"][-1] == "NONE_ESCALATE"
         assert it["target"] != ["NONE_ESCALATE"] and it["source"] == S.LABEL_SRC
         assert it["text"].startswith("ctx\n\nQuestion (se2e.")
+
+
+def test_load_se2e_samples_and_actions_only(tmp_path):
+    import json
+    st, act = _episode()
+    rows = S.episode_rows(st, act, 10, {"right": _chain(), "left": _chain()}, 3, "RB1", "sort the coffee", stride=10,
+                          image_ref=lambda k: {"cam_head": f"img/k{k}_h.jpg", "cam_wrist_left": f"img/k{k}_l.jpg",
+                                               "cam_wrist_right": f"img/k{k}_r.jpg"})
+    p = tmp_path / "RB1.stageb.jsonl"
+    p.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    smp = S.load_se2e(str(p), image_root="/root")
+    assert len(smp) == len(rows)
+    s = smp[0]
+    assert s["context"]["text"].startswith('task: "sort the coffee"')
+    labs = [lab for lab, _ in s["context"]["images"]]
+    assert labs[0] == "head camera:" and labs[1].startswith(rows[0]["arm"])
+    assert len(s["items"]) == 3 and s["items"][0]["images"] == s["context"]["images"]
+    assert s["committed"] == rows[0]["committed"]
+    off = S.load_se2e(str(p), labels=False)
+    assert all(x["items"] == [] and x["committed"] == {} for x in off)
+
+
+def test_load_se2e_skips_rows_without_needed_cameras(tmp_path):
+    import json
+    st, act = _episode()
+    rows = S.episode_rows(st, act, 10, {"right": _chain(), "left": _chain()}, 3, "RB2", "x", stride=10,
+                          image_ref=lambda k: {"cam_head": f"img/k{k}_h.jpg"})  # head-only episode
+    p = tmp_path / "RB2.stageb.jsonl"
+    p.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    assert S.load_se2e(str(p)) == []
+    head_only = S.load_se2e(str(p), wrist=False)
+    assert len(head_only) == len(rows) and all(len(s["context"]["images"]) == 1 for s in head_only)
