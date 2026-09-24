@@ -382,3 +382,4 @@
 - 07:41 UTC §36–§39 반영(M1·M3·M5·M6·M8·E-first·EVAL·SUMMARY v3.9·plan v6.7·STAGE2-CLOSE, 논문 M1 깊이·R 힘 입력·실험 '플랫폼' 문단, bib fastfs2025, 마인드맵 빨간 줄 user-log 37·38·39 원문). 확인: 빨간 줄 44 일치, [사용자] 삭제 0, 두 판 컴파일 오류 0. 하드웨어 결정 모두 해소.
 - 07:46 UTC 사용자 요청(user-log 40): Inspect Robots → D22 조사, Robocurve `inspect-robots`(MIT, 600★, 동기 LLM/VLA 로봇 평가 하네스)로 확정, 메인이 README·설계 문서·API·보고서로 재확인. 정본 §40: 선행 겹침 없음, Astra 수치는 LOW라 근거 아님, 주 평가 부적합, 로그 설계 참고, B1a-real 기준선 여부는 사용자 결정.
 - 07:51 UTC 사용자 결정(user-log 41): 1차 평가 = Inspect Robots, 향후 확장(RoboDojo 등). 정본 §41(§40 주 평가 판단 1차에 한해 변경, B1a-real 해소). D23 코드 수준 통합 조사 착수(비동기 대 동기 루프, Isaac Lab AI Worker 매핑, 기준선 플러그인, standard→random 짝).
+- 08:05 UTC D23 저장·코드 재확인 4건 일치. 정본 §42: 시계 3종(sync/simlat/wall), 주 표 = 지연 충실 트랙 + sync-fair 병기 [Claude 결정], 오라클 state는 우리 오라클 조건에서만(정보 동등) [Claude 결정], aiworker 몸체 신규, OursPolicy 비블로킹 어댑터, 기준선 3종, P0–P4. 교훈: 세션 로그에서 보고서를 찾을 때 압축 요약문도 같은 키워드를 담으므로 요약문을 제외 조건에 넣을 것.

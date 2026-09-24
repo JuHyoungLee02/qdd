@@ -375,3 +375,16 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - 풀어야 할 점: 하네스 루프는 동기(시뮬이 정책을 기다림)이고 우리 시스템은 비동기·비정지다. 설계 문서의 "an embodiment that needs real-time cadence paces itself inside step()"을 이용해 몸체 쪽에서 벽시계 박자를 맞추고, 정책 안에서 Astra를 비동기로 돌리는 방식을 검토한다(D23 코드 조사).
 - 몸체: 1차는 Isaac Lab(하네스 기본 Franka 7자유도 → AI Worker SG2 한 팔로 매핑 훅), 실물은 ROS 2 몸체로 AI Worker SG2(베이스 고정).
 - §40의 [결정 필요] B1a-real은 이 결정으로 해소 — Inspect Robots `agent` + Astra를 1차 평가의 범주 1 기준선으로 쓴다.
+
+## 42. Inspect Robots 통합 설계 (2026-09-24 08:05 UTC, `D23-inspect-robots-integration.md`, §41)
+- **코드 확인**(메인 재확인, v0.59.0 / 커밋 `7e506e3`): 롤아웃은 단일 스레드 동기 루프("no wall-clock pacing of its own", `rollout.py:276-280`). Policy = `info, config, reset(scene), act(observation) -> ActionChunk`. `derive_seed(eval_seed, scene_seed, epoch)`는 scene.id를 쓰지 않는다 → 같은 `init_seed`로 std/rnd 짝 장면이 된다. 기본 isaacsim 몸체는 행동 Box에 경계가 없고(`embodiment.py:215`), agent 기준선은 "finite low and high bounds"를 요구한다(`_tools.py:632`) → **그대로 못 쓴다**.
+- **시계 세 가지, 같은 정책 코드에 시계만 주입**: sync(세계가 정책을 기다림), simlat(시뮬 시각 t에 보낸 응답을 t + 실측 지연에 전달), wall(몸체가 self_paced로 벽시계에 맞춤 — 실물 또는 RTF ≥ 1일 때만). 스모크(`D:/tools/audit_d23/smoke/smoke_async.py`, 장난감 몸체)에서 세 모드 동작, simlat ≈ wall, 하네스 오버헤드 약 80 µs/스텝. §41의 "몸체 쪽 벽시계 박자"는 ZED_M 렌더로 RTF < 1이면 LLM이 빨라 보이게 되므로 **시뮬에서는 simlat로 대체**하고 RTF를 기록한다.
+- **주 표 = 지연 충실(latency-faithful) 트랙** [Claude 결정]: 우리 = simlat, 동기 기준선(agent·capx) = `LatencyChargingController`(act() 시간 L만큼 "직전 명령 유지" 행동 ceil(L×hz)개를 앞에 붙임 — 실물에서 생각하는 동안 팔이 서 있는 것과 같음; agent README "the arm stands still while the model thinks"). 근거: 우리 주장(비정지·실시간 지연 흡수)은 지연이 공짜인 조건에서는 정의되지 않는다. **sync-fair 트랙을 같은 표에 병기**해 "생각 시간 공짜" 조건에서의 결과도 숨기지 않는다.
+- **정보 동등** [Claude 결정]: agent는 `obs.state`의 모든 키를 프롬프트에 넣는다(`policy.py:1201-1219`). → 오라클 물체 자세는 우리 M1이 오라클일 때(E0 오라클 조건)에만 state에 넣고, 인식 조건에서는 두 쪽 모두 넣지 않는다(C2 "같은 인식" 원칙).
+- **`aiworker` 몸체**(새로 작성): FFW-SG2 한 팔 joint_pos 8-D(7 + 그리퍼 연속), 유한 경계·`dim_labels`, decimation 1, 카메라는 새 프레임일 때만, 깊이·내부행렬은 extra callable, `extra["sim_time"]`, 성공 술어, RTF 기록, 실물은 `ChainApprover(Clamp, DeltaLimit)` 직접 연결(Python eval 기본은 AutoApprover). 실물 100 Hz 경로는 rclpy 네이티브, rosbridge는 30–50 Hz 기준선용 [가정].
+- **`OursPolicy` 어댑터**: act()는 비블로킹(현재 확정 행동 + 스킬 100 Hz 한 틱, 청크 길이 1), Jev 겹침 호출·Astra T_fail은 스레드 풀, M4 원장·M7은 act() 안에서 O(ms), T0 계획만 블로킹 허용, `DefaultController(replan_interval=1)`. 정책 핵심은 하네스 중립 모듈 + 얇은 어댑터 둘(Inspect Robots Policy, 2차 RoboDojo용 XPolicyLab 서버).
+- **기준선**: B1a-IR = agent + Astra(충실판 effort=medium·max_llm_calls=20·max_speed_frac=0.25 [대응 미확인] / 공정판 effort low·high, 호출 예산 우리와 같게), B5-IR = capx(SAM3·Contact-GraspNet·Pyroki 서버, 컨테이너 격리), B3b-IR = xpolicylab π0.5(`action_type=joint arms=1 arm_dim=7 ee_dim=1`, AI Worker 한 팔 미세조정 필요 — cyclo_lab Mimic → LeRobot, std+DR).
+- **로그**: 설정 dataclass를 `policy.config`로(astra_prompt_id, question_id@vN, 모델 ID, effort, T_c, 시계 모드, M4 파라미터), 트라이얼별 부가 JSONL(M4 표·option_key·epoch·요청 해시·카나리 id) 경로를 `record.metadata` → `trial_metadata`.
+- **병렬**: 하네스가 순차이므로 환경 동시 실행 대신 프로세스·파드 분할.
+- **단계** [가정: 공수]: P0 설치·스모크(0.5–1일, 태그 고정) → P1 aiworker 몸체(4–7일) → P2 OursPolicy + LatencyChargingController + 로그(5–8일) → P3 기준선(3–6일, π0.5 학습 별도) → P4 짝 파일럿 layout 0–4 × {std, rnd} × epoch 3 × 두 시계 트랙(3–5일).
+- **위험**: alpha API(마이너마다 깨질 수 있음 → 판본 고정·사본 보관), 관리자 1인 의존(커밋 355/515), Isaac Lab 2.3 호환 [미확인], H200 RT 코어 없음(렌더), 프레임 메모리 누적, 외부 라이선스 [미확인].
