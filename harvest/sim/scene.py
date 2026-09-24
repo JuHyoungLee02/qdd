@@ -238,7 +238,8 @@ def _place_layout_event(env, env_ids):
         write_distractor_poses(env, env_ids, _LAYOUT["rand"])
 
 
-def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu", variant: str = "standard"):
+def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu", variant: str = "standard",
+               decimation: int = 5, render_interval: int | None = None):
     import isaaclab.envs.mdp as mdp
     import isaaclab.sim as sim_utils
     from isaaclab.assets import AssetBaseCfg, RigidObjectCfg
@@ -358,9 +359,9 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
         curriculum = None
 
         def __post_init__(self):
-            self.decimation = 5  # canon §37: sim.dt 0.01, decimation 5 -> 20 Hz env step
+            self.decimation = decimation  # canon §37: sim.dt 0.01, decimation 5 -> 20 Hz env step (R5: 1 -> 100 Hz)
             self.sim.dt = 0.01
-            self.sim.render_interval = self.decimation
+            self.sim.render_interval = render_interval or self.decimation
             self.episode_length_s = 120.0
             self.sim.physx.bounce_threshold_velocity = 0.01
             self.sim.physx.friction_correlation_distance = 0.00625
@@ -400,7 +401,7 @@ class Env:
     """Thin wrapper over an Isaac Lab ManagerBasedRLEnv. step() takes 7 arm joint targets + gripper width (m)."""
 
     def __init__(self, seed: int, headless=True, cameras=DEFAULT_CAMERAS, arm="right", depth=True, sim_device="cpu",
-                 variant="standard"):
+                 variant="standard", decimation: int = 5, render_interval: int | None = None):
         from . import randomize
         self.variant = randomize.check_variant(variant)
         cameras = tuple(cameras or ())
@@ -410,7 +411,7 @@ class Env:
 
         self.torch = torch
         self.seed, self.arm, self.cameras = int(seed), arm, cameras
-        cfg, self.layout = _build_cfg(seed, cameras, arm, depth, sim_device, variant)
+        cfg, self.layout = _build_cfg(seed, cameras, arm, depth, sim_device, variant, decimation, render_interval)
         self.sim_device = cfg.sim.device
         _LAYOUT["layout"] = self.layout
         self.randomization = randomize.sample_randomization(seed, variant, self.layout)
@@ -530,9 +531,13 @@ class Env:
 
 
 def make_env(seed: int, headless: bool = True, cameras=DEFAULT_CAMERAS, arm: str = "right", depth: bool = True,
-             sim_device: str = "cpu", variant: str = "standard") -> Env:
+             sim_device: str = "cpu", variant: str = "standard", decimation: int = 5,
+             render_interval: int | None = None) -> Env:
     """cameras: names from KNOWN_CAMERAS (real robot cameras); () for no rendering.
     sim_device: 'cpu' (PhysX on CPU, default, canon §48) or 'cuda' (GPU PhysX, the v1 setting).
     variant: 'standard' (today's scene, unchanged), 'random' (5 axes from the TEST pool, evaluation only) or 'dr'
-    (5 axes from the disjoint TRAIN pool, training-time domain randomization); randomize.py, canon §34/§52."""
-    return Env(seed, headless=headless, cameras=cameras, arm=arm, depth=depth, sim_device=sim_device, variant=variant)
+    (5 axes from the disjoint TRAIN pool, training-time domain randomization); randomize.py, canon §34/§52.
+    decimation: physics substeps (10 ms) per env step, 5 = the 20 Hz pool/label setting; the closed-loop runtime (R5,
+    D23 §3) uses 1 (100 Hz). render_interval: physics substeps per render (default = decimation)."""
+    return Env(seed, headless=headless, cameras=cameras, arm=arm, depth=depth, sim_device=sim_device, variant=variant,
+               decimation=decimation, render_interval=render_interval)

@@ -298,7 +298,7 @@ class OraclePlanner:
         q_des = self._ik(self.cmd_pos, self.cmd_quat)
         return np.concatenate([q_des, [self.cmd_w]]).astype(np.float32)
 
-    def _ik(self, pos_w, quat_w):
+    def _ik(self, pos_w, quat_w, max_dq: float = MAX_DQ_RAD):
         torch, env = self.torch, self.env
         r = env.robot
         dev = env.env.device
@@ -313,7 +313,7 @@ class OraclePlanner:
         self.ik.set_command(cmd)
         q = r.data.joint_pos[:, env.arm_ids]
         q_des = self.ik.compute(tcp_p, ee_q, jac, q)
-        dq = (q_des - q).clamp(-MAX_DQ_RAD, MAX_DQ_RAD)  # no jumps: DLS near singular poses can ask for big steps
+        dq = (q_des - q).clamp(-max_dq, max_dq)  # no jumps: DLS near singular poses can ask for big steps
         return (q + dq + self._gravity_offset())[0].cpu().numpy()
 
     def _gravity_offset(self):

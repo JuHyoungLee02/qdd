@@ -109,3 +109,24 @@ def test_image_sent_and_http_error_recorded():
     tr2, _ = _server(vocab, {"": {1: -1.0, 2: -2.0}}, status=500)
     r = _run(JevLClient("http://x", "m", transport=tr2), {"model": "m", "state": "s", "questions": {"q": _q(vocab)}})
     assert r.http_status == 500 and r.error == "http_500" and r.answers == {}
+
+
+def test_acall_mm_layout_H_matches_legacy_body_and_HW_labels_images():
+    vocab = {"px": [1, 2], "py": [1, 3], "n": [4]}
+    table = {"": {1: math.log(0.8), 4: math.log(0.2)}, "p": {2: math.log(0.3), 3: math.log(0.1)}}
+    req = {"model": "m", "state": "s", "questions": {"q": _q(vocab)}}
+    tr, seen = _server(vocab, table)
+    c = JevLClient("http://x", "m", transport=tr, image_mime="image/jpeg")
+    r = asyncio.run(c.acall_mm(req, {}, [("head camera:", b"H")], mode="base", layout="H"))
+    legacy = c._body(req, "q", req["questions"]["q"], "", {1, 4}, b"H")
+    assert seen[0]["messages"] == legacy["messages"]  # layout H == the stage-A training prompt
+    assert r.answers["q"]["choice"] == "py" or r.answers["q"]["choice"] == "px"
+    tr2, seen2 = _server(vocab, table)
+    c2 = JevLClient("http://x", "m", transport=tr2, image_mime="image/jpeg")
+    r2 = asyncio.run(c2.acall_mm(req, {}, [("head camera:", b"H"), ("right wrist camera (active arm):", b"W")],
+                                 mode="lead", layout="HW"))
+    content = seen2[0]["messages"][1]["content"]
+    assert [p["type"] for p in content] == ["text", "image_url", "text", "image_url", "text"]
+    assert content[0]["text"] == "head camera:" and content[2]["text"] == "right wrist camera (active arm):"
+    assert r2.meta["mode"] == "lead" and r2.meta["layout"] == "HW" and len(seen2) == 2
+    assert abs(r2.answers["q"]["probabilities"]["n"] - 0.2) < 1e-9

@@ -116,12 +116,46 @@ class JevLClient:
                 "logprobs": True, "logprob_token_ids": sorted(kids), "return_tokens_as_token_ids": True,
                 "continue_final_message": cont, "add_generation_prompt": not cont}
 
+    def _body_mm(self, req, qid, q, prefix_text, kids, images, layout):
+        """Multi-image DecCall (canon §59): layout H = the stage-A training prompt ([image, text], = _body);
+        layout HW = system -> "head camera:" + head -> "<arm> wrist camera (active arm):" + wrist -> state+question."""
+        if layout == "H":
+            return self._body(req, qid, q, prefix_text, kids, images[0][1] if images else None)
+        if layout != "HW":
+            raise ValueError(f"layout {layout!r}")
+        user = []
+        for label, data in images:
+            user.append({"type": "text", "text": label})
+            user.append({"type": "image_url",
+                         "image_url": {"url": f"data:{self.mime};base64," + base64.b64encode(data).decode()}})
+        user.append({"type": "text", "text": question_text(req["state"], qid, q)})
+        msgs = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": user}]
+        cont = prefix_text != ""
+        if cont:
+            msgs.append({"role": "assistant", "content": prefix_text})
+        return {"model": self.model, "messages": msgs, "max_tokens": 1, "temperature": 0.0,
+                "logprobs": True, "logprob_token_ids": sorted(kids), "return_tokens_as_token_ids": True,
+                "continue_final_message": cont, "add_generation_prompt": not cont}
+
     async def acall(self, req, meta, image=None) -> CallRecord:
+        return await self._acall(req, meta, lambda qid, q, ptxt, kids: self._body(req, qid, q, ptxt, kids, image),
+                                 "base")
+
+    async def acall_mm(self, req, meta, images, mode="lead", layout="HW") -> CallRecord:
+        """images: [(label, encoded bytes)]; mode base = all trie sequences in parallel, lead = the first sequence
+        alone (fills the prefix / image cache), then the rest in parallel (canon §59, tools/jevl_mmbench.py)."""
+        if mode not in ("base", "lead"):
+            raise ValueError(f"mode {mode!r}")
+        meta = {**meta, "mode": mode, "layout": layout}
+        return await self._acall(req, meta, lambda qid, q, ptxt, kids: self._body_mm(req, qid, q, ptxt, kids,
+                                                                                     images, layout), mode)
+
+    async def _acall(self, req, meta, build, mode) -> CallRecord:
         r = CallRecord(call_id=uuid.uuid4().hex, raw_request=req, meta=dict(meta),
                        experiment=meta.get("experiment", ""), condition=meta.get("condition", ""),
                        seed=meta.get("seed"))
         plans = await self.plan(req)
-        jobs = [(qid, pre, self._body(req, qid, req["questions"][qid], ptxt[pre], trie[pre], image))
+        jobs = [(qid, pre, build(qid, req["questions"][qid], ptxt[pre], trie[pre]))
                 for qid, (tok, trie, ptxt) in plans.items() for pre in trie]
         first = []
 
@@ -133,7 +167,11 @@ class JevLClient:
 
         r.t_send = time.monotonic()
         try:
-            resps = await asyncio.gather(*(one(b) for _, _, b in jobs))
+            if mode == "lead" and len(jobs) > 1:
+                head = await one(jobs[0][2])
+                resps = [head] + list(await asyncio.gather(*(one(b) for _, _, b in jobs[1:])))
+            else:
+                resps = await asyncio.gather(*(one(b) for _, _, b in jobs))
         except httpx.TimeoutException:
             r.t_done = time.monotonic()
             r.t_first_byte = first[0] if first else r.t_done
