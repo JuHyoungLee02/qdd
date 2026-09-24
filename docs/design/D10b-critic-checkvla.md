@@ -1,6 +1,6 @@
 # D10b 원문 정독: Critic in the Loop(2603.05185) · CheckVLA(2607.26789)
 
-작성: 2026-09-24 00:55 UTC. 정독 에이전트 보고를 메인 세션이 저장(수치·설정 줄이지 않음). 메인 세션 원문 재확인: Critic in the Loop Algorithm 1 "Max Stagnation N_stag = 180", "Reset Robot State; m ← 'stagnation timeout'", Brain 호출 "{System 2 Sync}" / CheckVLA PDF Table S6 "Wait for next chunk boundary 7.4 4.8 – 34.0 34.0 34.0 34.0 34.0 … Unconstrained generation … 23.4", §Table 3 문장 "Validation selects the periodic interval, yielding 10.1 calls per episode versus 10.2 for CheckVLA."
+작성: 2026-09-24 00:44 UTC(처음 00:55로 잘못 적음). 정독 에이전트 보고를 메인 세션이 저장(수치·설정 줄이지 않음). 메인 세션 원문 재확인: Critic in the Loop Algorithm 1 "Max Stagnation N_stag = 180", "Reset Robot State; m ← 'stagnation timeout'", Brain 호출 "{System 2 Sync}" / CheckVLA PDF Table S6 "Wait for next chunk boundary 7.4 4.8 – 34.0 34.0 34.0 34.0 34.0 … Unconstrained generation … 23.4", §Table 3 문장 "Validation selects the periodic interval, yielding 10.1 calls per episode versus 10.2 for CheckVLA."
 규칙: WebSearch·GitHub API 없음, 요청 간격 2초 이상.
 읽은 원문: Critic in the Loop arXiv abs + HTML v1 + PDF 16쪽(부록 없음, 코드·프로젝트 페이지 없음, 2026-03-05, 중국과학원 자동화연구소 + UCAS, 교신 Wanting Li·Shanlin Zhong, 학회 표기 없음, PDF는 LNCS 형식) / CheckVLA arXiv abs + HTML v1 + PDF 27쪽(부록 A~S, HTML에서 빠진 Table S20과 "<"로 잘린 문장은 PDF로 보충, 2026-07-29, 칭화·SJTU·PKU·NTU·Xspark AI, 교신 Wenbo Ding, 코드 없음, 학회 표기 없음).
 
