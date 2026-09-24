@@ -247,6 +247,24 @@ Harness VLA 코드를 보면 스킬의 성공 여부 한 비트는 틀릴 수 �
 \paragraph{생성 스킬.}
 CaP-X의 생성 스킬 9개는 대부분 좌표 계산 함수이고, 조건이나 자동 검증이 없다. 그래서 생성 스킬에는 같은 추출 과정에 계약(\texttt{entry}, \texttt{exit}, \texttt{effect}), typed hole 검사, 실행 기반 검증(재생과 새 seed에서의 비열화 확인)을 붙인다. typed hole 검사는 결정 자리를 \texttt{jev\_choice(dp\_id, Enum)}로만 허용하고, 생성 직후 타입, id, 철저성(\texttt{NONE\_ESCALATE} 포함), 술어, \texttt{effect}를 검사하는 우리 접목안이다. 오류 되먹임은 T0에서만 1--2회 한다. 사람이 만든 높은 단계 API일수록 성공률이 오르므로, 무엇 위에서 스킬을 생성하는지를 실험 축으로 둔다.
 
+\subsection{학습 실행기 (M6·M5)}
+\label{sec:executor}
+스킬 단계(phase)의 실행은 작은 학습 실행기 하나가 맡는다. 모든 스킬의 모든 단계를 한 실행기가 실행하며, 스크립트 스킬은 학습용 정답 궤적(GT)을 만드는 생성기이자 백업 실행기로 남는다. Astra의 계획과 Jev의 선택으로 이루어진 결정 층은 학습하지 않고 실행기 바깥에 둔다. 단계 전이는 계속 코드 술어 사건이 정하며, 실행기는 전이를 정하지 않는다. 스킬 계약과 진단값(최고 들어 올린 높이, 최소 그리퍼 간격 등)도 센서 측정으로 코드가 계산한다.
+
+\paragraph{근거.}
+물체 crop과 스킬 문장을 조건으로 받는 DiT 행동 익스퍼트에서 스킬 조건을 빼면 Hard 과제에서 성능이 8.8\% 떨어졌다~\cite{hivla2026}. 스크립트 스킬을 조합해 만든 성공 궤적만으로 학습한 모델은 공식 $\pi_0$와 맞먹었다(``18 skills, 70 tasks'', ``matches the official $\pi_0$ across 49 simulation tasks'')~\cite{interndataa1_2025}. 반대로 깨끗한 시연만으로 학습한 정책은 무작위화 장면에서 크게 떨어졌다($\pi_0$ 46.4 $\rightarrow$ 16.3, ``data without domain randomization does not help'')~\cite{robotwin2_2025}. 교사 궤적만 모방한 정책은 ``fails to correct its own mistakes''였고, 학생 롤아웃을 섞으면 나아졌다~\cite{viral2025}.
+
+\paragraph{입력과 출력.}
+입력은 스킬·단계 id, 확정된 Jev 보기 키(\texttt{option\_key}), 코드가 계산한 목표 자세, 공유 인식 앞단(M1)이 만든 대상·관련 물체의 crop과 마스크(손목·머리 카메라), 고유수용 상태, 짧은 행동 이력이다. 전체 장면 원본 이미지는 넣지 않는다(가정). 출력은 0.5\,s 분량의 행동 청크(약 10\,Hz로 생성해 100\,Hz로 보간, 가정)와 보조 머리 셋, 즉 단계 진행도, 단계 끝 술어 예측, flow 샘플 분산이다. 보조 머리는 M7의 소프트 채널로만 들어가며, 하드 채널과 FAIL 판정은 코드만 낸다. 술어 등록부는 바뀌지 않으므로 Jev 입력과 M7의 T1 판정은 그대로 코드가 계산한다. 규모는 동결한 소형 시각 인코더(Knowledge Insulating~\cite{kinsulate2025} 방향)와 약 50--100M 규모의 flow DiT로, 청크당 30\,ms 이하를 목표로 한다(가정). 참고로 $\pi_{0.5}$의 행동 익스퍼트는 300M~\cite{pi05_2025}, SmolVLA는 전체 0.45B이다~\cite{shukor2025smolvla}.
+
+\paragraph{다른 모듈과의 관계.}
+확정된 행동 청크가 M4 (b)의 예상 궤적 $\mathrm{ref}(t)$가 된다. \texttt{expected\_after}는 실행기와 무관한 코드 목표 술어로 두므로, 스크립트 실행기와 학습 실행기 조건에서 같다. M5의 L2 블렌딩은 RTC 인페인팅으로 바꾼다. RTC는 ``applicable to any diffusion- or flow-based VLA out of the box with no re-training''이며, 실행이 보장된 행동을 고정하고 나머지를 인페인팅한다~\cite{black2025rtc}. L1 시간 정렬과 L3 저크 제한은 그대로 둔다. flow 샘플 분산이 보정 문턱을 넘거나 M4 (b)가 DEVIATE를 2회 연속 내면(가정) 그 단계를 스크립트 스킬로 넘긴다. 이 폴백은 청크 경계에서 관성화로 이어 붙이며, FAIL이 아니므로 Astra 호출 규칙을 바꾸지 않는다. 폴백 비율은 모든 표에 기록한다.
+
+\paragraph{학습 데이터.}
+스킬·단계·보기마다 (1) standard 장면에서 스크립트 스킬을 실행해 성공 에피소드만 남기고, (2) 물체 자세, 시작 자세, 실행 중 밀기의 섭동을 주입하며, (3) 실행기 롤아웃 상태에서 스크립트 스킬이 라벨을 주는 DAgger(혼합 비율 0.5에서 시작, VIRAL의 값, 가정)를 쓰고, (4) 복구 구간은 섞어서만 쓴다. random 장면은 시험 전용이므로 학습 데이터는 standard 장면에서만 만든다.
+
+\paragraph{한계.}
+증류한 정책이 원래의 스크립트 스킬을 넘었다는 강한 근거는 찾지 못했다. 따라서 학습 실행기의 이득(세밀한 보정, 연속성, 지연 흡수)은 가설이며 E-AE 실험으로 확인한다. 또한 학습된 저수준 정책 위에 zero-shot GPT-4를 상위로 두면 ``attains the worst performance''였고(새 집 환경)~\cite{pi05_2025}, Hi Robot(기간 밖, 기초 문헌)은 GPT-4o보다 지시 정확도가 40\% 이상 높았다~\cite{hirobot2025}. 보기 목록과 코드 목표로 이루어진 우리의 typed 인터페이스가 이 차이를 줄이는지는 실험으로 확인한다.
 \subsection{진행 판별 (M7)}
 프레임마다 Astra의 계획대로 진행되는지 판별한다. ``계획대로''의 정의는 VLA 문헌을 많이 참고했다. $\pi^*_{0.6}$와 $\pi_{0.7}$의 진행 정의는 아래 OnPlan 정의에 흡수하되, $\pi$ 계열이 실행 중 벗어남을 판정한다고는 쓰지 않는다(학습 신호이기 때문이다). 단계 $k$에서 ``계획대로''를
 \begin{equation}

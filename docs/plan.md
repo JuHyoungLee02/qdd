@@ -1,5 +1,6 @@
-# Harvest 연구 계획 (v6.4, 2026-09-24 05:16 UTC — D18 신뢰도·재계획 조사 반영(정본 §30·§31, user-log 32 Claude 결정): A5′·A4′·J5, SUMMARY v3.6)
+# Harvest 연구 계획 (v6.5, 2026-09-24 06:38 UTC — 학습 실행기 B 채택(정본 §32·§33, user-log 33·34 사용자 결정, `docs/design/D19-action-expert.md`), SUMMARY v3.7)
 
+> 개정 2026-09-24 06:38 UTC (정본 §32·§33, D19 반영, `D19-action-expert.md`, user-log 33·34 — 사용자 결정 B, 세부는 Claude 설계): §18 신설 — 학습 실행기 B(phase 실행, 결정 층은 학습 안 함), 스크립트 스킬 = GT 생성기 + 폴백, 모듈별 변경(M1·M3·M4·M5·M6·M7), 평가 공정성(주 표 S [잠정] + B 병기), E-AE-0~5, [결정 필요] 9(D9) 해소 = 허용, 새 항목 D35·D36.
 > 개정 2026-09-24 (정본 §31, D18 반영): §17 신설 — A5′(Astra 1회 호출 → 코드 검사 → 순차 수리 재호출, 다수결 삭제), A4′(재계획 적응형 `patch | replace`), J5(Jev conformal 게이트, E1 뒤 후보), M7 소프트 채널 문턱의 성공 에피소드 보정. 셋 다 user-log 32로 맡긴 Claude 결정. 머리 줄 v6.3 → v6.4.
 > 개정 2026-09-24 (정본 §28, D17 반영): §16 신설 — API 일관성 규약 요약(Astra A1~A6, Jev J1~J4, 측정 추가: E0 Astra 같은 입력 반복, E0.5 (ii) 층 × 시간 블록, 매일 카나리, E1 판본 결합, Astra 비교 반복 사전 등록). 정본 §29(user-log 31)로 A5(T0 K = 3 병렬 다수결)는 **보류(대체안 조사 D18 중)**, A4(재계획 patch 기본)는 **잠정 유지, D18 조사 결과 전 미확정**. 둘 다 Claude 설계 선택이고 사용자 원칙은 바뀌지 않는다.
 > 개정 2026-09-24 03:57 UTC (D15 오류 점검 반영, 판본 유지): §1 effort 줄 CLAUDE.md 귀속 폐기 표시, §2.4 주의(v4) 해소 표시, §3 M1 변환 표기(기본 후보 A), §14 [결정 필요] 20 → §15 해소 표시.
@@ -327,3 +328,12 @@
 - **M7**: 소프트 채널 문턱을 성공 에피소드로 conformal 보정(FIPER 2510.09459, NeurIPS 2025 HIGH: 성공 롤아웃만으로 오경보 확률 ≤ δ) — 기존 CD11과 같은 방향.
 - **측정 추가**(E 문서 §3.5·§3.7·§4.14): E1 conformal 집합 지표(α별 커버리지·집합 크기·원소 하나 비율)와 J5 켬 판정, E-M2-4 3자 비교, 모든 Astra 호출의 수리 횟수·검사기별 실패 목록 기록.
 - 새 사용자 [결정 필요]는 없다. 사용자 원칙(실패할 때마다 Astra 개입, T0 뒤 웬만하면 안 멈춤, effort 기본 low + low·high 비교, 겹침 3회/초)은 그대로다.
+
+## 18. 학습 실행기 B 채택 (v6.5, 2026-09-24 06:38 UTC, 정본 §32·§33, `docs/design/D19-action-expert.md`, 상세는 `docs/design/SUMMARY.md` v3.7 §3.15)
+- **출처**: user-log 33(06:02 UTC 경) 학습 모듈(action expert) 제안과 보충 "스킬들의 모든 실행이 거기들어가 있어야한단뜻" → user-log 34(06:12 UTC 경) "B로"(사용자 결정).
+- **B의 뜻**: 모든 스킬 실행을 하나의 학습 실행기가 맡고, 인접 모듈 일부(인식 일부·스무딩·예상 상태 출력)를 흡수하는 소규모 end-to-end. **결정 층(Astra 계획, Jev 선택)은 학습하지 않고 바깥에 둔다.** 스크립트 스킬은 GT 생성기이자 백업 실행기가 된다(정본 §32).
+- **근거(D19, 등급 그대로)**: HiVLA(2604.14125, MED) 스킬 조건을 빼면 Hard 과제에서 8.8% 하락 / InternData-A1(2511.16651, MED) "18 skills, 70 tasks", "matches the official π0 across 49 simulation tasks" / RoboTwin 2.0(2506.18088, ICML 2026) π0 46.4 → 16.3, "data without domain randomization does not help" / VIRAL(2511.15200, MED) "fails to correct its own mistakes".
+- **모듈별**: M6 phase 실행 = B, FSM 전이·계약·진단은 코드(M6 §4.1.4) / M5 L2 → RTC 인페인팅(B일 때), L1·L3 유지(E-AE-5) / M4 `ref(t)` = 확정된 행동 청크, `expected_after` 불변 / M7 실행기 머리는 소프트 채널만, FAIL은 코드만, 폴백 ≠ FAIL / M1 공유 앞단의 crop + 마스크, 등록부 불변 / M3 `option_key`가 실행기 조건(E-AE-1 보기 준수).
+- **평가 공정성**(EVAL §3.2-9·10): 결정 층 비교 표 안에서 실행기는 모든 조건에 같게. 주 표 = 스크립트 실행기 S [잠정, Claude 결정], B 표 병기, 실행기 단독 낙폭(E-AE-3), 결정 층 × 실행기 상호작용(E-AE-4). 학습 데이터는 standard에서만, 도메인 무작위화를 쓰면 모든 학습 조건에 같은 데이터.
+- **실험**: E-AE-0~5(`docs/design/E-first-experiments.md` §4.15, 예산은 모두 [가정]).
+- **[결정 필요] 9(= SUMMARY D9) 해소 = 허용.** 새 사용자 [결정 필요]: D35 도메인 무작위화 허용 여부, D36 주 표 실행기 S [잠정] 대 B(SUMMARY §5.1). 사용자 원칙(실패할 때마다 Astra 개입, T0 뒤 웬만하면 안 멈춤, effort 기본 low + low·high 비교, 겹침 3회/초)은 그대로다.
