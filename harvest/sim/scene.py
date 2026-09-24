@@ -5,16 +5,24 @@ locally. Everything that touches Isaac is imported lazily inside functions (pod 
 
 Frames: world x = robot forward, y = robot left, z = up; robot root is fixed at the world origin.
 The "table frame" (harvest.predicates) is world x, y and z - TABLE_TOP_Z.
-Cameras: only the AI Worker model's default cameras as defined by cyclo_lab (user instruction 2026-09-24:
-no ZED_M twin, no extra stereo pair). See docs/stage3/results/scene_bringup.md for the camera table.
+v2 (2026-09-24, user instruction "우손목캠 있음 ... 로봇 설정 그대로 가져와서 복사해서 써보자"): robot and cameras are
+copied verbatim from kairobahq/humanoid-challenge-env (third_party/humanoid_challenge_env, see NOTICE.md):
+robot = taskC_ffw_sg2.FFW_SG2_MOBILE_CFG with ONE deviation (base fixed, canon §38), cameras =
+FFW_SG2_REAL_cameras.camera_cfg (head ZED Mini left 672x376, wrists D405 424x240). The v1 scene (cyclo_lab
+FFW_SG2_CFG + cam_head, slave-gripper gain change) is described in docs/stage3/results/scene_bringup.md.
 """
 from __future__ import annotations
 
+import importlib.util
 import math
+from pathlib import Path
 
 import numpy as np
 
-CYCLO_LAB_SRC = "/data/juhyoung_qdd/cyclo_lab/source/cyclo_lab"  # official ROBOTIS-GIT/cyclo_lab clone (f4c0470)
+# official ROBOTIS-GIT/cyclo_lab at 42dcd8256651 (the commit FFW_SG2_REAL_cameras.py pins as "CL"); a git worktree of
+# our f4c0470 clone. FFW_SG2.py / FFW_SG2.usd blobs are identical at both commits (checked: 004ee05 / 08a5bd5).
+CYCLO_LAB_SRC = "/data/harvest/cyclo_lab_42dcd82/source/cyclo_lab"
+CHALLENGE_SCRIPTS = Path(__file__).resolve().parents[2] / "third_party" / "humanoid_challenge_env" / "scripts"
 
 SCENE_SPEC = {
     "instruction": "Put the red mug on the blue tray.",
@@ -68,10 +76,16 @@ PAD_INSET_M = 0.0077  # finger link2 origin -> pad inner face (USD bbox), per fi
 EE_BODY = {"right": "arm_r_link7", "left": "arm_l_link7"}
 FINGER_BODIES = {"right": ("gripper_r_rh_p12_rn_l1", "gripper_r_rh_p12_rn_l2", "gripper_r_rh_p12_rn_r1",
                            "gripper_r_rh_p12_rn_r2")}
-# initial robot pose: cyclo_lab SG2 pick-place default (set_default_joint_pose), head pitched further down
-# (head_joint1 upper limit 0.695) so the table workspace is inside the default head camera.
-INIT_JOINTS = {"arm_l_joint1": 0.75, "arm_l_joint4": -2.30, "arm_r_joint1": 0.75, "arm_r_joint4": -2.30,
-               "head_joint1": 0.69, "lift_joint": -0.0993}
+# initial robot pose. v1: cyclo_lab SG2 pick-place default (set_default_joint_pose: arm_?_joint1 0.75, joint4 -2.30,
+# lift -0.0993) with the head pitched to 0.69 so the table workspace is inside the head camera.
+# v2 (challenge-env robot): the RIGHT arm starts top-down above the workspace instead (INIT_R_ARM). From the cyclo
+# pose the approach IK folded the elbow until the restored arm_r_link6 collider hit arm_r_link1 (134-201 N) and the
+# swinging arm knocked the mug over (P0 seeds 1-4), and a joint-space move from that pose dips the fingertips to the
+# table (-13..+61 mm over x > 0.30 for 4 candidate targets). v1 only worked because link6 had no collider.
+INIT_R_ARM = (-1.0511, -1.0975, 1.2281, -2.3934, 0.4838, 1.2356, 1.80)  # TCP (0.34, -0.25, table + 0.25), yaw pi/2
+# (IK gave joint7 = 1.8201, its upper limit 1.820; 1.80 keeps the default inside the limits)
+INIT_JOINTS = {"arm_l_joint1": 0.75, "arm_l_joint4": -2.30, "head_joint1": 0.69, "lift_joint": -0.0993,
+               **{f"arm_r_joint{i + 1}": v for i, v in enumerate(INIT_R_ARM)}}
 
 
 def joint_to_width(q: float) -> float:
@@ -110,12 +124,55 @@ def yaw_quat(yaw: float) -> tuple:
     return (math.cos(yaw / 2), 0.0, 0.0, math.sin(yaw / 2))
 
 
+_MODS = {}
+
+
+def _load_challenge(name: str, rel: str):
+    """Import a copied humanoid-challenge-env file by path (as the challenge scripts do with _by_path)."""
+    if name not in _MODS:
+        spec = importlib.util.spec_from_file_location(name, CHALLENGE_SCRIPTS / rel)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _MODS[name] = mod
+    return _MODS[name]
+
+
+def load_realcam():
+    """FFW_SG2_REAL_cameras (its data part imports without Isaac)."""
+    return _load_challenge("FFW_SG2_REAL_cameras", "FFW_SG2_REAL_cameras.py")
+
+
+KNOWN_CAMERAS = ("cam_head", "cam_wrist_left", "cam_wrist_right")  # = FFW_SG2_REAL_cameras.CAMERA_NAMES
+DEFAULT_CAMERAS = KNOWN_CAMERAS  # the real robot's three cameras are present in the scene
+RECORD_CAMERAS = ("cam_head", "cam_wrist_right")  # what we record (one arm = right)
+
+
+def camera_table():
+    """One row per camera from the copied spec: resolution, fx, FOV, parent link, mount [t, q], clipping."""
+    rc = load_realcam()
+    rows = []
+    for n in rc.CAMERA_NAMES:
+        s = rc.CAMERA_SPECS[n]
+        hf, vf = rc.fov_deg(n)
+        rows.append(dict(name=n, model=s["model"], width=s["width"], height=s["height"], fx=s["fx"],
+                         hfov_deg=hf, vfov_deg=vf, focal_length=rc.focal_length(n), parent=s["parent"],
+                         prim=s["prim"], mount=rc.mount_transform(n), clip_m=tuple(s["clipping_range"])))
+    return rows
+
+
 # ----------------------------------------------------------------------------------------------------------
 # Isaac part (pod only)
 # ----------------------------------------------------------------------------------------------------------
 _APP = None
-DEFAULT_CAMERAS = ("cam_head",)
-KNOWN_CAMERAS = ("cam_head", "right_wrist_cam")
+
+
+def _sim_device(name: str) -> str:
+    """Physics device for SimulationCfg.device: 'cpu' (default, canon §48) or 'cuda' (-> cuda:0; GPU 0 only)."""
+    if name == "cpu":
+        return "cpu"
+    if name in ("cuda", "cuda:0"):
+        return "cuda:0"
+    raise ValueError(f"sim_device {name!r}: 'cpu' or 'cuda'")
 
 
 def _ensure_app(headless: bool, cameras: bool):
@@ -130,31 +187,24 @@ def _ensure_app(headless: bool, cameras: bool):
 
 
 def _default_camera_cfgs(names, depth: bool):
-    """cyclo_lab's own camera definitions, unchanged except the optional renderer depth annotator.
-
-    cam_head: FFW-SG2 pick-place task (config/ffw_sg2/joint_pos_env_cfg.py), the only camera cyclo_lab defines
-    for SG2. right_wrist_cam: FFW-BG2 pick-place task (config/ffw_bg2/joint_pos_env_cfg.py) on the D405 mount
-    frame camera_r_link, which the SG2 USD also has; same offset/intrinsics, only the robot prefix differs.
-    """
+    """FFW_SG2_REAL_cameras.camera_cfg as copied; the only override is the renderer depth annotator."""
+    rc = load_realcam()
     out = {}
     for n in names:
         if n not in KNOWN_CAMERAS:
-            raise ValueError(f"camera {n!r}: only the model's default cameras {KNOWN_CAMERAS}")
-        if n == "cam_head":
-            from cyclo_lab.manager_based.manipulation.pick_place.config.ffw_sg2.joint_pos_env_cfg import (
-                FFWSG2PickPlaceEnvCfg,
-            )
-            c = FFWSG2PickPlaceEnvCfg().scene.cam_head
-        else:
-            from cyclo_lab.manager_based.manipulation.pick_place.config.ffw_bg2.joint_pos_env_cfg import (
-                PickPlaceFFWBG2EnvCfg,
-            )
-            c = PickPlaceFFWBG2EnvCfg().scene.right_wrist_cam
-            c = c.replace(prim_path=c.prim_path.replace("ffw_bg2_follower/right_arm/", "ffw_sg2_follower/"))
-        if depth and "distance_to_image_plane" not in c.data_types:
-            c = c.replace(data_types=list(c.data_types) + ["distance_to_image_plane"])
-        out[n] = c
+            raise ValueError(f"camera {n!r}: only the real robot's cameras {KNOWN_CAMERAS}")
+        out[n] = rc.camera_cfg(n, data_types=["rgb", "distance_to_image_plane"]) if depth else rc.camera_cfg(n)
     return out
+
+
+def _robot_cfg():
+    """taskC_ffw_sg2.FFW_SG2_MOBILE_CFG verbatim except fix_root_link (False -> True): canon §38 fixes the base.
+    Everything else (USD, gains incl. grippers, gravity on, spawn function: jaw friction 2.0/1.8, collider restore
+    and filters, head pitch limit 45 deg, swerve actuators) is the copied file's."""
+    ffw = _load_challenge("taskC_ffw_sg2", "taskC/taskC_ffw_sg2.py")
+    robot = ffw.FFW_SG2_MOBILE_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+    ap = robot.spawn.articulation_props.replace(fix_root_link=True)  # re-enables the USD world FixedJoint
+    return robot.replace(spawn=robot.spawn.replace(articulation_props=ap))
 
 
 _LAYOUT = {"layout": {}}  # current seed's layout, read by the reset event (module global: cfgs get deep-copied)
@@ -185,7 +235,7 @@ def _place_layout_event(env, env_ids):
         o.write_root_velocity_to_sim(torch.zeros((len(env_ids), 6), device=env.device), env_ids=env_ids)
 
 
-def _build_cfg(seed: int, cameras, arm: str, depth: bool):
+def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu"):
     import isaaclab.envs.mdp as mdp
     import isaaclab.sim as sim_utils
     from isaaclab.assets import AssetBaseCfg, RigidObjectCfg
@@ -198,8 +248,6 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool):
     from isaaclab.scene import InteractiveSceneCfg
     from isaaclab.sensors import ContactSensorCfg
     from isaaclab.utils import configclass
-
-    from cyclo_lab.assets.robots.FFW_SG2 import FFW_SG2_CFG
 
     if arm != "right":
         raise NotImplementedError("single right arm only (T11)")
@@ -233,18 +281,8 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool):
         return ContactSensorCfg(prim_path="{ENV_REGEX_NS}/" + k.upper(), update_period=0.0, history_length=0,
                                 filter_prim_paths_expr=finger_paths + others)
 
-    robot = FFW_SG2_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+    robot = _robot_cfg()
     robot = robot.replace(init_state=robot.init_state.replace(joint_pos={**robot.init_state.joint_pos, **INIT_JOINTS}))
-    # RH-P12-RN: cyclo_lab drives only joint1 stiffly (100) and the other three finger joints with stiffness 2,
-    # so under a grasp load the fingers go asymmetric (measured seed 2: joints [0.88, 1.10, 0.16, 0.40], the mug
-    # was shoved 28 mm and the arm with it). We command all four joints to the same target (as cyclo_lab's own
-    # BG2 BinaryJointPositionAction does: close_command_expr "gripper_r_joint.*") and give the slave joints the
-    # master's gains. Real gains get re-fit from step responses later (canon §37 [가정]).
-    acts = dict(robot.actuators)
-    acts["gripper_slave"] = acts["gripper_slave"].replace(stiffness=acts["gripper_master"].stiffness,
-                                                          damping=acts["gripper_master"].damping,
-                                                          velocity_limit_sim=acts["gripper_master"].velocity_limit_sim)
-    robot = robot.replace(actuators=acts)
 
     scene_attrs = {
         "robot": robot,
@@ -323,6 +361,7 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool):
             self.viewer.lookat = (0.4, -0.2, 0.8)
 
     cfg = EnvCfg()
+    cfg.sim.device = _sim_device(sim_device)  # physics device; rendering stays on the GPU (AppLauncher cuda:0)
     cfg.scene = scene_cfg
     return cfg, layout
 
@@ -353,7 +392,7 @@ def _measure_finger_offsets(arm: str):
 class Env:
     """Thin wrapper over an Isaac Lab ManagerBasedRLEnv. step() takes 7 arm joint targets + gripper width (m)."""
 
-    def __init__(self, seed: int, headless=True, cameras=DEFAULT_CAMERAS, arm="right", depth=True):
+    def __init__(self, seed: int, headless=True, cameras=DEFAULT_CAMERAS, arm="right", depth=True, sim_device="cpu"):
         cameras = tuple(cameras or ())
         _ensure_app(headless, bool(cameras))
         import torch
@@ -361,11 +400,14 @@ class Env:
 
         self.torch = torch
         self.seed, self.arm, self.cameras = int(seed), arm, cameras
-        cfg, self.layout = _build_cfg(seed, cameras, arm, depth)
+        cfg, self.layout = _build_cfg(seed, cameras, arm, depth, sim_device)
+        self.sim_device = cfg.sim.device
         _LAYOUT["layout"] = self.layout
         self.env = ManagerBasedRLEnv(cfg=cfg)
         self.scene = self.env.scene
         self.robot = self.scene["robot"]
+        if not self.robot.is_fixed_base:  # canon §38 (the one deviation from the copied FFW_SG2_MOBILE_CFG)
+            raise RuntimeError("robot base is not fixed")
         self.objects = {k: self.scene[k] for k in ("o3", "o5", "o8", "o9", "o10")}
         self.contact = {k: self.scene[f"contact_{k}"] for k in self.objects}
         self.present = [k for k in ("o3", "o5", "o8", "o9") if k in self.layout]  # o10 joins after P2 fires
@@ -460,6 +502,8 @@ class Env:
         self.env.close()
 
 
-def make_env(seed: int, headless: bool = True, cameras=DEFAULT_CAMERAS, arm: str = "right", depth: bool = True) -> Env:
-    """cameras: names of the AI Worker model's default cameras only (KNOWN_CAMERAS); () for no rendering."""
-    return Env(seed, headless=headless, cameras=cameras, arm=arm, depth=depth)
+def make_env(seed: int, headless: bool = True, cameras=DEFAULT_CAMERAS, arm: str = "right", depth: bool = True,
+             sim_device: str = "cpu") -> Env:
+    """cameras: names from KNOWN_CAMERAS (real robot cameras); () for no rendering.
+    sim_device: 'cpu' (PhysX on CPU, default, canon §48) or 'cuda' (GPU PhysX, the v1 setting)."""
+    return Env(seed, headless=headless, cameras=cameras, arm=arm, depth=depth, sim_device=sim_device)

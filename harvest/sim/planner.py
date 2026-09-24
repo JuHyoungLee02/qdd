@@ -140,7 +140,9 @@ V_LIFT = 0.08  # slower lift: the top-rim grasp slips when jerked (P0 seed 24, P
 W_MAX = 1.5  # rad/s orientation command rate
 REACH_TOL_M = 0.006  # descend / place
 REACH_TOL_FAST_M = 0.015  # approach / lift / carry / retreat
-GRIP_SQUEEZE_M = 0.012
+GRIP_SQUEEZE_M = 0.014  # v1 0.012. v2 (copied gains: master 100, slaves 2) sweep on DEV 0-29 (CPU physics), P0 / P1
+# successes: 0.004 11/12, 0.012 29/27, 0.014 30/28, 0.016 30/28, 0.024 25/22 -- too little squeeze lets the weak
+# slave finger open (grasp fail, width 80-86 mm), too much makes the mug slip out in carry/place (width ~70 mm)
 MAX_DQ_RAD = 0.04  # per 50 ms env step (0.8 rad/s); seed-2 lift without it threw the TCP 0.3 m upward
 HOLD_DEBOUNCE = 3  # env steps of holding == False before the FSM sees it
 TOP_DOWN_YAW = math.pi / 2  # link7 z up, fingers close along world x. IK study (seed 0 scene, 9 targets
@@ -312,7 +314,16 @@ class OraclePlanner:
         q = r.data.joint_pos[:, env.arm_ids]
         q_des = self.ik.compute(tcp_p, ee_q, jac, q)
         dq = (q_des - q).clamp(-MAX_DQ_RAD, MAX_DQ_RAD)  # no jumps: DLS near singular poses can ask for big steps
-        return (q + dq)[0].cpu().numpy()
+        return (q + dq + self._gravity_offset())[0].cpu().numpy()
+
+    def _gravity_offset(self):
+        """Static gravity sag of the PD arm, added to the joint target (v2 robot: links have gravity, arm stiffness
+        600/600/200). At rest K (q_target - q) = gravity-compensation torque, so q_target = q_wanted + c / K.
+        Without it the TCP sat 21-26 mm below the command and the approach swept the open fingers into the mug
+        (v2 P0 seeds 0-2). Zero when the robot has no gravity (v1)."""
+        r, ids = self.env.robot, self.env.arm_ids
+        c = r.root_physx_view.get_gravity_compensation_forces()[:, ids]  # fixed base: (1, num_dofs)
+        return c / r.data.joint_stiffness[:, ids]
 
     def _record_fail(self, sig, goal, tcp):
         ph = self.phase
