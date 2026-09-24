@@ -394,3 +394,13 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - 시뮬(cyclo_lab 모델): 모델에 정의된 기본 카메라 prim만 쓴다. 오라클 깊이가 필요하면 그 카메라의 렌더러 깊이 출력만 켠다(카메라 prim은 바꾸지 않음). 기본 카메라의 목록·해상도·화각·머리 좌우 쌍 여부는 T11에서 cyclo_lab 설정을 읽어 `docs/stage3/results/scene_bringup.md`에 적는다.
 - 실물: §36·§39대로 기본 구성(머리 ZED Mini, 손목 D405 × 2). 깊이 방식(§37: ZED NEURAL 1순위, Fast-FS 비교)은 기본 카메라 위의 처리라 유지한다. 단, 시뮬 기본 머리캠이 단안이면 시뮬 인식 조건의 깊이는 그 기본 출력에서 얻을 수 있는 것으로 한정하고, 실물과 입력이 달라지는 점을 결과에 표기한다.
 - 영향: 계획 T11 Step 2 취소·대체, E-first §1.4 장면 줄의 `ZED_M` 표기, EVAL D-stereo 보조 트랙은 편집 때 폐기 표시.
+
+## 44. Jev 대체 = 로컬 VLM typed 선택기 (2026-09-24 09:55 UTC, `D24-jev-replacement.md`, user-log 46) [Claude 결정, 사전 시험으로 확정]
+- **사용자 판단**(user-log 46): Jev는 쓸 수 없고, 텍스트 전용 API는 우리 구조에 부족할 수 있다 → 대체한다.
+- **1순위 [Claude 결정, 근거 D24]**: "Jev-L" — H200에서 vLLM(92.6k★, `VLLM_BATCH_INVARIANT=1` 배치 불변 모드·접두 캐시)으로 **Qwen3-VL-8B-Instruct**(2025-10, HF 좋아요 1.1k·다운로드 1,970만, 기술 보고서 2511.21631)를 돌려 typed 선택기로 쓴다. 입력 = M1 텍스트 상태 + 머리캠 1장, 질문 형식은 기존 `JevCall`을 그대로(이름만 `DecCall`). 생성 없이(max_tokens 1) 보기 토큰의 로그 확률을 읽어 **보기 집합 안에서 재정규화** → `p_chosen`/`p_second`. 보기 이름 첫 토큰이 겹치면 보기 문자열 전체 로그 확률.
+- **바뀌지 않는 것**: M4 겹침 호출·확정 규칙((a) 합의 + (b) 예상 대 측정), E1 보정, J5 conformal, M7 단일 FAIL, Astra 위층, 스킬 + 잔차 R 아래층. 새로움 주장(M4·평가)도 그대로(호출 대상만 바뀜).
+- **2순위(하이브리드)**: 3 Hz 결정은 Jev-L, GPT-6 Luna(effort none, `top_logprobs`, 이미지)는 J5 보류 반복 때 Astra 전 한 단계·저빈도 감시·"빠른 선택기만" 기준선. Luna 단독을 3 Hz에 쓰지 않는 근거 = 메인 실측(한국, 연결 재사용 중앙 1.17 s, 최대 2.91 s; `docs/stage3/results/sol_luna_probe.md`) — E0 판정 3 기준 (d) 구간. Claude API는 logprobs "Ignored"/"Always empty"(공식 호환 문서)라 제외.
+- **학습 결정 헤드(C)**는 π0.5 상위 단·Hi Robot·HiVLA와 같은 학습 정책이 되어 사용자 핵심 주장("LLM이 일반화")과 부딪치므로 상한·절제 조건으로만 둔다.
+- **확정 절차(사전 시험, D24 §5)**: (1) 지연·결정성 — Qwen3-VL-8B/4B를 GPU 3에서 vLLM으로, 텍스트만 대 텍스트+머리캠, 동시성 1–8, p50/p95, 같은 입력 반복 flip(배치 불변 켬/끔). (2) 정답률·보정 — 스냅샷 풀(T13) 뒤 약 1,500 스냅샷, 결과 기반 라벨, ECE·AUROC, 순서 flip, Luna 300개 부분 표본. 판정 기준은 실행 전 `docs/stage3/prereg.json`에 새 절로 고정.
+- **[결정 필요] (사용자)**: (a) cyclo_lab SG2 시뮬 모델에는 손목캠이 없다(D24·T11 확인 중). 실물 기본 구성에는 D405 손목캠이 있으므로, 시뮬에 실물과 같은 위치의 손목캠을 둘지(§43 "추가 금지"의 예외) / 시뮬은 머리캠만 쓸지. (b) 실물 추론 위치 — LAN GPU 서버(권장) / Orin 단독 / 클러스터 H200.
+- 영향: 계획(`docs/superpowers/plans/2026-09-24-stage3-experiments.md`)의 E0·E0.5·E1 과제는 Jev-L 기준으로 다시 쓴다(DC0부터, user-log 42 되돌아가기 규칙). T0–T7 도구는 그대로 쓴다(클라이언트만 추가).
