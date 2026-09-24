@@ -324,3 +324,4 @@
 - 교훈: 가장 강한 기준 방법은 원문대로 재현해야 한다. "~식"으로 우리 해석판을 만들면 심사에서 "약한 기준선" 비판을 받는다.
 - 00:35 UTC 정본 §20을 M3·M4·M7·M9·E-first·EVAL에 반영(C2 계열 원문판·C2''·C2-match·C2'-S, Show-Harness 원문판 SH/SH-wall, GPT-as-Policy B6b/B6b-wall, gate 원문 인용). 메인 판단: E0.5 판정 1·2는 C2'' 기준 유지(원문판 C2'는 합의 정보 질문에 답 못 함), 정본 §20의 "M9 L1 resume_ckpt" 오기를 L2로 정정. [사용자] 줄 삭제 0.
 - 00:36 UTC 라운드 D10 시작: 핵심 선행 정독 2갈래 — (1) Harness VLA + CaP-X(M6·M9·M10, 범주 5·6 기준 방법) (2) Critic in the Loop + CheckVLA(M7·M8, E-M8a 기준 방법). 보고는 수치를 줄이지 않고 전문 저장 예정.
+- 00:44 UTC D10b Critic in the Loop·CheckVLA 정독(본문·부록 전문, 보고 전문 저장). 메인 재확인: N_stag = 180·Reset Robot State·System 2 Sync, CheckVLA Table S6 경계 대기 34.0 대 청크 내 수리 23.4~31.4(d_lat = 10), 10.1 대 10.2 호출. **발견된 우리 오류**: M7의 "적시 재현율(CheckVLA 방식, τ = 2 s)"이 원문 정의가 아니었다(원문은 τ_irrev 기반 운영적 창) → 정본 §21에서 병기로 정정. E-M8a에 원문 충실 기준 4개 추가.
