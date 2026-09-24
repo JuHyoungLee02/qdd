@@ -1,5 +1,6 @@
 # EVAL. 평가 설계 (구체화판)
 
+> 개정: 2026-09-24 D7(선점 재검사) 반영 (`D7-preemption-rescan.md`, 00-interfaces §18): §4.1 **문구 규칙 3** — "처음 잰다"류 표현 금지, 새로움은 "같은 인식·같은 실행기 위에서 결정 층만 바꿔 짝지은 낙폭 비교는 없다(2026-09-22 색인 기준)"로만. §1 N11~N13 — **RoboDawn**(2609.22966, RoboTwin 2.0 C2R에서 Astra 무학습 53.2%·1-shot 73.6% 대 π0.5 46.0%, HarnessVLA 58.4%, RoboDojo 35.67 → 47.17%)을 이 주장을 **뒷받침하는 선행**으로(§4.3에도), LIBERO-VPro(2609.24350)·RoboFollow(2609.25636)를 지지 증거(LOW)로. 새 절 §2.5b **RoboTwin 2.0 C2R** 후보 벤치와 재사용 요건, §8 Q9(plan [결정 필요] 3 실험 환경의 선택지), §10 확인 못 한 것 갱신.
 > 개정: 2026-09-23 D6(모의 심사) 반영 (`D6-mock-review.md`, 00-interfaces §17): 주장 문구를 "과제 데이터로 미세조정한 학습 정책(VLA 포함)" + "같은 인식 앞단 위에서"로(§4.1, 사용자 빨간 줄 불변), 새 절 **§4.4** — 2×2(결정 층 {LLM, 규칙, B3c} × 상태 {정답, 인식}, S3 파일럿 규모), **B3c-V**(동결 π0.5 표현 + 헤드), **π0.5 few-shot 적응 곡선**(random 시연 k=5, 20, 2512.02902 대응), **바닥 과제 뺀 7과제 사전 등록 분석**, 조건부 **E-link**(RoboDojo Gen 4과제 random 벽시계, C2' 대 C5 — 한 논문 틀일 때만 필수), 조건부 **E-real 최소판**([결정 필요] 19). 새 항목마다 사전 등록 판정과 비용·시간 [가정]. §3.1 B3c-V·B3b' 추가, §5 S3에 2×2 표시, §8 Q7·Q8.
 > 개정: 2026-09-23 D5 반영 (`D5-consistency.md` 4-2, 00-interfaces §16): effort 표기를 "잠정 기본 high(다른 작업 발언 근거) — 이 프로젝트 적용은 [결정 필요] 5, 00 §16"로 통일(출처는 user-log가 아니라 다른 작업 발언).
 > 개정: 2026-09-23 정본 §14–§15 반영 (`00-interfaces.md` §14·§15): 모듈 실험 중 본 평가 구성에 걸리는 두 조건을 §5 끝에 적음 — E-M8a **정적 규칙 조건**(절제 조건, 근거 논문 없음. 2602.09902는 "실패하면 항상 상향"의 비용 측면 반대 근거로만 기록, 사용자 원칙 불변), E-M10 **역량 보존 사례 삭제 조건**(Smyth·Keane IJCAI 1995).
@@ -30,6 +31,9 @@
 | N8 | **Isaac Sim 5.1 공식 요구사항은 "RT 코어 없는 GPU 미지원"**이다(RoboDojo Installation Issues 문서가 인용). 우리 H200은 RT 코어가 없다. 한편 RoboProbe `setup`은 "A100/A800 호스트에서는 `scripts/a100_env_setup.sh`"를 제공한다(A100도 RT 코어 없음) → 데이터센터 GPU에서 돌리는 우회 경로가 실제로 있다. **첫 단계에서 스모크로 확인해야 할 1순위 위험.** | [원문] | `robodojo-benchmark.com/doc/common-issue/installation/`, `raw.githubusercontent.com/RoboProbe/RoboProbe/main/README.md` |
 | N9 | RoboProbe Lite 주 조건의 정보 경계: **RGB + 고유수용(관절) + 공식 지시문만.** "Depth, camera calibration, ground-truth object poses, layout metadata and reward internals are not available." | [원문] | `RoboProbe/docs/llm_benchmark_protocol.md` "Locked benchmark boundary" |
 | N10 | GPT-as-Policy(Astra xhigh가 π0.5 행동을 검토·수정): RoboDojo 10과제 × 정렬 사례 5개, 하이브리드 Score 62.60 / SR 48%, Astra Direct 26% / 37.81. "공식 모델 비교는 재가중 공개 참고치이지 같은 seed 재실행이 아니다." 코드 공개(시뮬 자산·체크포인트 제외). | [원문] | `raw.githubusercontent.com/anonymous-report-421/GPT-as-Policy/main/README.md` 9행 |
+| N11 | **RoboDawn**(2609.22966, 2026-09-19, "Transferring the Intelligence of VLMs to Robotic Control"): 에이전트형 VLM이 이산 이동·회전·그리퍼 명령으로 폐루프 제어(정지형). **RoboTwin 2.0 C2R**(깨끗한 장면 학습 → 랜덤화 장면 평가)에서 Astra 무학습 **53.2%**, 1-shot **73.6%** 대 π0.5 **46.0%**(HarnessVLA 58.4%). RoboDojo 35.67% → 47.17%. 우리 주장과의 차이: 같은 인식 모듈 위에서 결정 층만 바꾸지 않음(VLM은 원본 이미지), clean → shift 낙폭을 짝지어 재지 않음, 비정지 아님. → **우리 주장을 뒷받침하는 선행으로 필수 인용**(D7 위험 MED~HIGH) | [원문](D7, 메인 세션 원문 확인. 이 문서에서 다시 읽지 않음) | https://arxiv.org/abs/2609.22966 |
+| N12 | **LIBERO-VPro**(2609.24350, 2026-09-21): VLA·WAM 시각 강건성 벤치. 오래된·누락 관측에 약하다고 보고 → 학습 정책의 환경 변화 취약성 쪽 지지 증거 | [원문 요약](D7, LOW, 인용 권장, 수치 미확인) | https://arxiv.org/abs/2609.24350 |
+| N13 | **RoboFollow**(2609.25636, 2026-09-22): VLA가 장면 교란에서 지시 따르기에 실패 → 지지 증거 | [원문 요약](D7, LOW, 수치 미확인) | https://arxiv.org/abs/2609.25636 |
 
 ---
 
@@ -81,6 +85,12 @@
 - [원문] `pip install molmo-spaces==0.2.9`(벤치 고정 판본), **벤치 실행은 MuJoCo만 지원**, 8작업 벤치(MS-Bench v1/v2), `eval_main.py … PiPolicyEvalConfig --benchmark_dir …`. Franka FR3(+Robotiq), RB-Y1 등. Apache 2.0(일부 Objaverse 자산은 비상업). 2026-09-13 "업그레이드 중, 안정판 0.2.9 사용" 공지. 리더보드 `molmospaces.allen.ai/leaderboard`, 정책 모음 `molmospaces_policy_zoo`.
 - 우리 쓰임: π0.5-DROID도 해당 집 데이터 0이라 **가장 공정한 zero-shot 비교**. 단 Franka 스킬을 새로 붙여야 하고 결과 수치가 논문에선 그림뿐. 4단계 이후.
 
+### 2.5b RoboTwin 2.0 C2R (후보, 00 §18 — plan [결정 필요] 3 실험 환경의 선택지)
+- [원문, D7 요약] C2R = 깨끗한 장면 시연으로 학습 → 랜덤화 장면에서 평가. RoboDawn(N11)이 이 축에서 Astra 무학습 53.2%·1-shot 73.6% 대 π0.5 46.0%를 보고했다 → 이 축을 쓰면 **RoboDawn과 직접 비교가 가능**하다.
+- [우리 계획] 쓰임: 환경 축 보조(또는 [결정 필요] 3에서 고르면 주 벤치 후보). RoboDojo Gen standard/random(§2.1)과 같은 질문(깨끗한 → 바뀐 환경 낙폭)을 다른 시뮬레이터에서 한 번 더 재는 용도.
+- 재사용에 필요한 것 [우리 계획, 전부 확인 전]: (1) RoboTwin 2.0 설치·로봇(양팔 여부)·과제 목록·랜덤화 항목·에피소드 수·성공 판정을 원문으로 확인(이 문서에서 읽지 않음). (2) 우리 스킬 다발·술어 등록부·인식 앞단(M1)을 그 로봇·과제에 이식(RoboDojo 이식과 별도 작업). (3) **RoboDawn과 같은 과제 부분집합·같은 에피소드 수·같은 성공 기준**으로 돌려야 53.2/73.6/46.0과 같은 열 비교가 된다. (4) 우리 주장(RD)에는 clean 평가도 같은 과제로 짝지어 돌려야 한다(RoboDawn이 clean 점수를 과제별로 공개했는지 확인 못 함 → 없으면 π0.5·RoboDawn 쪽 clean 값을 우리가 다시 돌려야 함). (5) 같은 인식 조건(H2)을 만들려면 B3c(같은 인식 위 학습 결정 층)를 C2R clean 시연으로 학습해야 한다. (6) 렌더러의 GPU 요구(N8 RT 코어 문제와 같은지) 확인 [가정: 모름]. (7) 라이선스 확인.
+- 비용·시간 [가정]: 이식·스모크 약 1~2주(RoboDojo 이식 뒤, 인식·스킬 재사용 정도에 달림). 확인 전이라 §5 단계 계획에는 넣지 않고 Q9 결정 뒤에 넣는다.
+
 ### 2.6 요약표 [우리 계획]
 | 벤치 | 설정 부담 | GPU | 우리 스택 꽂기 | 범주 1 | 2 | 3 | 4 | 5 | 6 | 쓰임 |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -126,6 +136,7 @@
 - 주장: "같은 인식 앞단 위에서, 과제 데이터로 미세조정한 학습 정책(VLA 포함)은 배경·조명·방해물이 바뀌면 성능 대부분을 잃는다. 학습 없는 API 모델 + 스킬 결정 층은 같은 변화에서 상대 하락폭이 작다." 절대 성공률 우위는 주장하지 않는다.
 - **문구 규칙(D4 F1)**: 초록·결과·그림 설명 등 이 주장을 쓰는 모든 문장에 **"같은 인식 앞단 위에서(same perception front-end)"** 한정어를 넣는다. 한정어 없이 "LLM이 일반화한다"고 쓰지 않는다. 인식 앞단이 변화를 흡수했다면(H4) 그것은 LLM의 몫이 아니라 인식의 몫이다.
 - **문구 규칙 2(D6, 00 §17)**: 평가 주장에서 "VLA" 대신 **"과제 데이터로 미세조정한 학습 정책(VLA 포함)"**을 쓰고 **"같은 인식 앞단 위에서"** 한정어를 항상 붙인다. §0의 [사용자] 빨간 줄("VLA는 다른 환경으로 일반화가 안 되고 LLM은 된다")은 바꾸지 않는다. 바뀌는 것은 논문에 쓰는 검정 줄(주장 문구)뿐이다. B3c가 DP/ACT라 "VLA가 아니다"라는 반론(D6 R1 약점 1)에는 B3c-V(§3.1)로 답한다.
+- **문구 규칙 3(D7, 00 §18)**: "처음 잰다"·"최초"·"first" 같은 선점 표현을 쓰지 않는다. 새로움은 이 문장으로만 적는다: "**같은 인식·같은 실행기 위에서 결정 층만 바꿔**, 두 조건의 깨끗한 장면 → 바뀐 환경 낙폭을 짝지어 잰 연구는 없다(2026-09-22 색인 기준)." RoboDawn(N11: C2R Astra 무학습 53.2%·1-shot 73.6% 대 π0.5 46.0%)과 RoboDojo Astra(§4.3: −11.1% 대 −72.2%, 우리 계산)는 반박이 아니라 **이 주장을 뒷받침하는 선행**으로 인용한다. 우리와의 차이(같은 인식 앞단 없음, 낙폭 짝 비교 없음, 비정지 아님)를 인용 문장에 같이 적는다.
 - **H1 (시스템 수준)**: RD(우리) < RD(π0.5 재실행 B3b).
 - **H2 (같은 인식, 학습 결정 층 대 LLM 결정 층)**: RD(우리) < RD(B3c). ← 사용자 요구 "같은 인식, VLA 대 LLM"을 가장 깨끗하게 재는 대조.
 - **H3 (같은 인식, 규칙 대 LLM)**: random 조건 Score(우리) > Score(B4a). RD 차이도 보고. ← 인식이 환경 변화를 막아 주면 규칙도 안 무너질 수 있다. 그 경우 LLM의 몫은 RD가 아니라 random에서의 절대 점수·Open 축·복구에서 보여야 한다(정직하게 사전 등록).
@@ -155,6 +166,7 @@
 | Spatial Forcing (표 3) | 21.25 | 6.98 | −67.2% | 같음 |
 | X-VLA (표 3) | 17.92 | 3.04 | −83.0% | 같음 |
 → "Astra-as-policy는 덜 무너진다"는 방향이 **미심사 벤치마크 공개 자료**(RoboDojo 2607.04434, RoboDojo Astra 평가 2609.24170)에서 보인다(정보·seed·인식 조건 다름, π0.5 쪽 seed·에피소드 수는 확인 못 함 §10, D4 E-2). **우리 기여는 이것을 "같은 인식" 조건(H2·H3)과 우리 계층 구조(Astra+Jev+스킬)로 옮기는 것**이다. 이 표는 조건이 달라 같은 열 비교가 아니다(주석 필수).
+- **뒷받침하는 선행(D7, 00 §18)**: RoboDawn(2609.22966, N11) — RoboTwin 2.0 C2R에서 Astra 무학습 53.2%, 1-shot 73.6% 대 π0.5 46.0%(HarnessVLA 58.4%), RoboDojo 35.67% → 47.17%. 방향은 위 표와 같다(바뀐 환경에서 API 모델 쪽 우위). 단 VLM이 원본 이미지를 직접 보고 결정 층만 바꾼 비교가 아니며, clean → shift 낙폭을 짝지어 재지 않았다. 보조 지지(LOW): LIBERO-VPro(2609.24350, 오래된·누락 관측에 VLA·WAM이 약함), RoboFollow(2609.25636, 장면 교란에서 VLA 지시 따르기 실패). 이 셋은 표에 넣지 않는다(지표·조건이 RD와 다름).
 
 ### 4.4 D6 모의 심사 추가 분석 (00-interfaces §17, `D6-mock-review.md` R1·메타 사유 1·2·5) [우리 계획]
 모두 **사전 등록**이다. (1)~(4)는 탐색적 분석(주 가설 H1·H2의 다중 비교 수에 넣지 않음)이고, (5)·(6)은 조건부 실험이다.
@@ -245,6 +257,7 @@
 - Q6 H200에서 Isaac이 안 되면 다른 GPU 노드 사용 허가.
 - Q7 (D6, plan §8 [결정 필요] 18) 논문 틀. 2안(한 논문)이면 E-link(§4.4 (5))가 필수가 된다. 1안(분리)이면 E-link는 하지 않는다.
 - Q8 (D6, plan §8 [결정 필요] 19) 실물 로봇 사용. 허락되면 E-real 최소판(§4.4 (6))을 돌린다.
+- Q9 (D7, 00 §18, plan [결정 필요] 3 실험 환경) **RoboTwin 2.0 C2R을 선택지로 추가**(§2.5b): (i) 넣지 않음(RoboDojo 주 + LIBERO 보조, 지금 안) / (ii) 보조 벤치로 추가 — RoboDawn과 직접 비교 가능, 이식 약 1~2주 [가정] / (iii) 주 벤치 후보. 고르기 전에 §2.5b 재사용 요건 (1)·(6)·(7)을 먼저 확인한다.
 
 ## 9. 재현용 계산 (N2~N3)
 ```python
@@ -263,4 +276,5 @@ print(100*sum(S)/len(S), 100*sum(R)/len(R), 1-sum(R)/sum(S))  # 35.32 31.40 0.11
 - GPT-as-Policy 10과제가 Gen standard/random 중 어느 것인지.
 - Isaac Sim 5.1이 H200에서 실제로 도는지(메모리상 이 사용자의 다른 작업은 같은 클러스터에서 Isaac 렌더를 돌린 기록이 있으나 판본 5.1인지 모름).
 - MolmoSpaces 리더보드 수치(JS 페이지, 읽지 않음). RoboDojo 리더보드 사이트도 JS라 읽지 않음.
+- (D7) RoboDawn(2609.22966) 수치는 메인 세션 원문 확인(D7)에 기댄다. 이 문서에서 다시 읽지 않았다. RoboDojo 35.67% → 47.17%가 어느 두 조건(무학습 → 1-shot 등)의 값인지, C2R 과제 수·에피소드 수·clean 점수 공개 여부는 확인하지 못했다. LIBERO-VPro(2609.24350)·RoboFollow(2609.25636)는 D7 요약만 옮겼다(수치 미확인). RoboTwin 2.0 설치·로봇·라이선스·GPU 요구는 읽지 않았다(§2.5b). D7 색인 한계: arXiv 2026-09-22 17:59 UTC 제출분까지.
 - 사용한 조회: RoboDojo README·LICENSE·문서 9쪽(install, xpolicylab, configurations, quick-evaluation, sim-tasks, domain-randomization, stack-bowls, common-issue 2쪽), XPolicyLab 문서, RoboProbe README·protocol·leaderboard·setup·칸별 JSON, 2609.24170 HTML, LIBERO-Plus·LIBERO-PRO·X-ICM·MolmoSpaces·GPT-as-Policy·CaP-X·RPent·Show-Harness README. WebSearch 0회.
