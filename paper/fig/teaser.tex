@@ -1,9 +1,8 @@
 \begin{strip}
 \centering
-\fbox{\parbox[c][3.2cm][c]{.9\linewidth}{\centering (그림 자리)\\[4pt]
-Astra(계획) $\rightarrow$ Jev(겹침 결정) $\rightarrow$ 스킬 $\rightarrow$ 코드 critic $\rightarrow$ 복구}}
+\includegraphics[width=\linewidth]{figures/overview.pdf}
 \captionsetup{hypcap=false}
-\captionof{figure}{\textbf{Harvest 개요.} 그림은 아직 그리지 않았다.}
+\captionof{figure}{\textbf{Harvest 개요.} 느린 상위 계획기 Astra가 세션 계약을 쓰고, 빠른 typed 결정 모델 Jev가 약 3\,Hz로 겹쳐 호출되어 스킬 안의 결정을 내린다. 겹친 결정은 확정 규칙(M4)을 거쳐 스킬로 실행되고, 실패 판정은 코드 critic(M7) 한 곳에서만 내린다. 실패가 판정되면 연속 프레임(10장 격자)과 함께 Astra를 비동기로 부르며, 그동안 로봇은 멈추지 않는다.}
 \captionsetup{hypcap=true}
-\label{fig:\currfilebase}%
+\label{fig:teaser}
 \end{strip}
