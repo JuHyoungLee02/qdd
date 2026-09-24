@@ -24,8 +24,10 @@ def _target_opts(present):
     return out + [NE]
 
 
-def build_snapshot_request(line):
-    """line: one ep<seed>.jsonl row (cli_pool.write_episode). Returns (request, {qid: oracle key}, {qid: options})."""
+def build_snapshot_request(line, text_state=None, shift=0):
+    """line: one ep<seed>.jsonl row (cli_pool.write_episode). Returns (request, {qid: oracle key}, {qid: options}).
+    text_state: state text to send instead of line["text_state"] (E3-lite S1/S2); shift: cyclic left shift of every
+    option list, NONE_ESCALATE stays last (C3'' rotation, e3lite.md prereg)."""
     ds, sid = line["ds_id"], stage_of(line["phase"])
     q_dir = f"Which direction should the gripper move during step {ds} to make progress toward the exit of stage {sid}?"
     spec = {
@@ -42,10 +44,20 @@ def build_snapshot_request(line):
     qs, oracle, shown = [], {}, {}
     for q in QUESTIONS:
         qid, text, opts = spec[q]
+        if shift:
+            opts = rotate(opts, shift)
         qs.append(build_choice(qid, text, opts))
         oracle[qid] = line["oracle"][ORACLE_FIELD[q]]
         shown[qid] = (q, opts)
-    return build_request(line["text_state"], qs), oracle, shown
+    return build_request(line["text_state"] if text_state is None else text_state, qs), oracle, shown
+
+
+def rotate(opts, i):
+    """Cyclic left shift by i of the options other than NONE_ESCALATE; NONE_ESCALATE stays last."""
+    body = [o for o in opts if o.key != NE.key]
+    tail = [o for o in opts if o.key == NE.key]
+    j = i % len(body)
+    return body[j:] + body[:j] + tail
 
 
 def score(answers, oracle, shown):

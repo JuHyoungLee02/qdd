@@ -27,3 +27,13 @@ def test_auroc_basic_and_ties():
     assert auroc([0.1, 0.2, 0.8, 0.9], [1, 1, 0, 0]) == 0.0
     assert auroc([0.5, 0.5], [1, 0]) == 0.5  # ties count one half
     assert auroc([0.5, 0.7], [1, 1]) is None  # one class only
+
+
+def test_cluster_mean_ci_equals_generic_bootstrap_of_the_mean():
+    import numpy as np
+    from harvest.analysis.stats import cluster_bootstrap_ci, cluster_mean_ci
+    rng = np.random.default_rng(3)
+    by = {i: list(rng.integers(0, 2, rng.integers(1, 9))) for i in range(12)}
+    slow = cluster_bootstrap_ci(by, lambda v: float(np.mean(v)), n=500)
+    fast = cluster_mean_ci(by, n=500)
+    assert abs(slow[0] - fast[0]) < 1e-12 and abs(slow[1] - fast[1]) < 1e-12
