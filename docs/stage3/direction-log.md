@@ -25,3 +25,4 @@
 | 15:32 | 30분 루프 | 1·4·5: 풀 120편 있음, 풀 라벨 4회차(label4)·자체 점검 4회차(self4) 진행(load 39) — 재시작 이유 보고 아직 없음. SFT 스크립트 에이전트 로컬 단계. GPU 유휴. C scratchpad 비어 있음, /data 밖 새 파일 0 | 계속 |
 | 16:02 | 30분 루프 | 1·4·5: 풀 labels_v2 생성됨, 단계 A SFT 학습 중(GPU1 66%). 결과 라벨(label4 2 + self4 4) 계속(load 46). C scratchpad 비어 있음, /data 밖 새 파일 0 | 계속 |
 | 16:32 | 30분 루프 | 1·4·5: SFT 학습 40분째(GPU1 95%, sftA_pool_v1). 결과 라벨 계속. load 27. C scratchpad 비어 있음, /data 밖 새 파일 0 | 계속 |
+| 17:02 | 30분 루프 | 1·4·5: SFT 학습 완료 16:51 UTC(55분, 풀 eval NLL 0.157·정확도 0.936). DEV 평가·보고 스크립트 실행 중. load 62. C scratchpad 비어 있음, /data 밖 새 파일 0 | 계속 |
