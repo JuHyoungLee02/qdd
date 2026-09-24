@@ -421,3 +421,9 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - **결정**: M1 인식 앞단(SAM 3.1 문장 프롬프트)의 물체 이름은 과제 문장에서 기계적으로 뽑지 않고, **Astra가 계획(T0·하트비트 `replace`·T_fail)할 때 장면 이미지를 보고 M2 계약 `objects`에 적어 준 검출용 이름(`detect_phrase`)**을 쓴다. 물체 ID(o3 등)와 역할은 지금처럼 계약이 정한다.
 - 운영: `detect_phrase` 검출이 0건이거나 추적이 끊기면 M7 소프트 채널(`id_uncertain`)로 올리고 다음 하트비트(§45)를 앞당겨 Astra가 이름을 고치게 한다(정지 없음). 첫 계획(T0, 정지 허용) 때는 검출 성공을 확인한 뒤 실행을 시작한다.
 - 영향: M2 계약 `objects` 필드에 `detect_phrase` 추가(A1–A6 검사기에 "각 물체 detect_phrase 비어 있지 않음" 추가), M1 §4 인식 앞단 입력, E3 인식 조건. 다음 편집 묶음에서 반영.
+
+## 47. 시뮬 로봇·카메라 설정 = humanoid-challenge-env 복사 (2026-09-24 11:03 UTC, user-log 50) [사용자 결정]
+- **결정**: 시뮬 로봇과 카메라 설정은 `kairobahq/humanoid-challenge-env`(Apache-2.0)의 설정을 **그대로 복사**해 쓴다(`third_party/humanoid_challenge_env/`, 원본 레포는 수정하지 않음). 그 레포의 원칙: 로봇은 시뮬 설정(`FFW_SG2_MOBILE_CFG` — USD·게인·질량·관절 한계) 그대로, **카메라만 실물 사양**(장착 위치·화각·해상도, 출처 ROBOTIS ai_worker URDF·드라이버 설정·제조사 사양).
+- 카메라(원문 `scripts/FFW_SG2_REAL_cameras.py`): 머리 = ZED Mini **왼쪽 정류 영상** 672×376, VGA 모드 수평 **85°**(fx 367, 실측 camera_info fx 364.0); 손목 = RealSense D405 컬러 424×240, 수평 87°(fx 223.4, 실측 218.4/217.6), 좌·우 손목(우손목 있음 — user-log 50). §43 "기본 카메라만"과 일치(이 설정이 실물 기본 카메라의 시뮬 복제).
+- **정정**: §37·M1의 "ZED Mini 102°×57°"는 센서 최대 화각이며 VGA(672×376) 모드가 아니다(원문: "a maximum-sensor figure that is not the WVGA mode"). E3-ST가 쓴 공칭 fx 272.1(102°)은 틀렸다 → **fx 367로 깊이·3D 중심을 다시 계산**한다(시차 캐시 `/data/juhyoung_qdd/out/e3st_disp` 재사용). 깊이는 fx에 비례하므로 거리·흔들림 mm 값이 약 1.35배 커질 것으로 예상.
+- 영향: T11 장면 v2(이식), T13 풀은 v2 장면으로 생성(v1으로는 만들지 않음), E3-ST 재집계, M1·D21 수치 정정은 다음 편집 묶음.
