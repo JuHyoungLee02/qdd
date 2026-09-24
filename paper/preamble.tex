@@ -75,6 +75,9 @@
 %% [Harvest] 한국어(XeLaTeX)와 마인드맵 표시
 %%
 \usepackage{kotex}
+% 한글 글꼴: 나눔고딕(OFL, fonts/ 폴더에 동봉 — 로컬과 Overleaf에서 같은 결과). 기본 은바탕보다 화면 가독성이 좋다(사용자 요청 2026-09-24). 한글은 기울이지 않는다(기울임 자리도 바로 선 글꼴).
+\setmainhangulfont{NanumGothic}[Path=fonts/, Extension=.ttf, UprightFont=*-Regular, BoldFont=*-Bold, ItalicFont=*-Regular, BoldItalicFont=*-Bold]
+\setsanshangulfont{NanumGothic}[Path=fonts/, Extension=.ttf, UprightFont=*-Regular, BoldFont=*-Bold, ItalicFont=*-Regular, BoldItalicFont=*-Bold]
 \usepackage{enumitem}
 \setlist{nosep,leftmargin=1.2em}
 \newcommand{\intent}[1]{\textcolor{red}{#1}}      % 빨간색 = 사용자가 의도하고 말한 것
