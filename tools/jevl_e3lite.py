@@ -64,7 +64,8 @@ async def acc(a):
     c = JevLClient(f"http://127.0.0.1:{a.port}", a.model, end_token=a.end_token, image_mime="image/jpeg")
     for cond in a.conds.split(","):
         S, inp, order = cond.split(":")
-        out = f"{a.outdir}/acc_{a.model}_{S}_{inp}_{order}.jsonl"
+        g = "" if a.step_cm == 1 else f"_g{a.step_cm:g}"
+        out = f"{a.outdir}/acc_{a.model}_{S}{g}_{inp}_{order}.jsonl"
         done = set()
         if os.path.exists(out):
             done = {json.loads(x)["snap"] for x in open(out, encoding="utf-8")}
@@ -79,7 +80,7 @@ async def acc(a):
             while not q.empty():
                 s = q.get_nowait()
                 i = idx[key(s)]
-                req, oracle, shown = build_snapshot_request(s, text_state=state_text(s, S),
+                req, oracle, shown = build_snapshot_request(s, text_state=state_text(s, S, step_cm=a.step_cm),
                                                             shift=i if order == "rot" else 0)
                 img = open(f"{s['_dir']}/{s['images']['cam_head']}", "rb").read() if inp == "img" else None
                 rec, tries = None, 0
@@ -91,7 +92,8 @@ async def acc(a):
                 for r in score(rec.answers if rec.error is None else {}, oracle, shown):
                     ans = rec.answers.get(r["qid"]) if rec.error is None else None
                     opts = shown[r["qid"]][1]
-                    r.update(snap=key(s), idx=i, model=a.model, S=S, inp=inp, order=order, seed=s["seed"],
+                    r.update(snap=key(s), idx=i, model=a.model, S=S, step_cm=a.step_cm, inp=inp, order=order,
+                             seed=s["seed"],
                              kind=s["kind"], k=s["k"], phase=s["phase"], error=rec.error, tries=tries,
                              lat=round(rec.t_done - rec.t_send, 4), input_tokens=rec.input_tokens,
                              first=opts[0].key, probs=ans["probabilities"] if ans else None)
@@ -120,14 +122,14 @@ async def lat(a):
                 out = []
                 for _ in range(k):
                     s = snaps[next(ctr)]
-                    req, _, _ = build_snapshot_request(s, text_state=state_text(s, S))
+                    req, _, _ = build_snapshot_request(s, text_state=state_text(s, S, step_cm=a.step_cm))
                     img = open(f"{s['_dir']}/{s['images']['cam_head']}", "rb").read() if mode == "image" else None
                     r = await c.acall(req, {}, image=img)
                     if keep:
                         ok = r.error is None and r.http_status == 200
                         L = r.t_done - r.t_send
                         out.append({"test": "L1", "model": a.model, "S": S, "mode": mode, "N": n, "worker": w,
-                                    "ok": ok, "lat": round(L, 6) if ok and L <= 2.0 else None,
+                                    "step_cm": a.step_cm, "ok": ok, "lat": round(L, 6) if ok and L <= 2.0 else None,
                                     "lat_raw": round(L, 6), "error": r.error, "input_tokens": r.input_tokens,
                                     "n_seq": (r.raw_response or {}).get("n_seq"),
                                     "load1": float(open("/proc/loadavg").read().split()[0])})
@@ -155,6 +157,7 @@ def main():
     ap.add_argument("--conc", type=int, default=8)
     ap.add_argument("--n", type=int, default=4)
     ap.add_argument("--calls", type=int, default=200)
+    ap.add_argument("--step-cm", type=float, default=1, help="S1/S2 print grid (E3-lite runs: 1; canon §54: 0.1)")
     a = ap.parse_args()
     if a.what == "ub":
         ub(a)

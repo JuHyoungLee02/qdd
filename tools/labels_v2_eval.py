@@ -5,6 +5,11 @@ usage (pod, CPU only):
   python labels_v2_eval.py --dev /data/harvest/data/jsel_dev --selfcheck /data/harvest/data/pool_selfcheck \
       --out /data/harvest/labels_v2/eval_step1.json [--step-cm 1] [--write]
 --write: /data/harvest/data/jsel_dev/{P0,P1,P2}.labels_v2.jsonl (one row per snapshot line; originals untouched).
+
+POOL mode (stageA_sft.md step 1): --pool /data/harvest/data/pool --out JSON --step-cm 0.1 [--write]
+  labels for every pool line -> <pool>.labels_v2.jsonl (stagea_data.labels_v2_path; outside the folder so the
+  ep*.jsonl globs are unaffected). The pool `oracle` field is dropped on read (never used: no progress, no
+  old-oracle agreement). Gate = the S1-text code rule on all lines and on the decision snapshots.
 """
 import argparse
 import glob
@@ -35,6 +40,75 @@ def lines(dev):
                 yield kind, json.loads(x)
 
 
+def pool_lines(pool):
+    """Pool lines without the `oracle` field (canon §52-§54: never a target, never read here)."""
+    ps = [p for p in glob.glob(f"{pool}/ep*.jsonl") if re.fullmatch(r"ep\d+\.jsonl", os.path.basename(p))]
+    for p in sorted(ps, key=lambda x: int(os.path.basename(x)[2:-6])):
+        for x in open(p, encoding="utf-8"):
+            ln = json.loads(x)
+            ln.pop("oracle", None)
+            yield ln
+
+
+def pool_label_rows(lines):
+    rows = []
+    for ln in lines:
+        lab = labels(ln)
+        lab.pop("progress", None)  # labels_v2 progress = the old oracle value; not defined on the pool
+        rows.append({"seed": ln["seed"], "kind": ln["kind"], "k": ln["k"], "t": ln["t"], "ds_id": ln.get("ds_id"),
+                     "split": ln.get("split"), "decision": bool(ln.get("decision")), "planner_phase": ln["phase"],
+                     "stage": stage_of(ln["phase"]), "labels_v2": lab})
+    return rows
+
+
+def write_rows(rows, path):
+    with open(path, "w", encoding="utf-8") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+
+
+def pool_main(a):
+    from harvest.train.stagea_data import labels_v2_path
+    lines = list(pool_lines(a.pool))
+    rows = pool_label_rows(lines)
+    qs = GATED + ("motion_phase",)
+    res = {"n_lines": len(rows), "step_cm": a.step_cm, "n_episodes": len({(r["seed"], r["kind"]) for r in rows})}
+    mism = []
+    for subset, pick in (("all", lambda r: True), ("decision", lambda r: r["decision"])):
+        sel = [(ln, r) for ln, r in zip(lines, rows) if pick(r)]
+        ok = defaultdict(list)
+        for ln, r in sel:
+            rule = code_rule_v2(state_text(ln, "S1", step_cm=a.step_cm))
+            for q in qs:
+                ok[q].append(rule[q] == r["labels_v2"][q])
+                if subset == "all" and rule[q] != r["labels_v2"][q] and q in GATED:
+                    mism.append({"snap": f"{ln['kind']}_s{ln['seed']}_k{ln['k']}", "q": q, "label": r["labels_v2"][q],
+                                 "rule": rule[q], "M": r["labels_v2"]["motion_phase"], "M_rule": rule["motion_phase"],
+                                 "delta_m": r["labels_v2"]["delta_m"], "decision": r["decision"],
+                                 "cause": cause(ln, r["labels_v2"], rule, q, a.step_cm / 100)})
+        gate = {q: round(float(np.mean(v)), 4) for q, v in ok.items()}
+        res[f"gate_{subset}"] = {"n": len(sel), **gate}
+        res[f"gate_pass_{subset}"] = {q: gate[q] >= 0.95 for q in GATED}
+    res["mismatch_causes"] = {q: dict(Counter(m["cause"] for m in mism if m["q"] == q)) for q in GATED}
+    for subset, pick in (("all", lambda r: True), ("decision_fit", lambda r: r["decision"] and r["split"] == "fit"),
+                         ("decision_eval", lambda r: r["decision"] and r["split"] == "eval")):
+        sel = [r for r in rows if pick(r)]
+        d = {q: dict(Counter(r["labels_v2"][q] for r in sel).most_common()) for q in qs}
+        maj = {q: round(max(v.values()) / len(sel), 4) for q, v in d.items()}
+        res[f"dist_{subset}"] = {"n": len(sel), "dist": d, "majority": maj,
+                                 "majority_mean_gated": round(float(np.mean([maj[q] for q in GATED])), 4)}
+    res["split_episodes"] = dict(Counter(r["split"] for r in rows if r["k"] == 0))
+    res["decision_per_split"] = dict(Counter(r["split"] for r in rows if r["decision"]))
+    if a.write:
+        res["labels_file"] = labels_v2_path(a.pool)
+        write_rows(rows, res["labels_file"])
+    json.dump(res, open(a.out, "w"), indent=1)
+    with open(a.out.replace(".json", "_mismatch.jsonl"), "w") as f:
+        for m in mism:
+            f.write(json.dumps(m) + "\n")
+    print(json.dumps({k: v for k, v in res.items() if not k.startswith("dist")}, indent=1))
+
+
 def cause(line, lab, rule, q, step_m):
     """Why the S1-text rule differs from the label: the nearest threshold to the true value within one print step."""
     if rule["motion_phase"] != lab["motion_phase"]:
@@ -60,7 +134,8 @@ def cause(line, lab, rule, q, step_m):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dev", required=True)
+    ap.add_argument("--dev", default="")
+    ap.add_argument("--pool", default="", help="POOL mode (see module doc)")
     ap.add_argument("--selfcheck", default="")
     ap.add_argument("--out", required=True)
     ap.add_argument("--step-cm", type=float, default=1)
@@ -68,6 +143,8 @@ def main():
     a = ap.parse_args()
     step_m = a.step_cm / 100
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
+    if a.pool:
+        return pool_main(a)
 
     rows, files = [], defaultdict(list)
     for kind, ln in lines(a.dev):

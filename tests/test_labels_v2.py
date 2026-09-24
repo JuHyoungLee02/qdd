@@ -123,3 +123,35 @@ def test_code_rule_reads_fine_serializer():
     fine = state_text(ln, "S1", step_cm=0.5)
     assert "dz=-4.0" in fine  # o3 centre - gripper = -4.15 cm -> 0.5 cm grid
     assert code_rule_v2(fine)["dir_z"] == labels(ln)["dir_z"] == "down"
+
+
+def test_pool_label_rows_never_read_oracle_and_load_as_training_labels(tmp_path):
+    """Pool mode (stageA_sft.md step 1): one row per pool line, keyed (seed, kind, k), no progress, oracle-blind."""
+    import importlib.util
+    import json
+    import os
+
+    from harvest.train.stagea_data import labels_v2_path, read_labels_v2
+    spec = importlib.util.spec_from_file_location(
+        "labels_v2_eval", os.path.join(os.path.dirname(os.path.dirname(__file__)), "tools", "labels_v2_eval.py"))
+    E = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(E)
+
+    pool = tmp_path / "pool"
+    pool.mkdir()
+    a = {**_line((0.30, -0.30, 0.25)), "seed": 2000, "kind": "P1", "k": 3, "t": 1.0, "split": "fit", "decision": True}
+    b = {**_line((0.43, -0.38, 0.20), phase="lift", gopen=False, hold=True, text=S1_HOLD), "seed": 2000, "kind": "P1",
+         "k": 4, "t": 1.33, "split": "fit", "decision": False}
+    (pool / "ep2000.jsonl").write_text(json.dumps(a) + "\n" + json.dumps(b) + "\n")
+    rows = E.pool_label_rows(E.pool_lines(str(pool)))
+    b2 = {**b, "oracle": {k: "garbage" for k in b["oracle"]}}
+    (pool / "ep2000.jsonl").write_text(json.dumps(a) + "\n" + json.dumps(b2) + "\n")
+    assert E.pool_label_rows(E.pool_lines(str(pool))) == rows
+    assert [r["k"] for r in rows] == [3, 4] and [r["decision"] for r in rows] == [True, False]
+    assert all("progress" not in r["labels_v2"] and r["split"] == "fit" for r in rows)
+    assert rows[0]["labels_v2"] == {k: v for k, v in labels(a).items() if k != "progress"}
+    out = labels_v2_path(str(pool))
+    E.write_rows(rows, out)
+    assert out == str(tmp_path / "pool.labels_v2.jsonl")
+    got = read_labels_v2(out)
+    assert set(got) == {(2000, "P1", 3), (2000, "P1", 4)} and got[(2000, "P1", 4)]["motion_phase"] == "lift"
