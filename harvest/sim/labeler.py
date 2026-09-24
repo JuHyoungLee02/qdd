@@ -92,6 +92,56 @@ def exec_spec(question: str, key: str, oracle: dict) -> tuple:
     raise ValueError(question)
 
 
+RULES = ("plan", "short3", "short2", "short1", "time0.33", "time0.66")  # prereg_labeler.md candidates
+SIMPLICITY = {"plan": 0, "time0.33": 1, "time0.66": 1, "short3": 2, "short2": 3, "short1": 4}  # lower = simpler
+D_START_MIN_M = 0.005  # close / open phases hold still: their start distance is ~0
+
+
+def short_score(o: dict, h: float, phases) -> float:
+    """D-short(h): phase index + (1 - dist/d_start) at h s; a failure within the 10 s rollout vetoes (0);
+    success before h ranks above every running option."""
+    if o["fail"]:
+        return 0.0
+    if o["success"] and o["t_success"] is not None and o["t_success"] <= h + 1e-9:
+        return float(len(phases) + 1)
+    c = o["checkpoints"].get(f"{h:g}")
+    if c is None:  # rollout ended before h without success or failure (cannot happen with a 10 s horizon)
+        c = {"phase": o["phase"], "dist_m": o["dist_m"], "d_start": o.get("d_start", o["dist_m"])}
+    i = phases.index(c["phase"]) if c["phase"] in phases else 0
+    return 1.0 + i + 1.0 - min(float(c["dist_m"]) / max(float(c["d_start"]), D_START_MIN_M), 1.0)
+
+
+def rule_best(outs: dict, rule: str, phases) -> set:
+    """Best option set of one question under a prereg candidate rule (outs: {option_key: rollout outcome})."""
+    if rule == "plan":
+        return best_set({k: score_outcome(o, phases) for k, o in outs.items()})
+    if rule.startswith("short"):
+        h = float(rule[5:])
+        return best_set({k: short_score(o, h, phases) for k, o in outs.items()})
+    if rule.startswith("time"):
+        tau = float(rule[4:])
+        ok = {k: o["t_success"] for k, o in outs.items() if o["success"]}
+        if ok:
+            t_best = min(ok.values())
+            return {k for k, t in ok.items() if t <= t_best + tau + 1e-9}
+        return best_set({k: score_outcome(o, phases) for k, o in outs.items()})
+    raise ValueError(rule)
+
+
+def select_rule(stats: dict, min_oracle: float = 0.90, tie: float = 0.02):
+    """prereg_labeler.md: eligible = oracle-in-best >= 90 %; among eligible the largest discrimination, ties
+    within 0.02 go to the simpler rule (D-plan > D-time > D-short, longer h). stats: {rule: (oracle_rate, disc)}.
+    Returns the rule or None (no eligible rule -> E0.5 outcome accuracy verdicts are held)."""
+    elig = {r: v for r, v in stats.items() if v[0] >= min_oracle}
+    if not elig:
+        return None
+    top = max(v[1] for v in elig.values())
+    near = [r for r, v in elig.items() if top - v[1] <= tie + 1e-12]
+    # within a family the longer h / larger tau is closer to D-plan, hence "simpler" (prereg: "h는 긴 쪽")
+    return min(near, key=lambda r: (SIMPLICITY[r], -float(r[5:]) if r.startswith("short") else -float(
+        r[4:]) if r.startswith("time") else 0.0))
+
+
 def score_outcome(o: dict, phases) -> float:
     """success = 1; failure = 0; otherwise (phase index + 1 - min(dist/D_REF, 1)) / len(phases), in [0, 1)."""
     if o["success"]:
@@ -118,8 +168,47 @@ class Labeler:
     def outcome(self, snap: dict, spec: tuple) -> dict:
         key = (snap["key"], spec)
         if key not in self.cache:
-            self.cache[key] = self._rollout(snap["state"], spec)
+            if snap.get("replay"):
+                self.cache[key] = self._replay_rollout(snap, spec)
+            else:
+                self.cache[key] = self._rollout(snap["state"], spec)
         return self.cache[key]
+
+    def _replay_rollout(self, snap: dict, spec: tuple) -> dict:
+        """Exact restore (T13 Step 1, v2): re-run the episode from its reset with the oracle planner (bit-exact
+        after a process's first episode) up to snapshot k and branch there. No state write at all besides the
+        episode's own reset — PhysX contact caches are then the original ones. The replayed state is compared
+        with the stored one (replay_maxabs, expected 0)."""
+        from ..cli_pool import canonical_prefix, run_snapshot_episode
+        from .snapshot import obs_from_json, state_maxabs
+        r, out = snap["replay"], {}
+
+        def on(env_, pl, rec, s, imgs):
+            if rec["k"] != r["k"]:
+                return False
+            if snap.get("state") is not None:
+                ref = snap["state"]
+                out["replay_maxabs"] = state_maxabs(s, ref)
+                out["replay_obj_mm"] = round(max(float(np.linalg.norm(np.asarray(s["obj_pose"][o][:3], float)
+                                                                     - np.asarray(ref["obj_pose"][o][:3], float)))
+                                                 for o in s["obj_pose"]) * 1e3, 6)
+                out["replay_jpos_rad"] = float(np.abs(np.asarray(s["joint_pos"], float)
+                                                      - np.asarray(ref["joint_pos"], float)).max())
+            o = s["obs"]
+            pl.pred, pl.ps._near = dict(o["pred"]), {(a, b): v for a, b, v in o["near_hyst"]}
+            pl.objs, pl.grip, pl.contacts, pl.support = obs_from_json(o["raw"])
+            pl.near_target = bool(np.linalg.norm(pl.grip.pos - pl.objs["o3"].pos) < 0.05)
+            out.update(self._branch(pl, spec))
+            raise _Branched
+
+        canonical_prefix(self.env)
+        try:
+            run_snapshot_episode(self.env, r["seed"], r["kind"], on_snapshot=on)
+        except _Branched:
+            pass
+        if "success" not in out:
+            raise RuntimeError(f"replay never reached snapshot k={r['k']} (seed {r['seed']} {r['kind']})")
+        return out
 
     def label(self, snap: dict, question: str, options) -> dict:
         from .snapshot import PHASE_ORDER
@@ -129,12 +218,18 @@ class Labeler:
         return {"best": best_set(scores), "scores": scores, "outcomes": outs}
 
     def _rollout(self, state: dict, spec: tuple) -> dict:
+        from .snapshot import restore_state
+
+        restore_state(self.env, state, planner=self.pl)  # write-restore (inexact on v2: see pool.md)
+        return self._branch(self.pl, spec)
+
+    def _branch(self, pl, spec: tuple) -> dict:
+        """Execute option `spec` for one decision step from the current state, then the oracle planner."""
         from .perturb import apply_pending
         from .planner import success_from_history
-        from .snapshot import DECIM, PHYS_DT, SUB_PER_SNAP, restore_state, step_partial
+        from .snapshot import DECIM, PHYS_DT, SUB_PER_SNAP, step_partial
 
-        env, pl = self.env, self.pl
-        restore_state(env, state, planner=pl)  # the one write; everything below only steps
+        env = self.env
         t0 = env.sim_time
         sub0 = int(round(t0 / PHYS_DT))
         win_end = sub0 + SUB_PER_SNAP
@@ -145,14 +240,17 @@ class Labeler:
         if spec[0] == "next":
             _force_next(env, pl)
         undo_target = _swap_target(pl, spec[1]) if spec[0] == "target" else None
+        cur_phase, d_start = pl.phase, _progress(pl)["dist_m"]  # D-short: distance when the phase was entered
         while True:
             t = env.sim_time
             sub = int(round(t / PHYS_DT))
             pred = pl.pred if first else pl.observe()  # sensors are stale right after the write
             first = False
             hist.append((t, pred))
+            if pl.phase != cur_phase:
+                cur_phase, d_start = pl.phase, _progress(pl)["dist_m"]
             while cps and t - t0 >= cps[0] - 1e-9:
-                out["checkpoints"][f"{cps.pop(0):g}"] = _progress(pl)
+                out["checkpoints"][f"{cps.pop(0):g}"] = dict(_progress(pl), d_start=d_start)
             if pl.objs["o3"].pos[2] < -0.05 or pl.phase == "fail":
                 out.update(fail=True, t_fail=round(t - t0, 3))
                 break
@@ -186,6 +284,10 @@ class Labeler:
         self.n_rollouts += 1
         self.sim_s += env.sim_time - t0
         return out
+
+
+class _Branched(Exception):
+    pass
 
 
 def _progress(pl) -> dict:

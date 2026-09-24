@@ -79,3 +79,47 @@ def test_label_uses_option_key_and_skips_none_escalate():
     n = lab.n_rollouts
     r2 = lab.label(snap, "dir_z", [_O(k) for k in L.option_keys("dir_z")])
     assert r2["best"] == {"down"} and lab.n_rollouts == n + 2  # oracle rollout reused from the cache
+
+
+# ---- prereg_labeler.md candidate rules
+PH = PHASE_ORDER
+
+
+def _o(success=False, fail=False, t=None, phase="carry", dist=0.1, cps=None):
+    return {"success": success, "fail": fail, "t_success": t, "phase": phase, "dist_m": dist, "d_start": 0.3,
+            "checkpoints": cps or {}}
+
+
+def test_rule_plan_all_successes_tie():
+    outs = {"a": _o(True, t=4.0), "b": _o(True, t=5.0), "c": _o(fail=True)}
+    assert L.rule_best(outs, "plan", PH) == {"a", "b"}
+
+
+def test_rule_time_tau():
+    outs = {"a": _o(True, t=4.0), "b": _o(True, t=4.3), "c": _o(True, t=4.6), "d": _o(fail=True)}
+    assert L.rule_best(outs, "time0.33", PH) == {"a", "b"}
+    assert L.rule_best(outs, "time0.66", PH) == {"a", "b", "c"}
+    none_ok = {"a": _o(phase="carry", dist=0.1), "b": _o(phase="carry", dist=0.2)}
+    assert L.rule_best(none_ok, "time0.33", PH) == {"a"}  # no success: D-plan progress
+
+
+def test_rule_short_progress_veto_and_early_success():
+    cp = lambda ph, d: {"1": {"phase": ph, "dist_m": d, "d_start": 0.2}}
+    outs = {"a": _o(True, t=8.0, cps=cp("carry", 0.05)), "b": _o(True, t=8.0, cps=cp("carry", 0.10)),
+            "c": _o(fail=True, cps=cp("place_descend", 0.0)), "d": _o(True, t=8.0, cps=cp("lift", 0.0))}
+    assert L.rule_best(outs, "short1", PH) == {"a"}  # c is further but fails later: veto
+    outs["e"] = _o(True, t=0.9, cps={})
+    assert L.rule_best(outs, "short1", PH) == {"e"}
+    # close/open hold still: d_start ~0 must not blow up
+    z = {"x": _o(cps={"2": {"phase": "close", "dist_m": 0.001, "d_start": 0.0}})}
+    assert L.rule_best(z, "short2", PH) == {"x"}
+
+
+def test_select_rule_prereg():
+    st = {"plan": (0.99, 0.05), "time0.33": (0.93, 0.40), "time0.66": (0.95, 0.39), "short3": (0.91, 0.41),
+          "short2": (0.85, 0.60), "short1": (0.70, 0.70)}
+    assert L.select_rule(st) == "time0.66"  # eligible max 0.41; within 0.02: time0.33/0.66/short3 -> D-time, larger tau
+    st["short3"] = (0.91, 0.45)
+    assert L.select_rule(st) == "short3"
+    assert L.select_rule({"plan": (0.5, 0.1)}) is None
+    assert L.select_rule({"plan": (0.95, 0.10), "short1": (0.95, 0.12)}) == "plan"

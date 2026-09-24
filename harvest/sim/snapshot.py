@@ -99,6 +99,23 @@ def ambiguous_predicates(pos: dict, band=(CFG.near_in_m, CFG.near_out_m)) -> lis
     return out
 
 
+def boundary_flags(preds, ambiguous) -> list[bool]:
+    """Boundary stratum for the 30 % oversampling (E §1.5 "경계 사례"): the snapshot is inside a hysteresis band
+    (`ambiguous`), or some registered predicate changes value between it and the next continuous snapshot (the
+    decision step starting here crosses a predicate threshold). The near band alone is too rare to fill 30 %
+    (v2 pool: 4.6 % of snapshots); with the previous snapshot counted as well the stratum was 35 % of all
+    snapshots, so "30 %" would not have been oversampling."""
+    out = []
+    for i, p in enumerate(preds):
+        b = bool(ambiguous[i])
+        for j in (i + 1,):
+            if not b and 0 <= j < len(preds):
+                q = preds[j]
+                b = any(k in q and q[k] != v for k, v in p.items())
+        out.append(b)
+    return out
+
+
 def select_decision(ambiguous, n: int = N_DECISION, frac: float = OVERSAMPLE_FRAC, rng=None):
     """Pick n decision snapshots out of one episode's candidates, round(n * frac) from the boundary stratum
     (ambiguous) and the rest from the others (topped up from the other stratum when one is short).
@@ -107,8 +124,7 @@ def select_decision(ambiguous, n: int = N_DECISION, frac: float = OVERSAMPLE_FRA
     rng = rng if rng is not None else np.random.default_rng(0)
     amb = np.asarray(ambiguous, bool)
     N = len(amb)
-    if N < n:
-        raise ValueError(f"only {N} candidates for {n} decision snapshots")
+    n = min(n, N)  # a short (failed) episode contributes all its snapshots
     B, R = np.flatnonzero(amb), np.flatnonzero(~amb)
     nb = min(int(round(n * frac)), len(B))
     nr = min(n - nb, len(R))
@@ -306,6 +322,14 @@ def unpack_state(arrays, i: int, j: dict) -> dict:
     return s
 
 
+def state_maxabs(a: dict, b: dict) -> float:
+    """Largest absolute difference between two saved states (joints pos/vel, every body pose/vel)."""
+    d = [float(np.abs(np.asarray(a[k], float) - np.asarray(b[k], float)).max()) for k in ("joint_pos", "joint_vel")]
+    for grp in ("obj_pose", "obj_vel"):
+        d += [float(np.abs(np.asarray(a[grp][o], float) - np.asarray(b[grp][o], float)).max()) for o in a[grp]]
+    return max(d)
+
+
 # ================================================================================ Isaac part (pod only)
 def step_partial(env, q, n: int) -> None:
     """Run n (1..DECIM) physics substeps with target q, keeping the wrapper clock exact."""
@@ -362,11 +386,27 @@ def save_state(env, planner=None, obs=None, action=None) -> dict:
     return s
 
 
-def restore_state(env, s: dict, planner=None) -> None:
-    """Write the saved state ONCE (no per-step writes afterwards) and refresh kinematics."""
-    import torch
+PRIME_SUBSTEPS = 1  # see restore_state
 
-    from .perturb import PerturbState
+
+def restore_state(env, s: dict, planner=None, prime: int | None = None) -> None:
+    """Restore the saved state at restore time; afterwards the sim only steps (no per-step writes).
+
+    prime (default PRIME_SUBSTEPS): PhysX keeps contact / friction-anchor caches that a state write cannot set, so
+    the first steps after a plain write start from the caches of whatever was simulated last (v2, CPU PhysX, DEV 0:
+    2.3 mm drift while the gripper squeezes the mug). With prime > 0 the state is written, `prime` physics substeps
+    are run with the saved target (building caches for this very contact configuration), and the state is written
+    again. Both writes happen once, at restore time."""
+    _write_state(env, s)
+    n = PRIME_SUBSTEPS if prime is None else int(prime)
+    if n > 0 and s.get("action") is not None:
+        step_partial(env, s["action"], n)
+        _write_state(env, s)
+    _restore_bookkeeping(env, s, planner)
+
+
+def _write_state(env, s: dict) -> None:
+    import torch
     dev = env.env.device
     rob = env.robot
 
@@ -386,6 +426,13 @@ def restore_state(env, s: dict, planner=None) -> None:
     sim = env.env.sim
     if sim.physics_sim_view is not None:
         sim.physics_sim_view.update_articulations_kinematic()
+    env._steps = s["steps"]
+
+
+def _restore_bookkeeping(env, s: dict, planner=None) -> None:
+    import torch
+
+    from .perturb import PerturbState
     env._steps = s["steps"]
     env.present = list(s["present"])
     if s.get("carry_start_xy") is not None:

@@ -166,3 +166,9 @@ def test_pack_unpack_round_trip(tmp_path):
         r.set_state(u["rng_np"])
         assert r.randint(1 << 30) == np.random.RandomState(i).randint(1 << 30)
         assert u["t"] == s["t"] and u["planner"] == s["planner"] and u["perturb"] == s["perturb"]
+
+
+def test_boundary_flags_transition_or_band():
+    preds = [{"a": False}, {"a": False}, {"a": True}, {"a": True}, {"a": True}]
+    assert S.boundary_flags(preds, [False] * 5) == [False, True, False, False, False]
+    assert S.boundary_flags(preds, [False, False, False, False, True]) == [False, True, False, False, True]
