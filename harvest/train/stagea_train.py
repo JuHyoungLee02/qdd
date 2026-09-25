@@ -185,15 +185,16 @@ def evaluate(model, scorer, items, device, share=True, micro=8):
             "n": len(nll), "nll_q": {q: round(sum(v) / len(v), 4) for q, v in per_q.items()}}
 
 
-def source_factory(spec, rule, partial, labels_v2=None):
-    """'labels_v2' | 'outcome' (labeler best sets under `rule`) | 'py:pkg.mod:fn' (a stagea_data source factory)."""
+def source_factory(spec, rule, partial, labels_v2=None, stats=None):
+    """'labels_v2' | 'outcome' (labeler best sets under `rule`; rows whose replay was not bit-identical are dropped
+    and counted in `stats`, canon §78 (1)) | 'py:pkg.mod:fn' (a stagea_data source factory)."""
     from .stagea_data import labels_v2_factory, outcome_factory
     if spec == "labels_v2":
         return labels_v2_factory(labels_v2)
     if spec == "outcome":
         if not rule:
             raise SystemExit("--rule is required with --target-source outcome")
-        return outcome_factory(rule, partial)
+        return outcome_factory(rule, partial, stats)
     if spec.startswith("py:"):
         import importlib
         mod, fn = spec[3:].rsplit(":", 1)
@@ -209,13 +210,15 @@ def _seedset(spec):
     return out
 
 
-def _items(a):
+def _items(a, stats=None):
+    """All items of --pool; stats (optional) collects the outcome-label trust counts (canon §78 (1))."""
     from .stagea_data import load_pool
     dev = _seedset(a.dev_val_seeds) if a.dev_val_seeds else None
     items = []
     for folder in filter(None, a.pool.split(",")):
         items += load_pool(folder, state=a.state, partial=a.partial, step_cm=a.step_cm, dev_val_seeds=dev,
-                           source_factory=source_factory(a.target_source, a.rule, a.partial, a.labels_v2 or None),
+                           source_factory=source_factory(a.target_source, a.rule, a.partial, a.labels_v2 or None,
+                                                         stats),
                            cameras=a.cameras)
     return items
 
@@ -231,7 +234,8 @@ def cmd_train(a):
     os.makedirs(out, exist_ok=True)
     rng = random.Random(a.seed)
     torch.manual_seed(a.seed)
-    items = _items(a)
+    trust = {}
+    items = _items(a, trust)
     tr = [x for x in items if x["split"] == "train"]
     va = [x for x in items if x["split"] == "val"]
     if a.max_train:
@@ -263,7 +267,8 @@ def cmd_train(a):
            "steps_per_epoch": steps_per_epoch, "ne_train": sum(x["ne"] for x in tr),
            "multi_target_train": sum(len(x["target"]) > 1 for x in tr),
            "questions": sorted({x["question"] for x in tr}),
-           "target_sources": sorted({x["source"] for x in tr}), "prompt_files_sha": file_sha(PROMPT_FILES),
+           "target_sources": sorted({x["source"] for x in tr}), "label_trust": trust or None,
+           "prompt_files_sha": file_sha(PROMPT_FILES),
            "prompt_config": prompt_config(tr + va, a),
            "versions": {"torch": torch.__version__, "transformers": transformers.__version__,
                         "peft": peft.__version__, "python": sys.version.split()[0]},

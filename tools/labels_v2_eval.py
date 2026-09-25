@@ -132,6 +132,24 @@ def cause(line, lab, rule, q, step_m):
     return "other"
 
 
+def selfcheck_rows(selfcheck: str):
+    """(rows, n_excluded) of the T14 self-check files <selfcheck>/dev*_P*.jsonl: rows whose replay was not
+    bit-identical are dropped (canon §78 (1)); a line cut by a file still being written is skipped."""
+    from harvest.train.stagea_data import replay_bit_identical
+    rows, n_bad = [], 0
+    for p in sorted(glob.glob(f"{selfcheck}/dev*_P*.jsonl")):
+        for x in open(p, encoding="utf-8"):
+            try:
+                r = json.loads(x)
+            except json.JSONDecodeError:  # a file still being written by the self-check run
+                continue
+            if replay_bit_identical(r):
+                rows.append(r)
+            else:
+                n_bad += 1
+    return rows, n_bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dev", default="")
@@ -198,30 +216,27 @@ def main():
         by = defaultdict(lambda: defaultdict(lambda: [0, 0, 0]))  # rule -> q -> [n, new in best, old in best]
         n_rows = n_match = n_phase_mismatch = 0
         size, matched = defaultdict(list), set()
-        for p in sorted(glob.glob(f"{a.selfcheck}/dev*_P*.jsonl")):
-            for x in open(p):
-                try:
-                    r = json.loads(x)
-                except json.JSONDecodeError:  # a file still being written by the self-check run
-                    continue
-                n_rows += 1
-                key = (r["seed"], r["kind"], r["k"])
-                qn = {v: k for k, v in OUTCOME_Q.items()}.get(r["question"])
-                if key not in snap or qn is None:
-                    continue
-                ln, lab = snap[key]
-                if ln["phase"] != r["phase"] or abs(ln["t"] - r["t"]) > 1e-6:
-                    n_phase_mismatch += 1
-                    continue
-                n_match += 1
-                matched.add(key)
-                for ru, best in r["best_by_rule"].items():
-                    b = by[ru][qn]
-                    b[0] += 1
-                    b[1] += lab[qn] in best
-                    b[2] += ln["oracle"][qn] in best
-                    size[(ru, qn)].append(len(best) / r["n_options"])
-        out["outcome"] = {"n_rows": n_rows, "n_matched_rows": n_match, "n_phase_or_t_mismatch": n_phase_mismatch,
+        sc_rows, n_untrusted = selfcheck_rows(a.selfcheck)
+        for r in sc_rows:
+            n_rows += 1
+            key = (r["seed"], r["kind"], r["k"])
+            qn = {v: k for k, v in OUTCOME_Q.items()}.get(r["question"])
+            if key not in snap or qn is None:
+                continue
+            ln, lab = snap[key]
+            if ln["phase"] != r["phase"] or abs(ln["t"] - r["t"]) > 1e-6:
+                n_phase_mismatch += 1
+                continue
+            n_match += 1
+            matched.add(key)
+            for ru, best in r["best_by_rule"].items():
+                b = by[ru][qn]
+                b[0] += 1
+                b[1] += lab[qn] in best
+                b[2] += ln["oracle"][qn] in best
+                size[(ru, qn)].append(len(best) / r["n_options"])
+        out["outcome"] = {"n_rows": n_rows, "n_excluded_replay_not_bit_identical": n_untrusted,
+                          "n_matched_rows": n_match, "n_phase_or_t_mismatch": n_phase_mismatch,
                           "n_snap": len(matched),
                           "by_rule": {ru: {q: {"n": v[0], "new_in_best": round(v[1] / v[0], 4),
                                                "old_in_best": round(v[2] / v[0], 4),

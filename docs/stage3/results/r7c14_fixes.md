@@ -1,0 +1,39 @@
+# R7 14회차 수정 (D1, N1, N3, DOC D-1·D-2, N4)
+
+- 작성 2026-09-25 13:10 UTC, 수정 에이전트. 대상 `r7_cycle14.md`(검토 대상 `2c4a30d`); 작업 시작 HEAD `a4a6257`, 도중 메인이 `118def0`–`56f9c0d`(연구 문서·user-log 71·논문)를 커밋 — 이 수정은 그 위의 커밋 안 된 작업 트리이고 그 커밋들과 겹치는 파일이 없다. 정본 **§80**. **커밋 안 함**.
+- 원칙: 사전 등록과 정본은 구속한다. 사전 등록 문서 무변경(`tools/prereg_hash.py --check` OK). 시험 먼저(TDD: 새 시험이 실패하는 것을 본 뒤 코드). 다른 에이전트 파일(`harvest/train/stageb_train.py`·`tests/train/test_stageb_torch.py`·`tests/train/test_se2e_temporal.py`·`docs/stage3/prereg_se2e_diag.md`·`results/se2e_diag.md`·`docs/research/temporal_context_2026-09-25.md`)은 건드리지 않았고 파드 사본에도 넣지 않았다. `harvest/sim`은 `determinism.py`의 시드 검사 위치 한 곳만.
+- 로컬 임시 `D:\tools\scratch_qdd\r7c14fix`(`pod_inspect.py`, `cmp_verdict.py`, `mk_podcode.py`·`podcode.tar`·`pod_cpu.sh`·`pod_cpu.log`, `local_pytest.log`, 줄 끝 복구 `fix_draftlog_eol.py`, 들여쓰기 정리 `fix_lv2.py`, `lfsha.py`). 파드 `juhyoung-native-7a2a:/data/harvest/tmp/r7c14fix`는 끝에 지웠다. GPU·Isaac 안 씀. 파드 쓰기는 이 폴더와 지시받은 `/data/harvest/logs/se2e/verdict_v2.json` 하나(`verdict.json`은 그대로).
+- **절차 사고 3건**: (i) 첫 파드 업로드(`pod_inspect.py`)를 `kubectl exec -i … sh -c 'cat > …'`(파드 쪽에서 표준 입력을 받아 씀)로 했다 — 이후 업로드는 모두 `kubectl cp`. (ii) 로컬 Bash에 빈 `python - <<'X'` 한 줄을 실수로 보냈다(내용 없음, 입력 대기로 멈춤 → 바로 중지; 파일 변화 없음). (iii) `docs/draft-log.md`를 Edit 도구로 한 줄 덧붙였더니 파일 전체가 CRLF로 바뀌었다 → `fix_draftlog_eol.py`로 1–284행 CRLF·나머지 LF로 되돌림(`git diff` = 1줄 추가만).
+
+## 1. 결정과 근거
+
+| 항목 | 정본·사전 등록 문장 | 구현 |
+|---|---|---|
+| **D1** 결과 라벨 신뢰 | 정본 §78 (1) "라벨 신뢰 기준 = 재생 **비트 동일**; 풀 `replay_maxabs > 0` 886행(29편) 거부권 제외"; `labeler.md:40` "`replay_maxabs > 0`인 행 전부를 거부권에서 뺀다" | `stagea_data.replay_bit_identical(row)`(수이고 정확히 0; 필드 없음·null·NaN·bool → 불신) 하나를 모든 소비처가 쓴다: `common.load_truth` outcome 분기(`e05`·`rd`·`calib --truth outcome:<rule>`), `stagea_data.OutcomeLabels`(생성 때 거름, `n_kept`·`n_excluded`) → `outcome_factory(…, stats)` → `stagea_train._items(a, stats)`, `tools/labels_v2_eval.selfcheck_rows`. 뺀 수: `e05`·`calib` `meta.truth_label_trust` {rule, rows_kept, rows_excluded_replay_not_bit_identical}, `rd` 변형별, 단계 A `config.json` `label_trust`, `labels_v2_eval` `outcome.n_excluded_replay_not_bit_identical`. [Claude 결정, 정본 §80] 필드 없는 행 불신·행 단위·`partial` 완결 판정은 거르기 전 |
+| D1 곁: 프롬프트 해시 | 정본 §71(`PROMPT_FILES`), §77(ser-A-min-2로 기존 체크포인트 전부 무효) | `stagea_data.py` LF 블롭 sha256 `bc052491…` → `99b17048…`. S-E2E 주 학습·진단은 고정 사본 `code_se2e_run`·`code_se2e_diag`(그 `stagea_data.py` = `a8c7f527…`, e6ab856 이전 블롭 — 이미 HEAD와 다름)에서 `stageb_data`만 쓰고 결과 라벨을 읽지 않으며, 판정은 체크포인트 적재 검사를 거치지 않는다 → 영향 없음(정본 §80) |
+| **N1** S-E2E 판정 입력 검사 | `prereg_se2e.md` §3 "500스텝마다 + 마지막 스텝 → 0, 500, …, 4500, 4686", §4 "처음 = step 0, 끝 3점 = 4000·4500·4686", (e) "step 2001–2050의 50스텝", 정본 §77 보충 2(rc는 드라이버 출력에서) | `se2e_verdict.py`: `EVAL_EVERY` 500, `SCHEDULE` = range(0, total, 500) + [total]; `b.steps_ok` = 첫 eval step 0 그리고 끝 3점 스텝 = `SCHEDULE[-3:]`(아니면 (b) 불합격); `e.window_ok` = 재개 스텝 목록 = mid+1 … mid+50(아니면 "fail"); 드라이버 폴더 인자 필수·폴더 없으면 rc 1 + 사용법 문구. 문턱 불변 |
+| **N3** 빈 선택 | 정본 §79 N5(빈 입력 거부) | `common.load_episodes`: 모든 폴더를 합쳐 0편이면 SystemExit("no episode selected …"); 한 폴더에서만 고르면 그대로. `determinism.main`: `fresh`는 `--seed` 필수 + DEV 검사, `history`는 `--first`·`--partial`·`--seeds` DEV 검사 — 모두 `os.makedirs(--out)` 전 |
+
+## 2. 시험 (RED → GREEN)
+- `tests/eval/test_r7c14_label_trust.py` 16개: `replay_bit_identical` 7경우(0.0·0 → 참, 0.37·1e-300·None·필드 없음·NaN → 거짓); `load_truth(outcome:plan)` — 같은 편 k3(0.0) 남고 k4 dir_z(**0.37**) 빠짐, 같은 스냅샷 k4의 target(0.0)은 남음, 필드 없는 k5 빠짐, stats {kept 2, excluded 2}; stats 누적·labels_v2는 stats 안 건드림; `e05`·`rd`·`calib` 모의 판(`--truth outcome:plan --outcome-dirs`)의 `meta.truth_label_trust` 값; 단계 A `OutcomeLabels`가 0.37 질문 행을 빼 항목 4개, `load_pool` + `outcome_factory(stats)`, `partial` 파일 완결 판정 순서, `stagea_train._items(a, stats)`; `labels_v2_eval.selfcheck_rows`(잘린 줄 건너뜀). RED: `AttributeError`(`replay_bit_identical`·`selfcheck_rows` 없음)·`TypeError`(`stats` 인자 없음)·`KeyError 'truth_label_trust'`·항목 수 5 ≠ 4.
+- `tests/eval/test_r7c14_empty_seeds.py` 11개: `load_episodes` `--seeds {7}` → SystemExit, 한 폴더에서만 고른 경우 받음, `e05 --seeds 7`·`rd --seeds 9` → SystemExit; `determinism` 6경우(`fresh --seed 500`·`--seed` 없음·`--seed 1000`, `history --seeds 3,500`·`--first 549`·`--partial 2000`) 거부 + `--out` 폴더 없음, `compare`는 폴더 생성. RED 9개(한 폴더 경우·`compare`는 기존 동작 확인이라 처음부터 통과; `history --seeds 3,500`은 옛 코드에서 Isaac 가져오기까지 갔다).
+- `tests/test_se2e_verdict.py` 9개(기존 2개를 사전 등록 크기 total 4686·mid 2000으로 바꾸고 드라이버 폴더를 늘 줌): 정상 로그 통과(끝 3점 [4000, 4500, 4686], 창 [2001, 2050]), 부동소수 경계, rc 검사, 드라이버 폴더 없음·없는 경로 → rc ≠ 0·stderr에 "drivers", 재개 1–50·3001–3050(같은 값 50스텝) → "fail", 4500 eval 빠짐 → [3500, 4000, 4686] (b) 불합격, 4686 두 번 → [4500, 4686, 4686] 불합격, 첫 eval이 500 → 불합격. RED 7개(`KeyError 'steps_ok'`·`'window_ok'`, 드라이버 없이 rc 0).
+- 기존 시험 수정 1개: `tests/train/test_stagea_data.py` `_row`에 `replay_maxabs: 0.0`(실제 `cli_label` 행은 늘 이 필드가 있음 — 없으면 이제 불신이라 6개가 실패했다).
+
+## 3. 실제 자료 확인 (파드, 읽기 전용)
+- 라벨 행(`pod_inspect.py`): 풀 `data/pool/labels` 6,627행 — `replay_maxabs` > 0 **886행·29편**, 0 5,741, 필드 없음·null 0(정본 §78 (1)의 수와 같음). `data/pool_selfcheck` 4,970행 — > 0 597행·13편. 옛 `pool_superseded_liftcut/*` 자기 점검 폴더도 필드 있음.
+- S-E2E 판정: 커밋 판(0b056b8, sha256 `476e4098…` = 파드 `logs/se2e/se2e_verdict.py`)을 다시 돌린 출력 = `verdict.json` 바이트 동일. 새 판(sha256 `6bfc674b…` = 로컬 LF)으로 `se2e_verdict.py /data/harvest/ckpt/se2e se2e_A_s0 se2e_B_s1 4686 2000 /data/harvest/logs/se2e` → `/data/harvest/logs/se2e/verdict_v2.json`(sha256 `850e7083…`): `verdict.json`의 모든 값 같음(`cmp_verdict.py` 바뀐·빠진 키 0), 더해진 키 `b.expected_first_last3` [0, 4000, 4500, 4686]·`b.steps_ok` 참·`e.window_ok` 참(두 시드) → (d) 참, (e) "tolerance"·"tolerance" — **판정 불변**. 드라이버 인자 없이 → rc 1.
+
+## 4. 시험 묶음
+- 로컬(Git Bash, `cd D:/qdd && python -m pytest -q -rs`, TMP·TEMP·TMPDIR = scratch): **987 passed, 13 skipped, 실패 0**, rc 0(건너뜀: torch 없음 8, inspect_robots 2, pyarrow 1, isaaclab 1, TODO(P3) 1). 13회차 953 + 새 34. 마지막 줄 바꿈 편집 뒤 다시(13:00 UTC 무렵): **997 passed, 14 skipped**, rc 0 — 그 사이 작업 트리에 다른 에이전트의 커밋 안 된 시험(`tests/train/test_se2e_temporal.py`·`test_se2e_temporal_qwen.py`, torch 없음 1 건너뜀)이 들어와 수가 늘었다(내 것 아님).
+- 파드 CPU(`juhyoung-native-7a2a`, `venv_train`, `CUDA_VISIBLE_DEVICES=""`, `OMP_WAIT_POLICY=PASSIVE`, `OMP_NUM_THREADS=2`, `nice 10`(CPU 쿼터 경합), 코드 = `git -c core.autocrlf=false archive 56f9c0d` + 이 수정 파일 14개(CRLF → LF, 다른 에이전트의 커밋 안 된 파일 제외), third_party 포함(추적 파일), `CODE_VERSION` JSON {commit 56f9c0d…, dirty true}, tar sha256 `56adbbf27fc97be0`, 12:50–12:52 UTC): **1041 passed, 4 skipped**, rc 0(건너뜀: isaaclab 1, pyarrow 1, CUDA 없음 1, TODO(P3) 1). 새·수정 시험 4파일 따로 54 passed. 줄 바꿈만 한 마지막 편집(`calib.py`·`common.py` 120자 넘는 줄 2개) 뒤 사본(tar `fdeced65726798f0`)으로 `tests/eval`·`test_se2e_verdict.py`·`test_stagea_data.py` 다시: 213 passed.
+
+## 5. 문서
+- DOC D-1: `r7c12_fixes.md:17`에 [정정 R7 14회차 D-1, 정본 §79 N1]. DOC D-2: `labeler.md:40`, `pool_replay_debug.md:17`·`:135`(방법 줄), `r2_datagen.md:147`에 [정정 R7 14회차 D-2, 정본 §78 (2)].
+- N4: `handoff.md` 머리·정본 범위 §1~§80, §2.8 13회차 줄에 커밋 2c4a30d·태그 `stage3-r7fix13`, 새 줄 3개(§78 하드 리셋 e8e1864, S-E2E 통과 bc1bd54·진단 a4a6257, 14회차 FAIL + 이 수정). `direction-log.md` 14회차 행, `draft-log.md` 줄(1–284행 CRLF·나머지 LF 유지).
+- 정본 §80: 위 결정 전부, 프롬프트 해시 영향, 논문 갱신 항목.
+
+## 6. 남은 것·확실하지 않은 것
+- 라벨을 **쓰는** 쪽: `cli_label.label_snapshot`은 결과마다 `replay_maxabs`가 없으면 행 값을 0.0으로 적는다(`or 0.0`). 지금의 모든 호출(`label_pool`·`selfcheck`)은 기준 상태가 있어 모든 결과에 값이 있으므로 영향 없지만, 기준 상태 없이 부르면 "비트 동일"로 보이게 된다(바꾸지 않음 — 다음 라벨러 수정 때 null로 적기 권함). `summarize`·`poolsum` 요약은 전 행 기준 그대로.
+- 29편 재라벨 방식(§78 (2), `hard_reset=False` 또는 풀·라벨 재생성)은 R2_TRAIN 뒤 결정 — 그 전까지 `--truth outcome:` 판은 886행이 빠진 정답으로 돈다(뺀 수가 `meta`에 남음).
+- `handoff.md:12`의 user-log 번호("11:10 UTC 기준 70번")는 메인의 56f9c0d(user-log 71) 뒤 한 번호 뒤처진다 — 이 수정 범위 밖이라 두었다.

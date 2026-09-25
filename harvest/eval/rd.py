@@ -206,7 +206,7 @@ def main(argv=None):
     if "standard" not in vd:
         raise SystemExit("--variants needs standard=<dir>")
     res, t_calls = {}, 0.0
-    V, seeds_used = {}, {}
+    V, seeds_used, trust = {}, {}, {}  # trust: per variant, outcome rows kept / excluded (canon §78 (1))
     if not a.no_offline:
         eps = {v: C.load_episodes(expand_dirs(d), a.split, a.episodes, parse_seeds(a.seeds)) for v, d in vd.items()}
         od = [d for d in a.outcome_dirs.split(",") if d]
@@ -225,7 +225,10 @@ def main(argv=None):
                 t1 = time.monotonic()
                 done = asyncio.run(go())
                 t_calls += time.monotonic() - t1
-                V[v] = items_from(E, done, C.load_truth(E, a.truth, od), C.QUESTIONS)
+                st = {}
+                V[v] = items_from(E, done, C.load_truth(E, a.truth, od, stats=st), C.QUESTIONS)
+                if st:
+                    trust[v] = st
                 seeds_used[v] = sorted({(e["kind"], e["seed"]) for e in E})
             t_ready = getattr(srv, "t_ready", 0.0)
         res["offline"] = offline_rd(V, a.n_boot)
@@ -253,8 +256,8 @@ def main(argv=None):
         res["closed"] = crun(cl)
     meta = C.run_meta("rd", info, {
         "split": a.split, "variants": vd, "seeds": {v: [list(x) for x in s] for v, s in seeds_used.items()},
-        "truth": a.truth, "layout": layout, "mode": a.mode, "prompt_config": C.prompt_config_eval(layout),
-        "compare": a.compare or None,
+        "truth": a.truth, "truth_label_trust": trust or None, "layout": layout, "mode": a.mode,
+        "prompt_config": C.prompt_config_eval(layout), "compare": a.compare or None,
         "bootstrap": C.bootstrap_meta(a.n_boot, "episode (kind, layout seed); standard / variant items paired by "
                                                 "(kind, seed, k, question)"),
         "runtime_s": {"total": round(time.monotonic() - t0, 1), "calls": round(t_calls, 1),

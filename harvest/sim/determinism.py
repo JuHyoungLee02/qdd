@@ -191,6 +191,13 @@ def main(argv=None):
     ap.add_argument("--cameras", action="store_true")
     ap.add_argument("--out", required=True)
     a = ap.parse_args(argv)
+    if a.mode == "fresh":  # every seed is refused BEFORE the output folder exists (R7 cycle 14 N3)
+        if a.seed is None:
+            raise SystemExit("determinism fresh: --seed is required")
+        _dev_seed(a.seed)
+    elif a.mode == "history":
+        for s in [a.first, a.partial] + [int(x) for x in a.seeds.split(",")]:
+            _dev_seed(s)
     os.makedirs(a.out, exist_ok=True)
     if a.mode == "compare":
         compare_dir(a.out)

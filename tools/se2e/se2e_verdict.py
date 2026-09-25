@@ -1,13 +1,16 @@
 """S-E2E pre-registered criteria (docs/stage3/prereg_se2e.md §4) from the run logs. Prints one JSON.
-usage: python se2e_verdict.py <out_root> <runA> <runB> <total> <mid> [<drivers_dir>]
+usage: python se2e_verdict.py <out_root> <runA> <runB> <total> <mid> <drivers_dir>
   <out_root>/<run>/log.jsonl                 main run (train / eval / ckpt / save_load records)
   <out_root>/<run>/evalck.jsonl              evalck of ckpt/step_<mid> against the log (--step mid)
   <out_root>/<run>_resume/log.jsonl          resume from ckpt/step_<mid>, --stop-at mid + 50
   <drivers_dir>/driver_A.out, driver_B.out   run_seed.sh output with "main rc=", "evalck rc=", "resume rc=" lines
-                                             (criterion (a) "rc 0"; runA -> A, runB -> B)
+                                             (criterion (a) "rc 0"; runA -> A, runB -> B; mandatory)
 Committed to the repo before the results were read (R7 cycle 13 N3). Thresholds are the pre-registered ones; "<=" uses
 the canon §74 comparison tolerance CMP_EPS = 1e-12 (relative, as harvest.analysis.stats.at_most) so a value equal to
 the threshold up to float rounding passes.
+Input checks (R7 cycle 14 N1, canon §80): (b) "first" must be the step-0 eval and "last 3" exactly the last three
+pre-registered eval steps (every EVAL_EVERY + the final step: 4000, 4500, 4686 for 4686), else (b) fails; (e) the
+resume log must hold exactly steps mid+1 .. mid+K, else (e) fails; without the drivers folder the script refuses.
 """
 import json
 import math
@@ -15,9 +18,16 @@ import os
 import re
 import sys
 
+if len(sys.argv) != 7:
+    sys.exit("usage: se2e_verdict.py <out_root> <runA> <runB> <total> <mid> <drivers_dir> -- the drivers folder "
+             "(driver_A.out / driver_B.out) is required: criterion (a) 'rc 0' is read from it")
 root, runs, total, mid = sys.argv[1], sys.argv[2:4], int(sys.argv[4]), int(sys.argv[5])
-drivers = sys.argv[6] if len(sys.argv) > 6 else None
+drivers = sys.argv[6]
+if not os.path.isdir(drivers):
+    sys.exit(f"drivers folder not found: {drivers!r} (criterion (a) 'rc 0' is read from driver_A.out / driver_B.out)")
 K = 50
+EVAL_EVERY = 500  # prereg_se2e.md §3: eval every 500 steps + the last step
+SCHEDULE = list(range(0, total, EVAL_EVERY)) + [total]
 DEC_S, DEC_F, FM_S, FM_F, MSE_S = 0.70, 0.80, 0.80, 0.90, 0.80
 REL_MED, REL_MAX = 1e-2, 5e-2
 CMP_EPS = 1e-12
@@ -29,8 +39,8 @@ def le(a, b):
 
 def driver_rc(tag):
     """rc values printed by run_seed.sh for main / evalck / resume; None when the file or a line is missing."""
-    p = os.path.join(drivers, f"driver_{tag}.out") if drivers else None
-    txt = open(p).read() if p and os.path.exists(p) else ""
+    p = os.path.join(drivers, f"driver_{tag}.out")
+    txt = open(p).read() if os.path.exists(p) else ""
     out = {}
     for k in ("main", "evalck", "resume"):
         m = re.findall(rf"{k} rc=(-?\d+)", txt)
@@ -54,23 +64,23 @@ def verdict(run):
     out["a"] = {"train_steps_1_to_total": steps == list(range(1, total + 1)), "finite": finite,
                 "final_eval": bool(ev) and ev[-1]["step"] == total, "final_ckpt": total in ck,
                 "last_saved": os.path.exists(os.path.join(root, run, "last", "heads.pt"))}
-    if drivers is not None:
-        rc = driver_rc("A" if run == runs[0] else "B")
-        out["a"]["rc_all_zero"] = all(v == 0 for v in rc.values())
+    rc = driver_rc("A" if run == runs[0] else "B")
+    out["a"]["rc_all_zero"] = all(v == 0 for v in rc.values())
     out["a"]["pass"] = all(out["a"].values())
-    if drivers is not None:
-        out["a"]["rc"] = rc
+    out["a"]["rc"] = rc
     e0, eN = ev[0], ev[-1]
     last3 = ev[-3:]
     sm = {k: sum(r[k] for r in last3) / 3 for k in ("dec", "fm", "sample_mse_norm")}
+    steps_ok = e0["step"] == 0 and [r["step"] for r in last3] == SCHEDULE[-3:]
     out["b"] = {"eval_steps": [r["step"] for r in ev], "last3_steps": [r["step"] for r in last3],
+                "expected_first_last3": [0] + SCHEDULE[-3:], "steps_ok": steps_ok,
                 "dec0": e0["dec"], "dec_final": eN["dec"], "dec_last3": sm["dec"],
                 "fm0": e0["fm"], "fm_final": eN["fm"], "fm_last3": sm["fm"],
                 "mse0": e0["sample_mse_norm"], "mse_final": eN["sample_mse_norm"], "mse_last3": sm["sample_mse_norm"],
                 "b1": le(sm["dec"], DEC_S * e0["dec"]) and le(eN["dec"], DEC_F * e0["dec"]),
                 "b2": le(sm["fm"], FM_S * e0["fm"]) and le(eN["fm"], FM_F * e0["fm"]),
                 "b3": le(sm["sample_mse_norm"], MSE_S * e0["sample_mse_norm"])}
-    out["b"]["pass"] = out["b"]["b1"] and out["b"]["b2"] and out["b"]["b3"]
+    out["b"]["pass"] = steps_ok and out["b"]["b1"] and out["b"]["b2"] and out["b"]["b3"]
     sl = [r for r in log if r["event"] == "save_load"]
     ec = load(os.path.join(root, run, "evalck.jsonl"))
     ec = [r for r in ec if r.get("step") == mid]
@@ -87,15 +97,16 @@ def verdict(run):
     rel = sorted(abs(r["total"] - orig[r["step"]]["total"]) / abs(orig[r["step"]]["total"]) for r in rs[1:])
     first = rs[0] if rs else None
     e = {"steps": [rs[0]["step"], rs[-1]["step"]] if rs else None, "n": len(rs),
+         "window_ok": [r["step"] for r in rs] == list(range(mid + 1, mid + K + 1)),
          "bit_identical_steps": sum(same), "bit_identical_all": bool(rs) and all(same),
          "idx_lr_identical_all": bool(rs) and all(r["idx"] == orig[r["step"]]["idx"]
                                                   and r["lr_heads"] == orig[r["step"]]["lr_heads"] for r in rs),
          "first_step_losses_identical": bool(first) and all(first[k] == orig[first["step"]][k]
                                                             for k in ("fm", "dec", "total")),
          "rel_total_median": rel[len(rel) // 2] if rel else None, "rel_total_max": rel[-1] if rel else None}
-    tol = (e["n"] == K and e["idx_lr_identical_all"] and e["first_step_losses_identical"] and rel
+    tol = (e["window_ok"] and e["idx_lr_identical_all"] and e["first_step_losses_identical"] and rel
            and le(e["rel_total_median"], REL_MED) and le(e["rel_total_max"], REL_MAX))
-    e["grade"] = "bit" if e["n"] == K and e["bit_identical_all"] else ("tolerance" if tol else "fail")
+    e["grade"] = "bit" if e["window_ok"] and e["bit_identical_all"] else ("tolerance" if tol else "fail")
     e["pass"] = e["grade"] != "fail"
     out["e"] = e
     return out

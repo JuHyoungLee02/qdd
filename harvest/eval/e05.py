@@ -681,7 +681,8 @@ def main(argv=None):
     info = C.ensure_merged(info, a.out)
     dirs = [d for d in a.data.split(",") if d]
     eps = C.load_episodes(dirs, a.split, a.episodes, parse_seeds(a.seeds))
-    truth = C.load_truth(eps, a.truth, [d for d in a.outcome_dirs.split(",") if d])
+    trust = {}  # outcome rows kept / excluded by the §78 (1) replay bit-identity rule
+    truth = C.load_truth(eps, a.truth, [d for d in a.outcome_dirs.split(",") if d], stats=trust)
     pc = C.training_prompt_config(info["path"]) if info["kind"] != "mock" else None
     layout = C.default_layout(pc) if a.layout == "auto" else a.layout
     with C.Server(info, a.gpu, a.out, a.url, a.served_name, a.gpu_util) as srv:
@@ -699,7 +700,8 @@ def main(argv=None):
     for ep in eps:
         by_dir.setdefault(os.path.basename(ep["dir"].rstrip("/\\")), []).append(ep["seed"])
     meta = C.run_meta("e05", info, {
-        "split": a.split, "data": dirs, "seeds": by_dir, "truth": a.truth, "layout": layout, "mode": a.mode,
+        "split": a.split, "data": dirs, "seeds": by_dir, "truth": a.truth, "truth_label_trust": trust or None,
+        "layout": layout, "mode": a.mode,
         "episode_data_split": dict(Counter(str(ep["lines"][0].get("split")) for ep in eps if ep["lines"])),
         "prompt_config": C.prompt_config_eval(layout), "variants": a.variants, "same_k": a.same_k,
         "blocks": a.blocks, "floor_n": a.floor_n, "n_calls": len(done),

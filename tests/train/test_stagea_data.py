@@ -27,7 +27,8 @@ def _out(success=False, fail=False, phase="carry", dist=0.1, t_success=None):
 def _row(q, outs, seed=2000, k=21, split="fit", rule="plan"):
     by_rule = {ru: sorted(L.rule_best(outs, ru, PHASE_ORDER)) for ru in L.RULES}
     return {"key": f"ep{seed}_k{k}", "question": q, "rule": rule, "best": by_rule[rule], "best_by_rule": by_rule,
-            "outcomes": outs, "seed": seed, "k": k, "split": split}
+            "outcomes": outs, "seed": seed, "k": k, "split": split,
+            "replay_maxabs": 0.0}  # cli_label rows always carry it; 0 = bit-identical replay (canon §78 (1))
 
 
 def _rows(seed=2000, k=21, split="fit", fail_all=None):

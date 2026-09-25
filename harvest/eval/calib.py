@@ -124,7 +124,8 @@ def main(argv=None):
     if any((e["dir"], e["seed"]) in fitc for e in held):
         raise SystemExit("fit and held-out share episodes")
     od = [d for d in a.outcome_dirs.split(",") if d]
-    truth = {**C.load_truth(fit, a.truth, od), **C.load_truth(held, a.truth, od)}
+    trust = {}  # outcome rows kept / excluded by the §78 (1) replay bit-identity rule (fit + held-out)
+    truth = {**C.load_truth(fit, a.truth, od, stats=trust), **C.load_truth(held, a.truth, od, stats=trust)}
     pc = C.training_prompt_config(info["path"]) if info["kind"] != "mock" else None
     layout = C.default_layout(pc) if a.layout == "auto" else a.layout
     alphas = tuple(float(x) for x in a.alphas.split(","))
@@ -170,8 +171,9 @@ def main(argv=None):
         "fit_split": a.fit_split, "heldout_split": a.heldout_split, "fit_data": a.fit_data, "heldout": a.heldout,
         "seeds": {"fit": sorted({e["seed"] for e in fit}), "heldout": sorted({e["seed"] for e in held})},
         "n_fit_episodes": len(fit), "n_T_episodes": len(hT), "n_J5_episodes": len(hC), "n_heldout_episodes": len(held),
-        "truth": a.truth, "layout": layout, "mode": a.mode, "prompt_config": C.prompt_config_eval(layout),
-        "question_ids": qids, "calibration_file": cal_path, "decision_only": a.decision_only,
+        "truth": a.truth, "truth_label_trust": trust or None, "layout": layout, "mode": a.mode,
+        "prompt_config": C.prompt_config_eval(layout), "question_ids": qids, "calibration_file": cal_path,
+        "decision_only": a.decision_only,
         "bootstrap": C.bootstrap_meta(a.n_boot, "episode (kind, seed) of the held-out set"),
         "ece": ("judged ECE = 15 equal-mass bins (E §3.4); ECE raw / cal (width) are reported only; every ECE "
                 "excludes the ambiguous snapshots (E §3.10), their count and ECE are in heldout.ambiguous (canon §73)"),

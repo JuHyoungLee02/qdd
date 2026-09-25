@@ -363,6 +363,9 @@ def load_episodes(dirs, split: str, episodes: int = 0, seeds=None) -> list:
             meta = json.load(open(mp, encoding="utf-8")) if os.path.exists(mp) else {}
             out.append({"dir": d, "seed": s, "kind": lines[0].get("kind", "P0") if lines else "P0", "lines": lines,
                         "meta": meta})
+    if not out:  # --seeds matched nothing: never run on 0 episodes (R7 cycle 14 N3, canon §80)
+        sel = sorted(seeds) if seeds is not None else None
+        raise SystemExit(f"no episode selected in {list(dirs)} (--seeds {sel})")
     return out
 
 
@@ -372,10 +375,11 @@ def labels_v2_file(d: str) -> str:
     return d + ".labels_v2.jsonl"
 
 
-def load_truth(eps, truth: str, outcome_dirs=None) -> dict:
+def load_truth(eps, truth: str, outcome_dirs=None, stats: dict | None = None) -> dict:
     """{(kind, seed, k): {question: set(keys)}}: labels_v2 (canon §54, primary) or outcome:<rule> (the labeler's best
-    set under a pre-registered rule; NONE_ESCALATE when every option scores 0, §52 decision 1)."""
-    from ..train.stagea_data import target_keys
+    set under a pre-registered rule; NONE_ESCALATE when every option scores 0, §52 decision 1). Outcome rows whose
+    replay was not bit-identical are not truths (canon §78 (1), §80); their count is added to `stats`."""
+    from ..train.stagea_data import add_trust_stats, replay_bit_identical, target_keys
     V2 = {"dir_xy": "dir_xy", "dir_z": "dir_z", "mag_coarse": "mag_coarse", "target": "target",
           "phase": "phase_choice"}
     want = {(e["kind"], e["seed"]) for e in eps}
@@ -390,13 +394,20 @@ def load_truth(eps, truth: str, outcome_dirs=None) -> dict:
     if not truth.startswith("outcome:"):
         raise SystemExit(f"--truth {truth!r}: labels_v2 | outcome:<rule>")
     rule = truth.split(":", 1)[1]
+    kept = excluded = 0
     for d in outcome_dirs or []:
         for f in glob.glob(os.path.join(d, "*.jsonl")):
             for x in open(f, encoding="utf-8"):
                 r = json.loads(x)
                 if (r["kind"], r["seed"]) in want and r["question"] in QUESTIONS:
+                    if not replay_bit_identical(r):
+                        excluded += 1
+                        continue
+                    kept += 1
                     keys, _ = target_keys(r, rule)
                     out.setdefault((r["kind"], r["seed"], r["k"]), {})[r["question"]] = set(keys)
+    if stats is not None:
+        add_trust_stats(stats, rule, kept, excluded)
     return out
 
 

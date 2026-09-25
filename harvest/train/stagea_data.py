@@ -46,6 +46,20 @@ def rule_scores(outs: dict, rule: str, phases=PHASE_ORDER) -> dict:
     raise ValueError(rule)
 
 
+def replay_bit_identical(row: dict) -> bool:
+    """Label trust (canon §78 (1), §80): a labeler row counts only if its replay reached the snapshot bit-identically
+    (`replay_maxabs == 0`); a row without the field (or null / NaN) carries no evidence and is not trusted."""
+    v = row.get("replay_maxabs")
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and v == 0
+
+
+def add_trust_stats(stats: dict, rule: str, kept: int, excluded: int) -> None:
+    """Accumulate the label-trust counts of one reader call into `stats` (run meta / config)."""
+    stats["rule"] = rule
+    stats["rows_kept"] = stats.get("rows_kept", 0) + kept
+    stats["rows_excluded_replay_not_bit_identical"] = stats.get("rows_excluded_replay_not_bit_identical", 0) + excluded
+
+
 def target_keys(row: dict, rule: str) -> tuple[set, bool]:
     """(target option_keys, is_NONE_ESCALATE) of one label row under `rule`."""
     if row.get("rule") and row["rule"] != rule:
@@ -59,10 +73,14 @@ class OutcomeLabels:
     name = "outcome"
 
     def __init__(self, labels: dict, rule: str):
-        """labels: {snapshot key 'ep<seed>_k<k>': [label rows of cli_label]}."""
+        """labels: {snapshot key 'ep<seed>_k<k>': [label rows of cli_label]}. Rows whose replay was not bit-identical
+        are dropped (canon §78 (1)); n_kept / n_excluded count them."""
         if rule not in L.RULES:
             raise ValueError(f"rule must be one of {L.RULES}")
-        self.labels, self.rule = labels, rule
+        self.labels = {k: [r for r in v if replay_bit_identical(r)] for k, v in labels.items()}
+        self.n_kept = sum(len(v) for v in self.labels.values())
+        self.n_excluded = sum(len(v) for v in labels.values()) - self.n_kept
+        self.rule = rule
 
     def __call__(self, line, question, keys):
         rows = [r for r in self.labels.get(f"ep{line['seed']}_k{line['k']}", []) if r["question"] == question]
@@ -183,16 +201,20 @@ def _read_labels(path):
     return labels
 
 
-def outcome_factory(rule: str, partial: bool = False):
-    """source_factory for OutcomeLabels: pool_dir/labels/ep<seed>.jsonl (.done required unless partial)."""
+def outcome_factory(rule: str, partial: bool = False, stats: dict | None = None):
+    """source_factory for OutcomeLabels: pool_dir/labels/ep<seed>.jsonl (.done required unless partial).
+    stats (optional, accumulated over episodes): rule, rows_kept, rows_excluded_replay_not_bit_identical."""
     def make(pool_dir, seed):
         p = f"{pool_dir}/labels/ep{seed}.jsonl"
         if not os.path.exists(p) or (not partial and not os.path.exists(p + ".done")):
             return None
         labels = _read_labels(p)
-        if partial:  # the last snapshot of an unfinished file may be cut
+        if partial:  # the last snapshot of an unfinished file may be cut (judged before the trust filter)
             labels = {k: v for k, v in labels.items() if len(v) >= len(QUESTIONS)}
-        return OutcomeLabels(labels, rule)
+        src = OutcomeLabels(labels, rule)
+        if stats is not None:
+            add_trust_stats(stats, rule, src.n_kept, src.n_excluded)
+        return src
     return make
 
 
