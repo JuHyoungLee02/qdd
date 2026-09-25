@@ -8,6 +8,9 @@
          [--val-per-kind N --val-seed S]                                  stratified val subset per source (§69 N2)
          [--save-every N] [--resume CKPT] [--stop-at N]                   checkpoints + exact resume (§69 N3)
   evalck --ckpt DIR [same data / val / --seed] --against LOG --step N    reloaded checkpoint eval == logged eval
+  train  ... [--init-weights CKPT] [--train-subset N --train-subset-seed S] [--lr-schedule constant --warmup-steps W]
+         [--eval-train-subset]                                            diagnostics (prereg_se2e_diag D1 / D2)
+  predict --ckpt DIR [same data / val / --seed] --out JSONL               per-item decision predictions (D3)
 
 Model: Qwen3-VL-4B-Instruct (stage A's revision) + LoRA r32 on every LLM linear layer (stage A's target, vision
 tower frozen) + ActionExpert (flow matching, KI stop-gradient) + AuxGeomHead (privileged geometry, gradient to
@@ -126,22 +129,29 @@ def opt_param_names(model):
     return [[names[id(p)] for p in g] for g in _param_groups(model) if g]
 
 
-def make_optimizer(model, lr, lr_heads, total, warmup=0.03):
+def make_optimizer(model, lr, lr_heads, total, warmup=0.03, schedule="cosine", warmup_steps=0):
+    """AdamW; linear warmup (warmup_steps, 0 = warmup * total) then cosine to 0 (default) or constant
+    (prereg_se2e_diag D1 / D2)."""
     heads, bb = _param_groups(model)
     groups = [{"params": heads, "lr": lr_heads}]
     if bb:
         groups.append({"params": bb, "lr": lr})
     opt = torch.optim.AdamW(groups, weight_decay=0.0)
-    w = max(1, math.ceil(warmup * total))
-    sched = torch.optim.lr_scheduler.LambdaLR(
-        opt, lambda s: (s + 1) / w if s < w else 0.5 * (1 + math.cos(math.pi * min(1.0, (s - w) / max(1, total - w)))))
-    return opt, sched
+    w = warmup_steps or max(1, math.ceil(warmup * total))
+    if schedule == "constant":
+        f = lambda s: (s + 1) / w if s < w else 1.0  # noqa: E731
+    elif schedule == "cosine":
+        f = lambda s: (s + 1) / w if s < w else 0.5 * (1 + math.cos(math.pi * min(1.0, (s - w) / max(1, total - w))))  # noqa: E731
+    else:
+        raise ValueError(f"schedule {schedule!r}")
+    return opt, torch.optim.lr_scheduler.LambdaLR(opt, f)
 
 
 @torch.no_grad()
-def evaluate(model, enc, val, device, seed=0, steps=10):
+def evaluate(model, enc, val, device, seed=0, steps=10, records=None):
     """Fixed-noise validation: flow-matching loss (fixed t, noise), aux loss, decision NLL / accuracy, and the
-    sampled chunk error (10 Euler steps) in normalized units and in physical units (rad / m)."""
+    sampled chunk error (10 Euler steps) in normalized units and in physical units (rad / m). records = a list:
+    one dict per decision item appended (key, question, target, option log-probs, argmax, correct; D3 dumps)."""
     was = model.training
     model.eval()
     g = torch.Generator().manual_seed(seed)
@@ -166,6 +176,11 @@ def evaluate(model, enc, val, device, seed=0, steps=10):
                                      *enc.trie(it["names"]), enc.end, enc.pad) for it in s["items"]]
             for it, lp in zip(s["items"], lps):
                 acc.append(max(lp, key=lambda n: float(lp[n])) in it["target"])
+                if records is not None:
+                    lpf = {n: float(v) for n, v in lp.items()}
+                    pred = max(lp, key=lambda n: float(lp[n]))
+                    records.append({"key": s["key"], "question": it["question"], "target": list(it["target"]),
+                                    "pred": pred, "correct": acc[-1], "lp": lpf})
         n0 = torch.randn(a.shape, generator=g).to(device)
         ctx, mask = (fw[0], fw[1]) if fw else model.contexts([s], enc, device, grad=False)
         z = sample_actions(model.expert, model.cond([s], ctx, mask, device), steps, n0)
@@ -219,18 +234,32 @@ def check_resume_args(saved: dict, now: dict):
         raise SystemExit(f"--resume: settings differ from the checkpoint's run (saved, now): {bad}")
 
 
+def train_subset(tr, n_per_source: int, seed: int = 0):
+    """prereg_se2e_diag D2: a seeded stratified subset of the train split, n samples of every source (0 = all)."""
+    return stratified_val(tr, n_per_source, seed)
+
+
 def train_loop(model, enc, train, val, device, steps, batch=4, lr=1e-4, lr_heads=1e-4, eval_every=10,
-               seed=0, log=print, clip=1.0, save_every=0, save=None, resume=None, stop_at=0):
+               seed=0, log=print, clip=1.0, save_every=0, save=None, resume=None, stop_at=0, schedule="cosine",
+               warmup_steps=0, extra_evals=None):
     """steps = the schedule length. save(step, train_state) every save_every steps and at the last step (the caller
     writes the weights). resume = a saved train_state: optimizer, scheduler, RNG states and the data order continue
-    exactly (the caller has loaded the checkpoint's weights). stop_at = stop after that step (resume check)."""
+    exactly (the caller has loaded the checkpoint's weights). stop_at = stop after that step (resume check).
+    extra_evals = {name: samples}: also evaluated at every eval step, logged as event 'eval_<name>'."""
     rng = random.Random(seed)
     torch.manual_seed(seed)
-    opt, sched = make_optimizer(model, lr, lr_heads, steps)
+    opt, sched = make_optimizer(model, lr, lr_heads, steps, schedule=schedule, warmup_steps=warmup_steps)
     params = [p for g in opt.param_groups for p in g["params"]]
     order, start = [], 0
+
+    def extra(step):
+        for name, ss in (extra_evals or {}).items():
+            hist.append({"event": f"eval_{name}", "step": step, **evaluate(model, enc, ss, device, seed)})
+            log(hist[-1])
     if resume is None:
         hist = [{"event": "eval", "step": 0, **evaluate(model, enc, val, device, seed)}]
+        log(hist[-1])
+        extra(0)
     else:
         start, order = resume["step"], list(resume["order"])
         rng.setstate(resume["py_rng"])
@@ -240,7 +269,7 @@ def train_loop(model, enc, train, val, device, steps, batch=4, lr=1e-4, lr_heads
         if device.type == "cuda" and resume.get("cuda_rng") is not None:
             torch.cuda.set_rng_state(resume["cuda_rng"], device)
         hist = [{"event": "resume", "step": start}]
-    log(hist[-1])
+        log(hist[-1])
     model.train()
     t0 = time.time()
     for step in range(start + 1, steps + 1):
@@ -260,6 +289,7 @@ def train_loop(model, enc, train, val, device, steps, batch=4, lr=1e-4, lr_heads
         if step % eval_every == 0 or step == steps:
             hist.append({"event": "eval", "step": step, **evaluate(model, enc, val, device, seed)})
             log(hist[-1])
+            extra(step)
         if save is not None and save_every and (step % save_every == 0 or step == steps):
             save(step, {"step": step, "order": list(order), "py_rng": rng.getstate(), "opt": opt.state_dict(),
                         "sched": sched.state_dict(), "torch_rng": torch.get_rng_state(),
@@ -439,21 +469,26 @@ def cmd_train(a):
     if a.resume:
         resume = torch.load(os.path.join(a.resume, "train_state.pt"), map_location="cpu", weights_only=False)
         check_resume_args(resume["args"], vars(a))
-        if a.init_adapter:
-            raise SystemExit("--resume and --init-adapter: use one")
+        if a.init_adapter or a.init_weights:
+            raise SystemExit("--resume and --init-adapter / --init-weights: use one")
+    if a.init_weights and a.init_adapter:
+        raise SystemExit("--init-weights and --init-adapter: use one")
     os.makedirs(out, exist_ok=True)
-    if resume is not None:
-        bb, proc, hd = load_backbone("qwen", a.model, device, adapter=os.path.join(a.resume, "adapter"))
-        model = load_heads(a.resume, bb, device)
+    wdir = a.resume or a.init_weights  # --init-weights: adapter + heads only, fresh optimizer / schedule / data order
+    if wdir:
+        bb, proc, hd = load_backbone("qwen", a.model, device, adapter=os.path.join(wdir, "adapter"))
+        model = load_heads(wdir, bb, device)
     else:
         bb, proc, hd = load_backbone("qwen", a.model, device, adapter=a.init_adapter or None)
     backbone_trainable(bb)
     if a.grad_ckpt:
         bb.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
         bb.enable_input_require_grads()
-    if resume is None:
+    if not wdir:
         model = new_model(bb, tr, hd, mode=a.mode, ki=a.ki,
                           lam={"dec": a.lam_dec, "act": a.lam_act, "aux": a.lam_aux, "vqa": 0.0, "ver": a.lam_ver})
+    # --train-subset: after new_model, so normalization statistics / vocabularies still come from the whole split
+    full_n, tr = len(tr), train_subset(tr, a.train_subset, a.train_subset_seed)
     model = model.to(device)
     model.shared = not a.no_share
     pnames = opt_param_names(model)
@@ -473,6 +508,11 @@ def cmd_train(a):
            "val_used": len(val), "val_sources": {k: sum(source_of(s) == k for s in val)
                                                  for k in sorted({source_of(s) for s in val})},
            "val_keys_sha": _sha([s["key"] for s in val])})
+    if a.train_subset or a.init_weights or a.lr_schedule != "cosine" or a.warmup_steps:
+        write({"event": "diag_config", "n_train_full": full_n, "n_train_used": len(tr),
+               "train_keys_sha": _sha(sorted(s["key"] for s in tr)),
+               "train_sources": {k: sum(source_of(s) == k for s in tr) for k in sorted({source_of(s) for s in tr})},
+               "init_weights": a.init_weights, "lr_schedule": a.lr_schedule, "warmup_steps": a.warmup_steps})
     if resume is not None and resume["total"] != total:
         raise SystemExit(f"--resume: schedule length {total} != checkpoint's {resume['total']}")
     extra = {"base_model": a.model, "base_rev": MODEL_REV, "prompt_config": pcfg, "hz": hz, "data": a.data}
@@ -483,7 +523,8 @@ def cmd_train(a):
                                            "param_names": pnames})
         write({"event": "ckpt", "step": step, "dir": path})
     train_loop(model, enc, tr, val, device, total, a.batch, a.lr, a.lr_heads, a.eval_every, a.seed, write,
-               save_every=a.save_every, save=save, resume=resume, stop_at=a.stop_at)
+               save_every=a.save_every, save=save, resume=resume, stop_at=a.stop_at, schedule=a.lr_schedule,
+               warmup_steps=a.warmup_steps, extra_evals={"train_subset": tr} if a.eval_train_subset else None)
     if a.stop_at:
         return
     last = os.path.join(out, "last")
@@ -520,6 +561,23 @@ def cmd_evalck(a):
     write(rec)
 
 
+def cmd_predict(a):
+    """prereg_se2e_diag D3: reload a checkpoint, run evaluate() on the val subset (same --seed / subset) and write
+    one record per decision item (option log-probs, argmax, target) + a final 'summary' record (the eval metrics)."""
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    _, _, _, va = _load_data(a)
+    val = val_subset(va, a.max_val, a.val_per_kind, a.val_seed)
+    bb, proc, _ = load_backbone("qwen", a.model, device, adapter=os.path.join(a.ckpt, "adapter"))
+    m = load_heads(a.ckpt, bb, device).eval()
+    m.shared = not a.no_share
+    recs = []
+    ev = evaluate(m, HFEncoder(proc), val, device, a.seed, records=recs)
+    write = _writer(a.out)
+    for r in recs:
+        write({"event": "item", **r})
+    write({"event": "summary", "ckpt": a.ckpt, "val_keys_sha": _sha([s["key"] for s in val]), **ev})
+
+
 def _common(p):
     p.add_argument("--model", default=MODEL_DIR)
     p.add_argument("--mode", default="absolute", choices=("absolute", "residual"))
@@ -537,6 +595,11 @@ def _common(p):
 
 
 def main(argv=None):
+    a = build_parser().parse_args(argv)
+    {"smoke": cmd_smoke, "train": cmd_train, "evalck": cmd_evalck, "predict": cmd_predict}[a.cmd](a)
+
+
+def build_parser():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("smoke")
@@ -564,6 +627,13 @@ def main(argv=None):
     t.add_argument("--stop-at", type=int, default=0, help="stop after this step (resume check); no last/ save")
     t.add_argument("--grad-ckpt", action="store_true")
     t.add_argument("--overwrite", action="store_true")
+    # prereg_se2e_diag (D1 / D2); the defaults keep the S-E2E behaviour
+    t.add_argument("--init-weights", default="", help="start from a checkpoint dir's adapter + heads (fresh optimizer)")
+    t.add_argument("--train-subset", type=int, default=0, help="stratified train subset: N per source (0 = all)")
+    t.add_argument("--train-subset-seed", type=int, default=0)
+    t.add_argument("--lr-schedule", default="cosine", choices=("cosine", "constant"))
+    t.add_argument("--warmup-steps", type=int, default=0, help="linear warmup steps (0 = 3 %% of the schedule)")
+    t.add_argument("--eval-train-subset", action="store_true", help="also evaluate the train (sub)set at each eval")
     e = sub.add_parser("evalck", help="reload a checkpoint, fixed-noise validation, compare with the run's log")
     _common(e)
     _data(e)
@@ -572,8 +642,13 @@ def main(argv=None):
     e.add_argument("--against", default="", help="the run's log.jsonl")
     e.add_argument("--step", type=int, default=0, help="the logged eval step the checkpoint belongs to")
     e.add_argument("--out", default="", help="append the result (jsonl)")
-    a = ap.parse_args(argv)
-    {"smoke": cmd_smoke, "train": cmd_train, "evalck": cmd_evalck}[a.cmd](a)
+    pr = sub.add_parser("predict", help="per-item decision predictions of a checkpoint on the val subset (D3)")
+    _common(pr)
+    _data(pr)
+    pr.add_argument("--ckpt", required=True)
+    pr.add_argument("--max-train", type=int, default=0)
+    pr.add_argument("--out", required=True, help="jsonl: one 'item' record per decision item + 'summary'")
+    return ap
 
 
 def _data(p):

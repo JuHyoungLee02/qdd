@@ -391,3 +391,69 @@ def test_resume_refuses_a_changed_training_setting():
         T.check_resume_args(base, {**base, "lr": 2e-4})
     with pytest.raises(SystemExit):
         T.check_resume_args(base, {**base, "seed": 1})
+
+
+# ---------------------------------------------------------------------------------- S-E2E diagnostics (prereg_se2e_diag)
+def _lrs(schedule, warmup_steps, steps=12):
+    torch.manual_seed(0)
+    ss = D.synthetic_rows(16, seed=0)
+    tr, va = D.split_samples(ss)
+    m = M.new_model(MockBackbone(0), tr, HID, expert_kw=EK, aux_kw=AK)
+    hist, _ = _loop(m, tr, va, steps=steps, eval_every=steps, schedule=schedule, warmup_steps=warmup_steps)
+    return [h["lr_heads"] for h in hist if h["event"] == "train"]
+
+
+def test_default_schedule_is_the_old_warmup_cosine_exactly():
+    lrs = _lrs("cosine", 0)
+    w, total, base = max(1, math.ceil(0.03 * 12)), 12, 2e-3
+    old = lambda s: (s + 1) / w if s < w else 0.5 * (1 + math.cos(math.pi * min(1.0, (s - w) / max(1, total - w))))  # noqa: E731
+    assert lrs == [base * old(s) for s in range(1, 13)]
+
+
+def test_constant_schedule_warms_up_then_stays_flat():
+    lrs = _lrs("constant", 4)
+    assert lrs[:3] == pytest.approx([2e-3 * k / 4 for k in (2, 3, 4)])  # scheduler already stepped once at step 1
+    assert lrs[3:] == [2e-3] * 9
+
+
+def test_train_subset_is_stratified_seeded_and_order_free():
+    tr = _src_samples()
+    a = T.train_subset(list(tr), 4, seed=0)
+    assert sorted(T.source_of(s) for s in a) == ["RB1"] * 4 + ["RB2"] * 4
+    assert a == T.train_subset(list(reversed(tr)), 4, seed=0)
+    assert a != T.train_subset(list(tr), 4, seed=1)
+    assert T.train_subset(tr, 0, seed=0) is tr  # 0 = the whole train split (default)
+
+
+def test_extra_eval_sets_are_evaluated_at_the_eval_cadence():
+    torch.manual_seed(0)
+    ss = D.synthetic_rows(16, seed=0)
+    tr, va = D.split_samples(ss)
+    m = M.new_model(MockBackbone(0), tr, HID, expert_kw=EK, aux_kw=AK)
+    hist, _ = _loop(m, tr, va, steps=6, eval_every=3, extra_evals={"train_subset": tr[:4]})
+    ex = [h for h in hist if h["event"] == "eval_train_subset"]
+    assert [h["step"] for h in ex] == [0, 3, 6] and all(h["n"] == 4 for h in ex)
+    assert [h["step"] for h in hist if h["event"] == "eval"] == [0, 3, 6]
+
+
+def test_evaluate_records_per_item_predictions_without_changing_the_metrics():
+    torch.manual_seed(0)
+    m, ss = _model(n=6)
+    enc, dev = MockEncoder(), torch.device("cpu")
+    ref = T.evaluate(m, enc, ss, dev, seed=0)
+    recs = []
+    ev = T.evaluate(m, enc, ss, dev, seed=0, records=recs)
+    assert ev == ref
+    assert len(recs) == sum(len(s["items"]) for s in ss)
+    r = recs[0]
+    assert {"key", "question", "target", "pred", "lp", "correct"} <= set(r)
+    assert r["pred"] == max(r["lp"], key=r["lp"].get) and r["correct"] == (r["pred"] in r["target"])
+    assert np.mean([x["correct"] for x in recs]) == pytest.approx(ev["dec_acc"])
+
+
+def test_parser_defaults_keep_the_s_e2e_behaviour():
+    a = T.build_parser().parse_args(["train", "--run", "x"])
+    assert (a.init_weights, a.train_subset, a.lr_schedule, a.warmup_steps, a.eval_train_subset) == \
+        ("", 0, "cosine", 0, False)
+    p = T.build_parser().parse_args(["predict", "--ckpt", "c", "--out", "o.jsonl"])
+    assert p.cmd == "predict"
