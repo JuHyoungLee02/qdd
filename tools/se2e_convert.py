@@ -237,6 +237,105 @@ def convert(a):
         print(json.dumps(stats), flush=True)
 
 
+# ------------------------------------------------------------------------------------------ reconvert (canon §83)
+KEEP_FROM_OLD = ("images", "img_rotate_cw")  # filled by the materializing convert; the frames do not change
+
+
+def _diff_keys(a, b, pre=""):
+    if isinstance(a, dict) and isinstance(b, dict):
+        return [x for k in sorted(set(a) | set(b)) for x in _diff_keys(a.get(k), b.get(k), f"{pre}{k}.")]
+    return [] if a == b else [pre.rstrip(".")]
+
+
+def merge_reconverted(old: list, new: list, state=None, fps=None, names=None, kind=None) -> list:
+    """Rows of one episode re-derived with the causal velocity (se2e_data.finite_velocity): the new rows (json round
+    trip) + the old rows' image refs / rotation flag. Only proprio.qd and proprio.grip[1] may differ from the old
+    rows (ValueError otherwise). With `state`, each row also gets se2e_temporal.hist_fields (motion-line source,
+    past-frame refs img_prev/<kind>/ep<N>/k<K>_<cam>.jpg as in tools/se2e_temporal.py)."""
+    new = json.loads(json.dumps(new))
+    if [r["k"] for r in old] != [r["k"] for r in new]:
+        raise ValueError(f"frames differ: old {[r['k'] for r in old][:5]}.. new {[r['k'] for r in new][:5]}..")
+    out = []
+    for o, n in zip(old, new):
+        want = json.loads(json.dumps(o))
+        want["proprio"]["qd"] = n["proprio"]["qd"]
+        want["proprio"]["grip"][1] = n["proprio"]["grip"][1]
+        got = {**n, **{k: o[k] for k in KEEP_FROM_OLD if k in o}}
+        if got != want:
+            raise ValueError(f"ep{o['seed']} k{o['k']}: changed fields {_diff_keys(want, got)}")
+        out.append(got)
+    if state is not None:
+        from harvest.train import se2e_temporal as T
+        for r in out:
+            rel = os.path.join("img_prev", kind, f"ep{r['seed']:06d}")
+            r.update(T.hist_fields(r, state, fps, names,
+                                   lambda kp: {c: f"{rel}/k{kp:04d}_{c}.jpg".replace(os.sep, "/") for c in CAMS}))
+    return out
+
+
+def _reconvert_ep(args):
+    root, info, tasks, kind, ep, old, urdf, stride, hist = args
+    chain = {arm: S.load_arm_chain(urdf, arm) for arm in ("left", "right")}
+    pq_path, _ = _paths(root, info, ep)
+    t, st, act = _read_pq(pq_path)
+    names = info["features"]["observation.state"]["names"]
+    new = S.episode_rows(st, act, info["fps"], chain, ep, kind, tasks[int(t["task_index"][0])], stride=stride,
+                         labels=True, names=names, timestamps=t["timestamp"])
+    kw = {"state": st, "fps": info["fps"], "names": names, "kind": kind} if hist else {}
+    return merge_reconverted(old, new, **kw)
+
+
+def reconvert(a):
+    """New data version from an existing conversion (rows only): same rows / order / frames (<conv>/img -> <src>/img
+    symlink), velocity fields re-derived causally, + hist_fields (--hist). Never writes under --src."""
+    src, conv = os.path.abspath(a.src), os.path.abspath(a.conv)
+    for p in (src, os.path.dirname(src)):
+        if conv == p or conv.startswith(p + os.sep):
+            raise SystemExit(f"--conv {conv} must not be under {p}")
+    os.makedirs(conv, exist_ok=True)
+    rep = {"src": src, "stride": a.stride, "hist": a.hist}
+    for kind, name in DATASETS.items():
+        if a.kinds and kind not in a.kinds.split(","):
+            continue
+        out = S.rows_path(conv, kind)
+        if os.path.exists(out):
+            raise SystemExit(f"{out} exists (new data versions are never overwritten)")
+        t0 = time.time()
+        root = os.path.join(a.raw, name)
+        info, _, tasks = _meta(root)
+        order = [json.loads(x) for x in open(S.rows_path(src, kind), encoding="utf-8")]
+        by = {}
+        for r in order:
+            by.setdefault(r["seed"], []).append(r)
+        jobs = [(root, info, tasks, kind, ep, rows, a.urdf, a.stride, a.hist) for ep, rows in by.items()]
+        got = {}
+        with Pool(a.workers) as p:
+            for rows in p.imap_unordered(_reconvert_ep, jobs, chunksize=2):
+                for r in rows:
+                    got[(r["seed"], r["k"])] = r
+        n, changed, dq = 0, 0, []
+        with open(out, "w", encoding="utf-8") as f:
+            for o in order:
+                r = got[(o["seed"], o["k"])]
+                changed += r["proprio"]["qd"] != o["proprio"]["qd"] or r["proprio"]["grip"] != o["proprio"]["grip"]
+                dq.append(float(np.abs(np.subtract(r["proprio"]["qd"], o["proprio"]["qd"])).max()))
+                f.write(json.dumps(r, separators=(",", ":")) + "\n")
+                n += 1
+        st_old = os.path.join(src, f"{kind}.stats.json")
+        if os.path.exists(st_old):
+            json.dump({**json.load(open(st_old)), "reconverted_from": src}, open(os.path.join(conv, f"{kind}.stats.json"), "w"),
+                      indent=1)
+        rep[kind] = {"rows": n, "episodes": len(by), "rows_velocity_changed": changed,
+                     "qd_abs_change_max": max(dq), "qd_abs_change_median": float(np.median(dq)),
+                     "seconds": round(time.time() - t0, 1)}
+        print(kind, rep[kind], flush=True)
+    img = os.path.join(conv, "img")
+    if not os.path.lexists(img):
+        os.symlink(os.path.join(src, "img"), img)
+    rep["img"] = os.path.realpath(img)
+    json.dump(rep, open(os.path.join(conv, "reconvert.json"), "w"), indent=1)
+
+
 def sheet(a):
     """Contact sheet: per chosen episode one strip of 6 rows (head over active wrist) with arm / labels."""
     from PIL import Image, ImageDraw
@@ -281,7 +380,9 @@ def sheet(a):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=("verify", "convert", "sheet"))
+    ap.add_argument("cmd", choices=("verify", "convert", "sheet", "reconvert"))
+    ap.add_argument("--src", default="/data/harvest/data/se2e/conv", help="reconvert: the existing conversion (read)")
+    ap.add_argument("--hist", action="store_true", help="reconvert: + se2e_temporal.hist_fields (motion source)")
     ap.add_argument("--sheet-eps", default="")
     ap.add_argument("--sheet-out", default="/data/harvest/data/se2e/se2e_frames.jpg")
     ap.add_argument("--raw", default="/data/harvest/data/se2e/raw")
@@ -295,7 +396,7 @@ def main():
     ap.add_argument("--full-decode", type=int, default=40)
     ap.add_argument("--no-images", action="store_true")
     a = ap.parse_args()
-    {"verify": verify, "convert": convert, "sheet": sheet}[a.cmd](a)
+    {"verify": verify, "convert": convert, "sheet": sheet, "reconvert": reconvert}[a.cmd](a)
 
 
 if __name__ == "__main__":

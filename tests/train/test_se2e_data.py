@@ -69,7 +69,34 @@ def test_interp_at_and_velocity():
     np.testing.assert_allclose(S.interp_at(x, 1.5), [2.5])
     np.testing.assert_allclose(S.interp_at(x, 7.0), [9.0])  # clamped
     v = S.finite_velocity(x, hz=10)
-    np.testing.assert_allclose(v[:, 0], [10.0, 20.0, 40.0, 50.0])  # one-sided ends, central inside
+    # causal backward difference (canon §83): v[k] = (x[k] - x[k-1]) * hz, v[0] = 0; central would be 20 / 40 inside
+    np.testing.assert_allclose(v[:, 0], [0.0, 10.0, 30.0, 50.0])
+
+
+def test_finite_velocity_never_reads_the_next_frame():
+    x = np.array([[0.0], [1.0], [4.0], [9.0], [16.0]])
+    y = x.copy()
+    y[3] = 100.0  # change frame k + 1 = 3 only
+    for k in (0, 1, 2):
+        np.testing.assert_allclose(S.finite_velocity(y, 10)[k], S.finite_velocity(x, 10)[k])
+
+
+def test_episode_rows_proprio_velocity_is_causal_and_equals_the_motion_source():
+    from harvest.train import se2e_temporal as T
+    st, act = _episode()
+    ch = {"right": _chain(), "left": _chain()}
+    rows = S.episode_rows(st, act, 10, ch, 7, "RB2", "x", stride=1)
+    fut = st.copy()
+    fut[11] += 0.5  # frame k + 1 of row k = 10
+    r10 = S.episode_rows(fut, act, 10, ch, 7, "RB2", "x", stride=1)[10]
+    i10 = S.arm_index(S.FEATURE_NAMES_16, r10["arm"])  # (the active-arm window looks ahead by design; qd must not)
+    np.testing.assert_allclose(r10["proprio"]["qd"], (st[10, i10[:7]] - st[9, i10[:7]]) * 10, atol=1e-12)
+    assert r10["proprio"]["grip"][1] == pytest.approx((st[10, i10[7]] - st[9, i10[7]]) * 10)
+    for r in rows:  # the same causal velocity as the motion line's source (se2e_temporal.hist_fields)
+        ix = S.arm_index(S.FEATURE_NAMES_16, r["arm"])
+        np.testing.assert_allclose(r["proprio"]["qd"], T.backward_velocity(st[:, ix[:7]], r["k"], 10), atol=1e-12)
+        assert r["proprio"]["grip"][1] == pytest.approx(float(T.backward_velocity(st[:, ix[7]], r["k"], 10)))
+    assert rows[0]["proprio"]["qd"] == [0.0] * 7 and rows[0]["proprio"]["grip"][1] == 0.0  # episode start
 
 
 def test_decision_labels_bins_and_deadband():

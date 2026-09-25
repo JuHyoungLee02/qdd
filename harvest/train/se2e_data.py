@@ -12,7 +12,8 @@ One row per sampled frame k (stride), same fields as stageb_data.check_row(row, 
                             state); bimanual = both arms move >= 2 cm and the smaller >= half the larger
   action_exec / _script     8-D of the active arm (7 joints rad + gripper joint value as recorded); equal (teleop,
                             no scripted skill)
-  proprio                   q, qd (finite difference of the 10 fps state), tau = 0 (not recorded,
+  proprio                   q, qd (causal backward difference of the 10 fps state, 0 at k = 0; §83 -- data
+                            versions before se2e_c1 used a central difference), tau = 0 (not recorded,
                             proprio_mask.tau = 0), grip = [gripper joint value, its velocity] (joint units, NOT
                             the sim's width in m; stageb_data.make_sample maps both datasets to [0, 1] openness,
                             canon §63 (2), and drops masked tau from statistics and input, §63 (3))
@@ -131,10 +132,12 @@ def resample_chunk(a, src_hz: float, t0_index: int, dst_hz: float, H: int):
 
 
 def finite_velocity(x, hz: float) -> np.ndarray:
+    """Causal backward difference (canon §83): v[k] = (x[k] - x[k-1]) * hz, v[0] = 0 -- never reads frame k + 1
+    (= se2e_temporal.backward_velocity, the motion line's source). Was np.gradient (central, 0.1 s of future)."""
     x = np.asarray(x, float)
-    if len(x) < 2:
-        return np.zeros_like(x)
-    return np.gradient(x, axis=0) * hz
+    v = np.zeros_like(x)
+    v[1:] = np.diff(x, axis=0) * hz
+    return v
 
 
 # ------------------------------------------------------------------------------------------ labels
