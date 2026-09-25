@@ -441,3 +441,4 @@
 - 00:55 UTC R7 3회차 FAIL(DEFECT 0, DOC 4, SCOPED 8, NOTE 10) — 2회차 정정의 형제 누락 4건(se2e_data 날짜, r2_datagen 시드, 런타임 주석 '한 번 호출', handoff 정본 범위). 전 저장소 grep 후 정정 → 정본 §69(정정 절차 명문화, §68 K6 근거 보정, S-E2E 사전 등록 항목 N2·N3). 연속 무결 0회 → 4회차.
 - 01:14 UTC R7 4회차 FAIL(DEFECT 0, DOC 2, SCOPED 8, NOTE 11) — fused decide = vLLM 옛 서술 2곳(+ 검토가 놓친 r6_eval 1곳) 정정 → 정본 §70. 교훈: 같은 사실 grep은 문구가 아니라 구현 이름(vLLM·HF)으로도 해야 한다.
 - 01:31 UTC R7 5회차 FAIL(DEFECT 0, DOC 2, SCOPED 8, NOTE 13) — P1 handoff 상태 줄·코드 무결 횟수 오기(4회 → 실제 3회), P2 해결된 '실체크포인트 어댑터 없음' 서술. 코드 무결은 2–5회차 4회 연속. → 2026-09-25 01:48 UTC 문서 전수 정리 sweep6(`r7_sweep6.md`, 정본 §71): 열린 문제 목록 전수 대조, 102°·`ZED_M` 옛 서술, user-log 62 풀이 표시, 코드 주석. 교훈: 정정마다 형제만 찾지 말고 '열린 문제' 목록 전체를 후속 해결 기록과 한 번에 대조한다. 상태 줄에는 늦어질 숫자를 싣지 않는다.
+- 02:20 UTC R7 6회차 PASS(DEFECT 0, DOC 0, SCOPED 8, NOTE 14) — 전수 정리(sweep6) 뒤 첫 무결. 연속 무결 1회 → 7회차. 파드 1회차 검증 잔여 tmp/r7c1(2 GB) 삭제.
