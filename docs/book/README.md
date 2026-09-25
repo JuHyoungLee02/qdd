@@ -24,7 +24,7 @@
 | [03-decisions](03-decisions.md) | 결정 연표(정본 §·user-log), 대체 표시 |
 | [04-map](04-map.md) | 저장소 모듈·도구·시험, 파드 경로, 데이터 판본, 체크포인트, GPU·파드 |
 | [05-costs](05-costs.md) | 유료 API 장부(실험별), 예산, GPU 시간 |
+| [06-updates](06-updates.md) | 갱신 기록 — 책을 고칠 때마다 한 줄(필수) |
 
 ## 다른 살아 있는 문서
 - 인수인계 `docs/handoff.md`(지금 상태) · 작업 기록 `docs/draft-log.md`(시간순) · 방향 검사 `docs/stage3/direction-log.md` · 사용자 발언 원문 `docs/user-log.md` · 논문 `paper/`(가설 기반 완성판, user-log 88).
-- [06 갱신 기록](06-updates.md) — 책을 고칠 때마다 한 줄
