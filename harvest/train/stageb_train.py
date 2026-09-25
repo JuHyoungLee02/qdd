@@ -5,6 +5,9 @@
   train  --data r2|pool --pool DIR[,DIR] --run NAME ...                  our 30 Hz data (R2 / pool stage-B rows)
   train  --data se2e [--se2e-root DIR --se2e-kinds RB1,RB2] --run NAME   S-E2E public data, 10 Hz, H 5 (§62, §63)
          [--reload-check]                                                 save -> reload -> identical chunk / eval
+         [--val-per-kind N --val-seed S]                                  stratified val subset per source (§69 N2)
+         [--save-every N] [--resume CKPT] [--stop-at N]                   checkpoints + exact resume (§69 N3)
+  evalck --ckpt DIR [same data / val / --seed] --against LOG --step N    reloaded checkpoint eval == logged eval
 
 Model: Qwen3-VL-4B-Instruct (stage A's revision) + LoRA r32 on every LLM linear layer (stage A's target, vision
 tower frozen) + ActionExpert (flow matching, KI stop-gradient) + AuxGeomHead (privileged geometry, gradient to
@@ -110,10 +113,21 @@ def backbone_trainable(bb):
 
 
 # ------------------------------------------------------------------------------------------ loop
-def make_optimizer(model, lr, lr_heads, total, warmup=0.03):
+def _param_groups(model):
     bb = [p for p in model.backbone.parameters() if p.requires_grad]
     heads = list(model.expert.parameters()) + (list(model.aux.parameters()) if model.aux is not None else [])
     heads += list(model.verify.parameters()) if getattr(model, "verify", None) is not None else []
+    return heads, bb
+
+
+def opt_param_names(model):
+    """Parameter names in optimizer order (a resumed optimizer state must meet the same parameters)."""
+    names = {id(p): n for n, p in model.named_parameters()}
+    return [[names[id(p)] for p in g] for g in _param_groups(model) if g]
+
+
+def make_optimizer(model, lr, lr_heads, total, warmup=0.03):
+    heads, bb = _param_groups(model)
     groups = [{"params": heads, "lr": lr_heads}]
     if bb:
         groups.append({"params": bb, "lr": lr})
@@ -167,17 +181,69 @@ def evaluate(model, enc, val, device, seed=0, steps=10):
             "sample_mae_arm_rad": mean(mae_q), "n": len(val)}
 
 
+def source_of(s) -> str:
+    """Source dataset of a sample = its key prefix (S-E2E: RB1 / RB2; our rows: the perturbation kind)."""
+    return s["key"].split("_")[0]
+
+
+def stratified_val(va, n_per_source: int, seed: int = 0):
+    """§69 N2: a seeded random validation subset with n samples of every source dataset (all of a source with fewer),
+    independent of the input order (sorted by key first). n 0 = the whole split. `--max-val` (first N) would see RB1
+    only, because the rows are loaded RB1 first."""
+    if not n_per_source:
+        return va
+    by = {}
+    for s in sorted(va, key=lambda s: s["key"]):
+        by.setdefault(source_of(s), []).append(s)
+    rng = random.Random(seed)
+    return [s for src in sorted(by) for s in (by[src] if len(by[src]) <= n_per_source
+                                              else rng.sample(by[src], n_per_source))]
+
+
+# settings that change the training trajectory: a resumed run must use the checkpoint's values
+RESUME_KEYS = ("data", "pool", "rows", "se2e_root", "se2e_kinds", "no_labels", "state", "no_wrist", "dev_val_seeds",
+               "model", "mode", "ki", "lam_dec", "lam_act", "lam_aux", "lam_ver", "lr", "lr_heads", "batch", "seed",
+               "epochs", "max_steps", "max_train", "max_val", "val_per_kind", "val_seed", "no_share", "init_adapter")
+
+
+def val_subset(va, max_val: int, val_per_kind: int, val_seed: int):
+    """Evaluation set: --max-val N (first N, earlier smokes) or --val-per-kind N (stratified, seeded; §69 N2)."""
+    if max_val and val_per_kind:
+        raise SystemExit("--max-val and --val-per-kind: use one")
+    return va[:max_val] if max_val else stratified_val(va, val_per_kind, val_seed)
+
+
+def check_resume_args(saved: dict, now: dict):
+    bad = {k: (saved.get(k), now.get(k)) for k in RESUME_KEYS if saved.get(k) != now.get(k)}
+    if bad:
+        raise SystemExit(f"--resume: settings differ from the checkpoint's run (saved, now): {bad}")
+
+
 def train_loop(model, enc, train, val, device, steps, batch=4, lr=1e-4, lr_heads=1e-4, eval_every=10,
-               seed=0, log=print, clip=1.0):
+               seed=0, log=print, clip=1.0, save_every=0, save=None, resume=None, stop_at=0):
+    """steps = the schedule length. save(step, train_state) every save_every steps and at the last step (the caller
+    writes the weights). resume = a saved train_state: optimizer, scheduler, RNG states and the data order continue
+    exactly (the caller has loaded the checkpoint's weights). stop_at = stop after that step (resume check)."""
     rng = random.Random(seed)
     torch.manual_seed(seed)
     opt, sched = make_optimizer(model, lr, lr_heads, steps)
     params = [p for g in opt.param_groups for p in g["params"]]
-    hist = [{"event": "eval", "step": 0, **evaluate(model, enc, val, device, seed)}]
+    order, start = [], 0
+    if resume is None:
+        hist = [{"event": "eval", "step": 0, **evaluate(model, enc, val, device, seed)}]
+    else:
+        start, order = resume["step"], list(resume["order"])
+        rng.setstate(resume["py_rng"])
+        opt.load_state_dict(resume["opt"])
+        sched.load_state_dict(resume["sched"])
+        torch.set_rng_state(resume["torch_rng"])
+        if device.type == "cuda" and resume.get("cuda_rng") is not None:
+            torch.cuda.set_rng_state(resume["cuda_rng"], device)
+        hist = [{"event": "resume", "step": start}]
     log(hist[-1])
     model.train()
-    order, t0 = [], time.time()
-    for step in range(1, steps + 1):
+    t0 = time.time()
+    for step in range(start + 1, steps + 1):
         if len(order) < batch:
             order += rng.sample(range(len(train)), len(train))
         idx, order = order[:batch], order[batch:]
@@ -188,12 +254,18 @@ def train_loop(model, enc, train, val, device, steps, batch=4, lr=1e-4, lr_heads
         sched.step()
         opt.zero_grad(set_to_none=True)
         rec = {"event": "train", "step": step, **{k: round(v, 5) for k, v in logs.items()}, "grad_norm": round(gn, 4),
-               "lr_heads": opt.param_groups[0]["lr"], "elapsed_s": round(time.time() - t0, 1)}
+               "lr_heads": opt.param_groups[0]["lr"], "idx": idx, "elapsed_s": round(time.time() - t0, 1)}
         hist.append(rec)
         log(rec)
         if step % eval_every == 0 or step == steps:
             hist.append({"event": "eval", "step": step, **evaluate(model, enc, val, device, seed)})
             log(hist[-1])
+        if save is not None and save_every and (step % save_every == 0 or step == steps):
+            save(step, {"step": step, "order": list(order), "py_rng": rng.getstate(), "opt": opt.state_dict(),
+                        "sched": sched.state_dict(), "torch_rng": torch.get_rng_state(),
+                        "cuda_rng": torch.cuda.get_rng_state(device) if device.type == "cuda" else None})
+        if stop_at and step >= stop_at:
+            break
     return hist
 
 
@@ -311,9 +383,8 @@ def cmd_smoke(a):
            "eval_first": hist[0], "eval_last": [h for h in hist if h["event"] == "eval"][-1]})
 
 
-def cmd_train(a):
-    """Stage-B training: --data r2|pool (our 30 Hz rows) or se2e (S-E2E public data, 10 Hz, H 5; §62-§63)."""
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def _load_data(a):
+    """(samples, hz, train, val split) of --data (train subset by --max-train)."""
     dev = None
     if a.dev_val_seeds:
         from .stagea_train import _seedset
@@ -329,46 +400,124 @@ def cmd_train(a):
     except ValueError as e:
         raise SystemExit(str(e))
     tr, va = D.split_samples(samples)
-    if a.max_train:
+    if getattr(a, "max_train", 0):
         tr = random.Random(a.seed).sample(tr, min(a.max_train, len(tr)))
     if not tr or not va:
         raise SystemExit(f"no samples: train {len(tr)} val {len(va)}")
-    out = os.path.join(a.out_root, a.run)
-    if os.path.exists(os.path.join(out, "log.jsonl")) and not a.overwrite:
-        raise SystemExit(f"{out} exists (use --overwrite)")
-    os.makedirs(out, exist_ok=True)
-    bb, proc, hd = load_backbone("qwen", a.model, device, adapter=a.init_adapter or None)
-    backbone_trainable(bb)
-    if a.grad_ckpt:
-        bb.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
-        bb.enable_input_require_grads()
-    model = new_model(bb, tr, hd, mode=a.mode, ki=a.ki, lam={"dec": a.lam_dec, "act": a.lam_act, "aux": a.lam_aux,
-                                                             "vqa": 0.0, "ver": a.lam_ver}).to(device)
-    model.shared = not a.no_share
-    enc = HFEncoder(proc)
-    log = open(os.path.join(out, "log.jsonl"), "a")
+    return samples, hz, tr, va
+
+
+def _writer(path):
+    log = open(path, "a")
 
     def write(rec):
         rec["utc"] = _utc()
         log.write(json.dumps(rec) + "\n")
         log.flush()
         print(json.dumps(rec), flush=True)
+    return write
+
+
+def save_ckpt(path, bb, model, extra, state=None):
+    """adapter/ + heads.pt + stageb.json (the runtime / reload format) [+ train_state.pt for --resume]."""
+    bb.save_pretrained(os.path.join(path, "adapter"))
+    model.save_heads(path, extra)
+    if state is not None:
+        torch.save(state, os.path.join(path, "train_state.pt"))
+
+
+def cmd_train(a):
+    """Stage-B training: --data r2|pool (our 30 Hz rows) or se2e (S-E2E public data, 10 Hz, H 5; §62-§63).
+    --save-every N: checkpoints <run>/ckpt/step_NNNNNN (+ train_state.pt); --resume DIR continues one exactly
+    (same settings, checked); --stop-at N stops after step N (resume check); --val-per-kind N: stratified val (§69)."""
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    samples, hz, tr, va = _load_data(a)
+    out = os.path.join(a.out_root, a.run)
+    if os.path.exists(os.path.join(out, "log.jsonl")) and not a.overwrite:
+        raise SystemExit(f"{out} exists (use --overwrite)")
+    resume = None
+    if a.resume:
+        resume = torch.load(os.path.join(a.resume, "train_state.pt"), map_location="cpu", weights_only=False)
+        check_resume_args(resume["args"], vars(a))
+        if a.init_adapter:
+            raise SystemExit("--resume and --init-adapter: use one")
+    os.makedirs(out, exist_ok=True)
+    if resume is not None:
+        bb, proc, hd = load_backbone("qwen", a.model, device, adapter=os.path.join(a.resume, "adapter"))
+        model = load_heads(a.resume, bb, device)
+    else:
+        bb, proc, hd = load_backbone("qwen", a.model, device, adapter=a.init_adapter or None)
+    backbone_trainable(bb)
+    if a.grad_ckpt:
+        bb.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+        bb.enable_input_require_grads()
+    if resume is None:
+        model = new_model(bb, tr, hd, mode=a.mode, ki=a.ki,
+                          lam={"dec": a.lam_dec, "act": a.lam_act, "aux": a.lam_aux, "vqa": 0.0, "ver": a.lam_ver})
+    model = model.to(device)
+    model.shared = not a.no_share
+    pnames = opt_param_names(model)
+    if resume is not None and resume["param_names"] != pnames:
+        raise SystemExit("--resume: the optimizer state belongs to other parameters")
+    enc = HFEncoder(proc)
+    write = _writer(os.path.join(out, "log.jsonl"))
     pcfg = prompt_config(samples, a.state)
     arms = {arm: sum(s.get("arm", "right") == arm for s in tr) for arm in ("left", "right")}
+    total = a.max_steps or math.ceil(len(tr) / a.batch) * a.epochs
+    val = val_subset(va, a.max_val, a.val_per_kind, a.val_seed)
     write({"event": "config", "args": vars(a), "n_train": len(tr), "n_val": len(va), "model_rev": MODEL_REV,
            "prompt_config": pcfg, "data": a.data, "hz": hz, "H": tr[0]["H"], "train_arms": arms,
            "grip_space": model.norm.grip_space, "grip_src": sorted({s["grip_src"] for s in tr}),
            "proprio_masked": sum(1 for s in tr if s.get("proprio_mask") and 0 in s["proprio_mask"].values()),
-           "expert_params": n_params(model.expert), "python": sys.version.split()[0]})
-    total = a.max_steps or math.ceil(len(tr) / a.batch) * a.epochs
-    val = va[:a.max_val] if a.max_val else va
-    train_loop(model, enc, tr, val, device, total, a.batch, a.lr, a.lr_heads, a.eval_every, a.seed, write)
+           "expert_params": n_params(model.expert), "python": sys.version.split()[0], "total_steps": total,
+           "val_used": len(val), "val_sources": {k: sum(source_of(s) == k for s in val)
+                                                 for k in sorted({source_of(s) for s in val})},
+           "val_keys_sha": _sha([s["key"] for s in val])})
+    if resume is not None and resume["total"] != total:
+        raise SystemExit(f"--resume: schedule length {total} != checkpoint's {resume['total']}")
+    extra = {"base_model": a.model, "base_rev": MODEL_REV, "prompt_config": pcfg, "hz": hz, "data": a.data}
+
+    def save(step, st):
+        path = os.path.join(out, "ckpt", f"step_{step:06d}")
+        save_ckpt(path, bb, model, extra, {**st, "args": (resume or {}).get("args", vars(a)), "total": total,
+                                           "param_names": pnames})
+        write({"event": "ckpt", "step": step, "dir": path})
+    train_loop(model, enc, tr, val, device, total, a.batch, a.lr, a.lr_heads, a.eval_every, a.seed, write,
+               save_every=a.save_every, save=save, resume=resume, stop_at=a.stop_at)
+    if a.stop_at:
+        return
     last = os.path.join(out, "last")
-    bb.save_pretrained(os.path.join(last, "adapter"))
-    model.save_heads(last, {"base_model": a.model, "base_rev": MODEL_REV, "prompt_config": pcfg, "hz": hz,
-                            "data": a.data})
+    save_ckpt(last, bb, model, extra)
     if a.reload_check:
         write({"event": "save_load", **reload_check(model, enc, val, device, last, "qwen", a.model, a.seed)})
+
+
+def _sha(obj) -> str:
+    import hashlib
+    return hashlib.sha256(json.dumps(obj, sort_keys=True).encode()).hexdigest()[:12]
+
+
+def cmd_evalck(a):
+    """Reload a saved checkpoint into a fresh backbone and run the fixed-noise validation (same --seed, same val
+    subset as the run); --against LOG --step N: must equal the run's logged eval at step N exactly (§69 / S-E2E)."""
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    _, _, _, va = _load_data(a)
+    val = val_subset(va, a.max_val, a.val_per_kind, a.val_seed)
+    bb, proc, _ = load_backbone("qwen", a.model, device, adapter=os.path.join(a.ckpt, "adapter"))
+    m = load_heads(a.ckpt, bb, device).eval()
+    m.shared = not a.no_share
+    ev = evaluate(m, HFEncoder(proc), val, device, a.seed)
+    rec = {"event": "evalck", "ckpt": a.ckpt, "val_keys_sha": _sha([s["key"] for s in val]), **ev}
+    if a.against:
+        logged = [json.loads(x) for x in open(a.against)]
+        ref = [r for r in logged if r.get("event") == "eval" and r["step"] == a.step]
+        if not ref:
+            raise SystemExit(f"no eval at step {a.step} in {a.against}")
+        ref = {k: v for k, v in ref[-1].items() if k in ev}
+        rec.update(step=a.step, logged=ref, equal=ref == ev,
+                   max_abs_diff=max(abs((ev[k] or 0) - (ref[k] or 0)) for k in ev))
+    write = _writer(a.out) if a.out else (lambda r: print(json.dumps(r), flush=True))
+    write(rec)
 
 
 def _common(p):
@@ -402,27 +551,45 @@ def main(argv=None):
     s.add_argument("--heads", type=int, default=4)
     t = sub.add_parser("train")
     _common(t)
-    t.add_argument("--data", default="r2", choices=sorted(D.DATA_HZ), help="r2 | pool (30 Hz) | se2e (10 Hz, §62)")
-    t.add_argument("--pool", default="", help="--data r2|pool: episode folder(s) with <folder>.stageb.jsonl")
-    t.add_argument("--se2e-root", default=D.SE2E_ROOT, help="--data se2e: <root>/<kind>.stageb.jsonl + frames")
-    t.add_argument("--se2e-kinds", default="RB1,RB2")
-    t.add_argument("--no-labels", action="store_true", help="--data se2e: actions only (no heuristic decisions)")
+    _data(t)
     t.add_argument("--reload-check", action="store_true", help="after saving: reload -> identical chunk / eval")
     t.add_argument("--run", required=True)
     t.add_argument("--out-root", default="/data/harvest/ckpt/stageB")
-    t.add_argument("--state", default="IMG", help="IMG (default, §58) | S0 | S1 (ablation)")
-    t.add_argument("--no-wrist", action="store_true", help="head image only (ablation of §57)")
     t.add_argument("--init-adapter", default="", help="start from a stage-A LoRA adapter")
     t.add_argument("--epochs", type=int, default=2)
     t.add_argument("--max-steps", type=int, default=0)
-    t.add_argument("--max-val", type=int, default=0)
-    t.add_argument("--dev-val-seeds", default="")
-    t.add_argument("--rows", default="", help="R2 rows file per --pool folder (default <folder>.stageb.jsonl)")
     t.add_argument("--max-train", type=int, default=0, help="random subset of the train samples (smoke)")
+    t.add_argument("--save-every", type=int, default=0, help="checkpoint <run>/ckpt/step_NNNNNN every N steps")
+    t.add_argument("--resume", default="", help="continue from a --save-every checkpoint dir (same settings)")
+    t.add_argument("--stop-at", type=int, default=0, help="stop after this step (resume check); no last/ save")
     t.add_argument("--grad-ckpt", action="store_true")
     t.add_argument("--overwrite", action="store_true")
+    e = sub.add_parser("evalck", help="reload a checkpoint, fixed-noise validation, compare with the run's log")
+    _common(e)
+    _data(e)
+    e.add_argument("--ckpt", required=True)
+    e.add_argument("--max-train", type=int, default=0)
+    e.add_argument("--against", default="", help="the run's log.jsonl")
+    e.add_argument("--step", type=int, default=0, help="the logged eval step the checkpoint belongs to")
+    e.add_argument("--out", default="", help="append the result (jsonl)")
     a = ap.parse_args(argv)
-    {"smoke": cmd_smoke, "train": cmd_train}[a.cmd](a)
+    {"smoke": cmd_smoke, "train": cmd_train, "evalck": cmd_evalck}[a.cmd](a)
+
+
+def _data(p):
+    p.add_argument("--data", default="r2", choices=sorted(D.DATA_HZ), help="r2 | pool (30 Hz) | se2e (10 Hz, §62)")
+    p.add_argument("--pool", default="", help="--data r2|pool: episode folder(s) with <folder>.stageb.jsonl")
+    p.add_argument("--se2e-root", default=D.SE2E_ROOT, help="--data se2e: <root>/<kind>.stageb.jsonl + frames")
+    p.add_argument("--se2e-kinds", default="RB1,RB2")
+    p.add_argument("--no-labels", action="store_true", help="--data se2e: actions only (no heuristic decisions)")
+    p.add_argument("--state", default="IMG", help="IMG (default, §58) | S0 | S1 (ablation)")
+    p.add_argument("--no-wrist", action="store_true", help="head image only (ablation of §57)")
+    p.add_argument("--dev-val-seeds", default="")
+    p.add_argument("--rows", default="", help="R2 rows file per --pool folder (default <folder>.stageb.jsonl)")
+    p.add_argument("--max-val", type=int, default=0, help="first N val samples (earlier smokes)")
+    p.add_argument("--val-per-kind", type=int, default=0,
+                   help="stratified val: N random samples of every source (RB1 / RB2), --val-seed (§69 N2)")
+    p.add_argument("--val-seed", type=int, default=0)
 
 
 if __name__ == "__main__":

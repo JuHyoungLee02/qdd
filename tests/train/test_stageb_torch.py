@@ -305,3 +305,89 @@ def test_joint_train_loop_decreases_losses_on_synthetic_data():
     ki = T.ki_check(m, enc, tr[:2], dev)
     assert ki["backbone_grad_norm_from_fm"] == 0.0 and ki["backbone_grad_norm_from_aux"] > 0
     assert ki["expert_grad_norm_from_fm"] > 0
+
+
+# ---------------------------------------------------------------------------------- S-E2E trainer items (§69 N2, N3)
+def _src_samples():
+    return ([{"key": f"RB1_ep{e}_k{k}"} for e in range(30) for k in (0, 5)]
+            + [{"key": f"RB2_ep{e}_k{k}"} for e in range(6) for k in (0, 5)])
+
+
+def test_stratified_val_takes_n_per_source_seeded_and_order_free():
+    va = _src_samples()
+    a = T.stratified_val(list(va), 5, seed=0)
+    assert sorted(T.source_of(s) for s in a) == ["RB1"] * 5 + ["RB2"] * 5  # --max-val first-N would be RB1 only
+    assert a == T.stratified_val(list(reversed(va)), 5, seed=0)  # input order does not matter
+    assert a != T.stratified_val(list(va), 5, seed=1)
+    few = T.stratified_val(list(va), 20, seed=0)  # a source with fewer samples than n gives all of them
+    assert sum(T.source_of(s) == "RB2" for s in few) == 12 and sum(T.source_of(s) == "RB1" for s in few) == 20
+    assert T.stratified_val(list(va), 0, seed=0) == va  # 0 = the whole validation split
+
+
+def test_val_subset_options_first_n_or_stratified_not_both():
+    va = _src_samples()
+    assert T.val_subset(va, 0, 0, 0) == va
+    assert T.val_subset(va, 4, 0, 0) == va[:4]  # old --max-val (first N) kept for the earlier smokes
+    assert T.val_subset(va, 0, 3, 7) == T.stratified_val(va, 3, 7)
+    with pytest.raises(SystemExit):
+        T.val_subset(va, 4, 3, 0)
+
+
+def _loop(m, tr, va, **kw):
+    recs = []
+    hist = T.train_loop(m, MockEncoder(), tr, va, torch.device("cpu"), batch=3, lr=3e-3, lr_heads=2e-3,
+                        log=recs.append, **kw)
+    return hist, recs
+
+
+def _strip(recs, kind="train"):
+    return [{k: v for k, v in r.items() if k not in ("elapsed_s", "utc")} for r in recs if r["event"] == kind]
+
+
+def test_checkpoint_cadence_eval_cadence_and_stop_at():
+    import copy
+    torch.manual_seed(0)
+    ss = D.synthetic_rows(16, seed=0)
+    tr, va = D.split_samples(ss)
+    m = M.new_model(MockBackbone(0), tr, HID, expert_kw=EK, aux_kw=AK)
+    saved = []
+    hist, _ = _loop(m, tr, va, steps=10, eval_every=4, save_every=4,
+                    save=lambda step, st: saved.append((step, copy.deepcopy(st))))
+    assert [h["step"] for h in hist if h["event"] == "eval"] == [0, 4, 8, 10]
+    assert [s for s, _ in saved] == [4, 8, 10]  # every save_every steps and the last step
+    assert saved[0][1]["step"] == 4 and {"opt", "sched", "py_rng", "torch_rng", "order"} <= set(saved[0][1])
+    tr_steps = [h for h in hist if h["event"] == "train"]
+    assert all(len(h["idx"]) == 3 for h in tr_steps)  # the batch indices are logged (data-order check)
+    m2 = M.new_model(MockBackbone(0), tr, HID, expert_kw=EK, aux_kw=AK)
+    hist2, _ = _loop(m2, tr, va, steps=10, eval_every=4, stop_at=6)
+    assert [h["step"] for h in hist2 if h["event"] == "train"][-1] == 6  # stops early, schedule of 10 steps
+
+
+def test_resume_from_a_mid_checkpoint_reproduces_the_next_steps_exactly():
+    import copy
+    torch.manual_seed(0)
+    ss = D.synthetic_rows(16, seed=0)
+    tr, va = D.split_samples(ss)
+    m = M.new_model(MockBackbone(0), tr, HID, expert_kw=EK, aux_kw=AK)
+    saved = {}
+
+    def save(step, st):
+        saved[step] = (copy.deepcopy(m.state_dict()), copy.deepcopy(st))
+    _, recs = _loop(m, tr, va, steps=12, eval_every=6, save_every=6, save=save, seed=3)
+    weights, st = saved[6]
+    torch.manual_seed(99)  # a fresh model with other initial weights: everything must come from the checkpoint
+    m2 = M.new_model(MockBackbone(5), tr, HID, expert_kw=EK, aux_kw=AK)
+    m2.load_state_dict(weights)
+    _, recs2 = _loop(m2, tr, va, steps=12, eval_every=6, save_every=6, save=lambda *x: None, seed=3, resume=st)
+    assert _strip(recs2) == [r for r in _strip(recs) if r["step"] > 6]  # losses, grad norm, lr, batch: identical
+    assert _strip(recs2, "eval") == [r for r in _strip(recs, "eval") if r["step"] > 6]  # no step-0 eval again
+    assert recs2[0]["event"] == "resume" and recs2[0]["step"] == 6
+
+
+def test_resume_refuses_a_changed_training_setting():
+    base = {"lr": 1e-4, "batch": 8, "seed": 0, "val_per_kind": 150, "run": "a", "stop_at": 0}
+    T.check_resume_args(base, {**base, "run": "b", "stop_at": 50})  # run name / stop point may differ
+    with pytest.raises(SystemExit):
+        T.check_resume_args(base, {**base, "lr": 2e-4})
+    with pytest.raises(SystemExit):
+        T.check_resume_args(base, {**base, "seed": 1})
