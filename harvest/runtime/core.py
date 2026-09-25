@@ -36,6 +36,22 @@ from .reqhash import request_hash
 from .skills import PickPlaceSkill, apply_residual, residual_hook_zero
 
 FRAME_SAMPLE_S = 5.0  # sampled frames kept for inspection (plus one per phase change)
+_PHASE_TARGET = {"approach": "o3", "descend": "o3", "close": "o3", "lift": "o3"}  # later phases: o5
+
+
+def near_contact(raw: dict, phase: str) -> bool:
+    """Canon §7 near/contact zone: the skill phase's target (o3 until lift, then o5) within CFG.near_in_m (5 cm) of
+    the gripper finger midpoint, or a contact predicate with the target true (gripper-target, or the held o3 on o5).
+    Used for the M4 ordinal tau 0 near contact (E §4.12 C5 setting, canon §73), read from the M1 observation at the
+    current tick (the untrained residual-R gate in _execute keeps its distance-only test)."""
+    tgt = _PHASE_TARGET.get(phase, "o5")
+    if tgt not in raw["objs"]:
+        return False
+    g = np.asarray(raw["grip"]["pos"], float)
+    if float(np.linalg.norm(np.asarray(raw["objs"][tgt]["pos"]) - g)) <= CFG.near_in_m:
+        return True
+    pairs = {frozenset(c) for c in raw.get("contacts", [])}
+    return frozenset({"gripper", tgt}) in pairs or (tgt != "o3" and frozenset({"o3", tgt}) in pairs)
 
 
 @dataclass
@@ -124,6 +140,7 @@ class OursRuntime:
         self.prev_pred, self.stream = {}, []
         self.frames, self.frame_t = {}, {}
         self.cur_k, self.next_call, self.early, self.hold_step = None, 0.0, False, False
+        self.near_now = False
         self.n_calls, self.n_hb, self.dropped_hb = 0, 0, set()
         self.calls, self.slots_log, self.astra_log, self.events, self.sampled = [], [], [], [], []
         self.chunks, self.chunk_req, self.chunk_log = {}, set(), []
@@ -262,7 +279,7 @@ class OursRuntime:
                     v = Vote(ds=ds, question=q, choice=a["choice"], p_chosen=a.get("p_chosen"),
                              call_id=res.call_id, t_send=m["t_state"], t_recv=r["t_deliver"], t_state=m["t_state"],
                              premise_epoch=m["epoch"], qid=a.get("qid", ""))
-                    rec["votes"][q].append(self.ledger.on_vote(v, now, irreversible=irr))
+                    rec["votes"][q].append(self.ledger.on_vote(v, now, irreversible=irr, near=self.near_now))
             if res.verify:
                 rec["verify"] = {p: round(x, 3) for p, x in res.verify.items()}
                 self._on_verify(res.verify, m["t_state"], m["phase"], now, rec)
@@ -414,13 +431,14 @@ class OursRuntime:
         kind = self.hb.next_kind(now) if self.astra is not None else None
         if kind is not None:
             self._submit_hb(now, pred_exec, kind)
-        # deliveries (clock) -> M4
+        # deliveries (clock) -> M4 (near/contact zone now, canon §7: ordinal tau 0 near contact, E §4.12 C5)
+        self.near_now = near_contact(raw, self.skill.phase)
         got = self.q.poll(now)
         for r in got:
             self._deliver(r, now)
         if got:
             for qq in DECISION_QUESTIONS:
-                self.ledger.try_commit_prefix(qq, now)
+                self.ledger.try_commit_prefix(qq, now, near=self.near_now)
         # decision-step boundary
         k = int(math.floor(now / self.cfg.T_c + 1e-9))
         if k != self.cur_k:
@@ -482,7 +500,7 @@ class OursRuntime:
             if sig["early_call"]:
                 self.early = True
             for qq in DECISION_QUESTIONS:
-                self.ledger.try_commit_prefix(qq, now)
+                self.ledger.try_commit_prefix(qq, now, near=self.near_now)
         decs = self.ledger.mark_executed(k, now)
         dec = {} if self.hold_step else {q: c for q, (c, st) in decs.items() if c is not None}
         self.skill.begin_slot(k, dec)

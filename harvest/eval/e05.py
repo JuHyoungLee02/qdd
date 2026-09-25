@@ -196,6 +196,16 @@ def block_diff_lo(blocks, n: int = N_BOOT) -> float:
     return float(best)
 
 
+def gain_holm(gain_la2: dict, gain_c2pp: dict, n: int = N_BOOT, alpha: float = 0.05) -> dict:
+    """Judgment 2 ("LA-2 또는 C2''" +2 pp, lower > 0; E §2A.6-2) with E §1.7 "한 판정에 여러 조건을 걸면 Holm": Holm
+    step-down (stats.holm_ci) over the two paired gains vs newest (per-step differences, episode-cluster bootstrap,
+    same draws at every level). {"la2" | "c2pp": {reject, lo, hi, level}} (canon §73)."""
+    by = {"la2": gain_la2, "c2pp": gain_c2pp}
+    r = holm_ci(lambda k, level: cluster_mean_ci(by[k], n=n, level=level), list(by), alpha)
+    return {k: {"reject": bool(v["reject"]), "lo": round(v["lo"], 4), "hi": round(v["hi"], 4),
+                "level": round(v["level"], 6)} for k, v in r.items()}
+
+
 def block_diff_holm(blocks, n: int = N_BOOT, alpha: float = 0.05) -> dict:
     """Judgment 10 per block pair (E §2A.6-10 "블록 여러 개면 Holm"): Holm step-down (stats.holm_ci) over the
     pairwise floor differences, paired cluster bootstrap (cluster_diff_ci, same draws at every level)."""
@@ -388,9 +398,10 @@ def analyze(eps, ans, truth, questions, d_p95: float, n_boot: int = N_BOOT, win:
     out["layers"] = layers
     pr = out["rules"]["pooled"]
     j = {"flip_rate_success": out["flip"]["pooled"]["success"]["mean"],
-         "gain_la2": pr["la2_minus_newest"]["mean"], "gain_la2_lo": pr["la2_minus_newest"]["ci"][0],
-         "gain_c2pp": pr["c2pp_minus_newest"]["mean"], "gain_c2pp_lo": pr["c2pp_minus_newest"]["ci"][0],
+         "gain_la2": pr["la2_minus_newest"]["mean"], "gain_c2pp": pr["c2pp_minus_newest"]["mean"],
          "same_time_flip": out["same_time_flip"]["mean"]}
+    if pooled["gain_la2"] and pooled["gain_c2pp"]:  # judgment 2 decides on the Holm step-down (E §1.7, canon §73)
+        j["gain_holm"] = gain_holm(pooled["gain_la2"], pooled["gain_c2pp"], n=n_boot)
     if au and None not in au.values() and out["flip"]["pooled"]["perturb_window"]["mean"] is not None:
         j["perturb_flip"], j["auroc"] = out["flip"]["pooled"]["perturb_window"]["mean"], au
     lj = {}
@@ -407,7 +418,7 @@ def analyze(eps, ans, truth, questions, d_p95: float, n_boot: int = N_BOOT, win:
         out["floor"]["block_pairs_holm"] = block_diff_holm([fb[b] for b in blocks], n=n_boot)
     j = {k: v for k, v in j.items() if v is not None}
     out["judge_input"] = j
-    needed = ("flip_rate_success", "gain_la2", "gain_la2_lo", "gain_c2pp", "gain_c2pp_lo")
+    needed = ("flip_rate_success", "gain_la2", "gain_c2pp", "gain_holm")
     jd = judge_e05(j) if all(k in j for k in needed) else {"claim": "insufficient_data"}
     fs, rf = j.get("flip_rate_success"), out["retest_flip"]["mean"]
     jd["j5_flip_minus_retest"] = None if fs is None or rf is None else round(fs - rf, 4)
@@ -417,6 +428,10 @@ def analyze(eps, ans, truth, questions, d_p95: float, n_boot: int = N_BOOT, win:
                        "s1_alone": pr["s1"]}
     jd["j8_subst_above_floor"] = {L: bool(x["subst_minus_floor"]["ci"][0] is not None
                                           and x["subst_minus_floor"]["ci"][0] > 0) for L, x in layers.items()}
+    if "gain_holm" in j:
+        jd["j2_gain_holm"] = {"tests": j["gain_holm"], "alpha": 0.05,
+                              "rule": "judgment 2 = flip >= 5% and some rule with gain >= 0.02 rejected by Holm "
+                                      "with lower > 0 (E §1.7, §2A.6-2)"}
     if "block_pairs_holm" in out["floor"]:
         jd["j10_block_pairs_holm"] = out["floor"]["block_pairs_holm"]
     out["judgments"] = jd

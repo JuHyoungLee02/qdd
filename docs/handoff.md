@@ -1,8 +1,8 @@
 # 인수인계: 새 세션이 가장 먼저 읽을 문서
 
-마지막 갱신: 2026-09-25 03:11 UTC (R1–R6 완료, R7 순회 중 — 회차별 판정·연속 무결 횟수는 §2.8 마지막 줄, 정본 §1~§72)
+마지막 갱신: 2026-09-25 04:18 UTC (R1–R6 완료, R7 순회 중 — 회차별 판정·연속 무결 횟수는 §2.8 마지막 줄, 정본 §1~§73)
 
-> 현재 판본: 정본 `00-interfaces.md` **§1~§71**(뒤 절이 앞 절을 덮는다). 단계 3 이전 판본(plan v6.8, SUMMARY v3.10, §1의 v5.6)은 옛 기록이다. 단계 3 이후 최신 상태는 §2.7·§2.8.
+> 현재 판본: 정본 `00-interfaces.md` **§1~§73**(뒤 절이 앞 절을 덮는다). 단계 3 이전 판본(plan v6.8, SUMMARY v3.10, §1의 v5.6)은 옛 기록이다. 단계 3 이후 최신 상태는 §2.7·§2.8.
 
 ## 1. 먼저 할 일
 1. `dev` 브랜치인지 확인한다. **모든 작업(글, 코드)은 `dev`에서 시작하고 `dev`에만 푸시한다. `main`은 절대 건드리지 않는다**(사용자가 직접 반영).
@@ -80,7 +80,7 @@
 - 사용자에게는 한국어로 짧게 보고한다.
 
 ## 2.7 단계 3 이후 상태 (2026-09-24 21:03 UTC, user-log 42~66, 정본 §43~§64)
-- **먼저 읽을 것**: `docs/superpowers/plans/2026-09-25-e2e-ready.md`(현재 계획: 관문 R1–R7 → S-E2E), `docs/design/00-interfaces.md` §43부터 끝까지(지금 §71), `docs/stage3/direction-log.md`(방향 검사 기록), 진행 기록(ledger) `.superpowers/sdd/2026-09-24-stage3-experiments/progress.md`, 결과 문서 `docs/stage3/results/`.
+- **먼저 읽을 것**: `docs/superpowers/plans/2026-09-25-e2e-ready.md`(현재 계획: 관문 R1–R7 → S-E2E), `docs/design/00-interfaces.md` §43부터 끝까지(지금 §73), `docs/stage3/direction-log.md`(방향 검사 기록), 진행 기록(ledger) `.superpowers/sdd/2026-09-24-stage3-experiments/progress.md`, 결과 문서 `docs/stage3/results/`.
 - **핵심 결정**: Jev 사용 불가 → 로컬 VLM Qwen3-VL-4B typed 선택기(§44, §50, Gemma 4 E4B는 지연 탈락) / Astra = 위층 계획기 + 하트비트 5 s·단계 경계·사건(§45) / 인식 이름 `detect_phrase`는 Astra가(§46) / 카메라 = AI Worker 기본, 시뮬 설정은 humanoid-challenge-env 복사, ZED Mini VGA 85°·fx 367(§43·§47) / 시뮬 CPU PhysX(§48) / 실물 추론 = RTX PRO 6000 서버, 지금은 H200에서 가정해 검증(§49·user-log 62) / 영점 선택기는 최빈 미만 → 정답 재정의 labels_v2(§53·§54) / 학습 경로 C→A→B(§51·§52), **융합 원칙: 런타임은 단일 VLA(결정 토큰 + action expert + 확인 헤드)**, 모듈형 스택은 기준선으로 병기(§58·§60) / 입력 = 머리 + 활성 손목 다중 이미지, lead 호출(§57·§59) / S-E2E = ROBOTIS AI Worker 공개 데이터 1,575편·10 Hz(§62·§63) / **M4 (b)·critic 측정 = 세계 쪽 확인 헤드 V1h + 로봇 쪽 고유 감각 T1, critic 경보 = V1h 단독(§61·§64)**.
 - **완료 관문**: R1 인식 기준선(3D 오차 35 mm — 융합의 근거), R3 처리량(6.5–12배), R4 단계 B 코드(KI 기울기 0 확인, GPU 스모크), R5 폐루프(Inspect Robots에서 한 판 성공), E-M4b-meas. **진행 중**(21:03 기준; R2·R6은 이후 완료 — §2.8): 결과 라벨(T14, GPU 0 장시간). **다음**: R7 객관 검증 순회 2회 연속 무결 → S-E2E 소규모 E2E 학습(사전 등록 뒤).
 - **성격 주의(§56)**: 지금까지의 학습·평가 수치는 모두 파이프라인 확인용 소규모 시험 — 논문 결과로 쓰지 않는다.
@@ -97,3 +97,4 @@
 - **R7 5회차(2026-09-25 01:31 UTC) FAIL**: DEFECT 0, DOC 2(P1 이 문서 머리 상태 줄이 §70 뒤 갱신되지 않음·코드 무결 횟수 오기, P2 `r6_eval.md:54`·`r5_closed_loop.md:98`의 '단계 B 실체크포인트 어댑터 없음' 서술 — pre-R7 519de26에서 해결됨), SCOPED 8, NOTE 13. **코드 무결 4회 연속(2–5회차)**. 보고서 `docs/stage3/results/r7_cycle5.md`. → 문서 전수 정리 sweep6(2026-09-25 01:48 UTC): P1·P2, 결과 문서·D2x 열린 문제 목록의 해결·범위 표시, 102°·`ZED_M` 옛 카메라 서술, user-log 62 풀이 표시, 코드 주석(`stagea_train` 사용법, `gen` 거부 문구, `m4.py`·`closed.py` 머리 설명, Jev 옛 도구) — 기록 `docs/stage3/results/r7_sweep6.md`, 정본 §71. 연속 무결 0회 → 6회차.
 - **R7 6회차(2026-09-25 02:20 UTC) PASS**: DEFECT 0, DOC 0, SCOPED 8, NOTE 14 — sweep6 표시 28개 표본 대조 모두 사실, 단계 B 실체크포인트 융합 폐루프까지 실행. **연속 무결 1회** → 7회차(코드 무변경 상태에서). 보고서 `docs/stage3/results/r7_cycle6.md`. NOTE N1(`closed.py` 융합 판 `meta.prompt_config`가 모듈형 구성)은 2회 연속 무결 확정 뒤 수정.
 - **R7 7회차(2026-09-25 02:45 UTC) FAIL**: DEFECT 1(E1 — 평가 스크립트 `e05`·`rd`·`calib`·`closed`의 부트스트랩 기본 2,000회 ≠ 사전 등록 10,000회(E §1.7·EVAL §4.2), 출력에 횟수 없음), DOC 0, SCOPED 8, NOTE 14. 보고서 `docs/stage3/results/r7_cycle7.md`. → 수정(2026-09-25 03:11 UTC, `docs/stage3/results/r7c7_fixes.md`, 정본 §72): 기본값 10,000 + 출력 `meta.bootstrap`(횟수·seed·재표집 단위), 사전 등록 대조 N2(M4 W = 첫 도전 표 뒤 더 필요한 표 수, W=0 즉시 교체, 정본 §5 'W=2' → W=1 정정, 기본 C0–C6 동작 불변)·N3(판정 10 Holm 쌍별 결과)·N4(E1 ECE 판정 = 15개 동일 질량 구간)·N5(폐루프 RD 재표집 = 레이아웃 시드)·N7(융합 판 `meta.prompt_config` = 체크포인트 구성), N1(이 문서 머리 시각). 파드 1회차 잔여 `code_r7c1*`·`cache/pyc_r7c1*`·`ir/kitcache/cyclo-r7c1*`(약 1.7 GB) 삭제. 시험 로컬 800 passed/11 skipped, 파드 CPU 842/3. **코드 변경 → 연속 무결 0회** → 8회차.
+- **R7 8회차(2026-09-25 03:50 UTC) FAIL**: DEFECT 5(사전 등록 대조표 47행에서 — D1 E0.5 판정 2 Holm 없음, D2 E1 본 ECE에 `ambiguous` 포함, D3 카나리 표류 판정의 기록 없는 "> 2×바닥" 조건·재표집 단위, D4 C5 "접촉 근처 τ = 0" 미전달, D5 M4 경계 직후 W 2·γ 1.0·큐 임계 g·장면 변화 조기 호출 미구현·미기록), DOC 2(D-1 이 문서 정본 범위 줄, D-2 사전 등록이 열어 둔 값의 정본 미기록), SCOPED 8, NOTE 14. 보고서 `docs/stage3/results/r7_cycle8.md`. → 수정(2026-09-25 04:27 UTC, `docs/stage3/results/r7c8_fixes.md`, 정본 §73): D1 `e05.gain_holm`(가설별 결과 `j2_gain_holm`), D2 ECE에서 `ambiguous` 제외·따로 보고, D3 정본 §28 그대로(질문별 에피소드 군집 구간 + 질문 Holm, 2배 조건 삭제), D4 `core.near_contact` → `on_vote`·`try_commit_prefix`(newest 조건 C0·C1·C2·C4 비트 동일, C3·C5·C6은 접촉 근처만 달라짐), D5 SCOPED 기록, D-1·D-2, N5(E1 범위), N8(`closed --m4-h`), 대조 중 찾은 E §1.7 해시 줄(`meta.prereg`). 시험 로컬 813 passed/11 skipped, 파드 CPU 855/3. **코드 변경 → 연속 무결 0회** → 9회차.

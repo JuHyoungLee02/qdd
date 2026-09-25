@@ -10,11 +10,11 @@
       times -> <root>/canary_<YYYYMMDD UTC>_<model fingerprint>.json with an id:
         answers {"<snapshot>|<question>": [option_key per repeat]}, probs (repeat 0), floor (test-retest mismatch
         of repeats 1.. vs repeat 0 = the day's floor), baseline = the earliest other canary of the same model
-        fingerprint and set, compare = harvest.canary.canary_compare (mismatch vs the baseline's mode, bootstrap
-        lower bound minus the floor; drift_suspect -> report that day's results separately and redo E1, §28).
+        fingerprint and set, compare = harvest.canary.canary_compare (mismatch vs the baseline's mode minus the
+        floor, episode-cluster bootstrap per question, Holm over the questions, drift = a rejection with lower > 0;
+        drift_suspect -> report that day's results separately and redo E1, §28; canon §73).
 The runtime / eval commands read latest_canary(fingerprint)["id"] (or an explicit "none") and log it: eval run_meta
-"canary", closed-loop RuntimeConfig.canary_id on every decision / chunk call row. One test per model and day, so no
-Holm correction here. The Astra canary (fixed inputs at effort low, plan signature) needs paid calls and is not run
+"canary", closed-loop RuntimeConfig.canary_id on every decision / chunk call row. The Astra canary (fixed inputs at effort low, plan signature) needs paid calls and is not run
 (RuntimeConfig.astra_canary_id = "none"). root = $HARVEST_CANARY_ROOT or /data/harvest/canary (pod rule: /data).
 """
 from __future__ import annotations

@@ -32,7 +32,9 @@ def halves(clusters) -> tuple[set, set]:
 
 
 def items_from(eps, done, truth, questions, decision_only=False) -> dict:
-    """{question: [{cluster, probs (by option_key), truth (set), key}]} from the A0 calls."""
+    """{question: [{cluster, probs (by option_key), truth (set), key, ambiguous}]} from the A0 calls; ambiguous =
+    the snapshot's pool flag (a predicate inside the near hysteresis band, cli_pool) -- E §3.10: out of the judged
+    ECE, reported apart (canon §73)."""
     out = {q: [] for q in questions}
     for ep in eps:
         for ln in ep["lines"]:
@@ -47,7 +49,7 @@ def items_from(eps, done, truth, questions, decision_only=False) -> dict:
                 if a is None or q not in t or not a.get("probs"):
                     continue
                 out[q].append({"cluster": (ep["kind"], ep["seed"]), "probs": a["probs"], "truth": t[q],
-                               "key": a["key"]})
+                               "key": a["key"], "ambiguous": bool(ln.get("ambiguous"))})
     return out
 
 
@@ -83,11 +85,12 @@ def _md(rep, meta) -> str:
     for q, r in rep["questions"].items():
         ev, j = r["heldout"], r["judgment"]
         if ev is None:
-            rows.append([q, r["fit"]["T"], r["fit"]["use_raw"], 0] + ["-"] * 14)
+            rows.append([q, r["fit"]["T"], r["fit"]["use_raw"], 0] + ["-"] * 15)
             continue
         j5 = ev["j5"].get("0.1") or next(iter(ev["j5"].values()))
         rows.append([q, r["fit"]["T"], r["fit"]["use_raw"], ev["n"], ci_str(ev["acc"]), ev["ece_raw"], ev["ece_cal"],
-                     ev["ece_cal_mass"], ev["auroc_cal"]["mean"], ci_str(j5["coverage"]), j5["set_size_mean"],
+                     ev["ece_cal_mass"], f"{ev['ambiguous']['n']} ({ev['ambiguous']['ece_cal_mass']})",
+                     ev["auroc_cal"]["mean"], ci_str(j5["coverage"]), j5["set_size_mean"],
                      j5["singleton_rate"], j5["empty_rate"], j5["ne_in_set_rate"], j5["singleton_acc"],
                      ",".join(k for k, v in j["theta_gate"].items() if v) or "-",
                      ",".join(k for k, v in j["j5_ok"].items() if v) or "-", j["j5_guarantee"]])
@@ -98,7 +101,8 @@ def _md(rep, meta) -> str:
         f"fit split {meta['fit_split']} ({meta['n_fit_episodes']} ep: T {meta['n_T_episodes']} / J5 "
         f"{meta['n_J5_episodes']}), held-out split {meta['heldout_split']} ({meta['n_heldout_episodes']} ep)",
         f"- runtime file: {meta['calibration_file']}", "",
-        md_table(["question", "T", "raw", "n", "acc", "ECE raw (width)", "ECE cal (width)", "ECE cal (mass, judged)", "AUROC", "J5 cov (a=.1)",
+        md_table(["question", "T", "raw", "n", "acc", "ECE raw (width)", "ECE cal (width)", "ECE cal (mass, judged)",
+                  "ambiguous n (ECE mass, apart)", "AUROC", "J5 cov (a=.1)",
                   "set size", "singleton", "empty set", "NE in set", "singleton acc", "theta gate ok", "J5 ok (alpha)",
                   "J5 >=400 fit"], rows)])
 
@@ -169,7 +173,8 @@ def main(argv=None):
         "truth": a.truth, "layout": layout, "mode": a.mode, "prompt_config": C.prompt_config_eval(layout),
         "question_ids": qids, "calibration_file": cal_path, "decision_only": a.decision_only,
         "bootstrap": C.bootstrap_meta(a.n_boot, "episode (kind, seed) of the held-out set"),
-        "ece": "judged ECE = 15 equal-mass bins (E §3.4); ECE raw / cal (width) are reported only",
+        "ece": ("judged ECE = 15 equal-mass bins (E §3.4); ECE raw / cal (width) are reported only; every ECE "
+                "excludes the ambiguous snapshots (E §3.10), their count and ECE are in heldout.ambiguous (canon §73)"),
         "errors": sum(1 for r in done.values() if r.get("error")),
         "runtime_s": {"total": round(time.monotonic() - t0, 1), "calls": round(t_calls, 1),
                       "vllm_ready": round(getattr(srv, "t_ready", 0.0), 1)}})

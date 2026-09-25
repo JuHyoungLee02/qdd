@@ -416,9 +416,25 @@ def bootstrap_meta(n_boot: int, unit: str) -> dict:
             "prereg": "E-first §1.7 / EVAL §4.2: cluster bootstrap 10,000"}
 
 
+def prereg_meta() -> dict:
+    """E-first §1.7 (:133): the judgment sections' SHA-256 + registration time (docs/stage3/prereg.json) in the run
+    record, with a re-hash of the current E-first text (tools/prereg_hash.py); "unavailable" without the docs."""
+    import importlib.util
+    try:
+        saved = json.load(open(os.path.join(REPO, "docs", "stage3", "prereg.json"), encoding="utf-8"))
+        spec = importlib.util.spec_from_file_location("_prereg_hash", os.path.join(REPO, "tools", "prereg_hash.py"))
+        ph = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ph)
+        bad = [s for s, h in ph.current().items() if saved["hashes"].get(s) != h]
+    except (OSError, KeyError, ValueError) as e:
+        return {"check": f"unavailable ({type(e).__name__})"}
+    return {"written_utc": saved["written_utc"], "hashes": saved["hashes"],
+            "check": "OK" if not bad else f"CHANGED {bad}"}
+
+
 def run_meta(cmd: str, info: dict, extra: dict | None = None) -> dict:
     m = {"command": cmd, "argv": sys.argv, "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-         "git": git_commit(), "code_sha": code_sha(), "host": socket.gethostname(),
+         "prereg": prereg_meta(), "git": git_commit(), "code_sha": code_sha(), "host": socket.gethostname(),
          "model": {k: v for k, v in info.items() if k != "fingerprint"}}
     if info.get("path") and info["kind"] != "mock":
         m["model"]["fingerprint"] = model_fingerprint(info["path"])

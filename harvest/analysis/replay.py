@@ -27,11 +27,14 @@ def c2pp(votes, half_life=0.33):
 
 
 def judge_e05(r):
+    """r["gain_holm"] = {"la2" | "c2pp": {"reject", "lo", ...}}: judgment 2's two conditions under Holm (E §1.7 "한
+    판정에 여러 조건을 걸면 Holm", e05.gain_holm; canon §73). Judgments 1 and 3 read the point gains."""
     out = {}
     flip = r["flip_rate_success"]
-    gain = {"la2": (r["gain_la2"], r["gain_la2_lo"]), "c2pp": (r["gain_c2pp"], r["gain_c2pp_lo"])}
-    sig_gain = any(g >= 0.02 and lo > 0 for g, lo in gain.values())
-    small_gain = all(g < 0.02 for g, _ in gain.values())
+    gain = {"la2": r["gain_la2"], "c2pp": r["gain_c2pp"]}
+    h = r["gain_holm"]
+    sig_gain = any(g >= 0.02 and h[k]["reject"] and h[k]["lo"] > 0 for k, g in gain.items())
+    small_gain = all(g < 0.02 for g in gain.values())
     if flip < 0.05 and small_gain:
         out["claim"] = "narrow_to_b"  # judgment 1
     elif flip >= 0.05 and sig_gain:

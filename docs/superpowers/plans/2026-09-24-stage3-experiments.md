@@ -1288,7 +1288,7 @@ def test_first_token_time_recorded():
     assert rec.t_send <= rec.t_first_token <= rec.t_done and rec.output_text == "{" and rec.model_field == "m"
 ```
 
-- [ ] **Step 3: 구현** — `astra.py`는 `httpx.Client.stream("POST", "https://api.openai.com/v1/responses", json={"model": model, "input": input, "reasoning": {"effort": effort}, "max_output_tokens": max_output_tokens, "stream": True})`로 SSE 줄을 읽어 첫 `response.output_text.delta`에서 `t_first_token`, `response.completed`에서 usage·model을 뽑는다. 이미지 입력은 바이트 SHA-256을 `image_sha256s`에 적는다(정본 §28 A6). `canary.py`의 `plan_signature`는 `json.dumps({"skills":[(s["skill"], s.get("obj"), s.get("target")) …], "dps": sorted(decision_points), "roles": roles}, sort_keys=True)`의 SHA-256 앞 16자. `canary_compare`는 질문별 최빈 불일치율 평균이 `floor`의 2배를 넘고 부트스트랩 하한 > 0이면 `drift_suspect=True`.
+- [ ] **Step 3: 구현** — `astra.py`는 `httpx.Client.stream("POST", "https://api.openai.com/v1/responses", json={"model": model, "input": input, "reasoning": {"effort": effort}, "max_output_tokens": max_output_tokens, "stream": True})`로 SSE 줄을 읽어 첫 `response.output_text.delta`에서 `t_first_token`, `response.completed`에서 usage·model을 뽑는다. 이미지 입력은 바이트 SHA-256을 `image_sha256s`에 적는다(정본 §28 A6). `canary.py`의 `plan_signature`는 `json.dumps({"skills":[(s["skill"], s.get("obj"), s.get("target")) …], "dps": sorted(decision_points), "roles": roles}, sort_keys=True)`의 SHA-256 앞 16자. `canary_compare`는 질문별 최빈 불일치율 평균이 `floor`의 2배를 넘고 부트스트랩 하한 > 0이면 `drift_suspect=True`. [정정 R7 8회차, 정본 §73: '2배' 조건은 정본 §28에 없어 뺐다 — 질문마다 (불일치 − 바닥)의 에피소드 군집 구간, 질문들에 Holm, 하한 > 0으로 기각된 질문이 있으면 `drift_suspect`]
 - [ ] **Step 4: 통과 확인**
 - [ ] **Step 5: 실측(E0 첫 평일)** — T_fail 입력은 스냅샷 풀이 생기기 전이라 **합성 격자 이미지 1장(약 3,600 토큰) + 텍스트 약 2k**로 만든다(E §2.3, 풀 생긴 뒤 실제 입력으로 3개 교체). effort low 20회·high 20회 첫 토큰. 같은 입력 반복: 입력 3개 × low 50회(2604.22411 절차) × high 5회 [가정: high 횟수는 첫 10요청 비용으로 확정]. 결과 `docs/stage3/results/astra_first_token.md`.
 - [ ] **Step 6: 카나리 기준일** — E0 첫날 `canary_run`을 기준으로 저장, 이후 매 실험일 첫 실행 전에 돌린다.
@@ -1489,6 +1489,7 @@ def c2pp(votes, half_life=0.33):
 def judge_e05(r):
     out = {}
     flip = r["flip_rate_success"]
+    # [정정 R7 8회차, 정본 §73: 판정 2는 LA-2·C2'' 두 이득의 Holm(e05.gain_holm, 보정 없는 95% 하한 아님) — 아래 줄은 옛 초안]
     any_gain = (r["gain_la2"] >= 0.02 and r["gain_la2_lo"] > 0) or (r["gain_c2pp"] >= 0.02 and r["gain_c2pp_lo"] > 0)
     if flip < 0.05 and r["gain_la2"] < 0.02 and r["gain_c2pp"] < 0.02:
         out["claim"] = "narrow_to_b"

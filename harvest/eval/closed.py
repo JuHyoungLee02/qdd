@@ -1,8 +1,8 @@
 """Closed-loop batch evaluation through the R5 runtime (canon §42 Inspect Robots, §45, §58; M4 §5) -- one command.
 
   python -m harvest.eval.closed --model <merged | adapter | zero-shot | mock> --out DIR [--backend modular|fused] \
-      [--split dev] [--seeds 0-4] [--variants standard[,random,dr]] [--conditions C5[,C2,...]] [--clock simlat] \
-      [--max-seconds 60] [--epochs 1] [--astra mock|api|auto|none] [--isaac-gpu 1] [--gpu 3] \
+      [--split dev] [--seeds 0-4] [--variants standard[,random,dr]] [--conditions C5[,C2,...]] [--m4-h 3|1] \
+      [--clock simlat] [--max-seconds 60] [--epochs 1] [--astra mock|api|auto|none] [--isaac-gpu 1] [--gpu 3] \
       [--calibration FILE --j5-alpha 0.1] [--layout auto|H|HW] [--hb-n 5 | --hb-n 0,5,10,20]
 
 The outer process (plain python on the pod) serves the model -- vLLM (canon §59 flags, lead) for the modular Jev-L,
@@ -148,6 +148,18 @@ def run_labels(conds, hbs, modes=("K2",)) -> list:
 
 
 # ------------------------------------------------------------------------------------------ worker launch
+def m4_config(cond: str, H: int = 3) -> dict:
+    """RuntimeConfig.m4 of one condition: M4Params defaults + the condition's overrides + the horizon H (decision
+    steps per call; E §4.12 / M4 §4.4 "H 1과 3 비교", --m4-h, default 3 = M4Params.H)."""
+    from dataclasses import asdict
+
+    from ..runtime.conditions import condition
+    from ..runtime.m4 import M4Params
+    if int(H) < 1:
+        raise ValueError(f"M4 H = {H}: decision steps per call must be >= 1")
+    return {**asdict(M4Params()), **condition(cond)[0], "H": int(H)}
+
+
 def worker_cmd(code: str, spec_path: str, gpu: str, inst: str, timeout_s: int) -> list:
     if str(gpu) not in ISAAC_GPUS:
         raise ValueError(f"Isaac GPU {gpu!r}: renders only on {ISAAC_GPUS} (GPU 2 never renders)")
@@ -163,7 +175,6 @@ def worker_cmd(code: str, spec_path: str, gpu: str, inst: str, timeout_s: int) -
 
 def run_worker(spec_path: str) -> None:
     """Inside Isaac: one embodiment (variant), one eval() per condition over all seeds x epochs."""
-    from dataclasses import asdict
     spec = json.load(open(spec_path, encoding="utf-8"))
     os.environ.setdefault("HARVEST_QID_REGISTRY", os.path.join(spec["out"], "qid_registry.json"))
     from ..runtime.aiworker import AIWorkerEmbodiment
@@ -176,7 +187,6 @@ def run_worker(spec_path: str) -> None:
     from ..runtime.conditions import condition
     from ..runtime.core import OursRuntime, RuntimeConfig
     from ..runtime.ir_policy import OursPolicy
-    from ..runtime.m4 import M4Params
     from ..runtime.models import JevLSelector, MockFusedModel, MockSelector
     from ..runtime.run_r5 import question_ids
     from ..sim.scene import SCENE_SPEC
@@ -206,7 +216,7 @@ def run_worker(spec_path: str) -> None:
         elif spec["astra"] == "scripted":  # K3 pipeline check without a key: text-summary success detector
             from ..runtime.astra_hb import ScriptedAstra
             astra, amode = ScriptedAstra(1.0), "scripted"
-        m4o, rto = condition(cond)
+        _, rto = condition(cond)
         cfg = RuntimeConfig(backend=spec["backend"], selector=spec["selector"],
                             model_id=getattr(model, "model_id", spec["name"]), model_path=spec["model_path"] or "",
                             layout=spec["layout"] if spec["selector"] == "jevl" else "",
@@ -214,7 +224,7 @@ def run_worker(spec_path: str) -> None:
                             question_ids=question_ids(spec["layout"] or "H",
                                                       "IMG" if spec["selector"] == "stageb" else "S1-1mm"),
                             astra_mode=amode, condition=cond,
-                            m4={**asdict(M4Params()), **m4o}, calibration=spec["calibration"] or "",
+                            m4=m4_config(cond, spec.get("m4_H", 3)), calibration=spec["calibration"] or "",
                             j5_alpha=spec["j5_alpha"], model_fingerprint=spec["fingerprint"], hb_N_s=hb_n,
                             verify_cal=spec.get("verify_cal") or "", hb_mode=hb_mode,
                             hb_budget=spec.get("hb_budget") if hb_mode == "K4" else None,
@@ -270,6 +280,7 @@ def _args(argv):
     ap.add_argument("--seeds", default="0")
     ap.add_argument("--variants", default="standard")
     ap.add_argument("--conditions", default="C5")
+    ap.add_argument("--m4-h", type=int, default=3, help="M4 H: decision steps per call (E §4.12 / M4 §4.4: 1 and 3)")
     ap.add_argument("--clock", default="simlat", choices=["simlat", "sync"])
     ap.add_argument("--max-seconds", type=float, default=60.0)
     ap.add_argument("--epochs", type=int, default=1)
@@ -339,7 +350,6 @@ def run(a) -> dict:
     from .splits import check_seeds, check_split
     check_split(a.split)
     seeds = check_seeds(sorted(parse_seeds(a.seeds)), a.split)
-    from ..runtime.conditions import condition
     conds = [c for c in a.conditions.split(",") if c]
     from ..runtime.astra_hb import CADENCES
     modes = [m for m in a.hb_mode.split(",") if m]
@@ -348,7 +358,7 @@ def run(a) -> dict:
     if "K4" in modes and a.hb_budget is None:
         raise SystemExit("--hb-mode K4 needs --hb-budget (the matched call count)")
     for c in conds:
-        condition(c)
+        m4_config(c, a.m4_h)  # unknown condition or H < 1 -> refused before any worker
     if str(a.isaac_gpu) not in ISAAC_GPUS:
         raise SystemExit(f"--isaac-gpu {a.isaac_gpu}: 0 or 1 only (GPU 2 never renders)")
     t0 = time.monotonic()
@@ -383,7 +393,7 @@ def run(a) -> dict:
                     "j5_alpha": a.j5_alpha, "mock_latency": a.mock_latency, "verify_cal": a.verify_cal,
                     "hb_n": [float(x) for x in a.hb_n.split(",") if x],
                     "hb_mode": [m for m in a.hb_mode.split(",") if m], "hb_budget": a.hb_budget,
-                    "canary_id": canary_id}
+                    "canary_id": canary_id, "m4_H": a.m4_h}
             sp = os.path.join(a.out, f"spec_{v}.json")
             json.dump(spec, open(sp, "w", encoding="utf-8"), indent=1)
             cmd = worker_cmd(code, os.path.abspath(sp), a.isaac_gpu, f"{a.inst_prefix}_{v}", timeout)
@@ -411,7 +421,8 @@ def run(a) -> dict:
     res["eval_runs"] = cond_runs
     meta = C.run_meta("closed", info, {
         "backend": a.backend, "selector": selector, "split": a.split, "seeds": seeds, "variants": variants,
-        "conditions": conds, "clock": a.clock, "epochs": a.epochs, "max_seconds": a.max_seconds, "astra": a.astra,
+        "conditions": conds, "m4_H": a.m4_h, "clock": a.clock, "epochs": a.epochs, "max_seconds": a.max_seconds,
+        "astra": a.astra,
         "layout": layout, "mode": a.mode, "prompt_config": run_prompt_config(selector, pc, layout),
         "isaac_gpu": a.isaac_gpu, "bootstrap": res["bootstrap"],
         "calibration": a.calibration, "j5_alpha": a.j5_alpha, "hb_n": a.hb_n,

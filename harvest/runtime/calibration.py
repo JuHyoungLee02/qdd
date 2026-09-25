@@ -86,11 +86,13 @@ def ece_mass(p, correct, bins: int = 15) -> float:
 def fit_question(fit_t, fit_c, alphas=(0.05, 0.1, 0.2)) -> dict:
     """fit_t: items for the temperature, fit_c: items for the conformal thresholds (disjoint episodes)."""
     T = fit_temperature(fit_t)
-    raw_ece = ece_mass([max(x["probs"].values()) for x in fit_t], [x["key"] in x["truth"] for x in fit_t])
-    use_raw = raw_ece <= 0.03 and 0.8 <= T <= 1.25  # E §3.6
+    clean = [x for x in fit_t if not x.get("ambiguous")]  # E §3.10: ambiguous items out of the ECE (canon §73)
+    raw_ece = ece_mass([max(x["probs"].values()) for x in clean], [x["key"] in x["truth"] for x in clean])
+    use_raw = raw_ece <= 0.03 and 0.8 <= T <= 1.25  # E §3.6 (nan with no clean item -> False)
     Tu = 1.0 if use_raw else T
     scores = [1 - _p_true(apply_temperature(x["probs"], Tu), x["truth"]) for x in fit_c]
-    return {"T": round(T, 6), "use_raw": bool(use_raw), "T_used": round(Tu, 6), "fit_raw_ece": round(raw_ece, 5),
+    return {"T": round(T, 6), "use_raw": bool(use_raw), "T_used": round(Tu, 6),
+            "fit_raw_ece": round(raw_ece, 5) if clean else None, "n_fit_ambiguous": len(fit_t) - len(clean),
             "n_fit_T": len(fit_t), "n_fit_j5": len(fit_c),
             "j5": {str(a): {"alpha": a, "qhat": conformal_qhat(scores, a)} for a in alphas}}
 
@@ -105,7 +107,9 @@ def _boot(by_cluster, stat, n, seed=0):
 
 def evaluate(items, qc: dict, alphas=(0.05, 0.1, 0.2), thetas=(0.6, 0.7, 0.8), n_boot: int = N_BOOT) -> dict:
     """Held-out metrics of one question under its calibration qc (E §3.5 + J5 set metrics). The judged ECE is the
-    equal-mass one (ece_cal_mass + its bootstrap ci, E §3.4); ece_raw / ece_cal (equal width) are reported only."""
+    equal-mass one (ece_cal_mass + its bootstrap ci, E §3.4); ece_raw / ece_cal (equal width) are reported only.
+    Every ECE value is over the non-ambiguous items (E §3.10 "`ambiguous` 항목은 본 ECE에서 빼고 따로 보고"; n_ece);
+    the ambiguous items' ECE is reported apart (ev["ambiguous"]). The other metrics use every item (canon §73)."""
     from collections import defaultdict
 
     from ..analysis.stats import auroc, cluster_mean_ci, ece
@@ -115,10 +119,18 @@ def evaluate(items, qc: dict, alphas=(0.05, 0.1, 0.2), thetas=(0.6, 0.7, 0.8), n
         pc = apply_temperature(x["probs"], T)
         k = max(pc, key=pc.get)
         rows.append({"c": x["cluster"], "ok": int(k in x["truth"]), "p_raw": x["probs"].get(k, 0.0), "p": pc[k],
-                     "pc": pc, "truth": x["truth"]})
+                     "pc": pc, "truth": x["truth"], "amb": bool(x.get("ambiguous"))})
     byc = defaultdict(list)
     for r in rows:
         byc[r["c"]].append(r)
+    main = [r for r in rows if not r["amb"]]
+    amb = [r for r in rows if r["amb"]]
+    main_c = defaultdict(list)
+    for r in main:
+        main_c[r["c"]].append((r["p"], r["ok"]))
+
+    def _e(f, rs, key):
+        return round(f([r[key] for r in rs], [r["ok"] for r in rs]), 5) if rs else None
 
     def mci(vals_by_c):
         v = [z for vs in vals_by_c.values() for z in vs]
@@ -128,10 +140,11 @@ def evaluate(items, qc: dict, alphas=(0.05, 0.1, 0.2), thetas=(0.6, 0.7, 0.8), n
         return {"mean": round(float(np.mean(v)), 4), "ci": [round(lo, 4), round(hi, 4)], "n": len(v)}
     p, ok = [r["p"] for r in rows], [r["ok"] for r in rows]
     ev = {"n": len(rows), "wrong": int(len(rows) - sum(ok)), "acc": mci({c: [r["ok"] for r in v] for c, v in byc.items()}),
-          "ece_raw": round(ece([r["p_raw"] for r in rows], ok), 5), "ece_cal": round(ece(p, ok), 5),
-          "ece_cal_mass": round(ece_mass(p, ok), 5),
-          "ece_cal_mass_ci": _boot({c: [(r["p"], r["ok"]) for r in v] for c, v in byc.items()},
-                                   lambda xs: ece_mass([a for a, _ in xs], [b for _, b in xs]), n_boot),
+          "n_ece": len(main), "ece_raw": _e(ece, main, "p_raw"), "ece_cal": _e(ece, main, "p"),
+          "ece_cal_mass": _e(ece_mass, main, "p"),
+          "ece_cal_mass_ci": _boot(dict(main_c), lambda xs: ece_mass([a for a, _ in xs], [b for _, b in xs]), n_boot),
+          "ambiguous": {"n": len(amb), "ece_cal_mass": _e(ece_mass, amb, "p"), "ece_cal": _e(ece, amb, "p"),
+                        "acc": round(float(np.mean([r["ok"] for r in amb])), 4) if amb else None},
           "brier_cal": round(float(np.mean([sum((pv - (k in r["truth"])) ** 2 for k, pv in r["pc"].items())
                                             for r in rows])), 5) if rows else None,
           "nll_cal": round(float(np.mean([-math.log(max(_p_true(r["pc"], r["truth"]), P_MIN)) for r in rows])), 5)
@@ -177,7 +190,7 @@ def judge_question(ev: dict, n_fit_j5: int, thetas=(0.6, 0.7, 0.8)) -> dict:
     < 30 wrong items (gate stays off); J5 'no guarantee' with < 400 fit items (CoFineLLM size, [가정])."""
     judgeable = ev["wrong"] >= 30
     au = ev["auroc_cal"]
-    ece_ok = (ev["ece_cal_mass"] <= 0.05 and ev["ece_cal_mass_ci"][1] is not None
+    ece_ok = (ev["ece_cal_mass"] is not None and ev["ece_cal_mass"] <= 0.05 and ev["ece_cal_mass_ci"][1] is not None
               and ev["ece_cal_mass_ci"][1] <= 0.08)  # E §3.4: 15 equal-mass bins
     au_ok = judgeable and au["mean"] is not None and au["mean"] >= 0.75 and (au["ci"][0] or 0) >= 0.70
     out = {"auroc_judgeable": judgeable, "ece_ok": bool(ece_ok), "auroc_ok": bool(au_ok), "theta_gate": {},

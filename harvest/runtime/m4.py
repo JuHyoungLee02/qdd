@@ -16,12 +16,17 @@ E1). What is kept from §4.2:
     replaces at the first one, W = 1 at the second; canon §72), or at once when an expected-vs-measured check (b) != OK arrived after the incumbent was set (gate_hard);
   - prefix-only commit: LA-n (last n votes agree) or >= 3 votes with agreement share >= gamma; flip_score > FLIP_TH
     stops new commits (FLIP_TH off until E0.5 sets it);
+  - ordinal agreement within tau bins, tau = 0 near contact (E §4.12 C5 setting "tau=1(접촉 근처 0)", M4 §4.4):
+    the caller passes near (core.near_contact: target <= 5 cm or contact, canon §7) to on_vote and try_commit_prefix;
   - (b) outcome per executed step: DEVIATE -> epoch+1, future uncommitted slots reopened, early call;
     CONTRADICT -> same + hold (keep last committed action, slow down; never a stop -- M7 owns FAIL);
     LAG -> choices kept (retiming is left to the executor).
 Not implemented (logged as open items): C3' Beta stop rule, cumulative-expected-state agreement (agree_mode),
-align_tol, CUSUM. The J5 conformal gate is applied before this ledger in core.py (R6, canon §31; only with a
-calibration file and j5_alpha); the theta gate is only judged offline (calibration.py, E1 judgment 1), not applied
+align_tol, CUSUM; M4 design extensions outside the pre-registered flat C5 setting (E §4.12 W=1, gamma=0.67; canon
+§73 SCOPED, ablation candidates): boundary-adaptive W 2 / gamma 1.0 right after the frozen boundary (M4 §3 #5, §4.2
+W(zone_dist) / gamma(zone_dist), §4.4 W and W_irrev), queue-threshold early call g 0.5 and scene-change early call
+(§4.3, §3 #11), a one-step stricter (b) threshold for unconfirmed-executed steps (§4.2). The J5 conformal gate
+is applied before this ledger in core.py (R6, canon §31; only with a calibration file and j5_alpha); the theta gate is only judged offline (calibration.py, E1 judgment 1), not applied
 at runtime (canon §6: gates off before E1).
 """
 from __future__ import annotations
@@ -200,8 +205,9 @@ class CommitLedger:
         keys = set(a) | set(b)
         self.flip_score[v.question] = 0.5 * sum(abs(a.count(k) / w - b.count(k) / w) for k in keys)
 
-    def try_commit_prefix(self, q: str, now: float) -> list[int]:
-        """Commit future slots of question q from the front only (#1); returns the newly committed ds."""
+    def try_commit_prefix(self, q: str, now: float, near: bool = False) -> list[int]:
+        """Commit future slots of question q from the front only (#1); returns the newly committed ds. near: the
+        near/contact zone (ordinal tau 0 in the agreement count, E §4.12 C5 setting)."""
         out = []
         if self.p.agree == "newest":
             return out
@@ -212,9 +218,9 @@ class CommitLedger:
                 continue
             if s.incumbent is None:
                 break
-            live = [x for x in s.votes if self._agrees(q, x.choice, s.incumbent)]
+            live = [x for x in s.votes if self._agrees(q, x.choice, s.incumbent, near)]
             tail = s.votes[-self.p.n_la:]
-            la = len(tail) >= self.p.n_la and all(self._agrees(q, x.choice, s.incumbent) for x in tail)
+            la = len(tail) >= self.p.n_la and all(self._agrees(q, x.choice, s.incumbent, near) for x in tail)
             if la or (len(s.votes) >= 3 and len(live) / len(s.votes) >= self.p.gamma):
                 s.status = "COMMITTED"
                 self.counts["commits"] += 1
