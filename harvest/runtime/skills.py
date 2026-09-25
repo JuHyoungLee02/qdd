@@ -98,6 +98,7 @@ class PickPlaceSkill:
         self.cmd_w = self.w_open
         self.dec: dict = {}
         self.cap_left = math.inf
+        self.moved = 0.0  # motion commanded in the current step (redecide keeps the step's budget)
         self.wait_until = None
         self.retries = 0
         self.pending_outcome = None  # CONTRADICT from an expected_after check in this step
@@ -109,6 +110,15 @@ class PickPlaceSkill:
         self.ds, self.dec = ds, dict(dec)
         c = constraint(self.dec)
         self.cap_left = c[1] if c else 0.0
+        self.moved = 0.0
+
+    def redecide(self, dec: dict) -> None:
+        """C2 VLM Stream (M4 §5 :332, canon §74): a newer answer, or the 5 s timeout ({} -> default action = no
+        decided motion, as for any empty step), replaces the running step's decisions at this tick. The step keeps
+        one option-magnitude budget: the new option's cap minus what this step already moved."""
+        self.dec = dict(dec)
+        c = constraint(self.dec)
+        self.cap_left = max(0.0, c[1] - self.moved) if c else 0.0
 
     def irreversible(self, question: str, choice: str) -> bool:
         """M6 effect field: 'next' where it fires close / open."""
@@ -193,6 +203,7 @@ class PickPlaceSkill:
             if step > 0:
                 self.cmd_pos = self.cmd_pos + step_dir * (step / n)
                 self.cap_left -= step
+                self.moved += step
             z_lo = max(table_z + WS_Z[0], floor_z if floor_z is not None else -np.inf)
             self.cmd_pos = np.array([np.clip(self.cmd_pos[0], *WS_X), np.clip(self.cmd_pos[1], *WS_Y),
                                      np.clip(self.cmd_pos[2], z_lo, table_z + WS_Z[1])])

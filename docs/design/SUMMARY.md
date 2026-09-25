@@ -284,7 +284,7 @@
 - **역할/입출력**: 입력 = M3 `DecisionStep`, 측정 상태(매 제어 주기), Jev 지연 기록, **M5 `ref(t)`**. 출력 = 확정 스텝 열(스킬로), 가확정 열(M5가 미리 봄), 스텝별 `commit_window`(= `d_p95`), 스텝별 (b) 범주 → 다음 Jev 입력 한 줄(`last_step: LAG`), **M7로 신호만**, 조기 호출 요청. 하지 않는 것: Jev에 예상 상태·수치 묻기, 확률 가중 평균, **FAIL 판정·정지·M9 호출**.
 - **설계(1순위)**: 표 원장 + 전제 epoch.
   - 자료 구조: `Vote{ds_id, question_id, choice, p_chosen, call_id, sent_at, recv_at, t_state, premise_epoch}`, `Slot{zone ∈ FROZEN/MID/FRESH, status ∈ OPEN/TENTATIVE/CONTESTED/COMMITTED/EXECUTING/VERIFIED/FAILED, incumbent, challenger, defer_left, votes, expected_after, outcome}`, `Ledger{slots, epoch, d_hat, flip_score}`.
-  - **(a) 합의 [잠정 기본, [결정 필요] D4 승인 전]**: 전제가 살아 있는 표끼리 LocalAgreement-2(최근 두 표 같음) 또는 표 ≥3이고 최빈 비율 ≥ γ(0.67)이면 확정. 스텝 열 **앞에서부터만** 확정, 확정은 불변. 순서형 보기는 τ칸 이내면 일치(접촉 근처 τ=0). 도전 선택은 FLy식 **유예 창 W**를 통과해야 교체(경계 직후 W=2·γ=1.0, 멀수록 W=1·γ=0.67). (b)≠OK면 유예 없이 교체. 확률 게이트 θ는 E1 뒤에만. 표 폐기 나이 STALE_MAX 1.5 s(정본 §7).
+  - **(a) 합의 [잠정 기본, [결정 필요] D4 승인 전]**: 전제가 살아 있는 표끼리 LocalAgreement-2(최근 두 표 같음) 또는 표 ≥3이고 최빈 비율 ≥ γ(0.67)이면 확정. 스텝 열 **앞에서부터만** 확정, 확정은 불변. 순서형 보기는 τ칸 이내면 일치(접촉 근처 τ=0). 도전 선택은 FLy식 **유예 창 W**를 통과해야 교체(경계 직후 W=2·γ=1.0, 멀수록 W=1·γ=0.67 — [SCOPED R7 9회차, 정본 §73 D5·§74: 경계 적응형은 사전 등록 밖 설계 확장이라 구현·실험하지 않음; 사전 등록 C5 = 평탄 W=1·γ=0.67(= 정확히 2/3)]). (b)≠OK면 유예 없이 교체. 확률 게이트 θ는 E1 뒤에만. 표 폐기 나이 STALE_MAX 1.5 s(정본 §7).
   - **(b) 결과 확인**: 스텝 실행 뒤 (1) `ref(t)` 대비 연속 잔차와 (2) `expected_after` 술어 성립을 **따로** 계산, 성공 실행으로 split conformal 보정한 경계 + 짧은 창(w=5 제어 주기) + 느린 표류는 CUSUM → **OK / LAG / DEVIATE / CONTRADICT**.
   - 고리: DEVIATE·CONTRADICT → epoch +1, 이전 epoch 미확정 표 폐기(Raft term처럼), 조기 호출, 범주를 다음 Jev 입력에. LAG → 선택 유지, 뒤 스텝 시각만 미룸. CONTRADICT → 직전 확정 행동 유지 + 감속(정지 아님).
   - **M7로 가는 신호**: CONTRADICT → 모순 술어가 **T1일 때만 하드 채널(H4)**, T2·`unknown`이면 `C_m4` / DEVIATE(3스텝 연속) → `C_m4` / `flip_score` → `C_flip`. `C_m4`·`C_flip`은 둘 다 M4 출처라 **E-M7 전 기본은 동시 발동을 1표로 센다**(D4 C-11, M7 §4.2 채택, E-M7 D4f로 확정). **[잠정 기본] `flip_score` = 같은 스텝에 쌓인 표 분포와 직전 창 표 분포 사이 거리(총변동 거리 등)**, 임계 FLIP_TH = 성공 실행 flip_score의 1−α 분위(근거 Sentinel/STAC CoRL 2024 절제 그림 5, 기간 밖 → [결정 필요] D4 승인 전 잠정. 불허 시 "한 답 대 한 답" 뒤집힘 비율로, E0.5가 두 식을 같이 잰다). flip 급증 중에는 새 확정 중단.
@@ -586,7 +586,7 @@ E0 지연(실제 `JevCall` 크기) → **E0.5 표 재생(오프라인, E0와 같
 | L2 블렌딩 T_b / T_f / schedule | 0.3 s / 0 s([가정]) / RTC 식 5(exp) | M5 | §7(§25 정정) | τ_b 삭제(v3.2). E-M5-2 스윕 schedule {exp, linear} × T_b {0.2, 0.3, 0.5} s |
 | 관성화 감쇠 T_i | 0.3 s | M5 | §7 | 잠정 기본(§16), E-M5-2 |
 | 관성화 자동 트리거 ε_x / ε_v | 값 미기재(설정 표 후보) | M5 | M5 | |
-| γ / n(LA) / τ / W | 0.67 / 2 / 1(접촉 근처 0) / 1(경계 직후 2) | M4 | M4 | γ {0.5, 0.67, 1.0}, W {0, 1, 2} |
+| γ / n(LA) / τ / W | 0.67 / 2 / 1(접촉 근처 0) / 1(경계 직후 2) [SCOPED R7 9회차, 정본 §73 D5·§74: "경계 직후 2"는 구현하지 않음(평탄 W=1), γ 0.67 = 정확히 2/3] | M4 | M4 | γ {0.5, 0.67, 1.0}, W {0, 1, 2} |
 | W_irrev | W+1 | M4 | M4 | [잠정] |
 | C_thresh (C3') | 0.9 | M4 | M4 | 절제 0.95 |
 | α (conformal) / w | 0.01 / 5 제어 주기 | M4 | M4 | α {0.001, 0.01, 0.05} |

@@ -102,10 +102,10 @@ def rank_tracks(probs_per_frame: dict, k: int) -> list:
 
 
 def near_update(prev: bool | None, dist_m: float, near_in: float = 0.05, near_out: float = 0.06) -> bool:
-    """Hysteresis band as in M1 registry (enter < 5 cm, exit > 6 cm)."""
+    """Hysteresis band as in M1 registry (enter <= 5 cm, exit > 6 cm; M1 :140)."""
     if prev:
         return dist_m <= near_out
-    return dist_m < near_in
+    return dist_m <= near_in
 
 
 def above(ca: np.ndarray, cb: np.ndarray, b_half_extent_xy: float, up: np.ndarray) -> bool:

@@ -3,6 +3,31 @@ import numpy as np
 
 N_BOOT = 10000  # E-first §1.7 / EVAL §4.2: cluster bootstrap 10,000 draws (canon §72, R7 cycle 7 E1)
 
+# Pre-registered thresholds are compared on unrounded statistics with a float-noise tolerance (canon §74): a statistic
+# that equals the threshold in exact arithmetic (e.g. AUROC 0.83 - 0.80, 0.8 - 0.08, ECE |78/100 - 0.75|) must land on
+# the side the wording puts the boundary. 1e-12 is far below any gap between distinct count ratios the judgments see.
+CMP_EPS = 1e-12
+
+
+def at_least(x, t) -> bool:
+    """x >= t (boundary included)."""
+    return x >= t - CMP_EPS
+
+
+def at_most(x, t) -> bool:
+    """x <= t (boundary included)."""
+    return x <= t + CMP_EPS
+
+
+def below(x, t) -> bool:
+    """x < t (boundary excluded)."""
+    return x < t - CMP_EPS
+
+
+def above(x, t) -> bool:
+    """x > t (boundary excluded)."""
+    return x > t + CMP_EPS
+
 
 def cluster_bootstrap_ci(values_by_cluster, stat, n=10000, seed=0, level=0.95):
     keys = list(values_by_cluster)
@@ -59,17 +84,21 @@ def holm(pvals, alpha=0.05):
     return res
 
 
-def holm_ci(ci_at, names, alpha=0.05):
+def holm_ci(ci_at, names, alpha=0.05, direction="two-sided"):
     """Holm step-down on bootstrap intervals (E §1.7 "Holm 보정", §2A.6-10): with m hypotheses, step s = 0, 1, ...
     rejects one remaining hypothesis whose two-sided interval at level 1 - alpha / (m - s) excludes 0 and stops at
     the first step where none does. This is Holm on the CI-inversion p-value (p <= alpha / (m - s) exactly when that
     interval excludes 0; the percentile intervals of one set of draws are nested). ci_at(name, level) -> (lo, hi).
+    direction "greater" (a pre-registered "하한 > 0" criterion, canon §74): only lower > 0 is a rejection; an interval
+    wholly below 0 is not, and does not release the next step's level. Same intervals as two-sided.
     Returns {name: {"reject", "lo", "hi", "level"}} (the interval at the level of the step that decided it)."""
+    if direction not in ("two-sided", "greater"):
+        raise ValueError(f"holm_ci direction {direction!r}: two-sided | greater")
     rem, m, out = list(names), len(names), {}
     for s in range(m):
         level = 1 - alpha / (m - s)
         cis = {k: ci_at(k, level) for k in rem}
-        hit = [k for k in rem if cis[k][0] > 0 or cis[k][1] < 0]
+        hit = [k for k in rem if cis[k][0] > 0 or (direction == "two-sided" and cis[k][1] < 0)]
         if not hit:
             break
         k = max(hit, key=lambda x: max(cis[x][0], -cis[x][1]))

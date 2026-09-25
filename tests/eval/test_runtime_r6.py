@@ -42,7 +42,8 @@ def test_condition_table():
     assert m4 == {} and rt == {}
     m4, rt = condition("C0")
     assert m4["max_inflight"] == 1 and rt["stop_wait"] is True
-    assert condition("C2")[0] == {"agree": "newest", "feedback_b": False}
+    # C2 = VLM Stream as pre-registered (canon §74): 5 s timeout, no in-flight cap
+    assert condition("C2")[0] == {"agree": "stream", "feedback_b": False, "stale_max": 5.0, "n_max_cap": False}
     assert condition("C6")[0] == {"max_inflight": 1}
     with pytest.raises(ValueError):
         condition("C5-A3")

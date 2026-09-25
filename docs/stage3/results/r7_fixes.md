@@ -42,7 +42,7 @@
 - 읽고 기록하는 곳: `eval/common.run_meta`에 `"canary"`(e05·rd·calib·closed 모두), `eval/closed.py`가 워커 spec에 `canary_id`를 넣어 `RuntimeConfig.canary_id` → 부가 JSONL 모든 호출 행, `runtime/run_r5.py`도 같음.
 - 시험: `tests/runtime/test_reqhash.py`(2), `tests/runtime/test_core_fakeworld.py::test_every_call_logs_its_request_hash_and_canary_id`(modular·fused, call·chunk·astra 행 모두 64자리 해시, 이미지 해시, canary id / Astra "none"), `tests/eval/test_canary_cmd.py`(세트 만들기·불변, CAL 500 거부, mock 카나리 id·기준일 비교에서 drift 검출·최신 id·`--force`, run_meta 기록), `tests/eval/test_closed_pure.py::test_worker_spec_carries_the_latest_canary_id`("none"과 실제 id 두 경우).
 - 파드 실제 실행: 세트 `dev_v1`(jsel_dev/P0 DEV 0–2에서 12 스냅샷, set_sha `96bfc52a21afc751`). mock 카나리 `cn20260924_mock_ae0d1a`. **단계 A SFT 병합 모델**(`ckpt/stageA/sftA_pool_v1/merged`, 지문 `ed387f59…` = R7 cycle-1 보정 파일의 지문) vLLM GPU 3, 반복 2: id **`cn20260924_ed387f59_76f160`**, 호출 오류 0, 바닥 0.0(배치 불변), 97 s, 끝난 뒤 GPU 3 = 1 MiB(자기 vLLM만 종료). 이 모델로 폐루프를 돌리면 이 id가 모든 call 행에 기록된다. 기준일이 오늘이라 비교는 다음 날부터.
-- 한계(기록): Astra 카나리 없음("none" 명시), 한 모델·하루 한 검정이라 Holm 없음, 세트 크기·반복 수는 [가정](E-first §1.8 "E0 뒤 정함").
+- 한계(기록): Astra 카나리 없음("none" 명시), 한 모델·하루 한 검정이라 Holm 없음([해결 R7 8회차, 정본 §73 D3: 표류 판정 = 질문별 에피소드 군집 구간 + 질문 Holm(`harvest/canary.canary_compare`); R7 9회차 정본 §74: Holm은 "하한 > 0" 방향만 기각으로 셈]), 세트 크기·반복 수는 [가정](E-first §1.8 "E0 뒤 정함").
 
 ### 3. C6 — GPU 문구(코드 주석)
 

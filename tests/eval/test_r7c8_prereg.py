@@ -43,9 +43,10 @@ def test_judgment2_holds_when_holm_rejects_with_a_positive_gain():
     h = e05.gain_holm(la2, c2pp, n=2000)
     assert h["la2"]["reject"] is True and h["la2"]["lo"] > 0 and h["c2pp"]["reject"] is False
     assert judge_e05({"flip_rate_success": 0.2, "gain_la2": 0.5, "gain_c2pp": 0.0, "gain_holm": h})["claim"] == "keep_a"
-    # a significant NEGATIVE gain is a Holm rejection but not judgment 2
+    # a significant NEGATIVE gain is not judgment 2 -- and since R7 cycle 9 (canon §74, directional Holm) not a Holm
+    # rejection either
     neg = e05.gain_holm({c: [-1] * 5 + [0] * 5 for c in la2}, c2pp, n=2000)
-    assert neg["la2"]["reject"] is True and neg["la2"]["hi"] < 0
+    assert neg["la2"]["reject"] is False and neg["la2"]["hi"] < 0
     assert judge_e05({"flip_rate_success": 0.2, "gain_la2": 0.03, "gain_c2pp": 0.0, "gain_holm": neg})["claim"] \
         != "keep_a"
 
@@ -138,7 +139,7 @@ def test_canary_resamples_episodes_and_holms_over_questions():
         snap, q = key.rsplit("|", 1)
         by_q[q].setdefault(episode_of_key(snap), []).extend(float(a != "a") for a in ans)
     ref = holm_ci(lambda q, L: cluster_bootstrap_ci(by_q[q], lambda xs: sum(xs) / len(xs) - 0.05, n=2000,
-                                                    level=L), sorted(qs))
+                                                    level=L), sorted(qs), direction="greater")  # canon §74
     for q in qs:
         assert pq[q]["reject"] == ref[q]["reject"] and pq[q]["lo"] == pytest.approx(ref[q]["lo"])
         assert pq[q]["level"] == pytest.approx(ref[q]["level"])

@@ -56,7 +56,7 @@ class PredicateState:
                 continue
             d = float(np.linalg.norm(A.pos - B.pos))
             prev = self._near.get((a, b), False)
-            now = d <= CFG.near_out_m if prev else d < CFG.near_in_m
+            now = d <= CFG.near_out_m if prev else d <= CFG.near_in_m  # M1 :140 enter <= 5 cm / exit > 6 cm
             self._near[(a, b)] = now
             out[f"near({a},{b})"] = now
             touching = frozenset({a, b}) in contacts

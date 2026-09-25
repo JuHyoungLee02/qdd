@@ -197,7 +197,7 @@ class Labeler:
             o = s["obs"]
             pl.pred, pl.ps._near = dict(o["pred"]), {(a, b): v for a, b, v in o["near_hyst"]}
             pl.objs, pl.grip, pl.contacts, pl.support = obs_from_json(o["raw"])
-            pl.near_target = bool(np.linalg.norm(pl.grip.pos - pl.objs["o3"].pos) < 0.05)
+            pl.near_target = bool(np.linalg.norm(pl.grip.pos - pl.objs["o3"].pos) <= 0.05)
             out.update(self._branch(pl, spec))
             raise _Branched
 

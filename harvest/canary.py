@@ -32,8 +32,9 @@ def canary_compare(base: dict, today: dict, floor: float, n_boot=N_BOOT) -> dict
     """base/today: "<snapshot>|<question>" -> list of answers (option_key). Canon §28 (:264) / E §1.8: drift suspect
     when the mismatch vs the baseline mode is significantly above the day's floor ("하한 > 0, Holm"): per question
     the episode-cluster bootstrap CI (E §1.7 "스냅샷의 에피소드" clusters) of (mismatch - floor), Holm step-down over
-    the questions (stats.holm_ci); drift_suspect = some question rejected with lower > 0. The floor is the day's
-    pooled test-retest mismatch, taken as given (canon §73)."""
+    the questions (stats.holm_ci, directional: a question significantly BELOW the floor is no rejection and does not
+    release the next step's level, canon §74); drift_suspect = some question rejected with lower > 0. The floor is
+    the day's pooled test-retest mismatch, taken as given (canon §73)."""
     per_q = {}
     allv = []
     for key, answers in today.items():
@@ -44,7 +45,7 @@ def canary_compare(base: dict, today: dict, floor: float, n_boot=N_BOOT) -> dict
         per_q.setdefault(q, {}).setdefault(episode_of_key(key), []).extend(vals)
     mean = sum(allv) / max(1, len(allv))
     h = holm_ci(lambda q, level: cluster_bootstrap_ci(per_q[q], lambda xs: sum(xs) / len(xs) - floor, n=n_boot,
-                                                      level=level), sorted(per_q))
+                                                      level=level), sorted(per_q), direction="greater")
     pq = {q: {"mismatch": sum(sum(v) for v in per_q[q].values()) / sum(len(v) for v in per_q[q].values()),
               "reject": bool(r["reject"]), "lo": r["lo"], "hi": r["hi"], "level": r["level"]} for q, r in h.items()}
     drift = any(v["reject"] and v["lo"] > 0 for v in pq.values())

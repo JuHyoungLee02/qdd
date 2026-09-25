@@ -97,7 +97,7 @@ def run_snapshot_episode(env, seed: int, kind: str, cams=(), on_snapshot=None, l
             o = st["skip_obs"]
             pl.pred, pl.ps._near = dict(o["pred"]), {(a, b): v for a, b, v in o["near_hyst"]}
             pl.objs, pl.grip, pl.contacts, pl.support = S.obs_from_json(o["raw"])
-            pl.near_target = bool(np.linalg.norm(pl.grip.pos - pl.objs["o3"].pos) < CFG.near_in_m)
+            pl.near_target = bool(np.linalg.norm(pl.grip.pos - pl.objs["o3"].pos) <= CFG.near_in_m)
             pred, st["skip_obs"] = pl.pred, None
         else:
             pred = pl.observe()

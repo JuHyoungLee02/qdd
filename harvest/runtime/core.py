@@ -2,9 +2,11 @@
 
 act(obs) is non-blocking (except the clock's simlat/sync rules): it returns the current executor output for one
 100 Hz tick. Background work runs in a thread pool: (a) decision calls every T_c (staggered, up to N_max in flight,
-M4 §4.3), (b) the Astra heartbeat (§45). Delivery follows the injected clock (sync / simlat / wall, clock.py).
+M4 §4.3; the C2 baseline has no cap, canon §74), (b) the Astra heartbeat (§45). Delivery follows the injected clock
+(sync / simlat / wall, clock.py).
 Per tick, in this order: M1 observation -> schedule calls -> deliver answers (votes -> M4 ledger, prefix commit) ->
-decision-step boundary ((b) check of the finished step, M4 signals, decisions of the new step) -> executor.
+decision-step boundary ((b) check of the finished step, M4 signals, decisions of the new step) -> (C2 only: the
+newest valid answer replaces the running step's decisions, canon §74) -> executor.
 Back-ends (models.py): modular = decisions -> skill S (+ residual-R hook) -> IK; fused = decisions + action chunk,
 the chunk is played only while its own decisions agree with the committed ones (else hold).
 
@@ -149,6 +151,7 @@ class OursRuntime:
         self._last_sample, self._phase_seen = -1e9, None
         self.j5_streak, self.j5_stats = {}, {"held": 0, "escalated": 0, "passed": 0}
         self.n_stop_ticks = 0
+        self.inflight_at_send = []  # decision calls in flight right after each send (incl. that call)
         # canon §61/§64 measurement state
         self.critic, self.hard = Critic(self.vcal), HardChannel()
         self.v1h_last, self.meas_last, self.pending_t2, self.step_phase = None, None, [], {}
@@ -224,7 +227,7 @@ class OursRuntime:
         self.n_hb += 1
         template, allowed, pid = prompt_for(self.cfg.hb_mode, kind)
         sk, L = self.skill, self.ledger
-        dec = {k: L.decision(k, self.cur_k)[0] for k in DECISION_QUESTIONS} if self.cur_k is not None else {}
+        dec = {k: L.decision(k, self.cur_k, now)[0] for k in DECISION_QUESTIONS} if self.cur_k is not None else {}
         outs = [s.get("outcome") for s in self.slots_log[-6:-1]]
         mv = values(self.meas_last) if self.meas_last is not None else {}  # measured facts (canon §64), not oracle
         facts = {"holding(o3)": mv.get("holding_t"), "lifted_holding(o3)": mv.get("lifted_holding"),
@@ -405,9 +408,11 @@ class OursRuntime:
         v1h = v["logits"] if v is not None and now - v["t_state"] <= self.cfg.t2_check_max_age_s else None
         self.meas_last = measure(proprio, v1h, self.vcal, self.rules)
         pred_exec = self._exec_pred(pred, self.meas_last)
-        # (a) decision calls: staggered every T_c, <= N_max in flight; an early call pulls one periodic slot forward
+        # (a) decision calls: staggered every T_c, <= N_max in flight (C2: no cap); an early call pulls one periodic
+        # slot forward. The in-flight count at each send is recorded (C2 "실측 in-flight 수 보고", M4 §5 :332)
         infl = sum(1 for it in self.q._items if it["meta"]["kind"] == "dec")
         if infl < self.ledger.n_max() and (now >= self.next_call - 1e-9 or self.early):
+            self.inflight_at_send.append(infl + 1)
             self._submit_decision(now, raw, present, pred, support, obs)
             if self.early and now < self.next_call - 1e-9:
                 self.next_call += self.cfg.T_c
@@ -443,6 +448,12 @@ class OursRuntime:
         k = int(math.floor(now / self.cfg.T_c + 1e-9))
         if k != self.cur_k:
             self._boundary(k, now, tcp_p)
+        if self.ledger.p.agree == "stream" and not self.hold_step:
+            # C2 VLM Stream (M4 §5 :332 "매 틱 … 가장 새 유효 응답 하나의 보기를 그대로 적용", canon §74): a newer
+            # answer (or the 5 s timeout -> default action) changes the running step's decisions at this tick
+            dec = {q: c for q in DECISION_QUESTIONS if (c := self.ledger.decision(q, self.cur_k, now)[0]) is not None}
+            if dec != self.skill.dec:
+                self.skill.redecide(dec)
         if self.cfg.backend == "fused":
             self._maybe_request_chunk(now, obs)
         # executor (its expected_after checks read the measured predicates, not the privileged state)
@@ -563,7 +574,7 @@ class OursRuntime:
         if kn in self.chunk_req or now < self.ledger.t_start(kn) - self.cfg.chunk_lead_s - 1e-9:
             return
         self.chunk_req.add(kn)
-        dec = {q: self.ledger.decision(q, kn) for q in DECISION_QUESTIONS}
+        dec = {q: self.ledger.decision(q, kn, now) for q in DECISION_QUESTIONS}
         committed = {q: c for q, (c, st) in dec.items() if c is not None}
         from ..serialize import canonicalize
         from ..train.stageb_data import image_only_state
@@ -645,6 +656,9 @@ class OursRuntime:
                 "final_phase": self.skill.phase, "final_stage": self.skill.stage,
                 "grasp_retries": self.skill.retries, "chunk": dict(self.chunk_stats),
                 "condition": self.cfg.condition, "stop_ticks": getattr(self, "n_stop_ticks", 0),
+                "dec_inflight": {"max": max(self.inflight_at_send, default=None),
+                                 "mean": round(float(np.mean(self.inflight_at_send)), 3)
+                                 if self.inflight_at_send else None, "n_sends": len(self.inflight_at_send)},
                 "j5": dict(self.j5_stats) if self.cal is not None else None,
                 "measure": {**self.measure_stats, "verify_calibrated": self.vcal.calibrated,
                             "verify_cal": self.cfg.verify_cal or "default (uncalibrated)",

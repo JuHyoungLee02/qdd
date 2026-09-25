@@ -88,7 +88,8 @@ def fit_question(fit_t, fit_c, alphas=(0.05, 0.1, 0.2)) -> dict:
     T = fit_temperature(fit_t)
     clean = [x for x in fit_t if not x.get("ambiguous")]  # E §3.10: ambiguous items out of the ECE (canon §73)
     raw_ece = ece_mass([max(x["probs"].values()) for x in clean], [x["key"] in x["truth"] for x in clean])
-    use_raw = raw_ece <= 0.03 and 0.8 <= T <= 1.25  # E §3.6 (nan with no clean item -> False)
+    from ..analysis.stats import at_least, at_most
+    use_raw = at_most(raw_ece, 0.03) and at_least(T, 0.8) and at_most(T, 1.25)  # E §3.6 (nan: no clean item -> False)
     Tu = 1.0 if use_raw else T
     scores = [1 - _p_true(apply_temperature(x["probs"], Tu), x["truth"]) for x in fit_c]
     return {"T": round(T, 6), "use_raw": bool(use_raw), "T_used": round(Tu, 6),
@@ -97,12 +98,16 @@ def fit_question(fit_t, fit_c, alphas=(0.05, 0.1, 0.2)) -> dict:
             "j5": {str(a): {"alpha": a, "qhat": conformal_qhat(scores, a)} for a in alphas}}
 
 
-def _boot(by_cluster, stat, n, seed=0):
+def _boot(by_cluster, stat, n, seed=0, nd=4):
     from ..analysis.stats import cluster_bootstrap_ci
     if not by_cluster:
         return [None, None]
     lo, hi = cluster_bootstrap_ci(by_cluster, stat, n=n, seed=seed)
-    return [round(lo, 4), round(hi, 4)]
+    return [lo, hi] if nd is None else [round(lo, nd), round(hi, nd)]
+
+
+def _rnd(xs, nd=4):
+    return [None if x is None else round(x, nd) for x in xs]
 
 
 def evaluate(items, qc: dict, alphas=(0.05, 0.1, 0.2), thetas=(0.6, 0.7, 0.8), n_boot: int = N_BOOT) -> dict:
@@ -132,17 +137,28 @@ def evaluate(items, qc: dict, alphas=(0.05, 0.1, 0.2), thetas=(0.6, 0.7, 0.8), n
     def _e(f, rs, key):
         return round(f([r[key] for r in rs], [r["ok"] for r in rs]), 5) if rs else None
 
-    def mci(vals_by_c):
+    # judge_values: the unrounded statistics judge_question decides on (the rounded ones are for display, canon §74)
+    jv = {"theta": {}, "j5": {}}
+
+    def mci(vals_by_c, exact=None):
         v = [z for vs in vals_by_c.values() for z in vs]
         if not v:
+            if exact is not None:
+                exact.update(mean=None, lo=None)
             return {"mean": None, "ci": [None, None], "n": 0}
         lo, hi = cluster_mean_ci(vals_by_c, n=n_boot)
-        return {"mean": round(float(np.mean(v)), 4), "ci": [round(lo, 4), round(hi, 4)], "n": len(v)}
+        m = float(np.mean(v))
+        if exact is not None:
+            exact.update(mean=m, lo=lo)
+        return {"mean": round(m, 4), "ci": [round(lo, 4), round(hi, 4)], "n": len(v)}
     p, ok = [r["p"] for r in rows], [r["ok"] for r in rows]
+    jv["ece_cal_mass"] = ece_mass([r["p"] for r in main], [r["ok"] for r in main]) if main else None
+    jv["ece_cal_mass_ci"] = _boot(dict(main_c), lambda xs: ece_mass([a for a, _ in xs], [b for _, b in xs]), n_boot,
+                                  nd=None)
     ev = {"n": len(rows), "wrong": int(len(rows) - sum(ok)), "acc": mci({c: [r["ok"] for r in v] for c, v in byc.items()}),
           "n_ece": len(main), "ece_raw": _e(ece, main, "p_raw"), "ece_cal": _e(ece, main, "p"),
           "ece_cal_mass": _e(ece_mass, main, "p"),
-          "ece_cal_mass_ci": _boot(dict(main_c), lambda xs: ece_mass([a for a, _ in xs], [b for _, b in xs]), n_boot),
+          "ece_cal_mass_ci": _rnd(jv["ece_cal_mass_ci"]),
           "ambiguous": {"n": len(amb), "ece_cal_mass": _e(ece_mass, amb, "p"), "ece_cal": _e(ece, amb, "p"),
                         "acc": round(float(np.mean([r["ok"] for r in amb])), 4) if amb else None},
           "brier_cal": round(float(np.mean([sum((pv - (k in r["truth"])) ** 2 for k, pv in r["pc"].items())
@@ -155,15 +171,17 @@ def evaluate(items, qc: dict, alphas=(0.05, 0.1, 0.2), thetas=(0.6, 0.7, 0.8), n
     def _au(xs):
         v = auroc([s for s, _ in xs], [y for _, y in xs])
         return 0.5 if v is None else v
-    ev["auroc_cal"] = {"mean": None if a is None else round(a, 4),
-                       "ci": _boot({c: [(r["p"], r["ok"]) for r in v] for c, v in byc.items()}, _au, n_boot)
-                       if a is not None else [None, None]}
+    jv["auroc"] = a
+    jv["auroc_ci"] = (_boot({c: [(r["p"], r["ok"]) for r in v] for c, v in byc.items()}, _au, n_boot, nd=None)
+                      if a is not None else [None, None])
+    ev["auroc_cal"] = {"mean": None if a is None else round(a, 4), "ci": _rnd(jv["auroc_ci"])}
     ev["theta"] = {}
     for th in thetas:
         sel = {c: [r["ok"] for r in v if r["p"] >= th] for c, v in byc.items()}
         sel = {c: v for c, v in sel.items() if v}
-        ev["theta"][str(th)] = {"acc": mci(sel), "coverage": round(float(np.mean([r["p"] >= th for r in rows])), 4)
-                                if rows else None}
+        cov = float(np.mean([r["p"] >= th for r in rows])) if rows else None
+        x = jv["theta"][str(th)] = {"coverage": cov}
+        ev["theta"][str(th)] = {"acc": mci(sel, x), "coverage": None if cov is None else round(cov, 4)}
     ev["j5"] = {}
     for al in alphas:
         qh = qc["j5"][str(al)]["qhat"]
@@ -173,41 +191,58 @@ def evaluate(items, qc: dict, alphas=(0.05, 0.1, 0.2), thetas=(0.6, 0.7, 0.8), n
             cov[r["c"]].append(int(bool(s & r["truth"])))
         sizes = [len(s) for _, s in sets]
         single = [(r, s) for r, s in sets if len(s) == 1]
+        x = jv["j5"][str(al)] = {
+            "singleton_rate": len(single) / len(sets) if sets else None,
+            "singleton_acc": float(np.mean([bool(s & r["truth"]) for r, s in single])) if single else None}
         ev["j5"][str(al)] = {
-            "qhat": qh, "coverage": mci(cov), "target": 1 - al,
+            "qhat": qh, "coverage": mci(cov, x), "target": 1 - al,
             "set_size_mean": round(float(np.mean(sizes)), 4) if sizes else None,
             "set_size_dist": {str(k): sizes.count(k) for k in sorted(set(sizes))},
-            "singleton_rate": round(len(single) / len(sets), 4) if sets else None,
+            "singleton_rate": _rnd([x["singleton_rate"]])[0],
             "empty_rate": round(float(np.mean([len(s) == 0 for _, s in sets])), 4) if sets else None,
             "hold_rate": round(float(np.mean([len(s) != 1 or NE in s for _, s in sets])), 4) if sets else None,
             "ne_in_set_rate": round(float(np.mean([NE in s for _, s in sets])), 4) if sets else None,
-            "singleton_acc": round(float(np.mean([bool(s & r["truth"]) for r, s in single])), 4) if single else None}
+            "singleton_acc": _rnd([x["singleton_acc"]])[0]}
+    ev["judge_values"] = jv
     return ev
 
 
 def judge_question(ev: dict, n_fit_j5: int, thetas=(0.6, 0.7, 0.8)) -> dict:
     """E §3.7 judgment 1 (theta gate per candidate theta) and judgment 8 (J5 per alpha); AUROC not judgeable with
     < 30 wrong items (gate stays off); J5 'no guarantee' with < 400 fit items (CoFineLLM size, [가정])."""
+    from ..analysis.stats import at_least, at_most
+    jv = ev.get("judge_values") or _display_values(ev)  # evaluate() output carries the unrounded values (canon §74)
     judgeable = ev["wrong"] >= 30
-    au = ev["auroc_cal"]
-    ece_ok = (ev["ece_cal_mass"] is not None and ev["ece_cal_mass"] <= 0.05 and ev["ece_cal_mass_ci"][1] is not None
-              and ev["ece_cal_mass_ci"][1] <= 0.08)  # E §3.4: 15 equal-mass bins
-    au_ok = judgeable and au["mean"] is not None and au["mean"] >= 0.75 and (au["ci"][0] or 0) >= 0.70
+    e, ehi = jv["ece_cal_mass"], jv["ece_cal_mass_ci"][1]
+    ece_ok = e is not None and at_most(e, 0.05) and ehi is not None and at_most(ehi, 0.08)  # E §3.4 equal-mass
+    au_ok = (judgeable and jv["auroc"] is not None and at_least(jv["auroc"], 0.75)
+             and at_least(jv["auroc_ci"][0] or 0, 0.70))
     out = {"auroc_judgeable": judgeable, "ece_ok": bool(ece_ok), "auroc_ok": bool(au_ok), "theta_gate": {},
            "j5_ok": {}, "j5_guarantee": n_fit_j5 >= 400}
     for th in thetas:
-        t = ev["theta"].get(str(th))
-        if not t or t["acc"]["mean"] is None:
+        t = jv["theta"].get(str(th))
+        if not t or t["mean"] is None:
             out["theta_gate"][str(th)] = False
             continue
-        out["theta_gate"][str(th)] = bool(ece_ok and au_ok and t["acc"]["mean"] >= th - 0.03
-                                          and t["acc"]["ci"][0] >= th - 0.08 and t["coverage"] >= 0.20)
-    for al, j in ev["j5"].items():
+        out["theta_gate"][str(th)] = bool(ece_ok and au_ok and at_least(t["mean"], th - 0.03)
+                                          and at_least(t["lo"], th - 0.08) and at_least(t["coverage"], 0.20))
+    for al, j in jv["j5"].items():
         a = float(al)
-        out["j5_ok"][al] = bool(j["coverage"]["ci"][0] is not None and j["coverage"]["ci"][0] >= 1 - a - 0.03
-                                and (j["singleton_rate"] or 0) >= 0.5 and j["singleton_acc"] is not None
-                                and j["singleton_acc"] >= 1 - a)
+        out["j5_ok"][al] = bool(j["lo"] is not None and at_least(j["lo"], 1 - a - 0.03)
+                                and at_least(j["singleton_rate"] or 0, 0.5) and j["singleton_acc"] is not None
+                                and at_least(j["singleton_acc"], 1 - a))
     return out
+
+
+def _display_values(ev: dict) -> dict:
+    """judge_values from a display-only ev (no 'judge_values', e.g. a hand-built one)."""
+    au = ev["auroc_cal"]
+    return {"ece_cal_mass": ev["ece_cal_mass"], "ece_cal_mass_ci": ev["ece_cal_mass_ci"], "auroc": au["mean"],
+            "auroc_ci": au["ci"],
+            "theta": {k: {"mean": t["acc"]["mean"], "lo": t["acc"]["ci"][0], "coverage": t["coverage"]}
+                      for k, t in ev["theta"].items()},
+            "j5": {k: {"lo": j["coverage"]["ci"][0], "singleton_rate": j["singleton_rate"],
+                       "singleton_acc": j["singleton_acc"]} for k, j in ev["j5"].items()}}
 
 
 class Calibration:

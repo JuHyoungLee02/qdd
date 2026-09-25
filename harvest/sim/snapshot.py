@@ -94,7 +94,7 @@ def ambiguous_predicates(pos: dict, band=(CFG.near_in_m, CFG.near_out_m)) -> lis
     for i, a in enumerate(ids):
         for b in ids[i + 1:]:
             d = float(np.linalg.norm(np.asarray(pos[a], float) - np.asarray(pos[b], float)))
-            if band[0] <= d <= band[1]:
+            if band[0] < d <= band[1]:  # history-dependent only in (5, 6] cm (enter <= 5 cm, canon §74)
                 out += [f"near({a},{b})", f"near({b},{a})"]
     return out
 

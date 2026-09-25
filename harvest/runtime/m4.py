@@ -14,13 +14,15 @@ E1). What is kept from §4.2:
   - challenger replaces the incumbent only after the defer window W (W+1 when either choice is irreversible, §4.6):
     W = further votes for the same challenger needed after the first challenging vote (§4.2 pseudocode; W = 0
     replaces at the first one, W = 1 at the second; canon §72), or at once when an expected-vs-measured check (b) != OK arrived after the incumbent was set (gate_hard);
-  - prefix-only commit: LA-n (last n votes agree) or >= 3 votes with agreement share >= gamma; flip_score > FLIP_TH
-    stops new commits (FLIP_TH off until E0.5 sets it);
+  - prefix-only commit: LA-n (last n votes agree) or >= 3 votes with agreement share >= gamma (gamma 0.67 = 2/3
+    exactly, share_at_least, canon §74); flip_score > FLIP_TH stops new commits (FLIP_TH off until E0.5 sets it);
   - ordinal agreement within tau bins, tau = 0 near contact (E §4.12 C5 setting "tau=1(접촉 근처 0)", M4 §4.4):
     the caller passes near (core.near_contact: target <= 5 cm or contact, canon §7) to on_vote and try_commit_prefix;
   - (b) outcome per executed step: DEVIATE -> epoch+1, future uncommitted slots reopened, early call;
     CONTRADICT -> same + hold (keep last committed action, slow down; never a stop -- M7 owns FAIL);
     LAG -> choices kept (retiming is left to the executor).
+The C2 baseline (agree "stream", Slow Brain VLM Stream, M4 §5 :332, canon §74) bypasses the slots: the newest valid
+answer by request time is the decision until a newer one arrives or it is older than 5 s (stale_max of C2).
 Not implemented (logged as open items): C3' Beta stop rule, cumulative-expected-state agreement (agree_mode),
 align_tol, CUSUM; M4 design extensions outside the pre-registered flat C5 setting (E §4.12 W=1, gamma=0.67; canon
 §73 SCOPED, ablation candidates): boundary-adaptive W 2 / gamma 1.0 right after the frozen boundary (M4 §3 #5, §4.2
@@ -34,8 +36,20 @@ from __future__ import annotations
 import math
 from collections import deque
 from dataclasses import dataclass, field
+from fractions import Fraction
 
 MAG_ORDER = ("tiny", "small", "medium", "large", "xlarge")
+# E §4.12 :487 / §2A.3 :240 "γ=0.67", M4 §4.4 :276 "0.67 (3표 중 2)", §3 #2 :147 "3표면 2표 = 0.67": the pre-registered
+# 0.67 is exactly 2/3 (canon §74). Kept as the string "2/3" so the logged M4 parameters stay JSON.
+GAMMA = "2/3"
+
+
+def share_at_least(n_agree: int, n_votes: int, gamma=GAMMA) -> bool:
+    """n_agree / n_votes >= gamma, exact (integer cross-multiplication, no epsilon). gamma: anything Fraction() takes
+    ("2/3", 1.0, Fraction); a decimal float is taken at its exact value (0.67 > 2/3). The one agreement-share rule of
+    the runtime ledger and the E0.5 replay (canon §74)."""
+    g = Fraction(gamma)
+    return n_agree * g.denominator >= g.numerator * n_votes
 
 
 @dataclass(frozen=True)
@@ -43,20 +57,24 @@ class M4Params:
     T_c: float = 0.33
     H: int = 3
     W: int = 1
-    gamma: float = 0.67
+    gamma: str | float = GAMMA  # 0.67 = 2/3 exactly (canon §74)
     n_la: int = 2
     tau: int = 1  # ordinal tolerance (bins) for ordinal questions
-    stale_max: float = 1.5
+    stale_max: float = 1.5  # C5 STALE_MAX (E §4.12); agree "stream" (C2): the 5 s VLM Stream timeout instead
     flip_th: float | None = None  # off until E0.5 (M4 §4.4 FLIP_TH)
     flip_win: int = 4
     d_p95_init: float = 0.307  # stageA_sft.md (c): merged BF16 text+image N=4 p95
     d_window: int = 50
     ordinal: tuple = (("mag_coarse", MAG_ORDER),)
-    # R6 comparison conditions (conditions.py, M4 §5): agree = consensus (a) | newest (C2/C4: the vote with the
-    # newest request time wins, no commit); feedback_b = the (b) epoch / reopen / hold signals; max_inflight caps N_max
+    # R6 comparison conditions (conditions.py, M4 §5): agree = consensus (a) | newest (C0/C1/C4: per slot, the vote
+    # with the newest request time wins, no commit) | stream (C2 = Slow Brain VLM Stream, M4 §5 :332, canon §74: no
+    # slots -- the newest valid answer by request time is the decision of every tick until one newer arrives or it is
+    # older than stale_max = 5 s); feedback_b = the (b) epoch / reopen / hold signals; max_inflight caps N_max;
+    # n_max_cap False = no in-flight cap at all (C2: "in-flight 상한 없음", the runtime reports the measured count)
     agree: str = "consensus"
     feedback_b: bool = True
     max_inflight: int | None = None
+    n_max_cap: bool = True
 
     def __post_init__(self):
         if self.W < 0:
@@ -109,6 +127,7 @@ class CommitLedger:
         self.counts = {"votes": 0, "dropped_epoch": 0, "dropped_stale": 0, "log_only": 0, "replaced": 0,
                        "commits": 0}
         self._exec = {q: {"executed": 0, "committed": 0, "unconfirmed": 0, "empty": 0} for q in self.questions}
+        self._stream: dict[str, Vote] = {}  # agree "stream" (C2): newest valid answer per question
 
     # ------------------------------------------------------------------ time / latency
     def t_start(self, ds: int) -> float:
@@ -124,7 +143,9 @@ class CommitLedger:
     def record_latency(self, s: float) -> None:
         self.lat.append(float(s))
 
-    def n_max(self) -> int:
+    def n_max(self) -> int | float:
+        if not self.p.n_max_cap:  # C2 VLM Stream: no in-flight cap (M4 §5 :332)
+            return math.inf
         n = int(math.ceil(self.d_hat / self.p.T_c - 1e-9)) + 1
         return n if self.p.max_inflight is None else min(n, int(self.p.max_inflight))
 
@@ -160,13 +181,20 @@ class CommitLedger:
         if now - v.t_state > self.p.stale_max:
             self.counts["dropped_stale"] += 1
             return "dropped_stale"
+        if self.p.agree == "stream":  # C2 VLM Stream: no slots, no FROZEN log-only; newest by request time
+            self._update_flip(v)
+            cur = self._stream.get(v.question)
+            if cur is None or v.t_state >= cur.t_state:
+                self._stream[v.question] = v
+                return "newest"
+            return "older"
         s = self.slot(v.question, v.ds)
         if s.t_start <= now + 1e-9 or s.status == "COMMITTED":
             self.counts["log_only"] += 1
             return "log_only"
         self._update_flip(v)
         s.votes.append(v)
-        if self.p.agree == "newest":  # C2 / C4: newest valid vote by request time, no agreement
+        if self.p.agree == "newest":  # C0 / C1 / C4: newest valid vote of the slot by request time, no agreement
             if v.t_state >= s.t_state_inc:
                 s.incumbent, s.status, s.t_incumbent, s.t_state_inc = v.choice, "TENTATIVE", now, v.t_state
                 return "newest"
@@ -209,7 +237,7 @@ class CommitLedger:
         """Commit future slots of question q from the front only (#1); returns the newly committed ds. near: the
         near/contact zone (ordinal tau 0 in the agreement count, E §4.12 C5 setting)."""
         out = []
-        if self.p.agree == "newest":
+        if self.p.agree in ("newest", "stream"):
             return out
         if self.p.flip_th is not None and self.flip_score[q] > self.p.flip_th:
             return out
@@ -221,7 +249,7 @@ class CommitLedger:
             live = [x for x in s.votes if self._agrees(q, x.choice, s.incumbent, near)]
             tail = s.votes[-self.p.n_la:]
             la = len(tail) >= self.p.n_la and all(self._agrees(q, x.choice, s.incumbent, near) for x in tail)
-            if la or (len(s.votes) >= 3 and len(live) / len(s.votes) >= self.p.gamma):
+            if la or (len(s.votes) >= 3 and share_at_least(len(live), len(s.votes), self.p.gamma)):
                 s.status = "COMMITTED"
                 self.counts["commits"] += 1
                 out.append(ds)
@@ -229,9 +257,15 @@ class CommitLedger:
                 break
         return out
 
-    def decision(self, q: str, ds: int):
+    def decision(self, q: str, ds: int, now: float | None = None):
         """(choice, status) the executor uses for step ds: committed choice, else the tentative incumbent
-        (executed unconfirmed, §4.2), else (None, EMPTY)."""
+        (executed unconfirmed, §4.2), else (None, EMPTY). agree "stream" (C2): the newest valid answer whatever its
+        target step, (None, EMPTY) once it is older than stale_max (5 s timeout -> default action) at time now."""
+        if self.p.agree == "stream":
+            v = self._stream.get(q)
+            if v is None or (now is not None and now - v.t_state > self.p.stale_max):
+                return None, "EMPTY"
+            return v.choice, "TENTATIVE"
         s = self.slots.get((q, ds))
         if s is None or s.incumbent is None:
             return None, "EMPTY"
@@ -240,7 +274,7 @@ class CommitLedger:
     def mark_executed(self, ds: int, now: float) -> dict:
         out = {}
         for q in self.questions:
-            c, st = self.decision(q, ds)
+            c, st = self.decision(q, ds, now)
             e = self._exec[q]
             e["executed"] += 1
             key = {"COMMITTED": "committed", "TENTATIVE": "unconfirmed", "EMPTY": "empty"}[st]

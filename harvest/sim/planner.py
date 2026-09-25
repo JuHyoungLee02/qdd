@@ -269,7 +269,7 @@ class OraclePlanner:
         objs, grip, contacts, support = oracle_objects(self.env)
         self.pred = self.ps.update(objs, grip, contacts, support)
         self.objs, self.grip, self.contacts = objs, grip, contacts
-        self.near_target = bool(np.linalg.norm(grip.pos - objs[self.tgt].pos) < CFG.near_in_m)
+        self.near_target = bool(np.linalg.norm(grip.pos - objs[self.tgt].pos) <= CFG.near_in_m)
         return self.pred
 
     def step(self) -> np.ndarray:

@@ -27,7 +27,8 @@ from collections import Counter
 import numpy as np
 
 from ..analysis.replay import c2pp, judge_e05, la2, newest  # noqa: F401  (judge_e05 re-exported for main)
-from ..analysis.stats import N_BOOT, cluster_diff_ci, cluster_mean_ci, holm_ci
+from ..analysis.stats import N_BOOT, above, at_least, cluster_diff_ci, cluster_mean_ci, holm_ci
+from ..runtime.m4 import GAMMA, share_at_least
 
 T_C = 0.33
 NE = "NONE_ESCALATE"
@@ -58,7 +59,7 @@ def vote_steps(t_of: dict, d_p95: float, n_votes: int = 3):
 def apply_rules(votes) -> dict:
     """votes: [{"t_req", "key"}]. newest / LA-2 (with whether consensus was reached) / C2''."""
     k, n = Counter(v["key"] for v in votes).most_common(1)[0]
-    confirmed = n >= 2 and n / len(votes) >= 2 / 3 - 1e-3
+    confirmed = n >= 2 and share_at_least(n, len(votes), GAMMA)  # γ 0.67 = 2/3 exactly (canon §74)
     return {"newest": newest(votes), "la2": la2(votes), "la2_confirmed": bool(confirmed), "c2pp": c2pp(votes)}
 
 
@@ -180,6 +181,22 @@ def diff_ci(a: dict, b: dict, n: int = N_BOOT) -> dict:
             "n": [len(va), len(vb)]}
 
 
+def _mean_x(by_cluster: dict):
+    """Unrounded mean (judgment input; mean_ci's 4 dp are for display, canon §74)."""
+    vals = [x for v in by_cluster.values() for x in v]
+    return float(np.mean(vals)) if vals else None
+
+
+def _lo_x(by_cluster: dict, n: int):
+    """Unrounded 95 % lower bound (the same draws as mean_ci)."""
+    return cluster_mean_ci(by_cluster, n=n)[0] if any(by_cluster.values()) else None
+
+
+def _diff_lo_x(a: dict, b: dict, n: int):
+    """Unrounded 95 % lower bound of mean(a) - mean(b) (the same draws as diff_ci)."""
+    return cluster_diff_ci(a, b, n=n)[0] if any(a.values()) and any(b.values()) else None
+
+
 def block_diff_lo(blocks, n: int = N_BOOT) -> float:
     """Judgment 10: blocks = [ {cluster: [flip 0/1]} per time block ]. For every block pair the CI of the floor
     difference at level 1 - 0.05/m; returns the largest signed lower bound max(lo, -hi). > 0 exactly when Holm
@@ -199,10 +216,11 @@ def block_diff_lo(blocks, n: int = N_BOOT) -> float:
 def gain_holm(gain_la2: dict, gain_c2pp: dict, n: int = N_BOOT, alpha: float = 0.05) -> dict:
     """Judgment 2 ("LA-2 또는 C2''" +2 pp, lower > 0; E §2A.6-2) with E §1.7 "한 판정에 여러 조건을 걸면 Holm": Holm
     step-down (stats.holm_ci) over the two paired gains vs newest (per-step differences, episode-cluster bootstrap,
-    same draws at every level). {"la2" | "c2pp": {reject, lo, hi, level}} (canon §73)."""
+    same draws at every level). {"la2" | "c2pp": {reject, lo, hi, level}} (canon §73). Directional ("하한 > 0"): a
+    gain significantly below 0 is no rejection and does not release the other's level (canon §74)."""
     by = {"la2": gain_la2, "c2pp": gain_c2pp}
-    r = holm_ci(lambda k, level: cluster_mean_ci(by[k], n=n, level=level), list(by), alpha)
-    return {k: {"reject": bool(v["reject"]), "lo": round(v["lo"], 4), "hi": round(v["hi"], 4),
+    r = holm_ci(lambda k, level: cluster_mean_ci(by[k], n=n, level=level), list(by), alpha, direction="greater")
+    return {k: {"reject": bool(v["reject"]), "lo": float(v["lo"]), "hi": float(v["hi"]),  # unrounded: judge input
                 "level": round(v["level"], 6)} for k, v in r.items()}
 
 
@@ -397,17 +415,21 @@ def analyze(eps, ans, truth, questions, d_p95: float, n_boot: int = N_BOOT, win:
         layers[L]["subst_minus_floor"] = diff_ci(d["subst"], fl, n_boot)
     out["layers"] = layers
     pr = out["rules"]["pooled"]
-    j = {"flip_rate_success": out["flip"]["pooled"]["success"]["mean"],
-         "gain_la2": pr["la2_minus_newest"]["mean"], "gain_c2pp": pr["c2pp_minus_newest"]["mean"],
-         "same_time_flip": out["same_time_flip"]["mean"]}
+    # judgment inputs = the unrounded statistics (the rounded ones above are for display; canon §74)
+    j = {"flip_rate_success": _mean_x(pooled["succ"]),
+         "gain_la2": _mean_x(pooled["gain_la2"]), "gain_c2pp": _mean_x(pooled["gain_c2pp"]),
+         "same_time_flip": _mean_x(same)}
     if pooled["gain_la2"] and pooled["gain_c2pp"]:  # judgment 2 decides on the Holm step-down (E §1.7, canon §73)
         j["gain_holm"] = gain_holm(pooled["gain_la2"], pooled["gain_c2pp"], n=n_boot)
     if au and None not in au.values() and out["flip"]["pooled"]["perturb_window"]["mean"] is not None:
-        j["perturb_flip"], j["auroc"] = out["flip"]["pooled"]["perturb_window"]["mean"], au
+        j["perturb_flip"], j["auroc"] = _mean_x(pooled["pert"]), au
     lj = {}
-    for L, x in layers.items():
-        vals = (x["a1_minus_a0"]["ci"][0], x["follow_minus_floor"]["ci"][0], x["a0_minus_a1"]["ci"][0],
-                x["a4flip"]["mean"])
+    for L, d in lay.items():
+        if L not in layers:
+            continue
+        fl = _merge(list(floor.get(L, {}).values()))
+        vals = (_lo_x(d["a1_minus_a0"], n_boot), _diff_lo_x(d["follow"], fl, n_boot),
+                _lo_x({c: [-x for x in v] for c, v in d["a1_minus_a0"].items()}, n_boot), _mean_x(d["a4flip"]))
         if None not in vals:
             lj[L] = {"a1_minus_a0_lo": vals[0], "a3_follow_minus_floor_lo": vals[1], "a0_minus_a1_lo": vals[2],
                      "a4_flip": vals[3]}
@@ -423,11 +445,16 @@ def analyze(eps, ans, truth, questions, d_p95: float, n_boot: int = N_BOOT, win:
     fs, rf = j.get("flip_rate_success"), out["retest_flip"]["mean"]
     jd["j5_flip_minus_retest"] = None if fs is None or rf is None else round(fs - rf, 4)
     c2 = pr["c2prime_minus_la2"]
-    jd["j7_c2prime_strong_baseline"] = bool(c2["mean"] is not None and c2["mean"] >= 0.02 and c2["ci"][0] > 0)
+    c2m, c2lo = _mean_x(pooled["c2p_minus_la2"]), _lo_x(pooled["c2p_minus_la2"], n_boot)
+    jd["j7_c2prime_strong_baseline"] = bool(c2m is not None and at_least(c2m, 0.02) and above(c2lo, 0))
     jd["j7_values"] = {"c2prime_minus_newest": pr["c2prime_minus_newest"], "c2prime_minus_la2": c2,
                        "s1_alone": pr["s1"]}
-    jd["j8_subst_above_floor"] = {L: bool(x["subst_minus_floor"]["ci"][0] is not None
-                                          and x["subst_minus_floor"]["ci"][0] > 0) for L, x in layers.items()}
+    j8 = {}
+    for L, d in lay.items():
+        if L in layers:
+            lo8 = _diff_lo_x(d["subst"], _merge(list(floor.get(L, {}).values())), n_boot)
+            j8[L] = bool(lo8 is not None and above(lo8, 0))
+    jd["j8_subst_above_floor"] = j8
     if "gain_holm" in j:
         jd["j2_gain_holm"] = {"tests": j["gain_holm"], "alpha": 0.05,
                               "rule": "judgment 2 = flip >= 5% and some rule with gain >= 0.02 rejected by Holm "
