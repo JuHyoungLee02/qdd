@@ -22,7 +22,7 @@
 - Astra 입력 = 카메라 **3대**(`cam_head`, `cam_wrist_left`, `cam_wrist_right`) + 이름표. "잡았다/놓았다/닿았다" 주장은 **활성 손목 시점 근거**가 있어야 유효, 어긋나면 손목 우선 + 고유감각(T1) 교차 확인(설계 §12).
 - 비가역 동작(그리퍼 닫기·열기, 단계 S1→S2)은 **두 층이 일치할 때만** + **손목 시점 근거 또는 T1 고유감각 근거**(설계 §5, §12).
 - 덧그림: 현재 손끝·최근 2–3 s 궤적·확정 다음 청크 방향·직전 Astra 편향 — **다음 청크 예정 화살표는 Astra 영상에만**, VLA 입력에는 넣지 않는다(설계 §13–§14, 정본 §84). 손목 영상엔 가장자리만.
-- 유료 한도 **약 10만 원**(정본 §82 보충). 실험마다 예산 상한을 사전 등록에 먼저 적고, 누적 비용이 상한의 **80 %**에 닿으면 멈추고 보고(설계 §15). **유료 실행은 사용자 승인 뒤**(정본 §82). 이 계획의 시험은 전부 모의 Astra(유료 호출 0).
+- 유료 한도 **약 10만 원**(정본 §82 보충). 실험마다 예산 상한을 사전 등록에 먼저 적고, 누적 비용이 상한의 **80 %**에 닿으면 멈추고 보고(설계 §15). **유료 실행은 Claude 자체 검사 뒤**(user-log 87·저장소 CLAUDE.md: 사전 등록에 '바꾸는 결정·표본 충분성·무료 사전 실행' 자체 검사 절을 쓰고, 관문 결함이면 멈추고 재설계; 사용자 승인은 받지 않음 — 2026-09-25 18:00 UTC 메인 개정). 이 계획의 시험은 전부 모의 Astra(유료 호출 0).
 - falsify 먼저: 저장된 복구안 재사용은 **같은 에피소드·같은 실패 서명(단계 + 대상 물체 + 실패 유형 + 검출 근거)에서 한 번까지**, 부분 일치는 재사용 금지, 재사용 사례도 J5·J6 입력으로 남기고 **모든 분기를 로그**(정본 §84 + 보충 1).
 - 움직임 줄: `motion: arm=<still|slow|fast> gripper=<closing|still|opening>`, 인과 후방 차분, 경계 팔 **0.218/0.607 rad/s**·그리퍼 |열림 속도| **0.176 /s**(학습 분할 분위수), 줄 드롭아웃은 학습 때만(정본 §83). 새 직렬화 판본 → `question_id@vN`·보정 파일·카나리 기준 재생성(§77 규칙).
 - 정지는 T0와 L3뿐(정본 §4): Astra `stop`은 물리 정지가 아니라 "과제 완료 주장"으로만 기록한다.
@@ -31,6 +31,15 @@
 - 비밀 값 출력·검색 금지. API 키는 파드 `/data/.openai_token`을 코드가 읽기만 한다.
 - 다른 에이전트 소유물 수정 금지: E-MA1(학습·`prereg_ma1.md`), E-Astra-motion 탐침 코드 `harvest/astra_motion/`·`tests/astra_motion/`(미커밋). 탐침 **결과**만 입력으로 쓴다(아래 PROBE 표).
 - 사용자 보고 시각은 KST, 저장소 기록 시각은 UTC. 문서 산문은 한국어, 코드·식별자는 영어.
+
+
+## 메인 판정 (Rulings, 2026-09-25 18:00 UTC — 사용자가 판단을 메인에 위임: user-log 85 "옳은 방향으로 바꿔도돼", user-log 87)
+
+- **R1 '두 층 일치'(설계 §5)의 뜻 = 관대한 기본값 채택**: 비가역 동작(닫기·S1→S2·놓기)은 (a) 신선한 Astra 답(도착 ≤ 3 s)이 반대(misaligned·failed·반대 그리퍼 명령)하지 않고 (b) T1 고유감각 전제(닫기 = 그리퍼 열림 + 접촉 근처, 들기·놓기 = 쥐고 있음)가 참이면 진행. 신선한 답이 없으면 VLA 단독(§5 '> 3 s 무답'). 엄격 모드(`irrev_need_aligned=True`)는 E-Couple 판정 밖 참고 팔로만 — 이유: L = 3–10 s에서 긍정 답을 기다리면 모든 파지가 수 초씩 멈춘다(Astra는 느리고 VLA는 실시간이라는 역할 분담, user-log 83). 비용: 틀리면 Astra가 막았어야 할 파지를 VLA가 진행 → E-Couple에서 '신선한 답이 반대였는데 진행된 비가역 동작 수'를 판정 밖 지표로 보고.
+- **R2 유료 가드 = 사용자 승인 대신 자체 검사 참조**(Task 14 `--approval` 인자의 뜻을 바꿈, 이름은 유지).
+- **R3 탐침 예산 15,000원**(재범위)로 누적 계산 갱신.
+- 나머지 모호점 판정(2–12)은 에이전트 판정대로 채택.
+- **실행 방식**: R7 E2E 준비 기준점 태그 뒤, **subagent-driven**(과제 16개가 인터페이스로 서로 물리고 런타임 안전에 닿아 과제마다 검토가 값어치 있음). Task 12(직렬화기 판 올림)는 E-MA1b가 끝난 뒤, Task 8은 탐침 코드 커밋 뒤.
 
 ## Review Focus
 
@@ -3573,7 +3582,7 @@ def test_arms_labels_and_configs():
 
 
 def test_paid_runs_need_prices_budget_ledger_and_approval():
-    base = dict(couple_prices="p.json", couple_budget_krw=25000.0, couple_ledger="/data/x.jsonl", approval="user-log 90")
+    base = dict(couple_prices="p.json", couple_budget_krw=25000.0, couple_ledger="/data/x.jsonl", approval="prereg_couple.md §0 self-check")
     CP.check_paid(SimpleNamespace(**base))
     for k, v in (("approval", ""), ("couple_prices", ""), ("couple_budget_krw", 0.0), ("couple_ledger", "")):
         with pytest.raises(SystemExit):
@@ -3637,7 +3646,7 @@ def test_estimate_cli(tmp_path, capsys):
 """E-Couple / E-Astra-necessity (stream slot) evaluation pieces for harvest.eval.closed (spec §9, §15, §16; canon §82,
 §84 supplement 2). Arms: off (no Astra at all when compared with a coupling arm = VLA alone), serial (one Astra
 request in flight + two-layer M4), serial_pause (+ the optional phase pause, cost fallback). Paid runs need the run
-day's price table, the pre-registered budget, a ledger path and the user's approval reference (canon §82). Episodes
+day's price table, the pre-registered budget, a ledger path and a self-check reference — the prereg's self-check section (user-log 87; replaces user approval). Episodes
 cut by the 80 % budget stop are excluded from the judgment and counted (plan ruling 10).
 
   python -m harvest.eval.couple estimate --prices P.json --episodes 40 --episode-s 60 --latency-s 4 \
@@ -3680,7 +3689,7 @@ def check_paid(a) -> None:
     miss = [k for k, ok in (("--couple-prices", bool(a.couple_prices)), ("--couple-budget-krw", a.couple_budget_krw > 0),
                             ("--couple-ledger", bool(a.couple_ledger)), ("--approval", bool(a.approval))) if not ok]
     if miss:
-        raise SystemExit(f"paid Astra coupling run refused: {miss} missing (canon §82: user approval, the run day's "
+        raise SystemExit(f"paid Astra coupling run refused: {miss} missing (user-log 87: self-check reference, the run day's "
                          f"prices, the pre-registered budget and a ledger)")
 
 
@@ -3809,7 +3818,7 @@ if __name__ == "__main__":
     ap.add_argument("--couple-prices", default="", help="the run day's price table JSON (paid runs)")
     ap.add_argument("--couple-budget-krw", type=float, default=0.0, help="the pre-registered experiment cap")
     ap.add_argument("--couple-ledger", default="", help="experiment cost ledger JSONL under /data")
-    ap.add_argument("--approval", default="", help="user approval reference for paid calls (e.g. 'user-log 90')")
+    ap.add_argument("--approval", default="", help="self-check reference for paid calls: prereg self-check section (user-log 87), e.g. 'prereg_couple.md §0'")
 ```
 
 (b) `run(a)`에서 `conds = ...` 다음:
@@ -3886,7 +3895,7 @@ if __name__ == "__main__":
 ```markdown
 # E-Couple — Astra 직렬 1개 + 두 층 M4 대 VLA 단독 (사전 등록 **초안**, 유료 호출 0)
 
-- 작성: <UTC>, 계획 `docs/superpowers/plans/2026-09-26-astra-vla-coupling.md` Task 15. 상태: **초안 — 사용자 승인 전. 승인 전 유료 실행 금지**(정본 §82). 결과를 본 뒤 문턱·조건·시드·예산을 바꾸지 않는다(바꾸려면 새 등록).
+- 작성: <UTC>, 계획 `docs/superpowers/plans/2026-09-26-astra-vla-coupling.md` Task 15. 상태: **초안 — 자체 검사 절(§0: 바꾸는 결정·표본 충분성·무료 Qwen 사전 실행 결과·관문별 재설계 조건) 작성·커밋 전 유료 실행 금지**(user-log 87). 결과를 본 뒤 문턱·조건·시드·예산을 바꾸지 않는다(바꾸려면 새 등록).
 - 근거: 설계 §9·§15·§16, 정본 §84 보충 2(직렬 1개, E-Couple 조건 = {VLA 단독, Astra 직렬 1개 + 두 층 M4}).
 
 ## 1. 질문
@@ -3919,7 +3928,7 @@ Astra(low) 일반 조종 흐름을 한 번에 하나씩 부르고 두 층 M4로 
 ## 6. 예산 (정본 §82 보충: 전체 약 10만 원)
 - 식: 호출 수 = 편 수 × 60 s / L, 비용 = 호출 수 × 호출당 비용(실행일 가격표; `python -m harvest.eval.couple estimate --prices <그날 가격표> --episodes 40 --episode-s 60 --latency-s <탐침 L p50> --in-tokens <탐침 실측> --out-tokens <탐침 실측>`).
 - 설계 추정(설계 §8·§15: 호출당 약 28원, L = 4 s): 40편 × 15회 = 600회 ≈ 16,800원.
-- **상한 25,000원**(80 % = 20,000원에서 정지·보고). 누적: 탐침 하드 정지 35,000원 + 이 실험 25,000원 + E-Astra-necessity 흐름 자리 20,000원 = 80,000원 ≤ 100,000원.
+- **상한 25,000원**(80 % = 20,000원에서 정지·보고). 누적: 탐침 하드 정지 15,000원(2026-09-25 18:00 UTC 재범위) + 이 실험 25,000원 + E-Astra-necessity 흐름 자리 20,000원 = 60,000원 ≤ 100,000원. 실측 단가(탐침: low 파지 질문 15.7원)가 나오면 판 수를 다시 계산한다.
 - 실행 명령(승인 뒤, 파드): `python -m harvest.eval.closed --model <체크포인트> --backend fused --out /data/harvest/out/e_couple --split dev --seeds 0-19 --variants standard,dr --couple off,serial --astra api --couple-prices <가격표> --couple-budget-krw 25000 --couple-ledger /data/harvest/out/e_couple/ledger.jsonl --approval "<user-log 번호>" --parallel`
 
 ## 7. 산출물
@@ -3945,7 +3954,7 @@ Expected: `"calls": 600.0`과 `price_date`가 있는 JSON.
 ```markdown
 # E-Astra-necessity — 흐름 자리(실행 중 일반 조종) (사전 등록 **초안**, 유료 호출 0)
 
-- 작성: <UTC>, 계획 `docs/superpowers/plans/2026-09-26-astra-vla-coupling.md` Task 16. 상태: **초안 — 사용자 승인 전, 유료 실행 금지**(정본 §82).
+- 작성: <UTC>, 계획 `docs/superpowers/plans/2026-09-26-astra-vla-coupling.md` Task 16. 상태: **초안 — 자체 검사 절(§0) 작성·커밋 전 유료 실행 금지**(user-log 87).
 - 범위: 정본 §82 E-Astra-necessity 중 **결합 흐름 자리**만. J1–J6(과제 컴파일·진단·검사 술어·이름·감사·증류) 오프라인 슬롯 시험과 폐루프는 §82 구현(`harvest/astra/jobs.py`)과 함께 별도 등록한다(연구 문서 `astra_role_2026-09-25.md` §7).
 
 ## 1. 질문
