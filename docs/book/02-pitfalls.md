@@ -50,6 +50,7 @@
 | P32 | 로컬 C: scratchpad에 임시 파일 | 하네스 기본 경로 | 작업 드라이브는 D:만(`D:\tools\scratch_qdd\…`); 에이전트 지시에 명시 | DL 399 |
 | P33 | PowerShell에서 pytest 2개 실패 | `harvest/load/session.py`가 외부 `date` 실행 파일을 부름 | 전체 시험은 Git Bash에서 돌린다(또는 코드 수정) | R7 23회차 N31 |
 | P34 | argparse가 `-inf`를 옵션으로 읽어 가드 시험이 엉뚱하게 막힘 | 음수 값 인자 | 음수·`-inf` 값은 `--opt=-inf` 형식 | R7 25회차(가드 14→28) |
+| P67 | D: 여유 20 MB(60 GB 중) — 작업이 곧 멈출 뻔함(09-12 C: 사고와 같은 위험) | R7 회차·실험 에이전트마다 `D:\tools\scratch_qdd\<이름>`에 저장소 추출본·pytest 임시·파드 결과 사본을 쌓고 지우지 않음(r7c1–r7c26 등 수 GB). D:의 나머지(ipcam 31 GB·taskC_work 17.5 GB)는 사용자 자료라 손대지 않음 | 에이전트는 끝낼 때 자기 scratch의 큰 사본(추출 저장소·pytest basetemp·torch 캐시)을 지우고 요약·스크립트만 남긴다; R7은 직전 한 회차만 보관; 메인은 루프 점검 때 `Get-PSDrive D` 여유를 보고 5 GB 아래면 정리 먼저 | 2026-09-25 20:02 UTC, R7 26회차 보고(29 MB) → 옛 r7c·pytest 폴더 삭제 |
 
 ## 라. 시뮬·데이터·모델
 
