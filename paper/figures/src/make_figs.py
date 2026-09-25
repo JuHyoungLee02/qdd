@@ -194,21 +194,23 @@ def overview_strip(ax, W, Hs):
     x0, x1, T = 1.55, 6.70, 12.0
     sx = (x1 - x0) / T
     X = lambda t: x0 + t * sx
-    lanes = [("Astra (초 단위, 비동기)", 0.90), ("decide: 결정 토큰 (0.33 s 겹침)", 0.64),
+    lanes = [("Astra (직렬 흐름, low)", 0.90), ("decide: 결정 토큰 (0.33 s 겹침)", 0.64),
              ("chunk: 행동 (0.5 s 청크, 100 Hz)", 0.38)]
     for name, yy in lanes:
         ax.text(x0 - 0.08, yy, name, ha="right", va="center", fontsize=6.4, color="#333")
         ax.plot([x0, x1], [yy, yy], color="#E6E6E6", lw=0.8, zorder=0)
     # Astra lane
     pill(ax, X(0), 0.82, 3.0 * sx, 0.16, "astra", "T0 첫 계획", fs=6.0)
-    # canon §82: the 5 s heartbeat is no longer the design default (current implementation K2 = baseline)
-    pill(ax, X(8.0), 0.82, 3.0 * sx, 0.16, "astra", "J5 감사 (저빈도)", fs=6.0)
-    ax.annotate("", xy=(X(8.0), 1.02), xytext=(X(3.0), 1.02),
-                arrowprops=dict(arrowstyle="<->", lw=0.8, color=PAL["astra"][1]))
-    ax.text(X(5.5), 1.04, "결정이 바뀔 수 있을 때만 (5 s 하트비트는 기준선)", ha="center", va="bottom",
-            fontsize=6.0, color=PAL["astra"][1])
-    ax.text(X(5.5), 0.90, "실패(J2)·새 물체(J4) 때도 기다리지 않고 호출", ha="center", va="center", fontsize=6.0,
-            color="#555", bbox=dict(fc="white", ec="none", pad=1.0), zorder=4)
+    # canon §84 supp 2 (user-log 86): one Astra stream request in flight; next request on arrival (interval = L)
+    L = 4.0
+    tt, kk = 3.0, 1
+    while tt + L <= T + 1e-9:
+        pill(ax, X(tt), 0.82, L * sx - 0.02, 0.16, "astra", f"요청 {kk} (L≈{L:.0f} s)", fs=5.8)
+        ax.plot([X(tt + L), X(tt + L)], [0.80, 1.00], color=PAL["astra"][1], lw=0.9)
+        tt += L
+        kk += 1
+    ax.text(X(7.5), 1.04, "답이 오면 다음 요청 (한 번에 1개) · 두 답 합의면 편향 100 %, 한 답 50 %, 서서히 반영",
+            ha="center", va="bottom", fontsize=5.8, color=PAL["astra"][1])
     # decision lane: staggered calls every 0.33 s, each ~0.28 s long
     k = 0
     t = 3.0
@@ -259,10 +261,10 @@ def fig_overview():
 
     # slow layer: Astra + contract
     icon_cloud(ax, 1.82, 2.43, s=0.85)
-    rbox(ax, 2.10, 2.25, 1.40, 0.58, "astra", "Astra", fs=11, sub="Astra 전용 일 J1–J6 · low/high", sfs=6.2)
+    rbox(ax, 2.10, 2.25, 1.40, 0.58, "astra", "Astra", fs=11, sub="직렬 흐름(low) · 전용 일 J1–J6", sfs=6.2)
     icon_doc(ax, 3.75, 2.30, 0.34, 0.46)
     ax.text(4.16, 2.60, "세션 계약 (J1 과제 컴파일)", ha="left", va="center", fontsize=6.8, color="#444")
-    ax.text(4.16, 2.40, "움직임 개입 (준비 중)\nM4 느린 투표·물체 기준 경로", ha="left", va="center",
+    ax.text(4.16, 2.40, "흐름: 평가 + 계속·수정·멈춤\n(공간 목표 없음, 구현 예정)", ha="left", va="center",
             fontsize=5.2, color=TENT, linespacing=1.15)
     arr(ax, [(0.97, 2.52), (1.62, 2.52)])
     arr(ax, [(3.50, 2.53), (3.75, 2.53)])
@@ -282,10 +284,11 @@ def fig_overview():
     # contract -> VLA
     arr(ax, [(3.92, 2.30), (3.92, 2.08), (3.45, 2.08), (3.45, 1.92)])
     ax.text(3.40, 2.13, "현재 단계 요약", fontsize=6.0, color="#555", ha="right", va="bottom")
-    # heartbeat VLA side -> Astra
-    arr(ax, [(2.40, 1.92), (2.40, 2.25)], color=PAL["astra"][1], lw=1.1, ls=(0, (3, 2)))
-    ax.text(2.35, 2.07, "저빈도 감사(J5) · 모를 때만", fontsize=6.0, color=PAL["astra"][1], ha="right",
-            va="center")
+    # serial stream: request (3 cameras + EE overlay) up, answer (assessment + gentle bias) down
+    arr(ax, [(2.30, 1.92), (2.30, 2.25)], color=PAL["astra"][1], lw=1.1, ls=(0, (3, 2)))
+    arr(ax, [(2.52, 2.25), (2.52, 1.92)], color=PAL["astra"][1], lw=1.1)
+    ax.text(2.25, 2.085, "요청 1개씩: 3대 + 덧그림\n답: 평가 · 편향(합의·서서히)",
+            fontsize=5.0, color=PAL["astra"][1], ha="right", va="center", linespacing=1.15)
 
     # M4 + projection
     rbox(ax, 4.20, 1.34, 0.95, 0.46, "rule", "M4 확정", fs=8.5, sub="(a) 합의 + (b) 측정", sfs=6.0)
@@ -348,7 +351,7 @@ def fig_model():
     rows = {"dec": 1.70, "ver": 1.20, "aux": 0.70, "act": 0.12}
     rbox(ax, hx, rows["dec"], hw, hh, "jev", "결정 토큰", fs=6.8, sub="트라이 재정규화 → M4", sfs=5.6)
     rbox(ax, hx, rows["ver"], hw, hh, "crit", "확인 헤드 V1h", fs=6.8, sub="세계 술어 → M4 (b)·critic", sfs=5.6)
-    rbox(ax, hx, rows["aux"], hw, hh, "perc", "보조 기하 헤드", fs=6.8, sub="상대 위치 (학습 신호)", sfs=5.6)
+    rbox(ax, hx, rows["aux"], hw, hh, "perc", "보조 기하 헤드", fs=6.8, sub="상대 위치 · 미래 궤적", sfs=5.6)
     rbox(ax, hx, rows["act"], hw, hh, "skill", "action expert", fs=6.8, sub="flow matching · 0.5 s", sfs=5.6)
     for k in ("dec", "ver"):
         arr(ax, [(1.52, rows[k] + hh / 2), (hx, rows[k] + hh / 2)])
