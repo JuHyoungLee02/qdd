@@ -11,6 +11,8 @@
   train  ... [--init-weights CKPT] [--train-subset N --train-subset-seed S] [--lr-schedule constant --warmup-steps W]
          [--eval-train-subset]                                            diagnostics (prereg_se2e_diag D1 / D2)
   predict --ckpt DIR [same data / val / --seed] --out JSONL               per-item decision predictions (D3)
+  train|evalck|predict --data se2e [--camera-layout D27v2-video2] [--motion-line se2e-motion@v1 --motion-bins F]
+         [--se2e-t-root DIR] [--motion-dropout 0.3]                       OPT-IN temporal context (prereg_se2e_temporal)
 
 Model: Qwen3-VL-4B-Instruct (stage A's revision) + LoRA r32 on every LLM linear layer (stage A's target, vision
 tower frozen) + ActionExpert (flow matching, KI stop-gradient) + AuxGeomHead (privileged geometry, gradient to
@@ -67,6 +69,50 @@ def prompt_config(samples, state):
            "files_sha": file_sha(PROMPT_FILES + PROMPT_FILES_B)}
     cfg["sha"] = hashlib.sha256(json.dumps(cfg, sort_keys=True).encode()).hexdigest()[:12]
     return cfg
+
+
+# prereg_se2e_temporal: OPT-IN temporal options (defaults = the S-E2E behaviour and prompt_config above, unchanged)
+TEMPORAL_FILES = ("harvest/train/se2e_temporal.py", "harvest/train/se2e_temporal_model.py",
+                  "harvest/train/se2e_data.py")
+
+
+def temporal_on(a) -> bool:
+    return getattr(a, "camera_layout", "D27v1") != "D27v1" or getattr(a, "motion_line", "none") != "none"
+
+
+def prompt_config_t(samples, state, layout, bins=None):
+    """prompt_config of a temporal-option run: new layout id (D27v2-video2) / motion line version + bins, and the
+    option files in files_sha, so its checkpoints never pass as a default-layout checkpoint."""
+    import hashlib
+
+    from ..clients.jevl import SYSTEM
+    from .stagea_train import PROMPT_FILES, file_sha
+    cams = sorted({layout + ":" + "|".join(im[0] for im in s["context"]["images"]) for s in samples
+                   if s.get("context")})
+    cfg = {"camera": cams, "state": state, "layout": layout, "motion": bins,
+           "system_sha": hashlib.sha256(SYSTEM.encode()).hexdigest()[:12],
+           "files_sha": file_sha(PROMPT_FILES + PROMPT_FILES_B + TEMPORAL_FILES)}
+    cfg["sha"] = hashlib.sha256(json.dumps(cfg, sort_keys=True).encode()).hexdigest()[:12]
+    return cfg
+
+
+def motion_bins_of(a):
+    if getattr(a, "motion_line", "none") == "none":
+        return None
+    if not a.motion_bins:
+        raise SystemExit("--motion-line: --motion-bins FILE (train-split bins, fixed before training) needed")
+    b = json.load(open(a.motion_bins))
+    if b.get("version") != a.motion_line:
+        raise SystemExit(f"--motion-bins version {b.get('version')!r} != --motion-line {a.motion_line!r}")
+    return b
+
+
+def temporal_model(a, model, proc):
+    """(model, encoder) for the run's options: the default HFEncoder / StageB, or the video2 pair encoder."""
+    if getattr(a, "camera_layout", "D27v1") == "D27v1":
+        return model, HFEncoder(proc)
+    from .se2e_temporal_model import VideoEncoder, as_temporal
+    return as_temporal(model), VideoEncoder(proc)
 
 
 # ------------------------------------------------------------------------------------------ backbone
@@ -239,13 +285,30 @@ def train_subset(tr, n_per_source: int, seed: int = 0):
     return stratified_val(tr, n_per_source, seed)
 
 
+def train_fraction(tr, frac: float, seed: int = 0):
+    """prereg_se2e_diag section 7: round(frac * n) samples of every source (the source mix of the whole split), the
+    head of a seeded shuffle of the key-sorted samples, so smaller fractions are inside larger ones (0 = all)."""
+    if not frac:
+        return tr
+    by = {}
+    for s in sorted(tr, key=lambda s: s["key"]):
+        by.setdefault(source_of(s), []).append(s)
+    out = []
+    for src in sorted(by):
+        xs = list(by[src])
+        random.Random(seed).shuffle(xs)
+        out += xs[:round(frac * len(xs))]
+    return out
+
+
 def train_loop(model, enc, train, val, device, steps, batch=4, lr=1e-4, lr_heads=1e-4, eval_every=10,
                seed=0, log=print, clip=1.0, save_every=0, save=None, resume=None, stop_at=0, schedule="cosine",
-               warmup_steps=0, extra_evals=None):
+               warmup_steps=0, extra_evals=None, batch_fn=None):
     """steps = the schedule length. save(step, train_state) every save_every steps and at the last step (the caller
     writes the weights). resume = a saved train_state: optimizer, scheduler, RNG states and the data order continue
     exactly (the caller has loaded the checkpoint's weights). stop_at = stop after that step (resume check).
-    extra_evals = {name: samples}: also evaluated at every eval step, logged as event 'eval_<name>'."""
+    extra_evals = {name: samples}: also evaluated at every eval step, logged as event 'eval_<name>'.
+    batch_fn(batch, step) -> batch: training-batch transform (prereg_se2e_temporal motion-line dropout; None = off)."""
     rng = random.Random(seed)
     torch.manual_seed(seed)
     opt, sched = make_optimizer(model, lr, lr_heads, steps, schedule=schedule, warmup_steps=warmup_steps)
@@ -276,7 +339,10 @@ def train_loop(model, enc, train, val, device, steps, batch=4, lr=1e-4, lr_heads
         if len(order) < batch:
             order += rng.sample(range(len(train)), len(train))
         idx, order = order[:batch], order[batch:]
-        loss, logs = model.losses([train[i] for i in idx], enc, device)
+        batch_s = [train[i] for i in idx]
+        if batch_fn is not None:
+            batch_s = batch_fn(batch_s, step)
+        loss, logs = model.losses(batch_s, enc, device)
         loss.backward()
         gn = float(torch.nn.utils.clip_grad_norm_(params, clip))
         opt.step()
@@ -424,9 +490,17 @@ def _load_data(a):
     if a.data == "se2e" and a.state != "IMG":
         raise SystemExit("--data se2e: the rows carry an IMG-style context only (task + gripper), --state IMG")
     try:
-        samples, hz = D.load_for_training(a.data, pool=a.pool, rows=a.rows, se2e_root=a.se2e_root,
-                                          se2e_kinds=a.se2e_kinds, state=a.state, wrist=not a.no_wrist,
-                                          dev_val_seeds=dev, labels=not a.no_labels)
+        if temporal_on(a):  # prereg_se2e_temporal: augmented rows (se2e_t), current frames from --se2e-root
+            if a.data != "se2e":
+                raise SystemExit("--camera-layout / --motion-line: --data se2e only")
+            from .se2e_temporal import load_for_training_t
+            samples, hz = load_for_training_t(a.se2e_t_root, image_root=a.se2e_root, kinds=a.se2e_kinds,
+                                              layout=a.camera_layout, bins=motion_bins_of(a),
+                                              labels=not a.no_labels, wrist=not a.no_wrist)
+        else:
+            samples, hz = D.load_for_training(a.data, pool=a.pool, rows=a.rows, se2e_root=a.se2e_root,
+                                              se2e_kinds=a.se2e_kinds, state=a.state, wrist=not a.no_wrist,
+                                              dev_val_seeds=dev, labels=not a.no_labels)
     except ValueError as e:
         raise SystemExit(str(e))
     tr, va = D.split_samples(samples)
@@ -488,15 +562,25 @@ def cmd_train(a):
         model = new_model(bb, tr, hd, mode=a.mode, ki=a.ki,
                           lam={"dec": a.lam_dec, "act": a.lam_act, "aux": a.lam_aux, "vqa": 0.0, "ver": a.lam_ver})
     # --train-subset: after new_model, so normalization statistics / vocabularies still come from the whole split
+    if a.train_subset and a.train_fraction:
+        raise SystemExit("--train-subset and --train-fraction: use one")
     full_n, tr = len(tr), train_subset(tr, a.train_subset, a.train_subset_seed)
+    tr = train_fraction(tr, a.train_fraction, a.train_subset_seed)
+    tr_eval = stratified_val(tr, a.eval_train_per_kind, a.train_subset_seed)  # --eval-train-subset set (0 = all)
     model = model.to(device)
     model.shared = not a.no_share
     pnames = opt_param_names(model)
     if resume is not None and resume["param_names"] != pnames:
         raise SystemExit("--resume: the optimizer state belongs to other parameters")
-    enc = HFEncoder(proc)
+    model, enc = temporal_model(a, model, proc)
     write = _writer(os.path.join(out, "log.jsonl"))
-    pcfg = prompt_config(samples, a.state)
+    bins = motion_bins_of(a)
+    pcfg = prompt_config_t(samples, a.state, a.camera_layout, bins) if temporal_on(a) else \
+        prompt_config(samples, a.state)
+    batch_fn = None
+    if bins is not None and a.motion_dropout > 0:
+        from .se2e_temporal import motion_dropout
+        batch_fn = lambda b, step: motion_dropout(b, step, a.seed, a.motion_dropout)  # noqa: E731
     arms = {arm: sum(s.get("arm", "right") == arm for s in tr) for arm in ("left", "right")}
     total = a.max_steps or math.ceil(len(tr) / a.batch) * a.epochs
     val = val_subset(va, a.max_val, a.val_per_kind, a.val_seed)
@@ -508,11 +592,17 @@ def cmd_train(a):
            "val_used": len(val), "val_sources": {k: sum(source_of(s) == k for s in val)
                                                  for k in sorted({source_of(s) for s in val})},
            "val_keys_sha": _sha([s["key"] for s in val])})
-    if a.train_subset or a.init_weights or a.lr_schedule != "cosine" or a.warmup_steps:
+    if a.train_subset or a.train_fraction or a.init_weights or a.lr_schedule != "cosine" or a.warmup_steps \
+            or a.eval_train_subset:
         write({"event": "diag_config", "n_train_full": full_n, "n_train_used": len(tr),
-               "train_keys_sha": _sha(sorted(s["key"] for s in tr)),
+               "train_keys_sha": _sha(sorted(s["key"] for s in tr)), "train_fraction": a.train_fraction,
+               "n_eval_train": len(tr_eval) if a.eval_train_subset else 0,
                "train_sources": {k: sum(source_of(s) == k for s in tr) for k in sorted({source_of(s) for s in tr})},
                "init_weights": a.init_weights, "lr_schedule": a.lr_schedule, "warmup_steps": a.warmup_steps})
+    if temporal_on(a):
+        write({"event": "temporal_config", "camera_layout": a.camera_layout, "motion_line": a.motion_line,
+               "motion_bins": bins, "motion_dropout": a.motion_dropout if bins is not None else 0.0,
+               "se2e_t_root": a.se2e_t_root, "image_root": a.se2e_root})
     if resume is not None and resume["total"] != total:
         raise SystemExit(f"--resume: schedule length {total} != checkpoint's {resume['total']}")
     extra = {"base_model": a.model, "base_rev": MODEL_REV, "prompt_config": pcfg, "hz": hz, "data": a.data}
@@ -524,7 +614,8 @@ def cmd_train(a):
         write({"event": "ckpt", "step": step, "dir": path})
     train_loop(model, enc, tr, val, device, total, a.batch, a.lr, a.lr_heads, a.eval_every, a.seed, write,
                save_every=a.save_every, save=save, resume=resume, stop_at=a.stop_at, schedule=a.lr_schedule,
-               warmup_steps=a.warmup_steps, extra_evals={"train_subset": tr} if a.eval_train_subset else None)
+               warmup_steps=a.warmup_steps, extra_evals={"train_subset": tr_eval} if a.eval_train_subset else None,
+               batch_fn=batch_fn)
     if a.stop_at:
         return
     last = os.path.join(out, "last")
@@ -547,7 +638,8 @@ def cmd_evalck(a):
     bb, proc, _ = load_backbone("qwen", a.model, device, adapter=os.path.join(a.ckpt, "adapter"))
     m = load_heads(a.ckpt, bb, device).eval()
     m.shared = not a.no_share
-    ev = evaluate(m, HFEncoder(proc), val, device, a.seed)
+    m, enc = temporal_model(a, m, proc)
+    ev = evaluate(m, enc, val, device, a.seed)
     rec = {"event": "evalck", "ckpt": a.ckpt, "val_keys_sha": _sha([s["key"] for s in val]), **ev}
     if a.against:
         logged = [json.loads(x) for x in open(a.against)]
@@ -570,8 +662,9 @@ def cmd_predict(a):
     bb, proc, _ = load_backbone("qwen", a.model, device, adapter=os.path.join(a.ckpt, "adapter"))
     m = load_heads(a.ckpt, bb, device).eval()
     m.shared = not a.no_share
+    m, enc = temporal_model(a, m, proc)
     recs = []
-    ev = evaluate(m, HFEncoder(proc), val, device, a.seed, records=recs)
+    ev = evaluate(m, enc, val, device, a.seed, records=recs)
     write = _writer(a.out)
     for r in recs:
         write({"event": "item", **r})
@@ -634,6 +727,12 @@ def build_parser():
     t.add_argument("--lr-schedule", default="cosine", choices=("cosine", "constant"))
     t.add_argument("--warmup-steps", type=int, default=0, help="linear warmup steps (0 = 3 %% of the schedule)")
     t.add_argument("--eval-train-subset", action="store_true", help="also evaluate the train (sub)set at each eval")
+    t.add_argument("--train-fraction", type=float, default=0.0,
+                   help="same fraction of every source, nested across fractions (--train-subset-seed; 0 = all)")
+    t.add_argument("--eval-train-per-kind", type=int, default=0,
+                   help="--eval-train-subset: stratified N per source of the train (sub)set (0 = all of it)")
+    t.add_argument("--motion-dropout", type=float, default=0.3,
+                   help="--motion-line: training-only probability of the 'unknown' line (prereg_se2e_temporal)")
     e = sub.add_parser("evalck", help="reload a checkpoint, fixed-noise validation, compare with the run's log")
     _common(e)
     _data(e)
@@ -665,6 +764,14 @@ def _data(p):
     p.add_argument("--val-per-kind", type=int, default=0,
                    help="stratified val: N random samples of every source (RB1 / RB2), --val-seed (§69 N2)")
     p.add_argument("--val-seed", type=int, default=0)
+    # prereg_se2e_temporal (OPT-IN; defaults = the S-E2E inputs)
+    p.add_argument("--camera-layout", default="D27v1", choices=("D27v1", "D27v2-video2"),
+                   help="D27v2-video2: every camera = 2-frame clip [t-0.3 s, t] in one temporal patch (--data se2e)")
+    p.add_argument("--motion-line", default="none", choices=("none", "se2e-motion@v1"),
+                   help="se2e-motion@v1: coarse arm-speed / gripper-rate line (needs --motion-bins)")
+    p.add_argument("--motion-bins", default="", help="bins json (tools/se2e_temporal.py bins, train split)")
+    p.add_argument("--se2e-t-root", default="/data/harvest/data/se2e_t/conv",
+                   help="augmented S-E2E rows (past frames, causal motion); current frames stay under --se2e-root")
 
 
 if __name__ == "__main__":

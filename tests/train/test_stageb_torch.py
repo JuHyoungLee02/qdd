@@ -457,3 +457,16 @@ def test_parser_defaults_keep_the_s_e2e_behaviour():
         ("", 0, "cosine", 0, False)
     p = T.build_parser().parse_args(["predict", "--ckpt", "c", "--out", "o.jsonl"])
     assert p.cmd == "predict"
+    assert (a.train_fraction, a.eval_train_per_kind) == (0.0, 0)
+
+
+def test_train_fraction_keeps_the_source_mix_is_nested_and_order_free():
+    tr = [{"key": f"RB1_ep{e}_k{k}"} for e in range(40) for k in (0, 5)] + \
+        [{"key": f"RB2_ep{e}_k{k}"} for e in range(10) for k in (0, 5)]  # 80 RB1, 20 RB2
+    q = T.train_fraction(list(tr), 0.25, seed=0)
+    assert sorted(T.source_of(s) for s in q) == ["RB1"] * 20 + ["RB2"] * 5  # same fraction of every source
+    h = T.train_fraction(list(tr), 0.5, seed=0)
+    assert {s["key"] for s in q} < {s["key"] for s in h}  # 25 % inside 50 % (same seed)
+    assert q == T.train_fraction(list(reversed(tr)), 0.25, seed=0)
+    assert {s["key"] for s in q} != {s["key"] for s in T.train_fraction(list(tr), 0.25, seed=1)}
+    assert T.train_fraction(tr, 0.0, seed=0) is tr  # 0 = off
