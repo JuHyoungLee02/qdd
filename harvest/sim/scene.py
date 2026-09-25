@@ -415,10 +415,14 @@ def _measure_finger_offsets(arm: str):
 class Env:
     """Thin wrapper over an Isaac Lab ManagerBasedRLEnv. step() takes 7 arm joint targets + gripper width (m)."""
 
+    hard_reset = True  # every reset() recreates the PhysX scene first (physx_hard_reset.md)
+
     def __init__(self, seed: int, headless=True, cameras=DEFAULT_CAMERAS, arm="right", depth=True, sim_device="cpu",
-                 variant="standard", decimation: int = 5, render_interval: int | None = None, task: str = "mug_tray"):
+                 variant="standard", decimation: int = 5, render_interval: int | None = None, task: str = "mug_tray",
+                 hard_reset: bool = True):
         from . import randomize
         from .tasks import check_task
+        self.hard_reset = bool(hard_reset)
         self.variant = randomize.check_variant(variant)
         self.task = check_task(task)
         cameras = tuple(cameras or ())
@@ -494,10 +498,39 @@ class Env:
             return np.array([x, y, TABLE_TOP_Z + g["height"] / 2])
         return np.array([*PARK_XY["o11"], g["height"] / 2])
 
+    def _recreate_physx_scene(self):
+        """Timeline stop/play (SimulationContext.reset(soft=False)): a new PhysX scene, so no episode starts from
+        PhysX-internal state (contact pairs / islands / solver order) left by earlier runs in this process -- that
+        state made one seed replay into one of a few discrete trajectories (pool_replay_debug.md). On PLAY Isaac Lab
+        re-creates the PhysX views of every asset and sensor (same Python objects). Cameras are left as they are: they
+        hold no PhysX handle, and their re-init would add a new render product per episode.
+        The new scene is built from the USD poses, which are the make_env seed's layout; so while stopped the objects
+        get this seed's reset poses (what make_env(seed) authors) -- else a process made with another seed builds a
+        different scene (DEV 11 after make_env(5): o8 on the table instead of parked, mug 10 mm off; physx_hard_reset.md).
+        """
+        sim = self.env.sim
+        cams = [self.scene[n] for n in self.cameras]
+        for c in cams:
+            c._invalidate_initialize_callback = c._initialize_callback = _no_callback
+        sim._disable_app_control_on_stop_handle = True  # Isaac Lab otherwise waits for PLAY inside the STOP event
+        try:
+            sim.stop()
+            for k in self.objects:
+                _author_usd_pose(f"/World/envs/env_0/{k.upper()}", *_object_reset_pose(k, self.layout))
+            sim.reset(soft=False)
+        finally:
+            sim._disable_app_control_on_stop_handle = False
+            for c in cams:
+                del c._invalidate_initialize_callback, c._initialize_callback
+        self.env._sim_step_counter = 0  # render_interval phase counted from the episode start
+
     def reset(self, settle_s: float = 1.0):
-        """Reset once (write default state once), then let objects settle with the arm holding its pose."""
+        """Reset once (write default state once), then let objects settle with the arm holding its pose.
+        With hard_reset (default) the PhysX scene is recreated first, so the episode depends only on the seed."""
         _LAYOUT["layout"] = self.layout
         _LAYOUT["rand"] = self.randomization
+        if self.hard_reset:
+            self._recreate_physx_scene()
         if self.variant != "standard":
             from .randomize import apply_visuals
             apply_visuals(self, self.randomization)
@@ -573,15 +606,30 @@ class Env:
         self.env.close()
 
 
+def _no_callback(event):
+    pass
+
+
+def _author_usd_pose(path: str, pos, quat_wxyz) -> None:
+    """USD pose of a prim under /World/envs/env_0 (env-local, like _object_reset_pose); only while stopped."""
+    import omni.usd
+
+    from .randomize import _set_pose
+    _set_pose(omni.usd.get_context().get_stage().GetPrimAtPath(path), tuple(pos), tuple(quat_wxyz))
+
+
 def make_env(seed: int, headless: bool = True, cameras=DEFAULT_CAMERAS, arm: str = "right", depth: bool = True,
              sim_device: str = "cpu", variant: str = "standard", decimation: int = 5,
-             render_interval: int | None = None, task: str = "mug_tray") -> Env:
+             render_interval: int | None = None, task: str = "mug_tray", hard_reset: bool = True) -> Env:
     """cameras: names from KNOWN_CAMERAS (real robot cameras); () for no rendering.
     task: tasks.TASK_IDS (R2); the default is the original mug -> tray task with the standard layout.
     sim_device: 'cpu' (PhysX on CPU, default, canon §48) or 'cuda' (GPU PhysX, the v1 setting).
     variant: 'standard' (today's scene, unchanged), 'random' (5 axes from the TEST pool, evaluation only) or 'dr'
     (5 axes from the disjoint TRAIN pool, training-time domain randomization); randomize.py, canon §34/§52.
     decimation: physics substeps (10 ms) per env step, 5 = the 20 Hz pool/label setting; the closed-loop runtime (R5,
-    D23 §3) uses 1 (100 Hz). render_interval: physics substeps per render (default = decimation)."""
+    D23 §3) uses 1 (100 Hz). render_interval: physics substeps per render (default = decimation).
+    hard_reset: True (default) = every reset() recreates the PhysX scene, so an episode depends only on its seed
+    (physx_hard_reset.md); False = the old soft reset, only for replaying episodes recorded before (history-dependent,
+    pool_replay_debug.md)."""
     return Env(seed, headless=headless, cameras=cameras, arm=arm, depth=depth, sim_device=sim_device, variant=variant,
-               decimation=decimation, render_interval=render_interval, task=task)
+               decimation=decimation, render_interval=render_interval, task=task, hard_reset=hard_reset)
