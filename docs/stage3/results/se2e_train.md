@@ -52,3 +52,5 @@
 - 체크포인트는 6b013ac 직렬화(ser-A-min-1)라 현재 런타임(ser-A-min-2)이 거부한다(의도, §77 보충).
 
 원자료: `/data/harvest/ckpt/se2e/se2e_{A_s0,B_s1}{,_resume}/log.jsonl`, `evalck.jsonl`, `/data/harvest/logs/se2e/{driver_A,driver_B}.out`, `gpumon.csv`, `verdict.json`.
+
+> **한계 추가(2026-09-25 16:09 UTC, 정본 §83)**: 이 판의 데이터(`/data/harvest/data/se2e`)는 고유감각 속도(`proprio.qd`, 그리퍼 속도)를 중앙 차분(`np.gradient`)으로 만들어 0.1 s 뒤 미래 정보가 action expert의 고유감각 입력에 섞여 있었다. 판정은 파이프라인 시험(§56)이라 유지한다. 누수는 인과 후방 차분으로 고쳤고(커밋 44c907d, 새 데이터 판본 `se2e_c1`), 이후 S-E2E 학습·확인 실험(`prereg_se2e_motion_confirm.md`)은 고친 판으로 한다. 결정 NLL·정확도는 결정 토큰이라 이 입력의 영향이 작을 것으로 보이나 측정하지 않았다.
