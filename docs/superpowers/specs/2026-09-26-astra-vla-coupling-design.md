@@ -1,6 +1,6 @@
-# Astra–VLA 결합 설계: 손끝 목표 파이프라인과 두 층 M4 (초안)
+# Astra–VLA 결합 설계: 손끝 목표 파이프라인과 두 층 M4 (승인됨 — 2026-09-25 17:11 UTC, user-log 85; 제목의 '손끝 목표'는 머리 개정 문단으로 대체)
 
-- 작성: 2026-09-25 UTC (한국시간 09-26), 브레인스토밍 user-log 77–83. 상태: **초안 — 사용자 검토 전, 구현 전**.
+- 작성: 2026-09-25 UTC (한국시간 09-26), 브레인스토밍 user-log 77–83. 상태: ~~초안 — 사용자 검토 전, 구현 전~~ → **승인됨(정본 §84, 2026-09-25 17:11 UTC), 구현 전** [→ 갱신 2026-09-25 17:54 UTC, R7 24회차 N17].
 - 근거 문서: 정본 §58·§67(융합 VLA·두 호출), §82(Astra 전용 일 J1–J6, 비용 한도), §82 보충 2(실행 중 effort low), §83(움직임 줄), `docs/research/{astra_role,steering_representation,hypothesis_short_window,temporal_context}_2026-09-25.md`.
 - 미정(실험으로 정함): 손끝 목표의 공간 표현(E-Astra-motion 탐침: P-pc / P-plane / P-tri / S), Astra 요청 방식(탐침 F0 대 F1), 호출 간격 적응 문턱.
 
