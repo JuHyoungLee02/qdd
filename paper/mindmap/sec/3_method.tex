@@ -180,6 +180,7 @@
   \item \idea{(E-M4b-meas, 파이프라인 확인이라 수치는 임시) V1h \tentative{0.949} 대 명시 인식 \tentative{0.596}·영점 \tentative{0.750}, T1 \tentative{0.992--0.998}, V1h + 토크 충돌 규칙 재현율 \tentative{0.786} $<$ V1h 단독 \tentative{0.871} $\rightarrow$ 토크 규칙은 명목 운동 토크에 걸려 문턱을 망침. 명시 인식은 3D 오차 \tentative{35\,mm}라 측정원 탈락}
   \item \chg{(09-24 §67 C4) ``모델 한 번 호출'' $\rightarrow$ 스텝마다 두 호출: decide(공유 접두 순전파 1회 $\rightarrow$ 결정 확률 + 문맥 은닉 + 확인 헤드) $\rightarrow$ M4 $\rightarrow$ chunk(캐시 문맥 + 확정 결정 $\rightarrow$ expert, CUDA 그래프). 백본 순전파는 스텝당 1회라 융합 원칙 그대로. 융합 런타임은 HF 백본 서버, vLLM은 모듈형 기준선 전용}
   \item \chg{(09-24 §65) 결과 기반 라벨: 사전 등록 규칙이 \texttt{plan}을 골랐지만 판별력 없음 $\rightarrow$ 학습 정답 아님, 실패 보기 거부권 용도만. 학습 정답은 labels\_v2 유지}
+  \item \dirn{(09-25 user-log 71, 계획·\tentative{검증 중}) 결정 입력에 시간 맥락: 머리·활성 손목 카메라마다 $[t-0.3\,\text{s},\,t]$ 2프레임을 Qwen3-VL 비디오로(시각 토큰 수 불변). 동기 = S-E2E 진단(정확도 \tentative{약 0.72}, 오답은 움직임 유무·크기 한 칸, 부호 반대 \tentative{8/155}, 한 시점 입력엔 속도가 없음). chunk는 decide 캐시 문맥을 그대로 읽음. 채택은 E-TC 2$\times$2 결과로(실험 절 참고)}
 \end{itemize}
 
 \subsection{M4 사전 등록 적합화 (R7 순회, 09-25)}

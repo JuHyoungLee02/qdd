@@ -148,6 +148,18 @@ def icon_scene(ax, x, y, w, h, variant="std"):
         ax.add_patch(Rectangle((x + w * 0.7, y + h * 0.62), w * 0.2, h * 0.25, fc="#FFFFFF", ec="#B0B0B0", lw=0.5))
 
 
+TENT = "#E27000"   # paper \tentative orange (RGB 226,112,0)
+
+
+def past_frame(ax, x, y, w, h, dx, dy, variant="std"):
+    """planned temporal context (user-log 71): the t-0.3 s frame drawn behind the current frame,
+    faded with a dashed orange border -- the current single-frame input stays fully visible on top."""
+    icon_scene(ax, x + dx, y + dy, w, h, variant)
+    ax.add_patch(Rectangle((x + dx, y + dy), w, h, fc="white", ec="none", alpha=0.55))
+    ax.add_patch(Rectangle((x + dx, y + dy), w, h, fc="none", ec=TENT, lw=0.9, ls=(0, (2.5, 1.5))))
+    ax.text(x + dx + 0.02, y + dy + h - 0.015, "t−0.3 s", ha="left", va="top", fontsize=4.6, color=TENT)
+
+
 def save(fig, name):
     fig.savefig(os.path.join(OUT, name + ".pdf"))
     fig.savefig(os.path.join(OUT, name + ".png"), dpi=220)
@@ -234,10 +246,14 @@ def fig_overview():
     # inputs
     rbox(ax, 0.02, 2.30, 0.95, 0.45, "gray", "“{과제}”", fs=9)
     ax.text(0.495, 2.24, "사용자 명령", ha="center", va="top", fontsize=6.8, color="#444")
+    past_frame(ax, 0.08, 1.30, 0.80, 0.48, -0.06, 0.07, "std")
     icon_scene(ax, 0.08, 1.30, 0.80, 0.48, "std")
     ax.text(0.48, 1.25, "머리 카메라", ha="center", va="top", fontsize=6.6, color="#444")
+    past_frame(ax, 0.08, 0.58, 0.80, 0.40, -0.06, 0.07, "rnd")
     icon_scene(ax, 0.08, 0.58, 0.80, 0.40, "rnd")
     ax.text(0.48, 0.53, "활성 손목 카메라", ha="center", va="top", fontsize=6.6, color="#444")
+    ax.text(0.50, 0.40, "시간 맥락 (검증 중)\n카메라마다 [t−0.3 s, t]\n2프레임, 시각 토큰 수 같음", ha="center",
+            va="top", fontsize=5.2, color=TENT, linespacing=1.1)
 
     # slow layer: Astra + contract
     icon_cloud(ax, 1.82, 2.43, s=0.85)
@@ -310,10 +326,14 @@ def fig_model():
     call 2 = chunk (expert on cached context, conditioned on the decision M4 committed) -- canon §61, §64, §67 C4."""
     W, H = COL_W, 2.30
     fig, ax = canvas(W, H)
-    icon_scene(ax, 0.04, 1.70, 0.56, 0.40, "std")
-    ax.text(0.32, 1.66, "머리 (252 토큰)", ha="center", va="top", fontsize=6.0, color="#444")
-    icon_scene(ax, 0.04, 1.02, 0.56, 0.34, "rnd")
-    ax.text(0.32, 0.98, "활성 손목 (104)", ha="center", va="top", fontsize=6.0, color="#444")
+    past_frame(ax, 0.07, 1.70, 0.53, 0.40, -0.05, 0.06, "std")
+    icon_scene(ax, 0.07, 1.70, 0.53, 0.40, "std")
+    ax.text(0.335, 1.66, "머리 (252 토큰)", ha="center", va="top", fontsize=6.0, color="#444")
+    past_frame(ax, 0.07, 1.02, 0.53, 0.34, -0.05, 0.06, "rnd")
+    icon_scene(ax, 0.07, 1.02, 0.53, 0.34, "rnd")
+    ax.text(0.335, 0.98, "활성 손목 (104)", ha="center", va="top", fontsize=6.0, color="#444")
+    ax.text(0.36, 0.25, "점선 = t−0.3 s\n시간 맥락(검증 중)", ha="center", va="top", fontsize=4.6,
+            color=TENT, linespacing=1.15)
     wbox(ax, 0.04, 0.30, 0.56, 0.40, "#9A9A9A", "텍스트", fs=6.4, sub="과제·단계\n그리퍼", sfs=6.0,
          fc=PAL["gray"][0])
     rbox(ax, 0.78, 0.10, 0.74, 2.02, "jev", "Qwen3-VL-4B", fs=7.2, sub="LoRA r32\n비전 동결", sfs=6.0)
