@@ -10,6 +10,8 @@ from harvest.train import se2e_trace_model as TM  # noqa: E402
 from harvest.train import stageb_data as D  # noqa: E402
 from harvest.train import stageb_expert as E  # noqa: E402
 from harvest.train import stageb_model as M  # noqa: E402
+from harvest.train import stageb_train as T  # noqa: E402
+from harvest.train import stageb_train as T  # noqa: E402
 
 from .test_stageb_torch import AK, EK, HID, MockBackbone, MockEncoder  # noqa: E402
 
@@ -84,6 +86,56 @@ def test_save_load_roundtrip(tmp_path):
     ctx, mask = torch.randn(1, 4, HID), torch.ones(1, 4, dtype=torch.long)
     assert torch.equal(m.aux.full(ctx, mask)[0], m2.aux.full(ctx, mask)[0])
     assert isinstance(m2, TM.StageBTrace)
+
+
+def _a3d_model(seed=0, lam=None):
+    torch.manual_seed(seed)
+    ss = _samples(seed=seed)
+    rng = np.random.default_rng(seed + 1)
+    for s in ss:
+        s["a3d"] = {"d": rng.normal(0, 0.05, 12).tolist(), "mask": [1, 1, 1, 0]}
+    m = M.new_model(MockBackbone(seed), ss, HID, expert_kw=EK, aux_kw=AK, lam=lam)
+    return TM.with_trace_head(m, "a3d@v1"), ss
+
+
+def test_a3d_head_and_loss():
+    from harvest.train import se2e_a3d as A3
+    m, ss = _a3d_model()
+    assert m.aux.cfg.n_reg == len(D.AUX_REG) + 12 and m.aux_ver == "a3d@v1"
+    enc, dev = MockEncoder(), torch.device("cpu")
+    _, logs = m.losses(ss, enc, dev)
+    with torch.no_grad():
+        ctx, mask = m.contexts(ss, enc, dev, grad=False)
+        r, rm, _, _ = (torch.tensor(np.stack(x)) for x in zip(*[A3.a3d_aux_vecs(s) for s in ss]))
+        pr, _ = m.aux.full(ctx, mask)
+        want = (torch.nn.functional.smooth_l1_loss(pr, r, reduction="none") * rm).sum() / rm.sum()
+    assert logs["aux_trace"] == pytest.approx(float(want), rel=1e-5)
+    with pytest.raises(ValueError):
+        TM.as_trace(m, "trace5@v1")  # head size belongs to a3d
+
+
+def test_base_view_decides_identically():
+    """Runtime path: the aux head never enters the decision / chunk outputs -> identical in the base view."""
+    m, ss = _a3d_model()
+    enc, dev = MockEncoder(), torch.device("cpu")
+    recs_t = []
+    ev_t = T.evaluate(m, enc, ss, dev, seed=0, records=recs_t)
+    noise = torch.randn(1, m.expert.cfg.horizon, m.expert.cfg.act_dim, generator=torch.Generator().manual_seed(3))
+    ch_t = m.predict(ss[0], enc, dev, noise=noise)
+    TM.base_view(m)
+    assert type(m) is M.StageB
+    recs_b = []
+    ev_b = T.evaluate(m, enc, ss, dev, seed=0, records=recs_b)
+    ch_b = m.predict(ss[0], enc, dev, noise=noise)
+    assert recs_t == recs_b and np.array_equal(ch_t, ch_b)
+    assert {k: v for k, v in ev_t.items() if k != "aux"} == {k: v for k, v in ev_b.items() if k != "aux"}
+
+
+def test_extra_metrics_a3d_cm():
+    m, ss = _a3d_model()
+    ev = TM.extra_metrics(m, MockEncoder(), ss, torch.device("cpu"), seed=0)
+    assert ev["trace_px"] is None and ev["a3d_cm"]["n_points"] == 3 * len(ss)
+    assert len(ev["a3d_cm"]["per_point_mean"]) == 4 and ev["a3d_cm"]["mean"] > 0
 
 
 def test_extra_metrics_trace_error_and_predicted_decision_chunk():

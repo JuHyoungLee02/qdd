@@ -13,6 +13,8 @@
   predict --ckpt DIR [same data / val / --seed] --out JSONL               per-item decision predictions (D3)
   train|evalck|predict --data se2e [--camera-layout D27v2-video2] [--motion-line se2e-motion@v1 --motion-bins F]
          [--se2e-t-root DIR] [--motion-dropout 0.3]                       OPT-IN temporal context (prereg_se2e_temporal)
+  train|evalck|predict ... [--aux-extra a3d@v1 --a3d-root DIR]            OPT-IN training-only aux trajectory target
+         predict [--aux-view base] [--extra-out JSON]                     (prereg_ma1b; decision / chunk path unchanged)
 
 Model: Qwen3-VL-4B-Instruct (stage A's revision) + LoRA r32 on every LLM linear layer (stage A's target, vision
 tower frozen) + ActionExpert (flow matching, KI stop-gradient) + AuxGeomHead (privileged geometry, gradient to
@@ -80,9 +82,10 @@ def temporal_on(a) -> bool:
     return getattr(a, "camera_layout", "D27v1") != "D27v1" or getattr(a, "motion_line", "none") != "none"
 
 
-def prompt_config_t(samples, state, layout, bins=None):
+def prompt_config_t(samples, state, layout, bins=None, aux=None):
     """prompt_config of a temporal-option run: new layout id (D27v2-video2) / motion line version + bins, and the
-    option files in files_sha, so its checkpoints never pass as a default-layout checkpoint."""
+    option files in files_sha, so its checkpoints never pass as a default-layout checkpoint. aux (prereg_ma1b) = the
+    training-only auxiliary trajectory target version: recorded with its files (absent key when None = unchanged)."""
     import hashlib
 
     from ..clients.jevl import SYSTEM
@@ -91,9 +94,39 @@ def prompt_config_t(samples, state, layout, bins=None):
                    if s.get("context")})
     cfg = {"camera": cams, "state": state, "layout": layout, "motion": bins,
            "system_sha": hashlib.sha256(SYSTEM.encode()).hexdigest()[:12],
-           "files_sha": file_sha(PROMPT_FILES + PROMPT_FILES_B + TEMPORAL_FILES)}
+           "files_sha": file_sha(PROMPT_FILES + PROMPT_FILES_B + TEMPORAL_FILES + (AUX_FILES if aux else ()))}
+    if aux:
+        cfg["aux"] = aux
     cfg["sha"] = hashlib.sha256(json.dumps(cfg, sort_keys=True).encode()).hexdigest()[:12]
     return cfg
+
+
+# prereg_ma1b: OPT-IN training-only auxiliary trajectory target (the decision / chunk path is the default one)
+AUX_CHOICES = ("none", "a3d@v1")
+AUX_FILES = ("harvest/train/se2e_a3d.py", "harvest/train/se2e_trace.py", "harvest/train/se2e_trace_model.py")
+
+
+def attach_aux_targets(a, samples) -> None:
+    """In place: the --aux-extra targets of every sample (a3d@v1: <a3d-root>/<kind>.a3d.jsonl; KeyError if missing)."""
+    if getattr(a, "aux_extra", "none") == "none":
+        return
+    from .se2e_a3d import attach
+    for kind in sorted({s["key"].split("_")[0] for s in samples}):
+        attach(samples, a.a3d_root, kind)
+
+
+def aux_model(a, model, new: bool):
+    """--aux-extra: a new model gets the extra aux outputs (with_trace_head); a loaded one is switched to the trained
+    view (as_trace), or with --aux-view base to the plain StageB view (runtime path check)."""
+    ver = getattr(a, "aux_extra", "none")
+    if ver == "none":
+        return model
+    from . import se2e_trace_model as TM
+    if new:
+        return TM.with_trace_head(model, ver)
+    if getattr(a, "aux_view", "trained") == "base":
+        return TM.base_view(model, ver)
+    return TM.as_trace(model, ver)
 
 
 def motion_bins_of(a):
@@ -269,7 +302,7 @@ RESUME_KEYS = ("data", "pool", "rows", "se2e_root", "se2e_kinds", "no_labels", "
                "epochs", "max_steps", "max_train", "max_val", "val_per_kind", "val_seed", "no_share", "init_adapter",
                "lr_schedule", "warmup_steps", "train_subset", "train_subset_seed", "train_fraction",
                "eval_train_subset", "eval_train_per_kind",
-               "camera_layout", "motion_line", "motion_bins", "motion_dropout", "se2e_t_root")
+               "camera_layout", "motion_line", "motion_bins", "motion_dropout", "se2e_t_root", "aux_extra", "a3d_root")
 # every other option of `train` (bookkeeping: names, output, cadence, memory). eval_every: evaluate() uses its own
 # generator, so the trajectory does not depend on it; init_weights: refused together with --resume (the weights come
 # from the checkpoint); grad_ckpt: recomputation only. A new option must be added to one of the two (test).
@@ -517,6 +550,10 @@ def _load_data(a):
                                               dev_val_seeds=dev, labels=not a.no_labels)
     except ValueError as e:
         raise SystemExit(str(e))
+    if getattr(a, "aux_extra", "none") != "none":
+        if a.data != "se2e":
+            raise SystemExit("--aux-extra: --data se2e only")
+        attach_aux_targets(a, samples)
     tr, va = D.split_samples(samples)
     if getattr(a, "max_train", 0):
         tr = random.Random(a.seed).sample(tr, min(a.max_train, len(tr)))
@@ -575,6 +612,7 @@ def cmd_train(a):
     if not wdir:
         model = new_model(bb, tr, hd, mode=a.mode, ki=a.ki,
                           lam={"dec": a.lam_dec, "act": a.lam_act, "aux": a.lam_aux, "vqa": 0.0, "ver": a.lam_ver})
+    model = aux_model(a, model, new=not wdir)  # prereg_ma1b --aux-extra (none: unchanged)
     # --train-subset: after new_model, so normalization statistics / vocabularies still come from the whole split
     if a.train_subset and a.train_fraction:
         raise SystemExit("--train-subset and --train-fraction: use one")
@@ -589,7 +627,10 @@ def cmd_train(a):
     model, enc = temporal_model(a, model, proc)
     write = _writer(os.path.join(out, "log.jsonl"))
     bins = motion_bins_of(a)
-    pcfg = prompt_config_t(samples, a.state, a.camera_layout, bins) if temporal_on(a) else \
+    aux_ver = None if a.aux_extra == "none" else a.aux_extra
+    if aux_ver and not temporal_on(a):
+        raise SystemExit("--aux-extra: with the motion line (prereg_ma1b cells)")
+    pcfg = prompt_config_t(samples, a.state, a.camera_layout, bins, aux=aux_ver) if temporal_on(a) else \
         prompt_config(samples, a.state)
     batch_fn = None
     if bins is not None and a.motion_dropout > 0:
@@ -620,6 +661,8 @@ def cmd_train(a):
     if resume is not None and resume["total"] != total:
         raise SystemExit(f"--resume: schedule length {total} != checkpoint's {resume['total']}")
     extra = {"base_model": a.model, "base_rev": MODEL_REV, "prompt_config": pcfg, "hz": hz, "data": a.data}
+    if aux_ver:
+        extra["aux_extra"] = aux_ver
 
     def save(step, st):
         path = os.path.join(out, "ckpt", f"step_{step:06d}")
@@ -650,7 +693,7 @@ def cmd_evalck(a):
     _, _, _, va = _load_data(a)
     val = val_subset(va, a.max_val, a.val_per_kind, a.val_seed)
     bb, proc, _ = load_backbone("qwen", a.model, device, adapter=os.path.join(a.ckpt, "adapter"))
-    m = load_heads(a.ckpt, bb, device).eval()
+    m = aux_model(a, load_heads(a.ckpt, bb, device).eval(), new=False)
     m.shared = not a.no_share
     m, enc = temporal_model(a, m, proc)
     ev = evaluate(m, enc, val, device, a.seed)
@@ -674,7 +717,7 @@ def cmd_predict(a):
     _, _, _, va = _load_data(a)
     val = val_subset(va, a.max_val, a.val_per_kind, a.val_seed)
     bb, proc, _ = load_backbone("qwen", a.model, device, adapter=os.path.join(a.ckpt, "adapter"))
-    m = load_heads(a.ckpt, bb, device).eval()
+    m = aux_model(a, load_heads(a.ckpt, bb, device).eval(), new=False)
     m.shared = not a.no_share
     m, enc = temporal_model(a, m, proc)
     recs = []
@@ -683,6 +726,10 @@ def cmd_predict(a):
     for r in recs:
         write({"event": "item", **r})
     write({"event": "summary", "ckpt": a.ckpt, "val_keys_sha": _sha([s["key"] for s in val]), **ev})
+    if a.extra_out:  # prereg_ma1b: aux trajectory error (cm) and predicted-decision chunk error, outside the rule
+        from .se2e_trace_model import extra_metrics
+        json.dump({"ckpt": a.ckpt, "val_keys_sha": _sha([s["key"] for s in val]),
+                   **extra_metrics(m, enc, val, device, a.seed)}, open(a.extra_out, "w"), indent=1)
 
 
 def _common(p):
@@ -755,12 +802,16 @@ def build_parser():
     e.add_argument("--against", default="", help="the run's log.jsonl")
     e.add_argument("--step", type=int, default=0, help="the logged eval step the checkpoint belongs to")
     e.add_argument("--out", default="", help="append the result (jsonl)")
+    e.add_argument("--aux-view", default="trained", choices=("trained", "base"))
     pr = sub.add_parser("predict", help="per-item decision predictions of a checkpoint on the val subset (D3)")
     _common(pr)
     _data(pr)
     pr.add_argument("--ckpt", required=True)
     pr.add_argument("--max-train", type=int, default=0)
     pr.add_argument("--out", required=True, help="jsonl: one 'item' record per decision item + 'summary'")
+    pr.add_argument("--aux-view", default="trained", choices=("trained", "base"),
+                    help="--aux-extra checkpoint: trained view, or base = plain StageB (runtime path, prereg_ma1b)")
+    pr.add_argument("--extra-out", default="", help="json: aux trajectory error + predicted-decision chunk error")
     return ap
 
 
@@ -786,6 +837,10 @@ def _data(p):
     p.add_argument("--motion-bins", default="", help="bins json (tools/se2e_temporal.py bins, train split)")
     p.add_argument("--se2e-t-root", default="/data/harvest/data/se2e_t/conv",
                    help="augmented S-E2E rows (past frames, causal motion); current frames stay under --se2e-root")
+    # prereg_ma1b (OPT-IN, training-only aux target; default = no extra aux outputs)
+    p.add_argument("--aux-extra", default="none", choices=AUX_CHOICES,
+                   help="a3d@v1: future end-effector displacements (base frame) as an extra aux regression target")
+    p.add_argument("--a3d-root", default="/data/harvest/data/ma1b/conv", help="<root>/<kind>.a3d.jsonl targets")
 
 
 if __name__ == "__main__":
