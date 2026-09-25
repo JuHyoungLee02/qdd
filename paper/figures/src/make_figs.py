@@ -352,7 +352,7 @@ def fig_model():
     rows = {"dec": 1.70, "ver": 1.20, "aux": 0.70, "act": 0.12}
     rbox(ax, hx, rows["dec"], hw, hh, "jev", "결정 토큰", fs=6.8, sub="트라이 재정규화 → M4", sfs=5.6)
     rbox(ax, hx, rows["ver"], hw, hh, "crit", "확인 헤드 V1h", fs=6.8, sub="세계 술어 → M4 (b)·critic", sfs=5.6)
-    rbox(ax, hx, rows["aux"], hw, hh, "perc", "보조 기하 헤드", fs=6.8, sub="상대 위치 · 미래 궤적", sfs=5.6)
+    rbox(ax, hx, rows["aux"], hw, hh, "perc", "보조 기하 헤드", fs=6.8, sub="상대 위치", sfs=5.6)
     rbox(ax, hx, rows["act"], hw, hh, "skill", "action expert", fs=6.8, sub="flow matching · 0.5 s", sfs=5.6)
     for k in ("dec", "ver"):
         arr(ax, [(1.52, rows[k] + hh / 2), (hx, rows[k] + hh / 2)])
