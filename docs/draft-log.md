@@ -439,3 +439,4 @@
 - 00:08 UTC R7 1회차 코드 수정 완료(D1 §63 구현·S-E2E 학습 진입점, D2 요청 해시·카나리, C6 GPU 주석, N1 env TORCH_DISABLE_NATIVE_JIT, N2 테스트 시드, N3 LeRobot 시험, 파드 R3 고아 셸 7개 정리·빈 .triton 제거). 스위트 로컬 784·파드 826 통과. → R7 순회 카운트 0부터 다시(새 검증 에이전트).
 - 00:33 UTC R7 2회차 FAIL(DEFECT 0, DOC 6, SCOPED 7, NOTE 9) — 코드는 무결, 1회차 문서 정정이 덜 된 곳(결과 문서 날짜·계획 줄·gen.py 주석·handoff·se2e_data §9)과 CONTRADICT-soft 범위 누락. 메인이 정정 → 정본 §68(CONTRADICT-soft는 SCOPED: 보정 파일 필요·결과 범주 동일). 교훈: 정정은 한 문서가 아니라 같은 사실을 적은 모든 문서를 grep으로 찾아 고칠 것. 연속 무결 0회 → 3회차.
 - 00:55 UTC R7 3회차 FAIL(DEFECT 0, DOC 4, SCOPED 8, NOTE 10) — 2회차 정정의 형제 누락 4건(se2e_data 날짜, r2_datagen 시드, 런타임 주석 '한 번 호출', handoff 정본 범위). 전 저장소 grep 후 정정 → 정본 §69(정정 절차 명문화, §68 K6 근거 보정, S-E2E 사전 등록 항목 N2·N3). 연속 무결 0회 → 4회차.
+- 01:14 UTC R7 4회차 FAIL(DEFECT 0, DOC 2, SCOPED 8, NOTE 11) — fused decide = vLLM 옛 서술 2곳(+ 검토가 놓친 r6_eval 1곳) 정정 → 정본 §70. 교훈: 같은 사실 grep은 문구가 아니라 구현 이름(vLLM·HF)으로도 해야 한다.

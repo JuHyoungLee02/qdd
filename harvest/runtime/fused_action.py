@@ -1,11 +1,13 @@
 """FusedModel action path (canon §58; R4 stage-B model, harvest/train/stageb_*.py).
 
 The stage-B expert is conditioned on the COMMITTED decisions (cond["dec"]), so one fused step is two calls on the same
-backbone: decide() = decision-token probabilities (vLLM, prefix + multimodal cache, lead mode; canon §59) -> M4
-commit -> chunk(committed) = backbone context forward + expert flow sampling (HF torch; vLLM does not return hidden
-states). GraphedSampler captures the Euler loop in a CUDA graph (R4: 10 steps eager 36-49 ms -> graph 23 ms, same
+backbone (canon §67 C4; both on the HF backbone in fused_model.py): decide() = one shared-prefix forward giving the
+decision-token probabilities, the cached context hidden states and the verification head -> M4 commit ->
+chunk(committed) = expert flow sampling on the cached context (HF torch; vLLM does not return hidden states, so
+vLLM serves only the modular baseline's Jev-L). GraphedSampler captures the Euler loop in a CUDA graph (R4: 10 steps eager 36-49 ms -> graph 23 ms, same
 output) for B = 1 and a fixed padded context length (the key-padding mask keeps padding invisible).
-chunk_value(): the expert's 30 Hz chunk (stageb_data.HZ, H = 15 = 0.5 s) read at the 100 Hz control tick (linear).
+chunk_value(): the expert's chunk at the checkpoint's hz / H (R2 sim data 30 Hz, H = 15 = 0.5 s; S-E2E 10 Hz, H = 5)
+read at the 100 Hz control tick (linear).
 """
 from __future__ import annotations
 

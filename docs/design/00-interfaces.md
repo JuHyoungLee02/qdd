@@ -581,3 +581,8 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - **정정 절차(재발 방지)**: 사실 하나를 고칠 때는 저장소 전체(코드 주석 포함)를 grep해 같은 사실을 적은 곳을 모두 고치고, 원래 절의 문장은 지우지 않고 정정 표시를 붙인다.
 - **§68 K6 근거 보정(N1)**: 보정 파일이 없어도 런타임은 argmax 단일 원소 기본값으로 {거짓}을 내고 DEVIATE를 올린다 — '판정이 성립하지 않는다'는 과장이었다. CONTRADICT-soft를 M4 CONTRADICT로 보내면 정지와 Astra 사건 호출이 더해져 동작이 달라진다. 그래도 연속 2회 규칙의 문턱은 보정된 conformal 집합 위에서 정해야 의미가 있으므로 보정 때 함께 구현한다는 결정은 유지한다.
 - **S-E2E 사전 등록에 넣을 것(N2·N3)**: `--max-val`은 앞 N개를 잘라 RB1만 보게 되므로 층화(RB1·RB2) 무작위 부분집합을 쓴다; 학습 중간 체크포인트·재개와 평가 간격·크기를 정한다(기본값은 평가가 학습을 덮는다).
+
+## 70. R7 4회차 문서 정정 (2026-09-25 01:14 UTC, `docs/stage3/results/r7_cycle4.md`) [Claude 결정]
+- M1·M2 정정: fused decide가 vLLM에서 돈다는 서술(`harvest/runtime/fused_action.py` 머리 설명, `r5_closed_loop.md` 1순위·열린 문제 7, 검토에서 빠졌던 `r6_eval.md` 열린 문제 1)에 §67 C4 정정 표시. 실제 = decide·chunk 모두 HF 백본, vLLM은 모듈형 기준선 Jev-L 전용. `fused_action.py`의 '30 Hz, H = 15' 고정 서술은 체크포인트의 hz·H(R2 30 Hz·H 15, S-E2E 10 Hz·H 5)로.
+- §69 정정 절차의 grep 목록에 구현 이름(vLLM·HF·StageBFused 등) 검색을 더한다 — 문구('한 번 호출')만 찾으면 같은 사실을 다른 말로 적은 곳을 놓친다.
+- 논문 `3_method.tex`·`4_setup.tex`의 vLLM 결정 서빙 서술은 실물 서빙 선택(RTX PRO 6000, §67 C8 SCOPED)이 열려 있어 지금은 두고, 논문 갱신 때 §67에 맞춘다.

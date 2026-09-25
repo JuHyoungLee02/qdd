@@ -51,7 +51,7 @@
 
 ## 5. 발견·한계 (열린 것)
 
-1. **FusedModel 실모델 없음**: `closed --backend fused`는 `mock_fused`만 받는다. 단계 B 체크포인트용 `StageBFused`(vLLM 결정 + HF 청크) 어댑터는 R5 열린 문제 7 그대로 — 실체크포인트를 주면 그 메시지로 거부.
+1. **FusedModel 실모델 없음**: `closed --backend fused`는 `mock_fused`만 받는다. 단계 B 체크포인트용 `StageBFused`(vLLM 결정 + HF 청크; (**정정(정본 §67 C4, R7 4회차 M2)**: 실제 구현은 2순위 — decide도 HF 백본의 공유 접두 순전파 한 번으로 결정 확률·문맥 은닉·확인 헤드를 함께 얻고, 확정 뒤 chunk는 캐시된 문맥 + CUDA 그래프 expert. vLLM은 모듈형 기준선 Jev-L에만 쓴다. `harvest/runtime/fused_model.py`)) 어댑터는 R5 열린 문제 7 그대로 — 실체크포인트를 주면 그 메시지로 거부.
 2. **POOL = SFT 학습 자료**: `e05_sft_pool`의 6편 중 fit 편이 섞여 있다(`meta.episode_data_split`에 기록). 본 E0.5는 학습에 안 쓴 편(POOL eval 편 또는 새 DEV)으로 돌려야 한다 — 명령은 `--seeds`/`--episodes`로 고른다.
 3. **labels_v2 정답과 C2'의 S1이 같은 코드 규칙**이라 S1 단독 정답률(0.987–0.999)은 순환이다(결과 문서 meta에 주석). 결과 기반 정답(`--truth outcome:<rule>`)에서는 0.731. **결과 기반 점수식은 아직 사전 등록 규칙으로 확정 전**이라 `time0.33`은 경로 확인용 예시다(라벨러 풀 라벨도 진행 중, 41/120편 완료 시점).
 4. **지연**: e05 호출 지연(A0 p95 0.85–1.67 s)은 동시 부하(스냅샷 8 × K 3) 아래 값이라 E0 지연이 아니다. d_p95는 `--d-p95`(기본 0.307 = 단계 A 판정 조건 p95)로 받고, §2A.8 재실행 규칙은 E0 최종값으로 판단한다(meta에 명시).
