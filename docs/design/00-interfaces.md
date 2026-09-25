@@ -719,3 +719,14 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - **N15 기록 시각 정정**: §80 제목·`r7c14_fixes.md:3`·`handoff.md:3`의 "2026-09-25 13:10 UTC"는 처음 짐작 시각으로 잘못 적었다 — 그 내용을 담은 커밋 0790dd4(태그 `stage3-r7fix14`)의 시각은 **12:57:49 UTC**이므로 §80의 기록 시각은 12:57 UTC 이전이다(§21–§24 관례; §80 본문은 고치지 않음). `handoff.md`는 머리 시각을 이번 갱신 시각으로 바꾸고 14회차 줄에 커밋·태그를 적었다.
 - **DOC(handoff 등)**: `handoff.md:108`의 14회차 수정 "커밋 안 함" → 0790dd4·태그 `stage3-r7fix14`로 커밋됨 표시, §2.8에 15회차 줄(FAIL, DOC 2 → 이 절), `direction-log.md` 15회차 행, `draft-log.md` 줄.
 - **논문 갱신 항목(매시간 갱신 때)**: 자체 점검 불신 597행은 13시드·20편; 거부권 제외 수 886은 `fine_dir` 포함 전체 행(5질문 기준 805).
+
+## 82. Astra 역할 재정의 — Astra만 할 수 있는 일에만 쓴다 (2026-09-25 14:38 UTC, user-log 74·76, `docs/research/astra_role_2026-09-25.md`) [사용자 결정 + Claude 설계]
+- **원칙(user-log 74)**: Astra는 혼자서도 조작 추론을 하는 프런티어 모델이므로, 작은 VLM으로 되는 일에 쓰면 설계 근거가 없다. 위층 자리는 Astra의 고유 강점이 필요한 일에만 쓰고, 그 필요성은 실험(E-Astra-necessity)으로 입증한다.
+- **Astra 전용 일(J1–J6, 사용자 승인 user-log 76)**: J1 과제 컴파일(T0: 계약 + 물체 지식·검출 이름 후보·위험 목록·감사 지점·새로움 표시·예상 실패별 사전 대응; 분포 안 과제는 계약 캐시), J2 실패 진단 + 복구안 합성(T_fail; 판정은 V1h·코드, Astra는 설명·한 레버 복구·verify_after·falsify), J3 검사 술어 합성(등록부 밖 성공·금지 조건 → DSL 술어·시각 판정 질문), J4 새 물체 이름·속성(위치 찾기는 SAM 3.1), J5 저빈도 진행 감사(감시기 밖 실패 → typed 이상 목록), J6 오프라인 경험 증류(교훈·작은 모델 규칙·재학습 라벨). J7 모호성 해소는 첫 논문 범위 밖 후보.
+- **강등(작은 모델·코드로)**: 5 s 하트비트(→ J5 저빈도 감사로 대체; 사용자가 원한 "주기 호출"은 J5로 유지), 단계 경계 ack, K3 성공 판정·단계 전환, T3b-A, T_stag 첫 대응, detect_phrase 재시도 1차, 분포 안 T0. 근거: V1h 세계 술어 0.949·0.44 ms 대 Astra 첫 토큰 약 3 s; GR 1.5 원문 "stale success predictions quickly become irrelevant"; FORTRESS(CoRL 2025) 즉석 GPT-4o 판정 0.64 대 사전 계산 경로 0.90.
+- **호출 정책**: 사다리 L0–L3, 트리거 T0 / T_fail / T_nov(작은 층이 모를 때만, AND + 1 s 지속) / T_audit(저빈도). 결정이 바뀔 수 있을 때만 호출. 예상 성공 편 1–3회(지금 K2 7–12회).
+- **effort(user-log 76)**: 논문에 **low·high를 모두 가져가 성능·비용·지연을 비교**한다. 실시간 경로의 기본은 low(지연), 오프라인 일(J1 첫 컴파일, J6)과 E-Astra-necessity는 low·high 두 조건을 모두 측정.
+- **E-Astra-necessity**: 같은 위층 자리에 Astra low / Astra high / 로컬 Qwen3-VL-32B·8B·4B / 위층 없음 / Astra 무작위 호출(호출 수 맞춤); 층 S-ID·S-novel·S-long·S-fail·S-random; 오프라인 슬롯 시험 → 폐루프; 판정 초안(Δ = Astra − 최고 로컬, 짝 부트스트랩 10,000회, Holm; Δ ≥ +10 pt·하한 > 0 → 필수; 하한 > −5 pt·점추정 ≥ −3 pt → 강등) — 실행 전 별도 사전 등록. **유료 실행은 설계·구현 완료 뒤 예상 비용을 보고하고 사용자 승인 후**(user-log 76).
+- **남은 [결정 필요]**: 같은 진단이 반복될 때 `falsify`를 먼저 평가하고 Astra를 부를지("실패할 때마다 Astra" 원칙과 조정) — 구현 설계 때 사용자에게 확인.
+- **구현(다음)**: `astra_hb.py` K5 모드, `harvest/astra/jobs.py`, 위층 클라이언트 통일 + `closed --upper`, `core.py` T_nov·계약 캐시, M9 J2 경로, `harvest/eval/astra_slot.py`, 새 물체 에셋·긴 과제·감시기 밖 섭동, Qwen3-VL-32B 내려받기(/data). R7 관문(연속 무결 2회) 확인 뒤 착수.
+
