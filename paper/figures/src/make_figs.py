@@ -202,14 +202,15 @@ def overview_strip(ax, W, Hs):
     # Astra lane
     pill(ax, X(0), 0.82, 3.0 * sx, 0.16, "astra", "T0 첫 계획", fs=6.0)
     # canon §84 supp 2 (user-log 86): one Astra stream request in flight; next request on arrival (interval = L)
-    L = 4.0
+    # probe E-Astra-motion (canon §86): 3 cameras + overlay, low -> L p50 about 9-10 s
+    L = 9.0
     tt, kk = 3.0, 1
     while tt + L <= T + 1e-9:
-        pill(ax, X(tt), 0.82, L * sx - 0.02, 0.16, "astra", f"요청 {kk} (L≈{L:.0f} s)", fs=5.8)
+        pill(ax, X(tt), 0.82, L * sx - 0.02, 0.16, "astra", f"요청 {kk} (L≈9–10 s, 탐침 실측)", fs=5.8)
         ax.plot([X(tt + L), X(tt + L)], [0.80, 1.00], color=PAL["astra"][1], lw=0.9)
         tt += L
         kk += 1
-    ax.text(X(7.5), 1.04, "답이 오면 다음 요청 (한 번에 1개) · 두 답 합의면 편향 100 %, 한 답 50 %, 서서히 반영",
+    ax.text(X(7.5), 1.04, "답이 오면 다음 요청 (한 번에 1개) · 두 답 합의면 편향 100 %, 한 답 50 %, 서서히 반영 · 나이 15 s 넘은 수정은 버림",
             ha="center", va="bottom", fontsize=5.8, color=PAL["astra"][1])
     # decision lane: staggered calls every 0.33 s, each ~0.28 s long
     k = 0
@@ -387,11 +388,13 @@ def fig_latency():
         ("행동 청크 길이", 0.5, 0.5, "design"),
         ("모듈형 결정 p95 (캐시 끔)", 0.63, 0.63, "tent"),
         ("Astra low 첫 토큰 (1회)", 2.975, 2.975, "tent"),
+        ("Astra low 파지 질문 p50 (탐침)", 3.5, 3.5, "tent"),
+        ("Astra low 흐름 요청 p50 (세 대, 탐침)", 8.9, 10.0, "tent"),
         ("Astra 하트비트 실효 주기", 8.0, 9.0, "tent"),
         ("Astra high 첫 토큰 (공개 측정)", 73.0, 73.0, "public"),
     ]
     col = {"design": "#3A3A3A", "tent": "#E27000", "public": "#A8A8A8"}
-    fig, ax = plt.subplots(figsize=(COL_W, 2.6))
+    fig, ax = plt.subplots(figsize=(COL_W, 2.95))
     base = 0.005
     for i, (lab, lo, hi, k) in enumerate(items):
         y = len(items) - 1 - i

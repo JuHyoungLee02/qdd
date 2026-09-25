@@ -240,6 +240,8 @@
   \item \intent{아스트라는 3개의 캠을 다봐야해 예를들어 헤드캠에서 봤을때는 원시때문에 물체를 잡을 때, 잡았다고 오탐하지 않게 우론목에는 안보이는 그런게 있는거지 그걸 해결할 수 이썽야하는거지}
   \item \chg{(설계 §12) Astra = 머리 + 두 손목(이름표). 접촉·잡음·놓음 주장은 그 팔 손목 시점 근거 필수(코드가 확인), 어긋나면 손목 우선 + T1 교차. 비가역 동작은 두 층 + 손목/T1 근거}
   \item \idea{(탐침 무료 사전 실행, 중간 관찰) Qwen3-VL-8B는 세 대를 볼 때 오히려 ``잡았다'' 과잉 주장 \tentative{12/14}, 머리만이면 실제 파지 \tentative{5/5}를 놓침 $\rightarrow$ 카메라를 늘리는 게 늘 좋지 않음, 규칙은 코드로 강제하고 구성은 G1로 정함}
+  \item \chg{(정본 §86, 탐침 결과로 확정) 요청 형식 \textbf{F0}(F1 뒤집힘 감소 \tentative{0.594$\rightarrow$0.381, 36\%} $<$ 기준 50\%, 답 쌍 적음). 늦은 답의 edit 폐기 문턱 6\,s $\rightarrow$ \tentative{15\,s}(흐름 요청 p50 \tentative{8.9--10.0\,s}, 답 나이 p95 \tentative{11.1--14.2\,s}; 6\,s면 \tentative{70--100\%} 버림). \textbf{파지 확정 = T1·V1h}, Astra 영상 판정은 참고(손목 포함해도 실제 쥠 \tentative{13/25} 놓침, 테 건 쥠 \tentative{6/6}, high 표적 교정 \tentative{2/8}; 머리만이면 uncertain \tentative{39/40}). 확신 low 답 \tentative{0회} $\rightarrow$ 끼어듦은 합의·속도 상한·VLA 확인으로 거름. 부드러운 반영 저크 \tentative{0.83} 대 즉시 \tentative{2.36\,m/s$^3$}}
+  \item \idea{(과잉 주장의 원인) Qwen 세 대 \tentative{12/14}는 카메라 수가 아니라 프롬프트에 ``쥠'' 정의가 없던 탓(정의 뒤 \tentative{1/7}, 왼손목 가려도 \tentative{6/7}) $\rightarrow$ 모든 판정 질문 프롬프트는 대상의 조작적 정의를 담는다}
   \item \intent{VLA도 사진을 보는것도 좋을 것 같구}
   \item \chg{E-CAM3(예정): VLA 입력 머리 + 활성 손목 대 머리 + 두 손목(시각 토큰 356$\rightarrow$460), E-TC 채택 틀}
   \item \intent{엔드포인트의 움직임을 위에 덧그리는 방식도 뭔가 도움이 될 수 있을 것 같기도 하구}
