@@ -175,40 +175,50 @@ class Labeler:
         return self.cache[key]
 
     def _replay_rollout(self, snap: dict, spec: tuple) -> dict:
-        """Exact restore (T13 Step 1, v2): re-run the episode from its reset with the oracle planner (bit-exact
-        after a process's first episode) up to snapshot k and branch there. No state write at all besides the
-        episode's own reset — PhysX contact caches are then the original ones. The replayed state is compared
-        with the stored one (replay_maxabs, expected 0)."""
-        from ..cli_pool import canonical_prefix, run_snapshot_episode
+        """Exact restore (T13 Step 1, v2): re-run the episode from its reset with the oracle planner up to snapshot
+        k and branch there. No state write at all besides the episode's own reset — PhysX contact caches are then
+        the original ones. The replayed state is compared with the stored one (replay_maxabs, expected 0).
+
+        The rerun is bit-exact only for some process histories: CPU PhysX keeps order state across a reset that the
+        canonical prefix does not reset, so the same seed replays into one of a few discrete trajectories depending
+        on what ran before (pool_replay_debug.md: 20 of 120 pool episodes, up to 37 mm). So a replay that is not
+        bit-exact at k is not branched from; it is re-run after the next history of REPLAY_HISTORIES. The last try
+        branches whatever it gives, and its mismatch stays in the row (replay_attempts = tries used)."""
+        from ..cli_pool import run_snapshot_episode
         from .snapshot import obs_from_json, state_maxabs
-        r, out = snap["replay"], {}
+        r, ref = snap["replay"], snap.get("state")
+        hows = REPLAY_HISTORIES if ref is not None else REPLAY_HISTORIES[:1]  # nothing to check against: one try
+        for attempt, how in enumerate(hows):
+            out, last = {}, attempt == len(hows) - 1
 
-        def on(env_, pl, rec, s, imgs):
-            if rec["k"] != r["k"]:
-                return False
-            if snap.get("state") is not None:
-                ref = snap["state"]
-                out["replay_maxabs"] = state_maxabs(s, ref)
-                out["replay_obj_mm"] = round(max(float(np.linalg.norm(np.asarray(s["obj_pose"][o][:3], float)
-                                                                     - np.asarray(ref["obj_pose"][o][:3], float)))
-                                                 for o in s["obj_pose"]) * 1e3, 6)
-                out["replay_jpos_rad"] = float(np.abs(np.asarray(s["joint_pos"], float)
-                                                      - np.asarray(ref["joint_pos"], float)).max())
-            o = s["obs"]
-            pl.pred, pl.ps._near = dict(o["pred"]), {(a, b): v for a, b, v in o["near_hyst"]}
-            pl.objs, pl.grip, pl.contacts, pl.support = obs_from_json(o["raw"])
-            pl.near_target = bool(np.linalg.norm(pl.grip.pos - pl.objs["o3"].pos) <= 0.05)
-            out.update(self._branch(pl, spec))
-            raise _Branched
+            def on(env_, pl, rec, s, imgs):
+                if rec["k"] != r["k"]:
+                    return False
+                if ref is not None:
+                    out["replay_maxabs"] = state_maxabs(s, ref)
+                    out["replay_obj_mm"] = round(max(float(np.linalg.norm(np.asarray(s["obj_pose"][o][:3], float)
+                                                                         - np.asarray(ref["obj_pose"][o][:3], float)))
+                                                     for o in s["obj_pose"]) * 1e3, 6)
+                    out["replay_jpos_rad"] = float(np.abs(np.asarray(s["joint_pos"], float)
+                                                          - np.asarray(ref["joint_pos"], float)).max())
+                    if out["replay_maxabs"] > REPLAY_TOL and not last:
+                        raise _Mismatch
+                o = s["obs"]
+                pl.pred, pl.ps._near = dict(o["pred"]), {(a, b): v for a, b, v in o["near_hyst"]}
+                pl.objs, pl.grip, pl.contacts, pl.support = obs_from_json(o["raw"])
+                pl.near_target = bool(np.linalg.norm(pl.grip.pos - pl.objs["o3"].pos) <= 0.05)
+                out.update(self._branch(pl, spec))
+                raise _Branched
 
-        canonical_prefix(self.env)
-        try:
-            run_snapshot_episode(self.env, r["seed"], r["kind"], on_snapshot=on)
-        except _Branched:
-            pass
-        if "success" not in out:
-            raise RuntimeError(f"replay never reached snapshot k={r['k']} (seed {r['seed']} {r['kind']})")
-        return out
+            _pre_replay(self.env, how, r["seed"], r["kind"])
+            try:
+                run_snapshot_episode(self.env, r["seed"], r["kind"], on_snapshot=on)
+            except (_Branched, _Mismatch):
+                pass
+            if "success" in out:
+                out["replay_attempts"] = attempt + 1
+                return out
+        raise RuntimeError(f"replay never reached snapshot k={r['k']} (seed {r['seed']} {r['kind']})")
 
     def label(self, snap: dict, question: str, options) -> dict:
         from .snapshot import PHASE_ORDER
@@ -288,6 +298,35 @@ class Labeler:
 
 class _Branched(Exception):
     pass
+
+
+class _Mismatch(Exception):
+    pass
+
+
+# Pre-replay histories, tried in order until the replay is bit-exact at snapshot k (pool_replay_debug.md):
+# "prefix" = the canonical prefix only (the original method); "prev_episode" = the pool generator's own history
+# (previous POOL seed complete, then the prefix); "dev0_episode" = DEV 0 P0 complete, then the prefix (= warmup);
+# "self_episode" = the same seed complete, then the prefix. Each failed try is itself part of the history of the next.
+# Measured (pool_replay_debug.md): 3 histories x 3 left ep2047 k23 unrecovered in 7 of 26 rollouts, x 5 in 6.
+REPLAY_HISTORIES = ("prefix", "prev_episode", "dev0_episode", "self_episode") * 4
+REPLAY_TOL = 0.0  # max |state diff| accepted at k (bit-exact)
+
+
+def _pre_replay(env, how: str, seed: int, kind: str) -> None:
+    from ..cli_pool import canonical_prefix, run_snapshot_episode
+    from .snapshot import POOL_SEEDS, pool_kind
+    if how != "prefix":
+        prev = seed - 1
+        if how == "self_episode":
+            s, k = seed, kind
+        elif how == "prev_episode" and prev in POOL_SEEDS:
+            s, k = prev, pool_kind(prev)
+        else:
+            s, k = 0, "P0"
+        canonical_prefix(env)
+        run_snapshot_episode(env, s, k)
+    canonical_prefix(env)
 
 
 def _progress(pl) -> dict:

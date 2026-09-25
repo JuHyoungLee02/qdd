@@ -123,3 +123,92 @@ def test_select_rule_prereg():
     assert L.select_rule(st) == "short3"
     assert L.select_rule({"plan": (0.5, 0.1)}) is None
     assert L.select_rule({"plan": (0.95, 0.10), "short1": (0.95, 0.12)}) == "plan"
+
+
+# ---- replay restore (docs/stage3/results/pool_replay_debug.md): the rerun depends on what the process ran before
+# (hidden PhysX order state), so a replay is checked against the stored snapshot and, when it is not bit-exact,
+# run again after another pre-replay history instead of branching from a wrong state.
+def _rstate(off):
+    raw = {"objs": {"o3": {"pos": [0.4, -0.2, 0.8], "quat": [1, 0, 0, 0], "he": [0.04, 0.04, 0.05]}},
+           "grip": {"w": 0.1, "effort": 0.0, "pos": [0.4, -0.2, 0.9]}, "contacts": [], "support": {}}
+    return {"joint_pos": np.zeros(3) + off, "joint_vel": np.zeros(3),
+            "obj_pose": {"o3": np.array([0.4 + off, -0.2, 0.8, 1, 0, 0, 0])}, "obj_vel": {"o3": np.zeros(6)},
+            "obs": {"pred": {}, "near_hyst": [], "raw": raw}}
+
+
+class _RPL:
+    class ps:  # noqa: N801 (planner predicate state stand-in)
+        _near = {}
+
+
+class _RLab(L.Labeler):
+    def __init__(self):
+        self.env, self.cache, self.n_rollouts, self.sim_s = object(), {}, 0, 0.0
+
+    def _branch(self, pl, spec):
+        return {"success": True, "fail": False}
+
+
+def _fake_replays(monkeypatch, offsets):
+    """Replays whose state at every snapshot is off by offsets[i] (m) on the i-th replay; None = the replay ends
+    before snapshot k (a diverged run that finished early)."""
+    import harvest.cli_pool as CP
+    calls, it = [], iter(offsets)
+
+    def prefix(env):
+        calls.append("prefix")
+
+    def run(env, seed, kind, cams=(), on_snapshot=None, **kw):
+        calls.append(("run", seed, kind, on_snapshot is not None))
+        if on_snapshot is None:
+            return {}
+        off = next(it)
+        for k in range(4 if off is not None else 1):
+            on_snapshot(env, _RPL(), {"k": k}, _rstate(off or 0.0), {})
+        return {}
+
+    monkeypatch.setattr(CP, "canonical_prefix", prefix)
+    monkeypatch.setattr(CP, "run_snapshot_episode", run)
+    return calls
+
+
+_RSNAP = {"key": "ep2052_k2", "state": _rstate(0.0), "oracle": ORA, "replay": {"seed": 2052, "kind": "P0", "k": 2}}
+
+
+def test_replay_exact_on_first_try_costs_one_prefix(monkeypatch):
+    calls = _fake_replays(monkeypatch, [0.0])
+    out = _RLab()._replay_rollout(_RSNAP, ("plan",))
+    assert out["success"] and out["replay_maxabs"] == 0.0 and out["replay_attempts"] == 1
+    assert calls == ["prefix", ("run", 2052, "P0", True)]
+
+
+def test_replay_mismatch_is_retried_after_another_history(monkeypatch):
+    from harvest.sim.snapshot import pool_kind
+    calls = _fake_replays(monkeypatch, [0.02, None, 0.0])  # off by 2 cm, then ends before k, then exact
+    out = _RLab()._replay_rollout(_RSNAP, ("plan",))
+    assert out["success"] and out["replay_maxabs"] == 0.0 and out["replay_obj_mm"] == 0.0
+    assert out["replay_attempts"] == 3
+    # the 2nd try first re-runs the pool generator's own history: the previous POOL seed complete, then the prefix
+    assert calls[2:6] == ["prefix", ("run", 2051, pool_kind(2051), False), "prefix", ("run", 2052, "P0", True)]
+
+
+def test_replay_fourth_try_runs_the_seed_itself_complete_first(monkeypatch):
+    calls = _fake_replays(monkeypatch, [0.02, 0.02, 0.02, 0.0])
+    out = _RLab()._replay_rollout(_RSNAP, ("plan",))
+    assert out["replay_attempts"] == 4 and out["replay_maxabs"] == 0.0
+    # 4th try history: prefix, the same seed complete (no snapshot hook), prefix, then the replay itself
+    assert calls[-4:] == ["prefix", ("run", 2052, "P0", False), "prefix", ("run", 2052, "P0", True)]
+
+
+def test_replay_mismatch_on_every_try_is_reported_not_hidden(monkeypatch):
+    n = len(L.REPLAY_HISTORIES)
+    _fake_replays(monkeypatch, [0.02] * n)
+    out = _RLab()._replay_rollout(_RSNAP, ("plan",))
+    assert out["replay_attempts"] == n and out["success"]  # branched from the last try, mismatch kept in the row
+    assert out["replay_obj_mm"] == pytest.approx(20.0)
+
+
+def test_replay_never_reaching_k_still_raises(monkeypatch):
+    _fake_replays(monkeypatch, [None] * len(L.REPLAY_HISTORIES))
+    with pytest.raises(RuntimeError, match="never reached"):
+        _RLab()._replay_rollout(_RSNAP, ("plan",))
