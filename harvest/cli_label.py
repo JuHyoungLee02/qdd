@@ -34,6 +34,15 @@ def questions_for(oracle: dict) -> list[str]:
     return qs
 
 
+def replay_max(outs: dict, field: str):
+    """Largest replay distance over a row's outcomes; None (= no bit-identity evidence, untrusted: canon §78 (1),
+    §80 [Claude decision] (1)) if any outcome has no number for it (R7 cycle 15 N10: was written as 0.0 = trusted)."""
+    vs = [o.get(field) for o in outs.values()]
+    if not vs or any(not isinstance(v, (int, float)) or isinstance(v, bool) for v in vs):
+        return None
+    return max(vs)
+
+
 def label_snapshot(lab, snap: dict, present, rule: str = "plan") -> list[dict]:
     from .sim.snapshot import PHASE_ORDER
     rows = []
@@ -47,9 +56,9 @@ def label_snapshot(lab, snap: dict, present, rule: str = "plan") -> list[dict]:
                      "best_by_rule": by_rule, "scores_plan": r["scores"], "oracle_key": ok,
                      "oracle_in_best": {ru: ok in b for ru, b in by_rule.items()}, "n_options": len(outs),
                      "outcomes": {k: {x: o.get(x) for x in OUT_FIELDS} for k, o in outs.items()},
-                     "replay_maxabs": max([o.get("replay_maxabs") or 0.0 for o in outs.values()]),
-                     "replay_obj_mm": max([o.get("replay_obj_mm") or 0.0 for o in outs.values()]),
-                     "replay_jpos_rad": max([o.get("replay_jpos_rad") or 0.0 for o in outs.values()]),
+                     "replay_maxabs": replay_max(outs, "replay_maxabs"),
+                     "replay_obj_mm": replay_max(outs, "replay_obj_mm"),
+                     "replay_jpos_rad": replay_max(outs, "replay_jpos_rad"),
                      "wall_s": round(time.perf_counter() - t0, 2)})
     return rows
 

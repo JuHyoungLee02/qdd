@@ -21,7 +21,7 @@
 - 기존 시험 수정 1개: `tests/train/test_stagea_data.py` `_row`에 `replay_maxabs: 0.0`(실제 `cli_label` 행은 늘 이 필드가 있음 — 없으면 이제 불신이라 6개가 실패했다).
 
 ## 3. 실제 자료 확인 (파드, 읽기 전용)
-- 라벨 행(`pod_inspect.py`): 풀 `data/pool/labels` 6,627행 — `replay_maxabs` > 0 **886행·29편**, 0 5,741, 필드 없음·null 0(정본 §78 (1)의 수와 같음). `data/pool_selfcheck` 4,970행 — > 0 597행·13편. 옛 `pool_superseded_liftcut/*` 자기 점검 폴더도 필드 있음.
+- 라벨 행(`pod_inspect.py`): 풀 `data/pool/labels` 6,627행 — `replay_maxabs` > 0 **886행·29편**, 0 5,741, 필드 없음·null 0(정본 §78 (1)의 수와 같음). `data/pool_selfcheck` 4,970행 — > 0 597행·13편 [정정 R7 15회차 D-2, 정본 §81: **13시드·20편** — 자체 점검은 편 = 시드 × 섭동(DEV 30시드 × P0–P2 = 90편, 정본 §65)이고 `pod_inspect.py`는 시드만 셌다; 파드 재확인 3P1·4P1·6P0·6P2·9P0·9P2·10P1·13P0·13P2·16P1·17P1·20P1·21P1·24P0·24P1·24P2·25P1·26P0·26P1·26P2]. 옛 `pool_superseded_liftcut/*` 자기 점검 폴더도 필드 있음.
 - S-E2E 판정: 커밋 판(0b056b8, sha256 `476e4098…` = 파드 `logs/se2e/se2e_verdict.py`)을 다시 돌린 출력 = `verdict.json` 바이트 동일. 새 판(sha256 `6bfc674b…` = 로컬 LF)으로 `se2e_verdict.py /data/harvest/ckpt/se2e se2e_A_s0 se2e_B_s1 4686 2000 /data/harvest/logs/se2e` → `/data/harvest/logs/se2e/verdict_v2.json`(sha256 `850e7083…`): `verdict.json`의 모든 값 같음(`cmp_verdict.py` 바뀐·빠진 키 0), 더해진 키 `b.expected_first_last3` [0, 4000, 4500, 4686]·`b.steps_ok` 참·`e.window_ok` 참(두 시드) → (d) 참, (e) "tolerance"·"tolerance" — **판정 불변**. 드라이버 인자 없이 → rc 1.
 
 ## 4. 시험 묶음

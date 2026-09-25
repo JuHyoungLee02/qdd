@@ -264,6 +264,7 @@ def gen(out: str, variant: str, tasks, kinds, seeds, stale_s: float = 1800.0, H:
             if env is None:
                 env = _make_env(variant)
                 warmup(env)  # the canonical run must not be the process's first run (replay exactness, pool.md)
+                # [not sufficient: canon §78 — only the hard-reset build replays bit-identically; R7 cycle 15 D-1]
                 os.makedirs(os.path.dirname(chain), exist_ok=True)
             prefix(env, task)
             t_pre = time.perf_counter() - t0

@@ -408,6 +408,7 @@ def load_truth(eps, truth: str, outcome_dirs=None, stats: dict | None = None) ->
                     out.setdefault((r["kind"], r["seed"], r["k"]), {})[r["question"]] = set(keys)
     if stats is not None:
         add_trust_stats(stats, rule, kept, excluded)
+        stats["questions"] = list(QUESTIONS)  # rows of other questions (fine_dir) are not counted (R7 c15 N3)
     return out
 
 

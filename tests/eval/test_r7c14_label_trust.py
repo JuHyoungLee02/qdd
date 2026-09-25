@@ -13,6 +13,8 @@ from harvest.sim import labeler as L
 from harvest.sim.snapshot import PHASE_ORDER
 from harvest.train import stagea_data as D
 
+Q5 = list(common.QUESTIONS)  # load_truth's counted questions (R7 cycle 15 N3)
+
 
 def _out(dist):
     cps = {f"{h:g}": {"phase": "carry", "dist_m": dist, "d_start": 0.2} for h in L.CHECKPOINTS_S}
@@ -57,7 +59,7 @@ def test_load_truth_outcome_drops_rows_whose_replay_was_not_bit_identical(tmp_pa
     assert "dir_z" not in t.get(("P0", 2027, 4), {})  # replay_maxabs 0.37: not a truth
     assert t[("P0", 2027, 4)] == {"target": {L.option_keys("target", ("o3", "o5"))[0]}}  # same snapshot, bit-exact
     assert ("P0", 2027, 5) not in t  # no replay evidence
-    assert stats == {"rule": "plan", "rows_kept": 2, "rows_excluded_replay_not_bit_identical": 2}
+    assert stats == {"rule": "plan", "rows_kept": 2, "rows_excluded_replay_not_bit_identical": 2, "questions": Q5}
 
 
 def test_load_truth_stats_accumulate_and_labels_v2_is_untouched(tmp_path, dev_dirs):
@@ -95,7 +97,7 @@ def test_e05_outcome_truth_excludes_untrusted_rows_and_reports_the_count(dev_dir
               "--truth", "outcome:plan", "--outcome-dirs", str(od)])
     meta = json.load(open(os.path.join(out, "e05.json"), encoding="utf-8"))["meta"]
     assert bad > 0 and meta["truth_label_trust"] == {"rule": "plan", "rows_kept": n - bad,
-                                                     "rows_excluded_replay_not_bit_identical": bad}
+                                                     "rows_excluded_replay_not_bit_identical": bad, "questions": Q5}
 
 
 def test_rd_and_calib_report_the_excluded_count(dev_dirs, tmp_path, monkeypatch):
@@ -109,14 +111,15 @@ def test_rd_and_calib_report_the_excluded_count(dev_dirs, tmp_path, monkeypatch)
              "--n-boot", "50", "--truth", "outcome:plan", "--outcome-dirs", str(od)])
     meta = json.load(open(os.path.join(out, "rd.json"), encoding="utf-8"))["meta"]
     assert meta["truth_label_trust"] == {"standard": {"rule": "plan", "rows_kept": n - bad,
-                                                      "rows_excluded_replay_not_bit_identical": bad}}
+                                                      "rows_excluded_replay_not_bit_identical": bad,
+                                                      "questions": Q5}}
     out = str(tmp_path / "cal")
     calib.main(["--model", "mock", "--out", out, "--fit-data", dev_dirs["P0"], "--fit-split", "dev",
                 "--heldout", dev_dirs["P1"], "--heldout-split", "dev", "--n-boot", "50",
                 "--truth", "outcome:plan", "--outcome-dirs", str(od)])
     meta = json.load(open(os.path.join(out, "calib.json"), encoding="utf-8"))["meta"]
     assert meta["truth_label_trust"] == {"rule": "plan", "rows_kept": n - bad,
-                                         "rows_excluded_replay_not_bit_identical": bad}
+                                         "rows_excluded_replay_not_bit_identical": bad, "questions": Q5}
 
 
 # ------------------------------------------------------------------------------------------ stage A
@@ -171,7 +174,8 @@ def test_stagea_train_records_the_excluded_count(tmp_path):
     stats = {}
     items = T._items(a, stats)
     assert len(items) == len(D.QUESTIONS) - 1
-    assert stats == {"rule": "plan", "rows_kept": len(D.QUESTIONS) - 1, "rows_excluded_replay_not_bit_identical": 1}
+    assert stats == {"rule": "plan", "rows_kept": len(D.QUESTIONS) - 1, "rows_excluded_replay_not_bit_identical": 1,
+                     "questions": T.STAGEA_TRUST_QUESTIONS}  # R7 c15 N3
 
 
 # ------------------------------------------------------------------------------------------ labels_v2 self-check

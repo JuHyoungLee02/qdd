@@ -261,10 +261,20 @@ def stratified_val(va, n_per_source: int, seed: int = 0):
                                               else rng.sample(by[src], n_per_source))]
 
 
-# settings that change the training trajectory: a resumed run must use the checkpoint's values
+# settings that change the training trajectory (or the logged evaluation sets): a resumed run must use the
+# checkpoint's values. R7 cycle 15 N2: + the prereg_se2e_diag options (schedule, warmup, train subset / fraction,
+# train-set evaluation) and the prereg_se2e_temporal options (camera layout, motion line / bins / dropout, rows root).
 RESUME_KEYS = ("data", "pool", "rows", "se2e_root", "se2e_kinds", "no_labels", "state", "no_wrist", "dev_val_seeds",
                "model", "mode", "ki", "lam_dec", "lam_act", "lam_aux", "lam_ver", "lr", "lr_heads", "batch", "seed",
-               "epochs", "max_steps", "max_train", "max_val", "val_per_kind", "val_seed", "no_share", "init_adapter")
+               "epochs", "max_steps", "max_train", "max_val", "val_per_kind", "val_seed", "no_share", "init_adapter",
+               "lr_schedule", "warmup_steps", "train_subset", "train_subset_seed", "train_fraction",
+               "eval_train_subset", "eval_train_per_kind",
+               "camera_layout", "motion_line", "motion_bins", "motion_dropout", "se2e_t_root")
+# every other option of `train` (bookkeeping: names, output, cadence, memory). eval_every: evaluate() uses its own
+# generator, so the trajectory does not depend on it; init_weights: refused together with --resume (the weights come
+# from the checkpoint); grad_ckpt: recomputation only. A new option must be added to one of the two (test).
+RESUME_FREE = ("cmd", "run", "out_root", "resume", "stop_at", "overwrite", "reload_check", "save_every", "eval_every",
+               "grad_ckpt", "init_weights")
 
 
 def val_subset(va, max_val: int, val_per_kind: int, val_seed: int):
@@ -275,7 +285,11 @@ def val_subset(va, max_val: int, val_per_kind: int, val_seed: int):
 
 
 def check_resume_args(saved: dict, now: dict):
-    bad = {k: (saved.get(k), now.get(k)) for k in RESUME_KEYS if saved.get(k) != now.get(k)}
+    """Refuse a resume whose RESUME_KEYS differ from the checkpoint's. A key missing from the saved args (a checkpoint
+    written before the option existed) counts as the option's default: every option was added with a default that
+    keeps the earlier behaviour (prereg_se2e_diag section 1, prereg_se2e_temporal)."""
+    d = vars(build_parser().parse_args(["train", "--run", "_"]))
+    bad = {k: (saved.get(k, d[k]), now.get(k, d[k])) for k in RESUME_KEYS if saved.get(k, d[k]) != now.get(k, d[k])}
     if bad:
         raise SystemExit(f"--resume: settings differ from the checkpoint's run (saved, now): {bad}")
 

@@ -210,6 +210,11 @@ def _seedset(spec):
     return out
 
 
+# stage-A OutcomeLabels counts every row of a snapshot's label file, fine_dir (near contact) included, unlike
+# eval.common.load_truth (the five QUESTIONS only) -- on the pool 886 vs 805 untrusted rows (R7 cycle 15 N3)
+STAGEA_TRUST_QUESTIONS = "all label rows (dir_xy, dir_z, mag_coarse, target, phase + fine_dir near contact)"
+
+
 def _items(a, stats=None):
     """All items of --pool; stats (optional) collects the outcome-label trust counts (canon §78 (1))."""
     from .stagea_data import load_pool
@@ -220,6 +225,8 @@ def _items(a, stats=None):
                            source_factory=source_factory(a.target_source, a.rule, a.partial, a.labels_v2 or None,
                                                          stats),
                            cameras=a.cameras)
+    if stats:  # outcome labels were read: say which rows the counts cover (R7 cycle 15 N3)
+        stats["questions"] = STAGEA_TRUST_QUESTIONS
     return items
 
 

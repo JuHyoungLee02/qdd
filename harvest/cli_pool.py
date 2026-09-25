@@ -200,7 +200,10 @@ def canonical_prefix(env) -> None:
     Measured (v2 CPU): cutting this prefix at the first LIFT snapshot left residual differences (pool ep2000 replay
     max|diff| up to 0.0099); cut at the first CARRY snapshot (mug held ~12 cm above the table, so its table pair is
     gone) the next run was bit-identical after 6 different histories (aborted at k2/k3/k9/k20, complete, prefix
-    only). The first run after make_env is still different -> warmup()."""
+    only). The first run after make_env is still different -> warmup().
+    [Correction R7 cycle 15 D-1, canon §78 / pool_replay_debug.md: this prefix does NOT remove the history
+    dependence (CPU PhysX keeps scene state across env.reset(); 886 pool label rows of 29 episodes are not
+    bit-identical); a bit-identical rerun needs the hard-reset build (make_env(hard_reset=True), the default).]"""
     def on(env_, pl, rec, s, imgs):
         if rec["phase"] == "carry":
             raise _Stop
@@ -216,7 +219,8 @@ def warmup(env) -> None:
     replay-exact, and a canonical prefix that follows only another prefix leaves a different history than one that
     follows an episode (measured v2 CPU, DEV 0: tray/box poses 1e-8 apart at t=0, mug 6 mm apart at open). So:
     one prefix (absorbs the first-run effect) and one complete DEV 0 P0 episode; every pool episode, self-check
-    episode and replay then sees "episode, prefix" before its reset."""
+    episode and replay then sees "episode, prefix" before its reset. [Correction R7 cycle 15 D-1, canon §78: this
+    does not make replays bit-identical either; only the hard-reset build does (see canonical_prefix).]"""
     canonical_prefix(env)
     run_snapshot_episode(env, 0, "P0")
 
@@ -493,7 +497,8 @@ def pool(seeds, out: str, variant: str = "standard"):
         kind = S.pool_kind(s)
         if env is None:
             env = make_env(s, headless=True, cameras=cams, depth=False, variant=variant)
-            warmup(env)  # the canonical run itself must not be the process's first run (replay exactness)
+            warmup(env)  # the canonical run itself must not be the process's first run (not sufficient for replay
+            # exactness: canon §78, only the hard-reset build is bit-identical — R7 cycle 15 D-1)
         canonical_prefix(env)
         res = run_snapshot_episode(env, s, kind, cams=cams)
         meta = write_episode(res, out, cams)
