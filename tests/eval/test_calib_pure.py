@@ -82,7 +82,7 @@ def test_evaluate_reports_the_e1_quantities():
 
 
 def test_judge_question_follows_e1_rules():
-    ev = {"ece_cal": 0.03, "ece_cal_ci": [0.02, 0.05], "auroc_cal": {"mean": 0.8, "ci": [0.72, 0.86]},
+    ev = {"ece_cal_mass": 0.03, "ece_cal_mass_ci": [0.02, 0.05], "auroc_cal": {"mean": 0.8, "ci": [0.72, 0.86]},
           "wrong": 40, "theta": {"0.8": {"acc": {"mean": 0.85, "ci": [0.8, 0.9]}, "coverage": 0.4}},
           "j5": {"0.1": {"coverage": {"mean": 0.9, "ci": [0.88, 0.92]}, "singleton_rate": 0.6,
                          "singleton_acc": 0.93}}}

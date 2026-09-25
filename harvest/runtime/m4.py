@@ -11,8 +11,9 @@ J3 requires of agreement votes). Votes are counted by option_key (§27 R5), neve
 E1). What is kept from §4.2:
   - premise epoch: a vote whose premise_epoch < ledger epoch is dropped (#6); STALE_MAX drop;
   - FROZEN slots (already started) and COMMITTED slots are immutable (log only, #1);
-  - challenger replaces the incumbent only after the defer window W (W+1 when either choice is irreversible, §4.6),
-    or at once when an expected-vs-measured check (b) != OK arrived after the incumbent was set (gate_hard);
+  - challenger replaces the incumbent only after the defer window W (W+1 when either choice is irreversible, §4.6):
+    W = further votes for the same challenger needed after the first challenging vote (§4.2 pseudocode; W = 0
+    replaces at the first one, W = 1 at the second; canon §72), or at once when an expected-vs-measured check (b) != OK arrived after the incumbent was set (gate_hard);
   - prefix-only commit: LA-n (last n votes agree) or >= 3 votes with agreement share >= gamma; flip_score > FLIP_TH
     stops new commits (FLIP_TH off until E0.5 sets it);
   - (b) outcome per executed step: DEVIATE -> epoch+1, future uncommitted slots reopened, early call;
@@ -51,6 +52,10 @@ class M4Params:
     agree: str = "consensus"
     feedback_b: bool = True
     max_inflight: int | None = None
+
+    def __post_init__(self):
+        if self.W < 0:
+            raise ValueError(f"M4 W = {self.W}: the defer window is a vote count >= 0 (canon §72)")
 
 
 @dataclass
@@ -174,7 +179,10 @@ class CommitLedger:
             if s.defer_left <= 0:
                 return self._replace(s, v.choice, now)
             return "defer"
-        s.challenger, s.defer_left, s.status = v.choice, self.p.W + (1 if irr else 0), "CONTESTED"
+        w = self.p.W + (1 if irr else 0)
+        if w <= 0:  # W = 0: no defer window, the first challenging vote replaces (canon §72)
+            return self._replace(s, v.choice, now)
+        s.challenger, s.defer_left, s.status = v.choice, w, "CONTESTED"
         return "challenger"
 
     def _replace(self, s: Slot, choice: str, now: float) -> str:

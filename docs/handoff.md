@@ -1,6 +1,6 @@
 # 인수인계: 새 세션이 가장 먼저 읽을 문서
 
-마지막 갱신: 2026-09-25 01:48 UTC (R1–R6 완료, R7 순회 중 — 회차별 판정·연속 무결 횟수는 §2.8 마지막 줄, 정본 §1~§71)
+마지막 갱신: 2026-09-25 03:11 UTC (R1–R6 완료, R7 순회 중 — 회차별 판정·연속 무결 횟수는 §2.8 마지막 줄, 정본 §1~§72)
 
 > 현재 판본: 정본 `00-interfaces.md` **§1~§71**(뒤 절이 앞 절을 덮는다). 단계 3 이전 판본(plan v6.8, SUMMARY v3.10, §1의 v5.6)은 옛 기록이다. 단계 3 이후 최신 상태는 §2.7·§2.8.
 
@@ -96,3 +96,4 @@
 - **R7 4회차(2026-09-25 01:14 UTC) FAIL**: DEFECT 0, DOC 2(M1 `fused_action.py` 머리 설명, M2 `r5_closed_loop.md`의 fused decide = vLLM 서술) — 코드 무결 4회 연속(→ **정정(R7 5회차 P1)**: 3회 연속 — 2·3·4회차, 1회차는 코드 DEFECT 2). 정정(+ `r6_eval.md` 같은 서술) → 정본 §70. 연속 무결 0회 → 5회차.
 - **R7 5회차(2026-09-25 01:31 UTC) FAIL**: DEFECT 0, DOC 2(P1 이 문서 머리 상태 줄이 §70 뒤 갱신되지 않음·코드 무결 횟수 오기, P2 `r6_eval.md:54`·`r5_closed_loop.md:98`의 '단계 B 실체크포인트 어댑터 없음' 서술 — pre-R7 519de26에서 해결됨), SCOPED 8, NOTE 13. **코드 무결 4회 연속(2–5회차)**. 보고서 `docs/stage3/results/r7_cycle5.md`. → 문서 전수 정리 sweep6(2026-09-25 01:48 UTC): P1·P2, 결과 문서·D2x 열린 문제 목록의 해결·범위 표시, 102°·`ZED_M` 옛 카메라 서술, user-log 62 풀이 표시, 코드 주석(`stagea_train` 사용법, `gen` 거부 문구, `m4.py`·`closed.py` 머리 설명, Jev 옛 도구) — 기록 `docs/stage3/results/r7_sweep6.md`, 정본 §71. 연속 무결 0회 → 6회차.
 - **R7 6회차(2026-09-25 02:20 UTC) PASS**: DEFECT 0, DOC 0, SCOPED 8, NOTE 14 — sweep6 표시 28개 표본 대조 모두 사실, 단계 B 실체크포인트 융합 폐루프까지 실행. **연속 무결 1회** → 7회차(코드 무변경 상태에서). 보고서 `docs/stage3/results/r7_cycle6.md`. NOTE N1(`closed.py` 융합 판 `meta.prompt_config`가 모듈형 구성)은 2회 연속 무결 확정 뒤 수정.
+- **R7 7회차(2026-09-25 02:45 UTC) FAIL**: DEFECT 1(E1 — 평가 스크립트 `e05`·`rd`·`calib`·`closed`의 부트스트랩 기본 2,000회 ≠ 사전 등록 10,000회(E §1.7·EVAL §4.2), 출력에 횟수 없음), DOC 0, SCOPED 8, NOTE 14. 보고서 `docs/stage3/results/r7_cycle7.md`. → 수정(2026-09-25 03:11 UTC, `docs/stage3/results/r7c7_fixes.md`, 정본 §72): 기본값 10,000 + 출력 `meta.bootstrap`(횟수·seed·재표집 단위), 사전 등록 대조 N2(M4 W = 첫 도전 표 뒤 더 필요한 표 수, W=0 즉시 교체, 정본 §5 'W=2' → W=1 정정, 기본 C0–C6 동작 불변)·N3(판정 10 Holm 쌍별 결과)·N4(E1 ECE 판정 = 15개 동일 질량 구간)·N5(폐루프 RD 재표집 = 레이아웃 시드)·N7(융합 판 `meta.prompt_config` = 체크포인트 구성), N1(이 문서 머리 시각). 파드 1회차 잔여 `code_r7c1*`·`cache/pyc_r7c1*`·`ir/kitcache/cyclo-r7c1*`(약 1.7 GB) 삭제. 시험 로컬 800 passed/11 skipped, 파드 CPU 842/3. **코드 변경 → 연속 무결 0회** → 8회차.

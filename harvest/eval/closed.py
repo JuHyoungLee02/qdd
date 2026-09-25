@@ -14,7 +14,7 @@ OursPolicy, clock simlat (latency-faithful track) or sync, logging per §42 (pol
 sidecar JSONL + frames + summary in trial_metadata). The outer aggregates success rate (seed-cluster bootstrap),
 time to success, decision latency p50/p95, commit ratio, calls, blocked time, RTF, Astra calls, C0 stop ticks, J5
 counts, the paired condition differences (C5 - Cx per variant) and the closed-loop RD = 1 - SR_variant / SR_standard
-(paired by layout seed, bootstrap). Output <out>/closed.json + closed.md + <out>/<variant>/<condition>/ (IR logs).
+(paired by layout seed; the bootstrap resamples layout seeds with all their epochs, EVAL §4.2, canon §72). Output <out>/closed.json + closed.md + <out>/<variant>/<condition>/ (IR logs).
 Backends: modular = Jev-L selector (vLLM) or the mock code rule; fused = MockFusedModel (--model mock_fused) or a REAL
 stage-B checkpoint dir (stageb.json + adapter/): the outer process serves it with runtime.fused_model (HF shared-prefix
 decide + verification head + CUDA-graph expert chunk) on --gpu, the Isaac worker talks to it over HTTP (FusedClient).
@@ -31,6 +31,8 @@ import time
 from collections import defaultdict
 
 import numpy as np
+
+from ..analysis.stats import N_BOOT
 
 IR_DIR = "/data/harvest/ir"
 ISAAC_GPUS = ("0", "1")  # renders only on GPU 0 / 1 (GPU 2 DEVICE_LOST when rendering, memory rule)
@@ -51,12 +53,16 @@ def _med(xs):
     return {"median": round(float(np.median(xs)), 4) if xs else None, "n": len(xs)}
 
 
-def aggregate(trials, n_boot: int = 2000) -> dict:
+BOOT_UNIT = "layout seed (all epochs of a seed resampled together; variants / conditions paired by seed)"
+
+
+def aggregate(trials, n_boot: int = N_BOOT) -> dict:
     """trials: [{variant, condition, seed, epoch, success, sim_time, termination, summary}]."""
     cells = defaultdict(list)
     for t in trials:
         cells[(t["condition"], t["variant"])].append(t)
-    out = {"cells": {}, "condition_diff": {}, "rd": {}}
+    from .common import bootstrap_meta
+    out = {"cells": {}, "condition_diff": {}, "rd": {}, "bootstrap": bootstrap_meta(n_boot, BOOT_UNIT)}
     for (c, v), ts in sorted(cells.items()):
         S = [t["summary"] or {} for t in ts]
         by = defaultdict(list)
@@ -103,12 +109,18 @@ def aggregate(trials, n_boot: int = 2000) -> dict:
                     continue
                 a = np.array(pairs, float)
                 sr_s, sr_v = float(a[:, 0].mean()), float(a[:, 1].mean())
+                ps = defaultdict(lambda: [0.0, 0.0])  # layout seed -> [std successes, variant successes]
+                for (cc, vv, s, e), ok in succ.items():
+                    if cc == c and vv == v and (c, "standard", s, e) in succ:
+                        ps[s][0] += succ[(c, "standard", s, e)]
+                        ps[s][1] += ok
+                sums = np.array([ps[s] for s in sorted(ps)])
                 rng = np.random.default_rng(0)
                 boots = []
-                for _ in range(n_boot):
-                    b = a[rng.integers(0, len(a), len(a))]
-                    if b[:, 0].mean() > 0:
-                        boots.append(1 - b[:, 1].mean() / b[:, 0].mean())
+                for _ in range(n_boot):  # EVAL §4.2: resample the layout (seed) pairs, epochs stay with their seed
+                    b = sums[rng.integers(0, len(sums), len(sums))].sum(axis=0)
+                    if b[0] > 0:
+                        boots.append(1 - b[1] / b[0])
                 by = defaultdict(list)
                 for (cc, vv, s, e), ok in succ.items():
                     if cc == c and vv == v and (c, "standard", s, e) in succ:
@@ -118,7 +130,7 @@ def aggregate(trials, n_boot: int = 2000) -> dict:
                     "rd": round(1 - sr_v / sr_s, 4) if sr_s > 0 else None,
                     "rd_ci": [round(float(np.quantile(boots, 0.025)), 4), round(float(np.quantile(boots, 0.975)), 4)]
                     if boots else [None, None],
-                    "sr_diff": _mci(by, n_boot), "n_pairs": len(pairs)}
+                    "sr_diff": _mci(by, n_boot), "n_pairs": len(pairs), "n_seeds": len(ps)}
     return out
 
 
@@ -279,7 +291,7 @@ def _args(argv):
     ap.add_argument("--timeout", type=int, default=0, help="per worker (s); 0 = auto")
     ap.add_argument("--parallel", action="store_true", help="run the variant workers at the same time (<= 3)")
     ap.add_argument("--inst-prefix", default="r6", help="Isaac kit instance prefix; give concurrent runs different ones")
-    ap.add_argument("--n-boot", type=int, default=2000)
+    ap.add_argument("--n-boot", type=int, default=N_BOOT, help="bootstrap draws (E §1.7 / EVAL §4.2: 10,000)")
     ap.add_argument("--worker", default="", help=argparse.SUPPRESS)
     return ap.parse_args(argv)
 
@@ -309,6 +321,16 @@ def _md(res, meta) -> str:
                            [[k, v["sr_std"], v["sr_var"], v["rd"], str(v["rd_ci"]), ci_str(v["sr_diff"]),
                              v["n_pairs"]] for k, v in res["rd"].items()])]
     return "\n".join(lines)
+
+
+def run_prompt_config(selector: str, pc: dict | None, layout: str) -> dict:
+    """meta.prompt_config of a run (R7 cycle 7 N7): a stage-B checkpoint runs on its own training prompt_config
+    (the fused server's check_prompt refuses a mismatch with what the runtime feeds), everything else on the
+    modular inference config of this layout."""
+    from . import common as C
+    if selector == "stageb" and pc:
+        return {**pc, "source": "checkpoint stageb.json (fused server check_prompt enforces runtime equality)"}
+    return C.prompt_config_eval(layout)
 
 
 def run(a) -> dict:
@@ -390,7 +412,8 @@ def run(a) -> dict:
     meta = C.run_meta("closed", info, {
         "backend": a.backend, "selector": selector, "split": a.split, "seeds": seeds, "variants": variants,
         "conditions": conds, "clock": a.clock, "epochs": a.epochs, "max_seconds": a.max_seconds, "astra": a.astra,
-        "layout": layout, "mode": a.mode, "prompt_config": C.prompt_config_eval(layout), "isaac_gpu": a.isaac_gpu,
+        "layout": layout, "mode": a.mode, "prompt_config": run_prompt_config(selector, pc, layout),
+        "isaac_gpu": a.isaac_gpu, "bootstrap": res["bootstrap"],
         "calibration": a.calibration, "j5_alpha": a.j5_alpha, "hb_n": a.hb_n,
         "not_in_runtime": "C2'/C2'-S/C2-match, C3', C3'', C5-A3, C-FIX, C5' (conditions.py doc)",
         "hb_mode": a.hb_mode, "hb_budget": a.hb_budget, "verify_cal": a.verify_cal or "default (uncalibrated)",

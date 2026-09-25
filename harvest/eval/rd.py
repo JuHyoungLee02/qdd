@@ -28,6 +28,7 @@ from types import SimpleNamespace
 
 import numpy as np
 
+from ..analysis.stats import N_BOOT
 from .e05 import diff_ci, mean_ci
 
 
@@ -55,7 +56,7 @@ def _slices(keys):
     return [("pooled", keys)] + [(q, [k for k in keys if k[3] == q]) for q in qs]
 
 
-def majority(items, n_boot: int = 2000) -> dict:
+def majority(items, n_boot: int = N_BOOT) -> dict:
     """Always-pick-the-most-frequent label per question (that variant's own labels)."""
     c = defaultdict(Counter)
     for k, v in items.items():
@@ -67,7 +68,7 @@ def majority(items, n_boot: int = 2000) -> dict:
     return {"labels": lab, "pooled": mean_ci(b, n_boot)}
 
 
-def offline_rd(V: dict, n_boot: int = 2000) -> dict:
+def offline_rd(V: dict, n_boot: int = N_BOOT) -> dict:
     """V: {variant: {(kind, seed, k, q): {cluster, correct, key, y}}}; 'standard' is the reference."""
     out = {"A": {}, "majority": {}, "RD": {}}
     for v, I in V.items():
@@ -103,7 +104,7 @@ def offline_rd(V: dict, n_boot: int = 2000) -> dict:
     return out
 
 
-def drd(A: dict, B: dict, variant: str, n_boot: int = 2000) -> dict:
+def drd(A: dict, B: dict, variant: str, n_boot: int = N_BOOT) -> dict:
     """(S_A - V_A) - (S_B - V_B) per item present in all four runs, episode-cluster CI."""
     SA, VA, SB, VB = A["standard"], A[variant], B["standard"], B[variant]
     ks = sorted(set(SA) & set(VA) & set(SB) & set(VB))
@@ -151,7 +152,7 @@ def _args(argv):
     ap.add_argument("--gpu-util", type=float, default=0.30)
     ap.add_argument("--url", default="")
     ap.add_argument("--served-name", default="")
-    ap.add_argument("--n-boot", type=int, default=2000)
+    ap.add_argument("--n-boot", type=int, default=N_BOOT, help="bootstrap draws (E §1.7 / EVAL §4.2: 10,000)")
     ap.add_argument("--no-offline", action="store_true")
     ap.add_argument("--closed", action="store_true")
     ap.add_argument("--conditions", default="C5")
@@ -254,6 +255,8 @@ def main(argv=None):
         "split": a.split, "variants": vd, "seeds": {v: [list(x) for x in s] for v, s in seeds_used.items()},
         "truth": a.truth, "layout": layout, "mode": a.mode, "prompt_config": C.prompt_config_eval(layout),
         "compare": a.compare or None,
+        "bootstrap": C.bootstrap_meta(a.n_boot, "episode (kind, layout seed); standard / variant items paired by "
+                                                "(kind, seed, k, question)"),
         "runtime_s": {"total": round(time.monotonic() - t0, 1), "calls": round(t_calls, 1),
                       "vllm_ready": round(t_ready, 1)}})
     C.write_outputs(a.out, "rd", {"meta": meta, "result": res}, _md(res, meta))

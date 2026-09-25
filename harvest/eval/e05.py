@@ -27,7 +27,7 @@ from collections import Counter
 import numpy as np
 
 from ..analysis.replay import c2pp, judge_e05, la2, newest  # noqa: F401  (judge_e05 re-exported for main)
-from ..analysis.stats import cluster_diff_ci, cluster_mean_ci
+from ..analysis.stats import N_BOOT, cluster_diff_ci, cluster_mean_ci, holm_ci
 
 T_C = 0.33
 NE = "NONE_ESCALATE"
@@ -162,7 +162,7 @@ def in_perturb_window(t_step: float, events_t, win: float = 1.0) -> bool:
 
 
 # ------------------------------------------------------------------------------------------ statistics helpers
-def mean_ci(by_cluster: dict, n: int = 2000) -> dict:
+def mean_ci(by_cluster: dict, n: int = N_BOOT) -> dict:
     vals = [x for v in by_cluster.values() for x in v]
     if not vals:
         return {"mean": None, "ci": [None, None], "n": 0}
@@ -170,7 +170,7 @@ def mean_ci(by_cluster: dict, n: int = 2000) -> dict:
     return {"mean": round(float(np.mean(vals)), 4), "ci": [round(lo, 4), round(hi, 4)], "n": len(vals)}
 
 
-def diff_ci(a: dict, b: dict, n: int = 2000) -> dict:
+def diff_ci(a: dict, b: dict, n: int = N_BOOT) -> dict:
     va = [x for v in a.values() for x in v]
     vb = [x for v in b.values() for x in v]
     if not va or not vb:
@@ -180,10 +180,11 @@ def diff_ci(a: dict, b: dict, n: int = 2000) -> dict:
             "n": [len(va), len(vb)]}
 
 
-def block_diff_lo(blocks, n: int = 2000) -> float:
+def block_diff_lo(blocks, n: int = N_BOOT) -> float:
     """Judgment 10: blocks = [ {cluster: [flip 0/1]} per time block ]. For every block pair the CI of the floor
-    difference at Bonferroni level 1 - 0.05/m (stand-in for Holm on intervals); returns the largest signed lower
-    bound max(lo, -hi) (> 0 = a significant block difference)."""
+    difference at level 1 - 0.05/m; returns the largest signed lower bound max(lo, -hi). > 0 exactly when Holm
+    rejects at least one pair (Holm's first step is this level), so it is the judgment-10 decision; which pairs
+    differ is block_diff_holm (canon §72)."""
     pairs = [(i, j) for i in range(len(blocks)) for j in range(i + 1, len(blocks))]
     if not pairs:
         return float("nan")
@@ -193,6 +194,17 @@ def block_diff_lo(blocks, n: int = 2000) -> float:
         lo, hi = cluster_diff_ci(blocks[j], blocks[i], n=n, level=level)
         best = max(best, lo, -hi)
     return float(best)
+
+
+def block_diff_holm(blocks, n: int = N_BOOT, alpha: float = 0.05) -> dict:
+    """Judgment 10 per block pair (E §2A.6-10 "블록 여러 개면 Holm"): Holm step-down (stats.holm_ci) over the
+    pairwise floor differences, paired cluster bootstrap (cluster_diff_ci, same draws at every level)."""
+    pairs = {f"{i}-{j}": (i, j) for i in range(len(blocks)) for j in range(i + 1, len(blocks))}
+    r = holm_ci(lambda k, level: cluster_diff_ci(blocks[pairs[k][1]], blocks[pairs[k][0]], n=n, level=level),
+                list(pairs), alpha)
+    r = {k: {"reject": v["reject"], "lo": round(v["lo"], 4), "hi": round(v["hi"], 4), "level": round(v["level"], 6)}
+         for k, v in r.items()}
+    return {"pairs": r, "any": any(v["reject"] for v in r.values()), "alpha": alpha}
 
 
 # ------------------------------------------------------------------------------------------ analysis
@@ -228,7 +240,7 @@ def _q(xs, q):
     return round(float(np.quantile(xs, q)), 4) if xs else None
 
 
-def analyze(eps, ans, truth, questions, d_p95: float, n_boot: int = 2000, win: float = 1.0) -> dict:
+def analyze(eps, ans, truth, questions, d_p95: float, n_boot: int = N_BOOT, win: float = 1.0) -> dict:
     """eps: [{cluster, kind, seed, success, events_t, t: {k: t}}]; ans: {(kind, seed, k): {vote: {q: key},
     same: [{q: key}] (K same-time answers, first = vote), var: {A1..A4: {q: {key, name}}}, rt: {block: [{q: key},
     {q: key}]}, s1: {q: key} (code rule), opts: {q: [A0 option keys in shown order]}, names: {q: {key: A0 name}}}};
@@ -392,6 +404,7 @@ def analyze(eps, ans, truth, questions, d_p95: float, n_boot: int = 2000, win: f
         j["layers"] = lj
     if len(fb) >= 2:
         j["block_diff_lo"] = block_diff_lo([fb[b] for b in blocks], n=n_boot)
+        out["floor"]["block_pairs_holm"] = block_diff_holm([fb[b] for b in blocks], n=n_boot)
     j = {k: v for k, v in j.items() if v is not None}
     out["judge_input"] = j
     needed = ("flip_rate_success", "gain_la2", "gain_la2_lo", "gain_c2pp", "gain_c2pp_lo")
@@ -404,6 +417,8 @@ def analyze(eps, ans, truth, questions, d_p95: float, n_boot: int = 2000, win: f
                        "s1_alone": pr["s1"]}
     jd["j8_subst_above_floor"] = {L: bool(x["subst_minus_floor"]["ci"][0] is not None
                                           and x["subst_minus_floor"]["ci"][0] > 0) for L, x in layers.items()}
+    if "block_pairs_holm" in out["floor"]:
+        jd["j10_block_pairs_holm"] = out["floor"]["block_pairs_holm"]
     out["judgments"] = jd
     return out
 
@@ -434,7 +449,7 @@ def _args(argv):
     ap.add_argument("--url", default="")
     ap.add_argument("--served-name", default="")
     ap.add_argument("--perturb-window", type=float, default=1.0)
-    ap.add_argument("--n-boot", type=int, default=2000)
+    ap.add_argument("--n-boot", type=int, default=N_BOOT, help="bootstrap draws (E §1.7: 10,000)")
     return ap.parse_args(argv)
 
 
@@ -602,6 +617,7 @@ def main(argv=None):
         "episode_data_split": dict(Counter(str(ep["lines"][0].get("split")) for ep in eps if ep["lines"])),
         "prompt_config": C.prompt_config_eval(layout), "variants": a.variants, "same_k": a.same_k,
         "blocks": a.blocks, "floor_n": a.floor_n, "n_calls": len(done),
+        "bootstrap": C.bootstrap_meta(a.n_boot, "episode (kind, seed); paired differences share the episode id"),
         "errors": sum(1 for r in done.values() if r.get("error")),
         "lat": {"p50": round(float(np.median(lat)), 4) if lat else None, "p95": p95,
                 "note": f"A0 call latency under this run's load (conc {a.conc} snapshots x K {a.same_k} concurrent); "

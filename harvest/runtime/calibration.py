@@ -13,6 +13,8 @@ import math
 
 import numpy as np
 
+from ..analysis.stats import N_BOOT
+
 FORMAT = "r6-calib-v1"
 NE = "NONE_ESCALATE"
 P_MIN = 1e-6
@@ -67,7 +69,9 @@ def pred_set(probs_cal: dict, qhat: float) -> set:
 
 
 def ece_mass(p, correct, bins: int = 15) -> float:
-    """ECE with equal-mass bins (E §3.4 "15개 동일 질량 구간")."""
+    """ECE with equal-mass bins (E §3.4 "15개 동일 질량 구간"): items sorted by confidence (stable order for ties)
+    split into min(bins, n) groups of near-equal size (numpy array_split: the first n % bins groups get one more),
+    count-weighted |acc - conf|. This is the ECE of the E1 decisions (§3.6 raw-probability rule, §3.7 judgment 1)."""
     p, c = np.asarray(p, float), np.asarray(correct, float)
     if len(p) == 0:
         return float("nan")
@@ -81,9 +85,8 @@ def ece_mass(p, correct, bins: int = 15) -> float:
 
 def fit_question(fit_t, fit_c, alphas=(0.05, 0.1, 0.2)) -> dict:
     """fit_t: items for the temperature, fit_c: items for the conformal thresholds (disjoint episodes)."""
-    from ..analysis.stats import ece
     T = fit_temperature(fit_t)
-    raw_ece = ece([max(x["probs"].values()) for x in fit_t], [x["key"] in x["truth"] for x in fit_t])
+    raw_ece = ece_mass([max(x["probs"].values()) for x in fit_t], [x["key"] in x["truth"] for x in fit_t])
     use_raw = raw_ece <= 0.03 and 0.8 <= T <= 1.25  # E §3.6
     Tu = 1.0 if use_raw else T
     scores = [1 - _p_true(apply_temperature(x["probs"], Tu), x["truth"]) for x in fit_c]
@@ -100,8 +103,9 @@ def _boot(by_cluster, stat, n, seed=0):
     return [round(lo, 4), round(hi, 4)]
 
 
-def evaluate(items, qc: dict, alphas=(0.05, 0.1, 0.2), thetas=(0.6, 0.7, 0.8), n_boot: int = 2000) -> dict:
-    """Held-out metrics of one question under its calibration qc (E §3.5 + J5 set metrics)."""
+def evaluate(items, qc: dict, alphas=(0.05, 0.1, 0.2), thetas=(0.6, 0.7, 0.8), n_boot: int = N_BOOT) -> dict:
+    """Held-out metrics of one question under its calibration qc (E §3.5 + J5 set metrics). The judged ECE is the
+    equal-mass one (ece_cal_mass + its bootstrap ci, E §3.4); ece_raw / ece_cal (equal width) are reported only."""
     from collections import defaultdict
 
     from ..analysis.stats import auroc, cluster_mean_ci, ece
@@ -126,8 +130,8 @@ def evaluate(items, qc: dict, alphas=(0.05, 0.1, 0.2), thetas=(0.6, 0.7, 0.8), n
     ev = {"n": len(rows), "wrong": int(len(rows) - sum(ok)), "acc": mci({c: [r["ok"] for r in v] for c, v in byc.items()}),
           "ece_raw": round(ece([r["p_raw"] for r in rows], ok), 5), "ece_cal": round(ece(p, ok), 5),
           "ece_cal_mass": round(ece_mass(p, ok), 5),
-          "ece_cal_ci": _boot({c: [(r["p"], r["ok"]) for r in v] for c, v in byc.items()},
-                              lambda xs: ece([a for a, _ in xs], [b for _, b in xs]), n_boot),
+          "ece_cal_mass_ci": _boot({c: [(r["p"], r["ok"]) for r in v] for c, v in byc.items()},
+                                   lambda xs: ece_mass([a for a, _ in xs], [b for _, b in xs]), n_boot),
           "brier_cal": round(float(np.mean([sum((pv - (k in r["truth"])) ** 2 for k, pv in r["pc"].items())
                                             for r in rows])), 5) if rows else None,
           "nll_cal": round(float(np.mean([-math.log(max(_p_true(r["pc"], r["truth"]), P_MIN)) for r in rows])), 5)
@@ -173,7 +177,8 @@ def judge_question(ev: dict, n_fit_j5: int, thetas=(0.6, 0.7, 0.8)) -> dict:
     < 30 wrong items (gate stays off); J5 'no guarantee' with < 400 fit items (CoFineLLM size, [가정])."""
     judgeable = ev["wrong"] >= 30
     au = ev["auroc_cal"]
-    ece_ok = ev["ece_cal"] <= 0.05 and ev["ece_cal_ci"][1] is not None and ev["ece_cal_ci"][1] <= 0.08
+    ece_ok = (ev["ece_cal_mass"] <= 0.05 and ev["ece_cal_mass_ci"][1] is not None
+              and ev["ece_cal_mass_ci"][1] <= 0.08)  # E §3.4: 15 equal-mass bins
     au_ok = judgeable and au["mean"] is not None and au["mean"] >= 0.75 and (au["ci"][0] or 0) >= 0.70
     out = {"auroc_judgeable": judgeable, "ece_ok": bool(ece_ok), "auroc_ok": bool(au_ok), "theta_gate": {},
            "j5_ok": {}, "j5_guarantee": n_fit_j5 >= 400}

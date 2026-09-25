@@ -6,7 +6,7 @@
 
 The model is asked every snapshot once (A0, S1 1 mm, §59 lead). Fit episodes are split in two halves by episode
 (§52: half 1 = per-question temperature, half 2 = J5 split-conformal thresholds); the held-out folders give the
-reported ECE (equal-width and equal-mass, 15 bins) / AUROC / theta-gate accuracy and coverage / J5 coverage, set
+reported ECE (equal-width and equal-mass, 15 bins; judgment 1 uses equal-mass, E §3.4) / AUROC / theta-gate accuracy and coverage / J5 coverage, set
 sizes, singleton rate, NONE_ESCALATE-in-set rate, singleton accuracy, with episode-cluster CIs, and the E §3.7
 judgments 1 and 8 per question. <out>/calibration.json is what OursRuntime loads (RuntimeConfig.calibration); it is
 bound to the model fingerprint and the question_id hashes. CAL (500-549) / TEST (1000-1149) need --*-split cal|test
@@ -73,7 +73,7 @@ def _args(argv):
     ap.add_argument("--gpu-util", type=float, default=0.30)
     ap.add_argument("--url", default="")
     ap.add_argument("--served-name", default="")
-    ap.add_argument("--n-boot", type=int, default=2000)
+    ap.add_argument("--n-boot", type=int, default=K.N_BOOT, help="bootstrap draws (E §1.7: 10,000)")
     return ap.parse_args(argv)
 
 
@@ -98,7 +98,7 @@ def _md(rep, meta) -> str:
         f"fit split {meta['fit_split']} ({meta['n_fit_episodes']} ep: T {meta['n_T_episodes']} / J5 "
         f"{meta['n_J5_episodes']}), held-out split {meta['heldout_split']} ({meta['n_heldout_episodes']} ep)",
         f"- runtime file: {meta['calibration_file']}", "",
-        md_table(["question", "T", "raw", "n", "acc", "ECE raw", "ECE cal", "ECE cal (mass)", "AUROC", "J5 cov (a=.1)",
+        md_table(["question", "T", "raw", "n", "acc", "ECE raw (width)", "ECE cal (width)", "ECE cal (mass, judged)", "AUROC", "J5 cov (a=.1)",
                   "set size", "singleton", "empty set", "NE in set", "singleton acc", "theta gate ok", "J5 ok (alpha)",
                   "J5 >=400 fit"], rows)])
 
@@ -168,6 +168,8 @@ def main(argv=None):
         "n_fit_episodes": len(fit), "n_T_episodes": len(hT), "n_J5_episodes": len(hC), "n_heldout_episodes": len(held),
         "truth": a.truth, "layout": layout, "mode": a.mode, "prompt_config": C.prompt_config_eval(layout),
         "question_ids": qids, "calibration_file": cal_path, "decision_only": a.decision_only,
+        "bootstrap": C.bootstrap_meta(a.n_boot, "episode (kind, seed) of the held-out set"),
+        "ece": "judged ECE = 15 equal-mass bins (E §3.4); ECE raw / cal (width) are reported only",
         "errors": sum(1 for r in done.values() if r.get("error")),
         "runtime_s": {"total": round(time.monotonic() - t0, 1), "calls": round(t_calls, 1),
                       "vllm_ready": round(getattr(srv, "t_ready", 0.0), 1)}})

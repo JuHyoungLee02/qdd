@@ -409,6 +409,13 @@ def code_sha() -> str:
     return h.hexdigest()[:16]
 
 
+def bootstrap_meta(n_boot: int, unit: str) -> dict:
+    """How the 95% intervals of a run were made (E-first §1.7, EVAL §4.2; canon §72): cluster bootstrap, percentile
+    interval, fixed seed 0 (analysis.stats), resampling unit."""
+    return {"n_boot": int(n_boot), "seed": 0, "level": 0.95, "interval": "percentile", "unit": unit,
+            "prereg": "E-first §1.7 / EVAL §4.2: cluster bootstrap 10,000"}
+
+
 def run_meta(cmd: str, info: dict, extra: dict | None = None) -> dict:
     m = {"command": cmd, "argv": sys.argv, "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
          "git": git_commit(), "code_sha": code_sha(), "host": socket.gethostname(),

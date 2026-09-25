@@ -6,7 +6,7 @@ import hashlib
 import json
 from collections import Counter
 
-from .analysis.stats import cluster_bootstrap_ci
+from .analysis.stats import N_BOOT, cluster_bootstrap_ci
 
 
 def plan_signature(plan: dict) -> str:
@@ -16,7 +16,7 @@ def plan_signature(plan: dict) -> str:
     return hashlib.sha256(json.dumps(sig, sort_keys=True).encode()).hexdigest()[:16]
 
 
-def canary_compare(base: dict, today: dict, floor: float, n_boot=2000) -> dict:
+def canary_compare(base: dict, today: dict, floor: float, n_boot=N_BOOT) -> dict:
     """base/today: question -> list of answers (option_key). Drift = mismatch vs baseline mode > 2×floor
     and bootstrap lower bound of (mismatch − floor) > 0."""
     per_q = {}
@@ -26,4 +26,5 @@ def canary_compare(base: dict, today: dict, floor: float, n_boot=2000) -> dict:
     allv = [v for vs in per_q.values() for v in vs]
     mean = sum(allv) / max(1, len(allv))
     lo, _ = cluster_bootstrap_ci(per_q, lambda xs: sum(xs) / len(xs) - floor, n=n_boot)
-    return {"mismatch": mean, "lower_minus_floor": lo, "drift_suspect": bool(mean > 2 * floor and lo > 0)}
+    return {"mismatch": mean, "lower_minus_floor": lo, "drift_suspect": bool(mean > 2 * floor and lo > 0),
+            "n_boot": n_boot, "boot_seed": 0, "boot_unit": "snapshot|question key"}
