@@ -45,7 +45,7 @@ class RuntimeConfig:
     action_horizon: int = 1
     replan_interval: int = 1
     temperature: float | None = None
-    backend: str = "modular"  # modular (Jev-L -> M4 -> S + R) | fused (one call: decisions + chunk)
+    backend: str = "modular"  # modular (Jev-L -> M4 -> S + R) | fused (two calls per step: decide -> chunk, canon §67)
     selector: str = "mock"  # jevl | mock | mock_fused
     model_id: str = ""
     model_path: str = ""

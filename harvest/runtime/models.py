@@ -8,7 +8,7 @@ decide(ctx) -> ModelResult is called in a worker thread (never on the rollout th
 Both back-ends feed M4 the same way (typed decision probabilities from staggered calls):
   - ModularStack (baseline row): JevLSelector = Jev-L DecCall on vLLM (M1 S1 coordinate text + images) -> M4 ->
     scripted skill S + residual-R hook. MockSelector = the labels_v2 S1 code rule (deterministic stand-in).
-  - FusedModel (main row, canon §58, the R4 model): ONE backbone gives decision-token probabilities (decide(), vLLM)
+  - FusedModel (main row, canon §58, the R4 model): ONE backbone gives decision-token probabilities (decide(), HF backbone)
     and, conditioned on the M4-committed decisions (stage-B expert input cond["dec"]), a continuous action chunk
     (chunk(ctx, committed), HF backbone context + CUDA-graphed expert, fused_action.py). Input = images (head +
     active wrist) + task sentence + contract summary + proprioception, no S1 coordinates. MockFusedModel: decisions

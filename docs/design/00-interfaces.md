@@ -575,3 +575,9 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - **K2·K3·K5**: 계획 개정 줄에 §67 두 호출 정정 표시, `harvest/datagen/gen.py` 주석의 R2_TRAIN '[proposal]'·옛 시험 범위 500–699 정정(시험 시드 3000–3199), `se2e_data.md` §9에 b4a58ce 해결 표시, `random5.md`의 '예약되지 않은 500–699'(CAL과 겹침) 정정.
 - **K6 → SCOPED 추가**: D28의 CONTRADICT-soft(같은 T2 술어가 연속 2회 conformal {거짓})는 E2E-ready 범위 밖이다. 근거 — (1) conformal {거짓} 판정에는 확인 헤드 보정 파일이 있어야 하는데 이것 자체가 §67 SCOPED(본 학습 체크포인트 뒤 CAL에서)이고, (2) CONTRADICT-soft의 결과 범주는 DEVIATE와 같은 `C_m4`(하드 아님, §11.2)라 지금의 런타임 동작은 달라지지 않는다. 확인 헤드 보정 때 함께 구현한다(`harvest/runtime/measure.py`, 지금은 매번 단일 DEVIATE).
 - **NOTE 처리**: 카나리 id는 날짜별이라 S-E2E·본 실험 시작 때 그날 카나리를 새로 만든다(지금 실행은 `stale: true`로 전날 id를 싣는다 — 파이프라인 확인용이라 허용). 파드 `/data/harvest/ir/ir_run.sh` 사본의 옛 'GPU2 금지' 주석은 저장소 판으로 다시 동기화했다.
+
+## 69. R7 3회차 문서 정정 (2026-09-25 00:55 UTC, `docs/stage3/results/r7_cycle3.md`) [Claude 결정]
+- L1–L4 정정: `se2e_data.md` 작성일(2026-09-24 UTC), `r2_datagen.md`의 R2_TRAIN '[제안]'·500–699 서술, 런타임 주석(`harvest/runtime/core.py` backend, `models.py` FusedModel)과 `r4_stageB.md`의 '한 번 호출'에 §67 두 호출·HF 백본 표시, `handoff.md` 정본 범위(§1~§69, 읽을 범위 §43–끝). §68 K1 목록에 `se2e_data.md`를 더한다.
+- **정정 절차(재발 방지)**: 사실 하나를 고칠 때는 저장소 전체(코드 주석 포함)를 grep해 같은 사실을 적은 곳을 모두 고치고, 원래 절의 문장은 지우지 않고 정정 표시를 붙인다.
+- **§68 K6 근거 보정(N1)**: 보정 파일이 없어도 런타임은 argmax 단일 원소 기본값으로 {거짓}을 내고 DEVIATE를 올린다 — '판정이 성립하지 않는다'는 과장이었다. CONTRADICT-soft를 M4 CONTRADICT로 보내면 정지와 Astra 사건 호출이 더해져 동작이 달라진다. 그래도 연속 2회 규칙의 문턱은 보정된 conformal 집합 위에서 정해야 의미가 있으므로 보정 때 함께 구현한다는 결정은 유지한다.
+- **S-E2E 사전 등록에 넣을 것(N2·N3)**: `--max-val`은 앞 N개를 잘라 RB1만 보게 되므로 층화(RB1·RB2) 무작위 부분집합을 쓴다; 학습 중간 체크포인트·재개와 평가 간격·크기를 정한다(기본값은 평가가 학습을 덮는다).
