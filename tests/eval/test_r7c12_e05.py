@@ -24,9 +24,12 @@ def test_flip_th_candidates_include_the_prereg_alpha_001():
     eps, ans, truth = _mixed()
     r = e05.analyze(eps, ans, truth, questions=Q, d_p95=0.307, n_boot=100)
     c = r["c_flip"]["flip_th_candidates"]
-    assert "q0.99" in c and set(c["q0.99"]) == {"tv_distance", "one_flip"}
+    # per question since R7 cycle 13 D1 (canon §79; M4 :287 "question_id@vN별")
+    assert "q0.99" in c and set(c["q0.99"]) == set(Q)
+    assert {"tv_distance", "one_flip"} <= set(c["q0.99"]["dir_z"])
     assert set(c) == {"q0.99", "q0.999", "q0.95"}  # M4 §4.4 alpha range {0.001, 0.01, 0.05}; 0.1 is outside it
-    assert r["c_flip"]["flip_th_initial"] == {"alpha": 0.01, "key": "q0.99", **c["q0.99"]}
+    ini = r["c_flip"]["flip_th_initial"]
+    assert ini["alpha"] == 0.01 and ini["key"] == "q0.99" and ini["per_question"] == c["q0.99"]
 
 
 def test_same_time_flip_reported_for_success_and_perturbed_trajectories_separately():

@@ -10,7 +10,7 @@
       times -> <root>/canary_<YYYYMMDD UTC>_<model fingerprint>.json with an id:
         answers {"<snapshot>|<question>": [option_key per repeat]}, probs (repeat 0), floor (test-retest mismatch
         of repeats 1.. vs repeat 0 = the day's floor), baseline = the earliest other canary of the same model
-        fingerprint and set, compare = harvest.canary.canary_compare (mismatch vs the baseline's mode minus the
+        fingerprint, set and question_id@vN set (a new version starts a new baseline day, canon §79), compare = harvest.canary.canary_compare (mismatch vs the baseline's mode minus the
         floor, episode-cluster bootstrap per question, Holm over the questions, drift = a rejection with lower > 0;
         drift_suspect -> report that day's results separately and redo E1, §28; canon §73).
 The runtime / eval commands read latest_canary(fingerprint)["id"] (or an explicit "none") and log it: eval run_meta
@@ -155,8 +155,24 @@ def latest_canary(fp: str | None, root: str | None = None) -> dict:
     if not fs:
         return {"id": "none", "reason": f"no canary for model fingerprint {fp}"}
     d = json.load(open(fs[-1], encoding="utf-8"))  # canary_<YYYYMMDD>_<fp>.json: name order = date order
+    last_drift = None  # the newest drift-suspect canary of this model (J5 stays off until a later E1 re-run)
+    for f in reversed(fs):
+        x = d if f == fs[-1] else json.load(open(f, encoding="utf-8"))
+        if x.get("drift_suspect") is True:
+            last_drift = {"id": x["id"], "date_utc": x["date_utc"], "file": f}
+            break
     return {"id": d["id"], "date_utc": d["date_utc"], "file": fs[-1], "drift_suspect": d.get("drift_suspect"),
-            "stale": d["date_utc"] != _utc_date()}
+            "stale": d["date_utc"] != _utc_date(), "last_drift": last_drift}
+
+
+def select_baseline(runs, set_sha: str, question_ids: dict):
+    """The baseline day = the earliest canary (runs in date order) of the same fixed set AND the same
+    question_id@vN set (E §1.8 :136-140 "고정 스냅샷 × 고정 question_id@vN", "기준일 = 카나리 세트를 처음 돌린 날";
+    canon §77 "질문 id·프롬프트가 바뀜 → 새 기준일"). None -> this run is the first day of its version (canon §79)."""
+    for d in runs:
+        if d.get("set", {}).get("set_sha") == set_sha and d.get("question_ids") == question_ids:
+            return d
+    return None
 
 
 def canary_id_for(model_path: str | None, mock: bool = False, root: str | None = None) -> str:
@@ -208,14 +224,8 @@ def run_canary(a) -> dict:
                     probs[key] = a_.get("probs") or {}
     later = [v != vs[0] for vs in answers.values() for v in vs[1:]]
     floor = sum(later) / len(later) if later else 0.0
-    base = None
-    for f in canary_files(fp, root):
-        if f == path:
-            continue
-        d = json.load(open(f, encoding="utf-8"))
-        if d.get("set", {}).get("set_sha") == man["set_sha"]:
-            base = d
-            break
+    base = select_baseline((json.load(open(f, encoding="utf-8")) for f in canary_files(fp, root) if f != path),
+                           man["set_sha"], qids)
     compare, tv = None, None
     if base is not None:
         common = sorted(set(base["answers"]) & set(answers))

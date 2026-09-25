@@ -37,7 +37,7 @@ def expand_dirs(d: str) -> list:
     if glob.glob(os.path.join(d, "ep*.jsonl")):
         return [d]
     subs = [os.path.join(d, k) for k in ("P0", "P1", "P2") if glob.glob(os.path.join(d, k, "ep*.jsonl"))]
-    return subs
+    return subs or [d]  # neither: load_episodes refuses the folder by name (R7 cycle 13 N5)
 
 
 def _by(items, keys):

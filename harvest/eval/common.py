@@ -342,8 +342,14 @@ def load_episodes(dirs, split: str, episodes: int = 0, seeds=None) -> list:
     seed is checked against the declared split (splits.check_seeds) BEFORE its file is opened."""
     from .splits import check_seeds
     out = []
+    if not dirs:  # an empty / unresolved --data never runs on 0 episodes (R7 cycle 13 N5, canon §79)
+        raise SystemExit("no episode folder given (--data empty or not found)")
     for d in dirs:
+        if not os.path.isdir(d):
+            raise SystemExit(f"episode folder not found: {d!r} (cwd {os.getcwd()})")
         files = sorted(glob.glob(os.path.join(d, "ep*.jsonl")), key=lambda p: int(os.path.basename(p)[2:-6]))
+        if not files:
+            raise SystemExit(f"no episode files (ep*.jsonl) in {d!r}")
         cand = [int(os.path.basename(p)[2:-6]) for p in files]
         if seeds is not None:
             cand = [s for s in cand if s in seeds]

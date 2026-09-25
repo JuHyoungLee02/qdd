@@ -73,9 +73,10 @@ def test_next_request_after_a_forced_deviate_carries_it(cond, backend):
     assert t_dev is not None
     vals = [(t, _last_line(s)) for t, s in seen]
     assert vals[0][1] == "none"  # no step has finished at the first call
-    # requests built after the boundary tick that checked the step (a call sent at that same tick is built before
-    # the check, core.act order: calls -> deliveries -> boundary); DEVIATE pulls an early call to the next tick
-    after = [v for t, v in vals if t_dev + 1e-9 < t < t_dev + 0.33 - 1e-6]
+    # requests from the boundary tick that checked the step on (since R7 cycle 13 N1 the call of that tick is built
+    # after the check, core.act order: deliveries -> boundary -> calls; canon §79); DEVIATE pulls an early call to
+    # the next tick
+    after = [v for t, v in vals if t_dev - 1e-9 < t < t_dev + 0.33 - 1e-6]
     assert after and all(v == "DEVIATE" for v in after), (t_dev, after)
     assert {v for _, v in vals} <= {"none", "OK", "LAG", "DEVIATE", "CONTRADICT"}
     assert rt.cfg.b_to_model is True

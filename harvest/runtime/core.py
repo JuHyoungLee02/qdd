@@ -204,8 +204,8 @@ class OursRuntime:
             return "none"
         return self.b_last["outcome"]
 
-    def _decision_ctx(self, now, raw, present, pred, support, obs):
-        slots = self.ledger.target_slots(now)
+    def _decision_ctx(self, now, raw, present, pred, support, obs, slots=None):
+        slots = self.ledger.target_slots(now) if slots is None else slots
         sk = self.skill
         s0 = self._s0(now, pred, present, support)
         ls = self.b_line()
@@ -223,8 +223,8 @@ class OursRuntime:
             ctx["proprio_text"] = fused_state_text(self.instruction, sk.stage, sk.phase, obs["joint_pos"])  # log only
         return ctx
 
-    def _submit_decision(self, now, raw, present, pred, support, obs):
-        ctx = self._decision_ctx(now, raw, present, pred, support, obs)
+    def _submit_decision(self, now, raw, present, pred, support, obs, slots=None):
+        ctx = self._decision_ctx(now, raw, present, pred, support, obs, slots)
         self.n_calls += 1
         model, cfg = self.model, self.cfg
 
@@ -452,17 +452,12 @@ class OursRuntime:
         v1h = v["logits"] if v is not None and now - v["t_state"] <= self.cfg.t2_check_max_age_s else None
         self.meas_last = measure(proprio, v1h, self.vcal, self.rules)
         pred_exec = self._exec_pred(pred, self.meas_last)
-        # (a) decision calls: staggered every T_c, <= N_max in flight (C2: no cap); an early call pulls one periodic
-        # slot forward. The in-flight count at each send is recorded (C2 "실측 in-flight 수 보고", M4 §5 :332)
+        # (a) gate, target slots and early flag from the start of the tick (in-flight count, N_max and d_hat before
+        # this tick's deliveries; an early call raised later in this tick goes out on the next tick -- all as before
+        # canon §79); the call itself is built after the boundary check below
         infl = sum(1 for it in self.q._items if it["meta"]["kind"] == "dec")
-        if infl < self.ledger.n_max() and (now >= self.next_call - 1e-9 or self.early):
-            self.inflight_at_send.append(infl + 1)
-            self._submit_decision(now, raw, present, pred, support, obs)
-            if self.early and now < self.next_call - 1e-9:
-                self.next_call += self.cfg.T_c
-            else:
-                self.next_call = max(self.next_call + self.cfg.T_c, now)
-            self.early = False
+        can_send, slots_send = infl < self.ledger.n_max(), self.ledger.target_slots(now)
+        early_due, self.early = self.early, False
         # (c) Astra heartbeat
         if self.hb.timed_out(now):
             self.dropped_hb.add(self.n_hb)
@@ -492,6 +487,20 @@ class OursRuntime:
         k = int(math.floor(now / self.cfg.T_c + 1e-9))
         if k != self.cur_k:
             self._boundary(k, now, tcp_p)
+        # (a) decision calls: staggered every T_c, <= N_max in flight (C2: no cap); an early call pulls one periodic
+        # slot forward. The in-flight count at each send is recorded (C2 "실측 in-flight 수 보고", M4 §5 :332).
+        # Built after the boundary check (R7 cycle 13 N1, canon §79): a call of a boundary tick is the "next Jev
+        # input" of the step just checked (M4 §4.2 :232) -- its last_step line, premise epoch and state are those
+        # after the check, as in the training items (snapshot k carries the step that ended at k, canon §77 (iv))
+        if can_send and (now >= self.next_call - 1e-9 or early_due):
+            self.inflight_at_send.append(infl + 1)
+            self._submit_decision(now, raw, present, pred, support, obs, slots_send)
+            if early_due and now < self.next_call - 1e-9:
+                self.next_call += self.cfg.T_c
+            else:
+                self.next_call = max(self.next_call + self.cfg.T_c, now)
+            early_due = False
+        self.early = self.early or early_due  # unsent early call kept; one raised in this tick waits for the next
         if self.ledger.p.agree == "stream" and not self.hold_step:
             # C2 VLM Stream (M4 §5 :332 "매 틱 … 가장 새 유효 응답 하나의 보기를 그대로 적용", canon §74): a newer
             # answer (or the 5 s timeout -> default action) changes the running step's decisions at this tick

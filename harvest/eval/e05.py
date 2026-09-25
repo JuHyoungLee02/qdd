@@ -268,8 +268,17 @@ def _merge(dicts):
     return m
 
 
-def _q(xs, q):
-    return round(float(np.quantile(xs, q)), 4) if xs else None
+def flip_th_conformal(scores, alpha: float) -> dict:
+    """FLIP_TH from success-run flip scores by split conformal (M4 §4.4 :287 "성공 실행 flip_score의 1−α 분위(split
+    conformal)"): the ceil((n+1)(1-alpha))-th smallest score (the rank of M4 §4.4 q̂ :283 / E §3.5 :330; exact
+    rational arithmetic on the decimal alpha). When that rank exceeds n there is no finite threshold: value None,
+    finite False; n_needed = the smallest n with a finite rank = ceil(1/alpha - 1). Canon §79."""
+    from fractions import Fraction
+    s = sorted(float(x) for x in scores)
+    n, a = len(s), Fraction(str(alpha))
+    r = math.ceil((n + 1) * (1 - a))
+    fin = 1 <= r <= n
+    return {"value": s[r - 1] if fin else None, "finite": fin, "n": n, "rank": r, "n_needed": math.ceil(1 / a - 1)}
 
 
 def analyze(eps, ans, truth, questions, d_p95: float, n_boot: int = N_BOOT, win: float = 1.0) -> dict:
@@ -280,7 +289,8 @@ def analyze(eps, ans, truth, questions, d_p95: float, n_boot: int = N_BOOT, win:
     from ..analysis.stats import auroc
     per_q = {q: _acc() for q in questions}
     pooled = _acc()
-    step_rows = []  # (tv, one, in perturb window, success trajectory)
+    step_rows = []  # (tv, one, in perturb window, success trajectory) -- question means, AUROC (judgment 4)
+    succ_q = {q: {"tv": [], "one": []} for q in questions}  # per-question success-step scores -> FLIP_TH (J4)
     for ep in eps:
         c, kind, seed = ep["cluster"], ep["kind"], ep["seed"]
         ks = sorted(k for k in ep["t"] if (kind, seed, k) in ans)
@@ -309,9 +319,13 @@ def analyze(eps, ans, truth, questions, d_p95: float, n_boot: int = N_BOOT, win:
                     continue
                 cur[q] = keys
                 if prev is not None and q in prev:
-                    tv += c_flip_tv(keys, prev[q])
-                    one += c_flip_one(keys)
+                    tv_q, one_q = c_flip_tv(keys, prev[q]), c_flip_one(keys)
+                    tv += tv_q
+                    one += one_q
                     nq += 1
+                    if succ_traj:
+                        succ_q[q]["tv"].append(tv_q)
+                        succ_q[q]["one"].append(one_q)
                 t = truth.get(key, {}).get(q)
                 if t is None or key not in ans:
                     continue
@@ -415,14 +429,21 @@ def analyze(eps, ans, truth, questions, d_p95: float, n_boot: int = N_BOOT, win:
     if pw and sw:
         lab = [1] * len(pw) + [0] * len(sw)
         au = {"tv_distance": auroc([r[0] for r in pw + sw], lab), "one_flip": auroc([r[1] for r in pw + sw], lab)}
-    # FLIP_TH initial value = the success-trajectory 1 - alpha quantile at the pre-registered alpha 0.01 (E :253,
-    # :487; M4 §4.4 :285, :287); also the M4 alpha range {0.001, 0.05} (canon §77)
-    cands = {f"q{round(1 - al, 3):g}": {"tv_distance": _q([r[0] for r in sw], 1 - al),
-                                         "one_flip": _q([r[1] for r in sw], 1 - al)} for al in FLIP_ALPHAS}
+    # FLIP_TH initial value = split conformal on the success-trajectory flip scores, per question (M4 §4.4 :287 "1−α
+    # 분위(split conformal) … question_id@vN별로 잡는다(J4)", canon §28 J4 :260) at the pre-registered alpha 0.01
+    # (E :487; M4 :285); also the M4 alpha range {0.001, 0.05} (canon §77). Both E §2A.3 formulas (E :242, :253).
+    # value None = no finite threshold at this n (n_needed = the smallest n with one; canon §79)
+    def _th(q, al):
+        tv, one = flip_th_conformal(succ_q[q]["tv"], al), flip_th_conformal(succ_q[q]["one"], al)
+        return {"tv_distance": tv["value"], "one_flip": one["value"], "finite": tv["finite"], "n": tv["n"],
+                "rank": tv["rank"], "n_needed": tv["n_needed"]}
+    cands = {f"q{round(1 - al, 3):g}": {q: _th(q, al) for q in questions} for al in FLIP_ALPHAS}
     out["c_flip"] = {"auroc": au, "n_perturb_steps": len(pw), "n_success_steps": len(sw),
                      "flip_th_candidates": cands,
                      "flip_th_initial": {"alpha": FLIP_ALPHA, "key": f"q{round(1 - FLIP_ALPHA, 3):g}",
-                                         **cands[f"q{round(1 - FLIP_ALPHA, 3):g}"]}}
+                                         "method": "split conformal, rank ceil((n+1)(1-alpha)) of the per-question "
+                                                   "success-step scores (M4 §4.4 :287, J4; canon §79)",
+                                         "per_question": cands[f"q{round(1 - FLIP_ALPHA, 3):g}"]}}
     layers = {}
     for L, d in lay.items():
         fl = _merge(list(floor.get(L, {}).values()))
@@ -656,6 +677,7 @@ def main(argv=None):
     t0 = time.monotonic()
     info = C.resolve_model(a.model)
     os.makedirs(a.out, exist_ok=True)
+    os.environ.setdefault("HARVEST_QID_REGISTRY", os.path.join(a.out, "qid_registry.json"))  # as calib / canary
     info = C.ensure_merged(info, a.out)
     dirs = [d for d in a.data.split(",") if d]
     eps = C.load_episodes(dirs, a.split, a.episodes, parse_seeds(a.seeds))
@@ -669,7 +691,9 @@ def main(argv=None):
         t_calls = time.monotonic() - t1
     E, A = _assemble(eps, done)
     res = analyze(E, A, truth, C.QUESTIONS, a.d_p95, a.n_boot, a.perturb_window)
-    lat = [r["lat"] for r in done.values() if r["tag"] == "A0#0" and r.get("lat") is not None]
+    from ..runtime.run_r5 import question_ids  # the per-question FLIP_TH is per question_id@vN (J4, canon §79)
+    res["c_flip"]["question_ids"] = question_ids(layout)
+    lat =[r["lat"] for r in done.values() if r["tag"] == "A0#0" and r.get("lat") is not None]
     p95 = round(float(np.quantile(lat, 0.95)), 4) if lat else None
     by_dir = {}
     for ep in eps:

@@ -168,16 +168,21 @@ def m4_config(cond: str, H: int = 3, lead_max: float | None = None) -> dict:
 
 def j5_after_canary(j5_alpha, calibration: str, canary: dict):
     """(effective J5 alpha, note). E §3.7 judgment 8 (:347) "매일 카나리가 '표류 의심'을 내면 판정 7대로 끄고
-    재보정한다" and §1.8 (:139) "E1 보정 부분을 다시 돌린 뒤에 게이트를 재사용": the latest canary of the model says
-    drift_suspect and the calibration file was fitted before that canary's day -> the gate is off for this run
-    (canon §77); a calibration fitted on / after it is the re-run and keeps the gate."""
-    if j5_alpha is None or not calibration or not canary or canary.get("drift_suspect") is not True:
+    재보정한다" and §1.8 (:139) "E1 보정 부분을 다시 돌린 뒤에 게이트를 재사용": the newest drift-suspect canary of
+    the model (canary["last_drift"] from latest_canary; a later clean canary does not re-enable the gate, canon §79)
+    or, without that field, the given canary itself if it says drift_suspect; a calibration file fitted before that
+    canary's day -> the gate is off for this run (canon §77); one fitted on / after it is the re-run and keeps it."""
+    if j5_alpha is None or not calibration or not canary:
+        return j5_alpha, None
+    drift = canary.get("last_drift") if "last_drift" in canary else (
+        canary if canary.get("drift_suspect") is True else None)
+    if not drift:
         return j5_alpha, None
     cal_utc = str(json.load(open(calibration, encoding="utf-8")).get("utc") or "")
-    if cal_utc[:10] >= str(canary.get("date_utc") or ""):
+    if cal_utc[:10] >= str(drift.get("date_utc") or ""):
         return j5_alpha, None
-    return None, (f"J5 off: canary {canary.get('id')} ({canary.get('date_utc')}) drift suspect, calibration "
-                  f"{os.path.basename(calibration)} fitted {cal_utc or '?'} before it (E §3.7-8, canon §77)")
+    return None, (f"J5 off: canary {drift.get('id')} ({drift.get('date_utc')}) drift suspect, calibration "
+                  f"{os.path.basename(calibration)} fitted {cal_utc or '?'} before it (E §3.7-8, canon §77, §79)")
 
 
 def worker_cmd(code: str, spec_path: str, gpu: str, inst: str, timeout_s: int) -> list:
@@ -186,7 +191,8 @@ def worker_cmd(code: str, spec_path: str, gpu: str, inst: str, timeout_s: int) -
     q = "/data/harvest"
     envs = [f"HOME={q}/home", f"TMPDIR={q}/tmp", f"XDG_CACHE_HOME={q}/cache", f"HF_HOME={q}/cache/hf",
             f"TORCH_HOME={q}/cache/torch", f"PIP_CACHE_DIR={q}/cache/pip", f"WARP_CACHE_PATH={q}/cache/warp",
-            f"PYTHONPYCACHEPREFIX={q}/cache/pyc_r6", f"PYTHONPATH={code}:{q}/ir/pylib:{q}/ir/src/src"]
+            f"PYTHONPYCACHEPREFIX={q}/cache/pyc_r6", f"PYTHONPATH={code}:{q}/ir/pylib:{q}/ir/src/src",
+            "OMP_WAIT_POLICY=PASSIVE"]  # no libgomp spin-wait (~11 cores / process under the pod's 32-core quota)
     if os.environ.get("HARVEST_ALLOW_SPLIT"):
         envs.append(f"HARVEST_ALLOW_SPLIT={os.environ['HARVEST_ALLOW_SPLIT']}")
     return ["env", "IR_ROOT=cyclo", f"IR_INST={inst}", f"CUDA_VISIBLE_DEVICES={gpu}", "timeout", str(timeout_s),
