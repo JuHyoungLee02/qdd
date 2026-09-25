@@ -175,4 +175,20 @@
   \item \intent{어쩔수없는건 물론 그냥 하긴해야하구}
   \item \chg{(09-25 §58) 런타임 = VLA 하나(Qwen3-VL-4B): 이미지 $\rightarrow$ typed 결정 토큰(트라이 재정규화 확률, M4가 소비) + action expert 연속 행동 + 보조 기하 헤드(학습 신호). 모델 밖 = Astra, M4, 안전 투영. 명시적 인식·스크립트 스킬은 모듈형 기준선이자 교사}
   \item \decide{주 표의 주 행을 융합 모델로 둘지(현재 융합·모듈형 두 행 병기). 융합 런타임에서 M4 (b)·critic의 물체 술어를 무엇으로 확인할지}
+  \item \intent{일단 지금은 나란히 하고 나중에 확실히 정리가 되면 융합으로 해야지근데 그거와 별계로 저 M4의 크리틱 저거는 무조건 해결을해 1년반 내 논문 싹다 깃도 뒤져서 신뢰성있는걸로 찾아서 해봐봐}
+  \item \chg{(09-24 §60·§61·§64, 위 [결정 필요] 둘 다 답) 주 표는 지금 융합·모듈형 병기, 결과로 정리되면 융합으로. M4 (b)·critic 측정원은 둘로 나눔: 로봇 쪽 = 고유 감각 코드 T1(그리퍼 열림·쥠/빈 집기·쥔 채 들림, 하드 채널), 세계 쪽 = 같은 백본의 확인 헤드 V1h(\texttt{on}·\texttt{in\_contact}·\texttt{near}·접촉 멈춤, 소프트 채널, 술어별 온도 + conformal, 빈 집합 = \texttt{unknown}). critic 세계 쪽 경보 = V1h 단독. 근거(1.5년 안, 신뢰도 높음): Self-Improving EFM(같은 모델 진행 예측이 성공 판정기로 더 안정), TA-VLA(모터 전류 토크가 말단 상태 구분), SAFE(토큰 불확실성 기준선 약함)}
+  \item \idea{(E-M4b-meas, 파이프라인 확인이라 수치는 임시) V1h \tentative{0.949} 대 명시 인식 \tentative{0.596}·영점 \tentative{0.750}, T1 \tentative{0.992--0.998}, V1h + 토크 충돌 규칙 재현율 \tentative{0.786} $<$ V1h 단독 \tentative{0.871} $\rightarrow$ 토크 규칙은 명목 운동 토크에 걸려 문턱을 망침. 명시 인식은 3D 오차 \tentative{35\,mm}라 측정원 탈락}
+  \item \chg{(09-24 §67 C4) ``모델 한 번 호출'' $\rightarrow$ 스텝마다 두 호출: decide(공유 접두 순전파 1회 $\rightarrow$ 결정 확률 + 문맥 은닉 + 확인 헤드) $\rightarrow$ M4 $\rightarrow$ chunk(캐시 문맥 + 확정 결정 $\rightarrow$ expert, CUDA 그래프). 백본 순전파는 스텝당 1회라 융합 원칙 그대로. 융합 런타임은 HF 백본 서버, vLLM은 모듈형 기준선 전용}
+  \item \chg{(09-24 §65) 결과 기반 라벨: 사전 등록 규칙이 \texttt{plan}을 골랐지만 판별력 없음 $\rightarrow$ 학습 정답 아님, 실패 보기 거부권 용도만. 학습 정답은 labels\_v2 유지}
+\end{itemize}
+
+\subsection{M4 사전 등록 적합화 (R7 순회, 09-25)}
+\begin{itemize}
+  \item \dirn{원칙: 사전 등록은 구속한다. 코드는 사전 등록 문장을 그대로, 사전 등록이 열어 둔 값은 정본에 근거 한 줄과 함께}
+  \item \chg{(§72) 유예 창 $W$ = 첫 도전 표 뒤에 더 필요한 같은 도전 표 수. $W=0$은 첫 도전 표에서 즉시 교체, 기본 $W=1$(도전 표 2개), 비가역 $W{+}1$}
+  \item \chg{(§73) $\tau=1$(순서형 이웃 1칸), 접촉 근처(목표 $\le$ 5\,cm 또는 접촉)는 $\tau=0$. 경계 직후 $W$ 2·$\gamma$ 1.0, 큐 임계 조기 호출 $g$, 장면 변화 조기 호출, 미확정 실행 (b) 엄격화는 사전 등록 조건에 없음 $\rightarrow$ SCOPED(절제 후보)}
+  \item \chg{(§74) $\gamma$ = 정확히 2/3(``3표 중 2'', 정수 곱 비교), 런타임과 E0.5 재생이 같은 함수. C2 = Slow Brain VLM Stream 원문 그대로(동시 요청 상한 없음, 매 틱 요청 시각이 가장 새 유효 응답, 5\,s 타임아웃 $\rightarrow$ 기본 행동). Holm은 ``하한 $>0$'' 방향만(판정 2·카나리), 판정 10은 양측. E-M4-lat의 STALE\_MAX = 1.5\,s $\times d^\ast_{p95}/d_{p95}$(E0)(비례 규칙, 지연 큐 구현 때)}
+  \item \chg{(§75·§76) $H=1$ = 같은 스텝을 시각을 당겨 여러 번 묻기: 송신 $t$의 호출은 시작 시각이 $[t+\hat d,\,t+\text{lead}_{\max}]$인 모든 스텝의 표. $\text{lead}_{\max}$ \tentative{1.0\,s}(E0 뒤 런타임 스텝당 표 중앙값 $\ge 2$ 규칙으로 재결정, 유한 양수만). 판정 7($H=3$ 대 $H=1$)은 다스텝 DecCall 전까지 SCOPED. 나이 비교: 정확히 1.5\,s·5\,s는 유지}
+  \item \dirn{(R7 12회차 D3) (b) 범주를 다음 결정 요청 상태 텍스트에 ``\texttt{last\_step: <범주>}'' 한 줄로 되먹임 --- 사전 등록 C5의 정의. 없으면 런타임 C5 = C5$'$라 판정 3(C5 대 C5$'$)이 성립하지 않음. \tentative{구현 중}(결정 호출 형식이 바뀌어 학습 형식과 정합 필요)}
+  \item \idea{(R7 12회차) 그 밖의 결함: E0.5 FLIP\_TH 후보 분위가 $\alpha=0.01$이 아님, E0.5 지표 2개 미보고, 호출 기록에 질문별 확률 분포·요청/응답 원문·Astra 원응답 없음 $\rightarrow$ \tentative{수정 중}}
 \end{itemize}

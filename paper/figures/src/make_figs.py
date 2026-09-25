@@ -182,7 +182,8 @@ def overview_strip(ax, W, Hs):
     x0, x1, T = 1.55, 6.70, 12.0
     sx = (x1 - x0) / T
     X = lambda t: x0 + t * sx
-    lanes = [("Astra (초 단위, 비동기)", 0.90), ("결정 토큰 (0.33 s 겹침)", 0.64), ("행동 (0.5 s 청크, 100 Hz)", 0.38)]
+    lanes = [("Astra (초 단위, 비동기)", 0.90), ("decide: 결정 토큰 (0.33 s 겹침)", 0.64),
+             ("chunk: 행동 (0.5 s 청크, 100 Hz)", 0.38)]
     for name, yy in lanes:
         ax.text(x0 - 0.08, yy, name, ha="right", va="center", fontsize=6.4, color="#333")
         ax.plot([x0, x1], [yy, yy], color="#E6E6E6", lw=0.8, zorder=0)
@@ -246,43 +247,46 @@ def fig_overview():
     arr(ax, [(0.97, 2.52), (1.62, 2.52)])
     arr(ax, [(3.50, 2.53), (3.75, 2.53)])
 
-    # fused VLA
-    ax.add_patch(FancyBboxPatch((1.45, 0.78), 2.55, 1.12, boxstyle="round,pad=0,rounding_size=0.07",
+    # fused VLA: one backbone forward per step; decide (tokens + verification head) -> M4 -> chunk (expert)
+    ax.add_patch(FancyBboxPatch((1.45, 0.74), 2.55, 1.18, boxstyle="round,pad=0,rounding_size=0.07",
                                 fc=PAL["jev"][0], ec=PAL["jev"][1], lw=1.3))
-    ax.text(2.725, 1.77, "융합 VLA (Qwen3-VL-4B)", ha="center", va="center", fontsize=9.5, color=TXT,
+    ax.text(2.725, 1.81, "융합 VLA (Qwen3-VL-4B)", ha="center", va="center", fontsize=9.5, color=TXT,
             fontweight="bold")
-    wbox(ax, 1.60, 1.36, 2.25, 0.28, PAL["jev"][1], "결정 토큰  p(o) : 방향 · cm 구간 · 대상 · 단계", fs=6.6)
-    wbox(ax, 1.60, 1.00, 2.25, 0.28, PAL["skill"][1], "action expert : 0.5 s 행동 청크 (flow matching)", fs=6.6)
-    ax.text(2.725, 0.88, "+ 보조 기하 헤드 (학습 신호)", ha="center", va="center", fontsize=6.0, color="#555")
+    wbox(ax, 1.60, 1.47, 2.25, 0.22, PAL["jev"][1], "decide · 결정 토큰  p(o) : 방향 · cm 구간 · 대상 · 단계", fs=6.2)
+    wbox(ax, 1.60, 1.20, 2.25, 0.22, PAL["perc"][1], "decide · 확인 헤드 V1h : 세계 쪽 술어", fs=6.2)
+    wbox(ax, 1.60, 0.93, 2.25, 0.22, PAL["skill"][1], "chunk · action expert : 확정 결정 조건 0.5 s 청크", fs=6.2)
+    ax.text(2.725, 0.83, "백본 순전파는 스텝당 1회 (+ 보조 기하 헤드, 학습 신호)", ha="center", va="center",
+            fontsize=5.8, color="#555")
     arr(ax, [(0.88, 1.54), (1.45, 1.54)])
-    arr(ax, [(0.88, 0.80), (1.20, 0.80), (1.20, 1.14), (1.45, 1.14)])
+    arr(ax, [(0.88, 0.80), (1.20, 0.80), (1.20, 1.10), (1.45, 1.10)])
     # contract -> VLA
-    arr(ax, [(3.92, 2.30), (3.92, 2.08), (3.45, 2.08), (3.45, 1.90)])
+    arr(ax, [(3.92, 2.30), (3.92, 2.08), (3.45, 2.08), (3.45, 1.92)])
     ax.text(3.40, 2.13, "현재 단계 요약", fontsize=6.0, color="#555", ha="right", va="bottom")
     # heartbeat VLA side -> Astra
-    arr(ax, [(2.40, 1.90), (2.40, 2.25)], color=PAL["astra"][1], lw=1.1, ls=(0, (3, 2)))
+    arr(ax, [(2.40, 1.92), (2.40, 2.25)], color=PAL["astra"][1], lw=1.1, ls=(0, (3, 2)))
     ax.text(2.35, 2.07, "하트비트(잠정 5 s) · 단계 경계", fontsize=6.0, color=PAL["astra"][1], ha="right",
             va="center")
 
     # M4 + projection
-    rbox(ax, 4.25, 1.30, 0.98, 0.50, "rule", "M4 확정", fs=8.5, sub="(a) 합의 + (b) 측정", sfs=6.0)
-    rbox(ax, 4.25, 0.62, 0.98, 0.50, "fix", "안전 투영", fs=8.5, sub="방향·구간 제한, 저크", sfs=6.0)
-    arr(ax, [(3.85, 1.50), (4.25, 1.50)])
-    arr(ax, [(3.85, 1.14), (4.08, 1.14), (4.08, 0.87), (4.25, 0.87)])
-    arr(ax, [(4.74, 1.30), (4.74, 1.12)])
-    ax.text(4.79, 1.21, "확정", fontsize=6.0, color="#555", ha="left", va="center")
+    rbox(ax, 4.20, 1.34, 0.95, 0.46, "rule", "M4 확정", fs=8.5, sub="(a) 합의 + (b) 측정", sfs=6.0)
+    rbox(ax, 4.20, 0.60, 0.95, 0.40, "fix", "안전 투영", fs=8.0, sub="방향·구간 제한, 저크", sfs=5.8)
+    arr(ax, [(3.85, 1.58), (4.20, 1.58)])                                   # decision tokens -> M4
+    arr(ax, [(3.85, 1.31), (4.05, 1.31), (4.05, 1.43), (4.20, 1.43)], color=PAL["perc"][1])  # V1h -> M4 (b)
+    arr(ax, [(4.45, 1.34), (4.45, 1.09), (3.85, 1.09)])                     # committed decision -> chunk
+    ax.text(4.49, 1.20, "확정 → chunk", fontsize=5.8, color="#555", ha="left", va="center")
+    arr(ax, [(3.85, 0.99), (4.02, 0.99), (4.02, 0.80), (4.20, 0.80)])        # chunk -> projection
 
     # robot
     icon_robot(ax, 5.70, 0.62, s=1.0)
     ax.text(5.77, 0.55, "로봇 (100 Hz)", ha="center", va="top", fontsize=6.6, color="#444")
-    arr(ax, [(5.23, 0.87), (5.52, 0.87)])
+    arr(ax, [(5.15, 0.80), (5.52, 0.80)])
     # measurement back to M4 (b) and to critic
     ax.plot([6.25, 6.25], [0.95, 1.98], color="#777", lw=0.9, ls=(0, (2, 2)))
-    arr(ax, [(6.25, 1.55), (5.23, 1.55)], color="#777", lw=0.9, ls=(0, (2, 2)))
-    ax.text(5.74, 1.60, "측정", fontsize=6.0, color="#555", ha="center", va="bottom")
-    rbox(ax, 5.45, 1.98, 1.00, 0.30, "crit", "critic (실패 판정)", fs=6.8)
+    arr(ax, [(6.25, 1.55), (5.15, 1.55)], color="#777", lw=0.9, ls=(0, (2, 2)))
+    ax.text(5.70, 1.60, "고유 감각 T1", fontsize=6.0, color="#555", ha="center", va="bottom")
+    rbox(ax, 5.40, 1.96, 1.05, 0.34, "crit", "critic (실패 판정)", fs=6.6, sub="하드 T1 · 경보 V1h", sfs=5.6)
     # failure -> Astra
-    arr(ax, [(5.95, 2.28), (5.95, 2.92), (2.80, 2.92), (2.80, 2.83)], color=PAL["crit"][1], lw=1.2,
+    arr(ax, [(5.95, 2.30), (5.95, 2.92), (2.80, 2.92), (2.80, 2.83)], color=PAL["crit"][1], lw=1.2,
         ls=(0, (3, 2)))
     ax.text(4.60, 2.87, "실패 → Astra 비동기 호출(연속 프레임) + 아래 층 복구", fontsize=6.0,
             color=PAL["crit"][1], ha="center", va="top")
@@ -296,52 +300,71 @@ def fig_overview():
     wbox(ax, 3.28, 0.17, 0.80, 0.24, PAL["skill"][1], "스크립트 스킬 S", fs=6.2, fc=PAL["skill"][0])
     arr(ax, [(2.16, 0.29), (2.33, 0.29)])
     arr(ax, [(3.11, 0.29), (3.28, 0.29)])
-    arr(ax, [(3.68, 0.41), (3.68, 0.78)], color="#8A8A8A", lw=0.9, ls=(0, (1, 1.5)))
-    ax.text(3.62, 0.71, "교사 데이터", fontsize=6.0, color="#666", ha="right", va="center")
+    arr(ax, [(3.68, 0.41), (3.68, 0.74)], color="#8A8A8A", lw=0.9, ls=(0, (1, 1.5)))
+    ax.text(3.62, 0.53, "교사 데이터", fontsize=6.0, color="#666", ha="right", va="center")
     save(fig, "overview")
 
 
 def fig_model():
-    W, H = COL_W, 1.88
+    """one backbone forward per decision step; call 1 = decide (tokens + verification head, same forward),
+    call 2 = chunk (expert on cached context, conditioned on the decision M4 committed) -- canon §61, §64, §67 C4."""
+    W, H = COL_W, 2.30
     fig, ax = canvas(W, H)
-    icon_scene(ax, 0.04, 1.36, 0.56, 0.40, "std")
-    ax.text(0.32, 1.32, "머리 (252 토큰)", ha="center", va="top", fontsize=6.0, color="#444")
-    icon_scene(ax, 0.04, 0.76, 0.56, 0.34, "rnd")
-    ax.text(0.32, 0.72, "활성 손목 (104)", ha="center", va="top", fontsize=6.0, color="#444")
-    wbox(ax, 0.04, 0.10, 0.56, 0.40, "#9A9A9A", "텍스트", fs=6.4, sub="과제·단계\n그리퍼", sfs=6.0,
+    icon_scene(ax, 0.04, 1.70, 0.56, 0.40, "std")
+    ax.text(0.32, 1.66, "머리 (252 토큰)", ha="center", va="top", fontsize=6.0, color="#444")
+    icon_scene(ax, 0.04, 1.02, 0.56, 0.34, "rnd")
+    ax.text(0.32, 0.98, "활성 손목 (104)", ha="center", va="top", fontsize=6.0, color="#444")
+    wbox(ax, 0.04, 0.30, 0.56, 0.40, "#9A9A9A", "텍스트", fs=6.4, sub="과제·단계\n그리퍼", sfs=6.0,
          fc=PAL["gray"][0])
-    rbox(ax, 0.82, 0.10, 0.80, 1.70, "jev", "Qwen3-VL-4B", fs=7.4, sub="LoRA r32\n비전 동결", sfs=6.0)
-    arr(ax, [(0.60, 1.56), (0.82, 1.56)])
-    arr(ax, [(0.60, 0.93), (0.82, 0.93)])
-    arr(ax, [(0.60, 0.30), (0.82, 0.30)])
-    rbox(ax, 1.92, 1.32, 1.30, 0.48, "jev", "결정 토큰", fs=7.2, sub="트라이 재정규화 → M4", sfs=6.0)
-    rbox(ax, 1.92, 0.71, 1.30, 0.48, "skill", "action expert", fs=7.2, sub="flow matching · 0.5 s", sfs=6.0)
-    rbox(ax, 1.92, 0.10, 1.30, 0.48, "perc", "보조 기하 헤드", fs=7.2, sub="상대 위치·술어", sfs=6.0)
-    arr(ax, [(1.62, 1.56), (1.92, 1.56)])
-    arr(ax, [(1.62, 0.95), (1.92, 0.95)])
-    arr(ax, [(1.92, 0.34), (1.62, 0.34)], color=PAL["perc"][1])
-    # stop-gradient mark on the expert path
-    ax.plot([1.76, 1.76], [0.89, 1.01], color=PAL["crit"][1], lw=1.4)
-    ax.plot([1.79, 1.79], [0.89, 1.01], color=PAL["crit"][1], lw=1.4)
-    ax.text(1.775, 1.04, "sg", ha="center", va="bottom", fontsize=6.0, color=PAL["crit"][1])
-    ax.text(1.775, 0.40, "∇", ha="center", va="bottom", fontsize=6.4, color=PAL["perc"][1])
+    rbox(ax, 0.78, 0.10, 0.74, 2.02, "jev", "Qwen3-VL-4B", fs=7.2, sub="LoRA r32\n비전 동결", sfs=6.0)
+    arr(ax, [(0.60, 1.90), (0.78, 1.90)])
+    arr(ax, [(0.60, 1.19), (0.78, 1.19)])
+    arr(ax, [(0.60, 0.50), (0.78, 0.50)])
+    hx, hw, hh = 1.80, 1.08, 0.40
+    rows = {"dec": 1.70, "ver": 1.20, "aux": 0.70, "act": 0.12}
+    rbox(ax, hx, rows["dec"], hw, hh, "jev", "결정 토큰", fs=6.8, sub="트라이 재정규화 → M4", sfs=5.6)
+    rbox(ax, hx, rows["ver"], hw, hh, "crit", "확인 헤드 V1h", fs=6.8, sub="세계 술어 → M4 (b)·critic", sfs=5.6)
+    rbox(ax, hx, rows["aux"], hw, hh, "perc", "보조 기하 헤드", fs=6.8, sub="상대 위치 (학습 신호)", sfs=5.6)
+    rbox(ax, hx, rows["act"], hw, hh, "skill", "action expert", fs=6.8, sub="flow matching · 0.5 s", sfs=5.6)
+    for k in ("dec", "ver"):
+        arr(ax, [(1.52, rows[k] + hh / 2), (hx, rows[k] + hh / 2)])
+    arr(ax, [(hx, rows["aux"] + hh / 2), (1.52, rows["aux"] + hh / 2)], color=PAL["perc"][1])
+    ax.text(1.66, rows["aux"] + hh / 2 + 0.03, "∇", ha="center", va="bottom", fontsize=6.4, color=PAL["perc"][1])
+    # expert reads cached context through stop-gradient (KI)
+    ye = rows["act"] + hh / 2
+    arr(ax, [(1.52, ye), (hx, ye)])
+    ax.plot([1.64, 1.64], [ye - 0.06, ye + 0.06], color=PAL["crit"][1], lw=1.4)
+    ax.plot([1.67, 1.67], [ye - 0.06, ye + 0.06], color=PAL["crit"][1], lw=1.4)
+    ax.text(1.655, ye + 0.08, "sg", ha="center", va="bottom", fontsize=6.0, color=PAL["crit"][1])
+    # committed decision from M4 into the expert (call 2)
+    xr = hx + hw
+    arr(ax, [(xr, rows["dec"] + hh / 2), (3.14, rows["dec"] + hh / 2), (3.14, ye), (xr, ye)], color="#6F6F6F")
+    ax.text(3.19, (rows["dec"] + ye) / 2 + 0.25, "M4\n확정\n결정", ha="left", va="center", fontsize=5.6,
+            color="#555", linespacing=1.1)
+    # call brackets
+    ax.plot([1.74, 1.74], [rows["ver"], rows["dec"] + hh], color="#4A7FC1", lw=0.8)
+    ax.text(1.72, rows["dec"] + hh + 0.02, "호출 1 decide", ha="left", va="bottom", fontsize=5.6, color="#4A7FC1")
+    ax.text(hx + hw / 2, rows["act"] + hh + 0.02, "호출 2 chunk", ha="center", va="bottom", fontsize=5.6,
+            color=PAL["skill"][1])
     save(fig, "model")
 
 
 def fig_latency():
     items = [  # label, lo, hi, kind
         ("제어 주기 (100 Hz)", 0.01, 0.01, "design"),
-        ("action expert 청크 목표 (GPU)", 0.03, 0.03, "tent"),
-        ("결정 호출 p95 (머리+손목, lead)", 0.18, 0.28, "tent"),
+        ("chunk: expert 1회 (CUDA 그래프)", 0.023, 0.023, "tent"),
+        ("문맥 순전파 + expert 1회 (HF)", 0.12, 0.12, "tent"),
+        ("모듈형 결정 p95 (vLLM lead)", 0.18, 0.28, "tent"),
+        ("융합 decide (폐루프, CPU 경합)", 0.255, 0.376, "tent"),
         ("결정 호출 간격 $T_c$", 0.33, 0.33, "design"),
         ("행동 청크 길이", 0.5, 0.5, "design"),
-        ("결정 호출 p95 (캐시 끔)", 0.63, 0.63, "tent"),
+        ("모듈형 결정 p95 (캐시 끔)", 0.63, 0.63, "tent"),
         ("Astra low 첫 토큰 (1회)", 2.975, 2.975, "tent"),
         ("Astra 하트비트 실효 주기", 8.0, 9.0, "tent"),
         ("Astra high 첫 토큰 (공개 측정)", 73.0, 73.0, "public"),
     ]
     col = {"design": "#3A3A3A", "tent": "#E27000", "public": "#A8A8A8"}
-    fig, ax = plt.subplots(figsize=(COL_W, 2.25))
+    fig, ax = plt.subplots(figsize=(COL_W, 2.6))
     base = 0.005
     for i, (lab, lo, hi, k) in enumerate(items):
         y = len(items) - 1 - i
@@ -413,7 +436,9 @@ def fig_m4():
         ax.text(tx + (a + b) / 2 * cw, top + 0.04, lab, ha="center", va="bottom", fontsize=6.6, color="#333")
     ax.text(tx - 0.40, H - 0.12, "(b) 미래 스텝별 표 (option_key 기준, H=3)", fontsize=8, va="top", color=TXT,
             fontweight="bold")
-    ax.text(tx + 3 * cw, ty - 0.30, "고정: p95 지연 길이 · 중간: 바꾸려면 합의 · 끝: 가장 새 표만",
+    ax.text(tx + 3 * cw, ty - 0.24, "고정: 송신 뒤 d_p95 안 · 중간: 바꾸려면 합의(2/3, W=1) · 끝: 가장 새 표만",
+            ha="center", va="top", fontsize=6.0, color="#555")
+    ax.text(tx + 3 * cw, ty - 0.40, "H=1: 같은 스텝을 lead_max(1.0 s) 전부터 T_c마다 앞당겨 물어 2–3표",
             ha="center", va="top", fontsize=6.0, color="#555")
 
     # (c) decision (matches tab:m4rule)
@@ -430,6 +455,8 @@ def fig_m4():
         rbox(ax, dx + 0.92, yy, 0.63, 0.19, kind, act, fs=6.8)
     ax.text(dx + 0.78, 0.32, "교체·수리: 전제 판본 +1,\n그 전제의 미확정 표 폐기", fontsize=6.0,
             color=PAL["fix"][1], ha="center", va="top", linespacing=1.2)
+    ax.text(dx + 0.78, 0.02, "(b) 범주 → 다음 decide 입력 한 줄", fontsize=6.0,
+            color="#E27000", ha="center", va="bottom")
     arr(ax, [(tx + nsteps * cw + 0.05, ty + 2 * chh), (dx - 0.12, ty + 2 * chh), (dx - 0.12, 1.87), (dx, 1.87)])
     save(fig, "m4_commit")
 
@@ -506,7 +533,7 @@ def fig_training():
                                    ("손실", "보기 NLL(SFT) → 기대 보상 + KL(RL)", False),
                                    ("실행", "스크립트 스킬 S", False),
                                    ("역할", "결정 토큰만 학습 · M4 입력 확률", False)]),
-        ("B  융합 VLA (주 시스템)", "skill", [("데이터", "시뮬 풀 + ROBOTIS 공개 ~10 GB", True),
+        ("B  융합 VLA (주 시스템)", "skill", [("데이터", "시뮬 R2 + ROBOTIS 공개 ~9 GB", True),
                                             ("정답", "+ S 행동(교사) · 특권 기하", False),
                                             ("손실", "결정 NLL + flow matching(sg) + 보조", False),
                                             ("실행", "action expert + 안전 투영", False),
