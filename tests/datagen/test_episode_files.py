@@ -112,9 +112,13 @@ def test_lerobot_columns_from_an_episode(tmp_path):
     assert len(s["mean"]) == 8 and s["count"] == [12]
 
 
+LX_ENV = ("pod: /data/harvest/venv_e3st/bin/python -m pytest with PYTHONPATH=<code>:/data/harvest/r2/pylib_lerobot:"
+          "/data/harvest/r2/pylib_pytest (pyarrow + av + lerobot 0.3.3 + pytest in one interpreter)")
+
+
 def test_lerobot_export_roundtrip(tmp_path):
-    pytest.importorskip("pyarrow")
-    pytest.importorskip("av")
+    pytest.importorskip("pyarrow", reason="LeRobot export needs pyarrow; " + LX_ENV)
+    pytest.importorskip("av", reason="LeRobot export needs PyAV; " + LX_ENV)
     from harvest.datagen import lerobot_export as LX
     src = tmp_path / "r2"
     folder = str(src / "dr" / "bottle_tray" / "P0")
@@ -124,6 +128,11 @@ def test_lerobot_export_roundtrip(tmp_path):
     assert out["episodes"] == 1 and out["frames"] == 12
     rep = LX.verify(str(tmp_path / "lr"), str(src))
     assert rep["errors"] == []
+    import importlib.util
+    if importlib.util.find_spec("lerobot") is not None:  # the real consumer loads it (R7 cycle-1 N3)
+        assert isinstance(rep["lerobot"], dict), rep.get("lerobot")
+        assert rep["lerobot"]["num_frames"] == 12 and rep["lerobot"]["num_episodes"] == 1
+        assert rep["lerobot"]["action0_equal"]
 
 
 def test_queue_claims_once_resumes_and_takes_over_stale_locks(tmp_path):

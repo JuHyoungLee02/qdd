@@ -10,7 +10,8 @@ from harvest.sim.perturb import P2_LATERAL_M
 from harvest.sim.scene import OBJ_GEOM, TABLE_CENTER_XY, TABLE_SIZE, sample_layout
 
 DEV = range(30)
-EXTRA = range(500, 700)  # arbitrary non-reserved seeds (not TEST 1000-1149 / TEST-P5 1300-1329 / POOL 2000-2119)
+EXTRA = range(3000, 3200)  # in-memory sampling only; outside every reserved split (CAL 500-549 / TEST 1000-1149 /
+# TEST-P5 1300-1329 / POOL 2000-2119 / R2_TRAIN 10000-59999), checked by test_extra_seeds_avoid_every_reserved_split
 POOLS = R.load_pools()
 
 
@@ -32,6 +33,14 @@ def _names(pool):
 
 def _bands_overlap(a, b):
     return any(max(x[0], y[0]) < min(x[1], y[1]) for x in a for y in b)
+
+
+def test_extra_seeds_avoid_every_reserved_split():
+    """R7 cycle-1 N2: the in-memory sampling seeds must not touch CAL / TEST / TEST-P5 / POOL (splits.RANGES) nor
+    R2_TRAIN 10000-59999 (canon §66)."""
+    from harvest.eval.splits import RANGES
+    reserved = [r for k, r in RANGES.items() if k != "dev"] + [range(10000, 60000)]
+    assert not any(s in r for s in EXTRA for r in reserved)
 
 
 # ------------------------------------------------------------------------------------------------ pools

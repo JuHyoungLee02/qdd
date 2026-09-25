@@ -37,6 +37,39 @@ def test_modular_mock_completes_pick_and_place_on_fake_world():
     assert s["astra_calls"] >= 3 and s["astra_decisions"]["ack"] == s["astra_calls"]
 
 
+def test_every_call_logs_its_request_hash_and_canary_id():
+    """canon §42 sidecar (R7 cycle-1 D2): decision calls, chunk calls and Astra heartbeats carry the sha256 of the
+    canonical request payload (image digests included) and the day's canary id (or an explicit "none")."""
+    import re
+    hx = re.compile(r"^[0-9a-f]{64}$")
+    for backend, model in (("modular", MockSelector(latency_s=0.30)), ("fused", MockFusedModel(latency_s=0.30))):
+        cfg = RuntimeConfig(backend=backend, clock="simlat", astra_mode="mock", canary_id="cn20260924_abcd1234_x1",
+                            hb_N_s=1.0)
+        rt = OursRuntime(cfg, model, astra=MockAstra(1.0))
+        rt.reset()
+        w = FakeWorld()
+        for i in range(400):
+            o = w.obs()
+            if i % 10 == 0:  # a new camera frame every 0.1 s
+                o["images"] = {"cam_head": np.full((8, 8, 3), i % 251, np.uint8)}
+            a, _ = rt.act(o)
+            w.step(a)
+        rt.close()
+        heart = [a for a in rt.astra_log if "decision" in a]
+        assert rt.calls and heart
+        for rows in [rt.calls, heart] + ([rt.chunk_log] if backend == "fused" else []):
+            assert rows
+            for r in rows:
+                assert hx.match(r["request_sha256"]), r
+                assert isinstance(r["image_sha256"], dict)
+        assert all(c["canary_id"] == "cn20260924_abcd1234_x1" for c in rt.calls)
+        assert all(a["canary_id"] == "none" for a in heart)  # no Astra canary (paid API, not run): explicit none
+        assert all(c["image_sha256"].get("cam_head") for c in rt.calls)
+        assert all(a["image_sha256"].get("cam_head") for a in heart)
+        assert len({c["request_sha256"] for c in rt.calls}) > 1
+    assert RuntimeConfig().canary_id == "none" and RuntimeConfig().astra_canary_id == "none"
+
+
 def test_modular_mock_is_deterministic():
     _, w1, h1 = _run("modular", MockSelector(latency_s=0.30), 8.0)
     _, w2, h2 = _run("modular", MockSelector(latency_s=0.30), 8.0)

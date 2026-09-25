@@ -113,3 +113,5 @@ bash tools/r5/sync.sh                                   # 로컬 → /data/harve
 run_episode.sh mock_det1 1800 --backend modular --selector mock --astra mock        # 결정적 모의
 run_episode.sh fused_mock2 1200 --backend fused --selector mock_fused --astra mock --max-seconds 6
 ```
+
+> 정정(2026-09-25 00:08 UTC, R7 1회차 D2): 위 '로그 스키마(§42) 확인'은 요청 해시·카나리 id가 빠진 상태였다. `harvest/runtime/reqhash.py`·`harvest/eval/canary.py` 추가로 결정·청크·Astra 행에 요청 sha256·이미지 해시·카나리 id가 기록된다(`r7_fixes.md` 사이클 1 수정).

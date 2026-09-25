@@ -2,8 +2,9 @@
 
 A stage-B sample feeds the ONE Qwen3-VL-4B model three losses:
   (1) typed decision tokens  -> stage-A items (same prompts / option tries / renormalized set NLL as stage A),
-  (2) action expert          -> an action chunk (H steps x 8-D: 7 right-arm joint position targets [rad] +
-                                gripper width target [m], 30 Hz) by conditional flow matching,
+  (2) action expert          -> an action chunk (H steps x 8-D: 7 active-arm joint position targets [rad] +
+                                gripper openness target [0, 1] (§63 (2); rows carry m / joint units), the
+                                dataset's hz: 30 Hz ours, 10 Hz S-E2E) by conditional flow matching,
   (3) auxiliary geometry head -> privileged sim geometry (gripper->object offsets, distances, predicates);
                                 a TRAINING SIGNAL only, never a runtime input (§58).
 Runtime prompt state default = "IMG": task sentence + contract summary + gripper open/closed + images (head +
@@ -27,6 +28,11 @@ R2 CONTRACT (file <episode folder>.stageb.jsonl next to the pool folder, one row
   committed (optional)    {question: option name} the M4-confirmed decision, the option NAME shown in the DecCall
                           (= the decision token string); default = the single labels_v2 target of that question
   aux                     {"reg": {name: float|null}, "cls": {name: 0|1|null}}; names in AUX_REG / AUX_CLS
+  proprio_mask (optional) {"q"|"qd"|"tau"|"grip": 0|1}, 0 = not recorded (S-E2E tau): left out of the statistics,
+                          zeroed in the expert input + a mask input channel (canon §63 (3))
+
+Canon §63 (R7 cycle-1 D1): make_sample maps the gripper to [0, 1] openness per dataset (GRIP_CAL, (2)), ActionNorm
+keeps per-arm statistics ((1)) and honours proprio_mask ((3)); load_for_training takes the dataset's hz (§62).
 """
 from __future__ import annotations
 
@@ -37,11 +43,26 @@ import re
 
 import numpy as np
 
+from ..sim.scene import GRIP_MAX_W
+
 HZ = 30
 H_DEFAULT = 15  # 0.5 s chunk (D19 §33) at 30 Hz
-ACT_DIM = 8  # 7 right-arm joints + gripper width
+DATA_HZ = {"pool": HZ, "r2": HZ, "se2e": 10}  # §62: our data 30 Hz, S-E2E (ROBOTIS public) native 10 Hz
+SE2E_ROOT = "/data/harvest/data/se2e/conv"
+ACT_DIM = 8  # 7 active-arm joints + gripper (openness in [0, 1] after make_sample, §63 (2))
 PROPRIO_KEYS = (("q", 7), ("qd", 7), ("tau", 7), ("grip", 2))
 PROPRIO_DIM = sum(n for _, n in PROPRIO_KEYS)
+PROPRIO_IN_DIM = PROPRIO_DIM + len(PROPRIO_KEYS)  # expert proprio input: normalized values + one mask channel per key
+
+# §63 (2): gripper value -> openness in [0, 1] (1 = fully open, 0 = closed), linear per dataset, clipped; rates are
+# scaled by the same factor (not clipped). GRIP_CAL[source] = (value when open, value when closed):
+#   sim_width_m  our sim / R2 / pool data: measured pad gap in m, open = sim.scene.GRIP_MAX_W (0.107 m), closed = 0
+#   RB1, RB2     S-E2E gripper_{l,r}_joint1 (0 = open): open = 0.0; closed = the recorded state's 99.5th percentile,
+#                mean of the two arms (RB1 1.096 / 1.1005 -> 1.10, RB2 1.152 / 1.118 -> 1.14; 0.5th percentiles
+#                0.000 / 0.003-0.017 -> 0.0). Source: all converted rows (RB1 25,433, RB2 17,380), R7 cycle-1 fix,
+#                /data/harvest/tmp/r7fix/grip_range.json. Teleop commands reach -0.46 .. 1.34 -> clipped.
+GRIP_CAL = {"sim_width_m": (GRIP_MAX_W, 0.0), "RB1": (0.0, 1.10), "RB2": (0.0, 1.14)}
+GRIP_SPACE = "open01@v1"  # recorded in ActionNorm / stageb.json: expert gripper dims are openness (runtime maps back)
 QUESTIONS = ("dir_xy", "dir_z", "mag_coarse", "target", "phase")  # = stagea_data.QUESTIONS
 CAMS = {"right": "cam_wrist_right", "left": "cam_wrist_left"}
 # auxiliary geometry (privileged sim state; meters / binary). "tgt" = the stage target object, "goal" = the
@@ -129,6 +150,9 @@ def check_row(r: dict, hz: int = HZ) -> None:
     for k, n in PROPRIO_KEYS:
         if len(r["proprio"].get(k, ())) != n:
             raise ValueError(f"proprio.{k}: {n} values")
+    pm = r.get("proprio_mask") or {}
+    if set(pm) - {k for k, _ in PROPRIO_KEYS} or any(v not in (0, 1) for v in pm.values()):
+        raise ValueError(f"proprio_mask: keys from {[k for k, _ in PROPRIO_KEYS]}, values 0/1 ({pm})")
     bad = set(r["aux"].get("reg", {})) - set(AUX_REG) | set(r["aux"].get("cls", {})) - set(AUX_CLS)
     if bad:
         raise ValueError(f"unknown aux names {sorted(bad)}")
@@ -139,6 +163,53 @@ def check_row(r: dict, hz: int = HZ) -> None:
 
 def proprio_vec(p: dict) -> np.ndarray:
     return np.concatenate([np.asarray(p[k], np.float32) for k, _ in PROPRIO_KEYS])
+
+
+def proprio_mask_vec(mask: dict | None) -> np.ndarray:
+    """One 0/1 channel per PROPRIO_KEYS entry (None = everything recorded)."""
+    return np.array([float((mask or {}).get(k, 1)) for k, _ in PROPRIO_KEYS], np.float32)
+
+
+def _dim_mask(mask: dict | None) -> np.ndarray:
+    return np.concatenate([np.full(n, float((mask or {}).get(k, 1)), np.float32) for k, n in PROPRIO_KEYS])
+
+
+# ------------------------------------------------------------------------------------------ gripper (§63 (2))
+def grip_source(row: dict) -> str:
+    """GRIP_CAL key of a row: an explicit `grip_unit`, else the S-E2E dataset kind, else our sim data. A real-data
+    row (fps_src set by se2e_data) whose kind has no calibration is refused."""
+    if row.get("grip_unit"):
+        src = row["grip_unit"]
+    elif row.get("kind") in GRIP_CAL:
+        src = row["kind"]
+    elif "fps_src" in row:
+        raise ValueError(f"kind {row.get('kind')!r}: no gripper calibration in GRIP_CAL")
+    else:
+        src = "sim_width_m"
+    if src not in GRIP_CAL:
+        raise ValueError(f"grip_unit {src!r} not in GRIP_CAL")
+    return src
+
+
+def grip_open01(v, src: str):
+    """Gripper value -> openness in [0, 1] (clipped)."""
+    o, c = GRIP_CAL[src]
+    x = np.clip((np.asarray(v, np.float64) - c) / (o - c), 0.0, 1.0)
+    return float(x) if x.ndim == 0 else x
+
+
+def grip_rate01(v, src: str):
+    """Gripper velocity -> openness per second (same scale, no clipping)."""
+    o, c = GRIP_CAL[src]
+    x = np.asarray(v, np.float64) / (o - c)
+    return float(x) if x.ndim == 0 else x
+
+
+def grip_value(open01, src: str):
+    """Openness -> gripper value of `src` (inverse of grip_open01 inside the range)."""
+    o, c = GRIP_CAL[src]
+    x = c + np.clip(np.asarray(open01, np.float64), 0.0, 1.0) * (o - c)
+    return float(x) if x.ndim == 0 else x
 
 
 def aux_vecs(aux: dict):
@@ -198,11 +269,16 @@ def dec_ids(committed: dict, vocab: Vocab) -> list:
 
 
 class ActionNorm:
-    """absolute: z = (a - mean) / std; residual: z = clip((exec - script) / xi, -1, 1). Proprio: (p - mean) / std."""
+    """absolute: z = (a - mean) / std; residual: z = clip((exec - script) / xi, -1, 1). Proprio: (p - mean) / std,
+    masked dims (proprio_mask) = 0. Statistics per arm (§63 (1)): `arms[arm]` = {mean, std, p_mean, p_std}; the
+    top-level set is pooled over all rows and serves an arm without its own statistics (and pre-§63 checkpoints)."""
 
-    XI_DEFAULT = [0.05] * 7 + [0.005]  # rad / m per 30 Hz step [assumption; §35 bound comes from the projection]
+    # rad per 30 Hz step for the joints; gripper openness per step (0.05 = 5 mm of the 107 mm sim pad gap)
+    # [assumption; §35 bound comes from the projection]
+    XI_DEFAULT = [0.05] * 7 + [0.05]
 
-    def __init__(self, mode="absolute", mean=None, std=None, xi=None, p_mean=None, p_std=None):
+    def __init__(self, mode="absolute", mean=None, std=None, xi=None, p_mean=None, p_std=None, arms=None,
+                 grip_space=None):
         if mode not in ("absolute", "residual"):
             raise ValueError(mode)
         self.mode = mode
@@ -211,40 +287,65 @@ class ActionNorm:
         self.xi = np.asarray(self.XI_DEFAULT if xi is None else xi, np.float32)
         self.p_mean = np.zeros(PROPRIO_DIM, np.float32) if p_mean is None else np.asarray(p_mean, np.float32)
         self.p_std = np.ones(PROPRIO_DIM, np.float32) if p_std is None else np.asarray(p_std, np.float32)
+        self.arms = {a: {k: np.asarray(v, np.float32) for k, v in s.items()} for a, s in (arms or {}).items()}
+        self.grip_space = grip_space  # None = pre-§63 checkpoint (raw gripper units)
+
+    def stats(self, arm: str = "right") -> dict:
+        return self.arms.get(arm) or {"mean": self.mean, "std": self.std, "p_mean": self.p_mean, "p_std": self.p_std}
+
+    @staticmethod
+    def _fit_stats(rows) -> dict:
+        acts = np.concatenate([np.asarray(r["action_exec"], np.float32)[np.asarray(r["valid"]) > 0] for r in rows])
+        pro = np.stack([proprio_vec(r["proprio"]) for r in rows])
+        m = np.stack([_dim_mask(r.get("proprio_mask")) for r in rows])  # §63 (3): masked values do not count
+        n = m.sum(0)
+        p_mean = np.where(n > 0, (pro * m).sum(0) / np.maximum(n, 1), 0.0)
+        p_var = ((pro - p_mean) ** 2 * m).sum(0) / np.maximum(n, 1)
+        p_std = np.where(n > 0, np.maximum(np.sqrt(p_var), 1e-3), 1.0)
+        floor = np.array([1e-3] * 7 + [1e-4], np.float32)
+        return {"mean": acts.mean(0), "std": np.maximum(acts.std(0), floor), "p_mean": p_mean.astype(np.float32),
+                "p_std": p_std.astype(np.float32)}
 
     @classmethod
     def fit(cls, rows, mode="absolute", xi=None):
-        acts = np.concatenate([np.asarray(r["action_exec"], np.float32)[np.asarray(r["valid"]) > 0] for r in rows])
-        pro = np.stack([proprio_vec(r["proprio"]) for r in rows])
-        floor = np.array([1e-3] * 7 + [1e-4], np.float32)
-        return cls(mode, acts.mean(0), np.maximum(acts.std(0), floor), xi, pro.mean(0),
-                   np.maximum(pro.std(0), 1e-3))
+        rows = list(rows)
+        pooled = cls._fit_stats(rows)
+        arms = {a: cls._fit_stats([r for r in rows if r.get("arm", "right") == a])
+                for a in sorted({r.get("arm", "right") for r in rows})}
+        return cls(mode, pooled["mean"], pooled["std"], xi, pooled["p_mean"], pooled["p_std"], arms=arms,
+                   grip_space=GRIP_SPACE)
 
-    def target(self, exec_, script):
+    def target(self, exec_, script, arm: str = "right"):
         """Normalized flow-matching target [H, 8] and the fraction of residual entries clipped by xi."""
         e, s = np.asarray(exec_, np.float32), np.asarray(script, np.float32)
         if self.mode == "absolute":
-            return (e - self.mean) / self.std, 0.0
+            st = self.stats(arm)
+            return (e - st["mean"]) / st["std"], 0.0
         z = (e - s) / self.xi
         return np.clip(z, -1.0, 1.0), float((np.abs(z) > 1.0 + 1e-6).mean())
 
-    def cond_script(self, script):
+    def cond_script(self, script, arm: str = "right"):
         """Scripted chunk as an expert input (residual mode), normalized like absolute actions."""
-        return (np.asarray(script, np.float32) - self.mean) / self.std
+        st = self.stats(arm)
+        return (np.asarray(script, np.float32) - st["mean"]) / st["std"]
 
-    def action(self, z, script=None):
-        """Normalized expert output -> executable 8-D command chunk."""
+    def action(self, z, script=None, arm: str = "right"):
+        """Normalized expert output -> executable 8-D command chunk (gripper in the training grip space)."""
         z = np.asarray(z, np.float32)
         if self.mode == "absolute":
-            return z * self.std + self.mean
+            st = self.stats(arm)
+            return z * st["std"] + st["mean"]
         return np.asarray(script, np.float32) + np.clip(z, -1.0, 1.0) * self.xi
 
-    def proprio(self, p):
-        return (proprio_vec(p) - self.p_mean) / self.p_std
+    def proprio(self, p, arm: str = "right", mask: dict | None = None):
+        st = self.stats(arm)
+        return (proprio_vec(p) - st["p_mean"]) / st["p_std"] * _dim_mask(mask)
 
     def to_json(self):
         return {"mode": self.mode, "mean": self.mean.tolist(), "std": self.std.tolist(), "xi": self.xi.tolist(),
-                "p_mean": self.p_mean.tolist(), "p_std": self.p_std.tolist()}
+                "p_mean": self.p_mean.tolist(), "p_std": self.p_std.tolist(),
+                "arms": {a: {k: v.tolist() for k, v in s.items()} for a, s in self.arms.items()},
+                "grip_space": self.grip_space}
 
     @classmethod
     def from_json(cls, d):
@@ -255,8 +356,18 @@ class ActionNorm:
 def make_sample(row: dict, line: dict | None, items: list, state: str = "IMG", wrist: bool = True,
                 image_root: str = "", hz: int = HZ) -> dict:
     """Join one R2 row with its pool line and the stage-A decision items of that snapshot. The committed
-    decisions default to the (single) decision labels of the items (training = teacher forcing)."""
+    decisions default to the (single) decision labels of the items (training = teacher forcing). The gripper
+    (action dim 7, proprio grip) is mapped to [0, 1] openness of the row's dataset (§63 (2)); the row is not
+    modified."""
     check_row(row, hz)
+    src = grip_source(row)
+    acts = {}
+    for key in ("action_exec", "action_script"):
+        a = np.array(row[key], np.float64)
+        a[:, 7] = grip_open01(a[:, 7], src)
+        acts[key] = a.tolist()
+    g = row["proprio"]["grip"]
+    proprio = {**row["proprio"], "grip": [grip_open01(g[0], src), grip_rate01(g[1], src)]}
     committed = dict(row.get("committed") or {})
     for it in items:
         if it["question"] not in committed and len(it["target"]) == 1:
@@ -268,9 +379,10 @@ def make_sample(row: dict, line: dict | None, items: list, state: str = "IMG", w
         ctx = {"text": canonicalize(prompt_state(line, state)), "images": images_of(line, arm, wrist, image_root)}
     return {"key": f"{row['kind']}_ep{row['seed']}_k{row['k']}", "split": items[0]["split"] if items else
             (line or {}).get("split"), "items": items, "context": ctx, "committed": committed,
-            "skill_id": row["skill_id"], "phase_id": row["phase_id"], "proprio": row["proprio"],
-            "action_exec": row["action_exec"], "action_script": row["action_script"], "valid": row["valid"],
-            "aux": row["aux"], "H": row["H"], "verify": (row.get("verify") or {}).get("truth")}
+            "skill_id": row["skill_id"], "phase_id": row["phase_id"], "proprio": proprio,
+            "action_exec": acts["action_exec"], "action_script": acts["action_script"], "valid": row["valid"],
+            "aux": row["aux"], "H": row["H"], "verify": (row.get("verify") or {}).get("truth"), "arm": arm,
+            "proprio_mask": row.get("proprio_mask"), "grip_src": src, "hz": hz}
 
 
 def read_rows(path: str) -> dict:
@@ -286,9 +398,10 @@ def stageb_path(folder: str) -> str:
 
 
 def load_stageb(pool_dir: str, rows_path: str | None = None, labels_v2: str | None = None, state: str = "IMG",
-                wrist: bool = True, dev_val_seeds=None) -> list:
+                wrist: bool = True, dev_val_seeds=None, hz: int = HZ) -> list:
     """Stage-B samples of one pool folder: R2 rows (<folder>.stageb.jsonl) x pool lines x stage-A decision items
-    (labels_v2 targets, same prompt state and images as the context). Pool `oracle` is never read (stagea_data)."""
+    (labels_v2 targets, same prompt state and images as the context). Pool `oracle` is never read (stagea_data).
+    `hz` = the folder's action rate (§62: our data 30 Hz); a row with another hz is refused."""
     import glob
     from .stagea_data import build_items, labels_v2_factory
     rows = read_rows(rows_path or stageb_path(pool_dir))
@@ -308,12 +421,40 @@ def load_stageb(pool_dir: str, rows_path: str | None = None, labels_v2: str | No
                 ims = images_of(ln, row.get("arm", "right"), wrist, pool_dir)
                 for it in items:
                     it["images"] = ims
-            s = make_sample(row, ln, items, state, wrist, pool_dir)
+            s = make_sample(row, ln, items, state, wrist, pool_dir, hz=hz)
             if s["split"] is None or s["split"] not in ("train", "val"):
                 from .stagea_data import split_of
                 s["split"] = split_of(ln, dev_val_seeds)
             out.append(s)
     return out
+
+
+def load_for_training(data: str, pool: str = "", rows: str = "", se2e_root: str = SE2E_ROOT,
+                      se2e_kinds: str = "RB1,RB2", state: str = "IMG", wrist: bool = True, dev_val_seeds=None,
+                      labels: bool = True, image_root: str | None = None):
+    """(samples, hz) of one stage-B training dataset (§62: the loader takes the dataset's hz).
+      pool | r2  our 30 Hz data: --pool folders (comma separated) with <folder>.stageb.jsonl (or --rows per folder)
+      se2e       S-E2E (ROBOTIS AI Worker, 10 Hz, H 5): <se2e_root>/<kind>.stageb.jsonl, frames under se2e_root"""
+    if data not in DATA_HZ:
+        raise ValueError(f"data {data!r}: one of {sorted(DATA_HZ)}")
+    hz = DATA_HZ[data]
+    out = []
+    if data == "se2e":
+        from .se2e_data import load_se2e, rows_path
+        for kind in [k for k in se2e_kinds.split(",") if k]:
+            out += load_se2e(rows_path(se2e_root, kind), image_root=se2e_root if image_root is None else image_root,
+                             labels=labels, wrist=wrist, hz=hz)
+    else:
+        folders = [f for f in pool.split(",") if f]
+        rps = [r or None for r in rows.split(",")] if rows else [None] * len(folders)
+        if not folders or len(rps) != len(folders):
+            raise ValueError("pool / r2: one or more --pool folders, and one --rows entry per folder if given")
+        for folder, rp in zip(folders, rps):
+            out += load_stageb(folder, rows_path=rp, state=state, wrist=wrist, dev_val_seeds=dev_val_seeds, hz=hz)
+    Hs = sorted({s["H"] for s in out})
+    if len(Hs) > 1:
+        raise ValueError(f"mixed chunk lengths {Hs} in one training set")
+    return out, hz
 
 
 # ------------------------------------------------------------------------------------------ synthetic source

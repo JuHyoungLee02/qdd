@@ -416,6 +416,9 @@ def run_meta(cmd: str, info: dict, extra: dict | None = None) -> dict:
     if info.get("path") and info["kind"] != "mock":
         m["model"]["fingerprint"] = model_fingerprint(info["path"])
         m["model"]["train_prompt_config"] = training_prompt_config(info["path"])
+    # canon §28 / §42: the latest daily canary of this model (harvest.eval.canary), or an explicit "none"
+    from .canary import latest_canary
+    m["canary"] = latest_canary("mock" if info["kind"] == "mock" else m["model"].get("fingerprint"))
     m.update(extra or {})
     return m
 

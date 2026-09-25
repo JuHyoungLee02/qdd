@@ -68,6 +68,7 @@ def main(argv=None):
     from inspect_robots.controller import DefaultController
     from inspect_robots.scorer import episode_length, success_at_end
 
+    from ..eval.canary import canary_id_for  # canon §28/§42: the model's latest canary id (or "none")
     from .astra_hb import MODEL as ASTRA_MODEL, MockAstra
     from .core import OursRuntime, RuntimeConfig
     from .ir_policy import OursPolicy
@@ -98,7 +99,8 @@ def main(argv=None):
                         model_path=a.model_path, layout=a.layout if a.selector == "jevl" else "",
                         call_mode=a.mode if a.selector == "jevl" else "", clock=a.clock,
                         question_ids=question_ids(a.layout, "IMG" if a.selector == "stageb" else "S1-1mm"),
-                        astra_mode=astra_mode, hb_mode=a.hb_mode, hb_budget=a.hb_budget, verify_cal=a.verify_cal)
+                        astra_mode=astra_mode, hb_mode=a.hb_mode, hb_budget=a.hb_budget, verify_cal=a.verify_cal,
+                        canary_id=canary_id_for(a.model_path, mock=a.selector in ("mock", "mock_fused")))
     if a.backend == "fused":
         cfg.state_repr = "fused: images (head + active wrist) + task + contract summary + proprio (canon §58)"
     rt = OursRuntime(cfg, model, astra=astra)

@@ -124,19 +124,30 @@ class StageB(nn.Module):
         return ctx, mask, lps
 
     # ---------------------------------------------------------------------------------- conditions / targets
+    def proprio_input(self, s) -> np.ndarray:
+        """Expert proprio input of one sample: per-arm normalized values with masked keys zeroed (§63 (1), (3)) +
+        one mask channel per key (experts built with proprio_dim = D.PROPRIO_IN_DIM; pre-§63 experts: values only)."""
+        arm = s.get("arm", "right")
+        x = self.norm.proprio(s["proprio"], arm, s.get("proprio_mask"))
+        if self.expert.cfg.proprio_dim == D.PROPRIO_IN_DIM:
+            x = np.concatenate([x, D.proprio_mask_vec(s.get("proprio_mask"))])
+        return x.astype(np.float32)
+
     def cond(self, samples, ctx, mask, device):
         n, v = self.norm, self.vocabs
         c = {"ctx": insulate(ctx, self.ki), "ctx_mask": mask,
-             "proprio": torch.tensor(np.stack([n.proprio(s["proprio"]) for s in samples]), device=device),
+             "proprio": torch.tensor(np.stack([self.proprio_input(s) for s in samples]), device=device),
              "skill": torch.tensor([v["skill"].get(s["skill_id"]) for s in samples], device=device),
              "phase": torch.tensor([v["phase"].get(s["phase_id"]) for s in samples], device=device),
              "dec": torch.tensor([D.dec_ids(s["committed"], v["dec"]) for s in samples], device=device)}
         if self.expert.cfg.residual:
-            c["script"] = torch.tensor(np.stack([n.cond_script(s["action_script"]) for s in samples]), device=device)
+            c["script"] = torch.tensor(np.stack([n.cond_script(s["action_script"], s.get("arm", "right"))
+                                                 for s in samples]), device=device)
         return c
 
     def targets(self, samples, device):
-        zs, sat = zip(*[self.norm.target(s["action_exec"], s["action_script"]) for s in samples])
+        zs, sat = zip(*[self.norm.target(s["action_exec"], s["action_script"], s.get("arm", "right"))
+                        for s in samples])
         a = torch.tensor(np.stack(zs), device=device)
         valid = torch.tensor(np.asarray([s["valid"] for s in samples], np.float32), device=device)
         return a, valid, float(np.mean(sat))
@@ -221,7 +232,7 @@ class StageB(nn.Module):
         """Executable chunk [H, 8] for one sample (context forward + `steps` Euler steps)."""
         ctx, mask = self.contexts([sample], enc, device, grad=False)
         z = sample_actions(self.expert, self.cond([sample], ctx, mask, device), steps, noise)[0].cpu().numpy()
-        return self.norm.action(z, sample["action_script"])
+        return self.norm.action(z, sample["action_script"], sample.get("arm", "right"))
 
     # ---------------------------------------------------------------------------------- save / load heads
     def head_config(self):
@@ -281,11 +292,12 @@ def new_verify_head(ctx_dim, aux_kw=None) -> AuxGeomHead:
 def new_model(backbone, samples, ctx_dim, mode="absolute", ki="stop", layer=-1, expert_kw=None, aux_kw=None,
               lam=None, xi=None, use_aux=True, use_verify=True) -> StageB:
     """Heads sized from the training samples (vocabularies, normalization statistics)."""
-    rows = [{"action_exec": s["action_exec"], "valid": s["valid"], "proprio": s["proprio"]} for s in samples]
-    norm = D.ActionNorm.fit(rows, mode, xi)
+    rows = [{"action_exec": s["action_exec"], "valid": s["valid"], "proprio": s["proprio"],
+             "arm": s.get("arm", "right"), "proprio_mask": s.get("proprio_mask")} for s in samples]
+    norm = D.ActionNorm.fit(rows, mode, xi)  # per-arm statistics, masked proprio left out (§63 (1), (3))
     vocabs = D.build_vocabs(samples)
     H = samples[0]["H"]
-    ecfg = ExpertConfig(ctx_dim=ctx_dim, horizon=H, proprio_dim=D.PROPRIO_DIM, n_questions=len(D.QUESTIONS),
+    ecfg = ExpertConfig(ctx_dim=ctx_dim, horizon=H, proprio_dim=D.PROPRIO_IN_DIM, n_questions=len(D.QUESTIONS),
                         dec_vocab=len(vocabs["dec"]) + 8, skill_vocab=len(vocabs["skill"]) + 4,
                         phase_vocab=len(vocabs["phase"]) + 4, residual=mode == "residual", **(expert_kw or {}))
     acfg = AuxConfig(ctx_dim=ctx_dim, n_reg=len(D.AUX_REG), n_cls=len(D.AUX_CLS), **(aux_kw or {}))

@@ -53,6 +53,7 @@ fi
 for v in $(compgen -v | grep -E '^(IR_|CUDA_|PYTHONPATH$|PIP_)' || true); do E+=("$v=${!v}"); done
 E+=("LD_LIBRARY_PATH=/nvidia-driver:/root/cyclonedds/install/lib" "ACCEPT_EULA=Y" "PRIVACY_CONSENT=Y" "OMNI_KIT_ALLOW_ROOT=1"
     "NVIDIA_VISIBLE_DEVICES=all" "NVIDIA_DRIVER_CAPABILITIES=all")
-# GPU 0 만. 호출자가 안 주면 0 으로 고정 (GPU2 금지)
+# 렌더는 GPU 0·1 만(user-log 62: 1 = Isaac, 0 = 비어 있을 때만; GPU 2 는 학습 전용·렌더 금지, 3 = vLLM).
+# 호출자가 안 주면 0 으로 고정.
 [ -z "${CUDA_VISIBLE_DEVICES:-}" ] && E+=("CUDA_VISIBLE_DEVICES=0")
 exec chroot "$R" env -i "${E[@]}" HOME=/root "$@"

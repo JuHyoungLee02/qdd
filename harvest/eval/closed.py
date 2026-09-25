@@ -204,7 +204,8 @@ def run_worker(spec_path: str) -> None:
                             m4={**asdict(M4Params()), **m4o}, calibration=spec["calibration"] or "",
                             j5_alpha=spec["j5_alpha"], model_fingerprint=spec["fingerprint"], hb_N_s=hb_n,
                             verify_cal=spec.get("verify_cal") or "", hb_mode=hb_mode,
-                            hb_budget=spec.get("hb_budget") if hb_mode == "K4" else None, **rto)
+                            hb_budget=spec.get("hb_budget") if hb_mode == "K4" else None,
+                            canary_id=spec.get("canary_id") or "none", **rto)
         if spec["backend"] == "fused":
             cfg.state_repr = "fused: images (head + active wrist) + task + contract summary + proprio (canon §58)"
         rt = OursRuntime(cfg, model, astra=astra)
@@ -341,6 +342,8 @@ def run(a) -> dict:
     layout = ((C.default_layout(pc) if a.layout == "auto" else a.layout) if selector == "jevl"
               else "HW" if selector == "stageb" else "H")
     fp = C.model_fingerprint(info["path"]) if info.get("path") else None
+    from .canary import latest_canary  # canon §28/§42: the day's canary id on every call row (or "none")
+    canary_id = latest_canary("mock" if selector in ("mock", "mock_fused") else fp)["id"]
     variants = [v for v in a.variants.split(",") if v]
     per_ep = a.max_seconds / 0.3 + 60  # RTF >= 0.3 assumed + reset
     timeout = a.timeout or int(240 + len(conds) * len(seeds) * a.epochs * per_ep)
@@ -356,7 +359,8 @@ def run(a) -> dict:
                     "model_path": info.get("path"), "fingerprint": fp, "calibration": a.calibration,
                     "j5_alpha": a.j5_alpha, "mock_latency": a.mock_latency, "verify_cal": a.verify_cal,
                     "hb_n": [float(x) for x in a.hb_n.split(",") if x],
-                    "hb_mode": [m for m in a.hb_mode.split(",") if m], "hb_budget": a.hb_budget}
+                    "hb_mode": [m for m in a.hb_mode.split(",") if m], "hb_budget": a.hb_budget,
+                    "canary_id": canary_id}
             sp = os.path.join(a.out, f"spec_{v}.json")
             json.dump(spec, open(sp, "w", encoding="utf-8"), indent=1)
             cmd = worker_cmd(code, os.path.abspath(sp), a.isaac_gpu, f"{a.inst_prefix}_{v}", timeout)

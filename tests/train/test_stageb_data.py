@@ -94,6 +94,134 @@ def test_action_norm_absolute_and_residual():
     assert D.ActionNorm.from_json(json.loads(json.dumps(n.to_json()))).to_json() == n.to_json()
 
 
+# ------------------------------------------------------------------ canon §63 (1)-(3) (R7 cycle-1 D1)
+def test_grip_openness_maps_per_dataset_and_clips():
+    """§63 (2): gripper value -> [0, 1] openness (1 = open), linear per dataset, clipped outside the range."""
+    f = D.grip_open01
+    assert f(0.107, "sim_width_m") == pytest.approx(1.0) and f(0.0, "sim_width_m") == pytest.approx(0.0)
+    assert f(0.0535, "sim_width_m") == pytest.approx(0.5) and f(0.2, "sim_width_m") == 1.0
+    assert f(-0.01, "sim_width_m") == 0.0
+    o, c = D.GRIP_CAL["RB1"]  # S-E2E joint: 0 = open, ~1.1 = closed (dataset range calibration)
+    assert o == 0.0 and 1.05 <= c <= 1.2
+    assert f(0.0, "RB1") == pytest.approx(1.0) and f(c, "RB1") == pytest.approx(0.0)
+    assert f(c / 2, "RB1") == pytest.approx(0.5) and f(1.34, "RB1") == 0.0 and f(-0.4, "RB1") == 1.0
+    assert np.allclose(f(np.array([0.0, c]), "RB1"), [1.0, 0.0])  # vectorized
+    for src, v in (("sim_width_m", 0.03), ("RB2", 0.4)):
+        assert D.grip_value(f(v, src), src) == pytest.approx(v)
+    assert D.grip_rate01(-0.107, "sim_width_m") == pytest.approx(-1.0)  # rates scale, never clip
+    assert D.grip_rate01(1.0, "RB1") == pytest.approx(-1.0 / c)
+    assert D.grip_source({"kind": "P0"}) == "sim_width_m" and D.grip_source({"kind": "SYN"}) == "sim_width_m"
+    assert D.grip_source({"kind": "RB2", "fps_src": 10}) == "RB2"
+    with pytest.raises(ValueError):
+        D.grip_source({"kind": "RB9", "fps_src": 10})  # a real dataset without a calibration is refused
+
+
+def test_make_sample_maps_the_gripper_to_openness_without_touching_the_row():
+    r = _row(proprio={"q": [0.1] * 7, "qd": [0.0] * 7, "tau": [1.0] * 7, "grip": [0.0535, -0.0107]},
+             action_exec=[[0.1] * 7 + [0.107]] * 15, action_script=[[0.1] * 7 + [0.3]] * 15)
+    before = json.dumps(r)
+    s = D.make_sample(r, None, [])
+    assert json.dumps(r) == before
+    assert s["grip_src"] == "sim_width_m" and s["arm"] == "right"
+    assert s["proprio"]["grip"] == pytest.approx([0.5, -0.1])
+    assert np.asarray(s["action_exec"])[:, 7] == pytest.approx(1.0)
+    assert np.asarray(s["action_script"])[:, 7] == pytest.approx(1.0)  # 0.3 m > open width -> clipped
+    assert np.asarray(s["action_exec"])[:, :7] == pytest.approx(0.1)
+    se = _row(seed=3, kind="RB1", hz=10, H=5, arm="left", fps_src=10,
+              proprio={"q": [0.1] * 7, "qd": [0.0] * 7, "tau": [0.0] * 7, "grip": [0.0, 0.0]},
+              proprio_mask={"q": 1, "qd": 1, "tau": 0, "grip": 1},
+              action_exec=[[0.1] * 7 + [1.3]] * 5, action_script=[[0.1] * 7 + [1.3]] * 5, valid=[1] * 5)
+    s2 = D.make_sample(se, None, [], hz=10)
+    assert s2["grip_src"] == "RB1" and s2["arm"] == "left" and s2["proprio"]["grip"][0] == pytest.approx(1.0)
+    assert np.asarray(s2["action_exec"])[:, 7] == pytest.approx(0.0)
+    assert s2["proprio_mask"] == {"q": 1, "qd": 1, "tau": 0, "grip": 1}
+
+
+def _arm_rows(arm, loc, n=4, tau=5.0, mask=None):
+    out = []
+    for i in range(n):
+        a = np.random.default_rng(i).normal(loc, 0.1, (15, 8))
+        a[:, 7] = 0.5
+        r = _row(arm=arm, action_exec=a.tolist(), action_script=a.tolist(),
+                 proprio={"q": [loc] * 7, "qd": [0.0] * 7, "tau": [tau] * 7, "grip": [0.5, 0.0]})
+        if mask is not None:
+            r["proprio_mask"] = mask
+        out.append(r)
+    return out
+
+
+def test_action_norm_keeps_per_arm_statistics():
+    """§63 (1): normalization statistics per arm (left / right), not one pooled set."""
+    n = D.ActionNorm.fit(_arm_rows("right", 1.0) + _arm_rows("left", -1.0), "absolute")
+    assert n.stats("right")["mean"][0] == pytest.approx(1.0, abs=0.1)
+    assert n.stats("left")["mean"][0] == pytest.approx(-1.0, abs=0.1)
+    assert n.stats("left")["p_mean"][0] == pytest.approx(-1.0) and n.stats("right")["p_mean"][0] == pytest.approx(1.0)
+    e = np.asarray(_arm_rows("left", -1.0)[0]["action_exec"], np.float32)
+    zl, _ = n.target(e, e, arm="left")
+    zr, _ = n.target(e, e, arm="right")
+    assert abs(float(zl[:, 0].mean())) < 2.0 < abs(float(zr[:, 0].mean()))  # left data is typical for the left arm
+    assert np.allclose(n.action(zl, arm="left"), e, atol=1e-5)
+    p = {"q": [-1.0] * 7, "qd": [0.0] * 7, "tau": [5.0] * 7, "grip": [0.5, 0.0]}
+    assert np.allclose(n.proprio(p, arm="left")[:7], 0.0, atol=1e-5)
+    n2 = D.ActionNorm.from_json(json.loads(json.dumps(n.to_json())))
+    assert n2.to_json() == n.to_json() and n2.grip_space == "open01@v1"
+    # an arm never seen in training falls back to the pooled statistics
+    only_r = D.ActionNorm.fit(_arm_rows("right", 1.0), "absolute")
+    assert np.allclose(only_r.stats("left")["mean"], only_r.mean)
+    # a checkpoint written before §63 (no "arms", no grip_space) loads and uses its single statistics set
+    old = {"mode": "absolute", "mean": [0.0] * 8, "std": [1.0] * 8, "xi": [0.05] * 8,
+           "p_mean": [0.0] * D.PROPRIO_DIM, "p_std": [1.0] * D.PROPRIO_DIM}
+    o = D.ActionNorm.from_json(old)
+    assert o.grip_space is None and np.allclose(o.stats("left")["mean"], 0.0)
+
+
+def test_masked_proprio_is_left_out_of_statistics_and_input():
+    """§63 (3): no torque in S-E2E -> tau masked: excluded from the statistics and zeroed in the expert input (the
+    mask itself is a separate input channel, proprio_mask_vec)."""
+    rows = _arm_rows("right", 1.0, tau=5.0) + _arm_rows("right", 1.0, tau=0.0,
+                                                        mask={"q": 1, "qd": 1, "tau": 0, "grip": 1})
+    n = D.ActionNorm.fit(rows, "absolute")
+    tau = slice(14, 21)
+    assert n.stats("right")["p_mean"][tau] == pytest.approx(5.0)  # the masked zeros do not pull the mean down
+    p = {"q": [1.0] * 7, "qd": [0.0] * 7, "tau": [123.0] * 7, "grip": [0.5, 0.0]}
+    x = n.proprio(p, arm="right", mask={"q": 1, "qd": 1, "tau": 0, "grip": 1})
+    assert np.all(x[tau] == 0.0) and x.shape == (D.PROPRIO_DIM,)
+    assert not np.all(n.proprio(p, arm="right")[tau] == 0.0)
+    assert D.proprio_mask_vec(None).tolist() == [1.0, 1.0, 1.0, 1.0]
+    assert D.proprio_mask_vec({"q": 1, "qd": 1, "tau": 0, "grip": 1}).tolist() == [1.0, 1.0, 0.0, 1.0]
+    assert D.PROPRIO_IN_DIM == D.PROPRIO_DIM + len(D.PROPRIO_KEYS)
+    with pytest.raises(ValueError):
+        D.check_row(_row(proprio_mask={"torque": 0}))
+
+
+def test_training_loader_takes_the_dataset_rate(tmp_path):
+    """§62: the stage-B loader takes the dataset's hz (S-E2E 10 Hz / H 5, our pool / R2 data 30 Hz / H 15)."""
+    assert D.DATA_HZ == {"pool": 30, "r2": 30, "se2e": 10}
+    se = _row(seed=3, kind="RB2", hz=10, H=5, arm="right", fps_src=10, split="train", task="pick",
+              label_window_s=0.3, images={"cam_head": "h.jpg", "cam_wrist_right": "r.jpg"},
+              committed={"dir_xy": "plus_x", "dir_z": "up", "mag_coarse": "small"},
+              action_exec=[[0.0] * 8] * 5, action_script=[[0.0] * 8] * 5, valid=[1] * 5,
+              proprio_mask={"q": 1, "qd": 1, "tau": 0, "grip": 1}, aux={"reg": {}, "cls": {}})
+    root = tmp_path / "conv"
+    root.mkdir()
+    (root / "RB2.stageb.jsonl").write_text(json.dumps(se) + "\n" + json.dumps(dict(se, split="val", k=5)) + "\n")
+    ss, hz = D.load_for_training("se2e", se2e_root=str(root), se2e_kinds="RB2")
+    assert hz == 10 and len(ss) == 2 and {s["H"] for s in ss} == {5} and ss[0]["grip_src"] == "RB2"
+    (root / "RB2.stageb.jsonl").write_text(json.dumps(dict(se, hz=30)) + "\n")
+    with pytest.raises(ValueError):
+        D.load_for_training("se2e", se2e_root=str(root), se2e_kinds="RB2")  # a 30 Hz row in the 10 Hz dataset
+    folder = tmp_path / "pool"
+    folder.mkdir()
+    (folder / "ep2000.jsonl").write_text(json.dumps(_line()) + "\n")
+    (tmp_path / "pool.labels_v2.jsonl").write_text(json.dumps(_v2()) + "\n")
+    (tmp_path / "pool.stageb.jsonl").write_text(json.dumps(_row()) + "\n")
+    for data in ("pool", "r2"):
+        ss, hz = D.load_for_training(data, pool=str(folder))
+        assert hz == 30 and len(ss) == 1 and ss[0]["H"] == 15
+    with pytest.raises(ValueError):
+        D.load_for_training("bogus", pool=str(folder))
+
+
 def test_aux_vectors_mask_null_and_missing():
     r, rm, c, cm = D.aux_vecs(_row()["aux"])
     i = D.AUX_REG.index("g2goal_dx")

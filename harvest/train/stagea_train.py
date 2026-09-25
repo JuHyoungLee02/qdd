@@ -1,6 +1,8 @@
 """Stage-A SFT of the Jev-L typed selector (canon §51-§52, D26 §1.4, docs/stage3/results/stageA_pipeline.md).
 
-  train   --pool DIR --rule R --run NAME [--state S1] ...      LoRA SFT, early stopping on val (POOL `eval`) NLL
+  train   --pool DIR --run NAME [--cameras HW] [--state S1] ... LoRA SFT on labels_v2 targets (default; --rule R only
+                                                               with --target-source outcome), early stopping on val
+                                                               (POOL `eval`) NLL
   parity  --dev DIR --acc JSONL [--adapter DIR] --n N          HF option probs vs the recorded vLLM Jev-L probs
   load    --adapter DIR --pool DIR --rule R                    reload a saved adapter and score a few val items
 
@@ -15,7 +17,9 @@ factory(pool_dir, seed) -> stagea_data source. Never the pool oracle.
 --pool takes one or more episode folders (comma separated); DEV folders need --dev-val-seeds (smoke only). Model Qwen3-VL-4B-Instruct BF16,
 LoRA r32 a64 dropout 0.05 on every LLM linear layer (q,k,v,o,gate,up,down of model.language_model), vision tower,
 merger and lm_head frozen. AdamW lr 1e-4, cosine, 3 % warmup, 1-2 epochs.
-Pod: run with CUDA_VISIBLE_DEVICES=1 (smoke) from /data/harvest/venv_train; every output under /data/harvest.
+Pod: run with CUDA_VISIBLE_DEVICES=2 (training compute, no rendering: user-log 62, 64; GPU 1 = Isaac render, GPU 3 =
+vLLM; check the GPU is free with nvidia-smi first) from /data/harvest/venv_train; every output under /data/harvest.
+TORCH_DISABLE_NATIVE_JIT=1 is set below when absent (the pod has no C compiler for Triton's launcher, R7 cycle-1 N1).
 """
 from __future__ import annotations
 
@@ -27,6 +31,8 @@ import os
 import random
 import sys
 import time
+
+os.environ.setdefault("TORCH_DISABLE_NATIVE_JIT", "1")  # before any torch import (functions import torch lazily)
 
 MODEL_DIR = "/data/harvest/models/Qwen3-VL-4B-Instruct"
 MODEL_REV = "ebb281ec70b05090aa6165b016eac8ec08e71b17"

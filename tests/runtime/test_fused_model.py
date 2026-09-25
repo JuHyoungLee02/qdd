@@ -94,6 +94,22 @@ def _fake_server(record):
     return httpx.MockTransport(handler)
 
 
+def test_gripper_space_round_trip_at_the_runtime_boundary():
+    """canon §63 (2): a checkpoint trained on openness gets the sim pad gap mapped in and its chunk mapped back to m;
+    a pre-§63 checkpoint (grip_space None) keeps raw metres."""
+    p = {"q": [0.0] * 7, "qd": [0.0] * 7, "tau": [0.0] * 7, "grip": [0.0535, -0.107]}
+    q = FM.grip_to_model(p, "open01@v1")
+    assert q["grip"] == pytest.approx([0.5, -1.0]) and p["grip"] == [0.0535, -0.107] and q["q"] == p["q"]
+    assert FM.grip_to_model(p, None) == p
+    c = np.zeros((15, 8))
+    c[:, 7] = [0.0, 0.5, 1.0, 1.4, -0.2] * 3
+    out = FM.grip_from_model(c, "open01@v1")
+    assert out[:5, 7] == pytest.approx([0.0, 0.0535, 0.107, 0.107, 0.0]) and c[1, 7] == 0.5
+    assert np.array_equal(FM.grip_from_model(c, None), c)
+    with pytest.raises(ValueError):
+        FM.grip_to_model(p, "open01@v9")
+
+
 def test_fused_client_round_trip():
     rec = []
     c = FM.FusedClient("http://fake", transport=_fake_server(rec))

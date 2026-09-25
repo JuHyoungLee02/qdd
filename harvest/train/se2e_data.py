@@ -14,7 +14,8 @@ One row per sampled frame k (stride), same fields as stageb_data.check_row(row, 
                             no scripted skill)
   proprio                   q, qd (finite difference of the 10 fps state), tau = 0 (not recorded,
                             proprio_mask.tau = 0), grip = [gripper joint value, its velocity] (joint units, NOT
-                            the sim's width in m)
+                            the sim's width in m; stageb_data.make_sample maps both datasets to [0, 1] openness,
+                            canon §63 (2), and drops masked tau from statistics and input, §63 (3))
   action_full [H][D]        all recorded action dims (bimanual expert option), state_full [D]
   committed (labels mode)   HEURISTIC decision tokens (LABEL_SRC): Δ = FK(state[k + 3]) - FK(state[k]) (0.33 s ->
                             nearest step count, 3 steps = 0.30 s at 10 Hz, `label_steps`) of
@@ -236,9 +237,11 @@ def needed_cams(row: dict, wrist: bool = True) -> list:
                            else [f"cam_wrist_{row['arm']}"])
 
 
-def load_se2e(rows_path: str, image_root: str = "", labels: bool = True, wrist: bool = True) -> list:
+def load_se2e(rows_path: str, image_root: str = "", labels: bool = True, wrist: bool = True,
+              hz: int | None = None) -> list:
     """Stage-B samples (stageb_data.make_sample format) from a converted rows file. Rows missing a needed camera
-    (e.g. Task_0002 episodes 617-816 have no wrist videos) are skipped."""
+    (e.g. Task_0002 episodes 617-816 have no wrist videos) are skipped. hz = the dataset rate every row must have
+    (None = each row's own hz). make_sample maps the gripper joint to [0, 1] openness (canon §63 (2), GRIP_CAL)."""
     from .stageb_data import images_of, make_sample
     out = []
     for x in open(rows_path, encoding="utf-8"):
@@ -253,7 +256,7 @@ def load_se2e(rows_path: str, image_root: str = "", labels: bool = True, wrist: 
         items = decision_items(r.get("committed") or {}, ctx, r["split"], key, r["label_window_s"]) if labels else []
         for it in items:
             it["images"] = ims
-        s = make_sample(r, None, items, hz=r["hz"])
+        s = make_sample(r, None, items, hz=r["hz"] if hz is None else hz)
         s["context"] = {"text": ctx, "images": ims}
         s["split"] = r["split"]
         out.append(s)

@@ -2,14 +2,19 @@
 
   smoke  --backbone tiny|qwen --device cpu|cuda --steps 50 --out DIR     synthetic data, loss / KI / save-load /
                                                                           latency checks (NOT a result)
-  train  --pool DIR[,DIR] --run NAME ...                                 real stage-B training (R2 rows needed)
+  train  --data r2|pool --pool DIR[,DIR] --run NAME ...                  our 30 Hz data (R2 / pool stage-B rows)
+  train  --data se2e [--se2e-root DIR --se2e-kinds RB1,RB2] --run NAME   S-E2E public data, 10 Hz, H 5 (§62, §63)
+         [--reload-check]                                                 save -> reload -> identical chunk / eval
 
 Model: Qwen3-VL-4B-Instruct (stage A's revision) + LoRA r32 on every LLM linear layer (stage A's target, vision
 tower frozen) + ActionExpert (flow matching, KI stop-gradient) + AuxGeomHead (privileged geometry, gradient to
 the backbone). Loss = lam_dec * decision NLL + lam_act * flow matching + lam_aux * aux (+ lam_vqa * VQA, off).
 Prompt state default IMG (task sentence + contract summary + gripper, head + active wrist images; §58); S0/S1
 text states are ablations (--state). Action target default absolute (teacher S); --mode residual = ablation.
-Pod: /data/harvest/venv_train, every output under /data/harvest, GPU only when free (never GPU 2).
+Data (canon §63): per-arm normalization statistics, gripper as [0, 1] openness per dataset, masked proprio (S-E2E tau)
+out of the statistics and the expert input; the dataset's hz goes to the rows check and into stageb.json ("hz").
+Pod: /data/harvest/venv_train, every output under /data/harvest, GPU 2 = training / inference compute (user-log 62,
+64: no rendering on GPU 2; check it is free with nvidia-smi first). TORCH_DISABLE_NATIVE_JIT=1 (set below if absent).
 """
 from __future__ import annotations
 
@@ -21,8 +26,12 @@ import random
 import sys
 import time
 
-import numpy as np
-import torch
+# the pod has no C compiler: torch 2.13 would send some eager ops (Qwen3-VL mrope bmm) to Triton, whose launcher
+# build fails ("Failed to find C compiler"); must be set before torch is imported (R7 cycle-1 N1)
+os.environ.setdefault("TORCH_DISABLE_NATIVE_JIT", "1")
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 from . import stageb_data as D
 from .stageb_expert import fm_loss, n_params, sample_actions, sample_time
@@ -148,7 +157,7 @@ def evaluate(model, enc, val, device, seed=0, steps=10):
         z = sample_actions(model.expert, model.cond([s], ctx, mask, device), steps, n0)
         m = valid[..., None]
         mse_n.append(float((((z - a) ** 2) * m).sum() / (m.sum() * a.shape[-1])))
-        act = model.norm.action(z[0].cpu().numpy(), s["action_script"])
+        act = model.norm.action(z[0].cpu().numpy(), s["action_script"], s.get("arm", "right"))
         ex = np.asarray(s["action_exec"], np.float32)
         vv = np.asarray(s["valid"]) > 0
         mae_q.append(float(np.abs(act[vv, :7] - ex[vv, :7]).mean()))
@@ -235,6 +244,29 @@ def latency(model, enc, sample, device, steps=10, reps=30, warm=5):
     return out
 
 
+def reload_check(model, enc, va, device, ck, backbone_kind, model_dir, seed=0, dtype=torch.bfloat16) -> dict:
+    """Reload a saved checkpoint (adapter + heads) into a fresh backbone: the sampled chunk of va[0] (fixed noise)
+    and the fixed-noise validation metrics must be identical (R7 cycle-1 N10)."""
+    g = torch.Generator().manual_seed(123)
+    noise = torch.randn(1, model.expert.cfg.horizon, model.expert.cfg.act_dim, generator=g).to(device)
+    was = model.training
+    model.eval()
+    before = model.predict(va[0], enc, device, noise=noise)
+    ev_before = evaluate(model, enc, va, device, seed)
+    bb2, _, _ = load_backbone(backbone_kind, model_dir, device, adapter=os.path.join(ck, "adapter"), dtype=dtype)
+    m2 = load_heads(ck, bb2, device).eval()
+    m2.shared = model.shared
+    after = m2.predict(va[0], enc, device, noise=noise)
+    ev_after = evaluate(m2, enc, va, device, seed)
+    model.train(was)
+    del m2, bb2
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
+    return {"max_abs_action_diff": float(np.abs(before - after).max()), "eval_before": ev_before,
+            "eval_after": ev_after, "eval_equal": ev_before == ev_after,
+            "norm_equal": json.load(open(os.path.join(ck, "stageb.json")))["norm"] == model.norm.to_json()}
+
+
 # ------------------------------------------------------------------------------------------ commands
 def cmd_smoke(a):
     out = a.out
@@ -269,18 +301,8 @@ def cmd_smoke(a):
     ck = os.path.join(out, "ckpt")
     bb.save_pretrained(os.path.join(ck, "adapter"))
     model.save_heads(ck, {"base_model": a.model, "base_rev": MODEL_REV if a.backbone == "qwen" else "tiny-random",
-                          "prompt_config": pcfg})
-    g = torch.Generator().manual_seed(123)
-    noise = torch.randn(1, model.expert.cfg.horizon, model.expert.cfg.act_dim, generator=g).to(device)
-    model.eval()
-    before = model.predict(va[0], enc, device, noise=noise)
-    ev_before = evaluate(model, enc, va, device, a.seed)
-    bb2, _, _ = load_backbone(a.backbone, a.model, device, adapter=os.path.join(ck, "adapter"))
-    m2 = load_heads(ck, bb2, device).eval()
-    after = m2.predict(va[0], enc, device, noise=noise)
-    ev_after = evaluate(m2, enc, va, device, a.seed)
-    write({"event": "save_load", "max_abs_action_diff": float(np.abs(before - after).max()),
-           "eval_before": ev_before, "eval_after": ev_after})
+                          "prompt_config": pcfg, "hz": D.HZ})
+    write({"event": "save_load", **reload_check(model, enc, va, device, ck, a.backbone, a.model, a.seed)})
     write({"event": "latency", "steps": 10, **latency(model, enc, va[0], device)})
     first = [h for h in hist if h["event"] == "train"][:5]
     last = [h for h in hist if h["event"] == "train"][-5:]
@@ -290,19 +312,22 @@ def cmd_smoke(a):
 
 
 def cmd_train(a):
-    """Real stage-B training on R2 rows (not run in R4)."""
+    """Stage-B training: --data r2|pool (our 30 Hz rows) or se2e (S-E2E public data, 10 Hz, H 5; §62-§63)."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dev = None
     if a.dev_val_seeds:
         from .stagea_train import _seedset
         dev = _seedset(a.dev_val_seeds)
-    samples = []
-    folders = [f for f in a.pool.split(",") if f]
-    rows = [r or None for r in a.rows.split(",")] if a.rows else [None] * len(folders)
-    if len(rows) != len(folders):
-        raise SystemExit("--rows: one rows file per --pool folder (empty = <folder>.stageb.jsonl)")
-    for folder, rp in zip(folders, rows):
-        samples += D.load_stageb(folder, rows_path=rp, state=a.state, wrist=not a.no_wrist, dev_val_seeds=dev)
+    if a.data != "se2e" and not a.pool:
+        raise SystemExit(f"--data {a.data}: --pool DIR[,DIR] needed")
+    if a.data == "se2e" and a.state != "IMG":
+        raise SystemExit("--data se2e: the rows carry an IMG-style context only (task + gripper), --state IMG")
+    try:
+        samples, hz = D.load_for_training(a.data, pool=a.pool, rows=a.rows, se2e_root=a.se2e_root,
+                                          se2e_kinds=a.se2e_kinds, state=a.state, wrist=not a.no_wrist,
+                                          dev_val_seeds=dev, labels=not a.no_labels)
+    except ValueError as e:
+        raise SystemExit(str(e))
     tr, va = D.split_samples(samples)
     if a.max_train:
         tr = random.Random(a.seed).sample(tr, min(a.max_train, len(tr)))
@@ -329,14 +354,21 @@ def cmd_train(a):
         log.flush()
         print(json.dumps(rec), flush=True)
     pcfg = prompt_config(samples, a.state)
+    arms = {arm: sum(s.get("arm", "right") == arm for s in tr) for arm in ("left", "right")}
     write({"event": "config", "args": vars(a), "n_train": len(tr), "n_val": len(va), "model_rev": MODEL_REV,
-           "prompt_config": pcfg,
+           "prompt_config": pcfg, "data": a.data, "hz": hz, "H": tr[0]["H"], "train_arms": arms,
+           "grip_space": model.norm.grip_space, "grip_src": sorted({s["grip_src"] for s in tr}),
+           "proprio_masked": sum(1 for s in tr if s.get("proprio_mask") and 0 in s["proprio_mask"].values()),
            "expert_params": n_params(model.expert), "python": sys.version.split()[0]})
     total = a.max_steps or math.ceil(len(tr) / a.batch) * a.epochs
-    train_loop(model, enc, tr, va[:a.max_val] if a.max_val else va, device, total, a.batch, a.lr, a.lr_heads,
-               a.eval_every, a.seed, write)
-    bb.save_pretrained(os.path.join(out, "last", "adapter"))
-    model.save_heads(os.path.join(out, "last"), {"base_model": a.model, "base_rev": MODEL_REV, "prompt_config": pcfg})
+    val = va[:a.max_val] if a.max_val else va
+    train_loop(model, enc, tr, val, device, total, a.batch, a.lr, a.lr_heads, a.eval_every, a.seed, write)
+    last = os.path.join(out, "last")
+    bb.save_pretrained(os.path.join(last, "adapter"))
+    model.save_heads(last, {"base_model": a.model, "base_rev": MODEL_REV, "prompt_config": pcfg, "hz": hz,
+                            "data": a.data})
+    if a.reload_check:
+        write({"event": "save_load", **reload_check(model, enc, val, device, last, "qwen", a.model, a.seed)})
 
 
 def _common(p):
@@ -370,7 +402,12 @@ def main(argv=None):
     s.add_argument("--heads", type=int, default=4)
     t = sub.add_parser("train")
     _common(t)
-    t.add_argument("--pool", required=True)
+    t.add_argument("--data", default="r2", choices=sorted(D.DATA_HZ), help="r2 | pool (30 Hz) | se2e (10 Hz, §62)")
+    t.add_argument("--pool", default="", help="--data r2|pool: episode folder(s) with <folder>.stageb.jsonl")
+    t.add_argument("--se2e-root", default=D.SE2E_ROOT, help="--data se2e: <root>/<kind>.stageb.jsonl + frames")
+    t.add_argument("--se2e-kinds", default="RB1,RB2")
+    t.add_argument("--no-labels", action="store_true", help="--data se2e: actions only (no heuristic decisions)")
+    t.add_argument("--reload-check", action="store_true", help="after saving: reload -> identical chunk / eval")
     t.add_argument("--run", required=True)
     t.add_argument("--out-root", default="/data/harvest/ckpt/stageB")
     t.add_argument("--state", default="IMG", help="IMG (default, §58) | S0 | S1 (ablation)")

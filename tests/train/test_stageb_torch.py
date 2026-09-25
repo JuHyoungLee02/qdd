@@ -208,6 +208,58 @@ def test_save_load_heads_round_trip_and_predict_equal(tmp_path):
         assert v1.shape == (1, len(D.VERIFY_PREDS)) and torch.equal(v1, v2)
 
 
+def test_masked_proprio_is_zeroed_with_a_mask_channel_and_never_reaches_the_expert():
+    """canon §63 (3): a masked key (S-E2E tau) is zero in the expert input, its mask channel is 0, and its recorded
+    value cannot change the condition; no loss term reads proprio."""
+    enc, dev = MockEncoder(), torch.device("cpu")
+    m, ss = _model()
+    assert m.expert.cfg.proprio_dim == D.PROPRIO_IN_DIM
+    s = dict(ss[0], proprio_mask={"q": 1, "qd": 1, "tau": 0, "grip": 1})
+    s_big = dict(s, proprio=dict(s["proprio"], tau=[999.0] * 7))
+    ctx, mask = m.contexts([s], enc, dev, grad=False)
+    p = m.cond([s], ctx, mask, dev)["proprio"][0]
+    assert p.shape == (D.PROPRIO_IN_DIM,) and torch.all(p[14:21] == 0)
+    assert p[D.PROPRIO_DIM:].tolist() == [1.0, 1.0, 0.0, 1.0]
+    assert torch.equal(m.cond([s_big], ctx, mask, dev)["proprio"], m.cond([s], ctx, mask, dev)["proprio"])
+    u_big = dict(ss[0], proprio=dict(ss[0]["proprio"], tau=[999.0] * 7))  # unmasked: tau is an input
+    assert not torch.equal(m.cond([u_big], ctx, mask, dev)["proprio"], m.cond([ss[0]], ctx, mask, dev)["proprio"])
+    _, logs = m.losses([s], enc, dev)
+    assert not any("proprio" in k or "tau" in k for k in logs)
+
+
+def test_pre_s63_expert_without_mask_channel_keeps_its_23_d_condition():
+    enc, dev = MockEncoder(), torch.device("cpu")
+    m, ss = _model()
+    m.expert = E.ActionExpert(E.ExpertConfig(**{**m.expert.cfg.to_json(), "proprio_dim": D.PROPRIO_DIM}))
+    ctx, mask = m.contexts(ss[:1], enc, dev, grad=False)
+    assert m.cond(ss[:1], ctx, mask, dev)["proprio"].shape == (1, D.PROPRIO_DIM)
+    assert m.predict(ss[0], enc, dev).shape == (15, 8)
+
+
+def test_per_arm_statistics_are_used_for_each_samples_arm():
+    """canon §63 (1): targets / conditions of a left-arm sample use the left-arm statistics."""
+    enc, dev = MockEncoder(), torch.device("cpu")
+    m, ss = _model()
+    left = []
+    for s in ss:
+        a = (np.asarray(s["action_exec"]) - 2.0).tolist()
+        left.append(dict(s, arm="left", action_exec=a, action_script=a,
+                         proprio=dict(s["proprio"], q=(np.asarray(s["proprio"]["q"]) - 2.0).tolist())))
+    m.norm = D.ActionNorm.fit(ss + left, "absolute")
+    a, _, _ = m.targets(left[:1], dev)
+    ref, _ = m.norm.target(left[0]["action_exec"], left[0]["action_script"], arm="left")
+    assert np.allclose(a[0].numpy(), ref) and abs(float(a[0, :, 0].mean())) < 3.0
+    ctx, mask = m.contexts(left[:1], enc, dev, grad=False)
+    p = m.cond(left[:1], ctx, mask, dev)["proprio"][0, :D.PROPRIO_DIM].numpy()
+    assert np.allclose(p, m.norm.proprio(left[0]["proprio"], arm="left"), atol=1e-6)
+    noise = torch.randn(1, 15, 8, generator=torch.Generator().manual_seed(1))
+    with torch.no_grad():
+        z = E.sample_actions(m.expert, m.cond(left[:1], ctx, mask, dev), 10, noise)[0].numpy()
+    out = m.predict(left[0], enc, dev, noise=noise)
+    assert np.allclose(out, m.norm.action(z, arm="left"), atol=1e-5)  # decoded with the left statistics
+    assert not np.allclose(out, m.norm.action(z, arm="right"), atol=1e-2)
+
+
 def test_verify_preds_are_the_m4b_test_predicates():
     from harvest.m4b import spec as FS
     assert D.VERIFY_PREDS == FS.PREDS

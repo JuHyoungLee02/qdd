@@ -60,6 +60,31 @@ def test_cadence_flags_are_checked(tmp_path):
         closed.run(closed._args(["--model", "mock", "--out", str(tmp_path / "o"), "--hb-mode", "K9"]))
 
 
+def test_worker_spec_carries_the_latest_canary_id(tmp_path, monkeypatch):
+    """R7 cycle-1 D2: the outer command reads the model's latest canary id (or "none") and hands it to the workers
+    (RuntimeConfig.canary_id -> every call row of the sidecar)."""
+    import json
+
+    class _P:
+        def __init__(self, *a, **k):
+            pass
+
+        def wait(self):
+            return 0
+    monkeypatch.setattr(closed.subprocess, "Popen", _P)
+    root = tmp_path / "canary"
+    monkeypatch.setenv("HARVEST_CANARY_ROOT", str(root))
+    for expect in ("none", "cn20260924_mock_abc123"):
+        if expect != "none":
+            root.mkdir()
+            json.dump({"id": expect, "date_utc": "2026-09-24"}, open(root / "canary_20260924_mock.json", "w"))
+        out = tmp_path / f"o_{expect}"
+        with pytest.raises(SystemExit, match="wrote no result"):
+            closed.run(closed._args(["--model", "mock", "--out", str(out)]))
+        spec = json.load(open(out / "spec_standard.json"))
+        assert spec["canary_id"] == expect
+
+
 def test_worker_flag_alone_routes_to_the_worker(monkeypatch):
     got = []
     monkeypatch.setattr(closed, "run_worker", lambda p: got.append(p))

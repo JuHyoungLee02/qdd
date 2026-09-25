@@ -15,8 +15,10 @@ Processes: the Isaac worker renders on GPU 1, so the model runs in its own proce
   small HTTP server (`serve`, like the vLLM server of the modular stack); FusedClient is the runtime model (decide /
   chunk interface of runtime.models). StageBFused.decide / .chunk also work in process (GPU tests).
 Proprio mapping (the aiworker observation is joint_pos 8-D = 7 right-arm joints + pad gap): q = joint_pos[:7];
-  qd = finite difference over the previous control tick; tau = not observed -> the training mean (normalized 0 = mean
-  imputation); grip = [pad gap, its finite-difference rate]. Frames: JPEG q90 (the pool images' encoding).
+  qd = finite difference over the previous control tick; tau = not observed -> the right-arm training mean
+  (normalized 0 = mean imputation); grip = [pad gap, its finite-difference rate], mapped to [0, 1] openness for a
+  checkpoint with norm.grip_space open01@v1 (canon §63 (2)) and the chunk's gripper column mapped back to a pad gap
+  in m. Frames: JPEG q90 (the pool images' encoding).
 
   python -m harvest.runtime.fused_model serve --ckpt DIR [--port 8150] [--device cuda]      (CUDA_VISIBLE_DEVICES=2)
 """
@@ -45,6 +47,33 @@ def proprio23(jp, jp_prev, dt, tau_fill) -> dict:
     rate = (jp - np.asarray(jp_prev, float)) / dt if ok else np.zeros(8)
     return {"q": jp[:7].tolist(), "qd": rate[:7].tolist(), "tau": [float(v) for v in tau_fill],
             "grip": [float(jp[7]), float(rate[7])]}
+
+
+def _check_space(grip_space):
+    from ..train.stageb_data import GRIP_SPACE
+    if grip_space not in (None, GRIP_SPACE):
+        raise ValueError(f"checkpoint gripper space {grip_space!r}: this runtime knows None (raw m) and {GRIP_SPACE}")
+
+
+def grip_to_model(proprio: dict, grip_space) -> dict:
+    """aiworker pad gap [m, m/s] -> the checkpoint's gripper space (canon §63 (2): open01@v1 = sim openness);
+    None = a pre-§63 checkpoint trained on raw metres."""
+    _check_space(grip_space)
+    if grip_space is None:
+        return proprio
+    from ..train.stageb_data import grip_open01, grip_rate01
+    g = proprio["grip"]
+    return {**proprio, "grip": [grip_open01(g[0], "sim_width_m"), grip_rate01(g[1], "sim_width_m")]}
+
+
+def grip_from_model(chunk, grip_space) -> np.ndarray:
+    """Expert chunk gripper column (openness) -> pad gap target in m for the aiworker action (copy)."""
+    _check_space(grip_space)
+    c = np.array(chunk, float)
+    if grip_space is not None:
+        from ..train.stageb_data import grip_value
+        c[:, 7] = grip_value(c[:, 7], "sim_width_m")
+    return c
 
 
 def names_of(committed: dict, key2name: dict) -> dict:
@@ -115,12 +144,17 @@ class StageBFused:
         self.gen = torch.Generator(device="cpu").manual_seed(seed)
         self.frame_dir = frame_dir or os.path.join("/data/harvest/tmp/fused_frames", str(os.getpid()))
         os.makedirs(self.frame_dir, exist_ok=True)
-        self.tau_fill = [float(v) for v in self.m.norm.p_mean[14:21]]
+        # the aiworker task is one right arm: right-arm statistics (§63 (1)); tau not observed -> its training mean
+        self.arm = "right"
+        self.tau_fill = [float(v) for v in self.m.norm.stats(self.arm)["p_mean"][14:21]]
+        self.grip_space = self.m.norm.grip_space  # §63 (2): open01@v1 -> pad gap mapped in / chunk mapped back
+        _check_space(self.grip_space)
         self.model_id = f"stageb:{os.path.abspath(ckpt)}"
         self.verify_preds = list(self.cfg["verify"].get("preds", D.VERIFY_PREDS))
 
     def info(self) -> dict:
         return {"model_id": self.model_id, "tau_fill": self.tau_fill, "hz": self.hz, "verify_preds": self.verify_preds,
+                "grip_space": self.grip_space, "arm": self.arm,
                 "prompt_config": self.prompt_config, "prompt_check": self.prompt_check,
                 "graph": self.sampler is not None and self.sampler.use_graph, "steps": self.steps,
                 "max_ctx_age_s": self.max_ctx_age_s}
@@ -226,7 +260,8 @@ class StageBFused:
         torch = self.torch
         from ..datagen.rows import skill_of
         t0 = time.perf_counter()
-        s = {"proprio": proprio, "skill_id": skill_of(phase), "phase_id": phase, "committed": dict(committed_names)}
+        s = {"proprio": grip_to_model(proprio, self.grip_space), "skill_id": skill_of(phase), "phase_id": phase,
+             "committed": dict(committed_names), "arm": self.arm}
         with self._gpu(chunk=True):
             t_lock = time.perf_counter()
             h, mask, age, fresh = self._context(float(t_state), ctx_text, jpegs)
@@ -243,7 +278,7 @@ class StageBFused:
                     z = sample_actions(self.m.expert, cond, self.steps, noise)
                 self._sync()
             t_exp = time.perf_counter()
-        act = self.m.norm.action(z[0].float().cpu().numpy())
+        act = grip_from_model(self.m.norm.action(z[0].float().cpu().numpy(), arm=self.arm), self.grip_space)
         return {"chunk": np.asarray(act, float).tolist(), "chunk_dt": 1.0 / self.hz,
                 "meta": {"t_wait_s": round(t_lock - t0, 5), "t_ctx_s": round(t_ctx - t_lock, 5),
                          "t_expert_s": round(t_exp - t_ctx, 5), "ctx_age_s": round(age, 4), "ctx_fresh": fresh,

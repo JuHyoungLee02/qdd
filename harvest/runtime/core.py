@@ -32,6 +32,7 @@ from .clock import DeliveryQueue
 from .m4 import CommitLedger, M4Params, Vote
 from .measure import Critic, HardChannel, ProprioRules, VerifyCal, expected_check, measure, values
 from .models import DECISION_QUESTIONS, build_live_request, fused_state_text, jpeg_bytes
+from .reqhash import request_hash
 from .skills import PickPlaceSkill, apply_residual, residual_hook_zero
 
 FRAME_SAMPLE_S = 5.0  # sampled frames kept for inspection (plus one per phase change)
@@ -83,6 +84,11 @@ class RuntimeConfig:
                            "world + contact_stall = verification head V1h (conformal, empty/both = unknown, soft); "
                            "M7 critic alarm = V1h only")
     t2_check_max_age_s: float = 2.0  # a step's world-side check waits at most this long for a head output
+    # canon §42 / §28 (R7 cycle-1 D2): the day's canary result id of the decision model (harvest.eval.canary, the
+    # latest canary_<date>_<fingerprint>.json; "none" = no canary for this model) and of Astra ("none": the Astra
+    # canary needs paid API calls and is not run; Astra is mock / scripted in these runs). Logged on every call row.
+    canary_id: str = "none"
+    astra_canary_id: str = "none"
 
 
 def _pct(xs, q):
@@ -183,11 +189,14 @@ class OursRuntime:
     def _submit_decision(self, now, raw, present, pred, support, obs):
         ctx = self._decision_ctx(now, raw, present, pred, support, obs)
         self.n_calls += 1
-        model = self.model
+        model, cfg = self.model, self.cfg
 
-        def run():
+        def run():  # the request hash is computed in the worker thread (frame digests stay off the rollout thread)
+            rh = request_hash({"api": "decide", "model_id": cfg.model_id, "layout": cfg.layout,
+                               "call_mode": cfg.call_mode, "req": ctx["req"], "ctx_text": ctx.get("ctx_text")},
+                              ctx["images"])
             r = model.decide(ctx)
-            return {"latency_s": r.latency_s, "res": r}
+            return {"latency_s": r.latency_s, "res": r, "req_hash": rh}
         meta = {"kind": "dec", "call_no": self.n_calls, "slots": ctx["slots"], "epoch": ctx["epoch"],
                 "t_state": now, "phase": ctx["phase"], "anchor_g": list(raw["grip"]["pos"])}
         self.q.submit(now, self.pool.submit(run), fixed_latency=getattr(model, "synthetic_latency", None), meta=meta)
@@ -211,12 +220,17 @@ class OursRuntime:
         astra, n = self.astra, self.n_hb
 
         def run():
-            inp = heartbeat_input(summary, jpeg_bytes(head) if head is not None else None, template=template)
+            jpg = jpeg_bytes(head) if head is not None else None
+            inp = heartbeat_input(summary, jpg, template=template)
+            # the request without the base64 image (its sha256 goes in the image digests instead, canon §28 A6)
+            text_only = [{**m, "content": [c for c in m["content"] if c.get("type") != "input_image"]} for m in inp]
+            rh = request_hash({"api": "astra", "model": self.cfg.astra_model, "effort": EFFORT, "max_out": MAX_OUT,
+                               "prompt_id": pid, "input": text_only}, {"cam_head": jpg} if jpg is not None else {})
             rec = astra.call(inp, EFFORT, MAX_OUT, {"hb_no": n, "prompt_id": pid, "kind": kind,
                                                     "cadence": self.cfg.hb_mode})
             lat = getattr(astra, "synthetic_latency", None)
             return {"latency_s": lat if lat is not None else rec.t_done - rec.t_send, "rec": rec,
-                    "summary": summary}
+                    "summary": summary, "req_hash": rh}
         self.hb.sent(now, kind)
         self.q.submit(now, self.pool.submit(run), fixed_latency=getattr(astra, "synthetic_latency", None),
                       meta={"kind": "astra", "hb_no": n, "call_kind": kind, "allowed": allowed, "prompt_id": pid})
@@ -233,7 +247,8 @@ class OursRuntime:
                "latency_s": round(res.latency_s, 4), "slots": m["slots"], "epoch_sent": m["epoch"],
                "phase": m["phase"], "error": res.error, "call_id": res.call_id, "meta": res.meta,
                "answers": {q: [a["choice"], round(a["p_chosen"], 4) if a.get("p_chosen") is not None else None]
-                           for q, a in res.answers.items()}, "votes": {}}
+                           for q, a in res.answers.items()}, "votes": {}, "canary_id": self.cfg.canary_id}
+        rec["request_sha256"], rec["image_sha256"] = r.get("req_hash") or (None, {})
         if res.error is None:
             self.ledger.record_latency(res.latency_s)
             gate = self._j5(res, now) if self.cal is not None else {}
@@ -334,7 +349,9 @@ class OursRuntime:
                  "t_deliver": round(r["t_deliver"], 3),
                  "latency_s": round(r["latency_s"], 3), "decision": dec, "note": note, "error": rec_.error,
                  "model": rec_.model_field, "usage": rec_.usage, "http": rec_.http_status,
-                 "first_token_s": round(rec_.t_first_token - rec_.t_send, 3) if rec_.t_first_token else None}
+                 "first_token_s": round(rec_.t_first_token - rec_.t_send, 3) if rec_.t_first_token else None,
+                 "canary_id": self.cfg.astra_canary_id}
+        entry["request_sha256"], entry["image_sha256"] = r.get("req_hash") or (None, {})
         if dec in ("patch", "replace"):  # contract edit not implemented: premise epoch only (§45 합치기)
             entry["epoch"] = self.ledger.bump_epoch(f"astra_{dec}", now)
             self.early = True
@@ -539,11 +556,14 @@ class OursRuntime:
                "images": {k: v.copy() for k, v in self.frames.items()}, "phase": self.skill.phase,
                "ctx_text": canonicalize(image_only_state(self._s0(now, l1[2], l1[1], l1[3]))),
                "text": fused_state_text(self.instruction, self.skill.stage, self.skill.phase, obs["joint_pos"])}
-        model = self.model
+        model, cfg = self.model, self.cfg
 
         def run():
+            rh = request_hash({"api": "chunk", "model_id": cfg.model_id, "ctx_text": ctx["ctx_text"],
+                               "phase": ctx["phase"], "committed": committed, "joint_pos": ctx["joint_pos"],
+                               "joint_pos_prev": ctx["joint_pos_prev"], "dt_prev": ctx["dt_prev"]}, ctx["images"])
             r = model.chunk(ctx, committed)
-            return {"latency_s": r.latency_s, "res": r}
+            return {"latency_s": r.latency_s, "res": r, "req_hash": rh}
         self.chunk_stats["requested"] += 1
         self.q.submit(now, self.pool.submit(run), fixed_latency=getattr(model, "synthetic_chunk_latency", None),
                       meta={"kind": "chunk", "ds": kn, "t_state": now, "dec": committed,
@@ -554,7 +574,8 @@ class OursRuntime:
         self.chunk_stats["delivered"] += 1
         self.chunk_log.append({"ds": m["ds"], "t_state": round(m["t_state"], 4), "t_deliver": round(r["t_deliver"], 4),
                                "latency_s": round(res.latency_s, 4), "dec": m["dec"], "status": m["status"],
-                               "error": res.error, "meta": res.meta})
+                               "error": res.error, "meta": res.meta, "canary_id": self.cfg.canary_id})
+        self.chunk_log[-1]["request_sha256"], self.chunk_log[-1]["image_sha256"] = r.get("req_hash") or (None, {})
         if res.error is None and res.chunk is not None:
             self.chunks[m["ds"]] = {"t_state": m["t_state"], "chunk": np.asarray(res.chunk, float),
                                     "dt": res.chunk_dt, "dec": m["dec"]}
