@@ -4,6 +4,8 @@
 - 근거 문서: 정본 §58·§67(융합 VLA·두 호출), §82(Astra 전용 일 J1–J6, 비용 한도), §82 보충 2(실행 중 effort low), §83(움직임 줄), `docs/research/{astra_role,steering_representation,hypothesis_short_window,temporal_context}_2026-09-25.md`.
 - 미정(실험으로 정함): 손끝 목표의 공간 표현(E-Astra-motion 탐침: P-pc / P-plane / P-tri / S), Astra 요청 방식(탐침 F0 대 F1), 호출 간격 적응 문턱.
 
+> **개정 2026-09-25 16:33 UTC (user-log 83, 사용자 선택 "네, 일반 조종법만")**: 목표를 공간(3D 점·경로·이미지 점)으로 표현하지 않는다. Astra는 **일반 조종법**(GPT-as-Policy식)만 쓴다 — 이미지(손끝 표시 허용)를 보고 진행 평가(task_progress, 실행 progressing/failed/uncertain, 의도 aligned/misaligned + 근거) 뒤 명령 하나: **continue / edit(손끝 기준 이동 ≤ 5 cm·회전 ≤ 0.35 rad·그리퍼 keep/open/close) / stop**. 그래서 아래 2절의 '목표 해석기', 4절의 목표열(`ref`·`offset_cm`)·목표 해석, 6절의 '현재 목표 입력', 9절 탐침의 P 변형은 **대체된다**: Astra 층의 출력은 손끝 기준 명령 + 진행 평가(흐름 상태)이고, VLA는 그 명령이 정한 방향·구간 안에서 0.33 s마다 정밀 보정한다(조이스틱). 흐름 고정(F1: 흐름 상태 주입·차분 답·2답 히스테리시스), 1 Hz 계단식 호출, 두 층 M4, RTC식 앞부분 고정, 비가역 동작 두 층 일치 규칙은 그대로 유지한다. VLA 학습 신호는 '목표점' 대신 'Astra 명령(또는 시연에서 되짚은 손끝 변위 방향) 대비 보정'으로 다시 정한다 — 구현 계획 때 확정.
+
 ## 0. 사용자 의도 (원문 요지)
 
 - "나는 VLA를 VLA 처럼 쓰고 싶지 않은거야 … 순간 순간 어디로 가야하는지 엔드포인트 정밀 보정하는 역할" (user-log 82)
