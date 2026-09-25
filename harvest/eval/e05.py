@@ -43,7 +43,9 @@ _MAGV = {"tiny": 0.005, "small": 0.01, "medium": 0.02, "large": 0.04, "xlarge": 
 # ------------------------------------------------------------------------------------------ replay geometry
 def vote_steps(t_of: dict, d_p95: float, n_votes: int = 3):
     """t_of: {k: t} of one episode's continuous snapshots. -> [(k_step, [(k_vote, t_vote - t_step)] newest first)]
-    for every step whose n_votes newest snapshots with t <= t_step - d_p95 exist."""
+    for every step whose n_votes newest snapshots with t <= t_step - d_p95 exist. On the 0.33 s grid these are the
+    request times of the runtime's H = 1 early asks (runtime.m4.early_ask_steps) for lead_max in
+    [d_p95 + 2 T_c, d_p95 + 3 T_c), e.g. the default 1.0 s at d_p95 0.307 (canon §75; test_r7c10_prereg)."""
     ks = sorted(t_of)
     out = []
     for k in ks:

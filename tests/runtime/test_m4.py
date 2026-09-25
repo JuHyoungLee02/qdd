@@ -17,8 +17,10 @@ def test_target_slots_first_after_dhat_then_H():
     L = _led(H=3, d_p95_init=0.30)
     # t_send 0.10 + d 0.30 = 0.40 -> first slot start >= 0.40 is ds 2 (0.66)
     assert L.target_slots(0.10) == [2, 3, 4]
+    # H = 1 [R7 10회차 D1, 정본 §75]: the same step asked early -> every step starting in [t + d, t + lead_max]
     L1 = _led(H=1, d_p95_init=0.30)
-    assert L1.target_slots(0.0) == [1]
+    assert L1.target_slots(0.0) == [1, 2, 3]
+    assert _led(H=1, d_p95_init=0.30, lead_max=0.30).target_slots(0.0) == [1]  # no step in the window: the first
 
 
 def test_first_vote_tentative_then_LA2_commits():

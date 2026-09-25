@@ -7,8 +7,10 @@ calls, and this ledger decides what is committed.
 One slot per (decision step ds, question). A call sent at t_send votes for the H slots starting at the first slot with
 t_start >= t_send + d_hat (§4.1: H future steps; the stage-A DecCall asks one question per decision family, so the one
 answer is the vote for each of the H slots -- votes of one slot come from calls with different t_state, which is what
-J3 requires of agreement votes). Votes are counted by option_key (§27 R5), never by probability (§6: gates off before
-E1). What is kept from §4.2:
+J3 requires of agreement votes). H = 1 (canon §2 :18, M4 §4.1 :188): the one answer is the early vote of every step
+whose lead window [t_start - lead_max, t_start - d_hat] holds the send time (early_ask_steps; E §2.6 schedule, canon
+§75), so a step still gets 2-3 votes from staggered calls. Votes are counted by option_key (§27 R5), never by
+probability (§6: gates off before E1). What is kept from §4.2:
   - premise epoch: a vote whose premise_epoch < ledger epoch is dropped (#6); STALE_MAX drop;
   - FROZEN slots (already started) and COMMITTED slots are immutable (log only, #1);
   - challenger replaces the incumbent only after the defer window W (W+1 when either choice is irreversible, §4.6):
@@ -44,6 +46,29 @@ MAG_ORDER = ("tiny", "small", "medium", "large", "xlarge")
 GAMMA = "2/3"
 
 
+# Time comparisons (canon §75, R7 cycle 10 N1): an age that equals a limit in exact tick arithmetic (e.g. 1.50 s or
+# 5.00 s between two 100 Hz tick times) must land on the same side at every tick position; float subtraction of tick
+# times is off by ~1e-14. 1e-9 s is the tolerance the ledger already uses for its slot-start boundaries (far below one
+# 10 ms tick).
+T_EPS = 1e-9
+
+
+def older_than(age: float, limit: float) -> bool:
+    """age > limit (boundary excluded: an age of exactly limit is kept), with the T_EPS time tolerance."""
+    return age > limit + T_EPS
+
+
+def early_ask_steps(t_send: float, d_hat: float, T_c: float, lead_max: float) -> list[int]:
+    """H = 1 (canon §2 :18, M4 §4.1 :188 "호출 시각을 스텝 시작보다 앞당겨 같은 스텝을 2~3회 묻기"): every step is asked
+    from lead_max before its start until d_hat before it, every T_c (E §2.6 :183, the schedule analysis.latency.
+    votes_per_step counts offline). So the call sent at t_send is an ask of every step k with
+    t_send + d_hat <= t_start(k) = k T_c <= t_send + lead_max (both ends included); when no step lies in that window
+    (lead_max < d_hat + gap to the grid), the first step after d_hat (the M3 original "one call = one step")."""
+    k0 = int(math.ceil((t_send + d_hat) / T_c - 1e-9))
+    k1 = int(math.floor((t_send + lead_max) / T_c + 1e-9))
+    return list(range(k0, max(k0, k1) + 1))
+
+
 def share_at_least(n_agree: int, n_votes: int, gamma=GAMMA) -> bool:
     """n_agree / n_votes >= gamma, exact (integer cross-multiplication, no epsilon). gamma: anything Fraction() takes
     ("2/3", 1.0, Fraction); a decimal float is taken at its exact value (0.67 > 2/3). The one agreement-share rule of
@@ -75,10 +100,16 @@ class M4Params:
     feedback_b: bool = True
     max_inflight: int | None = None
     n_max_cap: bool = True
+    # H = 1 early re-asking (canon §2 :18, M4 §4.1 :188-189, E §2.6 :183 / §2.7-4 :197, canon §75): a step is asked
+    # from lead_max before its start until d_hat before it, every T_c. Pre-registered candidates {1.0, 1.5} s, set
+    # after E0; 1.0 = M4 §4.1 "2~3회" and the E0.5 replay's 3 asks (E §2A.3) at d_p95 0.307. Unused when H > 1.
+    lead_max: float = 1.0
 
     def __post_init__(self):
         if self.W < 0:
             raise ValueError(f"M4 W = {self.W}: the defer window is a vote count >= 0 (canon §72)")
+        if not self.lead_max > 0:
+            raise ValueError(f"M4 lead_max = {self.lead_max}: the H = 1 early-ask window must be > 0 s (canon §75)")
 
 
 @dataclass
@@ -150,6 +181,10 @@ class CommitLedger:
         return n if self.p.max_inflight is None else min(n, int(self.p.max_inflight))
 
     def target_slots(self, t_send: float) -> list[int]:
+        """Slots the call sent at t_send votes for. H > 1: the H steps from the first one starting at or after
+        t_send + d_hat (M4 §4.1). H = 1: early_ask_steps (the same step asked early, canon §2, canon §75)."""
+        if self.p.H == 1:
+            return early_ask_steps(t_send, self.d_hat, self.p.T_c, self.p.lead_max)
         k = int(math.ceil((t_send + self.d_hat) / self.p.T_c - 1e-9))
         return list(range(k, k + self.p.H))
 
@@ -178,7 +213,7 @@ class CommitLedger:
         if v.premise_epoch < self.epoch:
             self.counts["dropped_epoch"] += 1
             return "dropped_epoch"
-        if now - v.t_state > self.p.stale_max:
+        if older_than(now - v.t_state, self.p.stale_max):
             self.counts["dropped_stale"] += 1
             return "dropped_stale"
         if self.p.agree == "stream":  # C2 VLM Stream: no slots, no FROZEN log-only; newest by request time
@@ -263,7 +298,7 @@ class CommitLedger:
         target step, (None, EMPTY) once it is older than stale_max (5 s timeout -> default action) at time now."""
         if self.p.agree == "stream":
             v = self._stream.get(q)
-            if v is None or (now is not None and now - v.t_state > self.p.stale_max):
+            if v is None or (now is not None and older_than(now - v.t_state, self.p.stale_max)):
                 return None, "EMPTY"
             return v.choice, "TENTATIVE"
         s = self.slots.get((q, ds))

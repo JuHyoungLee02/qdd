@@ -397,7 +397,7 @@ class PredicateState:
             d = float(np.linalg.norm(A.pos - B.pos))
             key = (a, b)
             prev = self._near.get(key, False)
-            now = d < CFG.near_in_m if not prev else d <= CFG.near_out_m
+            now = d < CFG.near_in_m if not prev else d <= CFG.near_out_m  # [정정 R7 10회차 N4, 정본 §74: 들어가기 ≤ 5 cm — 지금 predicates.py는 d <= near_in_m]
             self._near[key] = now
             out[f"near({a},{b})"] = now
             touching = frozenset({a, b}) in contacts
