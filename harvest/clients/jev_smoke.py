@@ -1,4 +1,6 @@
-"""One live Jev call to confirm the real response shape (plan T5 Step 6). Needs HARVEST_JEV_TOKEN_FILE."""
+"""One live Jev call to confirm the real response shape (plan T5 Step 6). Needs HARVEST_JEV_TOKEN_FILE.
+
+Frozen: Jev is unusable (user-log 46, canon §44)."""
 import json
 import os
 import pathlib

@@ -244,7 +244,7 @@ GPU 0(라벨러)은 쓰지 않았다. 다른 에이전트 프로세스는 건드
 ## 11. 한계
 
 - V1h는 **동결 단계 A 백본 위 탐침**이다(LoRA 공동 학습 안 함). 특권 참값으로 같은 장면·같은 스크립트 정책 분포(풀 fit + FI-DEV 다른 시드)에서 학습했으므로 새 장면·실물 전이는 이 시험이 말하지 않는다(D28 §3.1의 실물 재보정 필요 그대로).
-- conformal 집합: V1h는 매우 확신해서 q̂가 작고(0.003–0.18) **빈 집합이 9 %**, unknown이 0 %다. 커버리지 0.905는 원소 하나 집합의 정답률에서 나온다. 런타임에서 빈 집합을 `unknown`으로 볼지 [결정 필요].
+- conformal 집합: V1h는 매우 확신해서 q̂가 작고(0.003–0.18) **빈 집합이 9 %**, unknown이 0 %다. 커버리지 0.905는 원소 하나 집합의 정답률에서 나온다. 런타임에서 빈 집합을 `unknown`으로 볼지 [결정 필요]. → **해소(정본 §64 Claude 결정)**: 빈 집합 = `unknown`(판정 보류, `runtime/measure.py` `conformal_value`).
 - critic 문턱 보정은 60편(V1h·P), 20편(V1z·V1q·V0) — 사전 등록대로. 20편 보정 조건의 평가 FWER 초과는 표본 수 탓이 크다.
 - "자기 확인 맹점" 지표(D28 §4.3, 단계 A 결정 재생 필요)는 재지 않았다(판정 기준 밖).
 - 조건 L(잠재 일치)과 A(Astra, 유료·사용자 승인 필요)는 실행하지 않았다.
@@ -252,6 +252,6 @@ GPU 0(라벨러)은 쓰지 않았다. 다른 에이전트 프로세스는 건드
 
 ## 12. 파일
 
-- 코드(로컬, 커밋 안 함): `harvest/m4b/{spec,fidev,data,prules,metrics,vhead,vqa,v0,analyze,diag,sheets}.py`, 테스트 `tests/m4b/{test_spec,test_metrics,test_prules,test_analyze}.py`(25개 통과). 로컬 `python -m pytest -q`: 다른 에이전트가 작업 중인 `tests/eval/test_closed_pure.py`(아직 없는 `harvest.eval.closed`를 가져옴)가 수집 오류를 내고, 그것을 뺀 나머지는 전부 통과.
+- 코드(로컬, 커밋 안 함): `harvest/m4b/{spec,fidev,data,prules,metrics,vhead,vqa,v0,analyze,diag,sheets}.py`, 테스트 `tests/m4b/{test_spec,test_metrics,test_prules,test_analyze}.py`(25개 통과). 로컬 `python -m pytest -q`: 다른 에이전트가 작업 중인 `tests/eval/test_closed_pure.py`(아직 없는 `harvest.eval.closed`를 가져옴)가 수집 오류를 내고, 그것을 뺀 나머지는 전부 통과. (→ 이후: 코드는 커밋됐고(태그 `stage3-r1r6`), `harvest.eval.closed`는 R6에서 생겨 수집 오류는 없다 — sweep6 표시.)
 - 파드(전부 `/data/harvest` 아래): 코드 사본 `code_m4b/`, 데이터 `m4b/fidev/<조건>/ep<seed>.{jsonl,npz,meta.json,r1.npz,fi.json,fi.npz}` + `img/`, 특징 `m4b/feat_v1h/`(28 GB), V1h `m4b/v1h/`(헤드 3개, `logits.jsonl`, `latency.json`), V1q `m4b/v1q_run/adapter`, 점수 `m4b/{v1z,v1q,v0,v0_b}.jsonl`, 결과 `m4b/results.json`·`diag.json`, 로그 `m4b/*.log`, 파일럿 `m4b/pilot*`.
 - `/data` 밖에 쓴 것: 파드 쪽 없음(Isaac 캐시는 `ir_run.sh` 인스턴스 폴더 `ir/kitcache/cyclo-m4b_*`, 파이썬·HF 캐시는 `env.sh`로 `/data/harvest` 아래). 로컬 임시 파일은 `D:\tools\scratch_qdd`만.

@@ -82,20 +82,20 @@
 | M4 표 처리·확정(act 안) | O(ms) | 설계 |
 | 행동 청크: HF 문맥 순전파(4B) | 약 97 ms(= 120 − 23) | R4 실측(H200, HF) |
 | 행동 청크: expert 10 스텝 | eager 36–49 ms → **CUDA 그래프 23 ms** | R4 실측, 우리 GraphedSampler로 동등 확인 |
-| 행동 청크 합(1순위) | 약 120 ms < `chunk_lead` 0.15 s | 스텝 시작 전 도착(가짜 세계 시험으로 확인) |
-| 2순위의 확정 뒤 행동 | 약 23 ms | 문맥 캐시 재사용 가정 [미측정] |
+| 행동 청크 합(1순위) | 약 120 ms < `chunk_lead` 0.15 s | 스텝 시작 전 도착(가짜 세계 시험으로 확인) — 1순위 설계값(76줄 정정: 실제 구현은 2순위) |
+| 2순위의 확정 뒤 행동 | 약 23 ms | 문맥 캐시 재사용 가정 [미측정] → 실측(pre-R7, 실제 구현 = 2순위): 청크 expert CUDA 그래프 30.0 ms(단독 벤치), 폐루프 동시 부하에서 청크 전체 p50 80–591 ms(`pre_r7_fixes.md` §1.3–§1.4) |
 | 청크 길이 | 15 × 1/30 s = 0.5 s ≥ lead 0.15 + T_c 0.33 | stageb_data |
 
-- 결정 호출은 겹쳐 돌아 T_c를 넘어도 되지만(d̂가 목표 슬롯을 밀어냄), 행동 경로는 스텝마다 순차라 `chunk_lead` 안에 끝나야 한다. 같은 GPU에서 vLLM과 HF 행동 서버가 경쟁하므로 **실물 서버(RTX PRO 6000) 조건에서 두 경로 동시 부하 지연**을 다시 재야 한다(사용자 지시 user-log 62: 폐루프 검증은 실물 서버 조건 가정, 같은 vLLM 설정·캐시·lead). 이번 판은 H200 GPU 3이다.
+- 결정 호출은 겹쳐 돌아 T_c를 넘어도 되지만(d̂가 목표 슬롯을 밀어냄), 행동 경로는 스텝마다 순차라 `chunk_lead` 안에 끝나야 한다. 같은 GPU에서 vLLM과 HF 행동 서버가 경쟁하므로 **실물 서버(RTX PRO 6000) 조건에서 두 경로 동시 부하 지연**을 다시 재야 한다(사용자 지시 user-log 62: 폐루프 검증은 실물 서버 조건 가정, 같은 vLLM 설정·캐시·lead). 이번 판은 H200 GPU 3이다. → **정정(sweep6, R7 5회차 N3)**: 괄호 안 '같은 vLLM 설정·캐시·lead'는 user-log 62 원문('프로600에서 하는걸 가정해서 여기서 다할거고')에 없는 Claude의 풀이다(모듈형 Jev-L에만 맞음). 'vLLM과 HF 행동 서버가 경쟁'은 1순위 설계 기준이다 — 실제 구현(2순위, 76줄 정정)은 한 HF 모델 프로세스가 decide·chunk로 GPU를 번갈아 쓴다(`pre_r7_fixes.md` §1.1 GPU 줄 세우기, 동시 부하 지연은 §1.6-1 → 정본 §67 C8 SCOPED).
 
 ## 6. 남은 문제 (열린 것)
-1. **계약 편집 없음**: Astra patch/replace는 epoch만 올린다(A5′ 검사·M2 R3 경계 교체·`detect_phrase`(§46) 반영 미구현). T0 첫 계획 호출도 없음(고정 계약 c1). T_sub(단계 경계 질의)·사건 앞당김은 훅만 있다.
-2. **M7 없음**: FAIL 판정·M9 복구 대신 스킬 안의 단순 재시도(헛잡기·놓침 → 다시 열고 접근, 최대 2회). 진행 질문(progress)은 호출에서 뺐다(학습 안 된 질문).
-3. **M4 미구현 부분**: C3′ Beta 정지 규칙, 누적 예상 상태 합의(agree_mode), align_tol, CUSUM, θ·J5 게이트(E1 전이라 끔), LAG 시 재배치. (b) 문턱(OK 15 mm / LAG 40 mm, fused 0.05/0.15 rad)은 [가정]이고 추종 지연을 모델링한 ref(t)가 아니라 명령 자체와 비교한다 → 빠른 운반 중 DEVIATE가 가끔 난다(`sft_h2` 5회). M5 ref(t)(Ruckig) 연결 필요.
+1. **계약 편집 없음**: Astra patch/replace는 epoch만 올린다(A5′ 검사·M2 R3 경계 교체·`detect_phrase`(§46) 반영 미구현). T0 첫 계획 호출도 없음(고정 계약 c1). T_sub(단계 경계 질의)·사건 앞당김은 훅만 있다. → **갱신**: T_sub(K1)·사건 앞당김·K3/K4는 pre-R7(519de26, `pre_r7_fixes.md` §4)에서 구현. A5′ 검사·M2 R3 합치기는 E2E-ready 범위 밖(정본 §67 C8 SCOPED). T0 첫 계획 호출·`detect_phrase` 반영은 여전히 없다(`r7_sweep6.md` §3).
+2. **M7 없음**: FAIL 판정·M9 복구 대신 스킬 안의 단순 재시도(헛잡기·놓침 → 다시 열고 접근, 최대 2회). 진행 질문(progress)은 호출에서 뺐다(학습 안 된 질문). → **갱신**: M4 `measure()`·M7 critic(V1h 단독 경보 + T1 하드 채널)은 pre-R7(519de26, `pre_r7_fixes.md` §2)에서 구현. FAIL → M9 복구는 E2E-ready 범위 밖(정본 §67 C8 SCOPED).
+3. **M4 미구현 부분**: C3′ Beta 정지 규칙, 누적 예상 상태 합의(agree_mode), align_tol, CUSUM, θ·J5 게이트(E1 전이라 끔), LAG 시 재배치. (b) 문턱(OK 15 mm / LAG 40 mm, fused 0.05/0.15 rad)은 [가정]이고 추종 지연을 모델링한 ref(t)가 아니라 명령 자체와 비교한다 → 빠른 운반 중 DEVIATE가 가끔 난다(`sft_h2` 5회). M5 ref(t)(Ruckig) 연결 필요. → **갱신**: J5 게이트는 R6에서 런타임에 들어갔다(`core.py` `_j5`, 보정 파일 + `--j5-alpha`일 때만, `r6_eval.md` §4). θ 게이트는 오프라인 판정(`calibration.py`)만 있다. 나머지(C3′·agree_mode·align_tol·CUSUM·ref(t))는 여전히 열림(`m4.py` 머리 설명).
 4. **라벨 기하 대 계획기 기하 차이**: 결정 정답(labels_v2)은 손가락 링크 중점, 계획기 잡기 높이는 패드 중심 기준 → 잡기 깊이 바닥(−3 mm)으로 맞췄다. 데드밴드 경계(약 1 cm)에 붙어 있어 취약하다. 단계 B 데이터 정의 때 기준점을 하나로 정해야 한다.
 5. **H 표 공유**: 한 호출의 답을 H = 3 스텝의 표로 쓴다(M4 §4.1의 "앞선 스텝 예상 상태를 앞에 적기"는 안 함). 질문 문구의 ds 번호는 첫 목표 스텝.
 6. **SFT 판의 입력 형식**: SFT 모델은 머리캠만(H)으로 학습돼 H로 돌렸다. §59 기본(HW)은 영점 판에만 썼다 — 두 판의 입력이 다르다. 단계 A′(R3)가 HW로 학습되면 HW로 다시 돌린다.
-7. **FusedModel 실물 모델 없음**: `StageBFused`(vLLM decide + HF chunk; (**정정(정본 §67 C4, R7 4회차 M2)**: 실제 구현은 2순위 — decide도 HF 백본의 공유 접두 순전파 한 번으로 결정 확률·문맥 은닉·확인 헤드를 함께 얻고, 확정 뒤 chunk는 캐시된 문맥 + CUDA 그래프 expert. vLLM은 모듈형 기준선 Jev-L에만 쓴다. `harvest/runtime/fused_model.py`))는 R4 체크포인트가 나오면 붙인다(계약·스케줄·로그·CUDA 그래프 샘플러는 준비됨). stage-B 고유감각은 23-D로 우리 8-D `joint_pos`와 다르다 — 어댑터 필요.
+7. **FusedModel 실물 모델 없음**: `StageBFused`(vLLM decide + HF chunk; (**정정(정본 §67 C4, R7 4회차 M2)**: 실제 구현은 2순위 — decide도 HF 백본의 공유 접두 순전파 한 번으로 결정 확률·문맥 은닉·확인 헤드를 함께 얻고, 확정 뒤 chunk는 캐시된 문맥 + CUDA 그래프 expert. vLLM은 모듈형 기준선 Jev-L에만 쓴다. `harvest/runtime/fused_model.py`))는 R4 체크포인트가 나오면 붙인다(계약·스케줄·로그·CUDA 그래프 샘플러는 준비됨). stage-B 고유감각은 23-D로 우리 8-D `joint_pos`와 다르다 — 어댑터 필요. → **해결(pre-R7 519de26, `pre_r7_fixes.md` §1, R7 5회차 P2)**: 실체크포인트 어댑터 = `harvest/runtime/fused_model.py`(LoRA + expert + 보조 + 확인 헤드를 올린 HF 서버 + `FusedClient`), 고유감각 23-D ← aiworker 8-D 사상(§1.1; tau는 학습 평균 대치 — 정본 §67 C8 SCOPED), `closed --backend fused --model <ckpt>`(`harvest/eval/closed.py` 머리 설명 'Backends' 줄, `info["kind"] == "stageb"` 분기). '실물 모델 없음'은 R5 당시 기록이다.
 8. **DEV P0만**: P1/P2는 `perturb.apply_pending`이 계획기 단계를 요구해 몸체에서 막았다(NotImplementedError). random/dr 변형은 몸체가 받지만 이번에 돌리지 않았다.
 9. **LatencyChargingController**는 스텁(P3에서 구현).
 10. **종료 멈춤**: 평가 뒤 `SimulationApp.close()`가 멈춰 결과 저장 뒤 강제 종료한다(스모크 1판은 수동 정리: 내 프로세스만).

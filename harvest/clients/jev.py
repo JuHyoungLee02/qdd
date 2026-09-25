@@ -1,4 +1,6 @@
-"""Jev HTTP client: keep-alive, no retries, timing fields, raw JSON kept (E §1.1, §1.6)."""
+"""Jev HTTP client: keep-alive, no retries, timing fields, raw JSON kept (E §1.1, §1.6).
+
+Jev is unusable (user-log 46, canon §44): kept for the frozen E0 tools; CallRecord is reused by jevl.py."""
 from __future__ import annotations
 
 import json

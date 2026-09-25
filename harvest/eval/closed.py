@@ -5,7 +5,8 @@
       [--max-seconds 60] [--epochs 1] [--astra mock|api|auto|none] [--isaac-gpu 1] [--gpu 3] \
       [--calibration FILE --j5-alpha 0.1] [--layout auto|H|HW] [--hb-n 5 | --hb-n 0,5,10,20]
 
-The outer process (plain python on the pod) serves the model with vLLM (canon §59 flags, lead) unless mock, then runs
+The outer process (plain python on the pod) serves the model -- vLLM (canon §59 flags, lead) for the modular Jev-L,
+runtime.fused_model (HF) for a stage-B checkpoint (see Backends below), nothing for mock -- then runs
 one Isaac worker per scene variant (the aiworker embodiment is one variant per process) through tools/ir/ir_run.sh
 (IR_ROOT=cyclo, CUDA_VISIBLE_DEVICES = --isaac-gpu, never GPU 2). Each worker builds the embodiment once and calls
 Inspect Robots eval() once per M4 condition (conditions.py C0-C6) over all seeds x epochs: DefaultController(1),

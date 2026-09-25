@@ -48,7 +48,7 @@
 
 - `harvest/train/stageb_train.py` 머리: "GPU only when free (never GPU 2)" → "GPU 2 = training / inference compute (user-log 62, 64: no rendering on GPU 2; nvidia-smi로 비었는지 먼저 확인)".
 - `harvest/train/stagea_train.py` 머리: `CUDA_VISIBLE_DEVICES=1 (smoke)` → `CUDA_VISIBLE_DEVICES=2`(GPU 1 = Isaac 렌더, 3 = vLLM), 사용법 첫 줄 `train --pool DIR --rule R` → labels_v2 기본(`--rule`은 `--target-source outcome`일 때만).
-- `tools/ir/ir_run.sh`(로컬 사본) "GPU 0 만 … (GPU2 금지)" → "렌더는 GPU 0·1만(1 = Isaac, 0 = 비어 있을 때만; GPU 2 학습 전용·렌더 금지, 3 = vLLM)". 동작(미지정 시 0)은 그대로. 파드 `/data/harvest/ir/ir_run.sh`는 공용 실행 파일이라 건드리지 않음(같은 주석이 남아 있음).
+- `tools/ir/ir_run.sh`(로컬 사본) "GPU 0 만 … (GPU2 금지)" → "렌더는 GPU 0·1만(1 = Isaac, 0 = 비어 있을 때만; GPU 2 학습 전용·렌더 금지, 3 = vLLM)". 동작(미지정 시 0)은 그대로. 파드 `/data/harvest/ir/ir_run.sh`는 공용 실행 파일이라 건드리지 않음(같은 주석이 남아 있음). → **해결(정본 §68 NOTE 처리)**: 파드 사본도 저장소 판으로 다시 동기화했다.
 - 나머지 검색 결과: `eval/closed.py`의 "never GPU 2"는 Isaac 렌더에 대한 문구라 맞음, `runtime/fused_model.py`("model GPU 2 or 3")·`m4b/vhead.py`(GPU 2)·`tools/r3_bench.py`(GPU 2)·`tools/r5/serve.sh`(GPU 3) 맞음. `cli_e3st.py:10`·`perception/run_r1.py`의 GPU 1은 user-log 62 이전의 끝난 실험(E3-ST, R1) 실행 기록이라 고치지 않았다.
 
 ### 4. NOTE 처리
@@ -75,6 +75,6 @@
 
 ### 7. 남은 것 / 다음 순회에 볼 것
 
-- 문서 항목 C1–C5·C7·C8은 메인 세션 몫. §63 (1)–(3) 구현과 D2(요청 해시·카나리)를 정본 §42·§63 영향 줄, `r5_closed_loop.md:16` 주장과 맞출지는 메인 세션이 판단.
-- 그리퍼 사상은 정본대로 선형이다. 시뮬 패드 간격은 관절값과 비선형(`sim.scene._GW`)이라 두 데이터셋의 "열림 0.5"는 물리적으로 같지 않다. S-E2E와 시뮬을 한 모델에 섞을 때 영향 확인 필요.
-- 런타임 tau는 여전히 학습 평균 대치(C8-5)다. 새 체크포인트는 마스크 채널이 있어 "tau 마스크 0"으로 넣을 수도 있지만, R2(토크 있음)로만 학습한 모델엔 분포 밖이라 바꾸지 않았다.
+- 문서 항목 C1–C5·C7·C8은 메인 세션 몫. §63 (1)–(3) 구현과 D2(요청 해시·카나리)를 정본 §42·§63 영향 줄, `r5_closed_loop.md:16` 주장과 맞출지는 메인 세션이 판단. → **처리됨**: 정본 §67(C1–C8)·§67 보충(00:08 UTC), `r5_closed_loop.md` 끝의 정정 줄(R7 1회차 D2).
+- 그리퍼 사상은 정본대로 선형이다. 시뮬 패드 간격은 관절값과 비선형(`sim.scene._GW`)이라 두 데이터셋의 "열림 0.5"는 물리적으로 같지 않다. S-E2E와 시뮬을 한 모델에 섞을 때 영향 확인 필요. → 정본 §67 보충에 기록(두 데이터를 섞을 때 재검토).
+- 런타임 tau는 여전히 학습 평균 대치(C8-5)다. 새 체크포인트는 마스크 채널이 있어 "tau 마스크 0"으로 넣을 수도 있지만, R2(토크 있음)로만 학습한 모델엔 분포 밖이라 바꾸지 않았다. → 정본 §67 C8 SCOPED(융합 런타임 토크 입력).

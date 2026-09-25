@@ -20,7 +20,7 @@
 | `harvest/sim/planner.py` | `run_episode` 결과에 `variant`·`randomization`·`rand_settle`·`rand_moved` 추가 (`randomization_meta`) |
 | `harvest/cli_pool.py` | 스냅샷 에피소드 메타(`ep<seed>.meta.json`)에 같은 필드, `--variant` 인자. **pool 모드는 `random`을 거부**(`check_train_variant`, D35) |
 | `harvest/sim/run_dev.py` | `dev --variant`, `r5frames`(프레임+RTF), `r5calib`(조명 기준 세기 보정) |
-| `tests/sim/test_randomize_logic.py` (새, 24건) | 시드 결정성, 풀 분리(파일·이름·색·구간), 풀 안에서만 뽑힘·풀 전 항목 사용, keep-out(DEV 0–29 + 500–699, random/dr), 메쉬 맞춤 크기, 메타 스키마·검증기, 학습용 random 거부, 조명 방향 |
+| `tests/sim/test_randomize_logic.py` (새, 24건) | 시드 결정성, 풀 분리(파일·이름·색·구간), 풀 안에서만 뽑힘·풀 전 항목 사용, keep-out(DEV 0–29 + 500–699(→ 3000–3199, 4줄 정정), random/dr), 메쉬 맞춤 크기, 메타 스키마·검증기, 학습용 random 거부, 조명 방향 |
 
 로봇·카메라·게인·질량은 손대지 않았다(`_robot_cfg`·`_default_camera_cfgs` 무변경, `fix_root_link=True`만 기존대로). 물리 변경은 방해물 자기 충돌체뿐이다(아래 §7-3의 비트 동일성 메모 참고).
 
@@ -48,7 +48,7 @@
 - 농구화·야구모자는 번들 재질이 번들에 없는 텍스처(`./T…`)를 가리켜서 풀 색으로 다시 칠한다(JSON `material_note`).
 
 ### 배치 (keep-out, planner·perturb 기하 재사용)
-방해물 중심 (x, y)는 다음을 모두 만족할 때까지 다시 뽑는다(3000회, 실패 시 그 방해물 제외·`distractors_dropped` 기록 — DEV 0–29와 500–699에서 제외 0건):
+방해물 중심 (x, y)는 다음을 모두 만족할 때까지 다시 뽑는다(3000회, 실패 시 그 방해물 제외·`distractors_dropped` 기록 — DEV 0–29와 500–699에서 제외 0건(당시 실측; 시험 시드는 이후 3000–3199, 4줄 정정)):
 1. 탁자 안(가장자리 1 cm + 반지름), 배치 상자 x 0.30–0.80, y −0.55–0.33.
 2. **경로 + P2 스폰 띠 밖**: 머그→트레이 선분까지 거리 ≥ `P2_LATERAL_M[1]`(0.13) + o10 반지름 + 자기 반지름 + 2 cm. P1의 2 cm 이동도 이 띠 안이다.
 3. 머그·트레이·o8·o9(standard 배치 그대로)와 반지름 합 + 3 cm, 먼저 놓인 방해물과 + 2 cm.

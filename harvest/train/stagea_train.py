@@ -4,7 +4,9 @@
                                                                with --target-source outcome), early stopping on val
                                                                (POOL `eval`) NLL
   parity  --dev DIR --acc JSONL [--adapter DIR] --n N          HF option probs vs the recorded vLLM Jev-L probs
-  load    --adapter DIR --pool DIR --rule R                    reload a saved adapter and score a few val items
+  load    --adapter DIR [--pool DIR] [--n N] [--seed S]        reload a saved adapter and score a few val items
+                                                               (same target options as train: labels_v2 default;
+                                                               --rule R only with --target-source outcome)
 
 Prompt = the Jev-L request exactly: --cameras HW (default, canon §59) = jevl.JevLClient._body_mm layout HW (system
 jevl.SYSTEM, user ["head camera:", head 672x376, "right wrist camera (active arm):", wrist 424x240,

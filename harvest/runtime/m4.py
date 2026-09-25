@@ -19,7 +19,9 @@ E1). What is kept from §4.2:
     CONTRADICT -> same + hold (keep last committed action, slow down; never a stop -- M7 owns FAIL);
     LAG -> choices kept (retiming is left to the executor).
 Not implemented (logged as open items): C3' Beta stop rule, cumulative-expected-state agreement (agree_mode),
-align_tol, CUSUM, J5 conformal gate and theta gate (both off before E1 anyway).
+align_tol, CUSUM. The J5 conformal gate is applied before this ledger in core.py (R6, canon §31; only with a
+calibration file and j5_alpha); the theta gate is only judged offline (calibration.py, E1 judgment 1), not applied
+at runtime (canon §6: gates off before E1).
 """
 from __future__ import annotations
 

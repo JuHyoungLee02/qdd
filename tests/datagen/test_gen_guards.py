@@ -17,6 +17,7 @@ def test_dev_seeds_only_unless_confirmed_train_range():
 
 def test_train_range_is_disjoint_from_reserved_ranges():
     r = set(G.R2_TRAIN_SEEDS)
+    # DEV, 500-699 (a superset of CAL 500-549), TEST, TEST-P5, POOL
     for rng in (range(0, 30), range(500, 700), range(1000, 1150), range(1300, 1330), range(2000, 2120)):
         assert not r & set(rng)
 

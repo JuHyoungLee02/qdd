@@ -161,7 +161,7 @@ S-E2E 단계 B (ROBOTIS AI Worker, `se2e_data.md`는 아직 없어 파드 자료
 ## 8. 열린 문제
 1. **HW 모델의 vLLM 서빙 확률·지연 재측정**: HF 학습 확률과 vLLM 추론 확률 일치(§55의 argmax 100 % 확인)를 HW 배치로 다시 해야 한다. 병합 → `serve_merged.sh`와 같은 옵션 → `JevLClient.acall_mm(layout="HW", mode="lead")`. GPU 3이 빌 때 한다.
 2. **검증 부분집합을 스냅샷 단위로**: 지금 `select_val`은 항목을 무작위로 뽑아 공유가 안 된다(평가 3배 느림). 스냅샷 단위 선택으로 바꾸면 빨라지지만 기존 실행과 검증 집합이 달라진다 → 본 학습 사전 등록 때 정한다.
-3. **질문 id 해시 추론 쪽 연결**: 학습 쪽 `prompt_config.sha`(카메라 구성 포함)는 기록된다. 런타임(`JevLSelector`)이 같은 해시를 내 비교하는 연결은 R5/R6 몫이다.
+3. **질문 id 해시 추론 쪽 연결**: 학습 쪽 `prompt_config.sha`(카메라 구성 포함)는 기록된다. 런타임(`JevLSelector`)이 같은 해시를 내 비교하는 연결은 R5/R6 몫이다. → **해결(R5·R6·pre-R7)**: 런타임이 `question_id@vN` 5개를 기록하고(`runtime/run_r5.py` `question_ids`, `r5_closed_loop.md` 45줄 `policy_config`), 보정 파일은 question_id 해시가 다르면 거부하며(`runtime/calibration.py`, `r6_eval.md` 48줄), 융합 런타임은 체크포인트 `prompt_config`가 다르면 거부한다(`pre_r7_fixes.md` §1.1).
 4. **단계 B `evaluate` 묶음화**: 지금은 표본 1개씩이다(§6). 고정 잡음 순서를 유지한 채 묶을 수 있다.
 5. **활성 팔**: 단계 A 풀은 오른팔 단일 과제라 `arm="right"` 고정이다. 다과제(R2)에서 왼팔·양팔이 생기면 풀 줄에 활성 팔 필드가 필요하다(단계 B는 R2 행 `arm` 사용).
 6. **LoRA dropout 공유·스냅샷 단위 스텝 구성**(§2.4)이 학습 결과에 주는 영향은 재지 않았다. 필요하면 `--no-share`와 짝 비교한다.

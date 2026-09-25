@@ -111,13 +111,13 @@ torch 2.13.0+cu130, torchvision 0.28.0, transformers 5.17.0, tokenizers 0.23.2, 
 
 ## 8. 열린 문제
 
-1. **정답 최종화 대기**: labels_v2는 지금 DEV(`jsel_dev/P*.labels_v2.jsonl`)에만 있다. 풀(`/data/harvest/data/pool`, 재생성 중)에 labels_v2가 생기면 파일을 `<풀 폴더>.labels_v2.jsonl`(= `/data/harvest/data/pool.labels_v2.jsonl`)에 두거나 `--labels-v2`로 경로를 준다. 결과 기반 라벨의 규칙은 DEV 자체 점검 뒤 `finalize` — 그 전에는 `--rule`을 직접 줘야 한다.
+1. **정답 최종화 대기**: labels_v2는 지금 DEV(`jsel_dev/P*.labels_v2.jsonl`)에만 있다. 풀(`/data/harvest/data/pool`, 재생성 중)에 labels_v2가 생기면 파일을 `<풀 폴더>.labels_v2.jsonl`(= `/data/harvest/data/pool.labels_v2.jsonl`)에 두거나 `--labels-v2`로 경로를 준다. 결과 기반 라벨의 규칙은 DEV 자체 점검 뒤 `finalize` — 그 전에는 `--rule`을 직접 줘야 한다. → **해결**: 풀 labels_v2 = `/data/harvest/data/pool.labels_v2.jsonl`(`stageA_sft.md` 12줄), 결과 기반 점수식 = plan(정본 §65, 거부권 용도만), 학습 정답 기본 = labels_v2(`--rule`은 `--target-source outcome`일 때만).
 2. **progress 질문은 학습하지 않는다**: 정답 원천이 없다(labels_v2의 progress = 옛 oracle). 그런데 LoRA가 LLM 전 층을 바꾸므로 progress 보기 확률도 영점에서 움직인다 → M7 progress 게이트·보정은 학습 뒤 모델로 다시 재야 한다.
 3. **NONE_ESCALATE 소멸**: labels_v2에는 NE 정답이 없고, 결과 기반 라벨의 "모든 보기 점수 0"도 스모크 데이터에 0건. SFT 뒤 p(NE) → 0이 예상된다(D26 위험 2) → §52 결정 1대로 J5 집합 크기를 상위 호출 신호로 쓰는지 확인 필요.
 4. **보기 순서**: 학습은 고정 순서(추론과 같음). §53에서 고정 순서 첫 자리 쏠림이 보였으므로, 순서 순환 증강(`shift`)을 켤지는 SFT 뒤 E3-lite 재측정에서 판정할 일.
-5. **question_id@vN 미연결**: DecCall 질문 id에 `qid.py` 레지스트리 판본이 붙어 있지 않다. 지금은 프롬프트 관련 파일 해시를 `config.json`에 남긴다. 추론 쪽도 같은 해시를 기록해야 학습–평가 일치를 기계적으로 확인할 수 있다.
+5. **question_id@vN 미연결**: DecCall 질문 id에 `qid.py` 레지스트리 판본이 붙어 있지 않다. 지금은 프롬프트 관련 파일 해시를 `config.json`에 남긴다. 추론 쪽도 같은 해시를 기록해야 학습–평가 일치를 기계적으로 확인할 수 있다. → **해결(R5·R6)**: `runtime/run_r5.py` `question_ids`(qid.py 레지스트리 `question_id@vN`, 카메라 배치 포함)가 폐루프 로그에 실리고, 보정 파일은 해시가 다르면 거부한다(`r3_throughput.md` §8-3 해결 표시).
 6. **BF16 수치 차**: HF 학습 경로 대 vLLM 추론은 BF16 로짓 한 칸(0.125) 차이로 일부 문항 확률이 0.05–0.18 흔들린다(argmax는 거의 항상 같음). 보정(온도·J5)은 반드시 **vLLM으로 서빙한 병합 모델의 확률**로 맞춘다.
-7. **머리캠만**: §51 입력은 머리캠 + 우손목캠이지만 지금 Jev-L 추론 프롬프트가 머리캠 1장이라 학습도 그대로 따랐다. 손목캠을 넣으려면 `jevl._body`와 학습 `Scorer`를 함께 바꿔야 한다(이미지 순서 포함).
+7. **머리캠만**: §51 입력은 머리캠 + 우손목캠이지만 지금 Jev-L 추론 프롬프트가 머리캠 1장이라 학습도 그대로 따랐다. 손목캠을 넣으려면 `jevl._body`와 학습 `Scorer`를 함께 바꿔야 한다(이미지 순서 포함). → **해결(R3)**: `stagea_train --cameras HW`(기본, 정본 §59 머리 + 활성 손목, `jevl.JevLClient._body_mm`와 같은 배치).
 8. **과적합 신호**: 작은 스모크(150–200항목)에서 dir_xy·mag 검증 NLL이 에폭 2에 다시 오른다. 본 학습에서는 조기 종료가 작동하도록 `--eval-every`를 에폭당 4회 이상으로 둔다.
 9. **가중치**: 풀의 `w_natural`(과다 표집 보정 가중치)은 손실에 쓰지 않았다(모든 결정 스냅샷 동일 가중). 필요하면 항목 가중 NLL로 바꾼다.
 10. 스모크 산출 `smoke_short1/merged`·`smoke_labels_v2/merged`(각 8.5 GB)는 지연·결정성 재측정 연습용으로 남겨 두었다. 필요 없으면 지워도 된다.

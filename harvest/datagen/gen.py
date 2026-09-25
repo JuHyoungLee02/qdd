@@ -44,9 +44,10 @@ def check_r2_seed(seed: int, allow_train: bool = False) -> int:
     s = int(seed)
     if s in DEV_SEEDS or (allow_train and s in R2_TRAIN_SEEDS):
         return s
-    raise ValueError(f"seed {s}: R2 generates DEV 0-29 only" + ("" if allow_train else
-                     f" (R2_TRAIN {R2_TRAIN_SEEDS.start}-{R2_TRAIN_SEEDS.stop - 1} needs --confirm-train)") +
-                     "; CAL / TEST / TEST-P5 / POOL are never generated here")
+    raise ValueError(f"seed {s}: R2 generates DEV 0-29" + (
+        f" and R2_TRAIN {R2_TRAIN_SEEDS.start}-{R2_TRAIN_SEEDS.stop - 1} (--confirm-train given)" if allow_train else
+        f" only (R2_TRAIN {R2_TRAIN_SEEDS.start}-{R2_TRAIN_SEEDS.stop - 1} needs --confirm-train)") +
+        "; every other seed is refused (CAL / TEST / TEST-P5 / POOL are never generated)")
 
 
 def split_of(seed: int) -> str:

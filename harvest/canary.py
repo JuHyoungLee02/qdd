@@ -1,4 +1,7 @@
-"""Daily canary (E §1.8, canon §28): Jev answer drift vs baseline day; Astra plan-signature drift."""
+"""Daily canary (E §1.8, canon §28): decision-model answer drift vs baseline day; Astra plan-signature drift.
+
+Written for Jev; Jev is unusable (user-log 46), so the decision model is now Jev-L / the fused model (canon §44,
+§58) -- harvest.eval.canary builds the sets and calls canary_compare."""
 import hashlib
 import json
 from collections import Counter

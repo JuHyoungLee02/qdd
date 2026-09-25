@@ -105,3 +105,5 @@
 2. M2: `r5_closed_loop.md:76`과 `:98` 끝에 "→ **정정(정본 §67 C4, R7 4회차)**: 사전 수정(pre-R7)에서 2순위(HF 한 백본: decide = 공유 접두 순전파, chunk = 캐시 문맥 + CUDA 그래프 expert, `harvest/runtime/fused_model.py`)로 구현했다"를 붙인다.
 3. 같은 사실 grep: 이번 5.5의 명령에 `grep -rn "vLLM" harvest docs/stage3 paper`를 더해 "융합 decide = vLLM"이 남은 곳이 없는지 확인한다. (N1 `random5.md:23`, N2 `handoff.md:3`도 같은 묶음으로 손보면 좋다.)
 4. (권장, S-E2E 사전 등록) N5: 검증 부분집합(`--max-val 0` 또는 층화 옵션 추가), `--eval-every`, 중간 저장 여부를 사전 등록 문서에 적는다. N6: 시작일 카나리를 새로 만든다.
+
+> 정정(2026-09-25 01:48 UTC, R7 5회차 P1·sweep6): 17줄 '코드는 네 번째로 무결하다'는 틀렸다 — 1회차에 코드 DEFECT 2건이 있었으므로 이 4회차까지 코드 무결은 2·3·4회차 **3회 연속**이다. 위 판정·발견 목록은 검증 기록이라 고치지 않는다.

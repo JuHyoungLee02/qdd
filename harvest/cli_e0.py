@@ -1,4 +1,6 @@
-"""E0 one-session CLI (plan T8). Token is read from HARVEST_JEV_TOKEN_FILE; never printed."""
+"""E0 one-session CLI (plan T8). Token is read from HARVEST_JEV_TOKEN_FILE; never printed.
+
+Frozen: Jev is unusable (user-log 46, canon §44); the E0 latency test of the replacement is jevl_latency.md."""
 import argparse
 import json
 import os

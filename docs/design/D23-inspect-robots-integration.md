@@ -3,6 +3,8 @@
 저장 2026-09-24 08:04 UTC. 조사 에이전트 보고 전문. 메인이 받아 둔 코드(D:/tools/audit_d23/ir)에서 재확인: rollout.py:276-280 "The loop applies no wall-clock pacing of its own … declares the \"self_paced\" capability" / rollout.py:55-64 `derive_seed(eval_seed, scene_seed, epoch)` — scene.id 미사용(짝 장면 가능) / agent `_tools.py:632` "control needs finite low and high bounds" / isaacsim `embodiment.py:215` `Box(shape=(action_dim,), …)` low·high 없음 — 모두 일치.
 
 
+> 정정(sweep6, 정본 §43·§47): 아래의 `ZED_M` 좌·우 카메라 서술은 §43(user-log 44)에서 폐기됐다 — AI Worker 기본 카메라 그대로, 시뮬 설정은 §47 복사(머리 672×376, 좌·우 손목 D405 424×240). 보고서 본문은 당시 기록이다.
+
 ## 작업 범위와 자료
 - **소스:** 전체 클론 `D:\tools\audit_d23\ir`. HEAD `7e506e3`가 태그 **v0.59.0**(2026-09-22)과 같습니다. D22 얕은 클론과 내용도 같습니다.
   - 아래 경로는 이 폴더 기준입니다.
@@ -97,7 +99,7 @@
   - 기준선용 latency-faithful은 우리 `LatencyChargingController`로 만듭니다(약 40줄).
   - 동작: `policy.act` 시간 L을 재고, 청크 앞에 "직전 명령 유지" 행동 `ceil(L×hz)`개를 붙입니다. 실물에서 LLM이 생각하는 동안 로봇이 멈춰 있는 상황과 같습니다(B6b-wall과 같은 모양).
   - `max_seconds` 과제는 sync에서 생각 시간이 공짜라는 점을 표에 적습니다.
-- 어느 트랙을 주 표로 할지는 [결정 필요]입니다.
+- 어느 트랙을 주 표로 할지는 [결정 필요]입니다. → **해소(정본 §42, Claude 결정)**: 주 표 = 지연 충실 트랙(우리 simlat, 동기 기준선 `LatencyChargingController`), sync-fair 트랙 병기.
 
 **2차(RoboDojo) 대비**
 - xpolicylab 계획서 원문: "RoboDojo embeds the same protocol on its eval side" (`plans/0007-xpolicylab-policy-plugin.md:74`).
@@ -218,5 +220,5 @@
   - §4.3 "병렬: 환경 4개 동시"는 하네스가 순차이므로 **프로세스·파드 분할**로 바꿉니다.
   - §1.6 기록은 `trial_metadata`와 부가 JSONL 대응을 명시합니다.
   - E-M4-lat 지연 주입은 같은 시계 추상화로 구현한다고 적습니다.
-  - 오라클 상태를 agent에 줄지(정보 동등)를 [결정 필요]로 올립니다.
+  - 오라클 상태를 agent에 줄지(정보 동등)를 [결정 필요]로 올립니다. → **해소(정본 §42, Claude 결정)**: 오라클 물체 자세는 우리 M1이 오라클일 때(E0 오라클 조건)에만 state에 넣고, 인식 조건에서는 두 쪽 모두 넣지 않는다.
 - **00 §41:** "몸체 쪽 벽시계 박자"만으로는 시뮬 RTF < 1일 때 무너집니다. 이 점과 simlat 권고를 덧붙입니다.

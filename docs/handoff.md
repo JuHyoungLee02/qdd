@@ -1,15 +1,15 @@
 # 인수인계: 새 세션이 가장 먼저 읽을 문서
 
-마지막 갱신: 2026-09-25 00:56 UTC (R1–R6 완료, R7 순회 중 — 3회차까지 FAIL(문서만), 연속 무결 0회, 정본 §1~§70)
+마지막 갱신: 2026-09-25 01:48 UTC (R1–R6 완료, R7 순회 중 — 회차별 판정·연속 무결 횟수는 §2.8 마지막 줄, 정본 §1~§71)
 
-> 현재 판본: 정본 `00-interfaces.md` **§1~§70**(뒤 절이 앞 절을 덮는다). 단계 3 이전 판본(plan v6.8, SUMMARY v3.10, §1의 v5.6)은 옛 기록이다. 단계 3 이후 최신 상태는 §2.7·§2.8.
+> 현재 판본: 정본 `00-interfaces.md` **§1~§71**(뒤 절이 앞 절을 덮는다). 단계 3 이전 판본(plan v6.8, SUMMARY v3.10, §1의 v5.6)은 옛 기록이다. 단계 3 이후 최신 상태는 §2.7·§2.8.
 
 ## 1. 먼저 할 일
 1. `dev` 브랜치인지 확인한다. **모든 작업(글, 코드)은 `dev`에서 시작하고 `dev`에만 푸시한다. `main`은 절대 건드리지 않는다**(사용자가 직접 반영).
    - Windows 클론이면 `git -c safe.directory=D:/qdd ...`가 필요할 수 있다.
 2. 다음 순서로 읽는다.
    1. `CLAUDE.md`: 모든 규칙과 제약.
-   2. `docs/user-log.md`: 사용자 발언 전체(1~41번). 의도는 여기서.
+   2. `docs/user-log.md`: 사용자 발언 전체(1~41번 — 지금은 66번까지, sweep6 갱신). 의도는 여기서.
    3. `docs/plan.md`: 현재 계획 **v5.6** ([사용자] / [제안] / [결정 필요]). §5에 [결정 필요] 10개와 첫 실험.
    4. `docs/draft-log.md`: v0~v4.1 기록과 교훈. **같은 실수를 반복하지 않는다.**
    5. `docs/research/v3/README.md`(에이전트 공통 규칙) + `v3/01~19`(원문 확인 보고서). v2는 참고만(일부 정정됨).
@@ -48,6 +48,7 @@
 ## 2.6 07:02 UTC 뒤 결정 (정본 §34~§42, user-log 35~41)
 - **§34·§35**: 도메인 무작위화 넣음(D35), 주 표 실행기 = 스크립트 스킬 S(D36), action expert = 구간 제한 잔차 R(`D20-expert-role.md`).
 - **§36~§39** [사용자 결정]: 로봇 = ROBOTIS AI Worker, 카메라 = ZED 스테레오(머리 ZED Mini + 손목 D405), 실물 = FFW-SG2 베이스 고정, R 힘 입력 = 관절 `effort` + 그리퍼 전류(손목 F/T 추가 안 함). GT·모듈 실험 장면 = cyclo_lab AI Worker 한 팔 + `ZED_M` 쌍둥이(`D21-aiworker-zed.md`). 남은 하드웨어 결정 없음.
+  - (sweep6 정정) 위 줄의 `ZED_M` 쌍둥이는 정본 §43(user-log 44)에서 폐기됐다 — AI Worker 기본 카메라 그대로, 시뮬 설정은 §47 복사(머리 ZED Mini 왼쪽 정류 672×376, VGA 수평 85°·fx 367; 좌·우 손목 D405 424×240).
 - **§40**: Inspect Robots(`robocurve/inspect-robots`, MIT, 논문 없음) 판정 — 선행 겹침 없음, Robocurve Astra 실물 수치는 LOW라 근거로 안 씀(`D22-inspect-robots.md`).
 - **§41** [사용자 결정, user-log 41]: **1차 평가 = Inspect Robots + AI Worker SG2 한 팔 시뮬, 2차 = RoboDojo.** B1a-real 해소(agent + Astra = 범주 1 기준선).
 - **§42** (`D23-inspect-robots-integration.md`): 시계 sync/simlat/wall 주입, 주 표 = 지연 충실 트랙(우리 simlat, 동기 기준선 `LatencyChargingController`) + sync-fair 병기, RTF 기록, 오라클 상태 정보 동등, `aiworker` 몸체·`OursPolicy` 어댑터, 기준선 B1a-IR·B5-IR·B3b-IR, 단계 P0~P4. 반영 문서: EVAL, E-first, SUMMARY v3.10, plan v6.8, 논문 평가 절.
@@ -60,6 +61,7 @@
 - 30분마다 루프 점검(세션 cron). 사용자 승인 없이 계속 진행한다.
 
 ## 4. 사용자 결정을 기다리는 것 (`plan.md` §5 요약)
+- (sweep6 표시) 아래는 단계 2 초기 목록이다 — 대부분 정본 §26·§31·§34–§51에서 해소됐다. 지금 사용자 대기 항목은 §2.7 '사용자 대기 항목: 없음'.
 1. 핵심 주장 문구 2. M1 변환 방법·인식 앞단 3. 실험 환경(RoboDojo-Sim + LIBERO-Plus 제안) 4. 기간 밖 문헌 허용 5. Astra effort 원칙 적용 6. M3 기본안(촘촘 대 목표 지정형) 7. M8 자체 판단 구현·다중 프레임 기본값 8. M6 5위·"기존 스킬" 정의 9. M10 메모리 주입·로컬 학습 진행 모델 10. 정밀 구간 정지 허용
 - 결정 전에는 두 안을 모두 설계에 남기고 멈추지 않는다.
 - 저장소 이름 변경(qdd → harvest)은 사용자가 직접 한다.
@@ -78,7 +80,7 @@
 - 사용자에게는 한국어로 짧게 보고한다.
 
 ## 2.7 단계 3 이후 상태 (2026-09-24 21:03 UTC, user-log 42~66, 정본 §43~§64)
-- **먼저 읽을 것**: `docs/superpowers/plans/2026-09-25-e2e-ready.md`(현재 계획: 관문 R1–R7 → S-E2E), `docs/design/00-interfaces.md` §43–§70(끝까지), `docs/stage3/direction-log.md`(방향 검사 기록), 진행 기록(ledger) `.superpowers/sdd/2026-09-24-stage3-experiments/progress.md`, 결과 문서 `docs/stage3/results/`.
+- **먼저 읽을 것**: `docs/superpowers/plans/2026-09-25-e2e-ready.md`(현재 계획: 관문 R1–R7 → S-E2E), `docs/design/00-interfaces.md` §43부터 끝까지(지금 §71), `docs/stage3/direction-log.md`(방향 검사 기록), 진행 기록(ledger) `.superpowers/sdd/2026-09-24-stage3-experiments/progress.md`, 결과 문서 `docs/stage3/results/`.
 - **핵심 결정**: Jev 사용 불가 → 로컬 VLM Qwen3-VL-4B typed 선택기(§44, §50, Gemma 4 E4B는 지연 탈락) / Astra = 위층 계획기 + 하트비트 5 s·단계 경계·사건(§45) / 인식 이름 `detect_phrase`는 Astra가(§46) / 카메라 = AI Worker 기본, 시뮬 설정은 humanoid-challenge-env 복사, ZED Mini VGA 85°·fx 367(§43·§47) / 시뮬 CPU PhysX(§48) / 실물 추론 = RTX PRO 6000 서버, 지금은 H200에서 가정해 검증(§49·user-log 62) / 영점 선택기는 최빈 미만 → 정답 재정의 labels_v2(§53·§54) / 학습 경로 C→A→B(§51·§52), **융합 원칙: 런타임은 단일 VLA(결정 토큰 + action expert + 확인 헤드)**, 모듈형 스택은 기준선으로 병기(§58·§60) / 입력 = 머리 + 활성 손목 다중 이미지, lead 호출(§57·§59) / S-E2E = ROBOTIS AI Worker 공개 데이터 1,575편·10 Hz(§62·§63) / **M4 (b)·critic 측정 = 세계 쪽 확인 헤드 V1h + 로봇 쪽 고유 감각 T1, critic 경보 = V1h 단독(§61·§64)**.
 - **완료 관문**: R1 인식 기준선(3D 오차 35 mm — 융합의 근거), R3 처리량(6.5–12배), R4 단계 B 코드(KI 기울기 0 확인, GPU 스모크), R5 폐루프(Inspect Robots에서 한 판 성공), E-M4b-meas. **진행 중**(21:03 기준; R2·R6은 이후 완료 — §2.8): 결과 라벨(T14, GPU 0 장시간). **다음**: R7 객관 검증 순회 2회 연속 무결 → S-E2E 소규모 E2E 학습(사전 등록 뒤).
 - **성격 주의(§56)**: 지금까지의 학습·평가 수치는 모두 파이프라인 확인용 소규모 시험 — 논문 결과로 쓰지 않는다.
@@ -91,4 +93,5 @@
 - 보고서: `docs/stage3/results/r7_cycle1.md`, 수정 기록 `docs/stage3/results/r7_fixes.md`.
 - **R7 2회차(2026-09-25 00:30 UTC 무렵) FAIL**: DEFECT 0, DOC 6(날짜·계획·gen.py 주석·handoff·se2e_data §9·CONTRADICT-soft 범위 표기), SCOPED 7, NOTE 9. 코드 결함 없음 — 1회차 D1·D2 해소를 실행으로 확인(stageb se2e/r2 `--reload-check` 차 0.0, 로그 행 요청 해시·카나리 id). DOC 6건은 메인이 정정(정본 §68). 연속 무결 여전히 0회 → 3회차 진행. 보고서 `docs/stage3/results/r7_cycle2.md`.
 - **R7 3회차(2026-09-25 00:55 UTC) FAIL**: DEFECT 0, DOC 4(L1 se2e_data 날짜, L2 r2_datagen 시드 서술, L3 런타임 주석의 '한 번 호출', L4 handoff 정본 범위) — 모두 2회차 정정 때 같은 사실을 적은 다른 곳을 놓친 것. 메인 정정(정본 §69). 연속 무결 0회 → 4회차. 보고서 `docs/stage3/results/r7_cycle3.md`.
-- **R7 4회차(2026-09-25 01:14 UTC) FAIL**: DEFECT 0, DOC 2(M1 `fused_action.py` 머리 설명, M2 `r5_closed_loop.md`의 fused decide = vLLM 서술) — 코드 무결 4회 연속. 정정(+ `r6_eval.md` 같은 서술) → 정본 §70. 연속 무결 0회 → 5회차.
+- **R7 4회차(2026-09-25 01:14 UTC) FAIL**: DEFECT 0, DOC 2(M1 `fused_action.py` 머리 설명, M2 `r5_closed_loop.md`의 fused decide = vLLM 서술) — 코드 무결 4회 연속(→ **정정(R7 5회차 P1)**: 3회 연속 — 2·3·4회차, 1회차는 코드 DEFECT 2). 정정(+ `r6_eval.md` 같은 서술) → 정본 §70. 연속 무결 0회 → 5회차.
+- **R7 5회차(2026-09-25 01:31 UTC) FAIL**: DEFECT 0, DOC 2(P1 이 문서 머리 상태 줄이 §70 뒤 갱신되지 않음·코드 무결 횟수 오기, P2 `r6_eval.md:54`·`r5_closed_loop.md:98`의 '단계 B 실체크포인트 어댑터 없음' 서술 — pre-R7 519de26에서 해결됨), SCOPED 8, NOTE 13. **코드 무결 4회 연속(2–5회차)**. 보고서 `docs/stage3/results/r7_cycle5.md`. → 문서 전수 정리 sweep6(2026-09-25 01:48 UTC): P1·P2, 결과 문서·D2x 열린 문제 목록의 해결·범위 표시, 102°·`ZED_M` 옛 카메라 서술, user-log 62 풀이 표시, 코드 주석(`stagea_train` 사용법, `gen` 거부 문구, `m4.py`·`closed.py` 머리 설명, Jev 옛 도구) — 기록 `docs/stage3/results/r7_sweep6.md`, 정본 §71. 연속 무결 0회 → 6회차.

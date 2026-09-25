@@ -37,7 +37,7 @@
 - **보조 기하 헤드**: 회귀(그리퍼→대상 Δxyz·거리, 그리퍼→소단계 목표 Δxyz·거리(labels_v2의 G), 대상→놓을 곳 Δxyz; 5 cm = 1 단위, smooth-L1) + 술어(BCE: gripper_open, holding, lifted, upright, near, contact, on). 값이 없으면(null) 가림.
 - **KI 모드**: `stop`(기본) / `none`(절제, 전체 기울기) / `scale:g`(InternVLA-M1식 감쇠 절제, D26 §4.2). `stop`이고 보조 헤드를 끄면 문맥 순전파를 `no_grad`로 해서 메모리를 아낀다.
 - **VQA 보존**: `vqa_loss`(답 토큰 NLL) 구현, λ_vqa 기본 0. 데이터 원천은 아직 없다(열린 문제 5).
-- **안전 투영**: §35의 과제 공간 투영(Jev 방향·크기 권위, |r⊥| ≤ ε)은 FK·야코비안과 S의 누적 이동이 필요해서 **모델 밖 R5 훅**에 둔다. 모델은 잔차 모드에서 차원별 상자 제한(|r| ≤ ξ)까지만 보장(테스트).
+- **안전 투영**: §35의 과제 공간 투영(Jev 방향·크기 권위 — 지금은 Jev-L·융합 모델의 확정 결정 토큰, 정본 §44·§58; |r⊥| ≤ ε)은 FK·야코비안과 S의 누적 이동이 필요해서 **모델 밖 R5 훅**에 둔다. 모델은 잔차 모드에서 차원별 상자 제한(|r| ≤ ξ)까지만 보장(테스트).
 - **checkpoint**: `adapter/`(PEFT LoRA) + `heads.pt`(expert + 보조 헤드, `torch.load(weights_only=True)`로 읽음) + `stageb.json`(구성·정규화·어휘·KI·λ·**prompt_config**). `prompt_config` = 카메라 구성 문자열(`D27v1:head camera:|right wrist camera (active arm):`), 상태 모드, system 해시, 프롬프트 관련 파일 해시와 그 전체 해시 `sha` — §59 "question_id@vN 해시에 카메라 구성 포함"의 학습 쪽 기록.
 
 ## 3. starVLA 판단 (재사용 안 함)
@@ -144,13 +144,13 @@
 
 ## 8. 열린 문제
 
-1. **expert CUDA 그래프**: GPU에서 eager 36.5 ms(목표 30 ms 초과), CUDA 그래프 23.1 ms(목표 안). 런타임 코드(R5)에 그래프 캡처(고정 입력 버퍼 + `torch.cuda.graph`)를 넣어야 한다 — 지금 `stageb_train.latency`는 eager만 잰다. 실물 서버(RTX PRO 6000)에서 다시 잰다. (처음 판에서 GPU 2 사용이 막혔던 문제는 사용자 허용(user-log 64) 뒤 §7.2로 해소.)
-2. **처리량**: 한 표본 = 문맥 1회 + 질문 5회 순전파(각각 같은 이미지 2장 재인코딩). 본 학습 규모에서는 질문 5개를 한 서열로 묶거나 이미지 인코딩을 공유해야 한다(단계 A §7과 같은 문제, R3 묶음 처리와 함께).
+1. **expert CUDA 그래프**: GPU에서 eager 36.5 ms(목표 30 ms 초과), CUDA 그래프 23.1 ms(목표 안). 런타임 코드(R5)에 그래프 캡처(고정 입력 버퍼 + `torch.cuda.graph`)를 넣어야 한다 — 지금 `stageb_train.latency`는 eager만 잰다. 실물 서버(RTX PRO 6000)에서 다시 잰다. (처음 판에서 GPU 2 사용이 막혔던 문제는 사용자 허용(user-log 64) 뒤 §7.2로 해소.) → **해결(R5·pre-R7)**: 런타임 그래프 캡처 = `harvest/runtime/fused_action.py` `GraphedSampler`, 단계 B 체크포인트 서버의 chunk가 쓴다(`pre_r7_fixes.md` §1.3: 그래프 30.0 ms, eager와 차 0.0). 실물 서버 재측정은 정본 §67 C8 SCOPED.
+2. **처리량**: 한 표본 = 문맥 1회 + 질문 5회 순전파(각각 같은 이미지 2장 재인코딩). 본 학습 규모에서는 질문 5개를 한 서열로 묶거나 이미지 인코딩을 공유해야 한다(단계 A §7과 같은 문제, R3 묶음 처리와 함께). → **해결(R3)**: 공유 접두 순전파(`train/prefix_share.py` `samples_forward`, `stageb_model.forward_shared`) — `r3_throughput.md`.
 3. **런타임 한 번 호출(§58, R5)** — **정정(정본 §67 C4)**: 런타임은 스텝마다 두 호출(decide → chunk), 백본 순전파는 스텝당 1회, 둘 다 HF 백본(`harvest/runtime/fused_model.py`): 지금은 결정(질문별 트라이 호출)과 행동(문맥 순전파 + expert)이 다른 순전파다. vLLM 서빙과 expert를 한 서버에서 묶으려면 vLLM이 은닉 상태를 내주거나(현재 미지원 [미확인]) HF 순전파를 따로 둬야 한다 — 지연 예산(§49·§59 0.33 s)과 함께 R5에서 정할 일.
 4. **절대 모드 목표 표현**: 관절 위치 목표 절대값. 현재 관절 기준 차분(Δq) 표현이 나을 수 있다(π0 계열은 절대, 여러 VLA는 차분) — 실데이터가 오면 절제.
-5. **VQA 보존 데이터 원천 없음**: `vqa_loss`만 있고 λ_vqa = 0. D26의 1 : 1 : 0.25 비율과 보존 탐침은 VQA 원천(공식 공개 데이터셋)을 정한 뒤.
+5. **VQA 보존 데이터 원천 없음**: `vqa_loss`만 있고 λ_vqa = 0. D26의 1 : 1 : 0.25 비율과 보존 탐침은 VQA 원천(공식 공개 데이터셋)을 정한 뒤. → **범위 밖(정본 §67 C8 SCOPED)**: VQA 보존 공동학습은 기본 끔, 본 단계 B 학습 사전 등록 때 결정.
 6. **백본 조건 방식**: 한 층 교차 주의(기본 마지막 층). π0.5식 층별 공유 KV, starVLA식 마지막 N층 조건은 절제 후보. 마지막 층은 다음 토큰 예측에 특화돼 있어 중간 층이 나을 수 있다(`layer` 인자).
-7. **잔차 모드 ξ 값**(관절 0.05 rad, 그리퍼 5 mm)은 [가정]. §35의 과제 공간 투영은 R5 훅에서 구현해야 하고, R2가 기록하는 `action_exec`가 투영 뒤 값이어야 한다.
+7. **잔차 모드 ξ 값**(관절 0.05 rad, 그리퍼 5 mm)은 [가정]. §35의 과제 공간 투영은 R5 훅에서 구현해야 하고, R2가 기록하는 `action_exec`가 투영 뒤 값이어야 한다. → **갱신**: R5 훅 자리(`runtime/skills.py` `apply_residual`, 근접 구간·상한 제한, 기본 훅 = 0)와 R2 `action_exec = action_script`(잔차 없음)는 있다. 잔차 모드 체크포인트는 런타임이 아직 거부한다(`fused_model.py`, `pre_r7_fixes.md` §1.6-4) — 여전히 열림.
 8. **IMG 상태의 `t_state` 줄**: 단계 문장("pick up mug o3")에 물체 id가 남는다 — 계약 요약이라 유지했지만 id가 M1 인식 결과를 암시하는지는 설계 확인 필요. 로봇 줄의 `closed_holding(o3)`은 `closed`로 줄였다.
-9. **보조 헤드 라벨 좌표계**: 로봇 기준 좌표(m)로 가정. R2가 labels_v2의 G·Δ와 같은 좌표계를 쓰는지 확인 필요.
-10. **로컬 pytest 임시 폴더**: 기존 테스트 모음이 `tmp_path`를 쓰므로 인자 없이 돌리면 C: 임시 폴더를 쓴다. 이번 작업의 실행은 모두 `--basetemp=D:/tools/scratch_qdd/pt`로 했다.
+9. **보조 헤드 라벨 좌표계**: 로봇 기준 좌표(m)로 가정. R2가 labels_v2의 G·Δ와 같은 좌표계를 쓰는지 확인 필요. → **해결(R2)**: R2 `aux.reg`의 `g2goal_*`는 labels_v2 Δ 그대로다(`r2_datagen.md` 32줄, `datagen/rows.py` `aux_row`).
+10. **로컬 pytest 임시 폴더**: 기존 테스트 모음이 `tmp_path`를 쓰므로 인자 없이 돌리면 C: 임시 폴더를 쓴다. 이번 작업의 실행은 모두 `--basetemp=D:/tools/scratch_qdd/pt`로 했다. → **해결**: `pytest.ini`(`--basetemp=D:/tools/scratch_qdd/pytest_tmp`) + `tests/conftest.py`(프로세스별 폴더, Windows TMP·torch 캐시를 D:로).

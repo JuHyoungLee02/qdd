@@ -139,7 +139,7 @@ BOOT PROOF: SUCCESS  (SimulationApp started + stepped on GPU in 32.9s)
 - **프레임 검증:** 50번째 스텝 프레임을 `docs/stage3/results/p0_ir_lift_cam_frame.png`에 저장했다. Franka, 테이블, 큐브가 정상 렌더됐다. RT 코어가 없는 H200에서도 RTX 렌더가 된다.
 - **해석:**
   - 카메라 1대, 224²에서 RTF가 1을 겨우 넘는다(1.13).
-  - ZED_M 좌우 2대 + 손목 카메라에 VGA 해상도를 쓰고, D23 권고대로 decimation 1(100 Hz)로 바꾸면 RTF < 1이 될 가능성이 크다(추정, 미측정).
+  - ZED_M 좌우 2대 + 손목 카메라에 VGA 해상도를 쓰고, D23 권고대로 decimation 1(100 Hz)로 바꾸면 RTF < 1이 될 가능성이 크다(추정, 미측정). (→ 정본 §43: `ZED_M` 쌍은 폐기 — AI Worker 기본 머리캠 + 손목캠만, §47 설정 복사.)
   - 따라서 **wall 모드를 시뮬에 쓰는 것은 부적합하다.** D23 권고대로 simlat을 주 트랙으로 하고, RTF를 로그에 남겨야 한다.
 
 ## 막힌 점 / 주의

@@ -27,7 +27,7 @@ D:\qdd는 읽기만 했습니다. 내려받은 자료는 모두 `D:\tools\audit_
 - 구동기: 팔 1–3축 "YM080-230-R099-RH", 4–6축 "YM070-210-R099-RH", 7축 "PH42-020-S300-R"(모두 DYNAMIXEL). 통신은 "RS-485", "4 Mbps".
 
 ### 1.2 카메라
-- 머리: **"Stereolabs ZED Mini"**, "Stereoscopic RGBD with 6DoF IMU", "102°(H) x 57°(V)", "0.1m to 9m".
+- 머리: **"Stereolabs ZED Mini"**, "Stereoscopic RGBD with 6DoF IMU", "102°(H) x 57°(V)", "0.1m to 9m". (→ 정정(정본 §47): 센서 최대 화각이다. 쓰는 VGA 672×376 모드는 수평 85°·fx 367.)
 - 손목: **"Intel RealSense D405" ×2**, "87°(H) × 58°(V)", "7cm to 50cm".
   - 참고: URDF 파일 이름은 `wrist_d401.urdf.xacro`라서 이름이 어긋납니다. 사양 페이지 기준으로 D405로 봅니다. 차이의 이유는 [미확인]입니다.
 - 라이다: "LakiBeam 1 (x2)".
@@ -81,7 +81,7 @@ D:\qdd는 읽기만 했습니다. 내려받은 자료는 모두 `D:\tools\audit_
 | cyclo_intelligence | 34★ | — |
 
 - cyclo_lab의 카메라가 ZED Mini의 실제 쌍둥이가 아닙니다.
-  - SG2 머리 카메라: **단안 RGB 672×376**, focal 10.4 / aperture 20.955 → 수평 화각 약 90°(우리 계산). ZED Mini는 102°입니다.
+  - SG2 머리 카메라: **단안 RGB 672×376**, focal 10.4 / aperture 20.955 → 수평 화각 약 90°(우리 계산). ZED Mini는 102°입니다. → **정정(정본 §47)**: 102°는 센서 최대 화각이고 VGA 672×376 모드는 85°(fx 367)다.
   - BG2: 머리 244×244 `rgb` + `distance_to_image_plane`, 손목 244×244 RGB.
 - 시뮬 설정 `sim.dt = 0.01`(100 Hz), `decimation = 5`.
 - 액추에이터(Implicit): 팔 `velocity_limit_sim=15.0`, `effort_limit_sim` 61.4 / 31.7 / 5.1.
@@ -117,6 +117,8 @@ D:\qdd는 읽기만 했습니다. 내려받은 자료는 모두 `D:\tools\audit_
 |---|---|---|---|
 | VGA | ≈272 px | 약 5 mm | 약 15 mm |
 | HD720 | ≈518 px | 약 3 mm | 약 8 mm |
+
+> 정정(정본 §47, R7 sweep6): 위 표의 f는 수평 102°(센서 최대 화각)로 계산했다. ZED Mini VGA 672×376 모드의 실제 fx는 **367 px**(수평 85°, 실측 camera_info 364.0)이라, 같은 식으로 z = 0.6 m 약 3.9 mm, z = 1.0 m 약 10.8 mm다(우리 계산). HD720 행도 102° 기준 값이다.
 
 - 해석: M1 T1 술어 문턱(cm 단위)에는 대체로 충분합니다. 접촉 근처는 D405(7–50 cm)가 맡는 편이 맞습니다.
 
@@ -179,7 +181,7 @@ D:\qdd는 읽기만 했습니다. 내려받은 자료는 모두 `D:\tools\audit_
 - **AI Worker Isaac 모델이 공식으로 있습니다**(cyclo_lab, Isaac Sim 5.1 / Isaac Lab 2.3).
   - **RoboDojo와 시뮬 판본이 같습니다**(EVAL 표: "Isaac Sim 5.1 + Isaac Lab 2.3"). 같은 설치에서 두 로봇을 돌릴 수 있습니다.
 - [제안] E0–E3와 R·B의 GT 생성 장면인 "단일 팔 자작 장면"을 **FFW-BG2 한 팔(7자유도 + RH-P12-RN)**로 고정합니다. 문서의 요구 조건과 정확히 일치하고, 실물 E-real까지 같은 로봇이 됩니다.
-- 카메라는 cyclo_lab 단안 카메라 대신 **Stereolabs ZED Isaac Sim 확장**(zed-isaac-sim 29★)의 `ZED_M` 디지털 쌍둥이를 붙입니다.
+- 카메라는 cyclo_lab 단안 카메라 대신 **Stereolabs ZED Isaac Sim 확장**(zed-isaac-sim 29★)의 `ZED_M` 디지털 쌍둥이를 붙입니다. → **폐기(정본 §43, user-log 44)**: 카메라를 추가하지 않고 AI Worker 기본 카메라 그대로, 시뮬 설정은 §47 복사.
   - 원문: "Every ZED camera as a calibrated digital twin", "Ground-truth depth streaming", "ZED Sim2Real … (experimental)", Camera Model 목록에 `ZED_M` 포함.
   - 오라클은 렌더러 GT 깊이를 쓰고, 인식 조건은 스트리밍 경로로 ZED SDK 깊이나 Fast-FS를 씁니다.
 - 원문 주의: "Only the streaming path involves the ZED SDK and its stereo-matched depth; the other two deliver Isaac Sim's ground-truth renderer depth."
@@ -195,8 +197,8 @@ D:\qdd는 읽기만 했습니다. 내려받은 자료는 모두 `D:\tools\audit_
 - **AI Worker는 RoboDojo 지원 로봇이 아닙니다.** 새 로봇 추가 절차에 대한 원문 언급도 없습니다.
 - [제안] 3층으로 나눕니다.
   1. **결정 층 비교(주장 H2·H3, RD 낙폭) = RoboDojo-Sim ARX X5 그대로.** 공개 수치(π0.5, Astra, GPT-as-Policy)와 같은 열로 비교하려면 로봇을 바꾸면 안 됩니다.
-     - M1은 트랙 D로 시뮬 깊이를 씁니다. 보조로 **"트랙 D-stereo"** 를 둡니다: 머리 카메라 옆 63 mm에 가상 카메라를 하나 더 두어 스테레오 쌍을 렌더링하고, AI Worker와 **같은 Fast-FS/M1 코드 경로**를 씁니다. 표에 "입력 다름"을 표기합니다.
-  2. **개발·GT·모듈 실험(E0–E3, E-M4, E-R·E-AE) = cyclo_lab FFW-BG2 + ZED_M 쌍둥이**, Isaac 5.1.
+     - M1은 트랙 D로 시뮬 깊이를 씁니다. 보조로 **"트랙 D-stereo"** 를 둡니다: 머리 카메라 옆 63 mm에 가상 카메라를 하나 더 두어 스테레오 쌍을 렌더링하고, AI Worker와 **같은 Fast-FS/M1 코드 경로**를 씁니다. 표에 "입력 다름"을 표기합니다. (→ 폐기(정본 §43).)
+  2. **개발·GT·모듈 실험(E0–E3, E-M4, E-R·E-AE) = cyclo_lab FFW-BG2 + ZED_M 쌍둥이**, Isaac 5.1. (→ 정본 §38: SG2 베이스 고정 우선, §43: `ZED_M` 쌍둥이 폐기.)
   3. **E-real = 실물 AI Worker**(ZED Mini + D405, ROS 2 Jazzy, 100 Hz JTC).
      - 결정 층·술어 등록부·Jev/Astra 계약은 로봇과 무관하게 공유합니다.
      - 스킬·M5 한계·R은 로봇별로 둡니다. 논문에는 "결정 층은 두 로봇에서 같은 코드, 실행 층은 로봇별"이라고 적습니다.
@@ -207,6 +209,7 @@ D:\qdd는 읽기만 했습니다. 내려받은 자료는 모두 `D:\tools\audit_
   - (b) RoboDojo 트랙 D-stereo를 둘지
   - (c) 실물을 BG2로 할지 SG2 베이스 고정으로 할지
   - (d) R의 힘 입력을 전류로 바꾸는 것과 F/T 추가 장착 중 무엇으로 할지
+  - → **해소(sweep6 표시)**: (a) 정본 §37·§38(SG2 베이스 고정 우선, 안 되면 BG2), (b) §43에서 D-stereo 폐기, (c) §38 FFW-SG2, (d) §39 관절 전류(F/T 추가 안 함).
 
 ---
 

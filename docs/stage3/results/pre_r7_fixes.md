@@ -60,9 +60,9 @@
 - `closed_fused_dev0_final`(코드 사본 `code_pre_r7_run2`, 이 문서의 최종 코드): 끝까지 돎, 호출 오류 0, 확인 헤드 출력 20회 → 세계 쪽 검사 18회(만료 6), T1 CONTRADICT 0, (b) 결과 OK 17·LAG 1·DEVIATE 7(합성 행동 모델의 관절 추종 잔차), Astra K2 하트비트 1회. 다른 Isaac 판 2개와 동시에 돌아 CPU 경합이 가장 컸던 판이라 청크 대기가 다시 늘었다(p50 230 ms, 늦은 청크 17/26) — §1.6-1.
 
 ### 1.6 남은 문제 (FusedModel)
-1. **동시 부하 지연**: 폐루프에서 decide 계산 p50 255–376 ms(단독 104 ms), 청크 일부가 스텝 시작 뒤 도착. 이미지 전처리를 요청 스레드로 빼거나(GPU 잠금 밖), 결정은 vLLM(R5 1순위)·청크는 HF로 나누거나, 실물 서버(RTX PRO 6000, §49)에서 같은 조건으로 다시 잰다. 지금 코드는 decide·chunk의 대기/계산/헤드 시간을 호출마다 기록한다.
-2. **확인 헤드 보정 없음**: 작은 체크포인트의 확인 헤드는 온도·conformal·critic 문턱이 없다(`VerifyCal.default()`: T = 1, argmax 단일 집합, 문턱 없음 → critic 경보 없음, 로그에 `verify_calibrated: false`). 실제 단계 B 체크포인트가 나오면 FI-DEV 보정 시드 0–14로 맞춘 `verify-cal-v1` 파일을 `--verify-cal`로 준다(형식·불러오기·E-M4b 결과 가져오기 `VerifyCal.from_m4b_results`는 구현·시험됨; E-M4b의 V1h 값은 단계 A 동결 백본 헤드 것이라 이 체크포인트에 쓰면 안 된다).
-3. **tau 평균 대치**: aiworker 관측에 관절 토크가 없다. 풀 행의 tau는 `joint_effort_target`(= 0)이라 학습 평균도 0. R2 행(측정 토크)으로 학습하면 런타임에도 토크를 넣어야 한다 — 몸체 `extra`에 `applied_torque`를 싣는 것이 다음 일.
+1. **동시 부하 지연**: 폐루프에서 decide 계산 p50 255–376 ms(단독 104 ms), 청크 일부가 스텝 시작 뒤 도착. 이미지 전처리를 요청 스레드로 빼거나(GPU 잠금 밖), 결정은 vLLM(R5 1순위)·청크는 HF로 나누거나, 실물 서버(RTX PRO 6000, §49)에서 같은 조건으로 다시 잰다. 지금 코드는 decide·chunk의 대기/계산/헤드 시간을 호출마다 기록한다. → **범위 밖(정본 §67 C8 SCOPED)**: 동시 부하 지연은 본 학습 체크포인트 뒤 RTX PRO 6000 조건에서.
+2. **확인 헤드 보정 없음**: 작은 체크포인트의 확인 헤드는 온도·conformal·critic 문턱이 없다(`VerifyCal.default()`: T = 1, argmax 단일 집합, 문턱 없음 → critic 경보 없음, 로그에 `verify_calibrated: false`). 실제 단계 B 체크포인트가 나오면 FI-DEV 보정 시드 0–14로 맞춘 `verify-cal-v1` 파일을 `--verify-cal`로 준다(형식·불러오기·E-M4b 결과 가져오기 `VerifyCal.from_m4b_results`는 구현·시험됨; E-M4b의 V1h 값은 단계 A 동결 백본 헤드 것이라 이 체크포인트에 쓰면 안 된다). → **범위 밖(정본 §67 C8 SCOPED)**: 확인 헤드 보정 파일은 본 학습 체크포인트 뒤 CAL에서.
+3. **tau 평균 대치**: aiworker 관측에 관절 토크가 없다. 풀 행의 tau는 `joint_effort_target`(= 0)이라 학습 평균도 0. R2 행(측정 토크)으로 학습하면 런타임에도 토크를 넣어야 한다 — 몸체 `extra`에 `applied_torque`를 싣는 것이 다음 일. → **범위 밖(정본 §67 C8 SCOPED)**: 융합 런타임 토크 입력.
 4. 잔차 모드 체크포인트는 스크립트 청크가 런타임에 필요해서 거부한다(절대 모드만).
 
 ## 2. M4 `measure()` 출처 표 + M7 critic (§61·§64)
@@ -77,7 +77,7 @@
   - 매 틱 T1 측정(패드 간격 = joint_pos[7], |그리퍼 effort|, TCP 높이 = FK − 탁상) + 가장 새 확인 헤드 출력(≤ 2 s)으로 `measure()`.
   - **옛 `holds()` 경로 교체**: 실행기(스킬 S)가 읽는 `gripper_open`·`holding(o3)`·`lifted(o3)`(= 쥔 채 들림 T1)·`in_contact(o3,o5)`·`on(o3,o5)`(V1h, 없으면 None → 스킬은 기하 `reached`로 대체)를 측정값으로 바꿨다. Astra 요약의 사실 줄도 측정값. 모듈형 스택의 DecCall 상태 문자열(M1 관측 = E0 오라클 조건)은 그대로.
   - (b)(2): 스텝이 한 단계 안에서 끝나면 스텝 끝에 T1 검사 → CONTRADICT, 그 스텝의 세계 쪽 검사는 **스텝 끝 뒤 첫 확인 헤드 출력**으로(D28 §3.1) → {거짓}이면 그 스텝에 DEVIATE(epoch+1, 조기 호출). 스텝 안에서 단계가 바뀐 스텝은 검사하지 않는다(전이는 실패가 아님, E-M4b §3의 1스냅샷 전이 위반과 같은 이유).
-  - M7: critic 경보·T1 하드 사건 → 사건 기록 + Astra 호출 앞당김(FAIL → M8 T_fail 대신; M9 복구는 아직 없음, R5 열린 문제 2 그대로).
+  - M7: critic 경보·T1 하드 사건 → 사건 기록 + Astra 호출 앞당김(FAIL → M8 T_fail 대신; M9 복구는 아직 없음, R5 열린 문제 2 그대로 → 정본 §67 C8 SCOPED).
   - 요약 `measure`: t1_contradict·t2_deviate·t2_checked·t2_expired·critic_alarms·hard_events·verify_outputs·보정 여부.
 - 시험: `tests/runtime/test_measure.py`(12: 출처 표, 등록 문턱, conformal unknown, 온도, 기대표 판정, T1만·T2만 범위, critic 지속, 문턱 없음, 하드 2틱, 보정 파일 왕복·E-M4b 가져오기, 기본값 표시), `tests/runtime/test_fused_model.py`의 런타임 시험 3(정직한 헤드 = DEVIATE·경보 0으로 과제 완주, 거짓 `lifted_t` 헤드 = 소프트 DEVIATE + critic 경보 + T1 CONTRADICT 0, 실행기가 오라클이 아니라 T1 규칙을 읽음). 가짜 세계는 쥔 동안 패드 간격을 머그 지름(64 mm)으로 보고하게 고쳤다(명령 폭 50 mm를 그대로 돌려주면 T1 쥠 규칙이 물리적으로 불가능한 값을 본다).
 - DEV 0–9 모의 판(§3): T1 CONTRADICT 0, 하드 사건 0(명목에서 T1 거짓 경보 없음 — E-M4b PC2와 같은 모양).
@@ -112,10 +112,10 @@
 - 파드(`venv_train`, CPU, IR PYTHONPATH): `tests/train tests/runtime tests/eval tests/m4b` **271 passed, 2 skipped**(최종 코드, 실제 Qwen3-VL 구조 시험 포함).
 
 ## 6. 남은 문제 (R7에 넘김)
-1. FusedModel 폐루프 동시 부하 지연(§1.6-1), 확인 헤드 보정 파일 없음(§1.6-2), 토크 입력(§1.6-3). 실제 단계 B 학습(R2 행, 30 Hz 행동)은 이 작업 범위 밖.
-2. M7 FAIL → M9 복구·M8 T_fail 일시정지(복구 끝 + 2 s)는 여전히 없다: critic 경보·하드 사건은 기록 + Astra 앞당김만 한다. T2 연속 2회 {거짓} → CONTRADICT-soft(D28)도 넣지 않았다(단일 DEVIATE).
-3. 모듈형 스택(Jev-L·모의)에는 확인 헤드 출력이 없어 세계 쪽이 항상 `unknown`이다 — 단계 A 병합 모델 + E-M4b V1h 헤드(`/data/harvest/m4b/v1h/head_fold*.pt`)를 모듈형 경로의 측정원으로 붙이는 일은 하지 않았다(vLLM은 은닉 상태를 내주지 않음).
-4. K3 `run_instruction`의 안전 술어는 이 과제(머그 → 트레이)의 S1/S2에 맞춘 것이다. 계약 편집(patch/replace의 A5′·M2 R3)은 여전히 epoch만 올린다(R5 열린 문제 1의 나머지).
+1. FusedModel 폐루프 동시 부하 지연(§1.6-1), 확인 헤드 보정 파일 없음(§1.6-2), 토크 입력(§1.6-3). 실제 단계 B 학습(R2 행, 30 Hz 행동)은 이 작업 범위 밖. → 세 가지 모두 정본 §67 C8 SCOPED.
+2. M7 FAIL → M9 복구·M8 T_fail 일시정지(복구 끝 + 2 s)는 여전히 없다: critic 경보·하드 사건은 기록 + Astra 앞당김만 한다. T2 연속 2회 {거짓} → CONTRADICT-soft(D28)도 넣지 않았다(단일 DEVIATE). → M9 복구·T_fail 뒤 하트비트 정지 = 정본 §67 C8 SCOPED, CONTRADICT-soft = §68 K6(§69 근거 보정) SCOPED.
+3. 모듈형 스택(Jev-L·모의)에는 확인 헤드 출력이 없어 세계 쪽이 항상 `unknown`이다 — 단계 A 병합 모델 + E-M4b V1h 헤드(`/data/harvest/m4b/v1h/head_fold*.pt`)를 모듈형 경로의 측정원으로 붙이는 일은 하지 않았다(vLLM은 은닉 상태를 내주지 않음). → 정본 §67 C8 SCOPED(모듈형은 기준선이라 세계 쪽 unknown 유지).
+4. K3 `run_instruction`의 안전 술어는 이 과제(머그 → 트레이)의 S1/S2에 맞춘 것이다. 계약 편집(patch/replace의 A5′·M2 R3)은 여전히 epoch만 올린다(R5 열린 문제 1의 나머지). → 계약 편집 = 정본 §67 C8 SCOPED. K3 안전 술어의 과제 특화는 열린 채(다과제 폐루프 때, `r7_sweep6.md` §3).
 5. `closed`를 동시에 여러 개 돌릴 때 Isaac 인스턴스 이름이 같으면(`r6_standard`) 캐시 폴더를 나눠 쓴다 → `--inst-prefix` 추가(이번 동시 판들은 서로 다른 접두로 돌렸다; 첫 동시 판 두 개는 같은 이름이었으나 둘 다 정상 종료).
 6. 모의 판은 오라클 M1 좌표(E0 조건)를 쓰므로 DEV 0–9 10/10은 실행기·런타임 배관 확인이지 결정층 성능이 아니다(§56).
 
