@@ -108,8 +108,9 @@ class M4Params:
     def __post_init__(self):
         if self.W < 0:
             raise ValueError(f"M4 W = {self.W}: the defer window is a vote count >= 0 (canon §72)")
-        if not self.lead_max > 0:
-            raise ValueError(f"M4 lead_max = {self.lead_max}: the H = 1 early-ask window must be > 0 s (canon §75)")
+        if not (math.isfinite(self.lead_max) and self.lead_max > 0):
+            raise ValueError(f"M4 lead_max = {self.lead_max}: the H = 1 early-ask window must be a finite > 0 s "
+                             "(canon §75, §76)")
 
 
 @dataclass

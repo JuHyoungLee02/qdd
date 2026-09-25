@@ -35,6 +35,13 @@ def test_h1_call_asks_every_step_of_its_lead_window():
     assert CommitLedger(M4Params(H=1, lead_max=0.2)).target_slots(0.0) == [1]
 
 
+@pytest.mark.parametrize("bad", [float("inf"), float("nan"), 0.0, -1.0])
+def test_lead_max_must_be_finite_and_positive(bad):
+    """R7 cycle 11 N4: lead_max = inf passed validation and crashed on the first call (OverflowError)."""
+    with pytest.raises(ValueError):
+        M4Params(H=1, lead_max=bad)
+
+
 def test_h3_target_slots_ignore_lead_max():
     for lead in (0.2, 1.0, 1.5, 3.0):
         L = CommitLedger(M4Params(H=3, lead_max=lead))
