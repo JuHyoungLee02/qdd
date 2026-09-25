@@ -49,7 +49,7 @@
 | 속도 누수 수정 | `proprio.qd`가 미래 프레임을 읽나 | — (§83) | `H/data/se2e_c1`(44c907d) | 중앙 차분(np.gradient) → 인과 후방 차분, 42,813행 재계산 오차 0.0(R7 22) | se2e_c1 사용 | CPU | 끝 (정본 §83, R7 22회차) |
 | 움직임 줄 확인 | 고친 데이터·시드 2·검증 1,799에서도 | [P/prereg_se2e_motion_confirm](../stage3/prereg_se2e_motion_confirm.md) 15:52:12Z | `H/ckpt/se2e_confirm/{none,motion}_s{1,2}` | none 0.672/0.677, motion 0.707/0.708; 합동 +0.032 [+0.022, +0.043], 전이 +0.030 | **CONFIRMED**, §83 유지 | ≈ 2.9 GPU-h(2장 × 15:53–17:21) | 끝 ([R/se2e_motion_confirm](../stage3/results/se2e_motion_confirm.md)) |
 | E-MA1 (MolmoAct 궤적 2×2) | 미래 궤적 보조 × 이력 덧그림 | [P/prereg_ma1](../stage3/prereg_ma1.md) 17:32:31Z | G0 120장, `H/logs/ma1/` | **G0 실패**: 명목 100.9/264.5 px, PnP 86.9/212.1 px(문턱 12/30) | 학습 0칸, R2 준비 뒤 재등록 | GPU 2 약 1.5분 | 끝 ([R/ma1](../stage3/results/ma1.md)) |
-| E-MA1b (3D 궤적 보조 A3d) | 카메라 없이 로봇 기준 궤적 보조 손실 | [P/prereg_ma1b](../stage3/prereg_ma1b.md) 17:54:05Z | 기준 = motion_s1·s2, a3d_s1·s2 | — | 채택 ⇔ 합동 ≥ +0.02·하한 > 0·전이 ≥ −0.01 | ≈ 1.3 GPU-h 계획 | `[진행 중]` |
+| E-MA1b (3D 궤적 보조 A3d) | 카메라 없이 로봇 기준 궤적 보조 손실 | [P/prereg_ma1b](../stage3/prereg_ma1b.md) 17:54:05Z(`ded38d7`) | `H/data/ma1b`, 기준 = motion_s1·s2(예측 비트 동일 재사용), `H/ckpt/ma1b/a3d_s{1,2}` | 검증 1,799: none 0.7067/0.7076 → a3d 0.7098/0.7108, 합동 **+0.0031 [−0.0022, +0.0085]**, 전이 0.000, RB1 +0.006·RB2 −0.002, 보조 오차 9.9/9.5 cm(변위 0 예측 12.4 cm) | **불채택** → S-E2E 궤적 보조 손실은 단계 B 레시피에서 뺌; 궤적 보조는 R2 E-MA1 재등록(trace5)으로만 | ≈ 1.9 GPU-h(GPU 2, 17:54–19:46) | 끝 ([R/ma1b](../stage3/results/ma1b.md)) |
 
 ## D. Astra·결합
 
