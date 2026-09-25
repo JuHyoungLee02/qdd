@@ -64,7 +64,7 @@
 |---|---|---|
 | `request_mode` | `"F1"` | §7-1 판정(F1 뒤집힘율 ≤ 0.5 × F0 그리고 성공 ≥ F0 → F1) |
 | `latency_init_s` | 3.0 | 직렬 호출 지연 p50 |
-| `timeout_s` | 15.0 | 직렬 호출 지연 p95 × 1.5 |
+| `timeout_s` | 20.0 | 정본 §86 보충(탐침 실행기와 같음; 지연 p95 범위 12–16 s 위) [2026-09-25 20:37 UTC] |
 | `stale_edit_s` | 6.0 | 답 나이 분포(설계 §15 잠정 6 s) |
 | `same_dir_deg` / `flip_deg` | 35 / 90 | §4.2 부드러운 실행기와 같은 값 |
 | `decay_s` / `v_max` / `a_max` | 0.5 / 0.08 / 0.32 | §4.2 부드러운 실행기와 같은 값 |
@@ -275,7 +275,7 @@ class CoupleParams:
     request_mode: str = "F1"  # PROBE prereg §7-1
     effort: str = "low"
     max_output_tokens: int = 1200
-    timeout_s: float = 15.0  # PROBE: 1.5 x serial latency p95
+    timeout_s: float = 20.0  # canon §86 supplement (probe runner value; above latency p95 range 12-16 s)
     min_interval_s: float = 0.0  # E-Astra-necessity: pace a local model to Astra's latency p50
     phase_pause_s: float | None = None  # optional cost fallback (canon §84 supp 2); None = off
     event_window_s: float = 3.0  # spec §15: no pause for 3 s after an event
