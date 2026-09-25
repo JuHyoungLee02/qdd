@@ -729,4 +729,4 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - **E-Astra-necessity**: 같은 위층 자리에 Astra low / Astra high / 로컬 Qwen3-VL-32B·8B·4B / 위층 없음 / Astra 무작위 호출(호출 수 맞춤); 층 S-ID·S-novel·S-long·S-fail·S-random; 오프라인 슬롯 시험 → 폐루프; 판정 초안(Δ = Astra − 최고 로컬, 짝 부트스트랩 10,000회, Holm; Δ ≥ +10 pt·하한 > 0 → 필수; 하한 > −5 pt·점추정 ≥ −3 pt → 강등) — 실행 전 별도 사전 등록. **유료 실행은 설계·구현 완료 뒤 예상 비용을 보고하고 사용자 승인 후**(user-log 76).
 - **남은 [결정 필요]**: 같은 진단이 반복될 때 `falsify`를 먼저 평가하고 Astra를 부를지("실패할 때마다 Astra" 원칙과 조정) — 구현 설계 때 사용자에게 확인.
 - **구현(다음)**: `astra_hb.py` K5 모드, `harvest/astra/jobs.py`, 위층 클라이언트 통일 + `closed --upper`, `core.py` T_nov·계약 캐시, M9 J2 경로, `harvest/eval/astra_slot.py`, 새 물체 에셋·긴 과제·감시기 밖 섭동, Qwen3-VL-32B 내려받기(/data). R7 관문(연속 무결 2회) 확인 뒤 착수.
-
+- (§82 보충, 2026-09-25 14:38 UTC, user-log 76) **유료 API 비용 한도 = 약 10만 원(KRW)**. E-Astra-necessity 등 Astra 유료 호출은 실행일 가격표로 예상 비용을 계산해 이 한도 안에 맞추고(넘으면 층·반복 수를 줄인 판을 제시), 실행 중 누적 비용을 기록해 한도에 닿기 전에 멈춘다. 실행 자체는 여전히 구현 완료 뒤 사용자 승인.
