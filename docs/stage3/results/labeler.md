@@ -31,3 +31,9 @@
 - `tests/sim/test_labeler_logic.py`(6): `best_set` 동점 허용 1e-6, 보기 키가 `jevcall` 보기 키와 같음, 코드 표 변위(대각선·크기·정지), 같은 실행 방식 공유(오라클 롤아웃 재사용, 정지 시 크기 보기 전부 같은 롤아웃), `NONE_ESCALATE` 거부, 점수 순서(성공 > 진행 > 실패), `option_key`로 라벨·캐시 재사용.
 - `tests/sim/test_snapshot_logic.py`(20): TEST·TEST-P5·CAL 시드 거부, POOL 섭동 40/40/40·분할 60/60(섭동별 20/20), 0.33 s 격자와 스텝 쪼개기, `ambiguous`(near 띠), 30 % 과표집과 자연 가중치 복원, 오라클 target/phase/fine_dir/progress, 텍스트 상태 형식, 플래너 상태 JSON 왕복, npz 저장·복원 왕복(RNG 포함).
 - 전체 `pytest -p no:cacheprovider tests` 232 통과(2026-09-24 11:45 UTC 로컬).
+
+## 풀 결과 라벨 최종화 (2026-09-25 05:57 UTC)
+- 라벨: POOL 2000–2119 **120편 · 스냅샷 1,200 · 행 6,627 · 롤아웃 25,650**(벽시계 합 102,450 s, GPU 0 Isaac, 작업자 label4_a·b + 보충 label4_c·r2052·r2059). 채점식 = **plan**(사전 등록 `prereg_labeler.md` 규칙, 정본 §65) → `cli_label finalize --rule plan`(백업 `/data/harvest/data/pool/labels_prefinal_20260925_0556.tgz`), 요약 `labels/summary.json`.
+- 운영 사고 2건: (1) ep2059 — 첫 보충 작업자가 `IR_ROOT` 없이 떠 isaaclab 가져오기에서 죽으며 잠금만 남김 → 다른 작업자가 건너뜀. (2) ep2052 — label4_a가 03:52 UTC 편 도중 종료(부분 29행, `ep2052.partial_0352utc.bak`로 보관; 같은 시각대 검증 에이전트가 공유 `/data/harvest/tmp`를 정리했으나 인과는 미확인). 두 편 모두 잠금 정리 뒤 새로 라벨.
+- 판별력(질문별 1 − |best|/|보기| 평균): dir_xy 0.015 · dir_z 0.006 · fine_dir 0.047 · mag_coarse 0.008 · phase 0.069 · target 0.008. 오라클 ∈ best: 0.986–0.998. → §65 판단 그대로(학습 정답 아님, **거부권 용도**). 눈에 띄는 거부 신호: target에서 o10(11 %)·o9(36 %)·o8(70 %)이 best에 드는 비율이 낮고, fine_dir의 done(69 %)·phase의 next(81 %)가 조기 확정 위험을 잡는다.
+- **재생 정확도 문제 [열림]**: 사전 등록 복원 기준 ≤ 1 mm(`pool.md` Step 1)를 넘는 행이 **410 / 6,627(6.2 %), 20편**(최대 물체 37.3 mm, 상태 최대 13.0). 편: 2027·2037·2046·2047·2050·2051·2052·2053·2055·2062·2068·2070·2073·2074·2087·2095·2103·2108·2109·2110. 시각·작업자·프로세스 첫 편과 무관하게 흩어져 있고, 새 프로세스에서 다시 라벨한 2052도 어긋남 → 시드 의존 비결정성으로 추정(미확인). **처리**: 1 mm 초과 행은 거부권에 쓰지 않는다(무효). 원인 추적 진행.
