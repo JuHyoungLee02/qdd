@@ -59,7 +59,7 @@ HF API(파드, `/data/.hf_token`)로 ROBOTIS 조직 데이터셋 전체(7개)와
 | `hz`, `H` | **10, 5** | §62: 리샘플링 없음, 0.5 s = 5스텝 |
 | `arm`, `bimanual` | 활성 팔 `left`/`right`, 양팔 여부 | 휴리스틱(아래 5절) |
 | `skill_id`, `phase_id` | `teleop`, `na` | 스크립트 스킬 없음 |
-| `proprio` | `q`[7] rad, `qd`[7] rad/s(10 fps 상태의 중앙 차분), `tau`[7] = 0, `grip` = [그리퍼 관절값, 그 속도] | `proprio_mask.tau = 0`(토크 미기록). 그리퍼는 **관절값**(시뮬 계약은 폭 m) | [→ 정정 2026-09-25 16:47 UTC, R7 22회차 N19/N21/N22: 이 설명은 옛 판 `se2e`·`se2e_t`에 해당한다. 정본 §83에 따라 `se2e_c1`부터는 인과 후방 차분(v[k] = (x[k] − x[k−1])·hz, v[0] = 0)]
+| `proprio` | `q`[7] rad, `qd`[7] rad/s(10 fps 상태의 중앙 차분), `tau`[7] = 0, `grip` = [그리퍼 관절값, 그 속도] | `proprio_mask.tau = 0`(토크 미기록). 그리퍼는 **관절값**(시뮬 계약은 폭 m) [→ 정정 2026-09-25 16:47 UTC, R7 22회차 N19/N21/N22: 이 설명은 옛 판 `se2e`·`se2e_t`에 해당한다. 정본 §83에 따라 `se2e_c1`부터는 인과 후방 차분(v[k] = (x[k] − x[k−1])·hz, v[0] = 0)] |
 | `action_exec` = `action_script` | [5][8] 활성 팔 7관절 + 그리퍼, 기록된 행동 a[k..k+4] 그대로 | 텔레옵이라 둘이 같음 |
 | `valid` | [5], 에피소드 끝 뒤 0(마지막 값 유지) | 전체 평균 0.98 |
 | `action_full`, `state_full`, `names_full` | [5][16 or 19], [16 or 19], 이름 | 양팔 expert 선택지용 |
