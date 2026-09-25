@@ -35,7 +35,7 @@
 |---|---|---|---|---|
 | 풀 재실행 불일치 | 같은 시드가 왜 다르게 재생되나 | "시드 + 직전 실행 이력"마다 결정적; 1 mm 초과 410행 모두 close 이후; 비트 동일 아닌 29편 886행 | §78: 라벨은 `replay_maxabs == 0`만 신뢰(§80) | [R/pool_replay_debug](../stage3/results/pool_replay_debug.md) |
 | PhysX 하드 리셋 | 에피소드마다 장면 재생성 | 24/24 비트 동일, 리셋당 +0.28 s; **옛 풀은 새 물리로 재현 안 됨** | §78 기본 `hard_reset=True` | [R/physx_hard_reset](../stage3/results/physx_hard_reset.md) |
-| R7 객관 검증 1–25회차 | 사전 등록·정본 대비 코드·문서 | 16·20·22회차 PASS, 나머지 FAIL(8회차 DEFECT 5 등) — 회차별 줄은 `docs/handoff.md` §2.8 | 2회 연속 무결 = E2E 준비 기준점(아직) | `R/r7_cycle*.md`, `R/r7c*_fixes.md` |
+| R7 객관 검증 1–25회차 | 사전 등록·정본 대비 코드·문서 | 6·16·20·22회차 PASS, 나머지 FAIL [→ 정정 2026-09-25 20:01 UTC, R7 26회차 D-1: 6회차 PASS 누락](8회차 DEFECT 5 등) — 회차별 줄은 `docs/handoff.md` §2.8 | 2회 연속 무결 = E2E 준비 기준점(아직) | `R/r7_cycle*.md`, `R/r7c*_fixes.md` |
 
 ## C. S-E2E (ROBOTIS 공개 실물 데이터, 소규모)
 
