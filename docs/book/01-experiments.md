@@ -1,7 +1,7 @@
 # 01. 실험 장부
 
 - 한 줄 = 실험 하나. 숫자는 링크한 결과 문서의 값. §56 규칙: 단계 3 수치는 대부분 **파이프라인 확인용 소규모 시험**이라 논문 결과로 쓰지 않는다(논문은 '예정/소규모'로 표시).
-- 상태: 끝 / `[진행 중]` / `[예정]`. 비용: GPU 시간은 문서의 시각으로 계산한 추정(`≈`), 유료 API는 [05-costs](05-costs.md).
+- 상태: 끝 / 중단 / `[결과 전]`(시작했으나 결과 문서 없음 — 지금 진행 상황은 handoff) / `[예정]` [→ 2026-09-25 21:07 UTC, R7 28회차 P69: `[진행 중]` 대신 커밋으로만 바뀌는 값]. 비용: GPU 시간은 문서의 시각으로 계산한 추정(`≈`), 유료 API는 [05-costs](05-costs.md).
 - 경로 약칭: `R/` = `docs/stage3/results/`, `P/` = `docs/stage3/`(사전 등록), 파드 `/data/harvest/` = `H/`.
 
 ## A. 인프라·데이터 (단계 3 앞부분, 2026-09-24 UTC)
@@ -57,14 +57,14 @@
 |---|---|---|---|---|
 | Astra 모델 ID·첫 호출 | ID·지연 | — | `gpt-6-astra`, low 첫 토큰 2.975 s(1회) | 끝 ([R/astra_model_id](../stage3/results/astra_model_id.md)) |
 | Sol·Luna 사전 시험 | Jev 대체 후보 | — | 중앙 1.17 s, 0.33 s 결정에 느림 | 끝 ([R/sol_luna_probe](../stage3/results/sol_luna_probe.md)) |
-| E-Astra-motion 탐침 | 직렬 흐름·요청 방식 F0/F1·잡기 판정(카메라 구성)·부드러운 반영 | [P/prereg_astra_motion](../stage3/prereg_astra_motion.md) 17:38:25Z(`a62164d`), 수정 1–2 `35029e5`, 정정 `8063733` | **직렬 Astra low(영상 셋)**: 답당 벽시계 p50 약 9–10 s, 답 나이 p50 6.7–9.8 s(6 s 넘는 답 70–100 %), 호출당 49.7원(F0)·58.0원(F1), 로봇 1분당 350–500원; 흐름 조종 0/6(Astra만, VLA 없음, approach). **F0/F1**: 뒤집힘 0.594 → 0.381(36 %↓, 규칙 50 % 미달 → F0 유지; Qwen 0.36 → 0.047). **잡기 판정 40장**: 머리만 → Astra uncertain 39/40; 손목 포함 → 거짓 잡음 0–1/15, 놓침 13/25(테 건 쥠 6/6 포함); 덧그림 효과 없음(3 대 3); 표적 high 2/8 고침. **부드러운 대 즉시(재생)** jerk RMS 0.83 대 2.36. Qwen 동기 S 0/20. 비용 6,933원 | 끝 ([R/astra_motion](../stage3/results/astra_motion.md)) — 바뀐 결정: spec §4 F0 기본, §12 손목 필수·잡기 확인은 고유 감각·V1h 우선, §15·§16 폐기 문턱 6 s는 너무 짧음(p95 11–14 s), §11 부드러운 반영 유지 |
-| E-CAM3 | VLA 결정 입력 머리 + 양 손목(시각 토큰 356 → 460) | [P/prereg_cam3](../stage3/prereg_cam3.md) 2026-09-25T20:30:33Z | `[진행 중]`(GPU 2, 기준 motion_s1·s2 재사용) | 설계 §12 |
+| E-Astra-motion 탐침 | 직렬 흐름·요청 방식 F0/F1·잡기 판정(카메라 구성)·부드러운 반영 | [P/prereg_astra_motion](../stage3/prereg_astra_motion.md) 17:38:25Z(`a62164d`), 수정 1–2 `35029e5`, 정정 `8063733` | **직렬 Astra low(영상 셋)**: 답당 벽시계 p50 약 9–10 s, 답 나이 p50 6.7–9.8 s(6 s 넘는 답 70–100 %), 호출당 49.7원(F0)·58.0원(F1), 로봇 1분당 350–500원; 흐름 조종 0/6(Astra만, VLA 없음, approach). **F0/F1**: 뒤집힘 0.594 → 0.381(36 %↓, 규칙 50 % 미달 → F0 유지; Qwen 0.36 → 0.047; Qwen 흐름은 프롬프트 판본 두 개 혼재 — [→ 2026-09-25 21:07 UTC, R7 28회차 E-N13]). **잡기 판정 40장**: 머리만 → Astra uncertain 39/40; 손목 포함 → 거짓 잡음 0–1/15, 놓침 13/25(테 건 쥠 6/6 포함); 덧그림 효과 없음(3 대 3); 표적 high 2/8 고침. **부드러운 대 즉시(재생)** jerk RMS 0.83 대 2.36. Qwen 동기 S 0/20. 비용 6,933원 | 끝 ([R/astra_motion](../stage3/results/astra_motion.md)) — 바뀐 결정: spec §4 F0 기본, §12 손목 필수·잡기 확인은 고유 감각·V1h 우선, §15·§16 폐기 문턱 6 s는 너무 짧음(p95 11–14 s), §11 부드러운 반영 유지 |
+| E-CAM3 | VLA 결정 입력 머리 + 양 손목(시각 토큰 356 → 460) | [P/prereg_cam3](../stage3/prereg_cam3.md) 2026-09-25T20:30:33Z | `[결과 전]`(GPU 2, 기준 motion_s1·s2 재사용) | 설계 §12 |
 | E-MA2 | VLA가 Astra `edit`을 따르는가(없음/문장/화살표) | `[예정]`(R2) | — | 연구 문서 §6.2 |
-| E-MA3 | expert 층별 KV 조건(블록 i ← 백본 층 L_i의 K·V) | [P/prereg_ma3](../stage3/prereg_ma3.md) 2026-09-25T20:34:02Z | `[진행 중]`(GPU 3, 기준 motion_s1·s2 재사용, 1차 지표 청크 오차) | 정본 §84 |
+| E-MA3 | expert 층별 KV 조건(블록 i ← 백본 층 L_i의 K·V) | [P/prereg_ma3](../stage3/prereg_ma3.md) 2026-09-25T20:34:02Z | `[결과 전]`(GPU 3, 기준 motion_s1·s2 재사용, 1차 지표 청크 오차) | 정본 §84 |
 | E-SR0 | 조이스틱 준수율 | `[예정]` | — | 설계 §9 |
 | E-Couple | VLA 단독 대 직렬 Astra + 두 층 M4(폐루프) | `[예정]`(계획 Task 15 초안, 상한 25,000원) | — | [계획](../superpowers/plans/2026-09-26-astra-vla-coupling.md) |
 | E-Astra-necessity | 같은 자리에 로컬 소형 VLM(low·high 병기) | `[예정]`(Task 16 초안) | — | 정본 §82 |
-| R2_TRAIN 대량 생성 | 하드 리셋 빌드로 학습 데이터 | — | 생성 중(작업자 5, P0 시드 10000–10599, `code_r2train_e8e1864`) — `R/ma1.md` 17:3x 기록 | `[진행 중]` |
+| R2_TRAIN 대량 생성 | 하드 리셋 빌드로 학습 데이터 | — | `[결과 전]`(`code_r2train_e8e1864`, 계획 P0–P2 시드 10000–10999; 생성 뒤 병합·검사 필요 — 지금 상태는 handoff) [→ 2026-09-25 21:07 UTC, R7 28회차 P69] | `[진행 중]` |
 | 풀 재라벨 | 29편 886행 | — | `hard_reset=False`로 재라벨 또는 풀·라벨 재생성(R2_TRAIN 뒤 결정) | `[예정]` |
 
 설계 문서: [결합 설계](../superpowers/specs/2026-09-26-astra-vla-coupling-design.md) · [구현 계획](../superpowers/plans/2026-09-26-astra-vla-coupling.md) · 연구 [molmoact](../research/molmoact_deepdive_2026-09-26.md) · [astra_role](../research/astra_role_2026-09-25.md) · [hypothesis_short_window](../research/hypothesis_short_window_2026-09-25.md) · [temporal_context](../research/temporal_context_2026-09-25.md) · [steering_representation](../research/steering_representation_2026-09-25.md).

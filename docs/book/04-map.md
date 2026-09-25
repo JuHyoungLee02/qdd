@@ -1,6 +1,6 @@
 # 04. 지도 — 코드·데이터·체크포인트·파드·GPU
 
-확인 시각 2026-09-25 18:4x UTC(로컬 `ls`, 파드 `ls /data/harvest`). 바뀌면 같은 커밋에서 고친다.
+확인 시각 2026-09-25 18:4x UTC(로컬 `ls`, 파드 `ls /data/harvest`). 바뀌면 같은 커밋에서 고친다. **이 장은 위치만 적고 진행 상태(생성 중·진행 중 등)는 적지 않는다 — 지금 상태는 `docs/handoff.md`** [→ 2026-09-25 21:07 UTC, R7 28회차 D-2: 상태 꼬리표가 두 번 낡아 규칙으로 뺌].
 
 ## 저장소 (`D:\qdd`, 브랜치 dev만 — main 금지)
 | 경로 | 무엇 |
@@ -13,7 +13,7 @@
 | `harvest/train/` | 단계 A `stagea_*`, 단계 B `stageb_data`·`stageb_model`(**체크포인트 해시 대상 — 함부로 고치지 않음**)·`stageb_train`·`stageb_expert`, `prefix_share`, S-E2E `se2e_data`(후방 차분)·`se2e_temporal*`, MolmoAct `se2e_trace*`·`se2e_a3d` |
 | `harvest/perception/`, `harvest/stereo/`, `harvest/m4b/` | R1 인식(기준선·진단), E3-ST, 확인 헤드 V1h |
 | `harvest/clients/` | `astra`·`jevl`·`jev` 클라이언트 |
-| `harvest/astra_motion/` | 탐침 코드 `[미커밋, 탐침 에이전트 작업 중]` |
+| `harvest/astra_motion/` | E-Astra-motion 탐침 코드(3500f54) [→ 2026-09-25 21:07 UTC, R7 28회차 D-2] |
 | `harvest/serialize.py`, `deccall_snap.py`, `labels_v2.py`, `qid.py` | 직렬화(ser-A-min-2)·결정 호출·정답·질문 id |
 | `tools/se2e/` | `se2e_verdict`·`temporal_verdict`·`temporal_latency`·`motion_confirm_verdict`(등록 때 고정) |
 | `tools/ma1/` | `g0`·`g0_point`·`ma1_verdict`·`build_a3d`·`ma1b_verdict` |
@@ -51,14 +51,14 @@
 | `ckpt/se2e_scale/{1000,9371,18742,37484}`, `ckpt/se2e_diag` | 규모 곡선·진단 |
 | `ckpt/se2e_temporal/{single_motion,video2_none,video2_motion}` | E-TC 칸(옛 데이터판 — 재사용 불가) |
 | `ckpt/se2e_confirm/{none,motion}_s{1,2}` | 움직임 줄 확인(se2e_c1) — E-MA1b 기준 칸 |
-| `ckpt/ma1b/` | E-MA1b `[진행 중]` |
+| `ckpt/ma1b/` | E-MA1b 체크포인트 `a3d_s{1,2}`(불채택, `results/ma1b.md`) [→ 2026-09-25 21:07 UTC, R7 28회차 D-2] |
 | `ckpt/stageA/sftA_pool_v1` | 단계 A SFT(병합 `merged/`) |
 | `logs/<실험>/` | 예측·판정 JSON(`se2e_confirm/verdict_full.json` 등), 탐침 비용 장부 `logs/astra_motion/cost.jsonl` |
 | `out/<작업>/` | 폐루프·장면·E3-ST 산출물 |
 | `tmp/<작업>/` | 임시(작업 끝나면 자기 경로만 정리) |
 
 ## 데이터 판본·분할
-- 시드 분할: DEV 0–29(자유), POOL 2000–2119, **CAL 500–549 · TEST 1000–1149 · TEST-P5 1300–1329는 `HARVEST_ALLOW_SPLIT` 없이는 거부**, 순수 로직 시험 시드 3000–3199, R2_TRAIN 시드 영역 10000–59999 [→ 정정 2026-09-25 20:01 UTC, R7 26회차 N55]; 생성 계획 P0 10000–10599 → P1 10600–10799 → P2 10800–10999(2026-09-25 20:10 UTC 기준 P2 생성 중) [→ 정정 2026-09-25 20:37 UTC, R7 27회차 D-1: 앞 정정의 'P0 생성 중'은 틀림 — 19:07Z에 P0 행 조립 끝·P1 생성 중이었다].
+- 시드 분할: DEV 0–29(자유), POOL 2000–2119, **CAL 500–549 · TEST 1000–1149 · TEST-P5 1300–1329는 `HARVEST_ALLOW_SPLIT` 없이는 거부**, 순수 로직 시험 시드 3000–3199, R2_TRAIN 시드 영역 10000–59999 [→ 정정 2026-09-25 20:01 UTC, R7 26회차 N55]; 생성 계획 P0 10000–10599 → P1 10600–10799 → P2 10800–10999[→ 정정 2026-09-25 20:37 UTC, R7 27회차 D-1] [→ 정정 2026-09-25 21:07 UTC, R7 28회차 D-1: 27회차 정정의 '19:07Z에 P0 행 조립 끝'도 틀림 — 폴더의 `P*.stageb.jsonl`은 12:20Z 파일럿 병합분(과제당 시드 19–41개)뿐이고 600편 전체 병합(`gen check`/merge)은 아직 돌지 않았다. 진행 상태는 이 장에 적지 않는다(handoff 참조)]. **학습 전 필수**: 생성이 끝나면 병합·검사를 다시 돌려야 단계 B가 전체 행을 읽는다(아니면 파일럿 부분만 읽음 — N94).
 - S-E2E: RB1(`ROBOTIS/Task_0001`, 라이선스 미표기 → 내부용) + RB2(`Task_0002`, apache-2.0), 10 Hz, 검증 1,799(층화 300 = `val_keys_sha e22f6d8ef7fc`).
 - 직렬화: `ser-A-min-2`(마지막 줄 `last_step:`), 움직임 줄 `se2e-motion@v1`(런타임 적용은 계획 Task 12 = ser-A-min-3, 기존 체크포인트를 모두 거부하게 되므로 E-MA1b 뒤).
 
