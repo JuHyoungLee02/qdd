@@ -8,26 +8,26 @@
 
 | ID | 질문 | 등록 | 데이터·산출 | 결과 (실측) | 판정 → 바뀐 결정 | 상태 |
 |---|---|---|---|---|---|---|
-| P0 Inspect Robots | 하네스가 우리 파드에서 도나 | — | `/data/juhyoung_qdd/ir/` | smoke 3모드 16/16, 오버헤드 57–59 µs/step, RTF 카메라 켬 1.13 | DC3 충족 → 1차 평가 = Inspect Robots(§41) | 끝 ([R/p0_inspect_robots](../stage3/results/p0_inspect_robots.md)) |
-| Jev-L 지연 | 로컬 VLM typed 선택기 지연·결정성 | 문서 안 09:55:58Z | vLLM GPU 3 | 4B text+image N=4 p95 0.261 s(acceptable), 8B 0.307 s; BI 켬 flip 0/20 | Qwen3-VL-4B(§44) | 끝 ([R/jevl_latency](../stage3/results/jevl_latency.md)) |
-| Jev-L 모델 선정 | Gemma 4 E4B 대 Qwen3-VL-4B | 문서 안 13:08:54Z | DEV 0–29 × P0–P2 | Qwen 유지(Gemma 지연 부적격·정확도 열세), 둘 다 최빈 기준선 0.669 미만 | §50: 상태 표현 결함 발견 → E3-lite | 끝 ([R/jevl_model_select](../stage3/results/jevl_model_select.md)) |
-| E3-lite | 상태 표현 S0/S1/S2 | 문서 안 13:59:11Z | jsel_dev 2,387 스냅샷 | 코드 규칙 상한 dir_xy 0.920·dir_z 0.803·mag 0.730 < 0.95 → ill-posed | §53: 영점 부족·단계 A 필수, 정답 재정의 | 끝 ([R/e3lite](../stage3/results/e3lite.md)) |
-| labels_v2 | 관측 자세로 정한 정답이 게이트 ≥ 0.95인가 | 문서 안 15:06:16Z | 2,387 스냅샷 | 1 mm 직렬화 코드 규칙 0.9954/0.9908/0.9883/1.0/0.9992 통과(1 cm는 미달) | §54: labels_v2 + S1 1 mm | 끝 ([R/labels_v2](../stage3/results/labels_v2.md)) |
-| E3-ST | 오프라인 스테레오 안정성(ROBOTIS) | 탐색(문턱 없음) | RB1·RB2 HF | fx 272.1(틀림) → 367 재계산이 8절 | §47 fx 367 | 끝 ([R/e3st](../stage3/results/e3st.md)) |
-| 장면·플래너 | v2 장면에서 오라클 플래너 성공률 | — | `H/out/t11_12_v2/` | CPU PhysX P0 30/30, P1 28/30, P2 30/30 (GPU PhysX 66.7/50/66.7 %) | §48 CPU PhysX | 끝 ([R/planner_dev](../stage3/results/planner_dev.md), [R/scene_bringup](../stage3/results/scene_bringup.md)) |
-| random5·DR | random 5축 평가 장면 + 학습 DR | — | DEV 0–29 | 오라클 P0 standard·random·dr 모두 30/30, 풀 겹침 0 | §34 random = 시험만 | 끝 ([R/random5](../stage3/results/random5.md)) |
-| 풀(T13) | 연속 0.33 s 스냅샷 풀 | — | `H/data/pool/` 120편 | 결정 스냅샷 1,200, 판 성공 118/120, 상태 쓰기 복원 2.31 mm 불합격 → 재실행 복원 | 풀 v2 | 끝 ([R/pool](../stage3/results/pool.md)) |
-| 결과 라벨러 | 롤아웃 결과로 정답 | [P/prereg_labeler](../stage3/prereg_labeler.md) | 풀 | 10 s 지평에서 거의 모든 보기 동점, 규칙 선택 plan(판별력 0.025) | §65: 거부권 용도로만, 학습 정답은 labels_v2 | 끝 ([R/labeler](../stage3/results/labeler.md)) |
-| 단계 A 파이프라인·SFT | typed 선택기 SFT | 문서 안 15:51:46Z | 풀 fit 60편 3,000항목 | A_SFT − A_zero +0.504 [+0.498, +0.511], p95 0.307 s, flip 0/20 | §55 합격 → §56 '소규모 시험'(user-log 56) | 끝 ([R/stageA_sft](../stage3/results/stageA_sft.md), [R/stageA_pipeline](../stage3/results/stageA_pipeline.md)) |
-| 단계 A 일반화 | std→random/dr 낙폭 | 문서 안 17:10:38Z | DEV 90판 | SFT img 짝 없는 RD random −0.0016, dr −0.0027(작음) | 참고 | 끝 ([R/stageA_generalize](../stage3/results/stageA_generalize.md)) |
-| R1 인식 앞단 | SAM 3.1 + 깊이 → 3D 중심 | 문서 안 18:04 | R1-DEV 30편 | 수치는 문서 | §58로 런타임 의존에서 빠짐(기준선·진단용) | 끝 ([R/r1_perception](../stage3/results/r1_perception.md)) |
-| R2 생성기(DEV) | 30 Hz·다과제·DR·LeRobot | — | DEV 36편 | 구조 36/36, 성공 32/36, 17.6 s/편, LeRobot 0.3.3 읽힘 | §66 | 끝 ([R/r2_datagen](../stage3/results/r2_datagen.md)) |
-| R3 처리량 | 공유 접두 묶음 학습 | — | POOL | 단계 A 3.61 → 23.6 항목/s(6.5배), 단계 B 5.00 → 0.42 s/스텝 | 학습 경로 | 끝 ([R/r3_throughput](../stage3/results/r3_throughput.md)) |
-| R4 단계 B | 융합 모델(4B + expert + aux) 스모크 | — | 합성 | KI 기울기 0.0, 재적재 차 0.0, expert eager p95 38–45 ms(목표 30 ms 초과 → CUDA 그래프) | §58 | 끝 ([R/r4_stageB](../stage3/results/r4_stageB.md)) |
-| R5 폐루프 | Inspect Robots 안 한 판 | — | DEV 0 P0 | SFT 성공 16.8 s·p95 0.293 s, 영점 실패, 모의 행동 1,646개 비트 동일 | 파이프라인 확인 | 끝 ([R/r5_closed_loop](../stage3/results/r5_closed_loop.md)) |
-| R6 평가 명령 | e05·rd·calib·closed 한 명령 | — | `H/out/r6/` | 끝까지 돎(수치 인용 금지) | 평가 도구 | 끝 ([R/r6_eval](../stage3/results/r6_eval.md)) |
-| E-M4b-meas | M4 (b)·critic 측정원 | 문서 안 19:08:45Z | POOL·FI-DEV | V1h BA 0.949(V0 0.596), T1 BA ≥ 0.99, PC3 불통과(V1h 단독 재현율 0.871) | §64 V1h + T1, critic = V1h | 끝 ([R/e_m4b_meas](../stage3/results/e_m4b_meas.md)) |
-| pre-R7 수정 | 열린 문제 4건 | — | DEV 0–9 | FusedModel 어댑터·measure·쥠 디바운스(모의 10/10)·K0–K4 | R7 착수 | 끝 ([R/pre_r7_fixes](../stage3/results/pre_r7_fixes.md)) |
+| P0 Inspect Robots | 하네스가 우리 파드에서 도나 | — | `/data/juhyoung_qdd/ir/` | smoke 3모드 16/16, 오버헤드 57–59 µs/step, RTF 카메라 켬 1.13 ([R/p0_inspect_robots](../stage3/results/p0_inspect_robots.md)) | DC3 충족 → 1차 평가 = Inspect Robots(§41) | 끝 |
+| Jev-L 지연 | 로컬 VLM typed 선택기 지연·결정성 | 문서 안 09:55:58Z | vLLM GPU 3 | 4B text+image N=4 p95 0.261 s(acceptable), 8B 0.307 s; BI 켬 flip 0/20 ([R/jevl_latency](../stage3/results/jevl_latency.md)) | Qwen3-VL-4B(§44) | 끝 |
+| Jev-L 모델 선정 | Gemma 4 E4B 대 Qwen3-VL-4B | 문서 안 13:08:54Z | DEV 0–29 × P0–P2 | Qwen 유지(Gemma 지연 부적격·정확도 열세), 둘 다 최빈 기준선 0.669 미만 ([R/jevl_model_select](../stage3/results/jevl_model_select.md)) | §50: 상태 표현 결함 발견 → E3-lite | 끝 |
+| E3-lite | 상태 표현 S0/S1/S2 | 문서 안 13:59:11Z | jsel_dev 2,387 스냅샷 | 코드 규칙 상한 dir_xy 0.920·dir_z 0.803·mag 0.730 < 0.95 → ill-posed ([R/e3lite](../stage3/results/e3lite.md)) | §53: 영점 부족·단계 A 필수, 정답 재정의 | 끝 |
+| labels_v2 | 관측 자세로 정한 정답이 게이트 ≥ 0.95인가 | 문서 안 15:06:16Z | 2,387 스냅샷 | 1 mm 직렬화 코드 규칙 0.9954/0.9908/0.9883/1.0/0.9992 통과(1 cm는 미달) ([R/labels_v2](../stage3/results/labels_v2.md)) | §54: labels_v2 + S1 1 mm | 끝 |
+| E3-ST | 오프라인 스테레오 안정성(ROBOTIS) | 탐색(문턱 없음) | RB1·RB2 HF | fx 272.1(틀림) → 367 재계산이 8절 ([R/e3st](../stage3/results/e3st.md)) | §47 fx 367 | 끝 |
+| 장면·플래너 | v2 장면에서 오라클 플래너 성공률 | — | `H/out/t11_12_v2/` | CPU PhysX P0 30/30, P1 28/30, P2 30/30 (GPU PhysX 66.7/50/66.7 %) ([R/planner_dev](../stage3/results/planner_dev.md), [R/scene_bringup](../stage3/results/scene_bringup.md)) | §48 CPU PhysX | 끝 |
+| random5·DR | random 5축 평가 장면 + 학습 DR | — | DEV 0–29 | 오라클 P0 standard·random·dr 모두 30/30, 풀 겹침 0 ([R/random5](../stage3/results/random5.md)) | §34 random = 시험만 | 끝 |
+| 풀(T13) | 연속 0.33 s 스냅샷 풀 | — | `H/data/pool/` 120편 | 결정 스냅샷 1,200, 판 성공 118/120, 상태 쓰기 복원 2.31 mm 불합격 → 재실행 복원 ([R/pool](../stage3/results/pool.md)) | 풀 v2 | 끝 |
+| 결과 라벨러 | 롤아웃 결과로 정답 | [P/prereg_labeler](../stage3/prereg_labeler.md) | 풀 | 10 s 지평에서 거의 모든 보기 동점, 규칙 선택 plan(판별력 0.025) ([R/labeler](../stage3/results/labeler.md)) | §65: 거부권 용도로만, 학습 정답은 labels_v2 | 끝 |
+| 단계 A 파이프라인·SFT | typed 선택기 SFT | 문서 안 15:51:46Z | 풀 fit 60편 3,000항목 | A_SFT − A_zero +0.504 [+0.498, +0.511], p95 0.307 s, flip 0/20 ([R/stageA_sft](../stage3/results/stageA_sft.md), [R/stageA_pipeline](../stage3/results/stageA_pipeline.md)) | §55 합격 → §56 '소규모 시험'(user-log 56) | 끝 |
+| 단계 A 일반화 | std→random/dr 낙폭 | 문서 안 17:10:38Z | DEV 90판 | SFT img 짝 없는 RD random −0.0016, dr −0.0027(작음) ([R/stageA_generalize](../stage3/results/stageA_generalize.md)) | 참고 | 끝 |
+| R1 인식 앞단 | SAM 3.1 + 깊이 → 3D 중심 | 문서 안 18:04 | R1-DEV 30편 | 수치는 문서 ([R/r1_perception](../stage3/results/r1_perception.md)) | §58로 런타임 의존에서 빠짐(기준선·진단용) | 끝 |
+| R2 생성기(DEV) | 30 Hz·다과제·DR·LeRobot | — | DEV 36편 | 구조 36/36, 성공 32/36, 17.6 s/편, LeRobot 0.3.3 읽힘 ([R/r2_datagen](../stage3/results/r2_datagen.md)) | §66 | 끝 |
+| R3 처리량 | 공유 접두 묶음 학습 | — | POOL | 단계 A 3.61 → 23.6 항목/s(6.5배), 단계 B 5.00 → 0.42 s/스텝 ([R/r3_throughput](../stage3/results/r3_throughput.md)) | 학습 경로 | 끝 |
+| R4 단계 B | 융합 모델(4B + expert + aux) 스모크 | — | 합성 | KI 기울기 0.0, 재적재 차 0.0, expert eager p95 38–45 ms(목표 30 ms 초과 → CUDA 그래프) ([R/r4_stageB](../stage3/results/r4_stageB.md)) | §58 | 끝 |
+| R5 폐루프 | Inspect Robots 안 한 판 | — | DEV 0 P0 | SFT 성공 16.8 s·p95 0.293 s, 영점 실패, 모의 행동 1,646개 비트 동일 ([R/r5_closed_loop](../stage3/results/r5_closed_loop.md)) | 파이프라인 확인 | 끝 |
+| R6 평가 명령 | e05·rd·calib·closed 한 명령 | — | `H/out/r6/` | 끝까지 돎(수치 인용 금지) ([R/r6_eval](../stage3/results/r6_eval.md)) | 평가 도구 | 끝 |
+| E-M4b-meas | M4 (b)·critic 측정원 | 문서 안 19:08:45Z | POOL·FI-DEV | V1h BA 0.949(V0 0.596), T1 BA ≥ 0.99, PC3 불통과(V1h 단독 재현율 0.871) ([R/e_m4b_meas](../stage3/results/e_m4b_meas.md)) | §64 V1h + T1, critic = V1h | 끝 |
+| pre-R7 수정 | 열린 문제 4건 | — | DEV 0–9 | FusedModel 어댑터·measure·쥠 디바운스(모의 10/10)·K0–K4 ([R/pre_r7_fixes](../stage3/results/pre_r7_fixes.md)) | R7 착수 | 끝 |
 
 ## B. 재현성·검증
 
@@ -41,15 +41,15 @@
 
 | ID | 질문 | 등록 (UTC) | 데이터·ckpt | 결과 (실측) | 판정 → 바뀐 결정 | 비용 | 상태 |
 |---|---|---|---|---|---|---|---|
-| S-E2E 데이터 | RB1+RB2 → 단계 B 행 | — | `H/data/se2e` 42,813행(학습 가능 39,283, train 37,484 / val 1,799) | 원본 8.95 GB, 휴리스틱 라벨 `se2e_heur_ee033@v1` | §62·§63 | — | 끝 ([R/se2e_data](../stage3/results/se2e_data.md)) |
-| S-E2E 학습 | 끝단 학습이 끝까지 도나 | [P/prereg_se2e](../stage3/prereg_se2e.md) 09:39:32Z | se2e_A_s0·B_s1, 4,686스텝 | dec 4.623 → 0.681(A)·0.688(B), 재적재 차 0.0, 재개 허용 통과 | PASS | ≈ 3.8 GPU-h(2장 × 약 1.9 h) | 끝 ([R/se2e_train](../stage3/results/se2e_train.md)) |
-| 진단 D1–D3 | 정확도 0.72의 원인 | [P/prereg_se2e_diag](../stage3/prereg_se2e_diag.md) 11:47:14Z | se2e | D1 계산 한계 아님(0.738 > 0.644), D2 라벨 학습 가능·일반화 간극(1k 판 1.000/0.552), D3 모호성 아님(34.4 %) | 입력(시간 맥락)·규모 쪽 | `[미검증]` | 끝 ([R/se2e_diag](../stage3/results/se2e_diag.md)) |
-| 데이터 규모 곡선 | 같은 스텝에서 N을 늘리면 | 같은 등록 §7 | N = 1k/9.4k/18.7k/37.5k | 0.552 / 0.682 / 0.686 / 0.683 | 레버 약함 + 포화 | `[미검증]` | 끝 (같은 문서 8절) |
-| E-TC 시간 맥락 2×2 | 2프레임 비디오 × 움직임 줄 | [P/prereg_se2e_temporal](../stage3/prereg_se2e_temporal.md) 13:05:07Z | se2e_t, 2,000스텝, 검증 300 | 0.683 / 0.696 / 0.708 / 0.721; M +0.025 [+0.003, +0.047], V +0.013·FULL p95 +20.4 % | M 채택(§83), V 불채택 | ≈ 2.5 GPU-h(칸당 2,119–2,450 s) | 끝 ([R/se2e_temporal](../stage3/results/se2e_temporal.md)) |
-| 속도 누수 수정 | `proprio.qd`가 미래 프레임을 읽나 | — (§83) | `H/data/se2e_c1`(44c907d) | 중앙 차분(np.gradient) → 인과 후방 차분, 42,813행 재계산 오차 0.0(R7 22) | se2e_c1 사용 | CPU | 끝 (정본 §83, R7 22회차) |
-| 움직임 줄 확인 | 고친 데이터·시드 2·검증 1,799에서도 | [P/prereg_se2e_motion_confirm](../stage3/prereg_se2e_motion_confirm.md) 15:52:12Z | `H/ckpt/se2e_confirm/{none,motion}_s{1,2}` | none 0.672/0.677, motion 0.707/0.708; 합동 +0.032 [+0.022, +0.043], 전이 +0.030 | **CONFIRMED**, §83 유지 | ≈ 2.9 GPU-h(2장 × 15:53–17:21) | 끝 ([R/se2e_motion_confirm](../stage3/results/se2e_motion_confirm.md)) |
-| E-MA1 (MolmoAct 궤적 2×2) | 미래 궤적 보조 × 이력 덧그림 | [P/prereg_ma1](../stage3/prereg_ma1.md) 17:32:31Z | G0 120장, `H/logs/ma1/` | **G0 실패**: 명목 100.9/264.5 px, PnP 86.9/212.1 px(문턱 12/30) | 학습 0칸, R2 준비 뒤 재등록 | GPU 2 약 1.5분 | 끝 ([R/ma1](../stage3/results/ma1.md)) |
-| E-MA1b (3D 궤적 보조 A3d) | 카메라 없이 로봇 기준 궤적 보조 손실 | [P/prereg_ma1b](../stage3/prereg_ma1b.md) 17:54:05Z(`ded38d7`) | `H/data/ma1b`, 기준 = motion_s1·s2(예측 비트 동일 재사용), `H/ckpt/ma1b/a3d_s{1,2}` | 검증 1,799: none 0.7067/0.7076 → a3d 0.7098/0.7108, 합동 **+0.0031 [−0.0022, +0.0085]**, 전이 0.000, RB1 +0.006·RB2 −0.002, 보조 오차 9.9/9.5 cm(변위 0 예측 12.4 cm) | **불채택** → S-E2E 궤적 보조 손실은 단계 B 레시피에서 뺌; 궤적 보조는 R2 E-MA1 재등록(trace5)으로만 | ≈ 1.9 GPU-h(GPU 2, 17:54–19:46) | 끝 ([R/ma1b](../stage3/results/ma1b.md)) |
+| S-E2E 데이터 | RB1+RB2 → 단계 B 행 | — | `H/data/se2e` 42,813행(학습 가능 39,283, train 37,484 / val 1,799) | 원본 8.95 GB, 휴리스틱 라벨 `se2e_heur_ee033@v1` ([R/se2e_data](../stage3/results/se2e_data.md)) | §62·§63 | — | 끝 |
+| S-E2E 학습 | 끝단 학습이 끝까지 도나 | [P/prereg_se2e](../stage3/prereg_se2e.md) 09:39:32Z | se2e_A_s0·B_s1, 4,686스텝 | dec 4.623 → 0.681(A)·0.688(B), 재적재 차 0.0, 재개 허용 통과 ([R/se2e_train](../stage3/results/se2e_train.md)) | PASS | ≈ 3.8 GPU-h(2장 × 약 1.9 h) | 끝 |
+| 진단 D1–D3 | 정확도 0.72의 원인 | [P/prereg_se2e_diag](../stage3/prereg_se2e_diag.md) 11:47:14Z | se2e | D1 계산 한계 아님(0.738 > 0.644), D2 라벨 학습 가능·일반화 간극(1k 판 1.000/0.552), D3 모호성 아님(34.4 %) ([R/se2e_diag](../stage3/results/se2e_diag.md)) | 입력(시간 맥락)·규모 쪽 | `[미검증]` | 끝 |
+| 데이터 규모 곡선 | 같은 스텝에서 N을 늘리면 | 같은 등록 §7 | N = 1k/9.4k/18.7k/37.5k | 0.552 / 0.682 / 0.686 / 0.683 (같은 문서 8절) | 레버 약함 + 포화 | `[미검증]` | 끝 |
+| E-TC 시간 맥락 2×2 | 2프레임 비디오 × 움직임 줄 | [P/prereg_se2e_temporal](../stage3/prereg_se2e_temporal.md) 13:05:07Z | se2e_t, 2,000스텝, 검증 300 | 0.683 / 0.696 / 0.708 / 0.721; M +0.025 [+0.003, +0.047], V +0.013·FULL p95 +20.4 % ([R/se2e_temporal](../stage3/results/se2e_temporal.md)) | M 채택(§83), V 불채택 | ≈ 2.5 GPU-h(칸당 2,119–2,450 s) | 끝 |
+| 속도 누수 수정 | `proprio.qd`가 미래 프레임을 읽나 | — (§83) | `H/data/se2e_c1`(44c907d) | 중앙 차분(np.gradient) → 인과 후방 차분, 42,813행 재계산 오차 0.0(R7 22) (정본 §83, R7 22회차) | se2e_c1 사용 | CPU | 끝 |
+| 움직임 줄 확인 | 고친 데이터·시드 2·검증 1,799에서도 | [P/prereg_se2e_motion_confirm](../stage3/prereg_se2e_motion_confirm.md) 15:52:12Z | `H/ckpt/se2e_confirm/{none,motion}_s{1,2}` | none 0.672/0.677, motion 0.707/0.708; 합동 +0.032 [+0.022, +0.043], 전이 +0.030 ([R/se2e_motion_confirm](../stage3/results/se2e_motion_confirm.md)) | **CONFIRMED**, §83 유지 | ≈ 2.9 GPU-h(2장 × 15:53–17:21) | 끝 |
+| E-MA1 (MolmoAct 궤적 2×2) | 미래 궤적 보조 × 이력 덧그림 | [P/prereg_ma1](../stage3/prereg_ma1.md) 17:32:31Z | G0 120장, `H/logs/ma1/` | **G0 실패**: 명목 100.9/264.5 px, PnP 86.9/212.1 px(문턱 12/30) ([R/ma1](../stage3/results/ma1.md)) | 학습 0칸, R2 준비 뒤 재등록 | GPU 2 약 1.5분 | 끝 |
+| E-MA1b (3D 궤적 보조 A3d) | 카메라 없이 로봇 기준 궤적 보조 손실 | [P/prereg_ma1b](../stage3/prereg_ma1b.md) 17:54:05Z(`ded38d7`) | `H/data/ma1b`, 기준 = motion_s1·s2(예측 비트 동일 재사용), `H/ckpt/ma1b/a3d_s{1,2}` | 검증 1,799: none 0.7067/0.7076 → a3d 0.7098/0.7108, 합동 **+0.0031 [−0.0022, +0.0085]**, 전이 0.000, RB1 +0.006·RB2 −0.002, 보조 오차 9.9/9.5 cm(변위 0 예측 12.4 cm) ([R/ma1b](../stage3/results/ma1b.md)) | **불채택** → S-E2E 궤적 보조 손실은 단계 B 레시피에서 뺌; 궤적 보조는 R2 E-MA1 재등록(trace5)으로만 | ≈ 1.9 GPU-h(GPU 2, 17:54–19:46) | 끝 |
 
 ## D. Astra·결합
 
@@ -57,9 +57,9 @@
 
 | ID | 질문 | 등록 | 결과 | 상태 |
 |---|---|---|---|---|
-| Astra 모델 ID·첫 호출 | ID·지연 | — | `gpt-6-astra`, low 첫 토큰 2.975 s(1회) | 끝 ([R/astra_model_id](../stage3/results/astra_model_id.md)) |
-| Sol·Luna 사전 시험 | Jev 대체 후보 | — | 중앙 1.17 s, 0.33 s 결정에 느림 | 끝 ([R/sol_luna_probe](../stage3/results/sol_luna_probe.md)) |
-| E-Astra-motion 탐침 | 직렬 흐름·요청 방식 F0/F1·잡기 판정(카메라 구성)·부드러운 반영 | [P/prereg_astra_motion](../stage3/prereg_astra_motion.md) 17:38:25Z(`a62164d`), 수정 1–2 `35029e5`, 정정 `8063733` | **직렬 Astra low(영상 셋)**: 답당 벽시계 p50 약 9–10 s, 답 나이 p50 6.7–9.8 s(6 s 넘는 답 70–100 %), 호출당 49.7원(F0)·58.0원(F1), 로봇 1분당 350–500원; 흐름 조종 0/6(Astra만, VLA 없음, approach). **F0/F1**: 뒤집힘 0.594 → 0.381(36 %↓, 규칙 50 % 미달 → F0 유지; Qwen 0.36 → 0.047; Qwen 흐름은 프롬프트 판본 두 개 혼재 — [→ 2026-09-25 21:07 UTC, R7 28회차 E-N13]). **잡기 판정 40장**: 머리만 → Astra uncertain 39/40; 손목 포함 → 거짓 잡음 0–1/15, 놓침 13/25(테 건 쥠 6/6 포함); 덧그림 효과 없음(3 대 3); 표적 high 2/8 고침. **부드러운 대 즉시(재생)** jerk RMS 0.83 대 2.36. Qwen 동기 S 0/20. 비용 6,933원 | 끝 ([R/astra_motion](../stage3/results/astra_motion.md)) — 바뀐 결정: spec §4 F0 기본, §12 손목 필수·잡기 확인은 고유 감각·V1h 우선, §15·§16 폐기 문턱 6 s는 너무 짧음(p95 11–14 s), §11 부드러운 반영 유지 |
+| Astra 모델 ID·첫 호출 | ID·지연 | — | `gpt-6-astra`, low 첫 토큰 2.975 s(1회) ([R/astra_model_id](../stage3/results/astra_model_id.md)) | 끝 |
+| Sol·Luna 사전 시험 | Jev 대체 후보 | — | 중앙 1.17 s, 0.33 s 결정에 느림 ([R/sol_luna_probe](../stage3/results/sol_luna_probe.md)) | 끝 |
+| E-Astra-motion 탐침 | 직렬 흐름·요청 방식 F0/F1·잡기 판정(카메라 구성)·부드러운 반영 | [P/prereg_astra_motion](../stage3/prereg_astra_motion.md) 17:38:25Z(`a62164d`), 수정 1–2 `35029e5`, 정정 `8063733` | **직렬 Astra low(영상 셋)**: 답당 벽시계 p50 약 9–10 s, 답 나이 p50 6.7–9.8 s(6 s 넘는 답 70–100 %), 호출당 49.7원(F0)·58.0원(F1), 로봇 1분당 350–500원; 흐름 조종 0/6(Astra만, VLA 없음, approach). **F0/F1**: 뒤집힘 0.594 → 0.381(36 %↓, 규칙 50 % 미달 → F0 유지; Qwen 0.36 → 0.047; Qwen 흐름은 프롬프트 판본 두 개 혼재 — [→ 2026-09-25 21:07 UTC, R7 28회차 E-N13]). **잡기 판정 40장**: 머리만 → Astra uncertain 39/40; 손목 포함 → 거짓 잡음 0–1/15, 놓침 13/25(테 건 쥠 6/6 포함); 덧그림 효과 없음(3 대 3); 표적 high 2/8 고침. **부드러운 대 즉시(재생)** jerk RMS 0.83 대 2.36. Qwen 동기 S 0/20. 비용 6,933원 ([R/astra_motion](../stage3/results/astra_motion.md) — 바뀐 결정: spec §4 F0 기본, §12 손목 필수·잡기 확인은 고유 감각·V1h 우선, §15·§16 폐기 문턱 6 s는 너무 짧음(p95 11–14 s), §11 부드러운 반영 유지) | 끝 |
 | E-CAM3 | VLA 결정 입력 머리 + 양 손목(시각 토큰 356 → 460) | [P/prereg_cam3](../stage3/prereg_cam3.md) 2026-09-25T20:30:33Z | — (GPU 2, 기준 motion_s1·s2 재사용; 근거 설계 §12) | `[결과 전]` |
 | E-MA2 | VLA가 Astra `edit`을 따르는가(없음/문장/화살표) | — | — (R2 데이터; 근거 연구 문서 §6.2) | `[예정]` |
 | E-MA3 | expert 층별 KV 조건(블록 i ← 백본 층 L_i의 K·V) | [P/prereg_ma3](../stage3/prereg_ma3.md) 2026-09-25T20:34:02Z | — (GPU 3, 기준 motion_s1·s2 재사용, 1차 지표 청크 오차; 근거 정본 §84) | `[결과 전]` |
