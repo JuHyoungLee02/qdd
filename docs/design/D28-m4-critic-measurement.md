@@ -1,6 +1,6 @@
 # D28. 융합 런타임에서 M4 (b)·M7 critic의 "측정"을 무엇으로 할 것인가 — 조사·설계·사전 등록 시험
 
-작성: D28 조사 에이전트. 로컬 `date -u` = 2026-09-24 18:59 UTC(정본 §60 기록 시각 2026-09-25 18:47 UTC와 하루 어긋남 — 로컬 시계 문제로 보이며 판단에 영향 없음). git 커밋 안 함. 유료 API 호출 없음.
+작성: D28 조사 에이전트. 로컬 `date -u` = 2026-09-24 18:59 UTC(정본 §60 제목의 '2026-09-25'는 KST 날짜를 잘못 붙인 것이다 — 시계 문제가 아니었다, 정본 §67 C1·R7 2회차 K1 정정). git 커밋 안 함. 유료 API 호출 없음.
 요청(user-log 원문): "저 M4의 크리틱 저거는 무조건 해결을해 1년반 내 논문 싹다 깃도 뒤져서 신뢰성있는걸로 찾아서 해봐봐". 신뢰도 규칙(원문): "신뢰도 낮은 논문과 깃 저장소는 최대한 쓰지 않는다. 쓰느니만 못하다." / "신뢰도가 무조건 있어야 하고, 스타도 어느 정도 있어야 하고, 논문도 좋아요(반응)를 많이 받은 것이어야 한다."
 근거로 읽은 우리 문서: 정본 `00-interfaces.md` §1–§9·§21·§31·§35·§39·§45·§50–§60, `M4-overlap-commit.md` §0·§2.2·§4.2, `M7-progress.md` §2·§4·§5, `D10b-critic-checkvla.md` §2, `docs/stage3/results/r1_perception.md` §1·§3, `r4_stageB.md` §1·§2, `pool.md`, `labeler.md`, 코드 `harvest/sim/snapshot.py`(`ROBOT_ARRAYS`, `obs.raw.grip.effort`)·`harvest/sim/scene.py`(`gripper_effort` = `applied_torque`)·`harvest/predicates.py`(`holding`은 폭 < 8 cm·effort ≥ 1 요구).
 

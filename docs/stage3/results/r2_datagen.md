@@ -1,6 +1,6 @@
 # R2 시뮬 데이터 생성기 — 30 Hz 기록·다과제·DR·LeRobot 내보내기·병렬 생성 (DEV 검증)
 
-작성 2026-09-25, R2 구현 에이전트. 계획 `docs/superpowers/plans/2026-09-25-e2e-ready.md` 관문 R2. git 커밋 안 함. **큰 생성은 돌리지 않았다**(§8은 계획만).
+작성 2026-09-24 UTC(R7 2회차 K1 정정 — 처음엔 KST 날짜를 적었다), R2 구현 에이전트. 계획 `docs/superpowers/plans/2026-09-25-e2e-ready.md` 관문 R2. git 커밋 안 함. **큰 생성은 돌리지 않았다**(§8은 계획만).
 근거: 정본 `00-interfaces.md` §34(D35 DR, random은 학습 금지), §47(로봇·카메라 복사), §48(CPU PhysX), §51–§63(특히 §57 머리 + 활성 손목, §58 융합, §59 이미지 배치, §61 확인 헤드, §62 우리 데이터 30 Hz), `r4_stageB.md` §5(R2 데이터 계약), `pool.md`, `random5.md`, `labels_v2.md`, `r1_perception.md`, `r5_closed_loop.md`.
 파드 `p-test2/juhyoung-native-7a2a`, Isaac = `ir_run.sh IR_ROOT=cyclo`, **CPU PhysX, 렌더 GPU 0만(동시 ≤ 2 프로세스)**, GPU 1·2·3 안 씀, 다른 에이전트 프로세스 건드리지 않음. 시드 = **DEV 0–29만**(실제 사용 0–5). 모든 수치는 파이프라인 확인용 소규모 시험(§56) — 결과로 쓰지 않는다.
 

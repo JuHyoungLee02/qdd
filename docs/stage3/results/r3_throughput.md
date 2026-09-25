@@ -1,6 +1,6 @@
 # R3 (1부) 학습 처리량 + 단계 A 다중 이미지 — 구현·동일성 시험·측정
 
-작성 2026-09-25, R3 구현 에이전트. git 커밋 안 함. 계획 `docs/superpowers/plans/2026-09-25-e2e-ready.md` 관문 R3(1부: 처리량 + 다중 이미지), 근거 정본 `00-interfaces.md` §52–§59, `D27-multi-image-input.md`, `stageA_pipeline.md`·`stageA_sft.md`·`r4_stageB.md`.
+작성 2026-09-24 UTC(R7 2회차 K1 정정 — 처음엔 KST 날짜를 적었다), R3 구현 에이전트. git 커밋 안 함. 계획 `docs/superpowers/plans/2026-09-25-e2e-ready.md` 관문 R3(1부: 처리량 + 다중 이미지), 근거 정본 `00-interfaces.md` §52–§59, `D27-multi-image-input.md`, `stageA_pipeline.md`·`stageA_sft.md`·`r4_stageB.md`.
 **아래 처리량·스모크 수치는 파이프라인 확인용(§56)이다. 모델 성능 결론이 아니다.** 데이터는 POOL(fit/eval)·합성만 썼다. CAL/TEST/TEST-P5와 풀 `oracle` 필드는 읽지 않았다.
 
 ## 1. 결론 요약
@@ -67,7 +67,7 @@
   - 파드 `venv_train`(CPU): `tests/train` **88 passed**(기존 + R3 16).
 - 기존 시험 수정 1건: `test_stagea_qwen.py::test_train_cli_end_to_end_tiny_model`의 인자에 `--cameras H`를 추가했다. 이 시험의 가짜 풀에는 머리 이미지만 있고 기본값이 HW로 바뀌었기 때문이다.
 
-## 4. 처리량 측정 (H200 GPU 2, 2026-09-25, 원자료 `/data/harvest/r3/bench_*.json`·`.out`)
+## 4. 처리량 측정 (H200 GPU 2, 2026-09-24 UTC, 원자료 `/data/harvest/r3/bench_*.json`·`.out`)
 
 조건: `tools/r3_bench.py`, Qwen3-VL-4B-Instruct@ebb281ec BF16, SDPA, LoRA r32(dropout 0.05), `TORCH_DISABLE_NATIVE_JIT=1`. 시작 전 `nvidia-smi`로 GPU 2가 비어 있음(1 MiB)을 확인했고, 다른 프로세스는 건드리지 않았다. 시간에는 이미지 디코딩·토큰화(CPU, 학습 루프 안)가 포함된다. 단계 A 학습 = 순전파 + 역전파 + AdamW 스텝(64항목마다)이다.
 

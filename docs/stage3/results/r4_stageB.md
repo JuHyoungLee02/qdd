@@ -1,6 +1,6 @@
 # R4 단계 B 학습 코드 (융합 모델: Qwen3-VL-4B + flow-matching action expert + 보조 기하 헤드) — 구축·스모크
 
-작성 2026-09-25, R4 구현 에이전트. git 커밋 안 함. **본 학습은 돌리지 않았다.** 아래 수치는 전부 합성 데이터 스모크(파이프라인 동작 확인, 정본 §56)라서 결과로 쓰지 않는다.
+작성 2026-09-24 UTC(R7 2회차 K1 정정 — 처음엔 KST 날짜를 적었다), R4 구현 에이전트. git 커밋 안 함. **본 학습은 돌리지 않았다.** 아래 수치는 전부 합성 데이터 스모크(파이프라인 동작 확인, 정본 §56)라서 결과로 쓰지 않는다.
 근거: 정본 `00-interfaces.md` §32–§35, §51–§59(작업 중 코디네이터가 §58 융합 원칙·§59 D27 이미지 배치를 추가 지시), `D19`·`D20`·`D26`, `stageA_pipeline.md`·`stageA_sft.md`.
 
 ## 1. 결론 요약
@@ -42,7 +42,7 @@
 
 ## 3. starVLA 판단 (재사용 안 함)
 
-- 확인(2026-09-25, GitHub API·원문): starVLA/starVLA 3,724★, 기본 가지 `starVLA_dev`, LICENSE = **MIT**(단 README·LICENSE에 "rebase 시 upstream 커밋 두 개를 별도 커밋으로 유지" 같은 귀속 조항 추가). API의 spdx는 NOASSERTION.
+- 확인(2026-09-24 UTC, GitHub API·원문): starVLA/starVLA 3,724★, 기본 가지 `starVLA_dev`, LICENSE = **MIT**(단 README·LICENSE에 "rebase 시 upstream 커밋 두 개를 별도 커밋으로 유지" 같은 귀속 조항 추가). API의 spdx는 NOASSERTION.
 - `starVLA/model/framework/VLM4A/QwenPI.py`: 액션 헤드가 VLM의 마지막 N층 은닉 상태 목록을 받는 층별 flow-matching 헤드(`LayerwiseFM_ActionHeader`). 이 파일에는 **stop-gradient(detach)가 없고**, **텍스트/결정 토큰 NLL 공동 손실도 없다**(행동만 예측). DeepSpeed·accelerate 전제의 큰 프레임워크.
 - 판단: 우리에게 필요한 핵심 두 가지(KI 차단, 트라이 재정규화 결정 손실과의 공동 학습)를 어차피 우리가 넣어야 하고, 단계 A 손실·프롬프트와의 바이트 일치를 유지하려면 우리 코드 경로를 써야 한다 → **최소 PyTorch 구현**(expert 약 200줄). 설계 참고(층별 조건)만 기록. 새 의존성 없음(`venv_train`의 torch·transformers·peft 그대로).
 
@@ -90,7 +90,7 @@
 
 ## 7. 스모크
 
-### 7.1 CPU 스모크 (파드 CPU, `smoke_tiny_cpu`, 2026-09-25 18:12–18:13 UTC 파드 시계 기준)
+### 7.1 CPU 스모크 (파드 CPU, `smoke_tiny_cpu`, 2026-09-24 18:12–18:13 UTC, 파드 시계는 정확 — R7 2회차 K1 정정)
 
 조건: 실제 Qwen3-VL 구조를 줄인 무작위 초기화 백본(LLM 2층, 폭 64, 비전 2층) + 실제 처리기·채팅 템플릿 + LoRA r32, expert 폭 128·깊이 2(스모크 축소), 합성 40표본(학습 32/검증 8, 원본 크기 이미지 2장, D27 배치), 배치 4, 50스텝, lr LoRA 1e-3 / 헤드 1e-3, λ_aux 0.1, KI stop, 절대 모드, `nice 10`, 8 스레드.
 

@@ -15,8 +15,8 @@ Recording (timing.py): one frame per 30 Hz tick on the 10 ms physics grid; per f
 t_k (native 672x376 / 424x240, JPEG q90), proprio q / qd / tau(arm applied_torque) / grip, the oracle observation;
 the command of tick k is held for 3 or 4 substeps. The teacher is the oracle planner (planner.OraclePlanner, task from
 tasks.py); action_script = action_exec (no residual). Training variants: standard and dr only -- 'random' (TEST pool)
-is refused (randomize.check_train_variant, canon §34 D35). Seeds: DEV 0-29 here; R2_TRAIN_SEEDS only with
---confirm-train (proposal for the stage-B generation, not run in this gate).
+is refused (randomize.check_train_variant, canon §34 D35). Seeds: DEV 0-29 here; R2_TRAIN_SEEDS (canon §66) only
+with --confirm-train (the large stage-B generation, not run yet).
 """
 from __future__ import annotations
 
@@ -32,8 +32,8 @@ from . import queue as Q
 from .timing import H_DEFAULT, PHYS_DT, hold_substeps, tick_time
 
 DEV_SEEDS = range(0, 30)
-R2_TRAIN_SEEDS = range(10000, 60000)  # [proposal] disjoint from CAL 500-549, TEST 1000-1149, TEST-P5 1300-1329,
-# POOL 2000-2119 and the randomize logic-test range 500-699
+R2_TRAIN_SEEDS = range(10000, 60000)  # canon §66: disjoint from CAL 500-549, TEST 1000-1149, TEST-P5 1300-1329,
+# POOL 2000-2119 and the unit-test seed range 3000-3199
 HOLD_DEBOUNCE_30 = 5  # planner HOLD_DEBOUNCE = 3 steps at 20 Hz = 0.15 s -> 5 ticks at 30 Hz (0.167 s)
 CAMS = ("cam_head", "cam_wrist_right")
 NO_RENDER = 10 ** 9  # render_interval: the env never renders by itself; frames are rendered on demand at t_k

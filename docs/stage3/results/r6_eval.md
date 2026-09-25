@@ -1,7 +1,7 @@
 # R6 평가 스크립트 (E0.5 재생 · RD · CAL 보정 · 폐루프 묶음) — 한 명령 실행
 
 - 계획: `docs/superpowers/plans/2026-09-25-e2e-ready.md` 관문 R6. 근거 정본: 00-interfaces §28(J1–J5), §31(J5), §42(시계 트랙·로그), §45(E-M8c), §50–§63, E-first §2A(E0.5 판정 1–10)·§3(E1), EVAL §4.2(std→rnd 짝 RD), M4 §5(C0–C6).
-- 실행: 2026-09-25 (파드 `p-test2/juhyoung-native-7a2a`, 파드 UTC 21:00–21:45 무렵). vLLM은 **GPU 2**(렌더 없음 — GPU 3은 시작 시 다른 작업이 쓰고 있었음), Isaac은 **GPU 1**(동시 ≤ 2 프로세스), GPU 0 안 씀. 코드 파드 사본 `/data/harvest/code_r6/`(`tools/r6/sync.sh`, `CODE_VERSION`에 로컬 커밋·dirty 기록), 산출물 `/data/harvest/out/r6/<태그>/`. git 커밋 안 함.
+- 실행: 2026-09-24 UTC(R7 2회차 K1 정정 — 처음엔 KST 날짜를 적었다) (파드 `p-test2/juhyoung-native-7a2a`, 파드 UTC 21:00–21:45 무렵). vLLM은 **GPU 2**(렌더 없음 — GPU 3은 시작 시 다른 작업이 쓰고 있었음), Isaac은 **GPU 1**(동시 ≤ 2 프로세스), GPU 0 안 씀. 코드 파드 사본 `/data/harvest/code_r6/`(`tools/r6/sync.sh`, `CODE_VERSION`에 로컬 커밋·dirty 기록), 산출물 `/data/harvest/out/r6/<태그>/`. git 커밋 안 함.
 - **§56 규칙**: 아래 수치는 모두 "명령이 끝까지 도는지" 확인용 소규모 판이다. 결과·근거로 인용하지 않는다(단계 A SFT는 POOL fit 편으로 학습됐고, labels_v2 정답은 S1 좌표에서 거의 기계적으로 나온다).
 
 ## 1. 명령 (파드, `source /data/harvest/env.sh` 뒤 `cd /data/harvest/code_r6`, 파이썬 = `/data/harvest/venv_vllm/bin/python`)
