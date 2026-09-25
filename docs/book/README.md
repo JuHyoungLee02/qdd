@@ -1,0 +1,28 @@
+# Harvest 연구 기록책 (docs/book)
+
+사용자 지시(user-log 89): "결과들은 모두 효율적으로 정보 저장해둬 나중에 같은씰수안하게 동일 md를 써도되고 효율적으로 분산해서 책처럼 기록 남겨둬두되고".
+작성 시작 2026-09-25 UTC(보고는 KST). 저장소 기록 시각은 UTC.
+
+## 원칙
+- **상세는 원래 문서에 둔다**(결과 `docs/stage3/results/`, 사전 등록 `docs/stage3/prereg_*.md`, 정본 `docs/design/00-interfaces.md`, 연구 `docs/research/`). 이 책은 **한 줄 요약 + 링크**다. 같은 내용을 두 곳에 길게 쓰지 않는다.
+- 숫자는 커밋된 결과 문서에 있는 값만 옮긴다. 확인 못 한 값은 `[미검증]`, 진행 중은 `[진행 중]`, 계획은 `[예정]`으로 표시한다.
+- **갱신 규칙**: 결과가 나오거나 실수가 확인되면 **그 결과·정정과 같은 커밋**에 해당 장을 고친다(R7 21·23·24·25회차가 '같은 커밋' 누락으로 실패했다 → [02-pitfalls](02-pitfalls.md) P05).
+
+## 쓰는 법
+1. **새 작업을 시작하기 전에 [02-pitfalls](02-pitfalls.md)를 먼저 읽는다**(특히 기록·커밋·파드·유료 호출 절).
+2. 무엇을 이미 했는지·결과가 무엇인지는 [01-experiments](01-experiments.md).
+3. 지금 유효한 결정과 대체된 결정은 [03-decisions](03-decisions.md)(정본 절 번호 순).
+4. 코드·데이터·체크포인트·파드 경로·GPU 역할은 [04-map](04-map.md).
+5. 유료 API 비용·GPU 시간은 [05-costs](05-costs.md).
+
+## 목차
+| 장 | 내용 |
+|---|---|
+| [01-experiments](01-experiments.md) | 실험 장부: 질문·사전 등록·데이터·결과·판정·바뀐 결정·비용·상태 |
+| [02-pitfalls](02-pitfalls.md) | **함정·실수와 예방 규칙**(가장 중요) |
+| [03-decisions](03-decisions.md) | 결정 연표(정본 §·user-log), 대체 표시 |
+| [04-map](04-map.md) | 저장소 모듈·도구·시험, 파드 경로, 데이터 판본, 체크포인트, GPU·파드 |
+| [05-costs](05-costs.md) | 유료 API 장부(실험별), 예산, GPU 시간 |
+
+## 다른 살아 있는 문서
+- 인수인계 `docs/handoff.md`(지금 상태) · 작업 기록 `docs/draft-log.md`(시간순) · 방향 검사 `docs/stage3/direction-log.md` · 사용자 발언 원문 `docs/user-log.md` · 논문 `paper/`(가설 기반 완성판, user-log 88).
