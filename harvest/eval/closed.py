@@ -162,8 +162,22 @@ def m4_config(cond: str, H: int = 3, lead_max: float | None = None) -> dict:
     cfg = {**asdict(M4Params()), **condition(cond)[0], "H": int(H)}
     if lead_max is not None:
         cfg["lead_max"] = float(lead_max)
-    M4Params(**cfg)  # validation (lead_max > 0, W >= 0)
+    M4Params(**cfg)  # validation (lead_max finite > 0, W >= 0; canon §76 N4)
     return cfg
+
+
+def j5_after_canary(j5_alpha, calibration: str, canary: dict):
+    """(effective J5 alpha, note). E §3.7 judgment 8 (:347) "매일 카나리가 '표류 의심'을 내면 판정 7대로 끄고
+    재보정한다" and §1.8 (:139) "E1 보정 부분을 다시 돌린 뒤에 게이트를 재사용": the latest canary of the model says
+    drift_suspect and the calibration file was fitted before that canary's day -> the gate is off for this run
+    (canon §77); a calibration fitted on / after it is the re-run and keeps the gate."""
+    if j5_alpha is None or not calibration or not canary or canary.get("drift_suspect") is not True:
+        return j5_alpha, None
+    cal_utc = str(json.load(open(calibration, encoding="utf-8")).get("utc") or "")
+    if cal_utc[:10] >= str(canary.get("date_utc") or ""):
+        return j5_alpha, None
+    return None, (f"J5 off: canary {canary.get('id')} ({canary.get('date_utc')}) drift suspect, calibration "
+                  f"{os.path.basename(calibration)} fitted {cal_utc or '?'} before it (E §3.7-8, canon §77)")
 
 
 def worker_cmd(code: str, spec_path: str, gpu: str, inst: str, timeout_s: int) -> list:
@@ -239,7 +253,7 @@ def run_worker(spec_path: str) -> None:
         if spec["backend"] == "fused":
             cfg.state_repr = "fused: images (head + active wrist) + task + contract summary + proprio (canon §58)"
         rt = OursRuntime(cfg, model, astra=astra)
-        tag = label.replace("|", "_")
+        tag = label.replace("|", "_").replace("'", "p")  # C5' -> C5p in folder / task names
         pol = OursPolicy(rt, name=f"ours-{spec['backend']}-{spec['selector']}-{tag}",
                          checkpoint=spec["model_path"] or None)
         scenes = [Scene(id=f"{spec['split']}{s}-P0-{spec['variant']}", instruction=SCENE_SPEC["instruction"],
@@ -367,7 +381,7 @@ def run(a) -> dict:
     if "K4" in modes and a.hb_budget is None:
         raise SystemExit("--hb-mode K4 needs --hb-budget (the matched call count)")
     for c in conds:
-        m4_config(c, a.m4_h, a.m4_lead_max)  # unknown condition, H < 1 or lead_max <= 0 -> refused before any worker
+        m4_config(c, a.m4_h, a.m4_lead_max)  # unknown condition, H < 1 or lead_max not finite > 0 -> refused before any worker
     if str(a.isaac_gpu) not in ISAAC_GPUS:
         raise SystemExit(f"--isaac-gpu {a.isaac_gpu}: 0 or 1 only (GPU 2 never renders)")
     t0 = time.monotonic()
@@ -385,7 +399,11 @@ def run(a) -> dict:
               else "HW" if selector == "stageb" else "H")
     fp = C.model_fingerprint(info["path"]) if info.get("path") else None
     from .canary import latest_canary  # canon §28/§42: the day's canary id on every call row (or "none")
-    canary_id = latest_canary("mock" if selector in ("mock", "mock_fused") else fp)["id"]
+    canary = latest_canary("mock" if selector in ("mock", "mock_fused") else fp)
+    canary_id = canary["id"]
+    j5_alpha, j5_gate = j5_after_canary(a.j5_alpha, a.calibration, canary)  # N6: drift suspect -> gate off
+    if j5_gate:
+        print(j5_gate, flush=True)
     variants = [v for v in a.variants.split(",") if v]
     per_ep = a.max_seconds / 0.3 + 60  # RTF >= 0.3 assumed + reset
     timeout = a.timeout or int(240 + len(conds) * len(seeds) * a.epochs * per_ep)
@@ -399,10 +417,11 @@ def run(a) -> dict:
                     "name": srv.name, "layout": layout, "mode": a.mode, "clock": a.clock,
                     "max_seconds": a.max_seconds, "epochs": a.epochs, "astra": a.astra,
                     "model_path": info.get("path"), "fingerprint": fp, "calibration": a.calibration,
-                    "j5_alpha": a.j5_alpha, "mock_latency": a.mock_latency, "verify_cal": a.verify_cal,
+                    "j5_alpha": j5_alpha, "mock_latency": a.mock_latency, "verify_cal": a.verify_cal,
                     "hb_n": [float(x) for x in a.hb_n.split(",") if x],
                     "hb_mode": [m for m in a.hb_mode.split(",") if m], "hb_budget": a.hb_budget,
-                    "canary_id": canary_id, "m4_H": a.m4_h, "m4_lead_max": a.m4_lead_max}
+                    "canary_id": canary_id, "m4_H": a.m4_h, "m4_lead_max": a.m4_lead_max,
+                    "j5_canary_gate": j5_gate}
             sp = os.path.join(a.out, f"spec_{v}.json")
             json.dump(spec, open(sp, "w", encoding="utf-8"), indent=1)
             cmd = worker_cmd(code, os.path.abspath(sp), a.isaac_gpu, f"{a.inst_prefix}_{v}", timeout)
@@ -435,8 +454,9 @@ def run(a) -> dict:
         "astra": a.astra,
         "layout": layout, "mode": a.mode, "prompt_config": run_prompt_config(selector, pc, layout),
         "isaac_gpu": a.isaac_gpu, "bootstrap": res["bootstrap"],
-        "calibration": a.calibration, "j5_alpha": a.j5_alpha, "hb_n": a.hb_n,
-        "not_in_runtime": "C2'/C2'-S/C2-match, C3', C3'', C5-A3, C-FIX, C5' (conditions.py doc)",
+        "calibration": a.calibration, "j5_alpha": j5_alpha, "j5_alpha_requested": a.j5_alpha,
+        "j5_canary_gate": j5_gate, "hb_n": a.hb_n,
+        "not_in_runtime": "C2'/C2'-S/C2-match, C3', C3'', C5-A3, C-FIX (conditions.py doc)",
         "hb_mode": a.hb_mode, "hb_budget": a.hb_budget, "verify_cal": a.verify_cal or "default (uncalibrated)",
         "runtime_s": {"total": round(time.monotonic() - t0, 1), "workers": wall,
                       "vllm_ready": round(getattr(srv, "t_ready", 0.0), 1)}})

@@ -265,7 +265,8 @@ def test_load_stageb_joins_pool_labels_and_rows_without_oracle(tmp_path):
     assert all(it["images"] == ims for it in s["items"])
     from harvest.jevcall import canonicalize
     assert s["context"]["text"] == canonicalize(D.image_only_state(TS))
-    assert all(it["text"].startswith(s["context"]["text"] + "\n\nQuestion") for it in s["items"])
+    # the DecCall items end their state with the (b) line (canon §77); the expert context has no DecCall line
+    assert all(it["text"].startswith(s["context"]["text"] + "\nlast_step: none\n\nQuestion") for it in s["items"])
     assert s["committed"] == {"dir_xy": "minus_y", "dir_z": "up", "mag_coarse": "small", "target": "o5",
                               "phase": "next"}
     # the pool oracle never matters

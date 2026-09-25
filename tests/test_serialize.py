@@ -15,7 +15,7 @@ def test_facts_true_plus_named_false_sorted_and_unknown():
     assert facts == "facts: in_contact(o3,o5)=unknown near(o3,o5)=yes on(o3,o5)=no"
     assert "above(o3,o5)" not in s
     assert s.startswith("t_state: f1287 (t=42.90s)  contract: c7  stage: S2")
-    assert SERIALIZER_VERSION == "ser-A-min-1"
+    assert SERIALIZER_VERSION == "ser-A-min-2"  # -2: DecCall state + (b) last_step line (canon §77)
 
 
 def test_changes_capped_at_8_and_3s():

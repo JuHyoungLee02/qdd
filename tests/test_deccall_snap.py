@@ -12,7 +12,7 @@ def test_request_has_six_questions_in_deccall_format_ne_last():
     req, oracle, shown = build_snapshot_request(_line())
     assert list(req["questions"]) == ["ds21.dir_xy", "ds21.dir_z", "ds21.mag_coarse", "ds21.target", "ds21.phase",
                                       "mon.progress"]
-    assert req["state"] == "t_state: f1\nrobot: x"
+    assert req["state"] == "t_state: f1\nrobot: x\nlast_step: none"  # (b) line, ser-A-min-2 (canon §77)
     for qid, q in req["questions"].items():
         assert q["type"] == "choice"
         assert list(q["criteria"])[-1] == "NONE_ESCALATE"

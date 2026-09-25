@@ -98,13 +98,44 @@ def batch_logprobs(model, scorer, items, device, share=True, micro=8, canonical=
     return out
 
 
+def serializer_of(pc: dict) -> str:
+    """State serializer version a checkpoint was trained with (canon §77): prompt_config["serializer"]; a config
+    without it (stage-B stageb_train.prompt_config, pre-§77 runs) is current only if its prompt-building files are
+    byte-identical to this code's (the version constant lives in one of them), else it predates ser-A-min-2."""
+    from ..serialize import SERIALIZER_VERSION
+    if pc.get("serializer"):
+        return pc["serializer"]
+    fs = pc.get("files_sha") or {}
+    try:
+        same = bool(fs) and isinstance(fs, dict) and file_sha(tuple(fs)) == fs
+    except OSError:
+        same = False
+    return SERIALIZER_VERSION if same else "ser-A-min-1 (pre canon §77: no last_step line)"
+
+
+def require_serializer(pc: dict | None, what: str) -> None:
+    """Refuse a checkpoint trained on another DecCall state format (canon §77: ser-A-min-2 adds the M4 (b)
+    `last_step:` line; every earlier checkpoint is invalid -- retrain)."""
+    from ..serialize import SERIALIZER_VERSION
+    if pc is None:
+        return
+    got = serializer_of(pc)
+    if got != SERIALIZER_VERSION:
+        raise ValueError(f"{what}: trained with state serializer {got!r}, this code feeds {SERIALIZER_VERSION!r} "
+                         f"(canon §77: the DecCall state ends with the M4 (b) 'last_step:' line) -- retrain on the "
+                         f"new format")
+
+
 def prompt_config(items, a):
     """Training-side record of what inference must match (question_id@vN hash input, canon §59): camera
-    configuration(s), state mode and grid, system prompt, prompt-building files; sha = hash of all of it."""
+    configuration(s), state mode and grid, system prompt, state serializer version (ser-A-min-2 = with the M4 (b)
+    `last_step:` line, canon §77), prompt-building files; sha = hash of all of it."""
     from ..clients.jevl import SYSTEM
+    from ..serialize import SERIALIZER_VERSION
     from .stagea_data import camera_of
     cfg = {"camera": sorted({camera_of(x) for x in items}), "state": a.state, "step_cm": a.step_cm,
-           "system_sha": hashlib.sha256(SYSTEM.encode()).hexdigest()[:12], "files_sha": file_sha(PROMPT_FILES)}
+           "system_sha": hashlib.sha256(SYSTEM.encode()).hexdigest()[:12], "serializer": SERIALIZER_VERSION,
+           "files_sha": file_sha(PROMPT_FILES)}
     cfg["sha"] = hashlib.sha256(json.dumps(cfg, sort_keys=True).encode()).hexdigest()[:12]
     return cfg
 

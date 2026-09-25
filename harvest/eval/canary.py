@@ -105,12 +105,13 @@ class FusedAsker:
         import base64
 
         from ..runtime.fused_model import answers_from
+        from ..deccall_snap import last_step_of
         from ..runtime.models import build_live_request
         from ..serialize import canonicalize
         from ..train.stageb_data import image_only_state
         ds = int(str(line.get("ds_id", "ds0"))[2:] or 0)
         req, shown = build_live_request(ds, line["phase"], line["text_state"], line["state"]["present"],
-                                        line["state"]["obs"]["raw"], state="IMG")
+                                        line["state"]["obs"]["raw"], state="IMG", last_step=last_step_of(line))
         ims = {cam: base64.b64encode(open(os.path.join(root, line["images"][cam]), "rb").read()).decode()
                for cam in ("cam_head", "cam_wrist_right")}
         r = self.c.post(self.url + "/decide", json={"t_state": line.get("t", 0.0),

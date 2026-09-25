@@ -27,7 +27,7 @@ import os
 from collections import defaultdict
 
 from ..clients.jevl import question_text
-from ..deccall_snap import build_snapshot_request
+from ..deccall_snap import annotate_last_step, build_snapshot_request
 from ..sim import labeler as L
 from ..sim.snapshot import PHASE_ORDER
 
@@ -141,8 +141,11 @@ def split_of(line: dict, dev_val_seeds=None) -> str:
 
 def build_items(lines, source, state_fn=None, shift: int = 0, dev_val_seeds=None) -> list[dict]:
     """lines: pool ep<seed>.jsonl rows; source: see module doc; state_fn(line) -> state text (None = the pool's
-    text_state, i.e. E3-lite S0); shift: C3'' option rotation (0 = fixed order)."""
+    text_state, i.e. E3-lite S0); shift: C3'' option rotation (0 = fixed order). The DecCall state ends with the M4
+    (b) line of the snapshot (deccall_snap.annotate_last_step: the recorded post-step check, canon §77) -- pass the
+    whole episode (a pre-annotated line keeps its value)."""
     items = []
+    lines = annotate_last_step(list(lines))
     for line in lines:
         if not line.get("decision"):
             continue

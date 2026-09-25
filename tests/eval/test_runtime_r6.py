@@ -37,7 +37,7 @@ def test_max_inflight_caps_n_max():
 
 
 def test_condition_table():
-    assert set(CONDITIONS) == {"C0", "C1", "C2", "C3", "C4", "C5", "C6"}
+    assert set(CONDITIONS) == {"C0", "C1", "C2", "C3", "C4", "C5", "C5'", "C6"}  # C5' added R7 cycle 12 D3
     m4, rt = condition("C5")
     assert m4 == {} and rt == {}
     m4, rt = condition("C0")

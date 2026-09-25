@@ -1,5 +1,5 @@
 """Estimated M1 state (R1): per-object centroids from vision + gripper from proprioception -> predicates, the
-ser-A-min-1 text and the S1 geometry block (e3lite format, step_cm = 0.1, labels_v2 §54) with occluded /
+ser-A-min S0 text (serialize_state) and the S1 geometry block (e3lite format, step_cm = 0.1, labels_v2 §54) with occluded /
 id_uncertain flags.
 
 What vision does NOT give here, and what stands in for it (stated in r1_perception.md):

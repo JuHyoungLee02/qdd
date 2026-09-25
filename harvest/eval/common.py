@@ -17,7 +17,7 @@ import sys
 import time
 from collections import defaultdict
 
-from ..deccall_snap import build_snapshot_request
+from ..deccall_snap import annotate_last_step, build_snapshot_request
 from ..jevcall import build_choice
 from ..options import variant as name_variant
 
@@ -112,7 +112,15 @@ def model_fingerprint(path: str) -> str:
 
 def training_prompt_config(model_path: str | None) -> dict | None:
     """What the model was trained on (stagea_train prompt_config, or the older config.json args): camera layout,
-    state mode, grid, prompt files sha. None for the base model."""
+    state mode, grid, prompt files sha. None for the base model. A checkpoint trained on another DecCall state
+    format (serializer, canon §77) is refused (ValueError) -- every evaluation command reads this first."""
+    from ..train.stagea_train import require_serializer
+    pc = _training_prompt_config(model_path)
+    require_serializer(pc, f"model {model_path}")
+    return pc
+
+
+def _training_prompt_config(model_path: str | None) -> dict | None:
     if not model_path:
         return None
     sb = os.path.join(model_path, "stageb.json")
@@ -344,6 +352,7 @@ def load_episodes(dirs, split: str, episodes: int = 0, seeds=None) -> list:
         check_seeds(cand, split)
         for s in cand:
             lines = [json.loads(x) for x in open(os.path.join(d, f"ep{s}.jsonl"), encoding="utf-8")]
+            annotate_last_step(lines)  # the DecCall (b) line as in training (canon §77)
             mp = os.path.join(d, f"ep{s}.meta.json")
             meta = json.load(open(mp, encoding="utf-8")) if os.path.exists(mp) else {}
             out.append({"dir": d, "seed": s, "kind": lines[0].get("kind", "P0") if lines else "P0", "lines": lines,

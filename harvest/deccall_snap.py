@@ -5,6 +5,7 @@ follow canon §27 R1 (jevcall option tables), NONE_ESCALATE last; answers are sc
 """
 from .jevcall import DIR_XY, DIR_Z, MAG, NE, PROGRESS, build_choice, build_request
 from .options import Option, to_option_key
+from .serialize import with_last_step
 from .sim.snapshot import SPEC_NAMES, stage_of
 
 QUESTIONS = ("dir_xy", "dir_z", "mag_coarse", "target", "phase", "progress")
@@ -24,10 +25,61 @@ def _target_opts(present):
     return out + [NE]
 
 
+_T1 = ("gripper_open", "holding_t", "lifted_holding")  # = runtime.measure.T1 (robot side, hard channel)
+
+
+def category_of_check(phase_prev: str, phase_now: str, violations) -> str:
+    """M4 (b) category of a finished step from its post-step expectation check, the runtime rule
+    (core._boundary + measure.expected_check): the step changed phase -> no expectation check -> OK; a robot-side
+    (T1) expectation false -> CONTRADICT; a world-side (T2) one -> DEVIATE; else OK. An OR entry ("a|b") is T1 only
+    if all its members are."""
+    if phase_prev != phase_now:
+        return "OK"
+    tiers = [all(x in _T1 for x in v.split("|")) for v in violations or ()]
+    return "CONTRADICT" if any(tiers) else ("DEVIATE" if tiers else "OK")
+
+
+def last_step_of(line: dict) -> str:
+    """The (b) line value of a snapshot line (canon §77): an explicit `last_step` (annotate_last_step, runtime);
+    else the recorded post-step check of an R2 line (`verify.prev_step`, datagen.episode); else "none"."""
+    if line.get("last_step") is not None:
+        return line["last_step"]
+    pv = (line.get("verify") or {}).get("prev_step")
+    if pv is None:
+        return "none"
+    return category_of_check(pv["phase"], line["phase"], pv.get("violations"))
+
+
+def annotate_last_step(lines: list) -> list:
+    """Set `last_step` on the lines of one episode (in file order). R2 lines use their recorded `verify.prev_step`;
+    cli_pool lines (0.33 s snapshots, no `verify`) are judged like datagen.rows.verify_prev_step: the previous
+    snapshot's phase expectations (m4b.spec.EXPECT) on this snapshot's recorded predicates (truth9 of the task's
+    target / place, contact_stall unknown). The first snapshot (no finished step) -> "none"."""
+    from .datagen.rows import truth9
+    from .m4b.spec import violations
+    from .sim import tasks as TK
+    for i, ln in enumerate(lines):
+        if ln.get("last_step") is not None:
+            continue
+        if "verify" in ln:
+            ln["last_step"] = last_step_of(ln)
+            continue
+        prev = lines[i - 1] if i else None
+        if prev is None or prev.get("k") != ln.get("k", 0) - 1 or prev.get("seed") != ln.get("seed") \
+                or "pred" not in ln or "phase" not in prev:
+            ln["last_step"] = "none"
+            continue
+        spec = TK.TASKS.get(ln.get("task") or "mug_tray", TK.TASKS["mug_tray"])
+        tr = {**truth9(ln["pred"], spec.target, spec.place, False), "contact_stall": None}
+        ln["last_step"] = category_of_check(prev["phase"], ln["phase"], violations(prev["phase"], tr))
+    return lines
+
+
 def build_snapshot_request(line, text_state=None, shift=0):
     """line: one ep<seed>.jsonl row (cli_pool.write_episode). Returns (request, {qid: oracle key}, {qid: options}).
     text_state: state text to send instead of line["text_state"] (E3-lite S1/S2); shift: cyclic left shift of every
-    option list, NONE_ESCALATE stays last (C3'' rotation, e3lite.md prereg)."""
+    option list, NONE_ESCALATE stays last (C3'' rotation, e3lite.md prereg). The state ends with the M4 (b) line
+    `last_step: <category>` (last_step_of(line), canon §77, serializer ser-A-min-2)."""
     ds, sid = line["ds_id"], stage_of(line["phase"])
     q_dir = f"Which direction should the gripper move during step {ds} to make progress toward the exit of stage {sid}?"
     spec = {
@@ -49,7 +101,8 @@ def build_snapshot_request(line, text_state=None, shift=0):
         qs.append(build_choice(qid, text, opts))
         oracle[qid] = line["oracle"][ORACLE_FIELD[q]]
         shown[qid] = (q, opts)
-    return build_request(line["text_state"] if text_state is None else text_state, qs), oracle, shown
+    st = line["text_state"] if text_state is None else text_state
+    return build_request(with_last_step(st, last_step_of(line)), qs), oracle, shown
 
 
 def rotate(opts, i):

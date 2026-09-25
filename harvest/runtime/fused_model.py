@@ -293,7 +293,7 @@ class StageBFused:
                 self.key2name[q] = {o.key: o.name for o in opts}
             r = self.decide_raw(ctx["t_state"], ctx["ctx_text"], ctx["req"], _jpegs(ctx["images"]))
             return ModelResult(answers_from(r["probs"], ctx["shown"]), time.perf_counter() - t0,
-                               call_id=uuid.uuid4().hex, verify=r["verify"], meta=r["meta"])
+                               call_id=uuid.uuid4().hex, verify=r["verify"], meta=r["meta"], raw=r)
         except Exception as e:  # noqa: BLE001
             return ModelResult({}, time.perf_counter() - t0, error=f"{type(e).__name__}: {e}")
 
@@ -318,21 +318,29 @@ def _jpegs(images: dict) -> dict:
 
 def check_prompt(pc: dict, strict: bool = True) -> dict:
     """The checkpoint's training prompt_config against what this runtime feeds (§59 camera layout, IMG state,
-    system prompt, prompt-building source files)."""
+    system prompt, state serializer version (canon §77 ser-A-min-2: the (b) `last_step:` line), prompt-building
+    source files)."""
     import hashlib
 
     from ..clients.jevl import SYSTEM
+    from ..serialize import SERIALIZER_VERSION
     from ..train import stageb_data as D
-    from ..train.stagea_train import PROMPT_FILES, file_sha
+    from ..train.stagea_train import PROMPT_FILES, file_sha, serializer_of
     from ..train.stageb_train import PROMPT_FILES_B
     cam = D.CAMERA_LAYOUT + ":" + "|".join(lab for _, lab in CAMS)
+    ser = serializer_of(pc)
     now = {"camera_ok": cam in (pc.get("camera") or []), "state_ok": pc.get("state") == "IMG",
            "system_ok": pc.get("system_sha") == hashlib.sha256(SYSTEM.encode()).hexdigest()[:12],
-           "files_ok": pc.get("files_sha") == file_sha(PROMPT_FILES + PROMPT_FILES_B), "sha": pc.get("sha")}
+           "serializer_ok": ser == SERIALIZER_VERSION,
+           "files_ok": pc.get("files_sha") == file_sha(PROMPT_FILES + PROMPT_FILES_B), "sha": pc.get("sha"),
+           "serializer": ser}
     now["mismatch"] = [k for k, v in now.items() if k.endswith("_ok") and not v]
     if now["mismatch"] and strict:
+        extra = "" if now["serializer_ok"] else (f"; state serializer {ser!r} != runtime {SERIALIZER_VERSION!r} "
+                                                 f"(canon §77: the DecCall state ends with the M4 (b) 'last_step:' "
+                                                 f"line; checkpoints before it are invalid -- retrain)")
         raise ValueError(f"prompt_config mismatch between training and runtime: {now['mismatch']} (camera {cam!r}, "
-                         f"trained {pc.get('camera')})")
+                         f"trained {pc.get('camera')}){extra}")
     return now
 
 
@@ -418,7 +426,7 @@ class FusedClient:
                                        "images": self._b64(ctx["images"])})
             lat = time.perf_counter() - t0
             return ModelResult(answers_from(d["probs"], ctx["shown"]), lat, call_id=uuid.uuid4().hex,
-                               verify=d["verify"], meta={**d["meta"], "t_total_s": round(lat, 5)})
+                               verify=d["verify"], meta={**d["meta"], "t_total_s": round(lat, 5)}, raw=d)
         except Exception as e:  # noqa: BLE001 -- logged as a call error; M4 keeps the last committed action
             return ModelResult({}, time.perf_counter() - t0, error=f"{type(e).__name__}: {e}")
 
@@ -458,7 +466,9 @@ def bench(a):
     rec = {"decide": [], "verify": [], "chunk_graph": [], "chunk_eager": [], "graph_vs_eager": [], "lp_diff": []}
     for i, ln in enumerate(lines):
         raw, present = ln["state"]["obs"]["raw"], ln["state"]["present"]
-        req, shown = build_live_request(i, ln["phase"], ln["text_state"], present, raw, state="IMG")
+        from ..deccall_snap import last_step_of
+        req, shown = build_live_request(i, ln["phase"], ln["text_state"], present, raw, state="IMG",
+                                        last_step=last_step_of(ln))
         ctx_text = canonicalize(image_only_state(ln["text_state"]))
         jp = {cam: open(os.path.join(a.pool, ln["images"][cam]), "rb").read() for cam, _ in CAMS}
         r = eng.decide_raw(ln["t"], ctx_text, req, jp)

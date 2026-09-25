@@ -403,6 +403,8 @@ def load_stageb(pool_dir: str, rows_path: str | None = None, labels_v2: str | No
     (labels_v2 targets, same prompt state and images as the context). Pool `oracle` is never read (stagea_data).
     `hz` = the folder's action rate (§62: our data 30 Hz); a row with another hz is refused."""
     import glob
+
+    from ..deccall_snap import annotate_last_step
     from .stagea_data import build_items, labels_v2_factory
     rows = read_rows(rows_path or stageb_path(pool_dir))
     src_make = labels_v2_factory(labels_v2)
@@ -410,6 +412,7 @@ def load_stageb(pool_dir: str, rows_path: str | None = None, labels_v2: str | No
     for p in sorted(glob.glob(f"{pool_dir}/ep*.jsonl"), key=lambda x: int(os.path.basename(x)[2:-6])):
         seed = int(os.path.basename(p)[2:-6])
         lines = [json.loads(x) for x in open(p, encoding="utf-8")]
+        annotate_last_step(lines)  # the DecCall (b) line from the recorded post-step check (canon §77)
         src = src_make(pool_dir, seed)
         for ln in lines:
             row = rows.get((ln["seed"], ln.get("kind"), ln["k"]))

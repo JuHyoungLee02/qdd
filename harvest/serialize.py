@@ -2,7 +2,17 @@
 import re
 import unicodedata
 
-SERIALIZER_VERSION = "ser-A-min-1"
+SERIALIZER_VERSION = "ser-A-min-2"
+# -2 (canon §77, R7 cycle 12 D3): every DecCall state ends with the M4 (b) category line of the last finished
+# decision step, `last_step: <category>` (M4 §4.2 `next_jev_input.add_line(f"last_step: {s.outcome}")`); "none" =
+# no step checked yet / no check in the data / the category withheld (C5', conditions without (b)).
+LAST_STEP_VALUES = ("none", "OK", "LAG", "DEVIATE", "CONTRADICT")
+
+
+def with_last_step(state: str, last_step: str) -> str:
+    if last_step not in LAST_STEP_VALUES:
+        raise ValueError(f"last_step {last_step!r}: one of {LAST_STEP_VALUES}")
+    return f"{state}\nlast_step: {last_step}"
 
 
 def _v(x):

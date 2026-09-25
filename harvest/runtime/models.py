@@ -46,16 +46,21 @@ class ModelResult:
     chunk_dt: float | None = None
     meta: dict = field(default_factory=dict)
     verify: dict | None = None  # fused: verification-head logits {predicate: logit} (canon §61/§64, runtime.measure)
+    raw: dict | None = None  # the back-end's raw response (E §1.6 "응답 원문", logged as a blob, canon §77)
 
 
 def build_live_request(ds: int, phase: str, text_s0: str, present, raw: dict, step_cm: float = 0.1,
-                       state: str = "S1"):
+                       state: str = "S1", last_step: str = "none"):
     """DecCall for the live state, built exactly as the stage-A / stage-B items (stagea_data.build_items): the pool
     line fields, questions restricted to the 5 decision questions. state S1 = E3-lite S1 on a 1 mm grid (canon §54,
     the modular stack); IMG = stageb_data.image_only_state of the S0 text (canon §58 fused model: no coordinates,
-    no predicate facts -- the stage-B prompt_config state)."""
+    no predicate facts -- the stage-B prompt_config state). last_step = the M4 (b) category line that ends the
+    state (M4 §4.2 :232, canon §77; "none" = none to show)."""
     from .. import e3lite
-    line = {"ds_id": f"ds{ds}", "phase": phase, "text_state": text_s0,
+    from ..serialize import LAST_STEP_VALUES
+    if last_step not in LAST_STEP_VALUES:
+        raise ValueError(f"last_step {last_step!r}: one of {LAST_STEP_VALUES}")
+    line = {"ds_id": f"ds{ds}", "phase": phase, "text_state": text_s0, "last_step": last_step,
             "state": {"present": list(present), "obs": {"raw": raw}}, "oracle": defaultdict(lambda: None)}
     if state == "IMG":
         from ..train.stageb_data import image_only_state
@@ -99,8 +104,9 @@ class MockSelector:
         self.model_id = "mock:labels_v2.code_rule_v2"
 
     def decide(self, ctx: dict) -> ModelResult:
-        return ModelResult(_rule_answers(ctx["req"]["state"], ctx["shown"]), self.synthetic_latency,
-                           call_id=uuid.uuid4().hex, meta={"mock": True})
+        ans = _rule_answers(ctx["req"]["state"], ctx["shown"])
+        return ModelResult(ans, self.synthetic_latency, call_id=uuid.uuid4().hex, meta={"mock": True},
+                           raw={"mock": self.name, "answers": ans})
 
     def close(self):
         pass
@@ -117,8 +123,10 @@ class MockFusedModel(MockSelector):
         self.model_id = "mock:fused(code_rule_v2 decisions + hold chunk)"
 
     def decide(self, ctx: dict) -> ModelResult:
-        return ModelResult(_rule_answers(ctx["privileged_s1"], ctx["shown"]), self.synthetic_latency,
-                           call_id=uuid.uuid4().hex, meta={"mock": True, "privileged_decisions": True})
+        ans = _rule_answers(ctx["privileged_s1"], ctx["shown"])
+        return ModelResult(ans, self.synthetic_latency, call_id=uuid.uuid4().hex,
+                           meta={"mock": True, "privileged_decisions": True},
+                           raw={"mock": self.name, "answers": ans})
 
     def chunk(self, ctx: dict, committed: dict) -> ModelResult:
         c = np.tile(np.asarray(ctx["joint_pos"], float), (self.H, 1))
@@ -165,8 +173,12 @@ class JevLSelector:
                                  layout=self.layout), self._loop)
         r = fut.result()
         lat = (r.t_done - r.t_send) if r.t_done else 0.0
+        raw = {"call_id": r.call_id, "model": r.model, "http_status": r.http_status, "error": r.error,
+               "input_tokens": r.input_tokens, "output_tokens": r.output_tokens, "answers": r.answers,
+               "raw_response": r.raw_response, "t_send": r.t_send, "t_first_byte": r.t_first_byte, "t_done": r.t_done}
         if r.error:
-            return ModelResult({}, lat, call_id=r.call_id, error=r.error, meta={"input_tokens": r.input_tokens})
+            return ModelResult({}, lat, call_id=r.call_id, error=r.error, meta={"input_tokens": r.input_tokens},
+                               raw=raw)
         answers = {}
         for qid, a in r.answers.items():
             q, opts = ctx["shown"][qid]
@@ -176,7 +188,7 @@ class JevLSelector:
         return ModelResult(answers, lat, call_id=r.call_id,
                            meta={"input_tokens": r.input_tokens, "n_seq": r.output_tokens, "model": r.model,
                                  "model_ok": r.model_ok, "n_images": len(imgs), "t_wall_send": r.t_send,
-                                 "mode": self.mode, "layout": self.layout})
+                                 "mode": self.mode, "layout": self.layout}, raw=raw)
 
     def close(self):
         try:

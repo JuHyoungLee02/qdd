@@ -56,6 +56,7 @@ class OursPolicy:
                                ("measure", getattr(rt, "measure_log", []))):
                 for r in rows:
                     f.write(json.dumps({"type": kind, **_jsonable(r)}) + "\n")
+        nb = write_blobs(d, getattr(rt, "blobs", {}))  # raw requests / responses / Astra images (canon §77)
         fdir = os.path.join(d, stem + "_frames")
         os.makedirs(fdir, exist_ok=True)
         if rt.sampled:
@@ -66,9 +67,28 @@ class OursPolicy:
         last = record.steps[-1].result.info if record.steps else {}
         s.update(sim_time_end=last.get("sim_time"), rtf_env=last.get("rtf"), env_success=last.get("success"),
                  n_steps=len(record.steps))
-        record.metadata.update({"ours_sidecar": side, "ours_frames": fdir, "ours_summary": s, "seed": record.seed})
+        s.update(blobs_dir=os.path.join(d, "blobs"), blobs_new=nb)
+        record.metadata.update({"ours_sidecar": side, "ours_frames": fdir, "ours_summary": s, "seed": record.seed,
+                                "ours_blobs": os.path.join(d, "blobs")})
         with open(os.path.join(d, stem + "_summary.json"), "w", encoding="utf-8") as f:
             json.dump(_jsonable(s), f, indent=1)
+
+
+def write_blobs(d: str, blobs: dict) -> int:
+    """Content-addressed files <d>/blobs/<sha256>.<ext> (shared by the trials of a run; an existing file is the same
+    content, so it is not rewritten). Returns the number of new files."""
+    bd = os.path.join(d, "blobs")
+    os.makedirs(bd, exist_ok=True)
+    n = 0
+    for h, (ext, b) in blobs.items():
+        p = os.path.join(bd, f"{h}.{ext}")
+        if os.path.exists(p):
+            continue
+        with open(p + ".tmp", "wb") as f:
+            f.write(b)
+        os.replace(p + ".tmp", p)
+        n += 1
+    return n
 
 
 def _jsonable(x):

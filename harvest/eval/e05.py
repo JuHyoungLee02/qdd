@@ -239,6 +239,8 @@ def block_diff_holm(blocks, n: int = N_BOOT, alpha: float = 0.05) -> dict:
 
 # ------------------------------------------------------------------------------------------ analysis
 RULES = ("newest", "la2", "c2pp", "c2prime", "c2prime_s", "s1")
+FLIP_ALPHA = 0.01  # pre-registered conformal alpha (E §4.12 :487, M4 §4.4 :285) -> FLIP_TH initial value
+FLIP_ALPHAS = (0.01, 0.001, 0.05)  # M4 §4.4 alpha range {0.001, 0.01, 0.05}
 _STREAMS = ("succ", "pert", "la2_unconf", "gain_la2", "gain_c2pp", "c2p_minus_newest", "c2p_minus_la2")
 
 
@@ -333,6 +335,11 @@ def analyze(eps, ans, truth, questions, d_p95: float, n_boot: int = N_BOOT, win:
             prev = cur
     # same-time K, retest, floors (layer x block), option-name variants per layer
     same, retest, floor, lay = _dd(), _dd(), {}, {}
+    # E §2A.5 "같은 시각 반복 호출 뒤집힘 비율(K=3, 성공·섭동 궤적 따로)", trajectories as §2A.4: success = P0 episode
+    # that succeeded, perturbed = a P1 / P2 episode (all its steps); a failed P0 episode is in neither (canon §77)
+    traj = {(ep["kind"], ep["seed"]): ("success" if ep["kind"] == "P0" and ep["success"]
+                                       else "perturbed" if ep["kind"] != "P0" else None) for ep in eps}
+    same_by = {"success": _dd(), "perturbed": _dd()}
     for key, a in ans.items():
         c = (key[0], key[1])
         for q in questions:
@@ -342,10 +349,14 @@ def analyze(eps, ans, truth, questions, d_p95: float, n_boot: int = N_BOOT, win:
             opts = a["opts"][q]
             L = _layer(len(opts))
             d = lay.setdefault(L, {n: _dd() for n in ("a0", "a1", "a2", "a3", "a4", "subst", "follow", "a4flip",
-                                                      "a1_minus_a0", "first_pick", "first_true")})
+                                                      "a1flip", "a2flip", "a3flip", "a1_minus_a0", "first_pick",
+                                                      "first_true")})
             st = [x.get(q) for x in a.get("same", []) if x.get(q) is not None]
             if len(st) >= 2:
                 same[c].append(int(same_time_flip(st)))
+                tr = traj.get(c)
+                if tr is not None:
+                    same_by[tr][c].append(int(same_time_flip(st)))
             rt = a.get("rt") or {}
             if rt:
                 b0 = rt[min(rt)]
@@ -367,13 +378,13 @@ def analyze(eps, ans, truth, questions, d_p95: float, n_boot: int = N_BOOT, win:
                     d[vn.lower()][c].append(int(x["key"] in t))
                     if vn == "A1":
                         d["a1_minus_a0"][c].append(int(x["key"] in t) - int(v in t))
+                # canon §27 "A0 대비 flip(option_key 기준)" for every variant (a1flip = subst, a4flip as before)
+                d[f"{vn.lower()}flip"][c].append(int(x["key"] != v))
                 if vn == "A1":
                     d["subst"][c].append(int(x["key"] != v))
                 elif vn == "A3":
                     meaning = {nm: kk for kk, nm in a["names"][q].items()}
                     d["follow"][c].append(int(meaning.get(x.get("name")) == v))
-                elif vn == "A4":
-                    d["a4flip"][c].append(int(x["key"] != v))
     out = {"n_episodes": len(eps), "n_snapshots": len(ans), "n_steps": len(step_rows), "d_p95": d_p95,
            "perturb_window_s": win}
     out["flip"] = {"pooled": {"success": mean_ci(pooled["succ"], n_boot),
@@ -391,6 +402,7 @@ def analyze(eps, ans, truth, questions, d_p95: float, n_boot: int = N_BOOT, win:
         return r
     out["rules"] = {"pooled": rules_block(pooled), "per_question": {q: rules_block(per_q[q]) for q in questions}}
     out["same_time_flip"] = mean_ci(same, n_boot)
+    out["same_time_flip_by_trajectory"] = {k: mean_ci(v, n_boot) for k, v in same_by.items()}
     out["retest_flip"] = mean_ci(retest, n_boot)
     blocks = sorted({b for L in floor.values() for b in L})
     fb = {b: _merge([floor[L][b] for L in floor if b in floor[L]]) for b in blocks}
@@ -403,10 +415,14 @@ def analyze(eps, ans, truth, questions, d_p95: float, n_boot: int = N_BOOT, win:
     if pw and sw:
         lab = [1] * len(pw) + [0] * len(sw)
         au = {"tv_distance": auroc([r[0] for r in pw + sw], lab), "one_flip": auroc([r[1] for r in pw + sw], lab)}
+    # FLIP_TH initial value = the success-trajectory 1 - alpha quantile at the pre-registered alpha 0.01 (E :253,
+    # :487; M4 §4.4 :285, :287); also the M4 alpha range {0.001, 0.05} (canon §77)
+    cands = {f"q{round(1 - al, 3):g}": {"tv_distance": _q([r[0] for r in sw], 1 - al),
+                                         "one_flip": _q([r[1] for r in sw], 1 - al)} for al in FLIP_ALPHAS}
     out["c_flip"] = {"auroc": au, "n_perturb_steps": len(pw), "n_success_steps": len(sw),
-                     "flip_th_candidates": {f"q{1 - al:.2f}": {"tv_distance": _q([r[0] for r in sw], 1 - al),
-                                                               "one_flip": _q([r[1] for r in sw], 1 - al)}
-                                            for al in (0.05, 0.1)}}
+                     "flip_th_candidates": cands,
+                     "flip_th_initial": {"alpha": FLIP_ALPHA, "key": f"q{round(1 - FLIP_ALPHA, 3):g}",
+                                         **cands[f"q{round(1 - FLIP_ALPHA, 3):g}"]}}
     layers = {}
     for L, d in lay.items():
         fl = _merge(list(floor.get(L, {}).values()))
@@ -607,7 +623,9 @@ def _markdown(res, meta) -> str:
                   r["flip"]["pooled"]["success"]["n"]],
                  ["successive flip, perturb window", ci_str(r["flip"]["pooled"]["perturb_window"]),
                   r["flip"]["pooled"]["perturb_window"]["n"]],
-                 ["same-time flip (K)", ci_str(r["same_time_flip"]), r["same_time_flip"]["n"]],
+                 ["same-time flip (K)", ci_str(r["same_time_flip"]), r["same_time_flip"]["n"]]] + [
+                 [f"same-time flip (K), {k} traj.", ci_str(v), v["n"]]
+                 for k, v in r["same_time_flip_by_trajectory"].items()] + [
                  ["retest flip (1x)", ci_str(r["retest_flip"]), r["retest_flip"]["n"]],
                  ["test-retest floor (ii)", ci_str(r["floor"]["pooled"]), r["floor"]["pooled"]["n"]]]),
              "", "## Rules (correctness vs truth)", "",

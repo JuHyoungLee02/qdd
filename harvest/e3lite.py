@@ -1,6 +1,7 @@
 """E3-lite state representations S0/S1/S2 and the S1-only code-rule upper bound (docs/stage3/results/e3lite.md).
 
-S0 = the snapshot's ser-A-min-1 text. S1 = S0 + a geometry block (robot base frame line; gripper position; per
+S0 = the snapshot's ser-A-min text (serialize_state; ser-A-min-2 only adds the DecCall's (b) `last_step:` line after
+the chosen state, canon §77). S1 = S0 + a geometry block (robot base frame line; gripper position; per
 present object the centre offset from the gripper in cm, rounded to 1 cm, plus distance). S2 = S1 + the offsets as
 mag_coarse bin names. Built offline from the snapshot's stored observation (state.obs.raw, table frame = robot base
 x/y, z = height above the table top), no Isaac.

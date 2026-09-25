@@ -1,4 +1,4 @@
-"""M4 comparison conditions available in the runtime (M4 §5 table, minimal set C0-C6).
+"""M4 comparison conditions available in the runtime (M4 §5 table, minimal set C0-C6 + C5').
 
 condition(name) -> (M4Params overrides, RuntimeConfig overrides). Same text state, skill, model, call rate (T_c)
 everywhere; only the commit rule / feedback / overlap changes.
@@ -8,11 +8,15 @@ everywhere; only the commit rule / feedback / overlap changes.
       no in-flight cap (measured count reported), the newest valid answer by request time applied every tick (also
       when it arrives after its target step started), 5 s timeout -> default action; no agreement, no (b) feedback
   C3  overlap + (a) only: LA-2 / gamma + defer window, no (b) epoch invalidation
-  C4  overlap + (b) only: newest answer + (b) categories / epoch invalidation
-  C5  overlap + (a) + (b) (the M4 design; runtime default)
+  C4  overlap + (b) only: newest answer + (b) categories (the `last_step:` line of the next DecCall, M4 §4.2 :232)
+      / epoch invalidation
+  C5  overlap + (a) + (b) (the M4 design, §4.2 in full incl. the (b) category line; runtime default)
+  C5' C5 with the (b) category removed from the decision-model input (M4 :342): the line shows "none"; (b) epoch
+      invalidation / reopen / hold (code replanning) unchanged (canon §77)
   C6  C5 with overlap off (one call in flight)
+C0-C3 have no (b) (feedback_b False): their DecCall line is always "none".
 Not in the runtime (need their own code): C2' / C2'-S / C2-match (Slow Brain fusion; offline values in e05), C3' Beta
-stop rule, C3'' option-order rotation, C5-A3 same-time batches, C-FIX, C5'.
+stop rule, C3'' option-order rotation, C5-A3 same-time batches, C-FIX.
 """
 from __future__ import annotations
 
@@ -23,6 +27,7 @@ CONDITIONS = {
     "C3": ({"feedback_b": False}, {}),
     "C4": ({"agree": "newest"}, {}),
     "C5": ({}, {}),
+    "C5'": ({}, {"b_to_model": False}),
     "C6": ({"max_inflight": 1}, {}),
 }
 

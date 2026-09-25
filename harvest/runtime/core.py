@@ -34,7 +34,7 @@ from .clock import DeliveryQueue
 from .m4 import CommitLedger, M4Params, Vote
 from .measure import Critic, HardChannel, ProprioRules, VerifyCal, expected_check, measure, values
 from .models import DECISION_QUESTIONS, build_live_request, fused_state_text, jpeg_bytes
-from .reqhash import request_hash
+from .reqhash import json_blob, request_body, request_hash
 from .skills import PickPlaceSkill, apply_residual, residual_hook_zero
 
 FRAME_SAMPLE_S = 5.0  # sampled frames kept for inspection (plus one per phase change)
@@ -90,6 +90,10 @@ class RuntimeConfig:
     # R6: M4 comparison condition (conditions.py; the m4 dict carries its overrides), C0 stop-while-waiting, and the
     # E1 calibration file (calibration.py) with the J5 gate at alpha j5_alpha (None = gate off, canon §6 before E1)
     condition: str = "C5"
+    # M4 §4.2 :232 (b) -> decision-model input: the (b) category of the last finished step ends the next DecCall
+    # state (`last_step: ...`, canon §77) when the condition has (b) (m4 feedback_b: C4 / C5 / C6); False = C5'
+    # (:342 "(b) 범주를 Jev 입력에서 뺌": the line shows "none"; epoch / reopen / hold unchanged)
+    b_to_model: bool = True
     stop_wait: bool = False
     calibration: str = ""
     j5_alpha: float | None = None
@@ -155,6 +159,10 @@ class OursRuntime:
         # canon §61/§64 measurement state
         self.critic, self.hard = Critic(self.vcal), HardChannel()
         self.v1h_last, self.meas_last, self.pending_t2, self.step_phase = None, None, [], {}
+        self.b_last = None  # {"ds", "outcome"} of the last finished step ((b), canon §77)
+        # E §1.6 / canon §28 A6 raw requests / responses and Astra images: {sha256: (ext, bytes)}, written by the
+        # harness adapter as content-addressed files next to the sidecar (ir_policy.write_blobs, canon §77)
+        self.blobs = {}
         self.measure_log = []
         self.measure_stats = {"t1_contradict": 0, "t2_deviate": 0, "t2_checked": 0, "t2_expired": 0,
                               "critic_alarms": 0, "hard_events": 0, "verify_outputs": 0}
@@ -188,20 +196,29 @@ class OursRuntime:
                           support, bool(pred.get("gripper_open")), bool(pred.get("holding(o3)")), moving,
                           list(self.stream))
 
+    def b_line(self) -> str:
+        """The `last_step:` value of the next DecCall (M4 §4.2 :232, canon §77): the (b) category of the last
+        finished step when the condition feeds (b) to the decision model (feedback_b and b_to_model: C4 / C5 / C6),
+        else "none" (C5', C0-C3; also before the first step has finished)."""
+        if not (self.cfg.b_to_model and self.ledger.p.feedback_b) or self.b_last is None:
+            return "none"
+        return self.b_last["outcome"]
+
     def _decision_ctx(self, now, raw, present, pred, support, obs):
         slots = self.ledger.target_slots(now)
         sk = self.skill
         s0 = self._s0(now, pred, present, support)
-        req, shown = build_live_request(slots[0], sk.phase, s0, present, raw)
+        ls = self.b_line()
+        req, shown = build_live_request(slots[0], sk.phase, s0, present, raw, last_step=ls)
         ctx = {"t_state": now, "ds": slots[0], "slots": slots, "epoch": self.ledger.epoch, "phase": sk.phase,
                "req": req, "shown": shown, "images": {k: v.copy() for k, v in self.frames.items()},
-               "joint_pos": np.asarray(obs["joint_pos"], float).copy()}
+               "joint_pos": np.asarray(obs["joint_pos"], float).copy(), "last_step": ls}
         if self.cfg.backend == "fused":  # canon §58: no S1 coordinates in the fused model's input
             from ..serialize import canonicalize
             from ..train.stageb_data import image_only_state
             ctx["privileged_s1"] = req["state"]  # used by the MOCK fused model only (flagged in its meta)
             # the stage-B prompt_config state IMG: the DecCall items and the context prompt carry the same text
-            ctx["req"], _ = build_live_request(slots[0], sk.phase, s0, present, raw, state="IMG")
+            ctx["req"], _ = build_live_request(slots[0], sk.phase, s0, present, raw, state="IMG", last_step=ls)
             ctx["ctx_text"] = canonicalize(image_only_state(s0))
             ctx["proprio_text"] = fused_state_text(self.instruction, sk.stage, sk.phase, obs["joint_pos"])  # log only
         return ctx
@@ -212,13 +229,14 @@ class OursRuntime:
         model, cfg = self.model, self.cfg
 
         def run():  # the request hash is computed in the worker thread (frame digests stay off the rollout thread)
-            rh = request_hash({"api": "decide", "model_id": cfg.model_id, "layout": cfg.layout,
-                               "call_mode": cfg.call_mode, "req": ctx["req"], "ctx_text": ctx.get("ctx_text")},
-                              ctx["images"])
+            h, ims, body = request_body({"api": "decide", "model_id": cfg.model_id, "layout": cfg.layout,
+                                         "call_mode": cfg.call_mode, "req": ctx["req"],
+                                         "ctx_text": ctx.get("ctx_text")}, ctx["images"])
             r = model.decide(ctx)
-            return {"latency_s": r.latency_s, "res": r, "req_hash": rh}
+            return {"latency_s": r.latency_s, "res": r, "req_hash": (h, ims), "req_body": body}
         meta = {"kind": "dec", "call_no": self.n_calls, "slots": ctx["slots"], "epoch": ctx["epoch"],
-                "t_state": now, "phase": ctx["phase"], "anchor_g": list(raw["grip"]["pos"])}
+                "t_state": now, "phase": ctx["phase"], "anchor_g": list(raw["grip"]["pos"]),
+                "last_step": ctx["last_step"]}
         self.q.submit(now, self.pool.submit(run), fixed_latency=getattr(model, "synthetic_latency", None), meta=meta)
 
     def _submit_hb(self, now, pred, kind: str = "hb"):
@@ -244,13 +262,15 @@ class OursRuntime:
             inp = heartbeat_input(summary, jpg, template=template)
             # the request without the base64 image (its sha256 goes in the image digests instead, canon §28 A6)
             text_only = [{**m, "content": [c for c in m["content"] if c.get("type") != "input_image"]} for m in inp]
-            rh = request_hash({"api": "astra", "model": self.cfg.astra_model, "effort": EFFORT, "max_out": MAX_OUT,
-                               "prompt_id": pid, "input": text_only}, {"cam_head": jpg} if jpg is not None else {})
+            h, ims, body = request_body({"api": "astra", "model": self.cfg.astra_model, "effort": EFFORT,
+                                         "max_out": MAX_OUT, "prompt_id": pid, "input": text_only},
+                                        {"cam_head": jpg} if jpg is not None else {})
             rec = astra.call(inp, EFFORT, MAX_OUT, {"hb_no": n, "prompt_id": pid, "kind": kind,
                                                     "cadence": self.cfg.hb_mode})
             lat = getattr(astra, "synthetic_latency", None)
             return {"latency_s": lat if lat is not None else rec.t_done - rec.t_send, "rec": rec,
-                    "summary": summary, "req_hash": rh}
+                    "summary": summary, "req_hash": (h, ims), "req_body": body,
+                    "images_raw": {"cam_head": jpg} if jpg is not None else {}}
         self.hb.sent(now, kind)
         self.q.submit(now, self.pool.submit(run), fixed_latency=getattr(astra, "synthetic_latency", None),
                       meta={"kind": "astra", "hb_no": n, "call_kind": kind, "allowed": allowed, "prompt_id": pid})
@@ -269,6 +289,13 @@ class OursRuntime:
                "answers": {q: [a["choice"], round(a["p_chosen"], 4) if a.get("p_chosen") is not None else None]
                            for q, a in res.answers.items()}, "votes": {}, "canary_id": self.cfg.canary_id}
         rec["request_sha256"], rec["image_sha256"] = r.get("req_hash") or (None, {})
+        rec["last_step"] = m.get("last_step")
+        if r.get("req_body") is not None:  # E §1.6 "요청 원문": the exact body request_sha256 hashes (canon §77)
+            self.blobs[rec["request_sha256"]] = ("json", r["req_body"])
+            rec["request_blob"] = rec["request_sha256"]
+        hb, bb = json_blob(res.raw if res.raw is not None else {"answers": res.answers, "error": res.error})
+        self.blobs[hb] = ("json", bb)
+        rec["response_blob"] = hb
         if res.error is None:
             self.ledger.record_latency(res.latency_s)
             gate = self._j5(res, now) if self.cal is not None else {}
@@ -286,6 +313,12 @@ class OursRuntime:
             if res.verify:
                 rec["verify"] = {p: round(x, 3) for p, x in res.verify.items()}
                 self._on_verify(res.verify, m["t_state"], m["phase"], now, rec)
+        # E §1.6 "질문별 {choice, probabilities, ...}": the option distribution by option_key (+ calibrated, J5)
+        rec["probs"] = {q: {k: round(float(p), 6) for k, p in (a.get("probs") or {}).items()}
+                        for q, a in res.answers.items()}
+        cal = {q: a["probs_cal"] for q, a in res.answers.items() if a.get("probs_cal")}
+        if cal:
+            rec["probs_cal"] = {q: {k: round(float(p), 6) for k, p in pc.items()} for q, pc in cal.items()}
         self.calls.append(rec)
 
     def _on_verify(self, logits: dict, t_state: float, phase: str, now: float, rec: dict) -> None:
@@ -317,6 +350,9 @@ class OursRuntime:
             if chk["outcome"] == "DEVIATE":
                 self.measure_stats["t2_deviate"] += 1
                 sig = self.ledger.on_step_executed(p["ds"], "DEVIATE", now)
+                b = self.b_last  # the late world-side verdict of the last finished step raises its (b) line
+                if b is not None and p["ds"] == b["ds"] and b["outcome"] in ("OK", "LAG"):
+                    b["outcome"] = "DEVIATE"
                 self.events.append({"t": round(now, 4), "event": "b2_world_deviate", "ds": p["ds"],
                                     "preds": chk["t2_false"], "epoch": sig["epoch"]})
                 if sig["early_call"]:
@@ -372,6 +408,14 @@ class OursRuntime:
                  "first_token_s": round(rec_.t_first_token - rec_.t_send, 3) if rec_.t_first_token else None,
                  "canary_id": self.cfg.astra_canary_id}
         entry["request_sha256"], entry["image_sha256"] = r.get("req_hash") or (None, {})
+        # canon §28 A6: request text (blob = the body request_sha256 hashes; image original by its byte hash),
+        # effort, max tokens, raw response (output_text) -- canon §77
+        entry.update(effort=rec_.effort or EFFORT, max_output_tokens=MAX_OUT, output_text=rec_.output_text)
+        if r.get("req_body") is not None:
+            self.blobs[entry["request_sha256"]] = ("json", r["req_body"])
+            entry["request_blob"] = entry["request_sha256"]
+        for cam, b in (r.get("images_raw") or {}).items():
+            self.blobs[entry["image_sha256"][cam]] = ("jpg", b)
         if dec in ("patch", "replace"):  # contract edit not implemented: premise epoch only (§45 합치기)
             entry["epoch"] = self.ledger.bump_epoch(f"astra_{dec}", now)
             self.early = True
@@ -502,6 +546,7 @@ class OursRuntime:
                 self.events.append({"t": round(now, 4), "event": "m7_hard_t1", **hev})
                 self.hb.advance(now)
             sig = self.ledger.on_step_executed(prev, out, now)
+            self.b_last = {"ds": prev, "outcome": out}
             if out == "CONTRADICT":  # an existing event call (canon §45): pulls the next Astra call forward
                 self.hb.advance(now)
             entry.update(prev_outcome=out, prev_residual_mm=round(resid * 1e3, 1), signals=sig)
