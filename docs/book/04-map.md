@@ -1,6 +1,6 @@
 # 04. 지도 — 코드·데이터·체크포인트·파드·GPU
 
-확인 시각 2026-09-25 18:4x UTC(로컬 `ls`, 파드 `ls /data/harvest`; 21:07·21:30 UTC에 R2_TRAIN·탐침·E-MA1b 줄 재확인 — 2026-09-25 21:30 UTC, R7 29회차 N106). 바뀌면 같은 커밋에서 고친다. **이 장은 위치만 적고 진행 상태(생성 중·진행 중 등)는 적지 않는다 — 지금 상태는 `docs/handoff.md`** [→ 2026-09-25 21:07 UTC, R7 28회차 D-2: 상태 꼬리표가 두 번 낡아 규칙으로 뺌].
+확인 시각 2026-09-25 18:4x UTC(로컬 `ls`, 파드 `ls /data/harvest`; 21:07·21:30 UTC에 R2_TRAIN·탐침·E-MA1b 줄 재확인 — 2026-09-25 21:30 UTC, R7 29회차 N106; 23:28 UTC에 R2_TRAIN 두 줄을 파드 `ls /data/harvest/r2`로 재확인). 바뀌면 같은 커밋에서 고친다. **이 장은 위치만 적고 진행 상태(생성 중·진행 중 등)는 적지 않는다 — 지금 상태는 `docs/handoff.md`** [→ 2026-09-25 21:07 UTC, R7 28회차 D-2: 상태 꼬리표가 두 번 낡아 규칙으로 뺌].
 
 ## 저장소 (`D:\qdd`, 브랜치 dev만 — main 금지)
 | 경로 | 무엇 |
@@ -47,7 +47,7 @@
 | `data/pool/`, `data/pool.labels_v2.jsonl` | 풀 120편(옛 소프트 리셋 물리 — 새 물리로 재현 안 됨) |
 | `data/jsel_dev/`, `data/gen_dev/` | DEV 스냅샷(standard / random·dr) |
 | `data/se2e` → `se2e_t` → **`se2e_c1`** | S-E2E 행: 원판(중앙 차분 누수) → 움직임 출처 필드 추가 → **누수 수정판(현재 사용)** |
-| `data/r2/`, `r2/dev*`, `r2train/` | R2 DEV 생성물·LeRobot 내보내기, R2_TRAIN 생성 스크립트(산출 위치는 R2_TRAIN 보고 뒤 확정 `[미검증]`) |
+| `r2/dev*`, `r2/train/`, `r2/train_lerobot/`, `r2train/`, `data/r2/` | R2 DEV 생성물·LeRobot 내보내기(`r2/dev_lerobot`), **R2_TRAIN 원본 `r2/train/<variant>/<task>/<P0\|P1\|P2>`**(단계 B `--pool` 폴더, 합본 `<kind>.stageb.jsonl`·`CODE_VERSION` e8e1864), R2_TRAIN LeRobot v2.1 `r2/train_lerobot/<variant>_<task>`(6개), 운영 스크립트·로그 `r2train/`, 폐기한 첫 파일럿(옛 물리 6b013ac) `data/r2/train_pilot_prefix_6b013ac` — [R/r2_train_gen](../stage3/results/r2_train_gen.md) §11 |
 | `ckpt/se2e/{se2e_A_s0,se2e_B_s1}` | S-E2E PASS 체크포인트(ser-A-min-1 — 폐루프에 안 씀) |
 | `ckpt/se2e_scale/{1000,9371,18742,37484}`, `ckpt/se2e_diag` | 규모 곡선·진단 |
 | `ckpt/se2e_temporal/{single_motion,video2_none,video2_motion}` | E-TC 칸(옛 데이터판 — 재사용 불가) |
@@ -60,7 +60,7 @@
 | `tmp/<작업>/` | 임시(작업 끝나면 자기 경로만 정리) |
 
 ## 데이터 판본·분할
-- 시드 분할: DEV 0–29(자유), POOL 2000–2119, **CAL 500–549 · TEST 1000–1149 · TEST-P5 1300–1329는 `HARVEST_ALLOW_SPLIT` 없이는 거부**, 순수 로직 시험 시드 3000–3199, R2_TRAIN 시드 영역 10000–59999 [→ 정정 2026-09-25 20:01 UTC, R7 26회차 N55]; 생성 계획 P0 10000–10599 → P1 10600–10799 → P2 10800–10999[→ 정정 2026-09-25 20:37 UTC, R7 27회차 D-1] [→ 정정 2026-09-25 21:07 UTC, R7 28회차 D-1: 27회차 정정의 '19:07Z에 P0 행 조립 끝'도 틀림 — 폴더의 `P*.stageb.jsonl`은 12:20Z 파일럿 병합분(과제당 시드 수 P0 19–41 · P1 11–19 · P2 10–20)이다 [→ 2026-09-25 21:30 UTC, R7 29회차 D-2: 시드 수를 종류별로; 근거 = 파드 `ls -l --time-style=+%H:%M:%S` 18파일 12:19:47–12:20:26 UTC(파드 표시는 KST) [2026-09-25 21:50 UTC, R7 30회차 N120], R7 29회차 파드 계수]. 병합 여부 등 진행 상태는 이 장에 적지 않는다(handoff 참조)]. **학습 전 필수**: 생성이 끝나면 병합·검사를 다시 돌려야 단계 B가 전체 행을 읽는다(아니면 파일럿 부분만 읽음 — N94). [→ 2026-09-25 22:36 UTC, R7 32회차 N141: 위 괄호의 '파일럿 병합분'은 22:0x UTC 이후 `gen check`가 다시 병합하며 낡음 — 병합 결과는 R2_TRAIN 결과 문서에 기록하고 이 괄호는 그 커밋에서 정리한다]
+- 시드 분할: DEV 0–29(자유), POOL 2000–2119, **CAL 500–549 · TEST 1000–1149 · TEST-P5 1300–1329는 `HARVEST_ALLOW_SPLIT` 없이는 거부**, 순수 로직 시험 시드 3000–3199, R2_TRAIN 시드 영역 10000–59999 [→ 정정 2026-09-25 20:01 UTC, R7 26회차 N55]; 생성한 R2_TRAIN = P0 10000–10599 · P1 10600–10799 · P2 10800–10999 × 과제 3 × {standard, dr} = 6,000편(유효 5,126), 분할 시드 % 20 == 0 → eval. 생성 뒤 `gen check`(2026-09-25 21:57:32–22:32:29 UTC)가 18폴더를 모두 다시 병합했고, 폴더마다 합본 `<kind>.stageb.jsonl` 행 수 = 유효 편 행 합(전체 1,495,348)·시드 집합 = 유효 시드 집합으로 확인했다([R/r2_train_gen](../stage3/results/r2_train_gen.md) §5). 단계 B는 이 합본을 `--pool` 폴더로 읽는다 — 앞으로 편을 더 만들면 같은 병합·확인을 다시 돌린다(N94) [→ 2026-09-25 23:28 UTC, R2_TRAIN 결과: 26–32회차 괄호(파일럿 병합분 서술, N141)를 최종 병합 사실로 정리]
 - S-E2E: RB1(`ROBOTIS/Task_0001`, 라이선스 미표기 → 내부용) + RB2(`Task_0002`, apache-2.0), 10 Hz, 검증 1,799(층화 300 = `val_keys_sha e22f6d8ef7fc`).
 - 직렬화: `ser-A-min-2`(마지막 줄 `last_step:`), 움직임 줄 `se2e-motion@v1`(런타임 적용은 계획 Task 12 = ser-A-min-3, 기존 체크포인트를 모두 거부하게 되므로 E-MA1b 뒤).
 
