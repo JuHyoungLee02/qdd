@@ -122,6 +122,23 @@
   \item \idea{(D25) Gemini Robotics-ER 문서~\cite{geminier_docs2026}: 최신 프레임 + 짧은 질문을 주기적으로 보내 명시적 결정을 강제하는 하트비트, 턴 완료를 기다리며 약 1 Hz 목표, 타이머만 믿으면 취소 반복 고리 경고. Gemini Robotics 1.5~\cite{geminirobotics15_2025}: 하위 과제 성공 감지로 다음 단계. Hi Robot 1 s 또는 사용자 개입 때(기간 밖, 기초 문헌) $\rightarrow$ 배포형 시스템은 주기 확인 + 단계 경계 + 사건을 섞음}
   \item \chg{(09-24 §45) H-cadence: T0(정지 허용) + T\_fail(항상) + 하트비트 T\_hb(직전 응답 뒤 $N$초, ack/patch/replace 닫힌 선택, 한 번에 1개, 잠정 $N$ = 5 s, 실효 약 8--9 s) + 단계 경계 T\_sub(기다리지 않음) + 사건(C\_assume·T3a·T\_stag·T\_j5·새 지시)은 하트비트를 앞당김. ack는 전제 판본을 안 올림(M4 표 보호). $N$은 E-M8c(K0--K4, 감시기 밖 실패 섭동 필수)로 정함}
   \item \idea{(09-24 실측) Astra low 첫 토큰 2.975 s(1회, 짧은 입력). 설계값 아님}
+  \item (5 s 하트비트·단계 경계 확인 강등 질문에 답) \intent{바꾸기 (Recommended)}
+  \item (오프라인 일 effort 질문에 답) \intent{논문에 로우 하이를 모두 가져가는 쪽이 맞겠네 성능비교두 그렇고}
+  \item (Astra 필요성 실험 유료 실행 시점 질문에 답) \intent{설계·구현 후 확인받고 (Recommended)}
+  \item \intent{지금 10만원 정도는 비용 한도 책정이 가능해}
+  \item \chg{(09-25 정본 §82) Astra는 Astra만 할 수 있는 일에만: J1 과제 컴파일(계약 + 물체 지식·검출 이름 후보·위험·감사 지점·새로움 표시·예상 실패별 대응, 분포 안 과제는 계약 캐시), J2 실패 진단 + 복구안(판정은 V1h·코드), J3 검사 술어 합성, J4 새 물체 이름·속성(위치 찾기는 SAM 3.1), J5 저빈도 진행 감사(하트비트 대체), J6 오프라인 경험 증류. 강등: 5 s 하트비트 ack·단계 경계 ack·성공 판정·정체 첫 대응 $\rightarrow$ 작은 모델·코드(V1h \tentative{0.949·0.44 ms} 대 Astra 첫 토큰 약 3 s). 호출 = 결정이 바뀔 수 있을 때만(T0/T\_fail/T\_nov/T\_audit), 성공 편 \tentative{1--3회}(지금 K2 \tentative{7--12회}). effort low·high 모두 논문에. 유료 한도 약 10만 원, 실행은 구현 뒤 승인. 구현은 R7 관문 뒤 $\rightarrow$ 지금 런타임은 K2(5 s 하트비트) = 기준선}
+  \item \dirn{(§82 E-Astra-necessity) 같은 위층 자리에 Astra low/high, Qwen3-VL-32B·8B·4B, 위층 없음, 무작위 시점 Astra. 층: 분포 안(대조)·새 물체·긴 과제·새 실패·random. 오프라인 슬롯 $\rightarrow$ 폐루프. 판정 초안 $\Delta$ = Astra $-$ 최고 로컬 $\ge$ \tentative{+10 pt}·하한 $>0$ $\rightarrow$ 필수, 비열등이면 강등. 논문 계획 절 표(\texttt{tab:astra}), 결과 칸 주황}
+  \item \intent{나는 그냥 아스트라 자체가 이 움직임에도 개입을 했으면 좋겠어 근데 딜레이가 문제니까 이걸 해결하면서 도 개입을 하는 방법을 찾는거야 최소화 하는 것도 방법이겠지 VLA가 한거를 감사하는건 아스트라의 능력중 극히 일부일 뿐인거구}
+  \item (제안 A: M4 느린 투표자 / B: 물체 기준 경로 / C: 조건부 동작 프로그램에 답) \intent{A,B 더하는 방식이 조금 더 좋은 것 같긴하다}
+  \item \intent{근데 아스트라가 경로를 짜는 방식으로 물체를 잡아 단독으로 할때? 아니면 직접 보면서 엔드포인트 보는 방식으로 조종을 해서 그다음에 움직이지 않나?}
+  \item \intent{아니 근데 아스트라가 만약에 3D 공간상에 예측해서 경로를 그려주는 일을 잘한다면 그 방법으로 시도를 해보는 것도 좋을 수는 있을 것 같아}
+  \item \intent{탐침 E-Astra-motion: 3D 경로 그리기 대 보고 조종하기 이거 한번 해보자용}
+  \item \intent{뎁스를가지고 한다고 하면 될 것 같아 뎁스가 있잖아 ai워커가}
+  \item \intent{아니다 뎁스를 쓰면 너무 범용성이 떨어질 것 같은 생각이드네 이미지 상만으로 어떻게 3D를 방향을 제대로 계획을 시킬 수 있을까...?}
+  \item \intent{그냥 뎁스라기보다는 그 가우시안 스플레팅인가? 아니면 포인트 클라우딩 포인트 클라우딩으이었던거 같은데 스테레오캠으로 하는 그거 그거를 어떻게 잘 해서 안되는건가? 공간 좌표 만들고 거기서 하는거.?}
+  \item \dirn{(user-log 78·79 브레인스토밍, \tentative{탐침 준비 중, 결과 없음}) 움직임 인터페이스 A+B: (A) Astra의 typed 답을 M4 원장에 늦게 온 표로 넣어 합의·실행 뒤 확인을 거쳐야만 확정, (B) Astra가 물체 기준 경로를 그리고 조이스틱 VLA가 따라가며 순간 보정. E-Astra-motion 탐침 = 3D 경로 그리기 대 보고 조종하기. 깊이는 범용성이 떨어져 RGB만으로 3D: 지지 평면 광선 교차, 두 시점 삼각측량, 스테레오 점군 + 가상 시점. 논문 방법 ``움직임 인터페이스''·계획 절에 주황으로}
+  \item \intent{아게 진짜로 잘 모르긴하겠다 아스트라를 어케 쓰지?}
+  \item \idea{(Astra 감독자 틀 정리) 과제 전 = J1(흐름·계약·예상 실패 대응) / 과제 중 = 움직임 개입(A+B, \tentative{시험 중})·J5 저빈도 감사 / 실패 때 = J2 진단·복구안 / 과제 뒤 = J6 오프라인 교사(작은 모델 규칙·재학습 라벨). 5 s 하트비트는 현재 구현 K2 = E-M8c 기준선, K5(감사 + 모를 때만)를 새 사전 등록으로 추가}
 \end{itemize}
 
 \subsection{M9 실패 복구}
@@ -182,6 +199,8 @@
   \item \chg{(09-24 §65) 결과 기반 라벨: 사전 등록 규칙이 \texttt{plan}을 골랐지만 판별력 없음 $\rightarrow$ 학습 정답 아님, 실패 보기 거부권 용도만. 학습 정답은 labels\_v2 유지}
   \item \dirn{(09-25 user-log 71, 계획·\tentative{검증 중}) 결정 입력에 시간 맥락: 머리·활성 손목 카메라마다 $[t-0.3\,\text{s},\,t]$ 2프레임을 Qwen3-VL 비디오로(시각 토큰 수 불변). 동기 = S-E2E 진단(정확도 \tentative{약 0.72}, 오답은 움직임 유무·크기 한 칸, 부호 반대 \tentative{8/155}, 한 시점 입력엔 속도가 없음). chunk는 decide 캐시 문맥을 그대로 읽음. 채택은 E-TC 2$\times$2 결과로(실험 절 참고)}
   \item \chg{(09-25 13:05 UTC E-TC 사전 등록, 학습 전) 입력 정의 확정: $\Delta=0.3$\,s = 10\,Hz 프레임 $k-3$(에피소드 시작은 0으로 자름). 실제 처리기 탐침에서 정지 이미지와 2프레임 클립 모두 머리 \tentative{252}·손목 \tentative{104} 토큰(grid\_t 1), 우리 [과거, 현재] 채움 픽셀 = 공식 비디오 처리기 출력 비트 동일. 공식 비디오 경로의 타임스탬프 \tentative{+8} 텍스트 토큰 대신 \texttt{<|image\_pad|>} 유지 + 카메라 표지 ``head camera (2 frames: t-0.3 s, t):''(프롬프트 해시 파일 무수정). 움직임 줄 = \texttt{motion: arm=<still|slow|fast> gripper=<closing|still|opening>}, 속도는 인과 후방 차분(행의 \texttt{qd}는 중앙 차분이라 0.1\,s 미래를 읽음 $\rightarrow$ 안 씀), 팔 3분위 \tentative{0.218·0.607}\,rad/s, 그리퍼 0.85 분위 \tentative{0.176}/s, 줄 드롭아웃 p \tentative{0.3}(값만 \texttt{unknown}). 과거 프레임 드롭아웃·$\Delta$ 0.1\,s는 이번 등록 밖. 판본 표지 \texttt{D27v2-video2}·\texttt{se2e-motion@v1}}
+  \item \chg{(09-25 정본 §83, user-log 80) E-TC 사전 등록 판정대로 결정 입력에 움직임 줄(\texttt{se2e-motion@v1}) 채택, 2프레임 비디오 불채택(CPU 전처리로 p95 증가). 개요·모델 그림의 주황 점선 과거 프레임을 지우고 텍스트에 ``움직임 줄''. 런타임 적용(새 직렬화 판본, 런타임 속도 구간화, 보정·카나리 재생성, R2 줄 생성) = \tentative{다음 작업}}
+  \item \idea{(§83 발견) S-E2E 변환 행의 \texttt{proprio.qd}·그리퍼 속도 = 중앙 차분(0.1 s 미래 포함). 움직임 줄은 안 쓰지만 action expert 고유감각 입력엔 들어감 $\rightarrow$ 변환기를 인과 후방 차분으로 고친 새 데이터 판본, 확인 실험 \tentative{진행 중}. 지금까지 S-E2E 판정은 §56 파이프라인 시험으로 유지 + 한계 명시}
 \end{itemize}
 
 \subsection{M4 사전 등록 적합화 (R7 순회, 09-25)}

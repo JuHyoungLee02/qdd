@@ -201,11 +201,13 @@ def overview_strip(ax, W, Hs):
         ax.plot([x0, x1], [yy, yy], color="#E6E6E6", lw=0.8, zorder=0)
     # Astra lane
     pill(ax, X(0), 0.82, 3.0 * sx, 0.16, "astra", "T0 첫 계획", fs=6.0)
-    pill(ax, X(8.0), 0.82, 3.0 * sx, 0.16, "astra", "하트비트 (5 s 뒤)", fs=6.0)
+    # canon §82: the 5 s heartbeat is no longer the design default (current implementation K2 = baseline)
+    pill(ax, X(8.0), 0.82, 3.0 * sx, 0.16, "astra", "J5 감사 (저빈도)", fs=6.0)
     ax.annotate("", xy=(X(8.0), 1.02), xytext=(X(3.0), 1.02),
                 arrowprops=dict(arrowstyle="<->", lw=0.8, color=PAL["astra"][1]))
-    ax.text(X(5.5), 1.04, "N = 5 s (잠정)", ha="center", va="bottom", fontsize=6.0, color=PAL["astra"][1])
-    ax.text(X(5.5), 0.90, "단계 경계·실패 때도 기다리지 않고 호출", ha="center", va="center", fontsize=6.0,
+    ax.text(X(5.5), 1.04, "결정이 바뀔 수 있을 때만 (5 s 하트비트는 기준선)", ha="center", va="bottom",
+            fontsize=6.0, color=PAL["astra"][1])
+    ax.text(X(5.5), 0.90, "실패(J2)·새 물체(J4) 때도 기다리지 않고 호출", ha="center", va="center", fontsize=6.0,
             color="#555", bbox=dict(fc="white", ec="none", pad=1.0), zorder=4)
     # decision lane: staggered calls every 0.33 s, each ~0.28 s long
     k = 0
@@ -246,20 +248,22 @@ def fig_overview():
     # inputs
     rbox(ax, 0.02, 2.30, 0.95, 0.45, "gray", "“{과제}”", fs=9)
     ax.text(0.495, 2.24, "사용자 명령", ha="center", va="top", fontsize=6.8, color="#444")
-    past_frame(ax, 0.08, 1.30, 0.80, 0.48, -0.06, 0.07, "std")
+    # user-log 80 / canon §83: the 2-frame video (V) was NOT adopted -> past frames removed; the adopted
+    # motion line is part of the state text (single-frame images stay the default input)
     icon_scene(ax, 0.08, 1.30, 0.80, 0.48, "std")
     ax.text(0.48, 1.25, "머리 카메라", ha="center", va="top", fontsize=6.6, color="#444")
-    past_frame(ax, 0.08, 0.58, 0.80, 0.40, -0.06, 0.07, "rnd")
     icon_scene(ax, 0.08, 0.58, 0.80, 0.40, "rnd")
     ax.text(0.48, 0.53, "활성 손목 카메라", ha="center", va="top", fontsize=6.6, color="#444")
-    ax.text(0.50, 0.40, "시간 맥락 (검증 중)\n카메라마다 [t−0.3 s, t]\n2프레임, 시각 토큰 수 같음", ha="center",
-            va="top", fontsize=5.2, color=TENT, linespacing=1.1)
+    ax.text(0.50, 0.40, "+ 상태 텍스트\n(과제·단계·그리퍼\n·움직임 줄)", ha="center",
+            va="top", fontsize=5.4, color="#555", linespacing=1.1)
 
     # slow layer: Astra + contract
     icon_cloud(ax, 1.82, 2.43, s=0.85)
-    rbox(ax, 2.10, 2.25, 1.40, 0.58, "astra", "Astra", fs=11, sub="느린 API 계획기 · effort low", sfs=6.2)
+    rbox(ax, 2.10, 2.25, 1.40, 0.58, "astra", "Astra", fs=11, sub="Astra 전용 일 J1–J6 · low/high", sfs=6.2)
     icon_doc(ax, 3.75, 2.30, 0.34, 0.46)
-    ax.text(4.16, 2.53, "세션 계약", ha="left", va="center", fontsize=6.8, color="#444")
+    ax.text(4.16, 2.60, "세션 계약 (J1 과제 컴파일)", ha="left", va="center", fontsize=6.8, color="#444")
+    ax.text(4.16, 2.40, "움직임 개입 (준비 중)\nM4 느린 투표·물체 기준 경로", ha="left", va="center",
+            fontsize=5.2, color=TENT, linespacing=1.15)
     arr(ax, [(0.97, 2.52), (1.62, 2.52)])
     arr(ax, [(3.50, 2.53), (3.75, 2.53)])
 
@@ -280,7 +284,7 @@ def fig_overview():
     ax.text(3.40, 2.13, "현재 단계 요약", fontsize=6.0, color="#555", ha="right", va="bottom")
     # heartbeat VLA side -> Astra
     arr(ax, [(2.40, 1.92), (2.40, 2.25)], color=PAL["astra"][1], lw=1.1, ls=(0, (3, 2)))
-    ax.text(2.35, 2.07, "하트비트(잠정 5 s) · 단계 경계", fontsize=6.0, color=PAL["astra"][1], ha="right",
+    ax.text(2.35, 2.07, "저빈도 감사(J5) · 모를 때만", fontsize=6.0, color=PAL["astra"][1], ha="right",
             va="center")
 
     # M4 + projection
@@ -304,7 +308,7 @@ def fig_overview():
     # failure -> Astra
     arr(ax, [(5.95, 2.30), (5.95, 2.92), (2.80, 2.92), (2.80, 2.83)], color=PAL["crit"][1], lw=1.2,
         ls=(0, (3, 2)))
-    ax.text(4.60, 2.87, "실패 → Astra 비동기 호출(연속 프레임) + 아래 층 복구", fontsize=6.0,
+    ax.text(4.60, 2.87, "실패 → Astra J2 진단·복구안 + 아래 층 복구", fontsize=6.0,
             color=PAL["crit"][1], ha="center", va="top")
 
     # modular baseline / teacher inset
@@ -326,16 +330,16 @@ def fig_model():
     call 2 = chunk (expert on cached context, conditioned on the decision M4 committed) -- canon §61, §64, §67 C4."""
     W, H = COL_W, 2.30
     fig, ax = canvas(W, H)
-    past_frame(ax, 0.07, 1.70, 0.53, 0.40, -0.05, 0.06, "std")
+    # canon §83 (user-log 80): motion line adopted into the decision input; 2-frame video not adopted
     icon_scene(ax, 0.07, 1.70, 0.53, 0.40, "std")
     ax.text(0.335, 1.66, "머리 (252 토큰)", ha="center", va="top", fontsize=6.0, color="#444")
-    past_frame(ax, 0.07, 1.02, 0.53, 0.34, -0.05, 0.06, "rnd")
     icon_scene(ax, 0.07, 1.02, 0.53, 0.34, "rnd")
     ax.text(0.335, 0.98, "활성 손목 (104)", ha="center", va="top", fontsize=6.0, color="#444")
-    ax.text(0.36, 0.25, "점선 = t−0.3 s\n시간 맥락(검증 중)", ha="center", va="top", fontsize=4.6,
-            color=TENT, linespacing=1.15)
-    wbox(ax, 0.04, 0.30, 0.56, 0.40, "#9A9A9A", "텍스트", fs=6.4, sub="과제·단계\n그리퍼", sfs=6.0,
-         fc=PAL["gray"][0])
+    ax.add_patch(FancyBboxPatch((0.04, 0.18), 0.56, 0.56, boxstyle="round,pad=0,rounding_size=0.05",
+                                fc=PAL["gray"][0], ec="#9A9A9A", lw=1.0))
+    ax.text(0.32, 0.64, "텍스트", ha="center", va="center", fontsize=6.4, color=TXT)
+    ax.text(0.32, 0.42, "과제·단계\n그리퍼\n움직임 줄", ha="center", va="center", fontsize=5.8, color="#555555",
+            linespacing=1.15)
     rbox(ax, 0.78, 0.10, 0.74, 2.02, "jev", "Qwen3-VL-4B", fs=7.2, sub="LoRA r32\n비전 동결", sfs=6.0)
     arr(ax, [(0.60, 1.90), (0.78, 1.90)])
     arr(ax, [(0.60, 1.19), (0.78, 1.19)])
