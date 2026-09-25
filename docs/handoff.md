@@ -10,7 +10,7 @@
 
 - **R2_TRAIN LeRobot 내보내기** (확인 2026-09-25 23:27 UTC, 파드 `ls /data/harvest/r2/train_lerobot/*/data/chunk-000`): `export_all.sh` 6개 병렬 실행 중(22:36Z 시작, 데이터셋마다 381–453편 끝 / 기대 579–991편, 이어서 verify) — 끝나고 verify하기 전에는 LeRobot 판을 쓰지 않는다. 원본 R2_TRAIN(단계 B `--pool` 폴더)은 끝(`docs/stage3/results/r2_train_gen.md`).
 - **R7** (확인 2026-09-25 23:30 UTC): 34회차 기준선 FAIL(DOC 1) → 연속 무결 0 → 이 커밋을 대상으로 35회차. 기준선 코드는 태그 전까지 바꾸지 않는다.
-- **E-MA2** (확인 2026-09-25 23:32 UTC, E-MA2 에이전트): 사전 등록 `docs/stage3/prereg_ma2.md` 커밋, 본 실행 시작 전 — 파드 GPU 2(c0 → c2 학습 → c2 평가 → 지연)·GPU 3(c1 학습 → c0·c1 평가), 드라이버 `/data/harvest/logs/ma2/run_ma2.sh`, 예상 약 3 GPU-h. 결과 전에는 `/data/harvest/ckpt/ma2`를 쓰지 않는다.
+- **E-MA2** (확인 2026-09-25 23:46 UTC, E-MA2 에이전트): 사전 등록 `fde4f6a`(`docs/stage3/prereg_ma2.md`), 본 실행 23:33:49Z 시작 — 파드 GPU 2 c0 학습(다음 c2 학습 → c2 평가 → 지연)·GPU 3 c1 학습(다음 c0·c1 평가), 드라이버 `/data/harvest/logs/ma2/run_ma2.sh`. 관문: 데이터 수 151,870 = 학습 144,562 + 검증 7,308, 명령 준 표본 75,895(50.0 %)·빠짐 0, step 500 NaN 없음·검증 dec 5.37→0.41(c0)·5.09→0.34(c1), 1.17 s/스텝(예상 안). 결과 전에는 `/data/harvest/ckpt/ma2`를 쓰지 않는다.
 
 ## 1. 먼저 할 일
 1. `dev` 브랜치인지 확인한다. **모든 작업(글, 코드)은 `dev`에서 시작하고 `dev`에만 푸시한다. `main`은 절대 건드리지 않는다**(사용자가 직접 반영).
