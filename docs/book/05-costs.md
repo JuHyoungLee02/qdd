@@ -33,5 +33,7 @@
 | 움직임 줄 확인 4판 | 2·3 | ≈ 2.9 GPU-h(15:53–17:21 × 2) | [R/se2e_motion_confirm](../stage3/results/se2e_motion_confirm.md) |
 | E-MA1 G0 | 2 | 약 1.5분 | [R/ma1](../stage3/results/ma1.md) |
 | E-MA1b 2판 + 기준 재예측·보기 확인 | 2 | ≈ 1.9 GPU-h(17:54–19:46; 학습 41.0·37.1분, 예측·확인 약 0.6 h) | [R/ma1b](../stage3/results/ma1b.md) 5절 |
+| E-CAM3 2판 + 기준 재예측·지연 | 2 | ≈ 1.7 GPU-h(사전 실행 20:22–20:25 + 20:34–22:15; 학습 41.0·40.6분) | [R/cam3](../stage3/results/cam3.md) 5절 |
+| E-MA3 2판 + 기준 청크 평가·지연 | 3 | ≈ 1.7 GPU-h(사전 실행 20:22–20:25 + 20:34–22:13; 학습 37.9·38.2분) | [R/ma3](../stage3/results/ma3.md) 5절 |
 | R2_TRAIN 생성 | 0·1(렌더) | `[결과 전]` [→ 2026-09-25 21:07 UTC, R7 28회차 P69] | — |
 | R7 순회 | 1(Isaac 한 프로세스) | 회차당 폐루프 한 판 | `R/r7_cycle*.md` |

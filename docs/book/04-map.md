@@ -10,13 +10,14 @@
 | `harvest/analysis/` | `stats`(`N_BOOT` 10,000, `CMP_EPS` 절대 1e-12)·`replay`·`latency` |
 | `harvest/sim/` | `scene`(하드 리셋 `Env.reset`)·`planner`(오라클)·`labeler`·`randomize`(random/dr)·`determinism`·`perturb`·`snapshot`·`run_dev` |
 | `harvest/datagen/` | R2 생성기(`gen`·`episode`·`rows`·`timing`·`validate`·`lerobot_export`·`queue`) |
-| `harvest/train/` | 단계 A `stagea_*`, 단계 B `stageb_data`·`stageb_model`(**체크포인트 해시 대상 — 함부로 고치지 않음**)·`stageb_train`·`stageb_expert`, `prefix_share`, S-E2E `se2e_data`(후방 차분)·`se2e_temporal*`, MolmoAct `se2e_trace*`·`se2e_a3d` |
+| `harvest/train/` | 단계 A `stagea_*`, 단계 B `stageb_data`·`stageb_model`(**체크포인트 해시 대상 — 함부로 고치지 않음**)·`stageb_train`·`stageb_expert`, `prefix_share`, S-E2E `se2e_data`(후방 차분)·`se2e_temporal*`, MolmoAct `se2e_trace*`·`se2e_a3d`, 옵션 CLI 포장 `se2e_cam3`(E-CAM3)·`se2e_kvcond`(E-MA3; 기준 파일 무수정) |
 | `harvest/perception/`, `harvest/stereo/`, `harvest/m4b/` | R1 인식(기준선·진단), E3-ST, 확인 헤드 V1h |
 | `harvest/clients/` | `astra`·`jevl`·`jev` 클라이언트 |
 | `harvest/astra_motion/` | E-Astra-motion 탐침 코드(3500f54) [→ 2026-09-25 21:07 UTC, R7 28회차 D-2] |
 | `harvest/serialize.py`, `deccall_snap.py`, `labels_v2.py`, `qid.py` | 직렬화(ser-A-min-2)·결정 호출·정답·질문 id |
 | `tools/se2e/` | `se2e_verdict`·`temporal_verdict`·`temporal_latency`·`motion_confirm_verdict`(등록 때 고정) |
 | `tools/ma1/` | `g0`·`g0_point`·`ma1_verdict`·`build_a3d`·`ma1b_verdict` |
+| `tools/cam3/`, `tools/ma3/`, `tools/se2e/paired_verdict.py` | E-CAM3 `build_cam3`·`cam3_latency`·`cam3_verdict`; E-MA3 `chunk_eval`·`ma3_latency`·`ma3_verdict`; 공통 짝 비교(등록 때 고정) |
 | `tools/` 기타 | `se2e_convert.py`(`reconvert --hist`), `labels_v2_eval.py`, `prereg_hash.py --check`, `intent_check.py`·`user_line_check.py`(빨간 줄·[사용자] 줄), `stagea_merge.py`, `r5/`·`r6/`(파드 동기화), `pod_sync.sh` |
 | `tests/` | 전체 시험(로컬은 Git Bash에서 `pytest`; PowerShell에서는 2개 실패 — P33) |
 | `docs/design/00-interfaces.md` | **정본**(마지막 절까지가 현재 판) |
@@ -42,7 +43,7 @@
 |---|---|
 | `env.sh`, `venv_vllm`, `venv_train`, `venv_sam3`, `pylib_molmo2` | 환경(모델별 venv) |
 | `models/` | Qwen3-VL-4B·8B-Instruct, gemma-4-E4B-it, Molmo2-ER, sam3.1, sam2, gdino-base, ffs |
-| `code_<작업>/` | 실험별 **고정 코드 사본**(예: `code_se2e_run`·`code_se2e_temporal`·`code_se2e_confirm`·`code_ma1_g0`·`code_ma1b`·`code_r2train_e8e1864`·`code_astra_motion`). 새 사본은 LF archive(P21) |
+| `code_<작업>/` | 실험별 **고정 코드 사본**(예: `code_se2e_run`·`code_se2e_temporal`·`code_se2e_confirm`·`code_ma1_g0`·`code_ma1b`·`code_cam3`·`code_ma3`·`code_r2train_e8e1864`·`code_astra_motion`). 새 사본은 LF archive(P21) |
 | `data/pool/`, `data/pool.labels_v2.jsonl` | 풀 120편(옛 소프트 리셋 물리 — 새 물리로 재현 안 됨) |
 | `data/jsel_dev/`, `data/gen_dev/` | DEV 스냅샷(standard / random·dr) |
 | `data/se2e` → `se2e_t` → **`se2e_c1`** | S-E2E 행: 원판(중앙 차분 누수) → 움직임 출처 필드 추가 → **누수 수정판(현재 사용)** |
@@ -52,6 +53,7 @@
 | `ckpt/se2e_temporal/{single_motion,video2_none,video2_motion}` | E-TC 칸(옛 데이터판 — 재사용 불가) |
 | `ckpt/se2e_confirm/{none,motion}_s{1,2}` | 움직임 줄 확인(se2e_c1) — E-MA1b 기준 칸 |
 | `ckpt/ma1b/` | E-MA1b 체크포인트 `a3d_s{1,2}`(불채택, `results/ma1b.md`) [→ 2026-09-25 21:07 UTC, R7 28회차 D-2] |
+| `ckpt/cam3/`, `ckpt/ma3/`, `data/cam3/` | E-CAM3 `cam3_s{1,2}`·E-MA3 `kv_s{1,2}`(둘 다 불채택, `results/cam3.md`·`ma3.md`), 반대 손목 프레임 `data/cam3/img_cam3/`(36,177장) |
 | `ckpt/stageA/sftA_pool_v1` | 단계 A SFT(병합 `merged/`) |
 | `logs/<실험>/` | 예측·판정 JSON(`se2e_confirm/verdict_full.json` 등), 탐침 비용 장부 `logs/astra_motion/cost.jsonl` |
 | `out/<작업>/` | 폐루프·장면·E3-ST 산출물 |
