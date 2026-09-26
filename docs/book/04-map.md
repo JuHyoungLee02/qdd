@@ -51,6 +51,7 @@
 | `docs/research/cross_embodiment_data_use_2026-09-26.md` | 교차 기체(맞지 않는) 로봇 데이터 활용법 조사 + 35B 혼합 계획·무료 시험 E-XEMB8 설계(user-log 115) |
 | `docs/research/diversity_plan_2026-09-26.md` | 다양한 데이터 필수 계획(user-log 116): 자체 시뮬 다양화 명세·공개 변환 필수 격상(요약)·OOD-H/O/D/X·E-XEMB8 개정(A·B·D·E) |
 | `docs/research/no_metric_xyz_control_survey_2026-09-26.md` | 로봇 좌표 m 값 없이 조종하는 법(8계열 분류) + metric 추정 방법론, 추천 3·E-PT 팔·무료 시험 F0–F5(user-log 118) |
+| `docs/research/public_data_conversion_howto_2026-09-26.md` | 공개 데이터 → P·C′ 변환 방법(user-log 119): MolmoAct 방식 양 판정, 남들의 변환 코드 근거, 데이터셋별 필드 조리법, 관문 G1–G10·누수 시험, 시제품 `tools/xemb/` 결과 |
 | `paper/` | CVPR author-kit 구조 논문 + 한국어 마인드맵(`mindmap.tex`), 그림 `figures/src/make_figs.py`; PDF는 `D:\tools\pdf_out\` |
 | `D:\tools\scratch_qdd\` | 로컬 임시(작업별 하위 폴더). C: 금지 |
 
@@ -119,4 +120,5 @@
 | `data/marr_real/`, `logs/marr_real/`, `ckpt/marr_real/`, `tools/marr_real/` | E-MAR-real 요인 A: 궤적 보조(`trace5-point@v1`) 학습 데이터·로그·체크포인트, 도구 사본 |
 | `out/open_vlm_proxy/proxy-low/<변형>/s<시드>/`, `out/open_vlm_proxy_mini/`(중단된 7호출), `logs/open_vlm_proxy/`(장부 `ledger.jsonl`), `videos/open_vlm_proxy/gpt-5.2/`·`videos/open_vlm_proxy/index.{json,md}`, `code_open_vlm_proxy_{5c021c6,f37051c}`, `tools_open_vlm/` | E-OpenVLM-proxy: gpt-5.2 대리 4편(영상 4 fps 연속 + 모델 시점), 도구 `tools/open_vlm/`(run_proxy·proxy4·selfcheck·stats·list_models·stop_mini) — [R/open_vlm_solo](../stage3/results/open_vlm_solo.md) |
 | `data/upper_vlm_survey/`(`raw/` 표본 1.2 GB: RoboTwin 2.0 zip·BEHAVIOR 2025 편 1·MolmoBot 샤드 1·RoboCasa 100편·RefSpatial·Robo2VLM parquet·RoboFAC QA, `frames/`, `code/`, `pylib/` h5py·zstandard) | 상위 VLM 학습 데이터 조사(user-log 111) — [research/upper_vlm_data_survey](../research/upper_vlm_data_survey_2026-09-26.md) |
+| `out/xemb_proto/`(`code/xemb/` 파드 사본, `src/molmobot/` 꾸러미 해제, `{molmobot,behavior,robotwin}/`의 records_P·records_C·gates.json·frames·sheets, `scratch/` 탐침) | 공개 데이터 변환 시제품(user-log 119) — [research/public_data_conversion_howto](../research/public_data_conversion_howto_2026-09-26.md) 6절 |
 | `out/teach_l8/`(collect/{train,dev}·data/{train,dev}.jsonl·run_main/epoch{1,2}·merged_ep2·eval_{zs,ft}·closed/{ft,zs}·sheets), `logs/teach_l8/`, `videos/teach_l8/`(finetuned_8b·zeroshot_8b + index), `code_teach_l8_72efee3` | E-TEACH-L8: 8B 참값 SFT 경향 시험 — 코드 `harvest/teach_l8/`, 도구 `tools/teach_l8/`(collect·py·vllm·closed·stop·build·show·collect_stats·latency), 시험 `tests/teach_l8/`, [R/teach_l8](../stage3/results/teach_l8.md) |
