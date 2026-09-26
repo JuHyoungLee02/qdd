@@ -55,3 +55,4 @@
 | R2_TRAIN 생성 | 0·1(렌더) + 2(로더 확인) | ≈ 21.3 GPU-h(21.34; GPU 0·1 각 11:16–21:56 ≈ 10.7 h 점유, 동시 Isaac 최대 5 = 누적 52.8 프로세스-시간, 사용률 20–50 % `[미검증]` — 저장된 로그에 없음) [→ 정정 2026-09-25 23:58 UTC, R7 35회차 N178·N179] + GPU 2 약 0.2 h(로더 확인 2회); 첫 파일럿(6b013ac, 폐기) GPU 1 약 0.7 h 별도 | [R/r2_train_gen](../stage3/results/r2_train_gen.md) 8절 |
 | R7 순회 | 1(Isaac 한 프로세스) | 회차당 폐루프 한 판 | `R/r7_cycle*.md` |
 | E-MAR-real 요인 A(궤적 보조 학습·평가) | 메인 0 + x2 0·1 | ≈ 3.6 GPU-h(메인 GPU 0 1.55 h + x2 GPU 0·1 2.05 h) | [R/marr](../stage3/results/marr.md) |
+| E-OpenVLM-proxy gpt-5.2 low 4편 + gpt-5-mini 7호출(중단) | 79 + 7 | **1,322.4원**(gpt-5.2 1,299.1 + mini 23.3; 상한 3,000원, 누적 확정분 합계에는 이 줄을 더한다) | gpt-5.2 **16.4원/호출**(입력 2,639·출력 471·추론 289 중앙), 지연 p50 7.2 s·p95 11.5 s, 성공 0; GPU ≈ 0.42 GPU-h(Isaac GPU 1) | [R/open_vlm_solo](../stage3/results/open_vlm_solo.md), 장부 `H/logs/open_vlm_proxy/ledger.jsonl` 86행 |

@@ -114,3 +114,4 @@
 | 경로 | 무엇 |
 |---|---|
 | `data/marr_real/`, `logs/marr_real/`, `ckpt/marr_real/`, `tools/marr_real/` | E-MAR-real 요인 A: 궤적 보조(`trace5-point@v1`) 학습 데이터·로그·체크포인트, 도구 사본 |
+| `out/open_vlm_proxy/proxy-low/<변형>/s<시드>/`, `out/open_vlm_proxy_mini/`(중단된 7호출), `logs/open_vlm_proxy/`(장부 `ledger.jsonl`), `videos/open_vlm_proxy/gpt-5.2/`·`videos/open_vlm_proxy/index.{json,md}`, `code_open_vlm_proxy_{5c021c6,f37051c}`, `tools_open_vlm/` | E-OpenVLM-proxy: gpt-5.2 대리 4편(영상 4 fps 연속 + 모델 시점), 도구 `tools/open_vlm/`(run_proxy·proxy4·selfcheck·stats·list_models·stop_mini) — [R/open_vlm_solo](../stage3/results/open_vlm_solo.md) |
