@@ -991,6 +991,7 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
   - 선행 조건: L8 1단계 결과, 사전 등록 `docs/stage3/prereg_xemb8.md`를 실행 전에 커밋.
   - 추정 약 11–15 GPU-h + 렌더 약 12–16 프로세스-h, 유료 0.
 - **사용자 확인 필요**: (1) 탁자 높이 범위를 리프트(`set_lift`)로 맞춰도 되나; (2) 게이트 데이터 HF 동의 여부.
+- (2026-09-26 20:1x UTC, user-log 150–152) **L8-D 다양화 생성기 구현 착수; 게이트 공개 데이터는 비게이트 먼저, 잘되면 사용자에게 제안** [사용자 결정] — 위 (2)의 답(user-log 150). 등록 `docs/stage3/prereg_l8d.md`. 사용자 범위 확대(user-log 151, "지금의 10배"): 자체 시뮬을 먼저 약 10배 다양하게(**L8-X 환경 모음**, 설계 `docs/research/l8x_env_suite_design_2026-09-27.md` — 받침면·높이·과제·물체·방해물·외관) 한 뒤 상위 실험(E-DIST8, E-STRIP8 재검증, 최종 35B)을 그 안에서 돌린다. 위 (1)의 답(user-log 152 "리프트도 쓰자"): 관문 G-H로 고정 리프트 0.74–0.98 m, 리프트(관절 [−0.50, 0.00])로 약 0.45–1.08 m; 리프트 값은 로봇 자기 정보로 요청에 넣는다(§97). 머리 각도는 고정. OOD-H·O·D·T(+ 리프트 OOD-H) 목록은 학습 전 동결 커밋(`docs/stage3/l8d_ood_sets*.json`).
 ## §97 보충 2 — 점 찍고 행동(point-then-act) 인터페이스 + 깊이 없이 모델이 거리를 아는 두 방법 (2026-09-26 15:2x UTC, user-log 120–122, 사전 등록 `docs/stage3/prereg_pt.md`) [사용자 방향 + Claude 설계]
 
 - **문제(user-log 120)**: 상위 모델이 로봇 기준 절대 xyz(m)를 직접 내야 했다 — 영샷 모델은 모두 실패(gpt-5.2 대리 접근 104–207 mm, Qwen3-VL-8B 0/5·오프라인 125.5 mm). VLM은 m 숫자보다 영상 위 가리키기에 강하다(조사 `no_metric_xyz_control_survey_2026-09-26.md`). 부족했던 것(확인): (i) astra_solo 명령에 픽셀 목표가 없음, (ii) astra_solo 월드는 깊이 끔(`depth=False`), (iii) 우리 데이터에 픽셀 라벨 없음(자체 시뮬은 투영으로 무료), (iv) 공개 MolmoAct식 변환은 다른 에이전트(`public_data_conversion_howto`, `tools/xemb/`).
