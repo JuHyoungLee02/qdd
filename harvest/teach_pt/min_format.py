@@ -112,6 +112,41 @@ def _aux(x: dict, track: str, rng):
     return None if a is None else dict(a, arm=track)
 
 
+def convert(src: str, out_dir: str, track: str, dst_name: str) -> dict:
+    """Training rows from an existing E-PT-format arm file (teach_pt.dataset rows: train_pt for D, train_nd-xyz for H /
+    R) — same states, repeats and aux draws, only the request / head image / answer re-made as the min track; the aux
+    rows keep their answers (D: the verified pointing pixels; R / H: the robot-frame xy) on the ring head image. Fast
+    path for large sets (no depth re-resolution for the aux pixels)."""
+    if track not in TRACKS:
+        raise ValueError(track)
+    rows = [json.loads(x) for x in open(src, encoding="utf-8")]
+    cache, out, n_c, n_a = {}, [], 0, 0
+    modes = Counter()
+    for r in rows:
+        if r["kind"] == "aux":
+            ring = os.path.join(os.path.dirname(r["images"][0]), RING)
+            a = dict(r, arm=track, images=[ring])
+            if track == "d-min":
+                a["prompt"] = r["prompt"].replace(DS.PT_HEAD, _PT_AUX_HEAD)
+            out.append(a)
+            n_a += 1
+            continue
+        if r["id"] not in cache:
+            dm = HY.train_depth_mode(r["id"]) if track == "h-min" else "clean"
+            src_row = dict(r, answer=r.get("xyz_answer", r["answer"]))  # arm files carry the arm answer in 'answer'
+            cache[r["id"]] = row(src_row, out_dir, track, dm)
+            modes[cache[r["id"]].get("h_mode") or "clean"] += 1
+        out.append(cache[r["id"]])
+        n_c += 1
+    with open(os.path.join(out_dir, dst_name), "w", encoding="utf-8", newline="\n") as f:
+        for x in out:
+            f.write(json.dumps(x) + "\n")
+    counts = {"src": src, "control_rows": n_c, "aux_rows": n_a, "states": len(cache), "depth_modes": dict(modes)}
+    with open(os.path.join(out_dir, dst_name + ".counts.json"), "w", encoding="utf-8", newline="\n") as f:
+        json.dump(counts, f, indent=1)
+    return counts
+
+
 def build(root: str, out_dir: str, split: str, track: str, mode: str = "clean", seed: int = 0) -> dict:
     """mode: train -> per-row depth draw (H) / clean (D); evaluation: clean | noisy | off (off for H only)."""
     if track not in TRACKS:

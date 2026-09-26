@@ -64,6 +64,28 @@ def test_eval_rows_score_zero(roots):
     assert all("depth_zed_mini" in r["depth_path"] for r in noisy)
 
 
+def test_convert_matches_build(roots):
+    """convert() of the E-PT arm files gives the same control rows as build() and keeps the aux answers."""
+    from harvest.teach_pt import dataset as DS
+    out = roots / "conv"
+    out.mkdir(exist_ok=True)
+    DS.build(str(roots / "train"), str(out), "train", arms=("pt", "nd-xyz"))
+    for track, src in (("d-min", "train_pt.jsonl"), ("h-min", "train_nd-xyz.jsonl"), ("r-min", "train_nd-xyz.jsonl")):
+        c = MF.convert(str(out / src), str(out), track, f"train_{track}_conv.jsonl")
+        rows = _rows(out / f"train_{track}_conv.jsonl")
+        srcr = _rows(out / src)
+        assert len(rows) == len(srcr) and c["aux_rows"] > 0
+        for a, b in zip(rows, srcr):
+            assert a["id"] == b["id"] and a["images"][0].endswith("img1_head_ring.png")
+            if a["kind"] == "aux":
+                assert a["answer"] == b["answer"]
+        ctrl = [r for r in rows if r["kind"] == "control"]
+        sc = [M.score(r, r["answer"], SCORER[track]) for r in ctrl if not r["label_missing"]]
+        assert all(s["valid"] and s["action_ok"] for s in sc)
+        if track == "d-min":
+            assert all(json.loads(r["answer"])["command"].get("mode") != "eef" for r in ctrl)
+
+
 def test_train_rows(roots):
     out = roots / "data"
     out.mkdir(exist_ok=True)
