@@ -28,6 +28,10 @@ def seeds_of(spec: str) -> list:
     return s
 
 
+def paid_model(name: str) -> bool:
+    return name.startswith("astra-") or name.startswith("proxy-")
+
+
 def make_model(name: str, a):
     if name == "truth":
         return None
@@ -35,6 +39,14 @@ def make_model(name: str, a):
         from ..astra_motion.cost import Ledger
         from .models import SoloAstra
         return SoloAstra(open(TOKEN).read().strip(), name.split("-", 1)[1], Ledger(a.ledger, hard_krw=a.cap_krw))
+    if name.startswith("proxy-"):  # prereg_open_vlm_solo.md: same client, only the model id changes (--api-model)
+        import re
+        from ..astra_motion.cost import Ledger
+        from .models import SoloAstra
+        tok = open(getattr(a, "token", TOKEN)).read().strip()
+        short = re.sub(r"-\d{4}-\d{2}-\d{2}$", "", a.api_model)
+        return SoloAstra(tok, name.split("-", 1)[1], Ledger(a.ledger, hard_krw=a.cap_krw), model_id=a.api_model,
+                         name=short)
     if name == "qwen8b":
         from .models import LocalVLM
         return LocalVLM(a.qwen_url, a.qwen_name, "qwen8b")
@@ -52,7 +64,7 @@ def run(a):
     from .world import SoloWorld
     model = make_model(a.model, a)
     world = SoloWorld(a.variant)
-    paid = a.model.startswith("astra-")
+    paid = paid_model(a.model)
     for k, s in enumerate(seeds_of(a.seeds)):
         od = os.path.join(a.out, a.model, a.variant, f"s{s}")
         if os.path.exists(os.path.join(od, "result.json")):
@@ -132,6 +144,8 @@ def main(argv=None):
     ap.add_argument("--video-first", type=int, default=1)
     ap.add_argument("--cap-krw", type=float, default=5000.0)
     ap.add_argument("--ledger", default=LEDGER)
+    ap.add_argument("--api-model", default="gpt-5.2-2025-12-11", help="Responses-API model of --model proxy-<effort>")
+    ap.add_argument("--token", default=TOKEN)
     ap.add_argument("--est-krw", type=float, default=900.0)
     ap.add_argument("--est-krw-per-call", type=float, default=60.0)
     ap.add_argument("--qwen-url", default="http://127.0.0.1:8391")

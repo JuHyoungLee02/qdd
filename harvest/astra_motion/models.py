@@ -35,7 +35,10 @@ def _data_url(png: bytes) -> str:
 
 class AstraModel:
     """gpt-6-astra at one reasoning effort. Every call: budget check (hard stop) before, ledger row after. A call whose
-    usage never arrived (network error / cut stream) is charged its maximum cost (conservative)."""
+    usage never arrived (network error / cut stream) is charged its maximum cost (conservative).
+    model_id = the Responses-API model (default gpt-6-astra; a subclass may set another id priced in cost.py)."""
+
+    model_id = ASTRA
 
     def __init__(self, token: str, effort: str, ledger: Ledger, transport: httpx.BaseTransport | None = None,
                  timeout_s: float = 900.0, cache_key: str | None = "astra_motion", extra: dict | None = None):
@@ -43,7 +46,7 @@ class AstraModel:
         self.extra = dict(extra or {})  # determinism settings the API accepted (api_params_probe)
         self.name = f"astra-{effort}"
         self.max_out = MAX_OUT[effort]
-        self.max_call_usd = cost_usd(ASTRA, {"input_tokens": MAX_IN_TOKENS, "output_tokens": self.max_out})
+        self.max_call_usd = cost_usd(self.model_id, {"input_tokens": MAX_IN_TOKENS, "output_tokens": self.max_out})
         self.cache_key = cache_key  # Responses API prompt_cache_key (routing hint for the shared prefix)
         self._c = httpx.Client(timeout=timeout_s, transport=transport, headers={"Authorization": f"Bearer {token}"})
 
@@ -55,13 +58,13 @@ class AstraModel:
                 self.cache_key = None  # the API refused the parameter: resend once without it (a 400 is not billed)
                 r = self._ask(text, images, meta)
         except BaseException:
-            self.ledger.add({"model": ASTRA, "effort": self.effort, "usage": {}, "meta": meta,
+            self.ledger.add({"model": self.model_id, "effort": self.effort, "usage": {}, "meta": meta,
                              "error": "exception"}, reserved_usd=self.max_call_usd)
             raise
         usage, charged_max = r.usage, False
         if not usage and r.error and not r.error.startswith("http_4"):
             usage, charged_max = {"input_tokens": MAX_IN_TOKENS, "output_tokens": self.max_out}, True
-        r.cost_usd = self.ledger.add({"model": ASTRA, "effort": self.effort, "usage": usage, "meta": meta,
+        r.cost_usd = self.ledger.add({"model": self.model_id, "effort": self.effort, "usage": usage, "meta": meta,
                                       "latency_s": round(r.latency_s, 3), "first_token_s": round(r.first_token_s, 3),
                                       "error": r.error, "charged_max": charged_max, "model_field": r.model_field,
                                       "cache_key": self.cache_key}, reserved_usd=self.max_call_usd)
@@ -72,8 +75,8 @@ class AstraModel:
         for i, (label, png) in enumerate(images):
             content.append({"type": "input_text", "text": f"Image {i + 1}: {label}"})
             content.append({"type": "input_image", "image_url": _data_url(png), "detail": "high"})
-        body = {"model": ASTRA, "input": [{"role": "user", "content": content}], "reasoning": {"effort": self.effort},
-                "max_output_tokens": self.max_out, "stream": True}
+        body = {"model": self.model_id, "input": [{"role": "user", "content": content}],
+                "reasoning": {"effort": self.effort}, "max_output_tokens": self.max_out, "stream": True}
         if self.cache_key:
             body["prompt_cache_key"] = self.cache_key
         body.update(self.extra)
