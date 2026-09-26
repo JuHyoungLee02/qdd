@@ -46,3 +46,4 @@
 | 2026-09-26 02:56 | 04 | 결합 구현 계획 Task 8 기록: 04 `harvest/couple/` 행에 `overlay`(Astra 영상 전용 덧그림·카메라 모델·MolmoAct 자취 polylines) 추가, `tests/couple/` 행에 `test_overlay.py` 추가; `ir_policy.py` obs에 `cams` 배선 | plan Task 8, 이 줄과 같은 커밋 |
 | 2026-09-26 02:58 | 01·02·04 | MolmoAct R2 준비 관문(user-log 95): 01 'MAR 준비 관문'(끝)·'E-MAR(AO·S)'(`[예정]`) 행, 02 P82(카메라 검사의 색 분할 결함 — 평면 표지 기준)·P83(라벨·그림 규칙의 뜻 번역 — 편 끝·덧그림 색), 04 `tools/mar2/`·파드 `logs/mar2/`·`code_mar2` 행 | [molmoact_r2_readiness](../stage3/molmoact_r2_readiness.md), 이 줄과 같은 커밋 |
 | 2026-09-26 02:59 | 02·06 | 정정: 바로 위 02:58 줄과 04 두 행·draft-log 02:58 줄은 결합 Task 8 커밋 8350c7e에 섞여 먼저 들어갔다(공유 파일 경로 커밋 경합) — 01·02 행과 준비 문서·그림·도구는 이 줄과 같은 커밋; 02 P80 발생 칸에 반대 방향 재발 기록 | 이 줄과 같은 커밋 |
+| 2026-09-26 03:08 | 04 | 결합 구현 계획 Task 8 Step 6 기록: 04 `harvest/runtime/` 행에 `aiworker.camera_models`(결합용 실시간 카메라 모델 어댑터, 탐침 `camera_pose` 재사용) 추가 | plan Task 8, 이 줄과 같은 커밋 |

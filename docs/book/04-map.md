@@ -5,7 +5,7 @@
 ## 저장소 (`D:\qdd`, 브랜치 dev만 — main 금지)
 | 경로 | 무엇 |
 |---|---|
-| `harvest/runtime/` | 런타임: `core`(실행기), `m4`(확정·교체), `conditions`(C0–C6), `skills`(스킬 S·쥠 디바운스), `calibration`(J5), `measure`(V1h·T1), `fused_model`(단계 B 서버), `fused_action`, `astra_hb`(K0–K4), `aiworker`·`ir_policy`(Inspect Robots), `clock`·`latency_ctrl`·`reqhash` |
+| `harvest/runtime/` | 런타임: `core`(실행기), `m4`(확정·교체), `conditions`(C0–C6), `skills`(스킬 S·쥠 디바운스), `calibration`(J5), `measure`(V1h·T1), `fused_model`(단계 B 서버), `fused_action`, `astra_hb`(K0–K4), `aiworker`·`ir_policy`(Inspect Robots; `aiworker.camera_models`: 결합용 실시간 카메라 모델 어댑터, 탐침 `camera_pose` 재사용, Task 8), `clock`·`latency_ctrl`·`reqhash` |
 | `harvest/eval/` | `e05`(E0.5 재생)·`rd`·`calib`·`closed`(폐루프 묶음)·`canary`·`splits`(분할 보호)·`common` |
 | `harvest/analysis/` | `stats`(`N_BOOT` 10,000, `CMP_EPS` 절대 1e-12)·`replay`·`latency` |
 | `harvest/sim/` | `scene`(하드 리셋 `Env.reset`)·`planner`(오라클)·`labeler`·`randomize`(random/dr)·`determinism`·`perturb`·`snapshot`·`run_dev` |

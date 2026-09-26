@@ -10,7 +10,9 @@ variant standard / random / dr) as one FFW-SG2 right arm.
   on those steps (new frames); depth / intrinsics are callables in extra (never arrays: TrialRecord keeps extras).
 - extra: sim_time, m1 (sim oracle M1 observation, table frame -- the E0 oracle condition; our policy reads it, the
   harness baselines never see it, canon §42 정보 동등), kin (sim kinematics service: TCP pose + DLS IK with the
-  static gravity offset of the PD arm, the planner's; a real robot would use its URDF IK), table_z, rtf.
+  static gravity offset of the PD arm, the planner's; a real robot would use its URDF IK), table_z, rtf, cams
+  (callable -> camera_models(): live camera pose x mount per camera, evaluated only when an Astra request goes out;
+  Astra-VLA coupling Task 8, reuses harvest.astra_motion.world_isaac.camera_pose, P40).
 - success: planner.success_from_history (on(o3,o5) & not holding(o3) & upright(o3) held 1 s) -> terminated "success";
   mug below the floor -> terminated "off_table". self_paced only when asked (wall clock); the sim uses simlat.
 Seeds: DEV (0-29); CAL/TEST only behind HARVEST_ALLOW_SPLIT (check_layout_seed, R6 guard).
@@ -79,6 +81,13 @@ def scene_revision() -> str:
     for f in ("scene.py", "randomize.py", "planner.py"):
         h.update((here / f).read_bytes())
     return "harvest-sim-" + h.hexdigest()[:12]
+
+
+def _camera_model_dict(R, t, K, W: int, H: int) -> dict:
+    """Pure assembly of one overlay.CamModel-shaped dict (no Isaac): camera_models() is this plus the live Isaac
+    pose lookup, factored out so it is testable without a running sim (tests/runtime/test_camera_models.py)."""
+    return {"K": np.asarray(K, float).tolist(), "R": np.asarray(R, float).tolist(),
+           "t": np.asarray(t, float).tolist(), "W": int(W), "H": int(H)}
 
 
 class Kinematics:
@@ -176,6 +185,27 @@ class AIWorkerEmbodiment:
         from ..sim.snapshot import obs_to_json
         return {"raw": obs_to_json(*oracle_objects(self.env)), "present": list(self.env.present)}
 
+    def camera_models(self) -> dict:
+        """{cam: {K, R (base_from_optical), t, W, H}} now: live parent-link pose x mount (the E-Astra-motion probe's
+        camera_pose; Isaac camera pos_w / quat_w do not follow physics, P40). Evaluated only when an Astra request
+        goes out (couple/overlay.py consumes this dict as obs["cams"], Task 8).
+
+        Frame check (Task 8 Step 6, no conversion applied): camera_pose (harvest/astra_motion/world_isaac.py) reads
+        (R, t) straight from robot.data.body_pos_w / body_quat_w -- Isaac's world/PhysX frame. kin.tcp_pose() ->
+        OraclePlanner.tcp_pose() -> self.env.ee_pose() (harvest/sim/scene.py Env.ee_pose) returns
+        d.body_pos_w[0, self.ee_idx] directly -- the SAME body_pos_w world frame. The robot is fixed-base (aiworker
+        docstring), so this is not seed/reset dependent. Since overlay.project() consumes cam.R/cam.t and the tip in
+        one common frame, and both camera_pose and kin.tcp_pose already report in body_pos_w, camera_models() passes
+        R/t straight through with no extra transform."""
+        from ..astra_motion.world_isaac import camera_pose
+        from ..sim.scene import camera_table, load_realcam
+        rc, rows = load_realcam(), {r["name"]: r for r in camera_table()}
+        out = {}
+        for n in self.cameras:
+            R, t = camera_pose(self.env.robot, rc, n)
+            out[n] = _camera_model_dict(R, t, self.K[n], rows[n]["width"], rows[n]["height"])
+        return out
+
     def _obs(self, imgs, m1):
         from inspect_robots import Observation
         e = self.env
@@ -184,6 +214,7 @@ class AIWorkerEmbodiment:
         extra = {"sim_time": t, "m1": m1, "kin": self.kin, "table_z": e.table_top_z,
                  "depth": {n: (lambda n=n: e.camera_depth(n)) for n in self.cameras},
                  "intrinsics": {n: (lambda n=n: self.K[n].copy()) for n in self.cameras},
+                 "cams": self.camera_models,
                  "rtf": t / max(time.monotonic() - self.t_wall0, 1e-9)}
         return Observation(images=imgs, state={"joint_pos": q}, image_times={n: t for n in imgs}, state_time=t,
                            extra=extra)
