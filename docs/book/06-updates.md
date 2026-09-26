@@ -97,3 +97,4 @@
 | 2026-09-26 11:37 | 03·04 | 결합 Task 19: 정본 §91 도착 시 대조 구현·예상 상태 청크 기준(§86 보충 4) — 03 행, 04 `harvest/couple/`·`tests/couple/`·`tests/runtime/` 행 | 계획 Task 19, 이 줄과 같은 커밋 |
 | 2026-09-26 11:4x | 01·03 | 자동 맥락 설계(정본 §97, ul 110): 01 E-AutoCtx-A0·A1·A2 `[예정]` 두 행, 03 §97 결정 행 | [auto_context_design](../research/auto_context_design_2026-09-26.md), 이 줄과 같은 커밋 |
 | 2026-09-26 12:09 | 03·04 | 결합 Task 19 수정 1회(통제 판정 F19): 늦은 답 무조건 폐기, 모듈형 스킬 편향 유지, 뒤 사영 충돌, extrapolate 문구 복원, 부분 진행 — 03 §91 구현 행 정정, 04 `harvest/couple/`(`stale_ok` 삭제)·`harvest/runtime/`·`tests/runtime/` 행; 정본 §91 구현 기록·§86 보충 4 정정 | 계획 Task 19 수정, 이 줄과 같은 커밋 |
+| 2026-09-26 12:2x | 04 | 상위 VLM 데이터 조사(ul 111): 04 파드 경로 `data/upper_vlm_survey/` 행; 결론 = 자체 시뮬 주, 공개 보조(MolmoBot·BEHAVIOR·RoboTwin 2.0·RefSpatial·InternData-M1) | [research/upper_vlm_data_survey](../research/upper_vlm_data_survey_2026-09-26.md), 이 줄과 같은 커밋 |
