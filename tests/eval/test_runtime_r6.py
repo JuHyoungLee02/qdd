@@ -145,3 +145,16 @@ def test_calibration_refused_for_another_model(tmp_path):
                              "questions": {}}))
     with pytest.raises(ValueError, match="fingerprint"):
         OursRuntime(RuntimeConfig(calibration=str(p), j5_alpha=0.1, model_fingerprint="BBB"), MockSelector())
+
+
+def test_calibration_refused_for_another_prompt_config(tmp_path):
+    """F19: RuntimeConfig.prompt_config_sha is wired to Calibration.load (caller of the checkpoint's current sha)."""
+    from harvest.runtime.core import OursRuntime, RuntimeConfig
+    from harvest.runtime.models import MockSelector
+    p = tmp_path / "c.json"
+    p.write_text(json.dumps({"format": "r6-calib-v1", "model": {"fingerprint": None}, "question_ids": {},
+                             "prompt_config_sha": "old-sha", "questions": {}}))
+    with pytest.raises(ValueError, match="prompt_config_sha"):
+        OursRuntime(RuntimeConfig(calibration=str(p), j5_alpha=0.1, prompt_config_sha="new-sha"), MockSelector())
+    rt = OursRuntime(RuntimeConfig(calibration=str(p), j5_alpha=0.1, prompt_config_sha="old-sha"), MockSelector())
+    rt.close()

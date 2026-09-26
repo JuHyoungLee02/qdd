@@ -32,3 +32,28 @@ def test_image_hashes_recorded():
     t = httpx.MockTransport(lambda r: httpx.Response(200, content=EVENTS.encode()))
     rec = AstraClient("k", "m-1", transport=t).call(img, "low", 10, {})
     assert len(rec.image_sha256s) == 1 and len(rec.image_sha256s[0]) == 64
+
+
+INCOMPLETE_EVENTS = (
+    'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"{\\"a\\""}\n\n'
+    'event: response.incomplete\ndata: {"type":"response.incomplete","response":{"model":"m-1","status":"incomplete",'
+    '"usage":{"input_tokens":10,"output_tokens":600},'
+    '"incomplete_details":{"reason":"max_output_tokens"}}}\n\n')
+
+
+def test_incomplete_response_flagged_not_a_normal_answer():
+    """F21 (prompt_health.md): response.incomplete (max_output_tokens truncation) must not be silently treated
+    as a normal completed answer -- AstraRecord.incomplete/incomplete_reason record it and .error names it."""
+    t = httpx.MockTransport(lambda r: httpx.Response(200, content=INCOMPLETE_EVENTS.encode(),
+                                                     headers={"content-type": "text/event-stream"}))
+    rec = AstraClient("k", "m-1", transport=t).call([{"role": "user", "content": "hi"}], "low", 600, {})
+    assert rec.incomplete is True and rec.incomplete_reason == "max_output_tokens"
+    assert rec.error == "incomplete:max_output_tokens"
+    assert rec.output_text == '{"a"'  # the raw (truncated) text stays available, just not treated as a plain answer
+
+
+def test_default_astra_record_is_not_incomplete():
+    rec = AstraClient("k", "m-1", transport=httpx.MockTransport(
+        lambda r: httpx.Response(200, content=EVENTS.encode()))).call(
+        [{"role": "user", "content": "hi"}], "low", 100, {})
+    assert rec.incomplete is False and rec.incomplete_reason is None and rec.error is None

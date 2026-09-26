@@ -25,6 +25,9 @@ class AstraRecord:
     image_sha256s: list = field(default_factory=list)
     error: str | None = None
     meta: dict = field(default_factory=dict)
+    # F21 (prompt_health.md): a response.incomplete event / status "incomplete" (e.g. max_output_tokens truncation)
+    incomplete: bool = False
+    incomplete_reason: str | None = None
 
 
 def _image_hashes(inp):
@@ -67,9 +70,13 @@ class AstraClient:
                         if not parts:
                             rec.t_first_token = time.monotonic()
                         parts.append(ev.get("delta", ""))
-                    elif ev.get("type") == "response.completed":
-                        r = ev.get("response", {})
+                    elif ev.get("type") in ("response.completed", "response.incomplete"):
+                        r = ev.get("response", {}) or {}
                         rec.model_field, rec.usage = r.get("model"), r.get("usage") or {}
+                        if ev.get("type") == "response.incomplete" or r.get("status") == "incomplete":
+                            rec.incomplete = True
+                            rec.incomplete_reason = (r.get("incomplete_details") or {}).get("reason")
+                            rec.error = f"incomplete:{rec.incomplete_reason}"
         except httpx.HTTPError as e:
             rec.error = "timeout" if isinstance(e, httpx.TimeoutException) else type(e).__name__
         rec.t_done = time.monotonic()

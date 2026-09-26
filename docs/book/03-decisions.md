@@ -83,6 +83,7 @@
 | §83·§87·§90 구현기록(Task 12) | 06:06(09-26) | 직렬화 `ser-A-min-3`: 결정 상태 끝 = 구간 의도 줄 → 움직임 줄 → `last_step`; 융합 VLA에만 그리퍼 질문(close·open·keep, `phase` 뒤, expert 결정 칸 5), 라벨 규칙은 `harvest/intent.py` 한 곳(R2 = 기록 단계, S-E2E = 그리퍼 명령 속도 0.176 /s); 확정 그리퍼는 의도, 관문은 두 층 + T1 그대로; 기존 체크포인트 모두 거부·qid 새 판 (Claude 결정, 통제 판정 G1·P4·S1) | 유효 |
 | §83 구현기록 2(Task 12) | 06:29(09-26) | 같은 판 `ser-A-min-3`: 모든 체크포인트 `prompt_config`가 직렬화기 판 + `last_step` 범주 목록을 기록, `check_prompt`가 `last_step_ok`까지 검사; `mag_coarse`·`dir_xy` 문구↔라벨 통일(PH-A 1)은 미결 — 정해질 때까지 ser-A-min-3 재학습 안 함 (Claude 결정, 통제 판정 PH-A) | 유효 |
 | ul 89 | 18:34 | 결과·실수를 책처럼 기록 → `docs/book/` | 유효(이 책) |
+| §59 보충 | 06:34(09-26) | 프롬프트 검진 F(로컬 VLM 이미지 상한): vLLM `--limit-mm-per-prompt` 이미지 2 → 3(결합 흐름이 머리+양쪽 손목 3장을 보내 2에서 HTTP 400) — `tools/r5/serve.sh`·`harvest/eval/common.py` `vllm_cmd` (Claude, plan 2026-09-26 Task 20) | 유효 |
 
 ## 저장소 규칙이 된 사용자 지시 (CLAUDE.md)
 main 금지·dev만 푸시 · MD 기록 · Overleaf 한국어 마인드맵 · 1.5년·신뢰도 규칙 · 논문 4시간 갱신(ul 73) · 성능 낮으면 최근 논문 적용(ul 70) · 보고는 KST(ul 72) · 예산 10만 원(ul 76) · 실험 자체 검사(ul 87) · 논문 완성판 형식(ul 88) · 기록책(ul 89).

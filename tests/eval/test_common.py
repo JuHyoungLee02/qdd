@@ -116,7 +116,7 @@ def test_md_table():
 def test_vllm_command_has_the_canon_flags():
     cmd = common.vllm_cmd("/m", "name", 8200, util=0.3)
     s = " ".join(cmd)
-    for f in ("--enable-prefix-caching", "raw_logprobs", "--seed 0", "--max-model-len 8192", '"image":2'):
+    for f in ("--enable-prefix-caching", "raw_logprobs", "--seed 0", "--max-model-len 8192", '"image":3'):
         assert f in s, f
 
 

@@ -517,6 +517,7 @@ E0 지연(실제 JevCall 크기) → E1 보정 → E2 마차 시험 → E-M4(C0~
 - **학습 일치**: 단계 A′·B의 SFT는 같은 순서·표지·원본 해상도로 학습하고, `question_id@vN` 해시에 카메라 구성을 넣는다.
 - 손목캠 효과의 기간 안 절제 근거는 찾지 못했다(OpenVLA-OFT·Hsu 외는 기간 밖, 손목 단독 효과 미분리) → §57 결정 실험이 우리 근거.
 - 남은 일: RTX PRO 6000 실물 서버에서 같은 벤치(H·HW × base·lead × N=1·4).
+- (§59 보충, 2026-09-26 06:34 UTC, `docs/stage3/results/prompt_health.md` F(로컬 VLM 이미지 상한), plan 2026-09-26 Task 20) **vLLM `--limit-mm-per-prompt` 이미지 상한 2 → 3**: 위 배치(머리 + 활성 손목 1장)는 이미지 2장을 가정했다. 결합 흐름(canon §84)의 로컬 VLM 스트림은 머리 + 양쪽 손목 3장을 보내 상한 2에서 HTTP 400이 났다. `tools/r5/serve.sh`·`tools/prompt_health/serve.sh`(이미 3)·`harvest/eval/common.py` `vllm_cmd`를 3으로 맞춘다(video·audio는 0 그대로, 접두·멀티모달 캐시 플래그 불변). 기존 R5(머리+손목 1장) 실행은 상한만 넉넉해질 뿐 동작 불변.
 
 ## 60. 주 표 병기 유지 + M4 (b)·critic 확인 신호는 필수 해결 과제 (2026-09-25 18:47 UTC, user-log 65) [사용자 결정]
 - 주 결과 표: **지금은 융합 모델과 모듈형 스택을 나란히** 두고, 결과로 정리가 확실해지면 융합으로 정리한다(§58 제안의 확정 시점 = 결과 뒤).

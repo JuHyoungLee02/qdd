@@ -174,11 +174,11 @@ def ensure_merged(info: dict, out: str) -> dict:
 
 # ------------------------------------------------------------------------------------------ serving
 def vllm_cmd(model_path: str, name: str, port: int, util: float = 0.30) -> list:
-    """Same flags as tools/r5/serve.sh (canon §59: prefix cache + multimodal cache on, 2 images, raw logprobs,
-    batch invariant via env)."""
+    """Same flags as tools/r5/serve.sh (canon §59 supp 2026-09-26: prefix cache + multimodal cache on, 3 images
+    -- the coupling stream sends head + both wrists, canon §84 -- raw logprobs, batch invariant via env)."""
     return [VLLM_BIN, "serve", model_path, "--served-model-name", name, "--host", "127.0.0.1", "--port", str(port),
             "--dtype", "bfloat16", "--max-model-len", "8192", "--gpu-memory-utilization", str(util),
-            "--enable-prefix-caching", "--limit-mm-per-prompt", '{"image":2,"video":0,"audio":0}',
+            "--enable-prefix-caching", "--limit-mm-per-prompt", '{"image":3,"video":0,"audio":0}',
             "--logprobs-mode", "raw_logprobs", "--seed", "0"]
 
 

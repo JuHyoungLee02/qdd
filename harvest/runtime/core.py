@@ -30,7 +30,7 @@ from ..config import CFG
 from ..predicates import PredicateState
 from ..sim.planner import PHASE_TIMEOUT_S
 from ..sim.snapshot import obs_from_json, pred_changes, text_state
-from .astra_hb import EFFORT, HB_PROMPT_ID, MAX_OUT, HeartbeatScheduler, heartbeat_input, parse_decision, prompt_for
+from .astra_hb import EFFORT, HB_PROMPT_ID, MAX_OUT, HeartbeatScheduler, heartbeat_input, parse_decision_ex, prompt_for
 from .clock import DeliveryQueue
 from .m4 import CommitLedger, M4Params, Vote
 from .measure import Critic, HardChannel, ProprioRules, VerifyCal, expected_check, measure, values
@@ -100,6 +100,10 @@ class RuntimeConfig:
     j5_alpha: float | None = None
     j5_escalate_after: int = 2  # T_j5 repeat = 2 in a row (canon §31 bracket assumption)
     model_fingerprint: str | None = None
+    # F19 (prompt_health.md, canon §59/§77): the checkpoint's current prompt_config sha (eval.common.
+    # prompt_config_eval); None -> OursRuntime derives it from model_path (eval.common.training_prompt_config +
+    # default_layout) when possible, else the check is skipped (no model_path: mock / zero-shot, as with fingerprint)
+    prompt_config_sha: str | None = None
     # canon §61/§64 measure() source table (runtime/measure.py): verification-head calibration file (verify-cal-v1:
     # per-predicate temperature, conformal q-hat, critic threshold); "" = uncalibrated default (flagged in the logs)
     verify_cal: str = ""
@@ -139,8 +143,12 @@ class OursRuntime:
         self.cal = None
         if cfg.calibration:
             from .calibration import Calibration
+            pcs = cfg.prompt_config_sha
+            if pcs is None and cfg.model_path:  # F19: derive the checkpoint's current sha (eval/calib.py's writer)
+                from ..eval.common import default_layout, prompt_config_eval, training_prompt_config
+                pcs = prompt_config_eval(default_layout(training_prompt_config(cfg.model_path)))["sha"]
             self.cal = Calibration.load(cfg.calibration, fingerprint=cfg.model_fingerprint,
-                                        question_ids=cfg.question_ids or None)
+                                        question_ids=cfg.question_ids or None, prompt_config_sha=pcs)
         self.vcal = VerifyCal.load(cfg.verify_cal) if cfg.verify_cal else VerifyCal.default()
         self.rules = ProprioRules()
         if cfg.couple not in ("off", "serial"):
@@ -559,13 +567,14 @@ class OursRuntime:
         if m["hb_no"] in self.dropped_hb:
             self.astra_log.append({"hb_no": m["hb_no"], "late_after_timeout": True, "t": round(now, 3)})
             return
-        dec, note = parse_decision(rec_.output_text, tuple(m.get("allowed") or ("ack", "patch", "replace")))
+        dec, note, parse_mode = parse_decision_ex(rec_.output_text,
+                                                  tuple(m.get("allowed") or ("ack", "patch", "replace")))
         self.hb.responded(now)
         entry = {"hb_no": m["hb_no"], "kind": m.get("call_kind", "hb"), "cadence": self.cfg.hb_mode,
                  "prompt_id": m.get("prompt_id"), "t_send": round(r["t_send"], 3),
                  "t_deliver": round(r["t_deliver"], 3),
-                 "latency_s": round(r["latency_s"], 3), "decision": dec, "note": note, "error": rec_.error,
-                 "model": rec_.model_field, "usage": rec_.usage, "http": rec_.http_status,
+                 "latency_s": round(r["latency_s"], 3), "decision": dec, "note": note, "parse_mode": parse_mode,
+                 "error": rec_.error, "model": rec_.model_field, "usage": rec_.usage, "http": rec_.http_status,
                  "first_token_s": round(rec_.t_first_token - rec_.t_send, 3) if rec_.t_first_token else None,
                  "canary_id": self.cfg.astra_canary_id}
         entry["request_sha256"], entry["image_sha256"] = r.get("req_hash") or (None, {})

@@ -148,17 +148,38 @@ def heartbeat_input(summary: str, head_jpeg: bytes | None, task: str = TASK, tem
     return [{"role": "user", "content": content}]
 
 
-def parse_decision(text: str, allowed=OURS_CHOICES) -> tuple[str, str]:
-    m = re.search(r"\{.*\}", text or "", re.S)
+def parse_decision_ex(text: str, allowed=OURS_CHOICES) -> tuple[str, str, str]:
+    """Like parse_decision, plus parse_mode (F20, prompt_health.md): "fenced_json" (```json ... ``` block),
+    "json" (bare {...} object), "regex_fallback" (no valid JSON, a bare allowed word found in the prose) or
+    "failed" (no decision recognized at all). A failure never turns into a default answer -- it comes back as
+    ("invalid", "", "failed") and the caller logs it (with the raw text, already kept in astra_log) instead of
+    silently treating it like an "ack"."""
+    text = text or ""
+    fence = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.S)
+    if fence:
+        try:
+            d = json.loads(fence.group(1))
+            if d.get("decision") in allowed:
+                return d["decision"], str(d.get("note", "")), "fenced_json"
+        except json.JSONDecodeError:
+            pass
+    m = re.search(r"\{.*\}", text, re.S)
     if m:
         try:
             d = json.loads(m.group(0))
             if d.get("decision") in allowed:
-                return d["decision"], str(d.get("note", ""))
+                return d["decision"], str(d.get("note", "")), "json"
         except json.JSONDecodeError:
             pass
-    w = re.search(r"\b(" + "|".join(re.escape(a) for a in allowed) + r")\b", text or "")
-    return (w.group(1), "") if w else ("invalid", "")
+    w = re.search(r"\b(" + "|".join(re.escape(a) for a in allowed) + r")\b", text)
+    if w:
+        return w.group(1), "", "regex_fallback"
+    return "invalid", "", "failed"
+
+
+def parse_decision(text: str, allowed=OURS_CHOICES) -> tuple[str, str]:
+    dec, note, _mode = parse_decision_ex(text, allowed)
+    return dec, note
 
 
 class MockAstra:

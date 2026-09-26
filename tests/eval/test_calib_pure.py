@@ -69,6 +69,27 @@ def test_fit_question_and_file_roundtrip(tmp_path):
         K.Calibration.load(str(p), fingerprint="abc", question_ids={"dir_z": "h2@v1"})
 
 
+def test_prompt_config_sha_guard(tmp_path):
+    """F19 (prompt_health.md): a calibration file must be refused when the caller's current checkpoint
+    prompt_config_sha does not match the one the file was fit with, and refused (not silently skipped) when an
+    older file has no prompt_config_sha at all -- it was built for an older serializer (canon §77/§59)."""
+    cal = {"format": K.FORMAT, "model": {"fingerprint": "abc"}, "question_ids": {}, "prompt_config_sha": "s1",
+           "questions": {}}
+    p = tmp_path / "calibration.json"
+    p.write_text(json.dumps(cal))
+    c = K.Calibration.load(str(p), prompt_config_sha="s1")  # match -> loads
+    assert c.q == {}
+    K.Calibration.load(str(p))  # caller not passing a sha at all: unchecked, as with fingerprint / question_ids
+    with pytest.raises(ValueError, match="s1.*s2|s2.*s1"):
+        K.Calibration.load(str(p), prompt_config_sha="s2")  # mismatch -> names both shas
+
+    old = tmp_path / "old.json"  # no prompt_config_sha recorded at all (pre-F19 calibration file)
+    old.write_text(json.dumps({"format": K.FORMAT, "model": {"fingerprint": "abc"}, "question_ids": {},
+                               "questions": {}}))
+    with pytest.raises(ValueError, match="prompt_config_sha"):
+        K.Calibration.load(str(old), prompt_config_sha="s1")
+
+
 def test_evaluate_reports_the_e1_quantities():
     items = _items(seed=3)
     qc = K.fit_question(_items(seed=1), _items(seed=2), alphas=(0.1,))

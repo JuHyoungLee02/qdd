@@ -253,7 +253,8 @@ class Calibration:
         self.q = d["questions"]
 
     @classmethod
-    def load(cls, path: str, fingerprint: str | None = None, question_ids: dict | None = None) -> "Calibration":
+    def load(cls, path: str, fingerprint: str | None = None, question_ids: dict | None = None,
+             prompt_config_sha: str | None = None) -> "Calibration":
         d = json.load(open(path, encoding="utf-8"))
         if d.get("format") != FORMAT:
             raise ValueError(f"{path}: format {d.get('format')!r} != {FORMAT}")
@@ -264,6 +265,16 @@ class Calibration:
             for q, qid in (d.get("question_ids") or {}).items():
                 if q in question_ids and qid.split("@")[0] != question_ids[q].split("@")[0]:
                     raise ValueError(f"question_id of {q}: calibrated {qid} != runtime {question_ids[q]}")
+        if prompt_config_sha is not None:
+            # F19 (prompt_health.md): SYSTEM / wrapping sentence / camera legend changes silently reused an old
+            # calibration and J5 threshold. A file with no recorded sha at all predates this check (older
+            # serializer, eval/calib.py always writes it now) and is refused rather than let through unchecked.
+            pcs = d.get("prompt_config_sha")
+            if pcs is None:
+                raise ValueError(f"{path}: no prompt_config_sha recorded (old calibration, built for an older "
+                                 f"prompt / serializer; recalibrate for {prompt_config_sha})")
+            if pcs != prompt_config_sha:
+                raise ValueError(f"calibration prompt_config_sha {pcs} != current {prompt_config_sha} (recalibrate)")
         return cls(d)
 
     def apply(self, q: str, probs: dict) -> dict:

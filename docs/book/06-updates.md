@@ -66,3 +66,4 @@
 | 2026-09-26 06:26 | 01·02·03·04·05 | E-NOV0 결과(NONE): 01 E-NOV0 행(`끝`), 02 절 '거' P97–P100, 03 §84 보충 9, 04 `tools/nov0/`·`logs/nov0/` 행, 05 ≈ 1.0 GPU-h | [R/nov0](../stage3/results/nov0.md), 이 줄과 같은 커밋 |
 | 2026-09-26 06:29 | 02 | 겹친 번호 정리: 'Astra 단독 0/6 불공정 기준선' 함정 P93 → P101(E-NOV0 보고) | 이 줄과 같은 커밋 |
 | 2026-09-26 06:29 | 03·04 | 결합 Task 12 후속(통제 판정 PH-A 2, 같은 판 `ser-A-min-3`): 03 §83 구현기록 2 행, 04 `tests/train/test_format_record.py` 행; PH-A 1(`mag_coarse`·`dir_xy` 문구↔라벨 통일)은 미결로 정본 §83 구현 기록 2·handoff §0에 적음 | plan Task 12, 이 줄과 같은 커밋 |
+| 2026-09-26 06:36 | 03·04 | 결합 Task 20(프롬프트 검진 F19–F21 가드 + 로컬 VLM 이미지 상한): 03 §59 보충 행, 04 `harvest/runtime/`·`harvest/clients/`·`tools/` 기타·`tests/`·`tests/runtime/`·`tests/eval/` 행(`calibration.Calibration.load(prompt_config_sha=)`, `astra_hb.parse_decision_ex`, `clients.astra.AstraRecord.incomplete`, vLLM 이미지 3) | plan Task 20, 이 줄과 같은 커밋 |
