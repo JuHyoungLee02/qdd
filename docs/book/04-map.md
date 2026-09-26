@@ -69,6 +69,7 @@
 | `data/pool/`, `data/pool.labels_v2.jsonl` | 풀 120편(옛 소프트 리셋 물리 — 새 물리로 재현 안 됨) |
 | `data/jsel_dev/`, `data/gen_dev/` | DEV 스냅샷(standard / random·dr) |
 | `data/se2e` → `se2e_t` → **`se2e_c1`** | S-E2E 행: 원판(중앙 차분 누수) → 움직임 출처 필드 추가 → **누수 수정판(현재 사용)** |
+| `data/robotis/rb3/`, `data/se2e_c2/`, `code_rb3` | RB3 원본(HF `Dongkkka/ffw_bg2_rev4_pickup_obj_1127_total2` f7e311dc, 3.2 GB)·`rb3_flags.json`·`overlap.json`·확인 시트; **`se2e_c2`** = se2e_c1 행 사본 + RB3 (`conv/RB3.stageb.jsonl`·`img/RB3`, RB1·RB2 img는 링크, `SHA256SUMS.txt`·`gates.json`), 코드 사본 (= 421833f 도구 블롭) |
 | `r2/dev*`, `r2/train/`, `r2/train_lerobot/`, `r2train/`, `data/r2/` | R2 DEV 생성물·LeRobot 내보내기(`r2/dev_lerobot`), **R2_TRAIN 원본 `r2/train/<variant>/<task>/<P0\|P1\|P2>`**(단계 B `--pool` 폴더, 합본 `<kind>.stageb.jsonl`·`CODE_VERSION` e8e1864), R2_TRAIN LeRobot v2.1 `r2/train_lerobot/<variant>_<task>`(6개), 운영 스크립트·로그 `r2train/`, 폐기한 첫 파일럿(옛 물리 6b013ac) `data/r2/train_pilot_prefix_6b013ac` — [R/r2_train_gen](../stage3/results/r2_train_gen.md) §11 |
 | `ckpt/se2e/{se2e_A_s0,se2e_B_s1}` | S-E2E PASS 체크포인트(ser-A-min-1 — 폐루프에 안 씀) |
 | `ckpt/se2e_scale/{1000,9371,18742,37484}`, `ckpt/se2e_diag` | 규모 곡선·진단 |
@@ -97,6 +98,7 @@
 ## 데이터 판본·분할
 - 시드 분할: DEV 0–29(자유), POOL 2000–2119, **CAL 500–549 · TEST 1000–1149 · TEST-P5 1300–1329는 `HARVEST_ALLOW_SPLIT` 없이는 거부**, 순수 로직 시험 시드 3000–3199, R2_TRAIN 시드 영역 10000–59999 [→ 정정 2026-09-25 20:01 UTC, R7 26회차 N55]; 생성한 R2_TRAIN = P0 10000–10599 · P1 10600–10799 · P2 10800–10999 × 과제 3 × {standard, dr} = 6,000편(유효 5,126), 분할 시드 % 20 == 0 → eval. 생성 뒤 `gen check`(2026-09-25 21:57:32–22:32:29 UTC)가 18폴더를 모두 다시 병합했고, 폴더마다 합본 `<kind>.stageb.jsonl` 행 수 = 유효 편 행 합(전체 1,495,348)·시드 집합 = 유효 시드 집합으로 확인했다([R/r2_train_gen](../stage3/results/r2_train_gen.md) §5). 단계 B는 이 합본을 `--pool` 폴더로 읽는다 — 앞으로 편을 더 만들면 같은 병합·확인을 다시 돌린다(N94) [→ 2026-09-25 23:28 UTC, R2_TRAIN 결과: 26–32회차 괄호(파일럿 병합분 서술, N141)를 최종 병합 사실로 정리]
 - S-E2E: RB1(`ROBOTIS/Task_0001`, 라이선스 미표기 → 내부용) + RB2(`Task_0002`, apache-2.0), 10 Hz, 검증 1,799(층화 300 = `val_keys_sha e22f6d8ef7fc`).
+- S-E2E RB3(`se2e_c2`, 선택 종류 `--se2e-kinds RB1,RB2,RB3`): 직원 개인 계정 카드 apache-2.0 → 내부용, val = 같은 편 해시 규칙(RB3 32편 815행), 겹침 0([R/rb3_data](../stage3/results/rb3_data.md)).
 - 직렬화: `ser-A-min-2`(마지막 줄 `last_step:`), 움직임 줄 `se2e-motion@v1`(런타임 적용은 계획 Task 12 = ser-A-min-3, 기존 체크포인트를 모두 거부하게 되므로 E-MA1b 뒤).
 
 ## 자주 쓰는 명령 (자세한 인자는 [R/r6_eval](../stage3/results/r6_eval.md) 1절)
