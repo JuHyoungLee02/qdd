@@ -69,9 +69,11 @@ X_OBJ_GEOM = {
     # a furniture surface as a place target (static collider, no sensor): its box / top are set per episode
     # (Env.set_virtual_surface); contact = the object's bottom on its top inside its box (tasks.surface_contacts)
     "o19": dict(shape="surface", size=(0.10, 0.10, 0.002), invisible=True),
+    "o20": dict(shape="surface", size=(0.10, 0.10, 0.002), invisible=True),  # a furniture container's floor
 }
 X_RIGID = ("o12", "o13", "o14", "o15")
-X_VISUAL_ONLY = ("o17", "o18", "o19")
+X_VISUAL_ONLY = ("o17", "o18", "o19", "o20")
+VIRTUAL_PLACES = ("o19", "o20")  # furniture surfaces as place objects (set per episode, Env.set_virtual_surface)
 SUPPORT_TOP = {"o15": 0.008}  # place surface above the object's bottom when it is not its top (bin floor)
 OBJ_GEOM.update(X_OBJ_GEOM)
 VISUAL_ONLY = ("o11",)
@@ -577,7 +579,7 @@ class Env:
         if k in self.layout:
             x, y = self.layout[k][:2]
             top = getattr(self, "virtual_top", {}).get(k, self.table_top_z)  # o19: the furniture surface top
-            return np.array([x, y, top + h / 2 if k != "o19" else top - h / 2])
+            return np.array([x, y, top + h / 2 if k not in VIRTUAL_PLACES else top - h / 2])
         return np.array([*PARK_XY.get(k, (-3.0, -3.3)), h / 2])
 
     def set_virtual_surface(self, k: str, top_z: float, xy_box) -> None:

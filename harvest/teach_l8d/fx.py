@@ -57,6 +57,24 @@ def choose_two_surfaces(scene: dict, min_rise: float = 0.02) -> tuple:
 MIN_DIAG = 0.20  # target and place need >= 0.16 m apart (task_layout): a narrower box cannot hold a layout
 
 
+def choose_container(scene: dict) -> tuple:
+    """Container task: -> (work surface A, region, container surface B, region); B = a usable container surface
+    (surface["container"]), A = the largest usable non-container surface. SkipScene if either is missing."""
+    by_id = {s["id"]: s for s in scene["surfaces"]}
+    regs = []
+    for p in scene.get("placement_regions") or []:
+        r = p.get("region")
+        if r is not None and p["surface"] in by_id:
+            regs.append((by_id[p["surface"]], [list(r[0]), list(r[1])], (r[0][1] - r[0][0]) * (r[1][1] - r[1][0])))
+    boxes = [t for t in regs if t[0].get("container")]
+    work = [t for t in regs if not t[0].get("container")]
+    if not boxes or not work:
+        raise SkipScene(f"{scene['kind']} seed {scene['seed']}: no usable container + work surface")
+    a = max(work, key=lambda t: t[2])
+    b = max(boxes, key=lambda t: t[2])
+    return a[0], a[1], b[0], b[1]
+
+
 def ws_from_region(region) -> tuple:
     from ..sim.scene import check_ws
     try:
@@ -81,7 +99,7 @@ def filter_layout(layout: dict, surface: dict, keep=()) -> tuple:
     from ..sim.scene import OBJ_GEOM, X_VISUAL_ONLY
     out, dropped = {}, []
     for k, v in layout.items():
-        if k == "o19":  # the place surface itself (a different surface, set by the runner)
+        if k in ("o19", "o20"):  # the place surface itself (a different surface, set by the runner)
             out[k] = v
             continue
         fr = 0.0 if k in X_VISUAL_ONLY else OBJ_GEOM[k]["footprint_r"]

@@ -63,10 +63,13 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                 self._rm = ReachModel.load(reach_path)
             from ..sim.tasks import X_FURNITURE_TASKS
             sc = FU.sample_scene(furniture, seed, reach=self._rm)
-            upper = None
-            if task in X_FURNITURE_TASKS:  # cross-surface: the task on the lower surface, o19 = the higher one
-                surf, region, upper, uregion = fx.choose_two_surfaces(sc)
-                env.set_virtual_surface("o19", float(upper["top_z"]), uregion)
+            upper, vid = None, TASKS[task].place
+            if task in X_FURNITURE_TASKS:  # cross-surface: o19 = a higher surface, o20 = a container's floor
+                pick = fx.choose_container if vid == "o20" else fx.choose_two_surfaces
+                surf, region, upper, uregion = pick(sc)
+                if float(upper["top_z"]) < float(surf["top_z"]) + 0.02 - 0.03:  # executor box: z >= table + 2.5 cm
+                    raise fx.SkipScene(f"place surface {upper['id']} lower than the work surface")
+                env.set_virtual_surface(vid, float(upper["top_z"]), uregion)
             else:
                 surf, region = fx.choose_surface(sc)
             env.ws = fx.ws_from_region(region)
@@ -88,7 +91,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             keep = {TASKS[task].target, TASKS[task].place} | {o for st in X_STEPS.get(task, ()) for o in st[:2]}
             lay, dropped = fx.filter_layout(env.layout, surf, keep)
             if upper is not None:  # the place surface centre (its region, not the layout box)
-                lay["o19"] = ((uregion[0][0] + uregion[0][1]) / 2, (uregion[1][0] + uregion[1][1]) / 2, 0.0)
+                lay[vid] = ((uregion[0][0] + uregion[0][1]) / 2, (uregion[1][0] + uregion[1][1]) / 2, 0.0)
             env.layout = lay
             SC._LAYOUT["layout"] = lay
             self.furniture_scene = fx.summary(sc, surf, region, dropped)

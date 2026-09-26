@@ -45,6 +45,18 @@ def test_two_surfaces_and_virtual_surface_contacts():
     assert not T.surface_contacts(pos, bottom, "o19", (0.04, 0.04))
 
 
+def test_choose_container():
+    box = {"id": "s2", "kind": "bin_floor", "top_z": 0.87, "container": True,
+           "xy_box": [[0.45, 0.58], [-0.20, -0.07]]}
+    sc = _scene([{"surface": "s0", "region": [[0.40, 0.52], [-0.40, -0.06]]},
+                 {"surface": "s2", "region": [[0.47, 0.56], [-0.18, -0.09]]}])
+    sc["surfaces"].append(box)
+    a, ra, b, rb = fx.choose_container(sc)
+    assert a["id"] == "s0" and b["id"] == "s2"
+    with pytest.raises(fx.SkipScene):
+        fx.choose_container(_scene([{"surface": "s0", "region": [[0.40, 0.52], [-0.40, -0.06]]}]))
+
+
 def test_filter_layout_drops_off_surface_extras_and_keeps_task_objects():
     lay = {"o3": (0.45, -0.2, 0.0), "o5": (0.50, -0.35, 0.0), "o8": (0.72, -0.1, 0.0), "o9": (0.5, 0.0, 0.3)}
     out, dropped = fx.filter_layout(lay, SURF, keep={"o3", "o5"})

@@ -100,8 +100,11 @@ X_TASKS = {
     # furniture cross-surface task (runner --furniture): the mug on the lower surface -> the higher surface o19
     "mug_to_upper": Task("mug_to_upper", "o3", "o19", "Put the red mug on the higher surface.",
                          {"S1": "pick up mug o3", "S2": "place mug o3 on surface o19"}, extras=("o8",)),
+    # furniture container task (runner --furniture): the mug -> the floor of the furniture's open box o20
+    "mug_to_container": Task("mug_to_container", "o3", "o20", "Put the red mug into the open box.",
+                             {"S1": "pick up mug o3", "S2": "place mug o3 in box o20"}, extras=("o8",)),
 }
-X_FURNITURE_TASKS = ("mug_to_upper",)  # need a furniture scene with two usable surfaces (teach_l8d.fx)
+X_FURNITURE_TASKS = ("mug_to_upper", "mug_to_container")  # need a furniture scene with a second usable surface
 # steps (target, place, place xy offset | None); a shared place gets side-by-side offsets
 X_STEPS = {"mug_tray_bottle_marker": (("o3", "o5", None), ("o8", "o11", None)),
            "clear_to_bin": (("o3", "o15", (0.0, 0.04)), ("o8", "o15", (0.0, -0.04))),

@@ -27,7 +27,7 @@ OBJ_DESC = {"o3": "cylinder, diameter 6.4 cm, height 9.5 cm (solid, flat top)",
 # L8-X objects (harvest/sim/scene.py X_OBJ_GEOM; only in L8-X scenes)
 OBJ_NAME.update({"o12": "white stand", "o13": "blue mug", "o14": "small red cup", "o15": "grey bin",
                  "o17": "spot left of the green bottle", "o18": "spot right of the green bottle",
-                 "o19": "higher surface"})
+                 "o19": "higher surface", "o20": "open box"})
 OBJ_DESC.update({"o12": "box 12 x 12 cm, 8 cm high (a raised stand)",
                  "o13": "cylinder, diameter 6.4 cm, height 9.5 cm (solid, flat top)",
                  "o14": "cylinder, diameter 5.0 cm, height 7.5 cm (solid, flat top)",
@@ -36,7 +36,8 @@ OBJ_DESC.update({"o12": "box 12 x 12 cm, 8 cm high (a raised stand)",
                         "(nothing is drawn there)",
                  "o18": "an empty place on the table about 10 cm to the robot's right (-y) of the green bottle's "
                         "centre (nothing is drawn there)",
-                 "o19": "the flat top of the higher piece of furniture next to the object (nothing is drawn there)"})
+                 "o19": "the flat top of the higher piece of furniture next to the object (nothing is drawn there)",
+                 "o20": "an open box that is part of the furniture (put things inside, on its floor)"})
 
 STATIC = """You control the right arm of a humanoid robot (ROBOTIS AI Worker FFW-SG2) at a table, in simulation, by looking at its cameras and giving short end-effector commands.
 
@@ -147,6 +148,8 @@ def place_rule(place: str, place_name: str) -> str:
         return f"inside the {place_name} (standing on its floor, supported by it)"
     if place == "o19":  # L8-X furniture surface
         return f"on the {place_name} (standing on it, fully inside its edges)"
+    if place == "o20":  # L8-X furniture container
+        return f"inside the {place_name} (standing on its floor)"
     if place in ("o17", "o18"):  # L8-X relational spot
         side = "left (+y)" if place == "o17" else "right (-y)"
         return (f"on the table about 10 cm to the robot's {side} of the green bottle (its centre within 4 cm of "
