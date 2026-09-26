@@ -119,3 +119,4 @@
 | 2026-09-26 15:5x | 03·04 | 좌표계 없는 공개 데이터 채택 추천안(ul 124): 03 §97 보충 3 행, 04 저장소 표에 조사 문서 행 | [research/no_frame_data_methods](../research/no_frame_data_methods_2026-09-27.md), 이 줄과 같은 커밋 |
 | 2026-09-27 16:2x | 03 | 최종 상위 35B 확정(8B는 임시 대리) + 상위↔VLA 의도 공유 프로토콜 필수(ul 125, 정본 §96 보충 2): 03 §96 보충 2 행 추가 | 이 줄과 같은 커밋 |
 | 2026-09-26 16:4x | 01·03·04 | 결합 학습 계획(ul 127·128): 01 `[예정]` 행 VLA-R3·E-VLA-E2E·E-TEACH-L8C·E-COUPLE-8B·E-TEACH-35C, 03 §96 보충 3·4 행, 04 계획 문서 행 | [research/coupled_training_plan](../research/coupled_training_plan_2026-09-27.md), 이 줄과 같은 커밋 |
+| 2026-09-26 17:4x | 01·04·05 | E-TEACH-35B 준비(ul 135): 01 `[예정]` 행 E-TEACH-35B, 04 파드 경로·코드 행, 05 GPU 행(≈ 1.3 GPU-h, 0원) | [R/teach_35b_ready](../stage3/results/teach_35b_ready.md), 이 줄과 같은 커밋 |
