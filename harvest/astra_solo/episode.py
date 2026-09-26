@@ -28,6 +28,13 @@ MOTION_LIMIT_S = 180.0
 MAX_INVALID_RUN = 3
 VIDEO_EVERY = 5
 KRW_PER_USD = 1450.0
+SAG_MM = 15.0  # history wording: a move ending <= 15 mm short is sag / lag, not BLOCKED (pilot P107)
+MAX_API_ERR_RUN = 3
+QUOTA_MARKERS = ("insufficient_quota", "credit_balance", "billing_hard_limit")
+
+
+class ApiStop(RuntimeError):
+    """The API cannot serve (quota / credit) or keeps returning nothing: stop the whole run, spend nothing more."""
 
 
 def outcome(e: dict) -> str:
@@ -37,6 +44,8 @@ def outcome(e: dict) -> str:
         return f"target clipped to the workspace at ({g[0]:.3f}, {g[1]:.3f}, {g[2]:.3f})"
     if e["event"] == "reach":
         return f"reached the target (error {e['err_mm']:.0f} mm)"
+    if e["err_mm"] <= SAG_MM:  # P107: ~1 cm load sag / lag while carrying is not a blockage
+        return f"stopped {e['err_mm']:.0f} mm short of the target (normal arm sag or lag, not blocked)"
     if e["event"] == "settled":
         return f"stopped {e['err_mm']:.0f} mm short of the target (arm stopped moving)"
     return f"BLOCKED: stopped {e['err_mm']:.0f} mm from the target (contact or out of reach)"
@@ -51,6 +60,7 @@ class Episode:
         self.calls, self.events, self.history, self.frames = [], [], [], []
         self.end_reason = None
         self.t_success = None
+        self.api_err_run = 0
 
     # ------------------------------------------------------------------ model
     def _truth(self) -> dict:
@@ -92,9 +102,21 @@ class Episode:
                 rec["parsed"] = parsed
             self.calls.append(rec)
             self._save_call(idx, t, images if (self.save_images and (attempt == 0)) else [], rep.text)
+            self._api_guard(rep)
             if parsed is not None:
                 return parsed, rec
         return None, rec
+
+    def _api_guard(self, rep) -> None:
+        """Runner guard (coordinator, 2026-09-26 credit exhaustion): a quota / credit error is fatal at once; three
+        empty-or-error answers in a row stop the run. The partial episode is saved (end_reason api_stop) first."""
+        msg = f"{rep.error or ''} {getattr(rep, 'status', None) or ''}"
+        fatal = any(k in msg for k in QUOTA_MARKERS)
+        self.api_err_run = self.api_err_run + 1 if (rep.error or not (rep.text or "").strip()) else 0
+        if fatal or self.api_err_run >= MAX_API_ERR_RUN:
+            self.end_reason = "api_stop"
+            self._result(0.0)
+            raise ApiStop(("quota: " if fatal else f"{self.api_err_run} empty/error answers in a row: ") + msg[:300])
 
     def _save_call(self, idx, text, images, reply):
         if not self.out_dir:

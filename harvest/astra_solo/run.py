@@ -47,7 +47,7 @@ def _results(out, model):
 
 def run(a):
     from ..astra_motion.cost import BudgetStop, Ledger
-    from .episode import run_episode
+    from .episode import ApiStop, run_episode
     from .truth import SoloTruth
     from .world import SoloWorld
     model = make_model(a.model, a)
@@ -72,6 +72,12 @@ def run(a):
                               motion_limit_s=a.motion_limit, video=k < a.video_first, variant=a.variant)
         except BudgetStop as e:
             print("BUDGET_STOP " + json.dumps({"msg": str(e)}), flush=True)
+            return
+        except ApiStop as e:  # quota / repeated empty answers: stop everything; the episode is rerun later
+            p = os.path.join(od, "result.json")
+            if os.path.exists(p):
+                os.replace(p, os.path.join(od, f"result_api_stop_{int(time.time())}.json"))
+            print("API_STOP " + json.dumps({"seed": s, "variant": a.variant, "msg": str(e)[:300]}), flush=True)
             return
         print("EP " + json.dumps({k2: res.get(k2) for k2 in (
             "seed", "variant", "model", "success", "grasp_lift", "fail_stage", "end_reason", "n_calls", "n_invalid",

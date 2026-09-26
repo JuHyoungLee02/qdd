@@ -12,6 +12,47 @@ from harvest.astra_solo.truth import SoloTruth
 from astra_motion.fakeworld import FakeWorld, GarbageModel
 
 
+def test_small_shortfall_is_load_sag_not_blocked():
+    """P107: a move that ends ~1 cm short while carrying (load sag) is not reported as BLOCKED."""
+    for kind in ("timeout", "settled"):
+        s = E.outcome({"event": kind, "err_mm": 10.8})
+        assert "BLOCKED" not in s and "sag" in s and "11 mm" in s
+    assert E.outcome({"event": "timeout", "err_mm": 40.0}).startswith("BLOCKED")
+    assert E.outcome({"event": "settled", "err_mm": 22.0}).startswith("stopped 22 mm short")
+
+
+class ErrModel:
+    name = "err"
+
+    def __init__(self, error, status=None):
+        self.error, self.status, self.n = error, status, 0
+
+    def ask(self, text, images, meta):
+        from harvest.astra_motion.truth import Rep
+        self.n += 1
+        r = Rep("")
+        r.error, r.status = self.error, self.status
+        return r
+
+
+def test_insufficient_quota_is_fatal_at_once():
+    import pytest
+    w = FakeWorld()
+    m = ErrModel("http_429", '{"error": {"code": "insufficient_quota"}}')
+    with pytest.raises(E.ApiStop):
+        E.run_episode(w, m, seed=1, task="mug_tray")
+    assert m.n == 1
+
+
+def test_three_empty_or_error_answers_stop_the_run():
+    import pytest
+    w = FakeWorld()
+    m = ErrModel("timeout")
+    with pytest.raises(E.ApiStop):
+        E.run_episode(w, m, seed=1, task="mug_tray")
+    assert m.n == E.MAX_API_ERR_RUN
+
+
 class Capture:
     """Wraps a model and keeps what it was sent."""
 

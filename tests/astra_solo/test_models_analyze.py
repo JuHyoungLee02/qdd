@@ -30,6 +30,14 @@ def test_medium_effort_body_and_ledger(tmp_path):
     assert abs(led.total_krw - (2000 * 10 + 500 * 50) / 1e6 * 1450) < 1e-6
 
 
+def test_quota_error_reaches_the_guard_unbilled(tmp_path):
+    body = '{"error": {"message": "You exceeded your current quota", "code": "insufficient_quota"}}'
+    led = Ledger(str(tmp_path / "l.jsonl"), hard_krw=5000.0)
+    m = SoloAstra("tok", "low", led, transport=httpx.MockTransport(lambda r: httpx.Response(429, text=body)))
+    r = m.ask("hi", [], {"call": 0})
+    assert r.error == "http_429" and "insufficient_quota" in r.status and r.cost_usd == 0.0 and led.total_krw == 0.0
+
+
 def test_hard_stop_before_the_call(tmp_path):
     led = Ledger(str(tmp_path / "l.jsonl"), hard_krw=10.0)
     m = SoloAstra("tok", "low", led, transport=httpx.MockTransport(lambda r: httpx.Response(500)))
