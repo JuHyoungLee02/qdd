@@ -85,11 +85,11 @@ def fig_overview():
     ax.text(vx + 0.10, py + ph - 0.10, "2단계(조건부): VLA = 드라이버", fontsize=7.6, va="top", color="#2F4F7A",
             fontweight="bold")
     ax.text(vx + 0.10, py + ph - 0.33, "기다림 실패·벽시계 등 한계가 측정될 때만", fontsize=5.8, va="top", color="#2F4F7A")
-    note(ax, vx + 0.10, py + 1.06, vw - 0.20, 0.36, "0.33 s마다 닫힌 보기 선택 (방향·크기·대상·단계·그리퍼)",
-         fs=5.6, ec=VL[1])
-    note(ax, vx + 0.10, py + 0.62, vw - 0.20, 0.36, "쥐기·놓기 시점은 VLA · 도착 시 대조 · 거리 권한 a", fs=5.6,
+    note(ax, vx + 0.10, py + 1.06, vw - 0.20, 0.36, "코드: 상위 목표 → 매 0.33 s VLA 결정 칸으로 변환", fs=5.6,
+         ec="#6F6F6F")
+    note(ax, vx + 0.10, py + 0.62, vw - 0.20, 0.36, "VLA 자기 결정과 늘 연속 혼합 (답 나이·확신·가시성)\n쥐는 시점은 VLA, 상위가 검증", fs=5.4,
          ec=VL[1])
-    note(ax, vx + 0.10, py + 0.16, vw - 0.20, 0.36, "행동 전문가 → 0.5 s 관절 청크", fs=5.8, ec=EX[1], fc=EX[0])
+    note(ax, vx + 0.10, py + 0.16, vw - 0.20, 0.36, "행동 전문가 → 0.4 s 관절 청크", fs=5.8, ec=EX[1], fc=EX[0])
     arr(ax, [(ex0 + ew, py + 1.30), (vx, py + 1.30)], color="#7A96C0", lw=0.9, ls=(0, (3, 2)))
     ax.text((ex0 + ew + vx) / 2, py + 1.35, "대체", ha="center", va="bottom", fontsize=5.2, color="#7A96C0")
 
@@ -116,17 +116,14 @@ def fig_overview():
     dy = 0.14
     dbox(ax, 0.05, 1.02, 6.78, 1.05, "none", "#7A96C0", lw=0.9)
     ax.text(0.12, 2.03, "2단계(조건부)", fontsize=5.8, va="top", color="#2F4F7A", fontweight="bold")
-    lanes = [("상위 계획기", 1.78 + dy - 0.06), ("VLA (0.33 s)", 1.50 + dy - 0.06), ("거리 권한 a", 1.22 + dy - 0.06)]
+    lanes = [("상위 계획기", 1.78 + dy - 0.06), ("VLA (0.33 s)", 1.50 + dy - 0.06), ("상위 목표 가중", 1.22 + dy - 0.06)]
     for name, yy in lanes:
         ax.text(x0 - 0.08, yy, name, ha="right", va="center", fontsize=6.0, color="#333")
         ax.plot([x0, x1], [yy, yy], color="#E6E6E6", lw=0.8, zorder=0)
     yu, yv, ya = lanes[0][1], lanes[1][1], lanes[2][1]
-    calls = [(0.0, 3.0, "첫 계획: 접근"), (3.0, 12.0, "요청 1 → \"이번엔 잡기\""), (12.0, 21.0, "요청 2 → 검증 + \"나르기\"")]
+    calls = [(0.0, 3.0, "목표: 머그 위"), (3.0, 12.0, "요청 1 → 목표: 머그 + \"잡기\""), (12.0, 21.0, "요청 2 → 검증 + 목표: 쟁반")]
     for a, b, t in calls:
         pill(ax, X(a), yu - 0.07, (b - a) * sx - 0.02, 0.14, "astra", t, fs=5.4)
-    for tt in [12.0, 21.0]:
-        ax.plot([X(tt), X(tt)], [ya + 0.08, yu - 0.08], color="#6F6F6F", lw=0.7, ls=(0, (2, 1.5)))
-        ax.text(X(tt) + 0.03, yu - 0.12, "대조", fontsize=5.0, color="#555", va="top")
     t = 3.0
     while t < T - 0.1:
         ax.plot([X(t), X(t)], [yv - 0.05, yv + 0.05], color=VL[1], lw=0.5)
@@ -135,12 +132,17 @@ def fig_overview():
     ax.text(X(14.5), yv - 0.09, "VLA가 쥐는 시점", ha="center", va="top", fontsize=5.2, color=VL[1])
     check(ax, X(21.0) + 0.14, yu + 0.11, s=0.03)
     ax.text(X(21.0) + 0.21, yu + 0.12, "잡음 검증", fontsize=5.2, color=VER[1], va="center")
-    segs = [(0.0, 11.0, 1.0), (11.0, 11.8, 0.5), (11.8, 16.5, 0.0), (16.5, 17.2, 0.5), (17.2, 24.0, 1.0)]
-    for a, b, v in segs:
-        ax.add_patch(Rectangle((X(a), ya - 0.07), (b - a) * sx, 0.12 * v + 0.004,
-                               fc=UP[0] if v > 0 else "white", ec=UP[1] if v > 0 else "none", lw=0.5))
-    ax.text(X(5.5), ya - 0.10, "a = 1 먼 구간: 상위 수정 반영", ha="center", va="top", fontsize=5.2, color=UP[1])
-    ax.text(X(14.2), ya - 0.10, "a = 0 접촉 근처: VLA만", ha="center", va="top", fontsize=5.2, color=VL[1])
+    # continuous blend weight of the upper-derived decision: high after a fresh answer, decays with answer age,
+    # lower while the VLA itself sees the target up close (illustrative, not measured)
+    import numpy as _np
+    tt = _np.linspace(0.0, 24.0, 400)
+    last = _np.where(tt < 3.0, 0.0, _np.where(tt < 12.0, 3.0, _np.where(tt < 21.0, 12.0, 21.0)))
+    w = 0.85 * _np.exp(-(tt - last) / 9.0)
+    w = w * (1.0 - 0.55 * _np.exp(-((tt - 14.5) / 2.2) ** 2))
+    ax.fill_between([X(v) for v in tt], ya - 0.07, ya - 0.07 + 0.15 * w, color=UP[0], lw=0)
+    ax.plot([X(v) for v in tt], ya - 0.07 + 0.15 * w, color=UP[1], lw=0.8)
+    ax.text(X(6.0), ya - 0.10, "새 답 직후 크고 답 나이에 따라 줄어듦", ha="center", va="top", fontsize=5.2, color=UP[1])
+    ax.text(X(15.0), ya - 0.10, "VLA가 목표를 가까이 볼 때 VLA 쪽으로 (스위치 아님)", ha="center", va="top", fontsize=5.2, color=VL[1])
     for tk in [0, 6, 12, 18, 24]:
         ax.text(X(tk), 0.93, f"{tk} s", ha="center", va="center", fontsize=5.2, color="#777")
 
@@ -165,14 +167,14 @@ def fig_model():
     W, H = COL_W, 2.95
     fig, ax = canvas(W, H)
     # upper planner (top)
-    rbox(ax, 0.05, 2.45, 3.15, 0.42, "astra", "상위 계획기", fs=7.0, bold=True,
-         sub="구간 의도(now · do · next)를 선언, 결과를 검증", sfs=5.6)
+    rbox(ax, 0.05, 2.45, 3.15, 0.42, "astra", "상위 계획기 (원래 형식)", fs=7.0, bold=True,
+         sub="손끝 목표 xyz + 그리퍼 의도, 결과를 검증", sfs=5.6)
     # inputs
     icon_scene(ax, 0.05, 1.55, 0.50, 0.36, "std")
     ax.text(0.30, 1.51, "머리", ha="center", va="top", fontsize=5.6, color="#444")
     icon_scene(ax, 0.05, 1.00, 0.50, 0.36, "rnd")
     ax.text(0.30, 0.96, "활성 손목", ha="center", va="top", fontsize=5.6, color="#444")
-    note(ax, 0.02, 0.28, 0.58, 0.50, "과제 문장\n구간 의도 줄\n그리퍼 · 움직임", fs=5.4, ec="#9A9A9A")
+    note(ax, 0.02, 0.28, 0.58, 0.50, "과제 문장\n그리퍼 상태\n움직임 줄", fs=5.4, ec="#9A9A9A")
     # backbone
     bx, bw = 0.78, 1.50
     ax.add_patch(FancyBboxPatch((bx, 0.28), bw, 1.98, boxstyle="round,pad=0,rounding_size=0.05",
@@ -184,19 +186,21 @@ def fig_model():
     rbox(ax, bx + 0.08, 0.36, bw - 0.16, 0.34, "skill", "행동 전문가 (sg[h])", fs=5.6)
     for yy in [1.73, 1.18, 0.53]:
         arr(ax, [(0.60, yy), (bx, yy)], lw=0.8)
-    # intent from upper
-    arr(ax, [(0.9, 2.45), (0.9, 2.26)], color=UP[1], lw=0.9)
+    # upper target -> code conversion + blend (not a model)
+    note(ax, 2.30, 1.86, 0.66, 0.40, "코드: 목표→결정\n변환 + 늘 섞기", fs=4.8, ec="#6F6F6F")
+    arr(ax, [(2.63, 2.45), (2.63, 2.26)], color=UP[1], lw=0.9)
+    arr(ax, [(2.62, 1.86), (2.62, 1.72)], color="#6F6F6F", lw=0.8)
     # right column: M4, chunk, robot, verification back
     rbox(ax, 2.45, 1.30, 0.75, 0.42, "rule", "M4 확정", fs=6.2, sub="합의 + 측정", sfs=5.2)
     arr(ax, [(bx + bw, 1.49), (2.45, 1.49)], lw=0.8)
     arr(ax, [(2.62, 1.30), (2.62, 0.75), (2.10, 0.75), (2.10, 0.70)], lw=0.8)
     ax.text(2.70, 1.02, "확정 결정", ha="left", va="center", fontsize=5.2, color="#555")
     arr(ax, [(bx + bw, 0.53), (2.42, 0.53)], lw=0.8)
-    ax.text(2.46, 0.53, "0.5 s 청크\n→ 안전 투영", ha="left", va="center", fontsize=5.3, color="#444")
+    ax.text(2.46, 0.53, "0.4 s 청크\n→ 안전 투영", ha="left", va="center", fontsize=5.3, color="#444")
     icon_robot(ax, 2.95, 0.02, s=0.36)
     # verification back up
     arr(ax, [(3.12, 1.72), (3.12, 2.45)], color=VER[1], lw=0.9)
-    ax.text(3.08, 2.08, "검증\n(T1·V1h)", ha="right", va="center", fontsize=5.2, color=VER[1])
+    ax.text(3.17, 2.06, "검증 (T1·V1h)", ha="left", va="center", fontsize=4.8, color=VER[1], rotation=90)
     save(fig, "model")
 
 

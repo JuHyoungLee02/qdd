@@ -2,7 +2,7 @@
 \centering
 \includegraphics[width=0.93\linewidth]{figures/overview.pdf}
 \captionsetup{hypcap=false}
-\captionof{figure}{\textbf{PaceNotes: 코드라이버 먼저, 드라이버는 필요할 때.} (a) \textbf{1단계}(실선): \textbf{상위 계획기}(코드라이버; Astra $\rightarrow$ 학습한 8B·35B)가 \textbf{구간 의도}를 선언하고 움직임까지 지시하며, \textbf{결정적 실행기}가 수행하고, 상위가 결과를 \textbf{검증}한다(근거 T1). \textbf{2단계}(점선, 조건부): 기다림 실패·긴 벽시계 같은 한계가 측정될 때만 실행기 자리에 \textbf{VLA}(드라이버)를 태운다. VLA는 0.33\,s마다 닫힌 보기와 쥐기 시점을 정하고, \textbf{행동 전문가}가 청크를 낸다. (b) 예시 시간 축(길이는 설명용): 1단계는 상위가 생각하는 동안 대기, 2단계는 답마다 도착 시 대조와 거리 권한 $a$(먼 구간 1, 접촉 근처 0). (c) 학습: 상위 계획기 증류(주 기여), 다양화·좌표계 없는 데이터, 조건부 VLA 학습.}
+\captionof{figure}{\textbf{PaceNotes: 코드라이버 먼저, 드라이버는 필요할 때.} (a) \textbf{1단계}(실선): \textbf{상위 계획기}(코드라이버; Astra $\rightarrow$ 학습한 8B·35B)가 진행과 의도를 적고 손끝 목표까지 지시하며, \textbf{결정적 실행기}가 수행하고, 상위가 결과를 \textbf{검증}한다(근거 T1). \textbf{2단계}(점선, 조건부): 기다림 실패·긴 벽시계 같은 한계가 측정될 때만 \textbf{VLA}(드라이버)를 태운다. 두 모델은 원래 형식을 그대로 쓰고, 코드가 상위 목표를 매 0.33\,s VLA 결정으로 바꿔 VLA 자신의 결정과 늘 연속 가중으로 섞는다. 쥐는 시점은 VLA가 정하고 상위가 검증하며, \textbf{행동 전문가}가 0.4\,s 청크를 낸다. (b) 예시 시간 축(길이와 가중 곡선은 설명용): 1단계는 상위가 생각하는 동안 대기, 2단계에서 상위 목표의 가중은 새 답 직후 크고 답이 낡을수록 줄며 VLA가 목표를 가까이 볼 때 VLA 쪽으로 옮겨 간다(거리 스위치가 아님). (c) 학습: 상위 계획기 증류(주 기여), 다양화·좌표계 없는 데이터, 조건부 VLA 학습.}
 \captionsetup{hypcap=true}
 \label{fig:teaser}
 \end{strip}
