@@ -124,3 +124,9 @@
 | E-COUPLE-8B | 결합 폐루프(무료): 학생 8B(L8C) 상위 + VLA 대 8B 단독 동기(L8) 대 VLA 단독 — 성공·기다림 포함 벽시계·쥐기 시점 오차·검증 정확도·§91 판정 수, DEV 0–19 × std·dr 40 짝 (ul 127) | (등록 전) — 같은 문서 6절 V4 | 선행 V0–V3 | — | — | `[예정]` |
 | E-TEACH-35C | 35B-A3B를 결합 형식으로(L8C 데이터 + 35B 결합 DAgger 1회) → V3·V4 반복 (ul 125) | (등록 전) — 같은 문서 4.6절 | 선행 E-COUPLE-8B | — | — | `[예정]` |
 | E-TEACH-35B | 35B-A3B를 L8 데이터로 LoRA(35-L8) — 8B-L8 대비 크기 효과(DEV + OOD-H), H-L 기준(지연 p50 ≤ 2 s·≤ Astra/3, DEV 짝 Astra − 3/40, 접근 xy ≤ 14 mm); 뒤에 E-OPEN8·E-XEMB8 혼합, 목표 35-C = E-TEACH-35C (ul 135) | 초안 [P/prereg_teach_35b](../stage3/prereg_teach_35b.md) — 준비 실측 [R/teach_35b_ready](../stage3/results/teach_35b_ready.md) | 모델 `/data/harvest/models/Qwen3.5-35B-A3B{,-FP8}`, 도구 `tools/teach_35b/train.sh`(solo·결합 형식), 스모크 50걸음 6.07 s/걸음(fla) → 팔당 학습 ≈ 1.4 GPU-h | 준비만: 영샷 FP8 지연 solo p50 1.11 s·couple 1.50 s(thinking 끔), 병합-서빙 왕복 됨 | (결과 전) | `[예정]` |
+
+## 추가: E-SR1e (파일 끝에 이어붙임)
+
+| ID | 질문 | 등록 | 데이터·산출 | 결과 (실측) | 판정 → 바뀐 결정 | 상태 |
+|---|---|---|---|---|---|---|
+| E-SR1e | E-SR1d(실데이터 0.536)의 부족분은 무엇이고, 레시피를 바꾸면 먼 구간 준수 0.8·근접 비열등이 되나(+ L1 추론 대조 안내) | [P/prereg_sr1e](../stage3/prereg_sr1e.md) 2026-09-26T09:58:40Z(`7b076cd`), 변경 없음 | E-SR1d 분기 61,993행 그대로; 진단 D1–D7(학습 없음), A 6,000스텝·50 %, D 3,000스텝·75 %, L1 w 1.5·2·3; 체크포인트 `H/ckpt/sr1e/` | 진단: 학습 분할 준수 = val(적합 부족); 먼 구간 A_xy C0 0.339 → A 0.866·D 0.899, 근접·전 구간 비열등 모두 통과, D − A +0.033; L1 최고 0.710; 재집계 118/118 ([R/sr1e](../stage3/results/sr1e.md)) | ADOPT_D(FULL) → 실데이터 레시피 = 먼 구간 분기 75 %, P1 오프라인 성립(정본 §84 보충 12); L1 CDG_NONE | 끝 |
