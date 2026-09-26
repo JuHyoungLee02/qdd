@@ -124,3 +124,4 @@
 | 2026-09-26 18:00 | 01·02·03·04·05 | E-SR1e 결과(ADOPT_D): 01 추가 절 E-SR1e 행, 02 새 절 '커' P124(HEAD 직렬화 판 올림과 옛 체크포인트)·P125(손실 대신 in-sample 준수, P101 정정)·P126(학습 메모리 봉우리), 03 §84 보충 12 행, 04 `tools/sr1e`·로그 행, 05 GPU 행 | [R/sr1e](../stage3/results/sr1e.md), 이 줄과 같은 커밋 |
 | 2026-09-26 18:5x | 01·04·05 | E-STRIP8 결과(ul 126, NOT_NEEDED 잠정: 최소 요청 DEV 1.2 mm·좁은 OOD-H 비열등, L8에 최소 요청은 89.9 mm로 무너짐, 한 높이 데이터 교란 → L8-X 재검증 E-STRIP8b 등록): 01 행(`끝(잠정)`), 04 코드·파드 경로 행, 05 GPU 행(≈ 3.7 GPU-h, 0원) | [R/strip8](../stage3/results/strip8.md), 이 줄과 같은 커밋 |
 | 2026-09-26 19:1x | 04 | 작전 T 중간(ul 144): 04 파드 표에 t4·t3b·rb2t4·open8 평가·dist8_packs 행 | [research/public_data_conversion_howto](../research/public_data_conversion_howto_2026-09-26.md) 13절, 이 줄과 같은 커밋 |
+| 2026-09-26 20:1x | 04 | 세 줄기 R·H·D 조사(ul 148·149): 04 조사 문서 행 | [research/rgb_depth_hybrid_survey](../research/rgb_depth_hybrid_survey_2026-09-27.md), 이 줄과 같은 커밋 |
