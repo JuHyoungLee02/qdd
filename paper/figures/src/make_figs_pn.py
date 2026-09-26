@@ -151,9 +151,9 @@ def fig_overview():
     bw, bh, by = 2.16, 0.60, 0.05
     bx = [0.05, 2.36, 4.67]
     rbox(ax, bx[0], by, bw, bh, "astra", "상위 계획기 증류 (주 기여)", fs=6.4, bold=True,
-         sub="Astra·시뮬 참값 선생 → 학생이 간 상태에 라벨\n8B 대리 → 35B, m 좌표 없는 출력, 손으로 준 정보 제거", sfs=5.2)
+         sub="Astra·시뮬 참값 선생 → 학생이 간 상태에 라벨\n8B 대리 → 35B, 줄기 D(깊이)·R(RGB)를 끝까지 짝 비교", sfs=5.2)
     rbox(ax, bx[1], by, bw, bh, "mem", "다양화 데이터", fs=6.4, bold=True,
-         sub="다양화 시뮬 + 좌표계 없는 공개 데이터\n점 추적 → 픽셀 경로 · 자기 보정", sfs=5.4)
+         sub="L8-X: 받침면 6·과제 약 12·높이 0.74–0.98 m\n공개 데이터: 좌표계 만들기 대 카메라 없는 조종", sfs=5.2)
     dbox(ax, bx[2], by, bw, bh, "#EEF4FB", VL[1])
     ax.text(bx[2] + bw / 2, by + bh * 0.66, "VLA 끝-끝 학습 (조건부)", ha="center", va="center", fontsize=6.4,
             color=TXT, fontweight="bold")

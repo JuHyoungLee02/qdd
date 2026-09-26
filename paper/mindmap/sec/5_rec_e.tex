@@ -83,3 +83,37 @@
   \item \textbf{참고:} E-OPEN8 초안: O-A 공개 데이터만으로 LoRA한 8B가 우리 요청 형식에서 대상에 다가가나(영샷 대비), O-B L8 자체 데이터 + 공개 세트를 같은 걸음 수로 섞으면 DEV·OOD-H가 나아지나; 좌표 누수 0; E-PT와 같은 모델·816걸음·같은 스냅숏·같은 채점기; 팔당 약 1.4 GPU-h [추정].
   \item \textbf{참고:} E-XEMB8 초안(§97 보충 1 개정판): 같은 상태·같은 계산량에서 L8 학습 행 일부를 (B) 공개 인식 QA, (D) 공개 C$'$, (E) 둘 다로 바꿔 가르기; 선행 = E-PT 결과(인터페이스)·관문 통과 세트. 3팔 약 4.2 GPU-h [추정].
 \end{itemize}
+
+\paragraph{E10. 좌표계 없는 오픈소스 --- 세 트랙 구현, 오픈소스 먼저, 점 추적 공용}
+{\small 09-27 01:0x -- 02:5x KST}
+\begin{itemize}
+  \item \textbf{사용자} (ul 123, 01:0x -- 02:5x KST): \intent{아니 아까부터 계속 이얘기 했잖아 좌표계 없는거는 어떻게 할건지 오픈소스를 어떻게 할건지 해야한다니까?}
+  \item \textbf{사용자} (ul 123, 01:0x -- 02:5x KST): \intent{좌표계가 없는걸 좌표계를 만들건지 / 그냥 이미지를 엄청 ㅁ낳이 핛브햇거 좌표계를 뭔가 너머에서 알 수 있게 하던지 / 뎁스를 근사화하는 비슷한 방식으로 해서 하던지}
+  \item \textbf{사용자} (ul 123, 01:0x -- 02:5x KST): \intent{일단 오픈소스를 가지고 학습을 할건데 어떤걸 써서 어떻게 할거임? 대규모는 아니고 소규모로 해두돼}
+  \item \textbf{사용자} (ul 123, 01:0x -- 02:5x KST): \intent{점추적은 T,1,3에 다 들어갈 수 있을 것 같은데 아닌가?}
+  \item \textbf{결과:} \texttt{tools/\allowbreak{}xemb/\allowbreak{}} + howto 9--12절(7faca71): RB2·MolmoAct OXE에 먼저, 보정 있는 공개 세트는 보정 숨긴 정답 대조만. 공용 점 추적 앞단(CoTracker3). T1: 정확한 2D면 0.81 px, 포인팅·추적 2D면 24--26 px(불통). T3(MoGe-2): 물체 17.5 cm·평면 7.7 cm(불통). E-OPEN8 오픈만 6,500행.
+\end{itemize}
+
+\paragraph{E11. 작전 T --- 깊이 추정은 버리고 두 안(T1+T4 대 C$'$)을 끝까지 키운 뒤 결정}
+{\small 09-27 03:0x KST \textasciitilde{} (최종 결정 12:53 KST)}
+\begin{itemize}
+  \item \textbf{사용자} (ul 144, 03:0x KST): \intent{일단 내가 시간을 더 줄테니까 계속 도전해보다가 10시간 줄게 안되면 잘되는 탑2에 다 몰아주고 그다음에 탑1에 다 몰아주는걸로 할게}
+  \item \textbf{사용자} (ul 144, 03:0x KST): \intent{아니다 깊이 추정은 그냥 아닌게 맞는 것 같아 버리고 2개중에 고민하고 계속 각각을 최대로 발전시킨 후에 10시간 뒤에 최종 결정하자. 이걸 작전명 T라고 할게}
+  \item \textbf{결과:} T4 실루엣 정렬(d2b2251·caea370): RB2 보류 경계 2.32 px, 프레임 96 \% $\leq$ 5 px $\rightarrow$ RB2 투영 점 18,636. 명목 카메라도 4.65 px라 T1의 21--42 px는 포인팅 잡음. RB3 2.87 px(73 \%), RB1 5.48 px(44 \%, 팔 마스크 병목)(5033591). C$'$ 물체 이름을 과제 문장에서(`the object' 누수 제거, 746396c). T3 재검토: MoGe-2 + FK 척도 정렬도 물체 19 cm·평면 12 cm $\rightarrow$ 폐기 유지. E-OPEN8 O-A 옛 시뮬 예비: DEV 106.8 mm(영샷 0.85배, NONE), 누수 1/305.
+  \item \textbf{진행 중·대기:} \tentative{최종 결정 09-27 12:53 KST. 선택은 L8-X에서 같은 조건 짝 비교 뒤(ul 143). 논문 본문 3.3절·5절에 `결정 대기'로 반영.}
+\end{itemize}
+
+\paragraph{E12. E-DIST8 --- 데이터 3수준 $\times$ 공개 픽셀 유무 6팔}
+{\small 09-27 03:3x KST}
+\begin{itemize}
+  \item \textbf{사용자} (ul 141, 03:3x KST): \intent{A·B·C·D 모두에 픽셀을 넣으면 픽셀이 도움인지 방해인지 확인하는 것까지 넣는걸로 하자}
+  \item \textbf{그래서(결정):} E-DIST8(8B, 무료, 같은 걸음·표본 수): A(L8)·A+px, B(L8-D)·B+px, C(L8-D + 공개 3D: BEHAVIOR 계량 3D QA + C$'$)·C+px. 평가 DEV·OOD-H(좁게·넓게)·OOD-O/D. 픽셀 효과는 세 수준 각각 짝 비교. L8-D 준비 뒤 등록. 논문 6절 `이번 마일스톤'에 반영.
+\end{itemize}
+
+\paragraph{E13. L8-X 환경 모음 --- 시뮬을 약 10배 다양하게, 데이터셋은 1.5년 규칙 해제}
+{\small 09-27 03:5x -- 04:5x KST}
+\begin{itemize}
+  \item \textbf{결과:} L8-D 생성기 등록(e4dced8): 한 Isaac 프로세스에 한 높이, 높이별 작업 상자 = 머리 시야 띠 $\times$ IK 도달 띠, 관문 G-H --- 고정 리프트 0.74--0.98 m 통과. L8-X 설계(dfeb965): 받침면 6(탁자·조리대·계단식 선반·낮은 탁자·바닥 통/상자·윗판 수납장 = 한계 탐침), 과제 약 12, 방해물 0--8, 외관 확장. 물체·과제(e6b2e1e): 받침대·파란 머그·작은 빨간 컵·회색 통, 학습 X 과제 7종. 보류 분할 학습 전 고정(d37634b): OOD-O 작은 컵, OOD-T 보류 조합 2종, OOD-S는 가구 장면 들어올 때. 여러 단계 과제 2종(aeb37f3).
+  \item \textbf{사용자} (ul 147, 04:5x KST): \intent{데이터는 1년반해제해줄게}
+  \item \textbf{그래서(결정):} CLAUDE.md 예외 줄(99a98d9·d0fdc10): 데이터셋에는 1.5년 규칙을 적용하지 않음(DROID·RH20T·OXE 등 사용 가능), 논문·방법 근거에는 유지; 라이선스·게이트·신뢰도·Astra 전송 제한은 그대로. 논문 3.3절에 한 문장.
+\end{itemize}

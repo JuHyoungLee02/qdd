@@ -5,7 +5,7 @@
 
 \subsection{검증 사다리}
 \label{sec:ladder}
-단계와 넘는 기준은 \cref{tab:ladder}에 있다. 1단계의 U0--U6을 먼저 넘고, 2단계의 V0--V4는 \cref{sec:plan_limits}의 트리거가 걸릴 때만 연다.
+단계와 넘는 기준은 \cref{tab:ladder}에 있다. 1단계(이번 마일스톤: 결정 수집 $\rightarrow$ 강화 $\rightarrow$ 최종 35B $\rightarrow$ 평가)를 먼저 넘고, 2단계의 V0--V4는 \cref{sec:plan_limits}의 트리거가 걸릴 때만 연다.
 \begin{table*}[t]
 \centering
 \scriptsize
@@ -14,14 +14,17 @@
 \toprule
 단계 & 무엇을 하나 & 넘는 기준(초안) & 상태 \\
 \midrule
-\multicolumn{4}{@{}l}{\textbf{1단계: 상위 계획기 단독(실행기와 함께) 다듬기}} \\
+\multicolumn{4}{@{}l}{\textbf{1단계: 상위 계획기 단독(실행기와 함께) --- 이번 마일스톤}} \\
 U0 & 8B 경향: 시뮬 참값 LoRA, 동기 단독 형식 & 오프라인 접근 오차 $\le$ 영샷의 절반, 폐루프 성공 $\ge1$ & 끝(\tentative{4/4}) \\
-U1 & 출력 형식(E-PT / ND): 깊이 없는 두 방법(주) 대 깊이 기반 점 대 격자 xyz & DEV와 OOD-H(탁자 0.82·0.88\,m)의 접근 오차 & \tentative{진행 중} \\
-U2 & 손으로 준 정보 제거(E-STRIP8): 최소 요청 대 전체 요청 & DEV·OOD-H 비열등, 틀린 높이에 흔들리지 않음 & \tentative{진행 중} \\
-U3 & 데이터 형태와 비율(E-XEMB8): 다양화 시뮬, 공개 인식 질의응답, 공개 조종 명령 & 관문: 유효 $\ge0.95$, 누수 0; 향상: OOD 기하 평균 $\le$ 자체만 $\times$\tentative{0.8} & \tentative{등록 전} \\
-U4 & 35B-A3B 학습(같은 데이터와 걸음 수, 동기 단독 형식) & 8B 대비 크기 효과; H-L 기준(\cref{sec:hl}) & 준비 끝, \tentative{예정} \\
-U5 & 한계 지도(\cref{sec:plan_limits}): 분포 밖, 교란, 접촉 정밀도, 기다림 포함 벽시계·호출 수 & 기술 지표(판정 밖), 트리거 판단의 근거 & \tentative{예정} \\
-U6 & 자동 맥락: 사람이 쓴 맥락을 자동 값으로 하나씩 교체 & 참값 대비 오차, 폐루프 비열등 & \tentative{예정} \\
+(1) 결정 & 출력 형식 두 줄기(E-PT/ND: 깊이 사용 D 대 RGB만 R) & DEV, OOD-H(좁게·넓게) 접근 오차 & \tentative{진행 중} \\
+(1) 결정 & 손으로 준 정보(E-STRIP8 $\rightarrow$ L8-X에서 E-STRIP8b) & DEV·OOD 비열등, 공정 짝 비교 & 잠정 NOT\_NEEDED \\
+(1) 결정 & 데이터 구성(E-DIST8 6팔: L8 / L8-D / L8-D + 공개 3D $\times$ 공개 픽셀 유무) & 수준마다 픽셀 짝 효과, DEV·OOD-H/O/D & \tentative{등록 전} \\
+(1) 결정 & 공개 데이터 경로(작전 T: 좌표계 만들기 대 카메라 없는 조종; E-OPEN8) & L8-X에서 같은 조건 짝 비교, 누수 0 & \tentative{결정 대기} \\
+(1) 결정 & 35B 학습 길이(E-TEACH-35B, 에폭마다 오프라인 평가) & 에폭 곡선 & \tentative{진행 중} \\
+(1.5) 강화 & 선정된 방법마다 기본 성능 올리기(문헌 + 8B 사전 등록 짝 시험) & 효과가 확인된 것만 최종 레시피에 & \tentative{예정} \\
+(2) 최종 & 35B-A3B 소규모 학습, 줄기 D와 R 두 판 & H-L 기준(\cref{sec:hl}) & \tentative{예정} \\
+(3) 평가 & DEV, OOD-H/O/D/T(/S), 한계 지도(\cref{sec:plan_limits}) & 기술 지표, 트리거 판단의 근거 & \tentative{예정} \\
+병행 & 자동 맥락: 사람이 쓴 맥락을 자동 값으로 하나씩 교체 & 참값 대비 오차, 폐루프 비열등 & \tentative{예정} \\
 \midrule
 \multicolumn{4}{@{}l}{\textbf{2단계: 한계가 트리거를 넘을 때만 --- VLA 층(두 모델 원래 형식 + 늘 섞기)}} \\
 V0 & VLA 재학습(그리퍼 질문, 실데이터 먼 구간 분기 75\%) & 재학습 관문(결정 정확도 비열등, 재적재 일치) & 보류 \\
@@ -31,9 +34,17 @@ V3 & 결합 폐루프: 상위 + VLA 대 상위 단독 대 VLA 단독, DEV 40 짝
 V4 & 유료 결합(Astra 상위) & 사용자 허락 뒤 & 보류 \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{검증 사다리.} 1단계(U0--U6)를 먼저 넘고, 2단계(V0--V4)는 \cref{sec:plan_limits}의 트리거가 걸릴 때만 연다. 2단계의 코드와 계획은 보존한다. 실데이터 먼 구간 분기(E-SR1e)는 진행 중인 팔만 마무리한다. 유료는 사용자 허락 뒤에만 돈다.}
+\caption{\textbf{검증 사다리.} 1단계(결정 수집, 강화, 최종 35B, 평가)를 먼저 넘고, 2단계(V0--V4)는 \cref{sec:plan_limits}의 트리거가 걸릴 때만 연다. 2단계의 코드와 계획은 보존한다. 실데이터 먼 구간 분기(E-SR1e)는 진행 중인 팔만 마무리한다. 유료는 사용자 허락 뒤에만 돈다.}
 \label{tab:ladder}
 \end{table*}
+
+\subsection{이번 마일스톤: 결정 모으기 $\rightarrow$ 강화 $\rightarrow$ 최종 35B}
+\label{sec:milestone}
+이번 마일스톤의 목표는 각 실험의 최선을 모아 최종 35B-A3B를 그 방법론과 데이터로 소규모 학습하고 평가하는 것이다(정본 §98 보충 1). 순서는 다섯이다. (1) \emph{결정 수집}: 입력 형식(손으로 준 정보, L8-X에서 재검증), 출력 형식(E-PT/ND), 데이터 구성(E-DIST8, E-OPEN8, 작전 T), 학습 길이(35B 에폭 곡선)를 정한다. (1.5) \emph{강화}: 선정된 방법마다 기본 성능을 올릴 방법(데이터 혼합 비율·커리큘럼, 증강, LoRA 대상·랭크, 학습률·에폭, 라벨 품질 거르기, 자기 점검 출력, 추론 설정)을 문헌에서 찾고, 싼 8B 사전 등록 짝 시험으로 확인된 것만 최종 레시피에 넣는다. (2) \emph{최종 35B 소규모 학습}: 줄기 D와 R 두 판을 같은 조건으로 학습한다. (3) \emph{평가}: DEV, OOD-H(좁게·넓게)/O/D/T, 한계 지도, H-L 기준. (4) \emph{다음 결정}: 한계가 트리거를 넘으면 2단계 VLA 결합으로, 아니면 대규모 학습과 실물 준비로 간다.
+
+\textbf{E-DIST8}은 데이터 구성을 정하는 요인 실험이다(8B, 무료, 팔마다 같은 걸음·표본 수). 데이터 기반 3수준(L8, L8-D, L8-D + 공개 3D 질의응답·좌표계 명시 조종)과 공개 픽셀 흐름 유무 2수준을 곱한 6팔이다. 픽셀이 도움인지 방해인지를 세 수준 각각에서 짝으로 판정한다. 평가는 DEV, OOD-H(좁게·넓게), OOD-O/D이며, 줄기 D·R의 짝 비교도 같은 조건으로 붙인다(\tentative{등록 전}).
+
+두 가지 절차 규칙을 둔다. 안을 버리기 전에는 한 번 재검증한다. 재검증으로 살아난 안은 기존 안을 바로 대체하지 않는다. 같은 데이터·학습량·평가 세트·시드·판정 규칙으로 사전 등록한 짝 비교를 한 번 더 거친 뒤에만 고른다. 손으로 준 정보의 유지·제거, 좌표계 만들기 대 카메라 없는 조종이 여기에 해당한다.
 
 \subsection{가설 H-L: 특화 학습한 상위 모델}
 \label{sec:hl}
@@ -90,10 +101,11 @@ VLA 단독 & \todoexp & \todoexp & \todoexp & \todoexp & 0 & 0 \\
  & $\pi_{0.5}$ 미세조정~\cite{pi05_2025} & 없음 & \todoexp & \todoexp & \todoexp & \todoexp & --- \\
  & 규칙 + 스크립트 스킬 & 없음 & \todoexp & \todoexp & \todoexp & \todoexp & --- \\
 \midrule
-\multirow{3}{*}{PaceNotes 1단계}
+\multirow{4}{*}{PaceNotes 1단계}
  & 상위 + 실행기 & Astra & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
  & \textbf{상위 + 실행기} & 8B 학생 & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
- & \textbf{상위 + 실행기} & 35B 학생 & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
+ & \textbf{상위 + 실행기} & 35B 학생, 줄기 D & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
+ & \textbf{상위 + 실행기} & 35B 학생, 줄기 R & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
 \midrule
 PaceNotes 2단계 & 상위 + VLA (트리거 시) & 35B 학생 & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
 \bottomrule
@@ -116,8 +128,8 @@ PaceNotes 2단계 & 상위 + VLA (트리거 시) & 35B 학생 & \todoexp & \todo
 \midrule
 \multicolumn{3}{@{}l}{\textbf{1단계}} \\
 Q1 & 가설 H-L(\cref{sec:hl}) & 초기 근거(8B, DEV \tentative{4/4}); 35B 준비 p50 \tentative{1.11\,s} \\
-Q2 & 상위 단독이 분포 밖에서도 버틴다 & U3--U5 \\
-Q3 & 깊이 없이, 손으로 준 정보 없이도 된다 & U1, U2 \\
+Q2 & 상위 단독이 분포 밖에서도 버틴다 & E-DIST8, 최종 35B 평가 \\
+Q3 & 손으로 준 정보 없이도 된다; 줄기 D·R 중 무엇이 나은가 & E-STRIP8b, E-PT/ND, 최종 35B 두 판 \\
 Q4 & 상위 한 호출의 명령이 충분히 정확 & 방향 \tentative{13/13}, 알아채기 \tentative{0/13} \\
 Q5 & 지연·비용이 실물 조건에서도 유지 & 실물 단계 \\
 \midrule

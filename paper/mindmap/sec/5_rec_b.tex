@@ -88,7 +88,8 @@
   \item \textbf{사실 확인:} \texttt{astra-\allowbreak{}solo@v2} 프롬프트는 우리(Claude 에이전트)가 손으로 썼고, E-TEACH-L8은 학습·추론 모두 이 프롬프트를 썼다: 탁자 높이 0.850, 물체 모양·크기, 그리퍼 기하, 잡기·놓기 요령, 카메라 자세, 작업 상자, 탁자 높이에 그린 격자·낙하선.
   \item \textbf{해 봄:} 사전 등록 5511d5d(01:32, 학습 전, 무료): 팔 S-full(L8 그대로)·S-min(학습·추론 모두 최소 요청: 탁자 높이·격자·낙하선·물체 크기·요령 뺌, 로봇 자기 정보는 남김)·S-drop(학습 때 특권 정보 드롭아웃, 추론은 최소)·S-full$\rightarrow$min(L8 어댑터에 최소 요청)·S-stale(OOD-H에 손으로 쓴 0.850). 같은 L8 상태·816걸음, DEV 305 + OOD-H 오프라인, 판정 NOT\_NEEDED / NEEDED / UNCLEAR은 결과 전 고정. \texttt{strip(v2, \{table, overlay\})} = E-PT \texttt{nd-\allowbreak{}xyz@v1}와 바이트 동일(시험).
   \item \textbf{결과:} 변경 1(8700871, 01:35, 학습·평가 전): G-stale 기준 = 글 동일 + 영상당 다른 화소 $\leq$ 100(재생성 142장 중 48장이 서브 mm TCP 차로 낙하선 1--69 화소가 다름).
-  \item \textbf{진행 중·대기:} \tentative{학습·평가 전 --- 결과 없음.}
+  \item \textbf{결과:} 결과(6da8e3f, \texttt{results/\allowbreak{}strip8.\allowbreak{}md}): NOT\_NEEDED, 잠정 --- S-min DEV 접근 xy 1.2 mm 대 S-full 2.6 mm; 좁은 OOD-H 3D 32.5 대 31.2 mm(짝 차 [$-$1.5, +0.9], 비열등), 넓은 OOD-H 72.9 대 70.5 mm(판정 불가); S-drop 차이 없음; L8 어댑터에 최소 요청 $\rightarrow$ 89.9 mm(DEPENDENT); 참 높이를 줘도 L8은 0.85 기준으로 외운 잡기 z를 씀 $\rightarrow$ 모든 팔이 $\pm$3 cm에서 약 3 cm, $\pm$7 cm에서 약 7 cm 틀림.
+  \item \textbf{그래서(결정):} 잠정인 이유(변경 3): 학습 편이 모두 탁자 0.85·같은 머그라 손 정보가 늘 상수였다. 제거 확정은 L8-X에서 S-full / S-min / S-drop 공정 재비교(E-STRIP8b) 뒤로(ul 143 규칙).
 \end{itemize}
 
 \paragraph{B10. 35B-A3B 바로 할 수 있게 준비만 --- 지연 약 1 s (준비 측정, 과제 성능 아님)}
@@ -106,4 +107,16 @@
   \item \textbf{사용자} (ul 136, 02:5x KST): \intent{오픈데이터의 경우엔 엄청 다양한 테스크도 있는거지?}
   \item \textbf{사용자} (ul 136, 02:5x KST): \intent{이게 맞지}
   \item \textbf{그래서(결정):} 상위 명령어는 당분간 지금 형식(손끝 목표·edit·그리퍼·stop, 위에서 잡기)으로 두고, 공개 데이터의 다양한 과제(RobotisSW 322종, BEHAVIOR 50과제, RoboTwin 50종, Robo2VLM 3,396과제 등)는 인식·판단 학습에만 쓴다. 상위 단독의 한계가 확인되면(§98) 손목 회전·접근 방향·밀기·당기기로 명령어를 넓힌다. 논문 3.2절에 한 문장으로 반영.
+\end{itemize}
+
+\paragraph{B12. 이번 마일스톤 --- 결정 모으기 $\rightarrow$ (1.5) 강화 $\rightarrow$ 최종 35B, 두 줄기 D·R 끝까지}
+{\small 09-27 03:4x -- 04:4x KST}
+\begin{itemize}
+  \item \textbf{사용자} (ul 142, 03:4x KST): \intent{이런저런거 다해서 일단 모든것에서 가각ㄱ제일 잘됐다된거가지고 최종 35B를 모두 결정된 방법론과 데이터로 소규모 데이터로 학습돌려보는것 까지가 최종 목표인거지?}
+  \item \textbf{그래서(결정):} 정본 §98 보충 1(be89ee0): (1) 결정 수집 --- 입력 형식(E-STRIP8 $\rightarrow$ L8-X 재검증), 출력 형식(E-PT/ND), 데이터(E-DIST8, E-OPEN8, 작전 T), 학습 길이(E-TEACH-35B 에폭 곡선) $\rightarrow$ (2) 최종 35B-A3B 소규모 학습 $\rightarrow$ (3) DEV·OOD·한계 지도·H-L 평가 $\rightarrow$ (4) 트리거면 §96 보충 5 VLA 결합, 아니면 대규모·실물.
+  \item \textbf{사용자} (ul 145, 04:3x KST): \intent{최종 선정 된것들도 조금 더 성능으 ㄹ기본적으로 끌 어 올릴 수 있는 방법을 연구해보는 걸로 하자 모든 게 다끝나고 35B하기 직전에 말이야}
+  \item \textbf{그래서(결정):} §98 보충 1 추가(9948393): (1.5) 강화 단계 --- 선정된 방법마다 기본 성능을 올릴 방법(혼합 비율·커리큘럼, 증강, LoRA 대상·랭크, 학습률·에폭, 라벨 품질 거르기, 자기 점검 출력, 추론 설정)을 문헌 + 8B 사전 등록 짝 시험으로 찾고, 확인된 것만 최종 35B 레시피에.
+  \item \textbf{사용자} (ul 146, 04:4x KST): \intent{근데 저건 깊이가 있어야 하니까 그럼 결과물로 깊이 말고 그냥 일반만 쓴것도 무조건 같이 비교해줘야해 데이터 양에서는 rgb가 우세니까 이건 끝까지 35B돌릴때 까지도 들고갈 거란얘기최종 비교로까지 끌고가야하는 놈인거야}
+  \item \textbf{그래서(결정):} §98 보충 1 추가(151199a): 줄기 D(점 + 깊이 $\rightarrow$ xyz)와 줄기 R(RGB만, xyz 직접·ND)을 E-DIST8·강화·최종 35B·평가까지 같은 조건으로 짝 비교(최종 35B도 두 판). L8-X 깊이 줄기용 스테레오식 깊이 잡음 변형(830473f).
+  \item \textbf{결과:} 논문 본문 반영(09-27): 3.2절 출력 형식을 두 줄기로, 6절에 `이번 마일스톤' 절(단계·E-DIST8·절차 규칙), 사다리 1단계를 (1)--(3) 단계로, 주 결과 표에 35B 줄기 D·R 두 줄.
 \end{itemize}

@@ -91,3 +91,17 @@
   \item \textbf{그래서(결정):} user-log 129(f04b41d): 제목 `PaceNotes: Intent-Sharing Hierarchies for Fast, Verifiable Robot Manipulation' --- 랠리 코드라이버가 앞 구간 노트를 불러 주고(상위 의도 선언), 드라이버가 실시간 조향·제동 타이밍을 잡으며(VLA 세부 조종·잡기 타이밍), 코드라이버가 위치를 확인(상위 검증)하는 비유(§96 보충 2와 같은 구조). 저장소·코드 이름 harvest는 유지.
   \item \textbf{참고:} user-log 129의 시각 표기(16:5x UTC = 01:5x KST)가 커밋 시각(01:46 KST)보다 늦다 --- 기록 그대로 둔다.
 \end{itemize}
+
+\paragraph{F10. 논문도 상위 중심, 결합은 §96 보충 5로}
+{\small 09-27 03:2x KST}
+\begin{itemize}
+  \item \textbf{사용자} (ul 140, 03:2x KST): \intent{논문도 이런식으로 적는걸로 하자 일단 실험들은 전부 상위를 중심으로 해야하는 것은 맞구 말이야.}
+  \item \textbf{그래서(결정):} 논문 da3b98f: 근거 5절을 `상위 계획기(주 줄기)'와 `2단계(조건부)'로 나눔, 3.4절·Fig. 1·모델 그림을 §96 보충 5로, 커밋 안 된 결과는 `진행 중'으로만.
+\end{itemize}
+
+\paragraph{F11. 버리기 전 재검증 + 살아난 안은 공정 비교 한 번 더}
+{\small 09-27 03:4x KST}
+\begin{itemize}
+  \item \textbf{사용자} (ul 143, 03:4x KST): \intent{결정 버리기전에 재검증해서 다시 살아났다고 기존거 ㄹ또 버리지말고 두개 비교를 공정하게 한번더 하는과정이 있어야해 알겠지?}
+  \item \textbf{그래서(결정):} 협업 보드 규칙·메모리(b02ff17): 재검증으로 살아난 안과 기존 안은 같은 데이터·학습량·평가 세트·시드·판정 규칙으로 사전 등록한 짝 비교를 한 번 더 한 뒤에만 선택(E-STRIP8 손 정보, T3 재검증, 작전 T). 논문 6절 절차 규칙에 반영.
+\end{itemize}
