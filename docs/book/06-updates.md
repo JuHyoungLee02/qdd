@@ -42,3 +42,4 @@
 | 2026-09-26 02:03 | 03 | 정본 §84 보충 6(SigLIP 별도 통합 안 함) 행 추가 | user-log 92, 이 줄과 같은 커밋 |
 | 2026-09-26 02:11 | 04 | 결합 구현 계획 Task 6 기록: 04 `harvest/couple/` 행에 `offset`(`OffsetApplier`: 부드러운 편향 적용기 — 속도·가속 상한 램프·창 종료 뒤 감쇠·reset·scale_remaining) 추가, `tests/couple/` 행에 `test_offset.py` 추가 | plan Task 6, 이 줄과 같은 커밋 |
 | 2026-09-26 02:25 | 02 | 함정 P81 추가: 논문 방법을 성립 조건 없이 겉모양만 이식 — 사전 등록에 성립 조건 목록·관문 | user-log 95, 이 줄과 같은 커밋 |
+| 2026-09-26 02:37 | 03·04 | 결합 구현 계획 Task 7 기록: 03 두 층 비가역 관문 근거=T1 전제만·VLA 청크 준수(`adhere_cos`) 결정 행 추가, 04 `harvest/couple/` 행에 `twolayer`(두 층 관문·빠른 검증·진전 없음) 추가, `tests/couple/` 행에 `test_twolayer.py` 추가 | plan Task 7, 이 줄과 같은 커밋 |

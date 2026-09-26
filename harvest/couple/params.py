@@ -44,6 +44,8 @@ class CoupleParams:
     alpha_max: float = 6.0  # [가정] rotation acceleration cap
     contra_steps: int = 3  # VLA fast check: committed direction opposite for 3 steps (1 s) -> shrink
     contra_factor: float = 0.5
+    adhere_cos: float = 0.5  # canon §84 supplement 4: adherence = executed chunk displacement vs intended
+    # direction, cos > adhere_cos (twolayer.adherence_cos / follows)
     stag_s: float = 2.0  # no progress along an active offset over this window
     stag_frac: float = 0.2
     # two layers (spec §5, §12; plan rulings 1-2)
