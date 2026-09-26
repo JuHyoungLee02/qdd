@@ -50,6 +50,7 @@
 | `docs/research/` | 조사 문서(1.5년·신뢰도 규칙) |
 | `docs/research/cross_embodiment_data_use_2026-09-26.md` | 교차 기체(맞지 않는) 로봇 데이터 활용법 조사 + 35B 혼합 계획·무료 시험 E-XEMB8 설계(user-log 115) |
 | `docs/research/diversity_plan_2026-09-26.md` | 다양한 데이터 필수 계획(user-log 116): 자체 시뮬 다양화 명세·공개 변환 필수 격상(요약)·OOD-H/O/D/X·E-XEMB8 개정(A·B·D·E) |
+| `docs/research/no_metric_xyz_control_survey_2026-09-26.md` | 로봇 좌표 m 값 없이 조종하는 법(8계열 분류) + metric 추정 방법론, 추천 3·E-PT 팔·무료 시험 F0–F5(user-log 118) |
 | `paper/` | CVPR author-kit 구조 논문 + 한국어 마인드맵(`mindmap.tex`), 그림 `figures/src/make_figs.py`; PDF는 `D:\tools\pdf_out\` |
 | `D:\tools\scratch_qdd\` | 로컬 임시(작업별 하위 폴더). C: 금지 |
 
