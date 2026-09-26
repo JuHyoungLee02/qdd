@@ -59,6 +59,11 @@ def astra_view(ep: str, res: dict, tmp: str) -> int:
         im.paste(h, (0, 0))
         im.paste(w, (h.width, 0))
         dr = ImageDraw.Draw(im)
+        if cmd.get("point_2d"):  # E-PT point command: the pointed spot in the head image (cyan cross + ring)
+            px, py = cmd["point_2d"][0] / 1000 * h.width, cmd["point_2d"][1] / 1000 * h.height
+            dr.ellipse([px - 9, py - 9, px + 9, py + 9], outline=(0, 255, 255), width=2)
+            dr.line([px - 14, py, px + 14, py], fill=(0, 255, 255), width=1)
+            dr.line([px, py - 14, px, py + 14], fill=(0, 255, 255), width=1)
         for i, t in enumerate(lines):
             dr.text((6, h.height + 5 + 16 * i), t, fill=(255, 255, 0) if i == 1 else (255, 255, 255))
         W, H = 1400, 600  # fixed canvas so every call frame has the same size
@@ -80,7 +85,8 @@ def main():
         for rp in sorted(glob.glob(os.path.join(src, "*", "*", "s*", "result.json"))):
             ep = os.path.dirname(rp)
             res = json.load(open(rp))
-            name = f"{res['variant']}_s{res['seed']}"
+            vdir = os.path.basename(os.path.dirname(ep))  # E-PT OOD-H: standard_tz0.82 (else = the variant)
+            name = f"{vdir if vdir.startswith(res['variant'] + '_tz') else res['variant']}_s{res['seed']}"
             row = {"run": run, "episode": ep, "variant": res["variant"], "seed": res["seed"], "model": res.get("model"),
                    "success": res["success"], "end_reason": res["end_reason"], "n_calls": res["n_calls"],
                    "cost_krw": res.get("cost_krw"), "motion_s": res.get("sim_t"), "t_success": res.get("t_success"),

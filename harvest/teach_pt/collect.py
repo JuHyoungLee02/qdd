@@ -21,7 +21,7 @@ from ..teach_l8 import collect as LC
 OOD_D_SEEDS = range(20, 30)
 
 
-OOD_H_TABLES = (0.82, 0.88)  # E-PT OOD-H (inside diversity_plan's OOD-H bands; training saw 0.85 only)
+OOD_H_TABLES = (0.82, 0.88, 0.78, 0.92)  # E-PT OOD-H: core +-3 cm (registered), wide +-7 cm (change 2); training saw 0.85 only
 
 
 def check_seed(seed: int, split: str, variant: str, table_z: float | None = None) -> int:
