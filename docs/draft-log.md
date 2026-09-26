@@ -489,3 +489,4 @@
 - 00:25 UTC 기록(2026-09-26): R7 36회차 기준선 PASS(연속 무결 1; 대상 ffe335c), 실험 절(E-MA2) PASS.
 - 00:46 UTC 기록(2026-09-26): R7 37회차 기준선 PASS → 연속 무결 2 = **E2E 준비 기준점 도달**, 태그 `stage3-e2e-ready` = 3d4738a.
 - 00:52 UTC 기록(2026-09-26): R2_TRAIN LeRobot v2.1 내보내기 끝(`r2_train_gen.md` §6) — (variant, task)별 6개 병렬 22:36:48Z–00:49:55Z, 5,126편·1,500,474프레임(= 유효 원본)·22.13 GB, verify 6/6 통과(오류 0, PSNR 최소 32.92 dB, lerobot 0.3.3 `LeRobotDataset` 적재). handoff §0 내보내기 줄 삭제.
+- 00:54 UTC 기록(2026-09-26): 결합 구현 계획 Task 1 — `harvest/couple/`(params·schema·prompt·mock) + `tests/couple/`, CoupleParams를 탐침 결과로 채움(정본 §86 보충 2), 시험 10개 통과.

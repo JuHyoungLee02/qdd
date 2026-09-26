@@ -14,12 +14,14 @@
 | `harvest/perception/`, `harvest/stereo/`, `harvest/m4b/` | R1 인식(기준선·진단), E3-ST, 확인 헤드 V1h |
 | `harvest/clients/` | `astra`·`jevl`·`jev` 클라이언트 |
 | `harvest/astra_motion/` | E-Astra-motion 탐침 코드(3500f54) [→ 2026-09-25 21:07 UTC, R7 28회차 D-2] |
+| `harvest/couple/` | 결합 패키지: `params`(`CoupleParams`)·`schema`(astra-couple@v1)·`prompt`·`mock`(Task 1); 뒤 과제가 모듈을 더한다 |
 | `harvest/serialize.py`, `deccall_snap.py`, `labels_v2.py`, `qid.py` | 직렬화(ser-A-min-2)·결정 호출·정답·질문 id |
 | `tools/se2e/` | `se2e_verdict`·`temporal_verdict`·`temporal_latency`·`motion_confirm_verdict`(등록 때 고정) |
 | `tools/ma1/` | `g0`·`g0_point`·`ma1_verdict`·`build_a3d`·`ma1b_verdict` |
 | `tools/cam3/`, `tools/ma3/`, `tools/se2e/paired_verdict.py` | E-CAM3 `build_cam3`·`cam3_latency`·`cam3_verdict`; E-MA3 `chunk_eval`·`ma3_latency`·`ma3_verdict`; 공통 짝 비교(등록 때 고정) |
 | `tools/` 기타 | `se2e_convert.py`(`reconvert --hist`), `labels_v2_eval.py`, `prereg_hash.py --check`, `intent_check.py`·`user_line_check.py`(빨간 줄·[사용자] 줄), `stagea_merge.py`, `r5/`·`r6/`(파드 동기화), `pod_sync.sh` |
 | `tests/` | 전체 시험(로컬은 Git Bash에서 `pytest`; PowerShell에서는 2개 실패 — P33) |
+| `tests/couple/` | `harvest/couple/` 시험(`test_schema.py`, Task 1) |
 | `docs/design/00-interfaces.md` | **정본**(마지막 절까지가 현재 판) |
 | `docs/stage3/` | 사전 등록 `prereg_*.md`·`prereg.json`, 결과 `results/`, `direction-log.md` |
 | `docs/superpowers/specs/`·`plans/` | 결합 설계(승인)·구현 계획(16과제) |
