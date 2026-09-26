@@ -52,6 +52,10 @@ def test_register_tasks_and_eligibility(rows):
     el = OV.eligible(rows, "train")
     assert el and all(r["stable_upright"] for r in el.values()) and all(r["split"] == "train" for r in el.values())
     assert not set(el) & set(OV.eligible(rows, "ood_o"))
+    # prereg change 8: the gate held 0/9 objects under 7 cm and the 2 cm / 8.9 cm wide ones -> pre-filter
+    assert all(r["height"] >= OV.MIN_H - 1e-9 and OV.MIN_GRASP_W <= r["grasp_width"] <= OV.MAX_GRASP_W + 1e-9
+               for r in el.values())
+    assert "objv_056e01405bac" not in el and "objv_01994d08f483" not in el and "objv_0503854981b4" in el
     ids = OV.register({k: rows[k] for k in sorted(el)[:3]})
     from harvest.astra_motion.prompts import OBJ_DESC, OBJ_NAME
     for k in ids:

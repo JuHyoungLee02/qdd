@@ -127,8 +127,13 @@ def register_for_tasks(tasks, rows: dict | None = None) -> list:
     return ids
 
 
+MIN_H, MAX_H = 0.07, 0.10  # prereg_l8d change 8: the truth held 0/9 gated objects under 7 cm (3/5 at 8 cm)
+MIN_GRASP_W, MAX_GRASP_W = 0.025, 0.085  # ... and failed the 2.0 cm and 8.9 cm wide ones (pads stop at ~8.5 cm)
+
+
 def eligible(rows: dict, split: str = "train", need_stable: bool = True) -> dict:
-    """Objects usable as targets: the split, the helper's stable flag (Isaac drop test), height 4.5-10 cm and a
-    grasp width 1.6-9 cm (the table already filters those)."""
+    """Objects usable as targets: the split, the helper's stable flag (Isaac drop test), height MIN_H-MAX_H and a
+    grasp width MIN_GRASP_W-MAX_GRASP_W; the Objaverse gate (>= 2/3 clean truth) filters further."""
     return {k: r for k, r in rows.items() if r["split"] == split and (r.get("stable_upright") is True or not need_stable)
-            and 0.045 <= r["height"] <= 0.10 + 1e-9 and 0.016 <= r["grasp_width"] <= 0.09 + 1e-9}
+            and MIN_H - 1e-9 <= r["height"] <= MAX_H + 1e-9
+            and MIN_GRASP_W - 1e-9 <= r["grasp_width"] <= MAX_GRASP_W + 1e-9}
