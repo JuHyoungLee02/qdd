@@ -136,4 +136,44 @@
   \item \idea{(MolmoAct 성립 조건 관문, 학습 없음) 조건 14개 추출. 카메라 투영 \tentative{0.21\,px} 통과, 궤적 라벨 손끝 영상 안 \tentative{0.994} 통과, URDF 대 시뮬 손끝 \tentative{9.5\,mm} 실패. 미비 조건 9개(궤적 끝, 색, 1:1 조건 데이터, 경로 다양화, 두 대상 장면 등) $\rightarrow$ E-MAR-AO·E-MAR-S \tentative{예정}}
   \item \idea{(R7 35--37회차) 35 실패(시뮬 결과 문서 수치 2), 36·37 연속 통과 $\rightarrow$ E2E 준비 기준점 태그 \texttt{stage3-e2e-ready}. 기준점 뒤 검증기 약점 9건 TDD로 고침(실데이터 342편 새 오류 0). R2\_TRAIN LeRobot 6개 \tentative{22.13\,GB} 검증 6/6. 결합 구현 과제 1--8 끝}
   \item \dirn{이번 판(09-26 03시 UTC 무렵, 4시간 주기): E2E 기준점, R2\_TRAIN LeRobot, E-MA2 NONE, E-SR0 WEAK와 조건 강화 절·표(\texttt{tab:adh}), 조이스틱 세 층·거리 권한·그리퍼 선택지(§87), SigLIP 판단(§84 보충 6), MolmoAct 성립 조건 관문, 모델 그림(SigLIP2 영상 탑, 준수 약함 표시), 초록·서론·결론·한계}
+  \item \idea{(조건 강화 결과) E-SR1b NOT\_REACHED(최고 되짚기 라벨 \tentative{0.598}, 비열등 실패; 드롭아웃·CFG는 청크·그리퍼 붕괴) / E-SR1c ADOPT\_C1: R2 먼 구간 반사실 분기 50\% $\rightarrow$ 먼 구간 준수 \tentative{0.344$\rightarrow$0.991}, 근접 비열등 통과(정본 §84 보충 8) / E-SR1d 실데이터 NOT\_REACHED \tentative{0.339$\rightarrow$0.536} $\rightarrow$ 실데이터 결합은 청크·손끝 경유 유지(보충 10), 전제 P1 불성립}
+  \item \intent{주기로 아스트라 부르는건 끄는거?}
+  \item \intent{그 주기로 부르는건 켜두고.}
+  \item \intent{프롬프트 엔지니어링 등으로 문제가 생겼는지 검진하는게 필요해보이는데}
+  \item \idea{(프롬프트 검진) 운영 프롬프트 v1에 쥠·축 정의·카메라 자세 줄 없음, 그리지 않은 화살표를 범례가 설명(Qwen 8B가 \tentative{27/33} 인용). 로컬 Qwen은 문구에 뒤집힘(\tentative{6--17/40}), Astra는 \tentative{3/30}으로 강건. VLA 크기·방향 질문 문구와 라벨 뜻이 다름(청크 일치 \tentative{0.375/0.626})}
+  \item \intent{한번에 하나가 기존 연구들도 한방법?}
+  \item \intent{아니 그게 아니라 아스트라쓰는방법중에 말야}
+  \item \intent{아스트라가 다음 답변을 할때까지 아무것도 못하는 거니까. 아스트라가 한번 명령을 내릴때 좀 정확히 해야함}
+  \item \intent{아스트라도 추가학습의 일환으로 써야겠음}
+  \item \intent{본학습은 가정한 지티로 하돼 추가학습으로 실제 반영하는거지}
+  \item \chg{(정본 §88) 본 학습 = 가정한 정답, 추가 학습 = 폐루프에서 Astra가 실제로 낸 판단·수정(DAgger식, E-AT). 선행 조건 = Astra 명령 정확도(E-ACC), 거른 답만 라벨로}
+  \item \intent{시뮬거쳤다오는건 절대 반대 몰모엑트 참고해}
+  \item \chg{(정본 §89) 추가 학습·MolmoAct 이식은 실데이터 위 모델 라벨로만, R2 시뮬 MolmoAct 데이터 생성 중단. 시뮬은 준수 연구·폐루프 시험장으로 유지}
+  \item \intent{상위 아스트라가 어디로 어케 움직일거고 나는 지금 다가가는 행동ㅈ이다, 이 구간선 잡는걸 할거다. 이구간선 드는걸할거다 하는ㅇ계회도 담고 vla는 그 구간이 길기에 그구간에서 잡는게 있다곤 하는데 언제 잡을지를 상황을보고 결정하는 겆ㄱ}
+  \item \chg{(정본 §90) Astra 답에 구간 계획(지금 구간·할 일·다음 구간), VLA는 구간 의도 줄을 받아 구간 안의 시점(언제 쥘지)을 스스로. 직렬화기 판 올림에 구현, 재학습·시점 시험 \tentative{예정}}
+  \item \intent{그리고 아스트라의 판단이 몇초전 이미지와 상황을 보고한거지 그리고 실제vla가 조정한건 어땠는지의 비교를가지고도 추가판단이 가능해야함}
+  \item \chg{(정본 §91) 도착 시 대조: 이미 됨 / 아직 유효 / 상황 바뀜 / 충돌 네 판정, 다음 요청 문맥과 추가 학습 거르개로. \tentative{구현 예정}}
+  \item \intent{이제 어떻게 서로 엮어서 최대 효율을 내게끔 파이프라인 구조 확정해서 이미지좀 만들어줘봐봐}
+  \item \intent{아직 돌고 있는 작업들은 확정이 나야지 파이프라인 확정이지? 아직 확실하지 않은 전제들이 좀 있지?}
+  \item \dirn{(정본 §92, 보충 1) 배치 확정·전제 검증 대기: P1 실데이터 준수, P2 실데이터 권한 a, P3 결합 > VLA 단독(핵심), P4 Astra 한 호출 정확도, P5 구간 계획, P6 그리퍼 선택지, P7 도착 시 대조, P8 먼 구간 정밀도 대가, P9 근접 차단 = a, P10 Astra 필요성, P11 Astra 교사 추가 학습, P12 실물 지연·비용 (논문 \texttt{tab:premises})}
+  \item \intent{아스트라 혼자조종도 꽤 할거야. 나는 vla와 아스트라의 하이브리드가 그리 옳다고는 생각안해}
+  \item \intent{3이 맞음 근데 아스트라가 0이 나온건 너가 최적으로 아스트라에 맞게 실험을 안했다는 얘기기도해}
+  \item \chg{(정본 §93) 하이브리드 유지, Astra 단독 기준선은 Astra에 최적화해 공정하게. 탐침 0/6은 실력으로 인용 금지(책 P101)}
+  \item \idea{(E-Astra-solo 파일럿) 동기·절대 손끝 목표·좌표 격자·정의 갖춘 프롬프트에서 Astra low 단독 머그-트레이 \tentative{4/4}, 성공당 \tentative{591.5원}, 벽시계 \tentative{74--215\,s}, 무효 \tentative{0/44}. 인터페이스 채택, effort는 판정 불가. $\rightarrow$ P3 비교에 AS 팔(강한 기준선) 추가, 전체 팔 \tentative{예정}}
+  \item \intent{아스트라를 최대 성능이 나게 만들어놓는것이 광장히 중요함}
+  \item \intent{vla는 아스트라가 옳다는 전제로 움직이기때문}
+  \item \chg{(정본 §94) Astra 성능 최대화가 E-Couple의 선행 조건 $\rightarrow$ E-ACC 우선}
+  \item \idea{(E-ACC) OpenAI 크레딧 소진으로 P1 31번째 호출부터 중단. 과금은 on 10장 $\times$ 3팔 30호출 \tentative{1,352.7원}, off 답 0개 $\rightarrow$ 주 지표 없음, 판정 \tentative{불가}. on만: 무효 \tentative{0/30}, 명령 정답 v1 \tentative{10/10}·v2 \tentative{9/10}·v2+카메라 자세 \tentative{8/10}. 크레딧 복구 뒤 off부터 재개}
+  \item \idea{(E-Couple 무료 사전 실행, 판정 없음, 0원) 배관 통과(충돌 0, 동시 1개, 늦은 답 폐기 정상). 그러나 VLA 단독 \tentative{0/12} $\rightarrow$ 짝 차가 정의상 0 $\rightarrow$ 유료 전 VLA 단독 폐루프 온전성 관문(예: DEV $\ge$30\%) 추가}
+  \item \intent{1. ai워커에 들어가보면 로보티즈 오픈 데이터 많은데 그중에 쓸만한거 찾아봐 2. 고}
+  \item \idea{(ROBOTIS 공개 데이터 조사) AI Worker 데이터 1,150개 메타 전수. 같은 공구 벽·지시문이 대상 고르는 806편(apache-2.0) $\rightarrow$ 오프라인 조종 평가 원천, 322과제 카탈로그 $\rightarrow$ E-AT 다양성. 같은 장면·다른 경로 시연은 없음 $\rightarrow$ AI Worker 원격조작을 MolmoAct식 궤적 원천으로, 대체 경로 200편 새 수집은 \tentative{보류}}
+  \item \idea{(MolmoAct 실데이터 준비·E-MAR-real) 포인팅 원 오류 \tentative{27--30\%}(다른 팔), 거르개 v2로 남긴 점 오류 \tentative{3.7\%}·유지 \tentative{94.5\%}. 요인 A(2D 궤적 보조) 사전 등록 \tentative{진행 중}, 덧그림 O는 보류(런타임 점 오차 \tentative{51\,px})}
+  \item \intent{결정 확신도는 어쩌다가 발견했음?}
+  \item \intent{확신도 기반으로 해두면 좋을듯 왜 그런 선택을 했는지도.}
+  \item \intent{그리고 조금씩 확신도를 능력을 더 높이는 개선도 필요할듯}
+  \item \chg{(정본 §95) 흐름 호출은 켠 채, 확신도 낮은 순간 Astra 요청에 헷갈림 표시·우선 처리, 답까지 VLA 보수 모드. 이유: E-NOV0 새로움 \tentative{0.570} 대 확신도 \tentative{0.804}, 계산 0, 해석 쉬움. 새 표본 사전 등록 E-CONF로 검증 뒤 적용, 확신도 개선 트랙(온도·결합·청크 분산·등각)}
+  \item \idea{(문헌 폭넓은 조사, 1.5년·신뢰도 규칙) L1 기존 체크포인트에 자기 결정 대비 대조 안내(학습 없음) / L2 R2 분기 + 실데이터 공동학습(ICML 2026 기전 분석, §89 경계라 \tentative{사용자 결정 필요}) / L3 실기록 모양 분기 + 준수 약한 상태 선택(ReSteer, RSS 2026) / L4 Astra 호출에 손끝 기저 축·평면도·경계 상자 텍스트(AxisGuide, RSS 2026) / L5 E-CONF 다음 판(SAFE·FIPER, NeurIPS 2025). 모두 \tentative{등록 전}}
+  \item \intent{Vla는 혼자서 의미가 있는지도 보긴해야해 그리고 로본의 동작 속도자체도 조금 느리게 가져가도 좋을듯}
+  \item \idea{(VLA 단독 0/12 분해, 기존 기록만) \tentative{8}편은 런타임 멈춤 고리(T1 모순 $\rightarrow$ M4 보류 $\rightarrow$ 결정 비움 $\rightarrow$ 청크 멈춤), \tentative{4}편은 VLA 자체 실패(머그 침 2, 머그 위 약 10\,cm에서 멈춤 2) $\rightarrow$ E-VLA-solo 무료 사전 등록(VLA 단독 의미, 재생 0.75·0.5배), 속도 낮추기는 검증 뒤 채택. Astra 단독 전체 팔 40편은 크레딧 소진으로 \tentative{보류}}
+  \item \dirn{이번 판(09-26 18시 KST 무렵, 4시간 주기): 조건 강화 결과(E-SR1b·c·d)와 준수 표, 열린 전제 표 P1--P12, Astra 단독 최적 팔·E-ACC 중단·결합 사전 실행과 온전성 관문, 확신도 절(E-NOV0·E-CONF, §95), 실데이터 추가 학습 절(§88·§89, ROBOTIS 조사), 방법의 거리 권한 a·구간 계획·도착 시 대조, 문헌 L1--L5, VLA 단독 0/12 분해·E-VLA-solo, user-log 96--107 의도}
 \end{itemize}
