@@ -95,3 +95,4 @@
 | 2026-09-26 11:08 | — | 결합 Task 18 수정 1회(통제 판정 F18): 융합 백엔드에서 실행 청크가 없으면 화살표 없음, segment_end가 층 수정도 지움, 받은 값을 담은 스키마 오류·v2 열거값 정규화, 판본 id `+cp`·`+d<값>`, 늦은 답은 구간 계획 합의에서 제외(`plan_stale`); 정본 §90 구현 기록 3에 한 문장 | 계획 Task 18 수정, 이 줄과 같은 커밋 |
 | 2026-09-26 11:20 | 01·04·05 | E-OpenVLM-proxy 결과(0/4, PERCEPTION): 01 행, 04 파드 경로·영상 행, 05 유료 1,322.4원·0.42 GPU-h 행 | [R/open_vlm_solo](../stage3/results/open_vlm_solo.md), 이 줄과 같은 커밋 |
 | 2026-09-26 11:37 | 03·04 | 결합 Task 19: 정본 §91 도착 시 대조 구현·예상 상태 청크 기준(§86 보충 4) — 03 행, 04 `harvest/couple/`·`tests/couple/`·`tests/runtime/` 행 | 계획 Task 19, 이 줄과 같은 커밋 |
+| 2026-09-26 11:4x | 01·03 | 자동 맥락 설계(정본 §97, ul 110): 01 E-AutoCtx-A0·A1·A2 `[예정]` 두 행, 03 §97 결정 행 | [auto_context_design](../research/auto_context_design_2026-09-26.md), 이 줄과 같은 커밋 |
