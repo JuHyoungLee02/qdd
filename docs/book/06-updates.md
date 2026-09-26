@@ -91,3 +91,4 @@
 | 2026-09-26 10:53 | 06 | 결합 Task 21 수정 1회(통제 판정 F21): 쉼 시계는 가장자리 사건만, 런타임 `clear` 시험, 치명 우선 보류 이유 — 책 장 변경 없음(정본 §84 보충 2 Task 21 줄에 한 문장) | plan Task 21 fix, 이 줄과 같은 커밋 |
 | 2026-09-26 10:58 | 01·03 | 선생-학생 설계(정본 §96): 01 E-TEACH-0 `[예정]` 행, 03 §96 결정 행 | [teacher_student_design](../research/teacher_student_design_2026-09-26.md), 이 줄과 같은 커밋 |
 | 2026-09-26 11:00 | 01·03 | 선생-학생 목표 재중심(정본 §96 개정 1, ul 109): 01 E-TEACH-0 행을 E-TEACH-L(주)·E-TEACH-V(보조) `[예정]` 두 행으로, 03 §96 행 고침 | [teacher_student_design](../research/teacher_student_design_2026-09-26.md) 개정, 이 줄과 같은 커밋 |
+| 2026-09-26 11:01 | 04 | 결합 Task 22: E-CONF 결정 확신도 기록 훅(conf-base@v1, 게이트 없음) — `harvest/runtime/confidence.py` 신설 + `core._deliver`의 `rec["conf"]` — 04 `harvest/runtime/` 행 | 계획 Task 22, 정본 §95 보충 2, 이 줄과 같은 커밋 |

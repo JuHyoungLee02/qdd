@@ -32,6 +32,7 @@ from ..sim.planner import PHASE_TIMEOUT_S
 from ..sim.snapshot import obs_from_json, pred_changes, text_state
 from .astra_hb import EFFORT, HB_PROMPT_ID, MAX_OUT, HeartbeatScheduler, heartbeat_input, parse_decision_ex, prompt_for
 from .clock import DeliveryQueue
+from .confidence import conf_from_answers
 from .m4 import CommitLedger, M4Params, Vote
 from .measure import Critic, HardChannel, ProprioRules, VerifyCal, expected_check, measure, values
 from .models import build_live_request, decision_questions, fused_state_text, jpeg_bytes
@@ -560,6 +561,11 @@ class OursRuntime:
         cal = {q: a["probs_cal"] for q, a in res.answers.items() if a.get("probs_cal")}
         if cal:
             rec["probs_cal"] = {q: {k: round(float(p), 6) for k, p in pc.items()} for q, pc in cal.items()}
+        # E-CONF logging hook (conf-base@v1, canon §95, plan Task 22): "why this choice" record only, no gate --
+        # never read back into any control path (§95 (a) stream-priority / (b) conservative-mode stay OFF).
+        conf = conf_from_answers(res.answers) if res.error is None else None
+        if conf is not None:
+            rec["conf"] = conf
         self.calls.append(rec)
 
     def _on_verify(self, logits: dict, t_state: float, phase: str, now: float, rec: dict) -> None:
