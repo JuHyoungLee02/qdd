@@ -90,6 +90,7 @@
 | ul 89 | 18:34 | 결과·실수를 책처럼 기록 → `docs/book/` | 유효(이 책) |
 | §59 보충 | 06:34(09-26) | 프롬프트 검진 F(로컬 VLM 이미지 상한): vLLM `--limit-mm-per-prompt` 이미지 2 → 3(결합 흐름이 머리+양쪽 손목 3장을 보내 2에서 HTTP 400) — `tools/r5/serve.sh`·`harvest/eval/common.py` `vllm_cmd` (Claude, plan 2026-09-26 Task 20) | 유효 |
 | §95 보충 1 | 10:07(09-26) | E-CONF NONE: 확신도 R2-새 0.806 통과·S-E2E 0.748 실패, 개선 후보 채택 없음(`temp_joint` +0.041/+0.024) → §95 흐름 우선·보수 모드 트리거로 안 쓰고 선택 이유 기록만; 다음 판 `temp_joint`·SAFE·FIPER·TD 보정 (Claude, 사전 등록 규칙) | 유효 |
+| §90 구현기록 3·§86 보충 3(Task 18) | 10:35(09-26) | 결합 Astra 응답 형식 `astra-couple@v2` 기본(E-ACC R1 채택 문장 바이트 이식, 판본 83fa03a5de19; v1 선택 가능), 구간 계획 두 답 합의·a = 0이면 합의된 할 일 동결, 런타임 구간 줄은 `PLAN_TO_LINE`+`SEGMENT_PLAN`(Astra 원 do·next는 기록만), 확정 화살표 = 실행 청크 변위, AxisGuide·카메라 자세·추가 문장 기본 끔, §86 상수는 v2로 재측정 (Claude, plan 2026-09-26 Task 18) | 유효 |
 
 ## 저장소 규칙이 된 사용자 지시 (CLAUDE.md)
 main 금지·dev만 푸시 · MD 기록 · Overleaf 한국어 마인드맵 · 1.5년·신뢰도 규칙 · 논문 4시간 갱신(ul 73) · 성능 낮으면 최근 논문 적용(ul 70) · 보고는 KST(ul 72) · 예산 10만 원(ul 76) · 실험 자체 검사(ul 87) · 논문 완성판 형식(ul 88) · 기록책(ul 89).

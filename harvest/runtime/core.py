@@ -199,7 +199,8 @@ class OursRuntime:
         from ..serialize import SEGMENT_UNKNOWN
         from .motion import MotionTracker
         self.motion = MotionTracker(self.cfg.motion_bins, self.cfg.motion_window_s)  # canon §83
-        # canon §90 segment-intent line: Astra's agreed segment plan (set by the coupling in a later task); unknown
+        # canon §90 segment-intent line: Astra's agreed segment plan (set by the coupling at each delivery, _deliver,
+        # plan Task 18); unknown
         # until set -- never the skill's own phase (that would be a privileged input the VLA must not rely on)
         self.segment_intent = SEGMENT_UNKNOWN
         self.q = DeliveryQueue(self.cfg.clock, wall=self.wall)
@@ -508,6 +509,9 @@ class OursRuntime:
         m = r["meta"]
         if m["kind"] == "couple":
             self.driver.on_delivery(r, now, self._t1())
+            # canon §90 (plan Task 18): the VLA segment line follows Astra's AGREED plan, mapped to the line
+            # vocabulary (driver.segment_intent: PLAN_TO_LINE + SEGMENT_PLAN); unknown until the first agreed plan
+            self.segment_intent = self.driver.segment_intent()
             self.blobs.update(self.driver.blobs)
             self.driver.blobs.clear()
             return

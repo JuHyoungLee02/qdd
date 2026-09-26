@@ -86,3 +86,4 @@
 | 2026-09-26 10:21 | 04 | E-Astra-solo 영상 7편(`/data/harvest/videos/astra_solo/`, 색인 index.json·md, 4 fps) 지도 행 | 사용자 지시(영상 저장), 이 줄과 같은 커밋 |
 | 2026-09-26 10:27 | 01·02·05 | E-ACC 2단계 결과(medium 권고 안 함, 목표 확인 채택 안 함): 01 E-ACC 행, 02 '머' 절 P113, 05 2단계 1,793.7원 행·누적 18,015.3원 | [R/eacc](../stage3/results/eacc.md) 6절, 이 줄과 같은 커밋 |
 | 2026-09-26 10:34 | 01·05 | E-ACC B′ 결과(채택 안 함): 01 E-ACC 행, 05 B′ 985.1원 행·누적 19,000.4원 | [R/eacc](../stage3/results/eacc.md) 6.3절, 이 줄과 같은 커밋 |
+| 2026-09-26 10:35 | 03·04 | 결합 Task 18: astra-couple@v2(구간 계획·두 답 합의·a = 0 동결·런타임 구간 줄·실행 청크 화살표) — 03 결정 행, 04 `harvest/couple/`·`tests/couple/`·`tests/runtime/` 행 | 계획 Task 18, 이 줄과 같은 커밋 |

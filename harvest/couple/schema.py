@@ -1,6 +1,12 @@
 """Astra coupling answer schema (astra-couple@v1): general control only (spec revision, user-log 83) with the
 GPT-as-Policy gate vocabulary (gate_assessment.py). parse_answer checks structure only and raises SchemaError with
-every problem found; the meaning checks (age, uncertainty, takeover reason, wrist evidence) are gate.py."""
+every problem found; the meaning checks (age, uncertainty, takeover reason, wrist evidence) are gate.py.
+
+version "v2" (astra-couple@v2, plan 2026-09-26 Task 18, harvest/couple/prompt_v2.py): the same common part plus a
+required segment plan {now, do, next} (names only, serialize.SEGMENTS / SEGMENT_ACTIONS, canon §90), a required
+edit.valid_until (next_answer | segment_end), the stated edit limit 0.04 m with the parser tolerance EDIT_MAX_M 0.05 m
+(P62), and an F1 keep's accompanying edit ignored with a note (prompt health F9) instead of a schema error. v1
+parsing is unchanged (recorded v1 runs stay reproducible)."""
 from __future__ import annotations
 
 import json
@@ -10,7 +16,11 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from ..serialize import SEGMENT_ACTIONS, SEGMENTS
+
 SCHEMA_ID = "astra-couple@v1"
+SCHEMA_IDS = {"v1": SCHEMA_ID, "v2": "astra-couple@v2"}
+VALID_UNTIL = ("next_answer", "segment_end")
 EXEC_STATUS = ("not_started", "progressing", "failed", "uncertain", "recovered")
 INTENT_STATUS = ("aligned", "misaligned", "uncertain")
 CONFIDENCE = ("low", "medium", "high")
@@ -63,6 +73,8 @@ class AstraAnswer:
     takeover_ok: bool = False
     progress_trusted: bool = True
     notes: list = field(default_factory=list)
+    segment: dict | None = None  # v2: Astra's segment plan {now, do, next} as answered (raw, logged)
+    valid_until: str | None = None  # v2: the edit's validity (next_answer | segment_end)
 
     @property
     def age(self) -> float:
@@ -103,10 +115,10 @@ def _progress_ok(tp) -> bool:
 
 
 def parse_answer(text: str, mode: str, sent_cameras, request_no: int, t_state: float,
-                 t_deliver: float) -> AstraAnswer:
+                 t_deliver: float, version: str = "v1") -> AstraAnswer:
     d = extract_json(text)
     sent = tuple(sent_cameras)
-    err = []
+    err, notes = [], []
     a = d.get("assessment")
     if not isinstance(a, dict):
         raise SchemaError(["assessment: object required"])
@@ -139,7 +151,18 @@ def parse_answer(text: str, mode: str, sent_cameras, request_no: int, t_state: f
     cmd = "continue" if diff == "keep" else d.get("command")
     if cmd not in COMMANDS:
         err.append(f"command: one of {COMMANDS}")
-    edit = None
+    v2 = version == "v2"
+    if v2 and diff == "keep" and d.get("edit") not in (None, {}):
+        d = {k: v for k, v in d.items() if k != "edit"}  # F9: keep confirms the command being applied
+        notes.append("keep_edit_ignored")
+    edit, vu, seg = None, None, None
+    if v2:
+        s = d.get("segment")
+        if (isinstance(s, dict) and s.get("now") in SEGMENTS and s.get("do") in SEGMENT_ACTIONS
+                and s.get("next") in SEGMENTS):
+            seg = {k: s[k] for k in ("now", "do", "next")}
+        else:
+            err.append(f"segment: {{now, next in {SEGMENTS}, do in {SEGMENT_ACTIONS}}}")
     if cmd == "edit":
         e = d.get("edit")
         if not isinstance(e, dict):
@@ -148,6 +171,10 @@ def parse_answer(text: str, mode: str, sent_cameras, request_no: int, t_state: f
             dp = _vec3(e.get("delta_position_m"), EDIT_MAX_M, "edit.delta_position_m", err)
             dr = _vec3(e.get("delta_rotation_rad", [0.0, 0.0, 0.0]), ROT_MAX_RAD, "edit.delta_rotation_rad", err)
             g = e.get("gripper", "keep")
+            if v2:
+                vu = e.get("valid_until")
+                if vu not in VALID_UNTIL:
+                    err.append(f"edit.valid_until: one of {VALID_UNTIL}")
             if g not in GRIPPER:
                 err.append(f"edit.gripper: one of {GRIPPER}")
             elif dp is not None and dr is not None:
@@ -162,4 +189,4 @@ def parse_answer(text: str, mode: str, sent_cameras, request_no: int, t_state: f
     return AstraAnswer(request_no=request_no, t_state=float(t_state), t_deliver=float(t_deliver), diff=diff,
                        command=cmd, edit=edit, execution=a["execution"], intent=a["intent"],
                        confidence=a["confidence"], evidence=ev, evidence_views=tuple(views), claims=tuple(claims),
-                       task_progress=tp, info_request=info)
+                       task_progress=tp, info_request=info, notes=notes, segment=seg, valid_until=vu)

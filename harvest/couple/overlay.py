@@ -218,3 +218,61 @@ def polylines(cams: dict, pts_newest_first: list, n: int = 5) -> dict:
         if uv:
             out[c] = uv
     return out
+
+
+def _nz(v) -> bool:
+    return v is not None and float(np.linalg.norm(v)) > 1e-6
+
+
+def drawn_elements(models: dict, *, tip, trace, next_vec=None, offset_vec=None, axisguide=()) -> dict | None:
+    """What draw_overlay puts on the images (astra-couple@v2 legend: only the elements actually drawn, prompt health
+    F2), in the shape of prompt_v2.legend_text: {"head": LEGEND keys, "wrist": WRIST_ARROW keys or None when no wrist
+    image carries an overlay, "axisguide": cameras with the axis guide}; None when no image carries an overlay.
+    Head keys follow tools/eacc/arms.images: ring / axes / next / offset only with the tip inside the head image,
+    trace with >= 2 projected trace points."""
+    if not models:
+        return None
+    head = set()
+    m = models.get("cam_head")
+    if m is not None:
+        pt = _px(m, tip)
+        if pt is not None and 0 <= pt[0] < m.W and 0 <= pt[1] < m.H:
+            head |= {"ring", "axes"} | ({"next"} if _nz(next_vec) else set()) | ({"offset"} if _nz(offset_vec)
+                                                                                  else set())
+        if sum(_px(m, p) is not None for p in trace) >= 2:
+            head.add("trace")
+    wrist = None
+    if any(c != "cam_head" for c in models):
+        wrist = {k for k, v in (("next", next_vec), ("offset", offset_vec)) if _nz(v)}
+    return {"head": head, "wrist": wrist, "axisguide": sorted(axisguide)}
+
+
+AXIS_LONG_M = 0.10
+
+
+def draw_axisguide(img, cam: CamModel, tip) -> tuple:
+    """Port of tools/eacc/arms.draw_axisguide (E-ACC arm 'ax', prereg change 4; astra-couple@v2 option, off by
+    default): AxisGuide-style (RSS 2026, arXiv 2606.06761) robot-frame axes at the projected tip, 10 cm arrows along
+    +x / +y / +z labelled '+x' / '+y' / '+z' (outlined), from robot kinematics and the camera model only. Returns
+    (image, drawn?) -- nothing is drawn when the tip is outside the image."""
+    from PIL import Image, ImageDraw
+    pt = _px(cam, tip)
+    if pt is None or not (0 <= pt[0] < cam.W and 0 <= pt[1] < cam.H):
+        return img, False
+    base = Image.fromarray(np.asarray(img, np.uint8)).convert("RGBA")
+    layer = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    try:
+        from PIL import ImageFont
+        font = ImageFont.load_default(size=16)
+    except (TypeError, OSError):  # older Pillow: bitmap default font
+        font = None
+    for e, col, lab in zip(np.eye(3), AXIS_COLORS, ("+x", "+y", "+z")):
+        q = _px(cam, np.asarray(tip, float) + AXIS_LONG_M * e)
+        if q is None:
+            continue
+        _arrow(d, pt, q, col, width=3, head_size=9)
+        for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            d.text((q[0] + 4 + dx, q[1] - 9 + dy), lab, fill=(0, 0, 0, 255), font=font)
+        d.text((q[0] + 4, q[1] - 9), lab, fill=col + (255,), font=font)
+    return np.asarray(Image.alpha_composite(base, layer).convert("RGB")), True

@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 
 REQUEST_MODES = ("F0", "F1")
+PROMPT_VERSIONS = ("v1", "v2")
 CAMERAS = ("cam_head", "cam_wrist_left", "cam_wrist_right")
 
 
@@ -16,6 +17,13 @@ class CoupleParams:
     probe_ref: str = "docs/stage3/results/astra_motion.md"  # canon §86
     # stream: one request in flight (canon §84 supp 2); effort low only (canon §82 supp 2)
     request_mode: str = "F0"  # canon §86: F0 kept (results §5/§9 — F1 flip-rate drop 0.594->0.381 misses the 50% rule)
+    # plan Task 18 (E-ACC R1 adopt, docs/stage3/results/eacc.md §5): astra-couple@v2 = harvest/couple/prompt_v2.py;
+    # v1 stays selectable so recorded v1 runs are reproducible. The §86 constants below (latency_init_s,
+    # est_text_tokens) were measured under v1 and are re-measured under v2 in E-Couple (canon §86 note)
+    prompt_version: str = "v2"
+    axis_guide: bool = False  # v2 only: AxisGuide head-image axes + legend line (E-ACC R2' undecided -> off)
+    extra_instruction: str = ""  # v2 only: one extra sentence before the mode rule (e.g. the E-ACC stage-2 target
+    # check); part of the prompt text and of the logged prompt id (+x<sha6>)
     effort: str = "low"
     max_output_tokens: int = 1200
     timeout_s: float = 20.0  # canon §86 supplement: probe runner value (probe's 20 s was measured in sim seconds;
@@ -66,6 +74,10 @@ class CoupleParams:
     def __post_init__(self):
         if self.request_mode not in REQUEST_MODES:
             raise ValueError(f"request_mode {self.request_mode!r}: one of {REQUEST_MODES}")
+        if self.prompt_version not in PROMPT_VERSIONS:
+            raise ValueError(f"prompt_version {self.prompt_version!r}: one of {PROMPT_VERSIONS}")
+        if self.prompt_version == "v1" and (self.axis_guide or self.extra_instruction.strip()):
+            raise ValueError("axis_guide / extra_instruction exist in prompt_version v2 only")
         if self.effort != "low":
             raise ValueError("the coupling stream runs effort low only (canon §82 supplement 2)")
         if not 0.0 <= self.single_weight <= 1.0:
