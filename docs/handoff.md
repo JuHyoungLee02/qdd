@@ -12,6 +12,7 @@
 - **결합 구현(계획 2026-09-26, subagent-driven)** (확인 2026-09-26 02:37 UTC): Task 1–7(`harvest/couple/` — params·schema·prompt astra-couple@v1·mock·gate·cost·stream·layer·offset·twolayer) 끝. Task 12는 E-MA2 결과 커밋(`399d1cb`)으로 보류 해제, 범위는 정본 §87(그리퍼 판단을 VLA 선택지로)까지 확장해 다룬다.
 - **E-NOV0 백본 특징 새로움 점수 → Astra 호출 게이트(학습 없음)** (확인 2026-09-26 05:36 UTC): 사전 등록 `docs/stage3/prereg_nov0.md` 커밋 뒤 메인 파드 **GPU 2만**에서 `tools/nov0/run_nov0.sh /data/harvest/code_nov0 A → gate → latency → verdict`(E-MA2 C0 특징 추출: 기억 15,000·보정 3,000·평가 7,308·S-E2E 1,799), 출력 `/data/harvest/logs/nov0/`. 결과 문서 `docs/stage3/results/nov0.md` 커밋 때 이 줄을 지운다.
 - **E-SR1d** (확인 2026-09-26 05:59 UTC): 실데이터(S-E2E `se2e_c1`) 먼 구간 기구학 반사실 분기 50 % — 사전 등록 `docs/stage3/prereg_sr1d.md` 커밋 뒤 x2 파드 GPU 0(시드 1)·1(시드 2)에서 C0 평가 → C1 학습 → C1 평가 (`tools/sr1d/run_sr1d.sh`, 로그 `/data/harvest/logs/sr1d/`). 결과 커밋 때 이 줄을 지운다.
+- **E-Couple 무료 사전 실행(셰이크다운, P3 판정 없음, 유료 0)** (확인 2026-09-26 06:10 UTC): 사전 등록 `docs/stage3/prereg_couple_dry.md` 커밋 뒤 메인 파드 **GPU 1만**(Isaac + 융합 VLA `ckpt/sr1c/c1/last` + Qwen3-VL-8B vLLM 포트 8371)에서 고정 사본 `/data/harvest/code_couple_dry_<등록 커밋>`의 `tools/couple_dry/run_dry.sh <사본> serve → smoke → main`, 출력 `/data/harvest/out/couple_dry/`; 정지는 `run_dry.sh <사본> stop`(자기 프로세스만). 결과 문서 `docs/stage3/results/couple_dry.md` 커밋 때 이 줄을 지운다.
 
 ## 1. 먼저 할 일
 1. `dev` 브랜치인지 확인한다. **모든 작업(글, 코드)은 `dev`에서 시작하고 `dev`에만 푸시한다. `main`은 절대 건드리지 않는다**(사용자가 직접 반영).
