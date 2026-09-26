@@ -18,11 +18,11 @@ import bench as B  # noqa: E402
 import run_eacc as R  # noqa: E402
 
 
-def tile(sd: str, meta: dict):
+def tile(sd: str, meta: dict, arm: str = "v2"):
     from PIL import Image, ImageDraw
 
     from harvest.couple.overlay import _px
-    imgs, _, models, _ = A.images(sd, meta, A.parse_arm("v2"))
+    imgs, _, models, _ = A.images(sd, meta, A.parse_arm(arm))
     head = Image.open(io.BytesIO(imgs["cam_head"])).convert("RGB")
     wrist = Image.open(io.BytesIO(imgs["cam_wrist_right"])).convert("RGB")
     d = ImageDraw.Draw(head)
@@ -54,12 +54,13 @@ def main(argv=None):
     ap.add_argument("--bench", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--ids", default="")
+    ap.add_argument("--arm", default="v2")
     a = ap.parse_args(argv)
     snaps = R.load_bench(a.bench)
     if a.ids:
         keep = set(a.ids.split(","))
         snaps = [s for s in snaps if s[0] in keep]
-    tiles = [tile(sd, m) for _, sd, m in snaps]
+    tiles = [tile(sd, m, a.arm) for _, sd, m in snaps]
     if not tiles:
         raise SystemExit("no snapshots")
     cols = 2

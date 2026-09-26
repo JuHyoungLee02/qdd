@@ -222,7 +222,7 @@ def _bench(tmp_path):
 def test_build_every_arm(tmp_path):
     root = _bench(tmp_path)
     m = json.loads((root / "off_a_00" / "meta.json").read_text())
-    for name in ("v1", "v2", "v2cp", "v2_2cam", "v2_noov", "v2_noctx", "v2cp_dlow"):
+    for name in ("v1", "v2", "v2cp", "v2_2cam", "v2_noov", "v2_noctx", "v2cp_dlow", "v2_ax"):
         arm = A.parse_arm(name)
         inp, req, pid, text = A.build(str(root / "off_a_00"), m, arm)
         n_img = sum(c.get("type") == "input_image" for c in inp[0]["content"])
@@ -230,7 +230,9 @@ def test_build_every_arm(tmp_path):
         if name == "v1":
             assert pid == CP.PROMPT_ID["F0"] and "segment" not in text.split(CP.REQ_OPEN)[0]
         else:
-            assert pid == P2.PROMPT_ID and '"segment": {"now"' in text
+            ax = "Axis guide on" in text
+            assert ax == arm["axis"]  # the synthetic camera sees the tip
+            assert pid == P2.PROMPT_ID + (f"+ax{P2.AXISGUIDE_ID}" if ax else "") and '"segment": {"now"' in text
             assert ("Camera poses now" in text) == arm["campose"]
             assert ("since_last_request (in the request)" in text) == arm["context"]
             assert ("No overlay is drawn" in text) == (not arm["overlay"])
@@ -254,6 +256,44 @@ def test_runner_mock_and_score(tmp_path):
     assert tab["v2"]["M3_command"]["n"] == 2 and tab["v1"]["M2_segment"]["n"] == 0
     dec = S.decide(srows, tab)
     assert "R1_v2_vs_v1" in dec and dec["R2_campose"]["verdict"] in ("adopt", "reject", "undecided")
+
+
+@pytest.mark.parametrize("model,calls,why", [("mock_empty", 3, "empty_x3"), ("mock_quota", 1, "fatal_quota")])
+def test_runner_api_stops(tmp_path, capsys, model, calls, why):
+    import run_eacc as R
+    root = _bench(tmp_path)
+    out = tmp_path / "rows.jsonl"
+    R.main(["--bench", str(root), "--set", "screen", "--arms", "v1,v2,v2cp", "--model", model, "--out", str(out)])
+    assert len(out.read_text().splitlines()) == calls
+    assert f'"stop_why": "{why}"' in capsys.readouterr().out
+
+
+def test_runner_kinds_filter(tmp_path):
+    import run_eacc as R
+    root = _bench(tmp_path)
+    out = tmp_path / "rows.jsonl"
+    R.main(["--bench", str(root), "--set", "screen", "--arms", "v1", "--model", "mock", "--out", str(out),
+            "--kinds", "off_a,off_b,off_c"])
+    rows = [json.loads(x) for x in out.read_text().splitlines()]
+    assert [r["kind"] for r in rows] == ["off_a"]
+
+
+def test_eacc_client_reports_stream_failure():
+    import httpx
+    from astra_client import EaccAstraClient, is_fatal
+    sse = ('data: {"type": "response.created"}\n\n'
+           'data: {"type": "error", "error": {"type": "insufficient_quota", "code": "credit_balance_exhausted"}}\n\n'
+           'data: {"type": "response.failed", "response": {"status": "failed", "error": '
+           '{"code": "credit_balance_exhausted"}}}\n\n')
+    tr = httpx.MockTransport(lambda req: httpx.Response(200, text=sse, headers={"content-type": "text/event-stream"}))
+    rec = EaccAstraClient("x", "m", transport=tr).call([{"role": "user", "content": []}], "low", 10, {})
+    assert rec.error == "failed:credit_balance_exhausted" and is_fatal(rec) and rec.output_text == ""
+    ok = ('data: {"type": "response.output_text.delta", "delta": "{}"}\n\n'
+          'data: {"type": "response.completed", "response": {"model": "m", "usage": {"input_tokens": 5, '
+          '"output_tokens": 2}}}\n\n')
+    tr2 = httpx.MockTransport(lambda req: httpx.Response(200, text=ok, headers={"content-type": "text/event-stream"}))
+    rec2 = EaccAstraClient("x", "m", transport=tr2).call([{"role": "user", "content": []}], "low", 10, {})
+    assert rec2.error is None and rec2.output_text == "{}" and rec2.usage["output_tokens"] == 2
 
 
 def test_decide_without_off_rows_is_not_decidable():

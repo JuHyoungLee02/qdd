@@ -129,7 +129,15 @@ def legend_text(drawn: dict | None, trace_s: float) -> str:
     if drawn.get("wrist") is not None:
         out += WRIST_BOX.format(wrist_arrows="".join(WRIST_ARROW[k] for k in ("next", "offset")
                                                      if k in drawn["wrist"])) + "\n"
+    if drawn.get("axisguide"):  # E-ACC arm 'ax' (prereg change 4); absent -> the v2 text is byte-identical
+        out += AXISGUIDE_LINE.format(cams=" and ".join(drawn["axisguide"])) + "\n"
     return out
+
+
+AXISGUIDE_LINE = ("Axis guide on {cams}: long red / green / blue arrows from the gripper tip, labelled +x / +y / +z, "
+                  "are the robot frame axes (10 cm long) as seen in that image -- read from them which image direction "
+                  "is +x (forward), +y (left) and +z (up) before you choose delta_position_m.")
+AXISGUIDE_ID = hashlib.sha256(AXISGUIDE_LINE.encode()).hexdigest()[:6]
 
 
 def events_text(events: list) -> str:

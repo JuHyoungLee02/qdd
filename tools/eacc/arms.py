@@ -22,7 +22,7 @@ except ImportError:  # run as a script from tools/eacc
     import prompt_v2 as P2  # type: ignore
 
 BASES = ("v1", "v2", "v2cp")
-MODS = ("med", "r1", "r2", "2cam", "noov", "noctx", "dlow", "dhigh")
+MODS = ("med", "r1", "r2", "2cam", "noov", "noctx", "dlow", "dhigh", "ax")
 CAMS3 = ("cam_head", "cam_wrist_left", "cam_wrist_right")
 CAMS2 = ("cam_head", "cam_wrist_right")
 
@@ -32,13 +32,47 @@ def parse_arm(name: str) -> dict:
     base, mods = parts[0], parts[1:]
     if base not in BASES or any(m not in MODS for m in mods) or len(set(mods)) != len(mods):
         raise ValueError(f"arm {name!r}: base in {BASES}, modifiers in {MODS}")
-    if base == "v1" and set(mods) & {"2cam", "noov", "noctx", "dlow", "dhigh"}:
+    if base == "v1" and set(mods) & {"2cam", "noov", "noctx", "dlow", "dhigh", "ax"}:
         raise ValueError(f"arm {name!r}: v1 is production only (effort / repeat modifiers)")
     return {"name": name, "base": base, "effort": "medium" if "med" in mods else "low",
             "rep": 2 if "r2" in mods else 1 if "r1" in mods else 0,
             "cams": CAMS2 if "2cam" in mods else CAMS3, "overlay": "noov" not in mods,
             "context": base != "v1" and "noctx" not in mods, "campose": base == "v2cp",
-            "detail": "low" if "dlow" in mods else "high" if "dhigh" in mods else None}
+            "detail": "low" if "dlow" in mods else "high" if "dhigh" in mods else None,
+            "axis": "ax" in mods and "noov" not in mods}
+
+
+AXIS_LONG_M = 0.10
+AXIS_COLORS = ((255, 40, 40), (40, 220, 40), (60, 120, 255))  # = couple.overlay.AXIS_COLORS (r / g / b = x / y / z)
+
+
+def draw_axisguide(img, cam, tip) -> tuple:
+    """AxisGuide-style (RSS 2026, arXiv 2606.06761) robot-frame basis axes drawn at the projected tip of this view:
+    10 cm arrows along +x / +y / +z, each labelled '+x' / '+y' / '+z' (outlined), from robot kinematics and the
+    camera model only. Returns (image, drawn?) -- nothing is drawn when the tip is outside the image."""
+    from PIL import Image, ImageDraw
+
+    from harvest.couple.overlay import _arrow, _px
+    pt = _px(cam, tip)
+    if pt is None or not (0 <= pt[0] < cam.W and 0 <= pt[1] < cam.H):
+        return img, False
+    base = Image.fromarray(np.asarray(img, np.uint8)).convert("RGBA")
+    layer = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    try:
+        from PIL import ImageFont
+        font = ImageFont.load_default(size=16)
+    except (TypeError, OSError):  # older Pillow: bitmap default font
+        font = None
+    for e, col, lab in zip(np.eye(3), AXIS_COLORS, ("+x", "+y", "+z")):
+        q = _px(cam, np.asarray(tip, float) + AXIS_LONG_M * e)
+        if q is None:
+            continue
+        _arrow(d, pt, q, col, width=3, head_size=9)
+        for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            d.text((q[0] + 4 + dx, q[1] - 9 + dy), lab, fill=(0, 0, 0, 255), font=font)
+        d.text((q[0] + 4, q[1] - 9), lab, fill=col + (255,), font=font)
+    return np.asarray(Image.alpha_composite(base, layer).convert("RGB")), True
 
 
 def _png(path: str) -> np.ndarray:
@@ -59,12 +93,16 @@ def images(snap_dir: str, meta: dict, arm: dict) -> tuple:
     models = {c: CamModel.from_dict(d) for c, d in B.cam_models(meta).items()}
     tip = np.asarray(meta["tip"], float)
     trace = B.trace_points(meta)
-    out, drawn = {}, None
+    out, drawn, ax_on = {}, None, set()
     for c in arm["cams"]:
         img = _png(os.path.join(snap_dir, f"{c}.png"))
         if arm["overlay"]:
             img = draw_overlay(img, models[c], tip=tip, trace=trace, next_vec=nxt, offset_vec=None,
                                wrist=c != "cam_head")
+            if arm.get("axis") and c == "cam_head":  # head only: at the wrist the tip sits at the image edge and 10 cm arrows cover the view
+                img, ok = draw_axisguide(img, models[c], tip)
+                if ok:
+                    ax_on.add(c)
         out[c] = jpeg_bytes(img)
     if arm["overlay"]:
         head = set()
@@ -74,7 +112,7 @@ def images(snap_dir: str, meta: dict, arm: dict) -> tuple:
             head |= {"ring", "axes"} | ({"next"} if nxt is not None else set())
         if sum(_px(m, p) is not None for p in trace) >= 2:
             head.add("trace")
-        drawn = {"head": head, "wrist": {"next"} if nxt is not None else set()}
+        drawn = {"head": head, "wrist": {"next"} if nxt is not None else set(), "axisguide": sorted(ax_on)}
     return out, drawn, models, nxt
 
 
@@ -99,5 +137,5 @@ def build(snap_dir: str, meta: dict, arm: dict) -> tuple:
                                  float(meta["tip"][2]) - float(meta["table_z"]))
         inp = P2.build_v2(req, imgs, cams, meta["instruction"], horizon_s=B.L_ARR, drawn=drawn, campose=cp,
                           detail=arm["detail"])
-        pid = P2.PROMPT_ID
+        pid = P2.PROMPT_ID + (f"+ax{P2.AXISGUIDE_ID}" if (drawn or {}).get("axisguide") else "")
     return inp, req, pid, inp[0]["content"][0]["text"]

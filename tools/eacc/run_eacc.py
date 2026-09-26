@@ -23,7 +23,8 @@ import prompt_v2 as P2  # noqa: E402
 
 PAID_N = {"on": 10, "off_a": 7, "off_b": 7, "off_c": 6}
 SUB_N = {"on": 3, "off_a": 3, "off_b": 3, "off_c": 3}
-MAX_OUT = 1200  # production CoupleParams.max_output_tokens
+MAX_OUT = 1200  # production CoupleParams.max_output_tokens (effort medium)
+MAX_OUT_LOW = 800  # prereg change 4: low-effort answers used 160-260 output tokens; lowers the reservation only
 EST_IN = 3400  # reservation upper bound of input tokens (v2 text ~2.2k + 3 images ~0.6k, margin)
 
 
@@ -95,18 +96,30 @@ def client(model: str, url: str, served: str, effort: str):
                 return AstraRecord(http_status=200, usage={"input_tokens": 2500, "output_tokens": 250}, output_text=txt,
                                    effort=effort, model_field="mock", meta=dict(meta), t_send=0.0, t_done=1.0)
         return _Mock()
+    if model in ("mock_empty", "mock_quota"):  # stop-rule tests: an empty answer / the quota failure
+        from harvest.clients.astra import AstraRecord
+
+        class _Bad:
+            def call(self, inp, effort, max_output_tokens, meta):
+                return AstraRecord(http_status=200, usage={}, output_text="", effort=effort, meta=dict(meta),
+                                   error="failed:insufficient_quota" if model == "mock_quota" else None,
+                                   t_send=0.0, t_done=0.5)
+        return _Bad()
     if model == "qwen":
         from harvest.couple.local_vlm import LocalVLMAstra
         return LocalVLMAstra(url, served, timeout_s=180.0)
-    from harvest.clients.astra import AstraClient
     from harvest.runtime.astra_hb import MODEL
+    from astra_client import EaccAstraClient  # prereg change 3: error / response.failed reported (result D1)
     tok = "/data/.openai_token"
-    return AstraClient(open(tok).read().strip(), MODEL, timeout_s=120.0 if effort != "low" else 60.0)
+    return EaccAstraClient(open(tok).read().strip(), MODEL, timeout_s=120.0 if effort != "low" else 60.0)
 
 
 def run(a) -> dict:
     from harvest.couple.cost import CostLedger, PriceTable
     snaps = select(load_bench(a.bench), a.set)
+    if a.kinds:  # prereg change 3: resume with the off-plan snapshots of the same set, same order
+        keep = set(a.kinds.split(","))
+        snaps = [s for s in snaps if s[2]["kind"] in keep]
     if a.limit:
         snaps = snaps[:a.limit]
     arms = [A.parse_arm(x) for x in a.arms.split(",")]
@@ -117,12 +130,13 @@ def run(a) -> dict:
     done = set()
     if os.path.exists(a.out):
         done = {(r["arm"], r["snap"]) for r in map(json.loads, open(a.out))}
-    stopped, n = False, 0
+    stopped, n, empty_run, stop_why = False, 0, 0, None
     for sid, sd, meta in snaps:
         for arm in arms:
             if (arm["name"], sid) in done:
                 continue
-            est = prices.krw_upper(EST_IN, MAX_OUT)
+            mo = MAX_OUT_LOW if arm["effort"] == "low" else MAX_OUT
+            est = prices.krw_upper(EST_IN, mo)
             if a.model == "astra" and not ledger.can_send(est):
                 stopped = True
                 print("BUDGET_STOP " + json.dumps(ledger.state()), flush=True)
@@ -137,10 +151,14 @@ def run(a) -> dict:
                 clients[arm["effort"]] = client(a.model, a.url, a.served, arm["effort"])
             k = f"{arm['name']}:{sid}"
             ledger.reserve(k, est)
-            rec = clients[arm["effort"]].call(inp, arm["effort"], MAX_OUT, {"eacc": a.tag, "arm": arm["name"],
+            rec = clients[arm["effort"]].call(inp, arm["effort"], mo, {"eacc": a.tag, "arm": arm["name"],
+                                                                       "cache_key": f"eacc-{arm['name']}-{meta['task']}",
                                                                             "snap": sid})
-            cost = ledger.charge(k, rec.usage or None, {"arm": arm["name"], "snap": sid, "error": rec.error,
-                                                        "resp_model": rec.model_field}) if a.model == "astra" else 0.0
+            empty = not (rec.output_text or "").strip() and not (rec.usage or {}).get("output_tokens")
+            usage = rec.usage or ({"input_tokens": 0, "output_tokens": 0} if (rec.error or empty) else None)
+            cost = ledger.charge(k, usage, {"arm": arm["name"], "snap": sid, "error": rec.error,
+                                            "unbilled": bool(not rec.usage and (rec.error or empty)),
+                                            "resp_model": rec.model_field}) if a.model == "astra" else 0.0
             row = {"arm": arm["name"], "snap": sid, "kind": meta["kind"], "model": a.model if a.model != "qwen"
                    else a.served, "effort": arm["effort"], "prompt_id": pid, "prompt_sha": hashlib.sha256(
                        text.encode()).hexdigest()[:12], "text_chars": len(text), "raw": (rec.output_text or "")[:3000],
@@ -154,9 +172,16 @@ def run(a) -> dict:
             n += 1
             print(f"CALL {n} {arm['name']} {sid} valid={row['valid']} cmd={row.get('command')} "
                   f"lat={row['latency_s']} cost={cost:.1f} spent={ledger.spent:.1f}", flush=True)
+            fatal = bool(rec.error) and any(c in rec.error for c in ("insufficient_quota", "credit_balance_exhausted",
+                                                                     "billing_hard_limit_reached"))
+            empty_run = empty_run + 1 if empty else 0
+            if fatal or empty_run >= 3:
+                stopped, stop_why = True, "fatal_quota" if fatal else "empty_x3"
+                print("API_STOP " + json.dumps({"why": stop_why, "error": rec.error}), flush=True)
+                break
         if stopped:
             break
-    return {"calls": n, "stopped": stopped, "ledger": ledger.state()}
+    return {"calls": n, "stopped": stopped, "stop_why": stop_why, "ledger": ledger.state()}
 
 
 def main(argv=None):
@@ -164,7 +189,7 @@ def main(argv=None):
     ap.add_argument("--bench", default="/data/harvest/out/eacc/bench")
     ap.add_argument("--set", default="screen", choices=("screen", "paid", "sub"))
     ap.add_argument("--arms", required=True)
-    ap.add_argument("--model", required=True, choices=("qwen", "astra", "mock"))
+    ap.add_argument("--model", required=True, choices=("qwen", "astra", "mock", "mock_empty", "mock_quota"))
     ap.add_argument("--url", default="http://127.0.0.1:8381")
     ap.add_argument("--served", default="qwen8b_eacc")
     ap.add_argument("--out", required=True)
@@ -173,6 +198,7 @@ def main(argv=None):
     ap.add_argument("--cap-krw", type=float, default=8000.0)
     ap.add_argument("--tag", default="main")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--kinds", default="", help="only these snapshot kinds of the set (e.g. off_a,off_b,off_c)")
     ap.add_argument("--dump", default="", help="write the first full prompt text of each arm here (eye check)")
     print("END " + json.dumps(run(ap.parse_args(argv))), flush=True)
 
