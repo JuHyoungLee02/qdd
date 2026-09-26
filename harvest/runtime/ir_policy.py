@@ -77,12 +77,14 @@ class OursPolicy:
 
 
 def _couple_rows(rt) -> list:
-    """The coupling driver's log (spec 2026-09-26 §16). Its rows carry their own "type" (send / answer / timeout /
-    adherence / ...), which would overwrite the sidecar type "couple": it is kept as "couple_kind"."""
+    """The coupling driver's log (spec 2026-09-26 §16) and its event flags (couple_kind "event"). Log rows carry their
+    own "type" (send / answer / timeout / adherence / ...), which would overwrite the sidecar type "couple": it is
+    kept as "couple_kind"."""
     drv = getattr(rt, "driver", None)
     if drv is None:
         return []
-    return [{"couple_kind": r.get("type"), **{k: v for k, v in r.items() if k != "type"}} for r in drv.log]
+    return ([{"couple_kind": r.get("type"), **{k: v for k, v in r.items() if k != "type"}} for r in drv.log]
+            + [{"couple_kind": "event", **{k: v for k, v in e.items() if k != "type"}} for e in drv.events])
 
 
 def write_blobs(d: str, blobs: dict) -> int:

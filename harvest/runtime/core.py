@@ -146,9 +146,16 @@ class OursRuntime:
         self.couple_ledger, self.driver, self.episode = None, None, 0
         if cfg.couple == "serial":
             from ..couple.cost import CostLedger, PriceTable
-            if cfg.astra_mode == "api" and not (cfg.couple_prices and cfg.couple_budget_krw > 0 and cfg.couple_ledger):
+            if cfg.hb_mode == "K3":
+                raise ValueError("couple serial with hb_mode K3: the K3 stage gate waits for an Astra heartbeat, which "
+                                 "is off in couple mode, so S1 -> S2 would never pass (use K0-K2 or K4)")
+            # paid = the paid API, or any client that is not a known mock / local one (review T10 M6)
+            model = str(getattr(astra, "model", "") or "")
+            paid = cfg.astra_mode == "api" or (astra is not None and not model.startswith(("mock:", "local:")))
+            if paid and not (cfg.couple_prices and cfg.couple_budget_krw > 0 and cfg.couple_ledger):
                 raise ValueError("couple serial on the paid API needs couple_prices (the run day's price table), "
-                                 "couple_budget_krw > 0 and couple_ledger (canon §82 supplement, spec §15)")
+                                 "couple_budget_krw > 0 and couple_ledger (canon §82 supplement, spec §15); "
+                                 f"client model {model!r} is not a mock: / local: client")
             prices = PriceTable.load(cfg.couple_prices) if cfg.couple_prices else PriceTable.free()
             self.couple_ledger = CostLedger(cfg.couple_ledger or None, cfg.couple_budget_krw, prices,
                                             run_id=cfg.couple_run_id)
@@ -193,6 +200,8 @@ class OursRuntime:
             self.driver.close()  # the last episode's request in flight: charged as unanswered, never applied
         self.driver, self.couple_out, self._off_hist = None, None, []
         self._bias_q, self._chunk_played = np.zeros(7), False
+        # chunk play clock (review T10 I1): lag accrues only while slowed; stays exactly 0.0 when the scale is 1
+        self._play_lag, self._play_prev_t, self._played_t_state, self._chunk_vec_err = 0.0, None, None, False
         self.episode += 1
         if self.cfg.couple == "serial":
             from ..couple.driver import CoupleDriver
@@ -246,8 +255,23 @@ class OursRuntime:
         if c is None or not dec or c["dec"] != dec or fk is None:
             return None
         ch = np.asarray(c["chunk"], float)
-        d = np.asarray(fk(ch[-1, :7]), float) - np.asarray(fk(ch[0, :7]), float)
+        try:  # never stops a run (review T10 M3): an FK failure -> None (decision vector), logged once
+            d = np.asarray(fk(ch[-1, :7]), float) - np.asarray(fk(ch[0, :7]), float)
+        except Exception as e:  # noqa: BLE001
+            if not self._chunk_vec_err:
+                self._chunk_vec_err = True
+                self.events.append({"t": round(self.t_last, 4), "event": "couple_chunk_vec_error", "error": repr(e)})
+            return None
         return d if float(np.linalg.norm(d)) >= 1e-4 else None
+
+    def _advance_play_clock(self, now: float) -> None:
+        """Chunk play clock (review T10 I1): over each tick interval the chunk advances speed_scale x dt, i.e. the lag
+        grows by (1 - scale) x dt. A chunk plays at now - (lag now - lag at its observation), so a scale switch (also
+        across a chunk switch) never jumps; with scale 1 the lag is never touched (off path: t_play == now)."""
+        scale = self.couple_out.speed_scale if self.couple_out is not None else 1.0
+        if self._play_prev_t is not None and scale != 1.0:
+            self._play_lag += (1.0 - scale) * (now - self._play_prev_t)
+        self._play_prev_t = now
 
     def _couple_fused(self, a, now, kin, tcp_p):
         """Fused path: the offset moved since the current chunk's observation is added as a joint bias (IK difference
@@ -261,9 +285,10 @@ class OursRuntime:
         st = self.couple_out.step6 if self.couple_out is not None else None
         if st is not None and np.any(st):
             self._off_hist.append((now, st.copy()))
-        c = self.chunks.get(self.cur_k)
-        t0 = c["t_state"] if c is not None else -math.inf
-        self._off_hist = [(t, s) for t, s in self._off_hist if t > t0]
+        # prune by the observation time of the chunk actually PLAYED (a held action comes from it, not from the current
+        # step's stale chunk; review T10 I2); the step applied at that very tick is not in its observation (>=)
+        t0 = self._played_t_state if self._played_t_state is not None else -math.inf
+        self._off_hist = [(t, s) for t, s in self._off_hist if t >= t0]
         self._bias_q = np.zeros(7)
         if self._off_hist:
             b = np.sum([s for _, s in self._off_hist], axis=0)
@@ -619,6 +644,7 @@ class OursRuntime:
                 now=now, dt=self.dt, tcp_p=np.asarray(tcp_p, float), phase=self.skill.phase, stage=self.skill.stage,
                 near=self.near_now, committed={q: c for q, c in self.skill.dec.items() if c is not None},
                 frames=self.frames, cams=obs.get("cams"), t1=self._t1(), motion=None))
+            self._advance_play_clock(now)  # before a chunk request of this tick records the lag at its observation
         if self.cfg.backend == "fused":
             self._maybe_request_chunk(now, obs)
         # executor (its expected_after checks read the measured predicates, not the privileged state)
@@ -769,7 +795,7 @@ class OursRuntime:
             return {"latency_s": r.latency_s, "res": r, "req_hash": rh}
         self.chunk_stats["requested"] += 1
         self.q.submit(now, self.pool.submit(run), fixed_latency=getattr(model, "synthetic_chunk_latency", None),
-                      meta={"kind": "chunk", "ds": kn, "t_state": now, "dec": committed,
+                      meta={"kind": "chunk", "ds": kn, "t_state": now, "dec": committed, "lag": self._play_lag,
                             "status": {q: st for q, (c, st) in dec.items()}})
 
     def _deliver_chunk(self, r, now):
@@ -781,7 +807,7 @@ class OursRuntime:
         self.chunk_log[-1]["request_sha256"], self.chunk_log[-1]["image_sha256"] = r.get("req_hash") or (None, {})
         if res.error is None and res.chunk is not None:
             self.chunks[m["ds"]] = {"t_state": m["t_state"], "chunk": np.asarray(res.chunk, float),
-                                    "dt": res.chunk_dt, "dec": m["dec"]}
+                                    "dt": res.chunk_dt, "dec": m["dec"], "lag": m.get("lag", 0.0)}
 
     def _play_chunk(self, now, q_meas):
         """Play the chunk of the current step only if it was conditioned on the decisions being executed; else hold
@@ -792,10 +818,9 @@ class OursRuntime:
         dec = {q: v for q, v in self.skill.dec.items() if v is not None}
         if c is not None and c["dec"] == dec and dec:
             self.chunk_stats["played"] += 1
-            self._chunk_played = True
-            scale = self.couple_out.speed_scale if self.couple_out is not None else 1.0
-            t_play = now if scale == 1.0 else c["t_state"] + (now - c["t_state"]) * scale  # off: exactly as before
-            return chunk_value(c["chunk"], c["dt"], c["t_state"], t_play)
+            self._chunk_played, self._played_t_state = True, c["t_state"]
+            lag = self._play_lag - c.get("lag", 0.0)  # lag accrued since this chunk's observation (0.0 when off)
+            return chunk_value(c["chunk"], c["dt"], c["t_state"], now - lag if lag else now)
         if c is not None:
             self.chunk_stats["stale_dec"] += 1
         self.chunk_stats["held"] += 1
