@@ -58,7 +58,8 @@ case $cmd in
     s=$1; g=$2; export CUDA_VISIBLE_DEVICES=$g
     until free_gpu $g; do sleep 60; done
     $PY $ENTRY predict $DATA $MO --val-per-kind 0 --val-seed 0 --seed 0 \
-      --ckpt $OLD/motion_s$s/last --out $L/predfull_c0_s$s.jsonl > $L/predfull_c0_s$s.out 2>&1
+      --ckpt $OLD/motion_s$s/last --out $L/predfull_c0_s$s.jsonl --extra-out $L/extra_c0_s$s.json \
+      > $L/predfull_c0_s$s.out 2>&1
     echo "c0_s$s predictfull rc=$? $(date -u +%FT%TZ)"
     $PY tools/marr_real/reuse_check.py pred $L/predfull_c0_s$s.jsonl /data/harvest/logs/ma1b/predfull_none_s$s.jsonl \
       --out $L/reuse_pred_s$s.json > /dev/null; echo "c0_s$s reuse cmp rc=$? $(date -u +%FT%TZ)";;
