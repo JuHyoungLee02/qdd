@@ -164,3 +164,11 @@ def test_repo_assets_table_is_licensed_and_samples():
         for seed in range(3):
             sc = FU.sample_scene(kind, seed, mesh_assets=assets)
             assert FU.check_keep_out(FU.all_parts(sc)) == [] and sc["furniture"][0]["usd"].endswith("_static.usda")
+
+
+def test_counter_cabinet_front_band_is_a_workspace():
+    rm = RE.ReachModel(fake_probe())
+    for seed in range(10):
+        sc = FU.sample_scene("counter_cabinet", seed, reach=rm)
+        regs = [p["region"] for p in sc["placement_regions"] if p["region"]]
+        assert regs and max(r[0][1] - r[0][0] for r in regs) >= 0.08, seed  # L8D gate G-H minimum

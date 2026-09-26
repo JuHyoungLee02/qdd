@@ -109,10 +109,10 @@ def _build(kind: str, rng) -> tuple[list, dict]:
                    _pick(rng, WALL), "wall")]
         prm = dict(top=top, depth=depth)
         if kind == "counter_cabinet":
-            cd, cz = rng.uniform(0.28, 0.36), top + rng.uniform(0.40, 0.50)
-            ps.append(part("wall_cabinet", (xf + depth - cd, y0, cz), (xf + depth - 0.02, y1, cz + 0.60), body,
-                           "cabinet"))
-            prm.update(cabinet_depth=cd, cabinet_bottom=cz)
+            cd, cz = rng.uniform(0.20, 0.26), top + rng.uniform(0.40, 0.50)
+            cx0 = max(xf + depth - cd, 0.58)  # the open front band keeps x 0.34-0.51 (L8D gate: a 2-6 cm band before)
+            ps.append(part("wall_cabinet", (cx0, y0, cz), (xf + depth - 0.02, y1, cz + 0.60), body, "cabinet"))
+            prm.update(cabinet_depth=_r(xf + depth - 0.02 - cx0), cabinet_bottom=cz)
         return ps, prm
     if kind in ("shelf_low", "shelf_tall"):
         xf, dx, dy = rng.uniform(0.28, 0.38), rng.uniform(0.30, 0.40), rng.uniform(0.80, 1.00)
