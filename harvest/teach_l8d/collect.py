@@ -91,10 +91,15 @@ def scene_record(world, seed: int, task: str, variant: str, split: str, style: s
     info = world.task_info()
     rand = getattr(env, "randomization", None)
     layout = dict(getattr(env, "layout", None) or {k: None for k in info.get("present", [])})
+    lift_q = None
+    rob = getattr(env, "robot", None)
+    if rob is not None and "lift_joint" in rob.joint_names:
+        lift_q = float(rob.data.joint_pos[0, rob.joint_names.index("lift_joint")])
     return _jl({"schema": SCENE_SCHEMA, "seed": seed, "split": split, "task": task, "variant": variant,
                 "style": style, "instruction": info["instruction"],
                 "table_z": float(getattr(env, "table_top_z", world.table_z)),
-                "lift": getattr(env, "lift", None), "ws": getattr(env, "ws", None), "layout": layout,
+                "lift": getattr(env, "lift", None), "lift_joint_measured": lift_q,
+                "ws": getattr(env, "ws", None), "layout": layout,
                 "randomization": rand, "rand_settle": getattr(env, "rand_settle", None),
                 "steps": _steps(task), "distractors": distractor_count(layout, info, rand)})
 

@@ -20,7 +20,7 @@ TRAIN_SEEDS = range(30000, 35000)
 GATE_SEEDS = range(35000, 35200)
 OOD_SEEDS = range(70000, 71000)
 OOD_SETS = {"ood_h": range(70000, 70100), "ood_o": range(70100, 70300), "ood_d": range(70300, 70500),
-            "ood_s": range(70500, 70700), "ood_t": range(70700, 70900)}
+            "ood_s": range(70500, 70700), "ood_t": range(70700, 70900), "ood_hl": range(70900, 71000)}
 SPLITS = ("train", "gate") + tuple(OOD_SETS)
 PT_OOD_H = (0.78, 0.82, 0.88, 0.92)  # E-PT OOD-H (registered 0.82 / 0.88, change 2 0.78 / 0.92), reused by E-STRIP8
 OOD_GAP = 0.015  # a train height is >= 1.5 cm from every OOD-H height
@@ -96,6 +96,57 @@ def plan_train(n: int, heights, start: int = TRAIN_SEEDS.start) -> list:
     for i, s in enumerate(seeds):
         out.append({"seed": s, "split": "train", "task": task_of(s), "variant": variant_of(s),
                     "table_z": heights[int(perm[i]) % len(heights)]})
+    return out
+
+
+# ------------------------------------------------------------------------------------------------ lift (change 4)
+# User decision "리프트도 쓰자": the torso lift extends the table heights to ~0.45-1.08 m. An episode at absolute table
+# height tz uses a relative height r (a fixed-lift TRAIN height, gate-checked) and the lift L = LIFT0 + (tz - r), so
+# the table-to-robot geometry is one the fixed-lift gate passed while the absolute height (and the head pose in the
+# robot frame, the lift joint state) is new.
+LIFT0 = -0.0993  # scene.INIT_JOINTS lift_joint
+LIFT_RANGE = (-0.50, 0.0)  # soft joint limits (probe_reach)
+LIFT_TRAIN_HEIGHTS = (0.48, 0.52, 0.56, 0.62, 0.66, 0.70, 1.00, 1.02, 1.05)  # 1.05 ~ 0.96 + 0.0993 (lift top)
+LIFT_OOD_HEIGHTS = (0.45, 0.59, 1.08)  # OOD-H-lift (split ood_hl), >= 1.5 cm from every train height (absolute);
+# 1.08 needs the relative height 0.98 (an outer OOD-H height): OOD plans pass rel_heights + the outer heights
+
+
+def lift_for(tz: float, seed: int, rel_heights) -> tuple:
+    """(lift, relative height r) for an absolute table height tz: r drawn by seed among rel_heights that keep the lift
+    inside LIFT_RANGE."""
+    tol = 0.003  # a lift up to 3 mm beyond a limit is clipped to it (e.g. 1.08 on 0.98: +0.7 mm)
+    ok = [float(r) for r in rel_heights if LIFT_RANGE[0] - tol <= LIFT0 + (tz - r) <= LIFT_RANGE[1] + tol]
+    if not ok:
+        raise ValueError(f"table {tz}: no relative height keeps the lift inside {LIFT_RANGE}")
+    r = ok[int(np.random.default_rng([int(seed), 21, 5]).integers(len(ok)))]
+    return round(float(np.clip(LIFT0 + (tz - r), *LIFT_RANGE)), 4), r
+
+
+def plan_lift(n: int, rel_heights, start: int, tasks=None, heights=LIFT_TRAIN_HEIGHTS, split: str = "train",
+              confirm_ood: bool = False) -> list:
+    """Lift episodes: heights round-robin, lift / relative height by seed (lift_for); tasks None = the phase-1 tasks
+    by seed (task_of), else drawn uniformly by seed from `tasks` (objset "x")."""
+    perm = np.random.default_rng([21, 6, n]).permutation(n)
+    out = []
+    for i in range(n):
+        s = start + i
+        check_seed(s, split, confirm_ood)
+        tz = float(heights[int(perm[i]) % len(heights)])
+        lift, r = lift_for(tz, int(round(tz * 1000)), rel_heights)  # one lift per height: one process per bucket
+        e = {"seed": s, "split": split, "variant": variant_of(s), "table_z": tz, "lift": lift, "rel_z": r}
+        if tasks is None:
+            e["task"] = task_of(s)
+        else:
+            e.update(task=tasks[int(np.random.default_rng([s, 21, 7]).integers(len(tasks)))], objset="x")
+        out.append(e)
+    return out
+
+
+def buckets_lift(plan: list) -> dict:
+    """{(variant, table_z, lift): [episodes]} = one Isaac process each (the lift is a build-time joint default)."""
+    out: dict = {}
+    for e in plan:
+        out.setdefault((e["variant"], e["table_z"], e["lift"]), []).append(e)
     return out
 
 
@@ -237,6 +288,10 @@ def dist_bin(n: int) -> str:
 
 
 def height_bin(tz: float) -> str:
+    if tz < 0.735:
+        return "lift_low(<0.74)"
+    if tz > 0.985:
+        return "lift_high(>0.98)"
     d = round((tz - 0.85) * 100)
     return "low(<-3cm)" if d < -3 else ("mid(+-3cm)" if d <= 3 else "high(>+3cm)")
 

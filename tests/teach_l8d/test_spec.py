@@ -84,6 +84,25 @@ def test_x_plan_and_held_out_tasks():
     assert all(a.stop <= b.start for a, b in zip(rs, rs[1:])) and rs[-1].stop <= S.OOD_SEEDS.stop
 
 
+def test_lift_plan():
+    rel = (0.76, 0.80, 0.84, 0.85, 0.86, 0.90, 0.94, 0.95, 0.96)
+    for tz in S.LIFT_TRAIN_HEIGHTS + S.LIFT_OOD_HEIGHTS:
+        rr = rel + ((0.74, 0.98) if tz in S.LIFT_OOD_HEIGHTS else ())
+        lift, r = S.lift_for(tz, 3, rr)
+        assert S.LIFT_RANGE[0] - 1e-9 <= lift <= S.LIFT_RANGE[1] + 1e-9 and r in rr
+        assert lift == pytest.approx(S.LIFT0 + tz - r, abs=3e-3)
+    for o in S.LIFT_OOD_HEIGHTS:
+        assert all(abs(o - h) >= S.OOD_GAP - 1e-9 for h in S.LIFT_TRAIN_HEIGHTS + rel)
+    p = S.plan_lift(300, rel, start=32700)
+    assert p == S.plan_lift(300, rel, start=32700) and {e["table_z"] for e in p} == set(S.LIFT_TRAIN_HEIGHTS)
+    assert len(S.buckets_lift(p)) <= 2 * len(S.LIFT_TRAIN_HEIGHTS)
+    px = S.plan_lift(100, rel, start=33000, tasks=S.X_TRAIN_TASKS)
+    assert {e["task"] for e in px} <= set(S.X_TRAIN_TASKS) and all(e["objset"] == "x" for e in px)
+    with pytest.raises(ValueError):
+        S.lift_for(0.30, 0, rel)
+    assert S.OOD_SETS["ood_hl"] == range(70900, 71000)
+
+
 def test_view_band_matches_the_head_camera():
     lo, hi = S.view_band(0.85)
     assert 0.35 <= lo <= 0.37 and hi >= 0.60

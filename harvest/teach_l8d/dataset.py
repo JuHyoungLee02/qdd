@@ -25,6 +25,18 @@ FORMATS = ("v2", "nd-xyz", "nd-est", "nd-pt", "pt", "s-min")
 PT_ARM = {"v2": "xyz", "nd-xyz": "nd-xyz", "nd-est": "nd-est", "nd-pt": "nd-pt", "pt": "pt", "s-min": "nd-xyz"}
 TAG_LINES = "source: qdd_sim/ffw_sg2\nframe: base_ffw_sg2\n"
 TRAIN_VARIANTS = ("standard", "drx")
+# robot self-information (canon §97: robot-intrinsic, from the robot's own joint setpoint, not a scene value)
+FRAME_LINE = ("- Robot frame: origin at the robot base, x forward (away from the robot), y to the robot's left, z up; "
+              "positions in metres.")
+LIFT_LINE = ("- Torso lift joint: {q:+.3f} m (its range is -0.500 to 0.000 m; the head camera and both arms ride on "
+             "it, so the camera poses below already include it).")
+
+
+def with_lift(text: str, lift_q: float) -> str:
+    """Insert the torso-lift self-information line after the robot-frame line (every interface has it)."""
+    if FRAME_LINE not in text:
+        raise ValueError("robot-frame line not found")
+    return text.replace(FRAME_LINE, FRAME_LINE + "\n" + LIFT_LINE.format(q=lift_q), 1)
 
 
 def check_row(r: dict, split: str) -> None:
@@ -47,7 +59,9 @@ def check_row(r: dict, split: str) -> None:
 def scene_of(ep_dir: str) -> dict:
     sc = json.load(open(os.path.join(ep_dir, "scene.json")))
     d = sc["distractors"]
-    return {"table_z": sc["table_z"], "lift": sc.get("lift"), "variant": sc["variant"], "task": sc["task"],
+    return {"table_z": sc["table_z"], "lift": sc.get("lift"),
+            "lift_q": SP.LIFT0 if sc.get("lift") is None else float(sc["lift"]), "variant": sc["variant"],
+            "task": sc["task"],
             "n_distractors": d["n"], "distractors": d["layout_objects"] + d["pool_distractors"],
             "height_bin": SP.height_bin(sc["table_z"]), "dist_bin": SP.dist_bin(d["n"]), "ws": sc.get("ws")}
 
@@ -99,7 +113,8 @@ def noisy_depth(r: dict, out_dir: str, preset: str) -> tuple:
 
 
 def build(root: str, out_dir: str, split: str, fmt: str = "v2", tags: bool = False, seed: int = 0,
-          repeats: bool | None = None, aux: bool = True, depth_noise: str | None = None) -> dict:
+          repeats: bool | None = None, aux: bool = True, depth_noise: str | None = None,
+          self_lift: bool = False) -> dict:
     """depth_noise: None (perfect simulator depth) or a depth_noise.PRESETS name -> every row's depth_path points to
     a noisy copy (track D against realistic depth; the images and answers are unchanged)."""
     if fmt not in FORMATS:
@@ -110,19 +125,20 @@ def build(root: str, out_dir: str, split: str, fmt: str = "v2", tags: bool = Fal
     dirs = episode_dirs(root)
     base = [r for d in dirs for r in load_rows(d, split)]
     rng = np.random.default_rng([seed, PD.ARMS.index(arm)])
-    pdir = os.path.join(out_dir, "prompts", f"{split}_{fmt}" + ("_tags" if tags else ""))
+    sfx = ("_tags" if tags else "") + ("_lift" if self_lift else "")
+    pdir = os.path.join(out_dir, "prompts", f"{split}_{fmt}" + sfx)
     ctrl = []
     for r in base:
         x = PD.arm_row(r, arm, keep_unlabelled=split != "train")
         if x is None:
             continue
         x = dict(x, format=fmt, tags=bool(tags))
-        if fmt == "s-min":
-            x["prompt_path"] = _write(os.path.join(pdir, x["id"] + ".txt"),
-                                      (TAG_LINES if tags else "") + ST.minimal(_read(os.path.join(x["call_dir"],
-                                                                                                    "prompt_v2.txt"))))
-        elif tags:
-            x["prompt_path"] = _write(os.path.join(pdir, x["id"] + ".txt"), TAG_LINES + _read(x["prompt_path"]))
+        if fmt == "s-min" or tags or self_lift:
+            text = ST.minimal(_read(os.path.join(x["call_dir"], "prompt_v2.txt"))) if fmt == "s-min" else \
+                _read(x["prompt_path"])
+            if self_lift:
+                text = with_lift(text, x["scene"]["lift_q"])
+            x["prompt_path"] = _write(os.path.join(pdir, x["id"] + ".txt"), (TAG_LINES if tags else "") + text)
         if depth_noise:
             x["depth_path"], x["depth_noise"] = noisy_depth(x, out_dir, depth_noise)
         ctrl.append(x)
@@ -139,7 +155,7 @@ def build(root: str, out_dir: str, split: str, fmt: str = "v2", tags: bool = Fal
                      prompt=(TAG_LINES if tags else "") + a["prompt"])
             auxr.append(a)
     os.makedirs(out_dir, exist_ok=True)
-    name = f"{split}_{fmt}" + ("_tags" if tags else "") + (f"_{depth_noise}" if depth_noise else "")
+    name = f"{split}_{fmt}" + sfx + (f"_{depth_noise}" if depth_noise else "")
     with open(os.path.join(out_dir, name + ".jsonl"), "w", encoding="utf-8", newline="\n") as f:
         for r in rows + auxr:
             f.write(json.dumps(r) + "\n")
@@ -147,7 +163,8 @@ def build(root: str, out_dir: str, split: str, fmt: str = "v2", tags: bool = Fal
     for d in dirs:
         m = json.load(open(os.path.join(d, "meta.json")))
         eps[d] = (m, scene_of(d))
-    counts = {"split": split, "format": fmt, "tags": bool(tags), "depth_noise": depth_noise, "episodes": len(dirs),
+    counts = {"split": split, "format": fmt, "tags": bool(tags), "self_lift": bool(self_lift), "depth_noise": depth_noise,
+              "episodes": len(dirs),
               "episodes_success": sum(bool(m["success"]) for m, _ in eps.values()),
               "rows_labelled": len(base), "control_unique": len(ctrl), "control_rows": len(rows),
               "aux_rows": len(auxr), "total": len(rows) + len(auxr),

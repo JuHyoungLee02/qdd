@@ -86,6 +86,18 @@ def test_noisy_depth_variant(root):
         assert a.shape == b.shape and not np.array_equal(np.nan_to_num(a), b)
 
 
+@pytest.mark.parametrize("fmt", ["v2", "nd-xyz", "pt", "s-min"])
+def test_self_lift_line(root, fmt):
+    out = root / f"data_lift_{fmt}"
+    D.build(str(root / "collect" / "train"), str(out), "train", fmt, self_lift=True)
+    rows = [r for r in _rows(out / f"train_{fmt}_lift.jsonl") if r["kind"] == "control"]
+    t = open(rows[0]["prompt_path"], encoding="utf-8").read()
+    line = D.LIFT_LINE.format(q=-0.0993)
+    assert line in t and t.index(D.FRAME_LINE) < t.index(line)
+    plain = D.build(str(root / "collect" / "train"), str(root / f"data_nolift_{fmt}"), "train", fmt)
+    assert plain["control_unique"] == len({r["id"] for r in rows})
+
+
 def test_split_guards():
     with pytest.raises(ValueError):
         D.check_row({"seed": 70001, "variant": "standard"}, "train")
