@@ -12,6 +12,7 @@ Output: <conv>/<kind>.stageb.jsonl (one row per sampled frame), <conv>/img/<kind
 from __future__ import annotations
 
 import argparse
+import functools
 import glob
 import json
 import os
@@ -34,6 +35,37 @@ JPEG_Q = 90
 # Task_0002 (and the §59 / sim wrist camera) is landscape 424x240 with the fingers entering from the left.
 # Rotating Task_0001 wrist frames 90 deg clockwise gives the Task_0002 layout (checked on frames, se2e_data.md).
 ROTATE_CW = {"RB1": {"cam_wrist_left", "cam_wrist_right"}}
+# Opt-in kinds (never in the default run; select with --kinds). RB3 = HF Dongkkka/ffw_bg2_rev4_pickup_obj_1127_total2
+# (docs/stage3/results/rb3_data.md): BG2 rev4, 16-D like RB1, 10 fps, head 672x376 + wrists 424x240. Its wrist frames
+# already have the RB2 layout (fingers from the left, checked on frames) -> no ROTATE_CW entry. Its gripper joint
+# closes at p99.5 1.054 / 1.066 (mean 1.06; open p0.5 0.0015), nearest existing calibration = RB1 (0.0, 1.10) ->
+# rows carry grip_unit "RB1" (stageb_data.GRIP_CAL is a prompt-hash file and stays untouched). Rows also carry the
+# per-episode flags of --ep-flags (release_visible: place box inside the head image at the release frame,
+# head_down_f0; tools/rb3/rb3_prep.py release); episodes flagged `exclude` are not converted.
+OPTIONAL = {"RB3": "ffw_bg2_rev4_pickup_obj_1127_total2"}
+GRIP_UNIT = {"RB3": "RB1"}
+EP_FLAGS = {"RB3": ("release_visible", "release_frame", "head_down_f0")}
+# RB3's parquet task_index disagrees with meta/episodes.jsonl for 58 episodes (indices 13 / 14 are not in
+# tasks.jsonl; 390-404 say 12 = "yellow bin" but are white-box episodes) -> task text = episodes.jsonl via flags
+TASK_FROM_FLAGS = {"RB3"}
+
+
+def flag_excluded(flags) -> list:
+    """Episodes whose --ep-flags entry has a truthy `exclude` (e.g. RB3 "no_grasp": robot idle while a person resets
+    the wall -- no demonstration; rb3_data.md)."""
+    return sorted(e for e, f in (flags or {}).items() if f.get("exclude"))
+
+
+def selected(kinds: str) -> dict:
+    """{kind: dataset folder} of a --kinds value; empty = the default DATASETS (RB1, RB2) only."""
+    if not kinds:
+        return dict(DATASETS)
+    allk = {**DATASETS, **OPTIONAL}
+    bad = [k for k in kinds.split(",") if k and k not in allk]
+    if bad:
+        raise SystemExit(f"unknown kinds {bad}: one of {sorted(allk)}")
+    want = set(kinds.split(","))
+    return {k: v for k, v in allk.items() if k in want}
 
 
 def _meta(root):
@@ -129,9 +161,7 @@ def _verify_ep(args):
 
 def verify(a):
     rep = json.load(open(a.out)) if os.path.exists(a.out) else {}
-    for kind, name in DATASETS.items():
-        if a.kinds and kind not in a.kinds.split(","):
-            continue
+    for kind, name in selected(a.kinds).items():
         root = os.path.join(a.raw, name)
         info, eps, tasks = _meta(root)
         n_pq = len(glob.glob(os.path.join(root, "data/*/*.parquet")))
@@ -165,13 +195,17 @@ def verify(a):
 
 
 # ------------------------------------------------------------------------------------------ convert
-def _convert_ep(args):
+def _convert_ep(args, flags=None, hist=False):
+    """Rows of one episode. flags = {episode: {field: value}} (kinds in EP_FLAGS must have their episode's entry),
+    hist = + se2e_temporal.hist_fields (motion-line source, as reconvert --hist). Defaults = the RB1 / RB2 rows."""
     from PIL import Image
     root, info, tasks, kind, ep, conv, urdf, stride, materialize = args
     chain = {arm: S.load_arm_chain(urdf, arm) for arm in ("left", "right")}
     pq_path, vids = _paths(root, info, ep)
     t, st, act = _read_pq(pq_path)
-    task = tasks[int(t["task_index"][0])]
+    # kinds in TASK_FROM_FLAGS: the parquet task_index is unreliable (RB3 merge) -> task text from the episode flags
+    # (meta/episodes.jsonl); KeyError when missing
+    task = (flags or {})[ep]["task_text"] if kind in TASK_FROM_FLAGS else tasks[int(t["task_index"][0])]
     rel = os.path.join("img", kind, f"ep{ep:06d}")
 
     def ref(k):
@@ -182,6 +216,13 @@ def _convert_ep(args):
                           timestamps=t["timestamp"])
     for r in rows:
         r["img_rotate_cw"] = sorted(ROTATE_CW.get(kind, ()))
+    if kind in GRIP_UNIT:
+        for r in rows:
+            r["grip_unit"] = GRIP_UNIT[kind]
+    if kind in EP_FLAGS:
+        f = (flags or {})[ep]  # KeyError: an opt-in kind is never converted without its episode flags
+        for r in rows:
+            r.update({k: f[k] for k in EP_FLAGS[kind]})
     if materialize:
         os.makedirs(os.path.join(conv, rel), exist_ok=True)
         need = {"cam_head": [r["k"] for r in rows]}
@@ -198,14 +239,19 @@ def _convert_ep(args):
                 im.save(os.path.join(conv, rel, f"k{k:04d}_{cam}.jpg"), quality=JPEG_Q)
         for r in rows:  # keep only the images that exist
             r["images"] = {c: p for c, p in r["images"].items() if os.path.exists(os.path.join(conv, p))}
+    if hist:  # after the image filter, as reconvert --hist (images_prev = the row's cameras)
+        from harvest.train import se2e_temporal as T
+        names = info["features"]["observation.state"]["names"]
+        prel = os.path.join("img_prev", kind, f"ep{ep:06d}")
+        for r in rows:
+            r.update(T.hist_fields(r, st, info["fps"], names,
+                                   lambda kp: {c: f"{prel}/k{kp:04d}_{c}.jpg".replace(os.sep, "/") for c in CAMS}))
     return rows
 
 
 def convert(a):
     os.makedirs(a.conv, exist_ok=True)
-    for kind, name in DATASETS.items():
-        if a.kinds and kind not in a.kinds.split(","):
-            continue
+    for kind, name in selected(a.kinds).items():
         t0 = time.time()
         root = os.path.join(a.raw, name)
         info, eps, tasks = _meta(root)
@@ -215,13 +261,20 @@ def convert(a):
         if ver.get("episodes_with_errors", 0) > len(bad):
             raise SystemExit(f"{kind}: more verify errors than listed examples; widen error_examples")
         ids = [i for i in ids if i not in bad]
+        flags = None
+        if kind in EP_FLAGS:
+            if not a.ep_flags:
+                raise SystemExit(f"{kind}: --ep-flags FILE required (fields {EP_FLAGS[kind]})")
+            flags = {int(e): v for e, v in json.load(open(a.ep_flags))[kind].items()}
+            ids = [i for i in ids if i not in set(flag_excluded(flags))]
         if a.episodes:
             ids = sorted(random.Random(0).sample(ids, min(a.episodes, len(ids))))
         jobs = [(root, info, tasks, kind, ep, a.conv, a.urdf, a.stride, not a.no_images) for ep in ids]
         out = S.rows_path(a.conv, kind)
         n, n_wrist, lab, arms = 0, 0, {}, {}
+        fn =functools.partial(_convert_ep, flags=flags, hist=a.hist) if (flags or a.hist) else _convert_ep
         with Pool(a.workers) as p, open(out, "w", encoding="utf-8") as f:
-            for rows in p.imap(_convert_ep, jobs, chunksize=2):
+            for rows in p.imap(fn, jobs, chunksize=2):
                 for r in rows:
                     f.write(json.dumps(r, separators=(",", ":")) + "\n")
                     n += 1
@@ -233,6 +286,9 @@ def convert(a):
         stats = {"kind": kind, "dataset": name, "episodes": len(ids), "excluded_verify": bad, "rows": n,
                  "stride": a.stride, "rows_with_active_wrist": n_wrist,
                  "arms": arms, "labels": lab, "seconds": round(time.time() - t0, 1)}
+        if flags is not None or a.hist:
+            stats.update({"hist": a.hist, "ep_flags": a.ep_flags or None, "grip_unit": GRIP_UNIT.get(kind),
+                          "excluded_flags": flag_excluded(flags)})
         json.dump(stats, open(os.path.join(a.conv, f"{kind}.stats.json"), "w"), indent=1)
         print(json.dumps(stats), flush=True)
 
@@ -294,9 +350,7 @@ def reconvert(a):
             raise SystemExit(f"--conv {conv} must not be under {p}")
     os.makedirs(conv, exist_ok=True)
     rep = {"src": src, "stride": a.stride, "hist": a.hist}
-    for kind, name in DATASETS.items():
-        if a.kinds and kind not in a.kinds.split(","):
-            continue
+    for kind, name in selected(a.kinds).items():
         out = S.rows_path(conv, kind)
         if os.path.exists(out):
             raise SystemExit(f"{out} exists (new data versions are never overwritten)")
@@ -382,7 +436,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=("verify", "convert", "sheet", "reconvert"))
     ap.add_argument("--src", default="/data/harvest/data/se2e/conv", help="reconvert: the existing conversion (read)")
-    ap.add_argument("--hist", action="store_true", help="reconvert: + se2e_temporal.hist_fields (motion source)")
+    ap.add_argument("--hist", action="store_true",
+                    help="reconvert / convert: + se2e_temporal.hist_fields (motion source, causal, §83)")
+    ap.add_argument("--ep-flags", default="", help="convert: JSON {kind: {episode: {field: value}}} for EP_FLAGS kinds")
     ap.add_argument("--sheet-eps", default="")
     ap.add_argument("--sheet-out", default="/data/harvest/data/se2e/se2e_frames.jpg")
     ap.add_argument("--raw", default="/data/harvest/data/se2e/raw")
