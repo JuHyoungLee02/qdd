@@ -10,6 +10,7 @@
 
 - **R7** (확인 2026-09-26 00:46 UTC): **E2E 준비 기준점 도달** — 36·37회차 연속 무결(대상 ffe335c·3d4738a), 태그 `stage3-e2e-ready` = 3d4738a. 이후 코드 변경은 새 회차로 검토한다(기준점은 태그로 고정). 태그 뒤 할 일: 결합 설계 구현 계획 실행(subagent-driven), 논문 N192.
 - **결합 구현(계획 2026-09-26, subagent-driven)** (확인 2026-09-26 02:37 UTC): Task 1–7(`harvest/couple/` — params·schema·prompt astra-couple@v1·mock·gate·cost·stream·layer·offset·twolayer) 끝. Task 12는 E-MA2 결과 커밋(`399d1cb`)으로 보류 해제, 범위는 정본 §87(그리퍼 판단을 VLA 선택지로)까지 확장해 다룬다.
+- **E-NOV0 백본 특징 새로움 점수 → Astra 호출 게이트(학습 없음)** (확인 2026-09-26 05:36 UTC): 사전 등록 `docs/stage3/prereg_nov0.md` 커밋 뒤 메인 파드 **GPU 2만**에서 `tools/nov0/run_nov0.sh /data/harvest/code_nov0 A → gate → latency → verdict`(E-MA2 C0 특징 추출: 기억 15,000·보정 3,000·평가 7,308·S-E2E 1,799), 출력 `/data/harvest/logs/nov0/`. 결과 문서 `docs/stage3/results/nov0.md` 커밋 때 이 줄을 지운다.
 
 ## 1. 먼저 할 일
 1. `dev` 브랜치인지 확인한다. **모든 작업(글, 코드)은 `dev`에서 시작하고 `dev`에만 푸시한다. `main`은 절대 건드리지 않는다**(사용자가 직접 반영).
