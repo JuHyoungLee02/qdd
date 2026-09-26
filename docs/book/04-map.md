@@ -20,6 +20,7 @@
 | `tools/ma1/` | `g0`·`g0_point`·`ma1_verdict`·`build_a3d`·`ma1b_verdict` |
 | `tools/cam3/`, `tools/ma3/`, `tools/se2e/paired_verdict.py` | E-CAM3 `build_cam3`·`cam3_latency`·`cam3_verdict`; E-MA3 `chunk_eval`·`ma3_latency`·`ma3_verdict`; 공통 짝 비교(등록 때 고정) |
 | `tools/ma2/`, `harvest/train/r2_ma2.py` | E-MA2(명령 입력, R2): 옵션 파일 CLI 포장 `r2_ma2`(`--ma2 c0/c1/c2`, `ma2eval` 돌린 명령 평가) + `build_ma2`(결정 스냅샷 뷰·되짚기 명령·평가 집합·화살표)·`ma2_latency`·`ma2_verdict`(등록 때 고정) |
+| `tools/sr0/` | E-SR0(조이스틱 준수, 학습 없음): `sr0_eval`(decide → chunk 경로에서 결정만 반사실로, 조건 20·22개), `sr0_gate`(기존 평가 재현 관문), `sr0_verdict`(A_xy·우연·A_z·ρ·그리퍼, 등록 때 고정 + 변경 1), `run_sr0.sh` |
 | `tools/` 기타 | `se2e_convert.py`(`reconvert --hist`), `labels_v2_eval.py`, `prereg_hash.py --check`, `intent_check.py`·`user_line_check.py`(빨간 줄·[사용자] 줄), `stagea_merge.py`, `r5/`·`r6/`(파드 동기화), `pod_sync.sh` |
 | `tests/` | 전체 시험(로컬은 Git Bash에서 `pytest`; PowerShell에서는 2개 실패 — P33) |
 | `tests/couple/` | `harvest/couple/` 시험(`test_schema.py`, Task 1; `test_gate.py`, Task 2; `test_cost.py`, Task 3; `test_stream.py`, Task 4) |
@@ -58,6 +59,7 @@
 | `ckpt/ma1b/` | E-MA1b 체크포인트 `a3d_s{1,2}`(불채택, `results/ma1b.md`) [→ 2026-09-25 21:07 UTC, R7 28회차 D-2] |
 | `ckpt/cam3/`, `ckpt/ma3/`, `data/cam3/` | E-CAM3 `cam3_s{1,2}`·E-MA3 `kv_s{1,2}`(둘 다 불채택, `results/cam3.md`·`ma3.md`), 반대 손목 프레임 `data/cam3/img_cam3/`(36,177장) |
 | `ckpt/ma2/`, `data/ma2/`, `logs/ma2/` | E-MA2 `c0`·`c1`·`c2`(판정 NONE, `results/ma2.md`), 결정 스냅샷 뷰 `data/ma2/view/`(img는 R2_TRAIN 원본 링크)·명령 표 `cmd/`·`eval_set.json`(1,200)·화살표 `arrow/`(79,495장) |
+| `logs/sr0/`, `code_sr0`·`code_sr0_v` | E-SR0 평가 출력 `sr0_motion_s{1,2}.jsonl`·`sr0_c0.jsonl`, `verdict.json`(WEAK, `results/sr0.md`), 재집계 `recount.json`·진단 `diag.json` |
 | `ckpt/stageA/sftA_pool_v1` | 단계 A SFT(병합 `merged/`) |
 | `logs/<실험>/` | 예측·판정 JSON(`se2e_confirm/verdict_full.json` 등), 탐침 비용 장부 `logs/astra_motion/cost.jsonl` |
 | `out/<작업>/` | 폐루프·장면·E3-ST 산출물 |

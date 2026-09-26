@@ -35,3 +35,6 @@
 | 2026-09-26 01:16 | 04 | 결합 구현 계획 Task 2 기록: 04 `harvest/couple/` 행에 `gate`(의미 게이트: 나이·불확실·개입 자격·손목 근거) 추가 | plan Task 2, 이 줄과 같은 커밋 |
 | 2026-09-26 01:33 | 04 | 결합 구현 계획 Task 3 기록: 04 `harvest/couple/` 행에 `cost`(가격표·비용 장부) 추가, `tests/couple/` 행에 `test_cost.py`(및 누락됐던 `test_gate.py`) 추가 | plan Task 3, 이 줄과 같은 커밋 |
 | 2026-09-26 01:44 | 04 | 결합 구현 계획 Task 4 기록: 04 `harvest/couple/` 행에 `stream`(`SerialStream`, 직렬 흐름)과 `mock`의 `ScriptedCoupleAstra` 추가, `tests/couple/` 행에 `test_stream.py` 추가 | plan Task 4, 이 줄과 같은 커밋 |
+| 2026-09-26 01:52 | 01·02·03·04·05 | E-SR0 결과(WEAK): 01 E-SR0 행 채움(`끝`), 02 절 '차' P78·P79, 03 §84 보충 5, 04 `tools/sr0/`·`logs/sr0/` 행, 05 ≈ 0.3 GPU-h | [R/sr0](../stage3/results/sr0.md), 이 줄과 같은 커밋 |
+| 2026-09-26 01:53 | 04 | 결합 구현 계획 Task 5 기록: 04 `harvest/couple/` 행에 `layer`(`AstraLayer`: Astra 층 두 답 합의 히스테리시스·flip·F1 keep·stop claim) 추가, `tests/couple/` 행에 `test_layer.py` 추가 | plan Task 5, 이 줄과 같은 커밋 |
+| 2026-09-26 01:55 | 01 | 빠져 있던 R7 sweep6(문서 전수 정리) 행 추가 — 결과 문서 41개 대 책 01 대조에서 유일한 누락 | 이 줄과 같은 커밋 |
