@@ -14,7 +14,11 @@ def test_grip_segment_ends_release_frames():
     ends = M.grip_segment_ends(g)
     assert ends == [5, 5, 5, 5, 5, 5, 10, 10, 10, 10, 10, None]
     assert M.grip_segment_ends([0.0, 0.0, 0.0]) == [None, None, None]  # never released
-    assert M.grip_segment_ends([1.0, 1.0, 0.0]) == [2, 2, None][:2] + [2]  # closed from the start, released at 2
+    # closed from the episode start: its first opening is a pre-grasp opening, not a release (change 2, eye check)
+    assert M.grip_segment_ends([1.0, 1.0, 0.0]) == [None, None, None]
+    assert M.grip_segment_ends([1.0, 1.0, 0.0], require_grasp=False) == [2, 2, 2]
+    g2 = [1.0, 0.0, 0.0, 0.9, 0.9, 0.1, 0.0]  # pre-grasp open at 1, grasp at 3, release at 5
+    assert M.grip_segment_ends(g2) == [5, 5, 5, 5, 5, 5, None]
 
 
 def _camera():

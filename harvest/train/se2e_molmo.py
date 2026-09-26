@@ -29,9 +29,15 @@ DLT_RESID_PX = 20.0  # F4: residual to the refitted DLT
 DLT_MIN_INLIER = 0.5  # F4: fewer inliers -> the episode's points of that arm are all dropped
 
 
-def grip_segment_ends(g, closed_thr: float = GRIP_CLOSED) -> list:
+def grip_segment_ends(g, closed_thr: float = GRIP_CLOSED, require_grasp: bool = True) -> list:
+    """Per frame: the next release frame (first open frame after a closed period), None after the last one.
+    require_grasp (change 2, from the release-frame eye check): only closed periods that START inside the episode
+    count -- a gripper that is closed at frame 0 and opens is opening to grasp, not releasing."""
     c = np.asarray(g, float) > closed_thr
     rel = [k for k in range(1, len(c)) if c[k - 1] and not c[k]]
+    if require_grasp:
+        rel = [r for r in rel if any(not c[j - 1] and c[j] for j in range(1, r))
+               and max(j for j in range(1, r) if not c[j - 1] and c[j]) > max([0] + [q for q in rel if q < r])]
     out, j = [], 0
     for t in range(len(c)):
         while j < len(rel) and rel[j] < t:

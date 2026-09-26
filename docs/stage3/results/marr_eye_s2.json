@@ -1,0 +1,11 @@
+{
+ "_about": "Blind eye judgments of eye sample 2 (validation of filter v2, plan change 1): 96 Molmo2-ER pointings (seed 1, 24 per source x arm, sample-1 frames excluded), Claude with the Read tool on /data/harvest/logs/marr/eye_v2_sheet_00..07.jpg, 2026-09-26 06:11-06:17 UTC, BEFORE reading filter_decisions_v2. Codes as in marr_eye.json (g named gripper, o other arm's gripper, x elsewhere with the named gripper visible, n named gripper not visible, u on a gripper of undecidable arm).",
+ "0": "n", "1": "n", "2": "g", "3": "n", "4": "o", "5": "g", "6": "g", "7": "g", "8": "n", "9": "g", "10": "g", "11": "u",
+ "12": "g", "13": "n", "14": "o", "15": "o", "16": "o", "17": "g", "18": "g", "19": "g", "20": "n", "21": "g", "22": "g", "23": "n",
+ "24": "n", "25": "g", "26": "o", "27": "g", "28": "n", "29": "n", "30": "g", "31": "g", "32": "o", "33": "n", "34": "u", "35": "n",
+ "36": "o", "37": "u", "38": "o", "39": "g", "40": "n", "41": "o", "42": "g", "43": "g", "44": "g", "45": "o", "46": "u", "47": "n",
+ "48": "g", "49": "g", "50": "g", "51": "g", "52": "g", "53": "g", "54": "g", "55": "g", "56": "g", "57": "g", "58": "o", "59": "g",
+ "60": "g", "61": "g", "62": "g", "63": "g", "64": "g", "65": "g", "66": "g", "67": "g", "68": "g", "69": "g", "70": "g", "71": "o",
+ "72": "g", "73": "u", "74": "x", "75": "g", "76": "n", "77": "g", "78": "o", "79": "n", "80": "g", "81": "g", "82": "o", "83": "g",
+ "84": "g", "85": "o", "86": "u", "87": "n", "88": "g", "89": "g", "90": "g", "91": "o", "92": "g", "93": "g", "94": "g", "95": "u"
+}
