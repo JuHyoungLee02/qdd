@@ -75,11 +75,12 @@ def _take(rows, n, rng):
 
 def build(out, X="/data/harvest/out/xemb_proto", sizes=None, seed=0):
     rng = np.random.default_rng(seed)
-    sizes = sizes or {"px_rb2_pt": 250, "px_rb2_tr": 150, "px_mact": 300, "px_rby1": 250, "px_franka": 220, "px_neg": 130,
+    sizes = sizes or {"px_rb2_pt": 150, "px_rb2_t4": 250, "px_rb2_tr": 150, "px_mact": 300, "px_rby1": 250, "px_franka": 220, "px_neg": 130,
                       "3d_obj": 1300, "3d_plane": 300, "c_franka": 500, "c_robotwin": 200, "c_rb2": 300}
     px = []
-    px += [to_n1000(r) for r in _take(_rows(f"{X}/rb2/records_P.jsonl", ["ee_point_detected"]), sizes["px_rb2_pt"], rng)]
-    px += [to_n1000(r) for r in _take(_rows(f"{X}/rb2/records_P.jsonl", ["ee_trace"]), sizes["px_rb2_tr"], rng)]
+    px += [to_n1000(r) for r in _take(_rows(f"{X}/rb2t4/records_P.jsonl", ["ee_point_detected"]), sizes["px_rb2_pt"], rng)]
+    px += [to_n1000(r) for r in _take(_rows(f"{X}/rb2t4/records_P.jsonl", ["ee_point"]), sizes["px_rb2_t4"], rng)]  # T4 camera
+    px += [to_n1000(r) for r in _take(_rows(f"{X}/rb2t4/records_P.jsonl", ["ee_trace"]), sizes["px_rb2_tr"], rng)]
     px += [to_n1000(r) for r in _take(_rows(f"{X}/molmoact/records_P.jsonl"), sizes["px_mact"], rng)]
     px += [to_n1000(r) for r in _take(_rows(f"{X}/molmobot50/records_P.jsonl", ["ee_point", "obj_point", "place_point"]),
                                       sizes["px_rby1"], rng)]
@@ -108,7 +109,8 @@ def build(out, X="/data/harvest/out/xemb_proto", sizes=None, seed=0):
     d3 += _take(_rows(f"{X}/behavior100/records_P.jsonl", ["table_plane_cam"]), sizes["3d_plane"], rng)
     d3 += _take(_rows(f"{X}/mbfranka/records_C.jsonl"), sizes["c_franka"], rng)
     d3 += _take(_rows(f"{X}/robotwin2/records_C.jsonl"), sizes["c_robotwin"], rng)
-    d3 += _take(_rows(f"{X}/rb2/records_C.jsonl"), sizes["c_rb2"], rng)
+    rc = _rows(f"{X}/rb2t4/records_C.jsonl")
+    d3 += _take([r for r in rc if "camera: unknown" not in r["prompt"]], sizes["c_rb2"], rng)  # T4 camera info
     os.makedirs(out, exist_ok=True)
     packs = {"pixel": px, "3d": d3, "3d_px": d3 + px}
     counts = {}

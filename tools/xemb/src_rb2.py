@@ -66,6 +66,17 @@ def fk_rot(root_raw, ep, urdf):
 _TASKS = {}
 
 
+def names_of(task: str) -> tuple:
+    """'Put the black wrench into the crate.' -> ('black wrench', 'crate'). The generic 'object' / 'target' names of the
+    first C' rows leaked into answers to OUR requests ('lower to the object', E-OPEN8 O-A DEV, 1 leak / 305)."""
+    import re
+    m = re.match(r"\s*(?:put|place|move)\s+the\s+(.+?)\s+(?:into|in|onto|on)\s+the\s+(.+?)\.?\s*$", task or "", re.I)
+    if m:
+        return m.group(1), m.group(2)
+    m = re.match(r"\s*(?:grasp|pick up|pick)\s+the\s+(.+?)\.?\s*$", task or "", re.I)
+    return (m.group(1), "table") if m else ("item", "place")
+
+
 def task_of(e) -> str:
     """Instruction of an RB2 episode from the raw LeRobot meta (meta/episodes.jsonl 'tasks')."""
     if not _TASKS:
@@ -326,8 +337,8 @@ def convert(root, out, urdf="/data/harvest/data/se2e/urdf/ffw_bg2_rev4_follower.
                     for robot, key in ((robot_u, "control_camera_unknown"), (robot_c, "control_with_camera")):
                         if key == "control_with_camera" and not t1_pass:
                             continue
-                        r = F.control_record(robot, s, k, X[k], 0.10 * max(0.0, 1 - g[k] / 1.1), task_of(e), "object",
-                                             "target", hist, first=(si == 0), images=[img],
+                        r = F.control_record(robot, s, k, X[k], 0.10 * max(0.0, 1 - g[k] / 1.1), task_of(e), *names_of(task_of(e))[:1],
+                                             names_of(task_of(e))[1], hist, first=(si == 0), images=[img],
                                              rid=f"rb2_{e['ep']}_{a}_{k}_{s['step']}_{key[8:11]}")
                         fC.write(json.dumps(r) + "\n")
                         cnt[key] += 1
