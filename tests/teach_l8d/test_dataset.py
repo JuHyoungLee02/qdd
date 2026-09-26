@@ -80,5 +80,9 @@ def test_split_guards():
     with pytest.raises(ValueError):
         D.check_row({"seed": 5, "variant": "standard"}, "train")
     D.check_row({"seed": 70001, "variant": "drx"}, "ood_h")
+    for t in ("smallcup_tray", "bluemug_bin", "bottle_stand"):
+        with pytest.raises(ValueError):
+            D.check_row({"seed": 31201, "variant": "drx", "task": t}, "train")
+    D.check_row({"seed": 31201, "variant": "drx", "task": "mug_bin"}, "train")
     with pytest.raises(ValueError):
         D.check_row({"seed": 30001, "variant": "standard"}, "ood_h")

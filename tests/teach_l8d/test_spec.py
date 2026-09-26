@@ -65,6 +65,25 @@ def test_plan_is_deterministic_and_balanced():
         assert all(e["variant"] == v and e["table_z"] == h for e in eps)
 
 
+def test_x_plan_and_held_out_tasks():
+    from harvest.sim.tasks import X_TASKS
+    heights = (0.80, 0.85, 0.90)
+    p = S.plan_x(700, heights)
+    assert p == S.plan_x(700, heights) and all(e["objset"] == "x" for e in p)
+    assert {e["task"] for e in p} == set(S.X_TRAIN_TASKS)
+    assert p[0]["seed"] == S.X_TRAIN_START and p[-1]["seed"] < S.TRAIN_SEEDS.stop
+    held = set(S.OOD_O_TASKS + S.OOD_T_TASKS)
+    assert not held & set(S.X_TRAIN_TASKS) and held <= set(X_TASKS)
+    assert set(S.X_TRAIN_TASKS) | held == set(X_TASKS)
+    # the unseen object o14 is not in any trained task (target, place or extras)
+    for t in S.X_TRAIN_TASKS + S.PHASE1_TASKS:
+        s = X_TASKS.get(t)
+        if s:
+            assert "o14" not in (s.target, s.place) + tuple(s.extras)
+    rs = list(S.OOD_SETS.values())
+    assert all(a.stop <= b.start for a, b in zip(rs, rs[1:])) and rs[-1].stop <= S.OOD_SEEDS.stop
+
+
 def test_view_band_matches_the_head_camera():
     lo, hi = S.view_band(0.85)
     assert 0.35 <= lo <= 0.37 and hi >= 0.60

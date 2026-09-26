@@ -19,7 +19,8 @@ import numpy as np
 TRAIN_SEEDS = range(30000, 35000)
 GATE_SEEDS = range(35000, 35200)
 OOD_SEEDS = range(70000, 71000)
-OOD_SETS = {"ood_h": range(70000, 70100), "ood_o": range(70100, 70300), "ood_d": range(70300, 70500)}
+OOD_SETS = {"ood_h": range(70000, 70100), "ood_o": range(70100, 70300), "ood_d": range(70300, 70500),
+            "ood_s": range(70500, 70700), "ood_t": range(70700, 70900)}
 SPLITS = ("train", "gate") + tuple(OOD_SETS)
 PT_OOD_H = (0.78, 0.82, 0.88, 0.92)  # E-PT OOD-H (registered 0.82 / 0.88, change 2 0.78 / 0.92), reused by E-STRIP8
 OOD_GAP = 0.015  # a train height is >= 1.5 cm from every OOD-H height
@@ -27,6 +28,12 @@ HEIGHT_CANDIDATES = (0.72, 0.74, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88,
 PHASE1_TASKS = ("mug_tray", "bottle_tray", "mug_marker")
 TASK_CUM = ((0.40, "mug_tray"), (0.70, "bottle_tray"), (1.00, "mug_marker"))
 TRAIN_VARIANTS = ("standard", "drx")
+# L8-X single-instruction tasks (objset "x"): trained / held out (frozen before any training, prereg change 2)
+X_TRAIN_TASKS = ("mug_stand", "stand_mug_tray", "mug_bin", "bottle_bin", "bluemug_tray", "mug_left_of_bottle",
+                 "mug_right_of_bottle")
+OOD_O_TASKS = ("smallcup_tray",)  # unseen object: the small red cup o14 never appears in training
+OOD_T_TASKS = ("bluemug_bin", "bottle_stand")  # unseen compositions of trained objects / places
+X_TRAIN_START = 31200  # TRAIN seeds of the L8-X task episodes (phase 1 = 30000-31199)
 STANDARD_SHARE = 1 / 3
 CLEAN_SHARE = 0.25  # = L8
 WS_Y = (-0.40, -0.06)  # = scene.WS_Y (the y band is not height dependent: the view limit is in x)
@@ -87,6 +94,19 @@ def plan_train(n: int, heights, start: int = TRAIN_SEEDS.start) -> list:
     for i, s in enumerate(seeds):
         out.append({"seed": s, "split": "train", "task": task_of(s), "variant": variant_of(s),
                     "table_z": heights[int(perm[i]) % len(heights)]})
+    return out
+
+
+def x_task_of(seed: int) -> str:
+    return X_TRAIN_TASKS[int(np.random.default_rng([int(seed), 21, 4]).integers(len(X_TRAIN_TASKS)))]
+
+
+def plan_x(n: int, heights, start: int = X_TRAIN_START) -> list:
+    """L8-X task episodes (objset "x"): n consecutive TRAIN seeds from `start`, X_TRAIN_TASKS uniform by seed,
+    variant and height as plan_train."""
+    out = plan_train(n, heights, start=start)
+    for e in out:
+        e.update(task=x_task_of(e["seed"]), objset="x")
     return out
 
 

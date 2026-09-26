@@ -79,11 +79,16 @@ X_TASKS = {
     "mug_right_of_bottle": Task("mug_right_of_bottle", "o3", "o18",
                                 "Put the red mug about 10 cm to the right of the green bottle (the robot's right).",
                                 {"S1": "pick up mug o3", "S2": "place mug o3 at spot o18 right of bottle o8"}),
+    # OOD-T compositions (evaluation only in L8-X: trained parts, unseen combination; teach_l8d.spec.OOD_T_TASKS)
+    "bluemug_bin": Task("bluemug_bin", "o13", "o15", "Put the blue mug in the grey bin.",
+                        {"S1": "pick up mug o13", "S2": "place mug o13 in bin o15"}, extras=("o8",)),
+    "bottle_stand": Task("bottle_stand", "o8", "o12", "Put the green bottle on the white stand.",
+                         {"S1": "pick up bottle o8", "S2": "place bottle o8 on stand o12"}, extras=("o9",)),
 }
 X_TASK_IDS = tuple(X_TASKS)
 X_TASK_CODE = {t: 100 + i for i, t in enumerate(X_TASK_IDS)}  # layout RNG stream ids (fixed; append new ones)
 X_SUPPORT = {"stand_mug_tray": ("o12", "o3")}  # (support object, object standing on it)
-X_CONFUSER = {"bluemug_tray": "o3", "smallcup_tray": "o3"}  # attribute twin, always 8-14 cm from the target
+X_CONFUSER = {"bluemug_tray": "o3", "smallcup_tray": "o3", "bluemug_bin": "o3"}  # attribute twin, always 8-14 cm from the target
 X_REL = {"mug_left_of_bottle": ("o8", "o17", 0.10), "mug_right_of_bottle": ("o8", "o18", -0.10)}  # ref, spot, dy
 TASKS.update(X_TASKS)
 

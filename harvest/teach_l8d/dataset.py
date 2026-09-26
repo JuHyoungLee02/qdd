@@ -32,6 +32,8 @@ def check_row(r: dict, split: str) -> None:
     if split == "train":
         if s not in SP.TRAIN_SEEDS or v not in TRAIN_VARIANTS:
             raise ValueError(f"train row refused: seed {s} / variant {v} (TRAIN 30000-34999, standard / drx)")
+        if r.get("task") in SP.OOD_O_TASKS + SP.OOD_T_TASKS:
+            raise ValueError(f"train row refused: task {r['task']} is held out (OOD-O / OOD-T)")
     elif split == "gate":
         if s not in SP.GATE_SEEDS:
             raise ValueError(f"gate row refused: seed {s}")
