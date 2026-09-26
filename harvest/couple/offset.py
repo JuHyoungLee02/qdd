@@ -11,10 +11,14 @@ the COMMANDED velocity by a before the acceleration / rate limit, and the remain
 what is actually applied (the plan is never mutated by a). Why this form is jump-free: the applied velocity moves
 toward a x v_des by at most a_max x dt per tick, and |a x v_des| <= v_max, so |v| <= v_max and |dv / dt| <= a_max
 hold for every a sequence -- an immediate drop of a (Hysteresis decreases are immediate) brakes at a_max (at most
-v^2 / (2 a_max) = 1 cm of further travel from v_max 0.08 m/s) instead of stopping in one tick, and a returning to 1
-resumes the kept plan through the same acceleration limit. Scaling the OUTPUT displacement instead would turn an
-immediate drop of a into a one-tick stop (deceleration v / dt = 8 m/s^2 >> a_max). a = 0 for the whole window ->
-the velocity stays exactly 0 and the rest is dropped at the window end (the external command has zero effect).
+v^2 / (2 a_max) = 1 cm of further travel from v_max 0.08 m/s; rotation w^2 / (2 alpha_max) = 0.1875 rad from
+w_max 1.5 rad/s) instead of stopping in one tick, and a returning to 1 resumes the kept plan through the same
+acceleration limit. The post-window decay (|v| / decay_s, gentler than a_max) also honours a: with a < 1 it brakes at
+max(decay rate, a_max), so a drop of a near or after the window end keeps the same bound (plan Task 17 fix, F17).
+Scaling the OUTPUT displacement instead would turn an immediate drop of a into a one-tick stop (deceleration
+v / dt = 8 m/s^2 >> a_max). a = 0 for the whole window -> the velocity stays exactly 0 and the rest is dropped at the
+window end (the external command has exactly zero effect); a drop of a mid-window leaves the bounded braking residual
+above, not zero.
 The §6 decision projection (canon §84 supplement 8) is NOT implemented here (no task in this plan)."""
 from __future__ import annotations
 
@@ -86,10 +90,11 @@ class OffsetApplier:
             if in_win and n > 1e-12:
                 speed = min(n / max(self.t_end - now, dt), vmax, math.sqrt(2.0 * amax * n))
                 v_des, lim = rem / n * (speed * k), amax * dt  # authority on the command, before the limit
-            elif n > 1e-12:  # window over with a rest: decay over decay_s
+            elif n > 1e-12:  # window over with a rest: decay over decay_s (a < 1: brake at least at the accel cap)
                 if i0 not in self._decay:
                     self._decay[i0] = max(float(np.linalg.norm(v)) / self.p.decay_s, 1e-6)
-                v_des, lim = np.zeros(3), self._decay[i0] * dt
+                rate = self._decay[i0] if k >= 1.0 else max(self._decay[i0], amax)
+                v_des, lim = np.zeros(3), rate * dt
             else:  # nothing left (reset): brake at the acceleration cap
                 v_des, lim = np.zeros(3), amax * dt
             dv = v_des - v

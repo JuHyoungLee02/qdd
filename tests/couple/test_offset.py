@@ -120,6 +120,26 @@ def test_authority_drop_brakes_within_the_accel_limit_and_resumes_smoothly():
     np.testing.assert_allclose(ap.applied[:3], [0.06, 0, 0], atol=1e-4)  # the plan was kept, it resumed
 
 
+@pytest.mark.parametrize("axis,vec,vmax_name,amax_name", [
+    (0, [0.5, 0, 0, 0, 0, 0], "v_max", "a_max"),  # translation: bound v^2 / (2 a_max) <= 1 cm
+    (5, [0, 0, 0, 0, 0, 5.0], "w_max", "alpha_max"),  # rotation: bound w^2 / (2 alpha_max) <= 0.1875 rad
+])
+def test_authority_drop_just_before_the_window_end_travels_at_most_the_braking_bound(axis, vec, vmax_name, amax_name):
+    # F17: a -> 0 at t_end - 0.05 s; the post-window decay (|v| / decay_s, gentler than a_max) must not stretch the
+    # travel at a = 0 beyond the a_max braking distance
+    p = CoupleParams()
+    ap = OffsetApplier(p)
+    ap.command(1, vec, 1.0, 0.0, 3.0)
+    t = _run_a(ap, 0.0, 3.0 - 0.05, lambda t: 1.0)
+    sl = slice(0, 3) if axis < 3 else slice(3, 6)
+    v0 = float(np.linalg.norm(ap.v[sl]))
+    x0 = float(ap.applied[axis])
+    _run_a(ap, t, 6.0, lambda t: 0.0)
+    assert v0 > 0.9 * getattr(p, vmax_name)
+    assert float(ap.applied[axis]) - x0 <= v0 ** 2 / (2.0 * getattr(p, amax_name)) + 1e-9
+    assert not ap.active
+
+
 def test_authority_half_caps_the_speed_at_half():
     p = CoupleParams()
     ap = OffsetApplier(p)
