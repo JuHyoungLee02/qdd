@@ -53,6 +53,19 @@ def test_three_empty_or_error_answers_stop_the_run():
     assert m.n == E.MAX_API_ERR_RUN
 
 
+def test_stage_caps_end_early_without_changing_the_prompt():
+    """Prereg change 3: the runner ends an episode after stop_calls call sites or stop_motion_s of motion, while the
+    prompt still states the registered 40 calls / 180 s (so earlier episodes stay comparable)."""
+    w = FakeWorld()
+    cap = Capture(SoloTruth(w))
+    res = E.run_episode(w, cap, seed=3, task="mug_tray", stop_calls=2)
+    assert res["end_reason"] == "stage_cap_calls" and res["n_sites"] == 2
+    assert "Call 1 of at most 40" in cap.sent[0][0] and "of 180 s" in cap.sent[0][0]
+    w2 = FakeWorld()
+    res2 = E.run_episode(w2, SoloTruth(w2), seed=3, task="mug_tray", stop_motion_s=3.0)
+    assert res2["end_reason"] == "stage_cap_motion" and 3.0 <= res2["sim_t"] < 4.0
+
+
 class Capture:
     """Wraps a model and keeps what it was sent."""
 

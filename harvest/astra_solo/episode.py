@@ -53,7 +53,10 @@ def outcome(e: dict) -> str:
 
 class Episode:
     def __init__(self, world, model, seed, task, out_dir=None, max_calls=MAX_CALLS, motion_limit_s=MOTION_LIMIT_S,
-                 video=False, variant="standard", save_images=True):
+                 video=False, variant="standard", save_images=True, stop_calls=None, stop_motion_s=None):
+        """stop_calls / stop_motion_s (prereg change 3): runner-side early end that leaves the prompt's stated limits
+        (max_calls / motion_limit_s) unchanged, so episodes run before the change stay comparable."""
+        self.stop_calls, self.stop_motion_s = stop_calls, stop_motion_s
         self.w, self.model, self.seed, self.task, self.out_dir = world, model, seed, task, out_dir
         self.max_calls, self.motion_limit_s, self.video, self.variant = max_calls, motion_limit_s, video, variant
         self.save_images = save_images
@@ -145,6 +148,8 @@ class Episode:
             return "off_table"
         if self._t() >= self.motion_limit_s:
             return "motion_limit"
+        if self.stop_motion_s is not None and self._t() >= self.stop_motion_s:
+            return "stage_cap_motion"
         return None
 
     def _tick(self):
@@ -208,6 +213,9 @@ class Episode:
         for i in range(1, self.max_calls + 1):
             r = self._check()
             if r:
+                break
+            if self.stop_calls is not None and i > self.stop_calls:
+                r = "stage_cap_calls"
                 break
             obs = w.observe()
             if head_static is None:

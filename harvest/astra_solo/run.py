@@ -69,7 +69,8 @@ def run(a):
         t0 = time.perf_counter()
         try:
             res = run_episode(world, mdl, s, "mug_tray", out_dir=od, max_calls=a.max_calls,
-                              motion_limit_s=a.motion_limit, video=k < a.video_first, variant=a.variant)
+                              motion_limit_s=a.motion_limit, video=k < a.video_first, variant=a.variant,
+                              stop_calls=a.stop_calls, stop_motion_s=a.stop_motion)
         except BudgetStop as e:
             print("BUDGET_STOP " + json.dumps({"msg": str(e)}), flush=True)
             return
@@ -126,6 +127,8 @@ def main(argv=None):
     ap.add_argument("--seeds", default="0")
     ap.add_argument("--max-calls", type=int, default=40)
     ap.add_argument("--motion-limit", type=float, default=180.0)
+    ap.add_argument("--stop-calls", type=int, default=None, help="runner-side early end (prompt unchanged)")
+    ap.add_argument("--stop-motion", type=float, default=None, help="runner-side early end, motion s")
     ap.add_argument("--video-first", type=int, default=1)
     ap.add_argument("--cap-krw", type=float, default=5000.0)
     ap.add_argument("--ledger", default=LEDGER)
