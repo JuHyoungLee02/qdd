@@ -98,3 +98,9 @@
 | E-OpenVLM-proxy(사용자 질문 '오픈 LLM이 아스트라 대신?') | Astra 단독 인터페이스(`astra-solo@v2`) 그대로 모델 id만 gpt-5.2(오픈 목표 Qwen3.5-397B/학습 크기 Qwen3.5-27B의 OpenAI 대리), effort low, DEV standard/dr × 0·1, 20호출/60 s 조기 종료 | [P/prereg_open_vlm_solo](../stage3/prereg_open_vlm_solo.md) 2026-09-26T10:49Z(`5c021c6`), 변경 1 `f37051c`(gpt-5-mini 추가 → 사용자 지시로 7호출 뒤 중단) | **0/4**, 파지+들기 0, 무효 0/79; 접근 목표 xy 오차 편 중앙 104–207 mm(Astra 2.6–48.9) → 판정 PERCEPTION; 1,299.1원(+mini 23.3) | [R/open_vlm_solo](../stage3/results/open_vlm_solo.md) |
 | E-AutoCtx-A0 (무료) | 깊이 켠 머리 RGB-D 스냅샷(TRAIN 시드)에서 자동 원천(탁자 평면, 물체 군집 중심·높이·폭, 놓을 면, 자기 점·접근 축)이 GT·FK와 관문(탁자 ≤ 5 mm, 물체 xy ≤ 10 mm·h ≤ 5 mm, 자기 3D ≤ 10 mm·축 ≤ 10°) 안인가; GT 깊이·잡음 깊이 두 판 | 설계 [docs/research/auto_context_design_2026-09-26.md](../research/auto_context_design_2026-09-26.md) 7절(등록 전) | — (정본 §97) | `[예정]` |
 | E-AutoCtx-A1·A2 | A1(무료): 참값 모델 입력을 자동 값으로 하나씩 교체한 폐루프가 참값 6/6을 유지하나; A2(유료 ≤ 8,000원, 단계 1 ≤ 3,000원): 저장된 Astra 요청에서 손 정보 한 항목씩(탁자 z·크기·그리퍼 수치·요령·격자 → 인식 숫자·정의) 빼고 재질문 시 명령 목표 오차가 커지나 | 같은 문서 7절(등록 전) | — (A0 뒤) | `[예정]` |
+
+## 추가: E-VLA-solo (파일 끝에 이어붙임 — 원래 위치는 §D 표)
+
+| ID | 질문 | 등록 | 데이터·산출 | 결과 (실측) | 판정 → 바뀐 결정 | 상태 |
+|---|---|---|---|---|---|---|
+| E-VLA-solo | E-SR1c C1 VLA 단독이 폐루프에서 의미가 있나, 느린 재생(0.75·0.5배)이 지나침·맴돌기를 줄이고 성공을 늘리나(ul 107) | [P/prereg_vla_solo](../stage3/prereg_vla_solo.md) 2026-09-26T09:44:01Z(`d752509`), 변경 없음 | 메인 GPU 3, DEV 0–5 × standard·dr × 7팔 84편, `H/out/vla_solo/`, 진단 [R/vla_alone_diag](../stage3/results/vla_alone_diag.md) | VLA 5팔 모두 0/12(계획기 규칙 12/12, 제자리 0/12); C5 영구 hold 8/12 대 C3 0/12, C3 들기 이상 10–11/12; 지나침 87.7 → 52.9 → 17.9 mm(1.0·0.75·0.5배) ([R/vla_solo](../stage3/results/vla_solo.md)) | Q1 NOT_MEANINGFUL·Q2 NOT_ADOPTED·Q3 CONFIRMED → 1.0배 유지, 유료 E-Couple 금지 유지, 런타임 교착 수정 필수 | 끝 |
