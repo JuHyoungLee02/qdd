@@ -46,7 +46,7 @@ Astra(low) 일반 조종 흐름을 한 번에 하나씩 부르고 두 층 M4로 
 - **탐침 실측값으로 지금 추정**(정본 §86 보충 2, `docs/stage3/results/astra_motion.md` §2/§5: 직렬 F0 호출당 **약 49.7원**, 지연(벽시계) p50 **약 9.3 s**; 참고로 로봇 1분당 약 350–500원): 편 수 40 × 판 길이 60 s / L 9.3 s = **약 258회**(40 × 60 / 9.3 = 258.06), 비용 = 258회 × 49.7원 ≈ **12,826원**(약 12,800원) — 이 값은 실행 전 추정일 뿐이며, **실행일에는 위 CLI로 그날 가격표를 다시 읽어 재계산한다**(설계 §8·§15의 옛 사전 추정 28원/호출·L = 4 s는 탐침 전 값이라 더는 쓰지 않는다).
 - **상한 25,000원**(80 % = 20,000원에서 정지·보고).
 - **누적**(정본 §82 보충 "약 10만 원" 한도, E-Astra-necessity §5가 참조하는 계산과 같음): **탐침 실제 지출 6,933원**(하드 정지 상한 15,000원이 아니라 실측 지출 — `docs/stage3/results/astra_motion.md` §2, `docs/book/05-costs.md` 누적행) **+ 이 실험 상한 25,000원 + E-Astra-necessity 흐름 자리 상한 20,000원 = 51,933원 ≤ 100,000원**. 실측 단가(탐침: low 파지 질문 15.7원, 흐름 질문 49.7원)가 이미 나와 있으므로 실행 전 위 CLI 재계산 값이 이 문단의 12,826원 추정을 대체한다.
-- 실행 명령(자체 검사 뒤, 파드): `python -m harvest.eval.closed --model <체크포인트> --backend fused --out /data/harvest/out/e_couple --split dev --seeds 0-19 --variants standard,dr --couple off,serial --astra api --couple-prices <가격표> --couple-budget-krw 25000 --couple-ledger /data/harvest/out/e_couple/ledger.jsonl --approval "user approval: user-log 114, prereg_couple.md §0" --parallel`
+- 실행 명령(§0 자체 검사 커밋 + 사용자 명시 승인 뒤, user-log 114, 파드): `python -m harvest.eval.closed --model <체크포인트> --backend fused --out /data/harvest/out/e_couple --split dev --seeds 0-19 --variants standard,dr --couple off,serial --astra api --couple-prices <가격표> --couple-budget-krw 25000 --couple-ledger /data/harvest/out/e_couple/ledger.jsonl --approval "user approval: user-log 114, prereg_couple.md §0" --parallel`
 
 ## 7. 산출물
 `docs/stage3/results/e_couple.md`(표·그림·영상: 판마다 카메라 3대 영상 확인), `closed.json`, 장부 JSONL, 블롭.
