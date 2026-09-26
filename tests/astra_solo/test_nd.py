@@ -83,7 +83,9 @@ def test_resolve_est_exact_on_top():
 def test_table_z_default_path_unchanged():
     from harvest.sim import scene
     src = inspect.getsource(scene)
-    assert "table_z: float | None = None) -> Env" in src and "table_z=table_z)" in src
+    # L8-D (prereg_l8d.md) added ws / lift keywords; both default None and are only passed when set
+    assert "table_z: float | None = None, ws=None, lift: float | None = None) -> Env" in src
+    assert 'kw = {} if ws is None and lift is None else {"ws": ws, "lift": lift}' in src and "table_z=table_z, **kw)" in src
     assert "tz = TABLE_TOP_Z if table_z is None else float(table_z)" in src
     assert "self.table_top_z = tz" in src and scene.TABLE_TOP_Z == 0.85
     assert '_LAYOUT.get("table_z", TABLE_TOP_Z)' in src

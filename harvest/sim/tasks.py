@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from .scene import DISTRACTOR_X, DISTRACTOR_Y, OBJ_GEOM, WS_X, WS_Y, sample_layout
+from .scene import DISTRACTOR_X, DISTRACTOR_Y, OBJ_GEOM, WS_X, WS_Y, check_ws, sample_layout
 
 TOP_DOWN_YAW = math.pi / 2  # = planner.TOP_DOWN_YAW (fingers close along world x)
 GRIP_SQUEEZE_M = 0.014  # = planner.GRIP_SQUEEZE_M
@@ -74,16 +74,18 @@ def _fr(k):
     return OBJ_GEOM[k]["footprint_r"]
 
 
-def task_layout(seed: int, task: str) -> dict:
-    """{obj_id: (x, y, yaw)} world xy for (seed, task); mug_tray = the standard layout."""
+def task_layout(seed: int, task: str, ws=None) -> dict:
+    """{obj_id: (x, y, yaw)} world xy for (seed, task); mug_tray = the standard layout. ws: optional workspace box
+    for target and place (scene.check_ws, L8-D per-height box); None = WS_X / WS_Y (unchanged)."""
     check_task(task)
     if task == "mug_tray":
-        return sample_layout(seed)
+        return sample_layout(seed, ws=ws)
+    wx, wy = check_ws(ws) or (WS_X, WS_Y)
     s = TASKS[task]
     rng = np.random.default_rng([int(seed), 11, 1000 + TASK_CODE[task]])
     for _ in range(10000):
-        p = (rng.uniform(WS_X[0] + 0.02, WS_X[1]), rng.uniform(WS_Y[0] + 0.03, WS_Y[1] - 0.03))
-        m = (rng.uniform(*WS_X), rng.uniform(*WS_Y))
+        p = (rng.uniform(wx[0] + 0.02, wx[1]), rng.uniform(wy[0] + 0.03, wy[1] - 0.03))
+        m = (rng.uniform(*wx), rng.uniform(*wy))
         if math.dist(p, m) >= max(0.16, _fr(s.target) + _fr(s.place) + 0.03):
             break
     else:  # pragma: no cover
@@ -153,12 +155,12 @@ def pair_layout(seed: int) -> dict:
     return out
 
 
-def layout_for(seed: int, task: str, layout: str = "task") -> dict:
+def layout_for(seed: int, task: str, layout: str = "task", ws=None) -> dict:
     """The layout of (seed, task) under a layout mode: 'task' = task_layout (default), 'pair' = pair_layout (only
-    for PAIR_TASKS)."""
+    for PAIR_TASKS). ws: task_layout's workspace box (L8-D)."""
     check_task(task)
     if layout == "task":
-        return task_layout(seed, task)
+        return task_layout(seed, task, ws=ws)
     if layout == "pair":
         if task not in PAIR_TASKS:
             raise ValueError(f"layout 'pair' is for {PAIR_TASKS}, not {task!r}")

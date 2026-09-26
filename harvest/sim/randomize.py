@@ -23,10 +23,15 @@ from .perturb import P2_LATERAL_M
 from .scene import OBJ_GEOM, TABLE_CENTER_XY, TABLE_SIZE, TABLE_TOP_Z, sample_layout, yaw_quat
 
 POOLS_PATH = Path(__file__).with_name("randomization_pools.json")
-VARIANTS = ("standard", "random", "dr")
+# L8-D (docs/stage3/prereg_l8d.md): wider pools in their own file so the original file, its digest and every
+# 'random' / 'dr' sample stay byte-identical. drx = TRAIN_X (training), randx = TEST_X (OOD-D evaluation only).
+POOLS_X_PATH = Path(__file__).with_name("randomization_pools_x.json")
+VARIANTS = ("standard", "random", "dr", "drx", "randx")
 VARIANT_POOL = {"random": "test", "dr": "train"}
+X_VARIANT_POOL = {"drx": "train_x", "randx": "test_x"}
+EVAL_ONLY_VARIANTS = ("random", "randx")
 META_SCHEMA = "qdd.randomization/v1"
-_VCODE = {"random": 1, "dr": 2}
+_VCODE = {"random": 1, "dr": 2, "drx": 3, "randx": 4}
 _AXIS = {"table": 1, "floor": 2, "hdr": 3, "light": 4, "distractors": 5}
 _POOLS_CACHE: dict = {}
 
@@ -51,11 +56,26 @@ def check_variant(variant: str) -> str:
 
 
 def check_train_variant(variant: str) -> str:
-    """Training data may use 'standard' or 'dr' only: random test scenes are never used for training (D35)."""
+    """Training data may use 'standard', 'dr' or 'drx' only: random / randx test scenes are never used for training
+    (D35)."""
     check_variant(variant)
-    if variant == "random":
-        raise ValueError("variant 'random' is the TEST pool: never used for training (canon §34 D35); use 'dr'")
+    if variant in EVAL_ONLY_VARIANTS:
+        raise ValueError(f"variant {variant!r} is a TEST pool: never used for training (canon §34 D35); use 'dr'")
     return variant
+
+
+def pool_name(variant: str):
+    """Pool of a variant (None for standard)."""
+    return VARIANT_POOL.get(variant) or X_VARIANT_POOL.get(variant)
+
+
+def pools_path(variant: str):
+    return POOLS_X_PATH if variant in X_VARIANT_POOL else POOLS_PATH
+
+
+def distractor_spawn_z(d: dict, table_z: float) -> float:
+    """World z of a distractor's centre at spawn: on the current table top (1 mm clearance)."""
+    return float(table_z) + float(d["half_height"]) + 0.001
 
 
 def _rng(seed: int, variant: str, axis: str):
@@ -163,14 +183,14 @@ def sample_randomization(seed: int, variant: str, layout: dict | None = None, po
     """The five axes for (seed, variant). 'standard' -> no randomization (metadata only). Deterministic: every axis
     has its own RNG stream from (seed, variant, axis); nothing depends on earlier episodes of the process."""
     check_variant(variant)
-    meta = {"schema": META_SCHEMA, "seed": int(seed), "variant": variant, "pool": VARIANT_POOL.get(variant),
+    meta = {"schema": META_SCHEMA, "seed": int(seed), "variant": variant, "pool": pool_name(variant),
             "pools_digest": None, "table_material": None, "floor_material": None, "light": None, "hdr": None,
             "distractors": None}
     if variant == "standard":
         return meta
-    pools = pools or load_pools()
+    pools = pools or load_pools(pools_path(variant))
     layout = layout if layout is not None else sample_layout(seed)
-    c, pool = pools["common"], pools["pools"][VARIANT_POOL[variant]]
+    c, pool = pools["common"], pools["pools"][pool_name(variant)]
     meta["pools_digest"] = pools_digest(pools)
 
     rng = _rng(seed, variant, "table")
@@ -206,7 +226,8 @@ def sample_randomization(seed: int, variant: str, layout: dict | None = None, po
 
     rng = _rng(seed, variant, "distractors")
     dists = pool["distractors"]
-    n = int(rng.integers(c["n_distractors"][0], c["n_distractors"][1] + 1))
+    nr = pool.get("n_distractors", c["n_distractors"])  # pool-level override (L8-D x pools)
+    n = int(rng.integers(nr[0], nr[1] + 1))
     order = [int(i) for i in rng.permutation(len(dists))]
     placed, dropped = [], []
     cols = pool["distractor_colors"]
@@ -249,7 +270,7 @@ def validate_meta(m: dict) -> list:
         bad.append("schema")
     if m["variant"] not in VARIANTS:
         return bad + ["variant"]
-    if m["pool"] != VARIANT_POOL.get(m["variant"]):
+    if m["pool"] != pool_name(m["variant"]):
         bad.append("pool/variant mismatch")
     if m["variant"] == "standard":
         return bad + [f"{k} set" for k in ("table_material", "floor_material", "light", "hdr", "distractors")
@@ -283,8 +304,8 @@ MESH_FIT: dict = {}  # prim path -> measured mesh fit (logged)
 
 
 def pool_of(variant: str, pools: dict | None = None) -> dict:
-    pools = pools or load_pools()
-    return pools["pools"][VARIANT_POOL[variant]]
+    pools = pools or load_pools(pools_path(variant))
+    return pools["pools"][pool_name(variant)]
 
 
 def distractor_scene_cfgs(variant: str) -> dict:
@@ -293,7 +314,7 @@ def distractor_scene_cfgs(variant: str) -> dict:
     import isaaclab.sim as sim_utils
     from isaaclab.assets import RigidObjectCfg
 
-    pools = load_pools()
+    pools = load_pools(pools_path(variant))
     c = pools["common"]
     out = {}
     for i, d in enumerate(pool_of(variant, pools)["distractors"]):
@@ -540,9 +561,11 @@ def write_distractor_poses(env, env_ids, meta) -> None:
 
     if not meta or not meta.get("distractors"):
         return
+    from .scene import _LAYOUT
+    tz = _LAYOUT.get("table_z", TABLE_TOP_Z)  # the current env's table top (make_env(table_z=...), L8-D)
     for d in meta["distractors"]:
         o = env.scene["rd_" + d["name"]]
-        p = torch.tensor([[d["xy"][0], d["xy"][1], TABLE_TOP_Z + d["half_height"] + 0.001, *yaw_quat(d["yaw"])]],
+        p = torch.tensor([[d["xy"][0], d["xy"][1], distractor_spawn_z(d, tz), *yaw_quat(d["yaw"])]],
                          dtype=torch.float32, device=env.device)
         p[:, :3] += env.scene.env_origins[env_ids]
         o.write_root_pose_to_sim(p, env_ids=env_ids)
@@ -566,7 +589,7 @@ def distractor_report(env, ref: dict | None = None) -> dict:
     for d in meta.get("distractors") or []:
         p = pos[d["name"]]
         if ref is None:
-            q = np.array([d["xy"][0], d["xy"][1], TABLE_TOP_Z + d["half_height"]])
+            q = np.array([d["xy"][0], d["xy"][1], getattr(env, "table_top_z", TABLE_TOP_Z) + d["half_height"]])
         else:
             q = ref[d["name"]]
         out[d["name"]] = {"dxy_mm": round(float(np.linalg.norm(p[:2] - q[:2])) * 1e3, 1),

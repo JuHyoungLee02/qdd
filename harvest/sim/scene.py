@@ -104,13 +104,28 @@ def width_to_joint(w: float) -> float:
     return float(np.interp(w, _GW[::-1], _GQ[::-1]))
 
 
-def sample_layout(seed: int) -> dict:
-    """Initial placement from the seed: {obj_id: (x, y, yaw)} in world xy (table frame xy is the same)."""
+WS_MIN_W = 0.08  # L8-D gate G-H: a table height's workspace (view x reach) must be >= 8 cm wide in x
+
+
+def check_ws(ws):
+    """ws = ((x0, x1), (y0, y1)) workspace box (L8-D per-height box, docs/stage3/prereg_l8d.md) or None (WS_X/WS_Y)."""
+    if ws is None:
+        return None
+    (x0, x1), (y0, y1) = ws
+    if not (x1 - x0 >= WS_MIN_W - 1e-9 and y1 - y0 >= 0.10):
+        raise ValueError(f"workspace {ws}: x width >= {WS_MIN_W} m and y width >= 0.10 m")
+    return (float(x0), float(x1)), (float(y0), float(y1))
+
+
+def sample_layout(seed: int, ws=None) -> dict:
+    """Initial placement from the seed: {obj_id: (x, y, yaw)} in world xy (table frame xy is the same).
+    ws: optional workspace box (check_ws) for target and place; None = WS_X / WS_Y (unchanged)."""
+    wx, wy = check_ws(ws) or (WS_X, WS_Y)
     rng = np.random.default_rng([int(seed), 11])
     fr = {k: g["footprint_r"] for k, g in OBJ_GEOM.items()}
     for _ in range(10000):
-        t = (rng.uniform(WS_X[0] + 0.02, WS_X[1]), rng.uniform(WS_Y[0] + 0.03, WS_Y[1] - 0.03), 0.0)
-        m = (rng.uniform(*WS_X), rng.uniform(*WS_Y), 0.0)
+        t = (rng.uniform(wx[0] + 0.02, wx[1]), rng.uniform(wy[0] + 0.03, wy[1] - 0.03), 0.0)
+        m = (rng.uniform(*wx), rng.uniform(*wy), 0.0)
         if math.dist(t[:2], m[:2]) >= max(0.16, fr["o3"] + fr["o5"] + 0.03):
             break
     else:  # pragma: no cover
@@ -249,7 +264,7 @@ def _place_layout_event(env, env_ids):
 
 def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu", variant: str = "standard",
                decimation: int = 5, render_interval: int | None = None, task: str = "mug_tray",
-               table_z: float = TABLE_TOP_Z):
+               table_z: float = TABLE_TOP_Z, ws=None, lift: float | None = None):
     import isaaclab.envs.mdp as mdp
     import isaaclab.sim as sim_utils
     from isaaclab.assets import AssetBaseCfg, RigidObjectCfg
@@ -266,7 +281,7 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
     if arm != "right":
         raise NotImplementedError("single right arm only (T11)")
     from .tasks import task_layout
-    layout = task_layout(seed, task)  # mug_tray = sample_layout(seed)
+    layout = task_layout(seed, task, ws=ws)  # mug_tray = sample_layout(seed)
     robot_prefix = "{ENV_REGEX_NS}/Robot/ffw_sg2_follower"
     finger_paths = [f"{robot_prefix}/right_gripper/{b}" for b in FINGER_BODIES[arm]]
     obj_ids = ["o3", "o5", "o8", "o9", "o10"]
@@ -297,7 +312,8 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
                                 filter_prim_paths_expr=finger_paths + others)
 
     robot = _robot_cfg()
-    robot = robot.replace(init_state=robot.init_state.replace(joint_pos={**robot.init_state.joint_pos, **INIT_JOINTS}))
+    joints = dict(INIT_JOINTS) if lift is None else {**INIT_JOINTS, "lift_joint": float(lift)}  # L8-D lift flag
+    robot = robot.replace(init_state=robot.init_state.replace(joint_pos={**robot.init_state.joint_pos, **joints}))
 
     scene_attrs = {
         "robot": robot,
@@ -421,9 +437,11 @@ class Env:
 
     def __init__(self, seed: int, headless=True, cameras=DEFAULT_CAMERAS, arm="right", depth=True, sim_device="cpu",
                  variant="standard", decimation: int = 5, render_interval: int | None = None, task: str = "mug_tray",
-                 hard_reset: bool = True, table_z: float | None = None):
+                 hard_reset: bool = True, table_z: float | None = None, ws=None, lift: float | None = None):
         from . import randomize
         from .tasks import check_task
+        self.ws = check_ws(ws)  # L8-D per-height workspace box (None = WS_X / WS_Y)
+        self.lift = None if lift is None else float(lift)  # L8-D lift flag (None = INIT_JOINTS lift, default)
         self.hard_reset = bool(hard_reset)
         self.variant = randomize.check_variant(variant)
         self.task = check_task(task)
@@ -435,11 +453,9 @@ class Env:
         self.torch = torch
         self.seed, self.arm, self.cameras = int(seed), arm, cameras
         tz = TABLE_TOP_Z if table_z is None else float(table_z)
-        if tz != TABLE_TOP_Z and self.variant != "standard":  # randomize.py places distractors at TABLE_TOP_Z
-            raise ValueError("table_z other than TABLE_TOP_Z: variant standard only (E-PT OOD-H)")
-        _LAYOUT["table_z"] = tz
+        _LAYOUT["table_z"] = tz  # randomize.write_distractor_poses reads it (distractors stand on this table)
         cfg, self.layout = _build_cfg(seed, cameras, arm, depth, sim_device, variant, decimation, render_interval,
-                                      task, tz)
+                                      task, tz, self.ws, self.lift)
         self.sim_device = cfg.sim.device
         _LAYOUT["layout"] = self.layout
         self.randomization = randomize.sample_randomization(seed, variant, self.layout, path=self.task_path())
@@ -484,7 +500,7 @@ class Env:
         from .randomize import sample_randomization
         from .tasks import check_task, layout_for, layout_paths
         self.seed, self.task = int(seed), check_task(task)
-        self.layout = layout_for(seed, self.task, layout)
+        self.layout = layout_for(seed, self.task, layout, ws=getattr(self, "ws", None))
         self.layout_mode = layout
         _LAYOUT["layout"] = self.layout
         self.randomization = sample_randomization(seed, self.variant, self.layout,
@@ -630,7 +646,7 @@ def _author_usd_pose(path: str, pos, quat_wxyz) -> None:
 def make_env(seed: int, headless: bool = True, cameras=DEFAULT_CAMERAS, arm: str = "right", depth: bool = True,
              sim_device: str = "cpu", variant: str = "standard", decimation: int = 5,
              render_interval: int | None = None, task: str = "mug_tray", hard_reset: bool = True,
-             table_z: float | None = None) -> Env:
+             table_z: float | None = None, ws=None, lift: float | None = None) -> Env:
     """cameras: names from KNOWN_CAMERAS (real robot cameras); () for no rendering.
     task: tasks.TASK_IDS (R2); the default is the original mug -> tray task with the standard layout.
     sim_device: 'cpu' (PhysX on CPU, default, canon §48) or 'cuda' (GPU PhysX, the v1 setting).
@@ -642,7 +658,11 @@ def make_env(seed: int, headless: bool = True, cameras=DEFAULT_CAMERAS, arm: str
     (physx_hard_reset.md); False = the old soft reset, only for replaying episodes recorded before (history-dependent,
     pool_replay_debug.md).
     table_z: None (default) = TABLE_TOP_Z 0.85 (every path unchanged); a float moves the table and the objects
-    standing on it (variant standard only; E-PT OOD-H, docs/stage3/prereg_pt.md)."""
+    standing on it (E-PT OOD-H, docs/stage3/prereg_pt.md; any variant since L8-D: pool distractors stand on it too).
+    ws: None (default) = WS_X / WS_Y; a box ((x0, x1), (y0, y1)) for the task layouts (L8-D per-height box, gate G-H).
+    lift: None (default) = INIT_JOINTS lift_joint; a float = the lift joint's start / hold position (L8-D lift flag,
+    default off, docs/stage3/prereg_l8d.md). The head pitch is never changed."""
+    kw = {} if ws is None and lift is None else {"ws": ws, "lift": lift}
     return Env(seed, headless=headless, cameras=cameras, arm=arm, depth=depth, sim_device=sim_device, variant=variant,
                decimation=decimation, render_interval=render_interval, task=task, hard_reset=hard_reset,
-               table_z=table_z)
+               table_z=table_z, **kw)

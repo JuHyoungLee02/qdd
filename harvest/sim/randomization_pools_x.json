@@ -1,0 +1,961 @@
+{
+ "schema": "qdd.randomization_pools/v1",
+ "note": "L8-D wider pools (docs/stage3/prereg_l8d.md). A separate file so the original pools, their digest and every 'random' / 'dr' sample stay byte-identical. 'common' = the base file's common block (copied). Pool-level n_distractors overrides common n_distractors.",
+ "common": {
+  "n_distractors": [
+   1,
+   3
+  ],
+  "place_x": [
+   0.3,
+   0.8
+  ],
+  "place_y": [
+   -0.55,
+   0.33
+  ],
+  "table_edge_margin_m": 0.01,
+  "keepout_margin_m": 0.02,
+  "object_clearance_m": 0.03,
+  "distractor_clearance_m": 0.02,
+  "distractor_mass_kg": 0.15,
+  "distractor_friction": 0.8,
+  "mesh_fit_max_xy_m": 0.09,
+  "mesh_fit_max_z_m": 0.1,
+  "light_target": [
+   0.5,
+   -0.1,
+   0.85
+  ],
+  "light_elevation_deg": [
+   35.0,
+   75.0
+  ],
+  "light_distance_m": [
+   1.2,
+   2.0
+  ],
+  "key_weight": 0.5,
+  "base_intensity_note": "base_intensity values (light types, HDR maps) = run_dev r5calib 2026-09-25: each light alone (bisection on log intensity) gives the head-camera mean luma of the standard lighting (dome 2500, colour 0.9) in the same scene; key and dome then get weight 0.5 each",
+  "dome_weight": 0.5,
+  "floor": {
+   "size_m": [
+    8.0,
+    8.0
+   ],
+   "center_xy": [
+    1.0,
+    0.0
+   ],
+   "thickness_m": 0.01
+  },
+  "light_types": {
+   "sphere": {
+    "base_intensity": 4600000.0,
+    "radius": 0.08
+   },
+   "disk": {
+    "base_intensity": 1150000.0,
+    "radius": 0.2
+   },
+   "rect": {
+    "base_intensity": 1000000.0,
+    "width": 0.4,
+    "height": 0.4
+   },
+   "cylinder": {
+    "base_intensity": 1500000.0,
+    "length": 0.6,
+    "radius": 0.04
+   },
+   "distant": {
+    "base_intensity": 3200.0,
+    "angle": 1.0
+   }
+  }
+ },
+ "pools": {
+  "train_x": {
+   "table_materials": [
+    {
+     "name": "tbl_wooden_floor",
+     "texture": "/isaac-sim/extscache/omni.mdl.usd_converter-1.0.30+69cbf6ad/omni/mdl/usd_converter/tests/data/usd/simple_bitmap/Materials/Material__42/wooden_floor.jpg",
+     "texture_scale": [
+      1.5,
+      1.5
+     ],
+     "roughness": 0.5,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_carpet_beige",
+     "texture": "/isaac-sim/extscache/omni.kit.thumbnails.mdl-1.0.27+107.3.0/data/tests/Carpet_Beige/Carpet_Beige_BaseColor.png",
+     "texture_scale": [
+      2.0,
+      2.0
+     ],
+     "roughness": 0.95,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_brick",
+     "texture": "/isaac-sim/extscache/omni.asset_validator.core-1.1.6/omni/asset_validator/core/tests/data/textures/brick.jpg",
+     "texture_scale": [
+      2.0,
+      2.0
+     ],
+     "roughness": 0.85,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_aluminum_anodized",
+     "texture": "/isaac-sim/extscache/omni.kit.tool.collect-2.2.18+69cbf6ad/data/test_stages/OM_55150/1/Materials/Base/Metals/Aluminum_Anodized/Aluminum_Anodized_BaseColor.png",
+     "texture_scale": [
+      1.0,
+      1.0
+     ],
+     "roughness": 0.35,
+     "metallic": 0.8
+    },
+    {
+     "name": "tbl_laminate_black",
+     "color": [
+      0.08,
+      0.08,
+      0.09
+     ],
+     "roughness": 0.5,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_plastic_grey",
+     "color": [
+      0.45,
+      0.45,
+      0.47
+     ],
+     "roughness": 0.6,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_oak_light",
+     "color": [
+      0.78,
+      0.62,
+      0.42
+     ],
+     "roughness": 0.55,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_walnut",
+     "color": [
+      0.36,
+      0.24,
+      0.15
+     ],
+     "roughness": 0.5,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_cream",
+     "color": [
+      0.93,
+      0.88,
+      0.75
+     ],
+     "roughness": 0.4,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_blue_grey",
+     "color": [
+      0.35,
+      0.42,
+      0.5
+     ],
+     "roughness": 0.6,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_yellow_pine",
+     "color": [
+      0.85,
+      0.72,
+      0.4
+     ],
+     "roughness": 0.55,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_concrete",
+     "color": [
+      0.55,
+      0.54,
+      0.5
+     ],
+     "roughness": 0.9,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_teak",
+     "color": [
+      0.55,
+      0.35,
+      0.18
+     ],
+     "roughness": 0.45,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_gloss_black",
+     "color": [
+      0.03,
+      0.03,
+      0.035
+     ],
+     "roughness": 0.15,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_sage",
+     "color": [
+      0.56,
+      0.6,
+      0.5
+     ],
+     "roughness": 0.7,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_copper",
+     "texture": "/isaac-sim/extscache/omni.replicator.core-1.12.27+107.3.3.lx64.r.cp311/omni/replicator/core/scripts/data/materials/Copper/Copper_BaseColor.png",
+     "texture_scale": [
+      1.0,
+      1.0
+     ],
+     "roughness": 0.35,
+     "metallic": 0.8
+    },
+    {
+     "name": "tbl_plastic_grey_tex",
+     "texture": "/isaac-sim/extscache/omni.simready.explorer-1.1.3/omni/simready/explorer/tests/data/assets/props/box_a01/textures/T_Plastic_Gray_A_Albedo.png",
+     "texture_scale": [
+      1.0,
+      1.0
+     ],
+     "roughness": 0.6,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_plastic_black_tex",
+     "texture": "/isaac-sim/extscache/omni.simready.explorer-1.1.3/omni/simready/explorer/tests/data/assets/props/box_a01/textures/T_Plastic_Black_A_Albedo.png",
+     "texture_scale": [
+      1.0,
+      1.0
+     ],
+     "roughness": 0.55,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_nv_uv_grid",
+     "texture": "/isaac-sim/extscache/omni.replicator.core-1.12.27+107.3.3.lx64.r.cp311/omni/replicator/core/scripts/data/uv_textures/nv_uv_grid_D.png",
+     "texture_scale": [
+      1.0,
+      1.0
+     ],
+     "roughness": 0.7,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_noise",
+     "texture": "/isaac-sim/extscache/omni.syntheticdata-0.6.13+69cbf6ad.lx64.r.cp311/omni/syntheticdata/tests/data/ds2_materials/drivable_surfaces/general/road/road_base/t_noise_d.png",
+     "texture_scale": [
+      1.5,
+      1.5
+     ],
+     "roughness": 0.8,
+     "metallic": 0.0
+    }
+   ],
+   "floor_materials": [
+    {
+     "name": "flr_leaves",
+     "texture": "/isaac-sim/extscache/omni.replicator.core-1.12.27+107.3.3.lx64.r.cp311/omni/replicator/core/scripts/data/materials/Leaves/Leaves_BaseColor.png",
+     "texture_scale": [
+      0.5,
+      0.5
+     ],
+     "roughness": 0.9,
+     "metallic": 0.0
+    },
+    {
+     "name": "flr_puddle",
+     "texture": "/isaac-sim/extscache/isaacsim.replicator.incident-0.1.28+107.3.3.lx64/data/Puddle/albedo.png",
+     "texture_scale": [
+      0.5,
+      0.5
+     ],
+     "roughness": 0.5,
+     "metallic": 0.0
+    },
+    {
+     "name": "flr_uv_grid",
+     "texture": "/isaac-sim/extscache/omni.kit.stage_templates-2.0.0+69cbf6ad/data/ov_uv_grids_basecolor_1024.png",
+     "texture_scale": [
+      0.5,
+      0.5
+     ],
+     "roughness": 0.7,
+     "metallic": 0.0
+    },
+    {
+     "name": "flr_scratch2",
+     "texture": "/isaac-sim/extscache/omni.replicator.core-1.12.27+107.3.3.lx64.r.cp311/omni/replicator/core/scripts/data/textures/scratch_2_D.png",
+     "texture_scale": [
+      0.5,
+      0.5
+     ],
+     "roughness": 0.6,
+     "metallic": 0.0
+    },
+    {
+     "name": "flr_checkerboard",
+     "texture": "/isaac-sim/extscache/omni.replicator.core-1.12.27+107.3.3.lx64.r.cp311/omni/replicator/core/tests/data/objects/textures/checkerboard_texture.png",
+     "texture_scale": [
+      0.5,
+      0.5
+     ],
+     "roughness": 0.7,
+     "metallic": 0.0
+    },
+    {
+     "name": "flr_tan",
+     "color": [
+      0.7,
+      0.6,
+      0.45
+     ],
+     "roughness": 0.8,
+     "metallic": 0.0
+    },
+    {
+     "name": "flr_scratch1",
+     "texture": "/isaac-sim/extscache/omni.replicator.core-1.12.27+107.3.3.lx64.r.cp311/omni/replicator/core/scripts/data/textures/scratch_1_D.png",
+     "texture_scale": [
+      0.5,
+      0.5
+     ],
+     "roughness": 0.6,
+     "metallic": 0.0
+    },
+    {
+     "name": "flr_scratch3",
+     "texture": "/isaac-sim/extscache/omni.replicator.core-1.12.27+107.3.3.lx64.r.cp311/omni/replicator/core/scripts/data/textures/scratch_3_D.png",
+     "texture_scale": [
+      0.5,
+      0.5
+     ],
+     "roughness": 0.6,
+     "metallic": 0.0
+    },
+    {
+     "name": "flr_scratch4",
+     "texture": "/isaac-sim/extscache/omni.replicator.core-1.12.27+107.3.3.lx64.r.cp311/omni/replicator/core/scripts/data/textures/scratch_4_D.png",
+     "texture_scale": [
+      0.5,
+      0.5
+     ],
+     "roughness": 0.6,
+     "metallic": 0.0
+    },
+    {
+     "name": "flr_venthood",
+     "texture": "/isaac-sim/extscache/omni.kit.usd.collect-2.4.5+69cbf6ad/data/test_stages/udim_in_mdl/Collected_venthood_flat/textures/Venthood_albedo.png",
+     "texture_scale": [
+      0.5,
+      0.5
+     ],
+     "roughness": 0.7,
+     "metallic": 0.0
+    },
+    {
+     "name": "flr_grey_dark",
+     "color": [
+      0.2,
+      0.2,
+      0.22
+     ],
+     "roughness": 0.85,
+     "metallic": 0.0
+    },
+    {
+     "name": "flr_wood_tone",
+     "color": [
+      0.5,
+      0.35,
+      0.2
+     ],
+     "roughness": 0.6,
+     "metallic": 0.0
+    },
+    {
+     "name": "flr_blue_carpet",
+     "color": [
+      0.2,
+      0.25,
+      0.45
+     ],
+     "roughness": 0.95,
+     "metallic": 0.0
+    }
+   ],
+   "hdr_maps": [
+    {
+     "name": "hdr_carlight",
+     "file": "/isaac-sim/extscache/omni.kit.stage_templates-2.0.0+69cbf6ad/data/CarLight_512x256.hdr",
+     "base_intensity": 1760.0
+    },
+    {
+     "name": "hdr_sunflowers",
+     "file": "/isaac-sim/extscache/omni.kit.property.light-1.0.12+69cbf6ad/data/tests/textures/sunflowers.hdr",
+     "base_intensity": 3130.0
+    }
+   ],
+   "distractors": [
+    {
+     "name": "mesh_cup",
+     "kind": "mesh",
+     "usd": "/isaac-sim/extscache/omni.kit.stage_column.payload-2.0.3+107.3.0/data/tests/Cup.geom.usd",
+     "up": "Z",
+     "extent_m": [
+      0.135617,
+      0.152003,
+      0.086069
+     ],
+     "has_material": false
+    },
+    {
+     "name": "mesh_serving_bowl",
+     "kind": "mesh",
+     "usd": "/isaac-sim/extscache/omni.tools.array-107.0.0/omni/tools/array/tests/data/Collected_serving_bowl/serving_bowl.usd",
+     "up": "Z",
+     "extent_m": [
+      0.159683,
+      0.159683,
+      0.052031
+     ],
+     "has_material": false
+    },
+    {
+     "name": "mesh_basketball_shoes",
+     "kind": "mesh",
+     "usd": "/isaac-sim/extscache/omni.replicator.core-1.12.27+107.3.3.lx64.r.cp311/omni/replicator/core/tests/data/objects/Worker/Props/Meshes/Basketball_Shoes.usd",
+     "up": "Z",
+     "extent_m": [
+      0.260489,
+      0.302644,
+      0.177372
+     ],
+     "has_material": false,
+     "material_note": "its bundled material references textures missing from the bundle: recoloured from the pool"
+    },
+    {
+     "name": "mesh_baseball_cap",
+     "kind": "mesh",
+     "usd": "/isaac-sim/extscache/omni.replicator.core-1.12.27+107.3.3.lx64.r.cp311/omni/replicator/core/tests/data/objects/Worker/Props/Meshes/Baseball_Cap.usd",
+     "up": "Z",
+     "extent_m": [
+      0.168972,
+      0.281968,
+      0.134508
+     ],
+     "has_material": false,
+     "material_note": "its bundled material references textures missing from the bundle: recoloured from the pool"
+    },
+    {
+     "name": "prim_capsule",
+     "kind": "capsule",
+     "radius": 0.025,
+     "height": 0.05
+    },
+    {
+     "name": "prim_cuboid",
+     "kind": "cuboid",
+     "size": [
+      0.06,
+      0.045,
+      0.08
+     ]
+    },
+    {
+     "name": "prim_cylinder",
+     "kind": "cylinder",
+     "radius": 0.03,
+     "height": 0.07
+    }
+   ],
+   "distractor_colors": [
+    {
+     "name": "col_brown",
+     "color": [
+      0.45,
+      0.28,
+      0.12
+     ]
+    },
+    {
+     "name": "col_grey",
+     "color": [
+      0.5,
+      0.5,
+      0.5
+     ]
+    },
+    {
+     "name": "col_black",
+     "color": [
+      0.08,
+      0.08,
+      0.08
+     ]
+    },
+    {
+     "name": "col_cyan",
+     "color": [
+      0.3,
+      0.85,
+      0.95
+     ]
+    },
+    {
+     "name": "col_olive",
+     "color": [
+      0.5,
+      0.5,
+      0.1
+     ]
+    },
+    {
+     "name": "col_purple",
+     "color": [
+      0.4,
+      0.18,
+      0.55
+     ]
+    },
+    {
+     "name": "col_beige",
+     "color": [
+      0.85,
+      0.78,
+      0.62
+     ]
+    },
+    {
+     "name": "col_charcoal",
+     "color": [
+      0.22,
+      0.22,
+      0.24
+     ]
+    },
+    {
+     "name": "col_lavender",
+     "color": [
+      0.7,
+      0.65,
+      0.9
+     ]
+    },
+    {
+     "name": "col_sand",
+     "color": [
+      0.76,
+      0.66,
+      0.45
+     ]
+    },
+    {
+     "name": "col_silver",
+     "color": [
+      0.75,
+      0.75,
+      0.78
+     ]
+    }
+   ],
+   "light": {
+    "key_mult_bands": [
+     [
+      0.35,
+      0.5
+     ],
+     [
+      0.5,
+      0.7
+     ],
+     [
+      0.9,
+      1.1
+     ],
+     [
+      1.3,
+      1.5
+     ],
+     [
+      1.7,
+      2.0
+     ]
+    ],
+    "dome_mult_bands": [
+     [
+      0.35,
+      0.5
+     ],
+     [
+      0.5,
+      0.7
+     ],
+     [
+      0.9,
+      1.1
+     ],
+     [
+      1.3,
+      1.5
+     ],
+     [
+      1.7,
+      2.0
+     ]
+    ],
+    "color_temperature_bands_k": [
+     [
+      2200,
+      2700
+     ],
+     [
+      2700,
+      3300
+     ],
+     [
+      3900,
+      4500
+     ],
+     [
+      5100,
+      5700
+     ],
+     [
+      6300,
+      6900
+     ],
+     [
+      7500,
+      8000
+     ]
+    ],
+    "azimuth_bands_deg": [
+     [
+      -180,
+      -90
+     ],
+     [
+      0,
+      90
+     ]
+    ],
+    "dome_rotation_deg": [
+     0,
+     360
+    ]
+   },
+   "n_distractors": [
+    0,
+    6
+   ],
+   "note": "L8-D TRAIN_X (variant drx): the TRAIN pool (same assets, same distractors) + 14 table / 7 floor materials, 6 distractor colours (none red / green / blue / magenta: the task objects' colours), wider key / dome intensity and colour-temperature bands outside every TEST band; 0-6 distractors"
+  },
+  "test_x": {
+   "table_materials": [
+    {
+     "name": "tbl_mahogany_floorboards",
+     "texture": "/isaac-sim/extscache/omni.kit.usdz_export-1.0.9+69cbf6ad/data/test_stage/textures/mahogany_floorboards.png",
+     "texture_scale": [
+      1.5,
+      1.5
+     ],
+     "roughness": 0.45,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_fieldstone",
+     "texture": "/isaac-sim/extscache/omni.asset_validator.core-1.1.6/omni/asset_validator/core/tests/data/Materials/Fieldstone/Fieldstone_BaseColor.png",
+     "texture_scale": [
+      2.0,
+      2.0
+     ],
+     "roughness": 0.8,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_laminate_white",
+     "color": [
+      0.86,
+      0.86,
+      0.83
+     ],
+     "roughness": 0.35,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_steel_brushed",
+     "color": [
+      0.62,
+      0.63,
+      0.65
+     ],
+     "roughness": 0.3,
+     "metallic": 0.9
+    },
+    {
+     "name": "tbl_mint",
+     "color": [
+      0.6,
+      0.85,
+      0.7
+     ],
+     "roughness": 0.5,
+     "metallic": 0.0
+    },
+    {
+     "name": "tbl_slate_blue",
+     "color": [
+      0.3,
+      0.35,
+      0.6
+     ],
+     "roughness": 0.6,
+     "metallic": 0.0
+    }
+   ],
+   "floor_materials": [
+    {
+     "name": "flr_asphalt",
+     "texture": "/isaac-sim/extscache/omni.syntheticdata-0.6.13+69cbf6ad.lx64.r.cp311/omni/syntheticdata/tests/data/ds2_materials/drivable_surfaces/general/road/road_base/set1superalbedo.TGA",
+     "texture_scale": [
+      0.5,
+      0.5
+     ],
+     "roughness": 0.9,
+     "metallic": 0.0
+    },
+    {
+     "name": "flr_scratch0",
+     "texture": "/isaac-sim/extscache/omni.replicator.core-1.12.27+107.3.3.lx64.r.cp311/omni/replicator/core/scripts/data/textures/scratch_0_D.png",
+     "texture_scale": [
+      0.5,
+      0.5
+     ],
+     "roughness": 0.6,
+     "metallic": 0.0
+    },
+    {
+     "name": "flr_slate",
+     "color": [
+      0.3,
+      0.32,
+      0.35
+     ],
+     "roughness": 0.85,
+     "metallic": 0.0
+    },
+    {
+     "name": "flr_terracotta",
+     "color": [
+      0.7,
+      0.4,
+      0.28
+     ],
+     "roughness": 0.8,
+     "metallic": 0.0
+    }
+   ],
+   "hdr_maps": [
+    {
+     "name": "hdr_stinson_beach",
+     "file": "/isaac-sim/extscache/omni.usd.libs-1.0.1+69cbf6ad.lx64.r.cp311/bin/usd/hdx/resources/textures/StinsonBeach.hdr",
+     "base_intensity": 3370.0
+    },
+    {
+     "name": "hdr_photo_studio_01",
+     "file": "/isaac-sim/extscache/omni.kit.thumbnails.mdl-1.0.27+107.3.0/data/tests/template/SubUSDs/textures/photo_studio_01_4k.hdr",
+     "base_intensity": 1320.0
+    }
+   ],
+   "distractors": [
+    {
+     "name": "mesh_ycb_cracker_box",
+     "kind": "mesh",
+     "usd": "/isaac-sim/extscache/omni.replicator.core-1.12.27+107.3.3.lx64.r.cp311/omni/replicator/core/tests/data/objects/003_cracker_box.usd",
+     "up": "Z",
+     "extent_m": [
+      0.16404,
+      0.21344,
+      0.0718
+     ],
+     "has_material": true
+    },
+    {
+     "name": "mesh_bunny",
+     "kind": "mesh",
+     "usd": "/isaac-sim/extscache/omni.warp-1.8.2/data/scenes/assets/geometries/bunny.usd",
+     "up": "Y",
+     "extent_m": [
+      0.30782,
+      0.40335,
+      0.40488
+     ],
+     "has_material": false
+    },
+    {
+     "name": "prim_sphere",
+     "kind": "sphere",
+     "radius": 0.035
+    },
+    {
+     "name": "prim_cone",
+     "kind": "cone",
+     "radius": 0.035,
+     "height": 0.08
+    }
+   ],
+   "distractor_colors": [
+    {
+     "name": "col_orange",
+     "color": [
+      1.0,
+      0.45,
+      0.05
+     ]
+    },
+    {
+     "name": "col_white",
+     "color": [
+      0.92,
+      0.92,
+      0.92
+     ]
+    },
+    {
+     "name": "col_pink",
+     "color": [
+      0.95,
+      0.45,
+      0.7
+     ]
+    },
+    {
+     "name": "col_teal",
+     "color": [
+      0.0,
+      0.55,
+      0.55
+     ]
+    }
+   ],
+   "light": {
+    "key_mult_bands": [
+     [
+      0.2,
+      0.35
+     ],
+     [
+      0.7,
+      0.9
+     ],
+     [
+      1.1,
+      1.3
+     ],
+     [
+      1.5,
+      1.7
+     ],
+     [
+      2.0,
+      2.3
+     ]
+    ],
+    "dome_mult_bands": [
+     [
+      0.2,
+      0.35
+     ],
+     [
+      0.7,
+      0.9
+     ],
+     [
+      1.1,
+      1.3
+     ],
+     [
+      1.5,
+      1.7
+     ],
+     [
+      2.0,
+      2.3
+     ]
+    ],
+    "color_temperature_bands_k": [
+     [
+      1900,
+      2200
+     ],
+     [
+      3300,
+      3900
+     ],
+     [
+      4500,
+      5100
+     ],
+     [
+      5700,
+      6300
+     ],
+     [
+      6900,
+      7500
+     ],
+     [
+      8000,
+      8500
+     ]
+    ],
+    "azimuth_bands_deg": [
+     [
+      -90,
+      0
+     ],
+     [
+      90,
+      180
+     ]
+    ],
+    "dome_rotation_deg": [
+     0,
+     360
+    ]
+   },
+   "n_distractors": [
+    3,
+    4
+   ],
+   "note": "L8-D TEST_X (variant randx, OOD-D evaluation only, never training): the TEST pool assets + 2 table / 1 floor colours and wider bands outside every TRAIN_X band; 3-4 distractors (all TEST distractors)"
+  }
+ }
+}
