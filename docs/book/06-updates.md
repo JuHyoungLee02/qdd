@@ -127,3 +127,4 @@
 | 2026-09-26 20:1x | 04 | 세 줄기 R·H·D 조사(ul 148·149): 04 조사 문서 행 | [research/rgb_depth_hybrid_survey](../research/rgb_depth_hybrid_survey_2026-09-27.md), 이 줄과 같은 커밋 |
 | 2026-09-26 20:1x | 01·04 | L8-D / L8-X 생성기 착수(ul 150–152): 01 새 절 'L8-D / L8-X' 행(관문 G-H·과제 관문·리프트, `[결과 전]`), 04 코드·파드 경로 행 | [P/prereg_l8d](../stage3/prereg_l8d.md) 변경 1–4, 이 줄과 같은 커밋 |
 | 2026-09-26 20:21 | 01·02·05 | E-PT 결과(ul 120–122): 01 결과 행(`끝`), 02 새 절 '처2' P127–P130, 05 GPU 행 | [R/pt](../stage3/results/pt.md), 이 줄과 같은 커밋 |
+| 2026-09-26 20:41 | 03·04 | 트랙 H 구현(ul 153): 03 §98 보충 1 추가 행, 04 코드 경로 행 | `docs/research/rgb_depth_hybrid_survey_2026-09-27.md` 4절, 이 줄과 같은 커밋 |

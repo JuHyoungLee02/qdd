@@ -23,7 +23,8 @@ from ..astra_motion.prompts import OBJ_NAME
 from .collect import DEV_SEEDS, TRAIN_SEEDS
 
 IMAGE_FILES = ("img1_head_camera.png", "img2_right_wrist_camera.png")
-IMAGE_LABELS = ("head camera", "right wrist camera")  # = astra_solo.prompts.IMAGE_LABELS
+IMAGE_LABELS = ("head camera", "right wrist camera", "head depth (grey, 0.25-1.60 m, near = bright, black = no depth)")
+# first two = astra_solo.prompts.IMAGE_LABELS; the third = astra_solo.hybrid.DEPTH_LABEL (track H only)
 UP_STEPS = ("above_target", "descend_close")
 TABLE_BOX = ((0.15, 0.80), (-0.70, 0.40))
 AUX_HEAD = ("Image 1 is the robot's head camera. White grid lines lie on the table surface every 5 cm, labelled "

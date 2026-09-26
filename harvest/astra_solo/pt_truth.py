@@ -135,6 +135,34 @@ class PtTruth:
         return Rep(json.dumps({"assessment": ASSESS, "command": c, "reason": f"truth {step}"}))
 
 
+class HTruth:
+    """Truth model through the track-H interface: the H truth answer (hybrid.h_answer of the xyz and pt truth of the
+    state; no verified pixel when H has no depth this call -> xyz only). Wiring check / ceiling, never a result arm."""
+    name = "truth-h"
+
+    def __init__(self, world):
+        self.w, self.ep = world, None
+
+    def ask(self, text, images, meta):
+        from ..astra_motion.truth import Rep
+        from ..teach_l8.labels import plan
+        from .hybrid import h_answer
+        ep, w = self.ep, self.w
+        st = w.status()
+        step, cmd = plan(st, ep.info, w.table_z, w.w_open)
+        if cmd is None:
+            return Rep(json.dumps({"assessment": ASSESS, "command": {"mode": "stop"}, "reason": "truth"}))
+        xyz = json.dumps({"assessment": ASSESS, "command": cmd, "reason": f"truth {step}"})
+        pt = None
+        if ep.h_used_depth is not None:
+            c, _ = pt_command(step, cmd, st, ep.info, ep.head, ep.h_used_depth, w.table_z)
+            if c is not None:
+                pt = json.dumps({"assessment": ASSESS, "command": c, "reason": f"truth {step}"})
+        elif step in STEP_MAP and STEP_MAP[step][0] is None:  # lift needs no depth
+            pt = json.dumps({"assessment": ASSESS, "command": {"mode": "point", "height": "lift", "gripper": "keep"}})
+        return Rep(h_answer(xyz, pt))
+
+
 class NdTruth:
     """Truth model through the no-depth interfaces (nd-xyz / nd-est: the xyz truth; nd-pt: nd.nd_pt_command) with the
     simulator estimates block -- the interface ceiling and the wiring check; never a result arm."""

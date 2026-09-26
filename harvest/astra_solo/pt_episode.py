@@ -19,6 +19,7 @@ import time
 import numpy as np
 
 from ..astra_motion.harness import Monitor
+from . import hybrid as HY
 from . import nd as ND
 from . import nd_prompts as NP
 from . import prompts as V2P
@@ -30,19 +31,24 @@ from .executor import MinJerkExec
 from .overlay import head_overlay, png_bytes
 
 HOLD_GAP_M = 0.005
-IFACES = {"pt": PT.VERSION, "nd-xyz": "nd-xyz@v1", "nd-est": "nd-est@v1", "nd-pt": "nd-pt@v1"}
+IFACES = {"pt": PT.VERSION, "nd-xyz": "nd-xyz@v1", "nd-est": "nd-est@v1", "nd-pt": "nd-pt@v1", "h": HY.VERSION}
+H_DEPTH = ("on", "noisy", "off")  # track H evaluation modes: sim depth / zed_mini stereo noise / no depth
 
 
 class PtEpisode(Episode):
     def __init__(self, world, model, seed, task, out_dir=None, allow_eef=False, save_v2=False, save_depth=True,
-                 coords="n1000", iface="pt", save_nd=False, **kw):
+                 coords="n1000", iface="pt", save_nd=False, h_depth="on", **kw):
         super().__init__(world, model, seed, task, out_dir, **kw)
         if iface not in IFACES:
             raise ValueError(iface)
         self.allow_eef, self.save_v2, self.save_depth, self.coords = allow_eef, save_v2, save_depth, coords
         self.iface, self.save_nd = iface, save_nd
         self.version = IFACES[iface]
-        self.prompt_id = PT.PROMPT_ID if iface == "pt" else NP.PROMPT_IDS[self.version]
+        if h_depth not in H_DEPTH:
+            raise ValueError(h_depth)
+        self.h_depth, self.h_branches, self.h_used_depth = h_depth, [], None
+        self.prompt_id = PT.PROMPT_ID if iface == "pt" else (HY.PROMPT_ID if iface == "h" else
+                                                             NP.PROMPT_IDS[self.version])
         self.grip_offset = None
         self.plane = None
         self.est_table = None
@@ -52,6 +58,8 @@ class PtEpisode(Episode):
 
     # ------------------------------------------------------------------ model
     def _validate(self, text):
+        if self.iface == "h":
+            return HY.validate(text)
         if self.iface == "pt":
             return PS.validate(text, allow_eef=self.allow_eef)
         return ND.validate(text, self.version, allow_eef=self.allow_eef)
@@ -133,7 +141,33 @@ class PtEpisode(Episode):
         return dict(res or {}, goal=[round(float(v), 4) for v in goal], holding=hold, notes=notes,
                     grip_offset=None if self.grip_offset is None else round(self.grip_offset, 4))
 
+    def _h_resolver(self, st):
+        """PT converter bound to the depth H sees this call (None when H has no depth)."""
+        if self.h_used_depth is None:
+            return None
+
+        def res(cmd):
+            hold = self.holding(st)
+            r = None
+            plane = self.plane if self.plane is not None else self.w.table_z
+            if cmd["height"] != "lift":
+                r = RS.resolve_point(self.head, self.h_used_depth, self.w.table_z, cmd["point_2d"], tcp=st["tcp"])
+                if r["kind"] == "none":
+                    return None, r
+                plane = r["plane"]
+            g, notes = RS.target_of(cmd["height"], r, plane, st["tcp"], hold, self.grip_offset)
+            return g, dict(r or {}, notes=notes)
+        return res
+
     def _execute(self, cmd) -> list:
+        if cmd["mode"] == "move":
+            st = self.w.status()
+            goal, branch, info = HY.select(cmd, self._h_resolver(st))
+            self.h_branches.append(dict(branch=branch, fallback=info.get("fallback")))
+            self.last_res = dict(info, branch=branch, goal=None if goal is None else [round(v, 4) for v in goal])
+            if goal is None:
+                return [{"t": round(st["t"], 3), "event": "point_unresolved"}]
+            return self.ex.go_to(goal, cmd["gripper"], st["t"])
         if cmd["mode"] != "point":
             self.last_res = None
             return super()._execute(cmd)
@@ -144,7 +178,7 @@ class PtEpisode(Episode):
         return self.ex.go_to(self.last_res["goal"], cmd["gripper"], st["t"])
 
     def _score(self, cmd, truth, phase):
-        if cmd and cmd["mode"] == "point" and phase != "after" and self.last_res and self.last_res.get("goal"):
+        if cmd and cmd["mode"] in ("point", "move") and phase != "after" and self.last_res and self.last_res.get("goal"):
             goal = np.asarray(self.last_res["goal"], float)
             ref = np.asarray(truth["tgt_xyz"] if phase == "approach" else truth["place_xyz"], float)
             return {"xy_err_mm": round(float(np.linalg.norm(goal[:2] - ref[:2])) * 1e3, 1),
@@ -186,7 +220,23 @@ class PtEpisode(Episode):
         self.nd_texts = nd if self.save_nd else {}
         if self.iface == "pt":
             return pt_text, ovl_ims
+        if self.iface == "h":
+            self.h_used_depth = self._h_depth(obs)
+            ims = ring_ims + ([(HY.DEPTH_LABEL, HY.depth_png(self.h_used_depth))] if self.h_used_depth is not None
+                              else [])
+            return HY.request(statics["nd-xyz@v1"], nowt + nd_note, self.h_used_depth is not None), ims
         return nd[self.version], ring_ims
+
+    def _h_depth(self, obs):
+        """The head depth H receives: sim depth (on), zed_mini stereo noise of it (noisy), or none (off)."""
+        if self.h_depth == "off" or self.depth is None:
+            return None
+        if self.h_depth == "on":
+            return self.depth
+        from ..teach_l8d.depth_noise import stereo_noise
+        d, _ = stereo_noise(self.depth, obs.rgb["head"], float(self.head.fx), "zed_mini",
+                            seed=[int(self.seed), len(self.calls)])
+        return d
 
     # ------------------------------------------------------------------ episode (= Episode.run with the E-PT request)
     def run(self) -> dict:
@@ -209,7 +259,8 @@ class PtEpisode(Episode):
                 break
             obs = w.observe(depth=True)
             self.depth = (obs.depth or {}).get("head")
-            if self.depth is None and (self.iface == "pt" or self.save_nd or self.save_v2):
+            if self.depth is None and (self.iface == "pt" or self.save_nd or self.save_v2 or
+                                       (self.iface == "h" and self.h_depth != "off")):
                 raise RuntimeError("this E-PT episode needs the head depth (world built with depth=True)")
             self.cams, self.head = dict(obs.cams), obs.cams["head"]
             if self.depth is not None:
@@ -248,7 +299,7 @@ class PtEpisode(Episode):
                 res = "the point does not lead to a target: nothing moved"
             res = res or "done"
             tcp = st["tcp"]
-            desc = PT.describe(cmd, self.last_res)
+            desc = PT.describe(cmd, self.last_res) if cmd["mode"] != "move" else HY.describe(cmd, self.last_res)
             if self.iface.startswith("nd") and self.last_res and self.last_res.get("goal") is not None:
                 g = self.last_res["goal"]  # no-depth arms: no measured object top in the history
                 desc = (f"point at ({cmd['point_2d'][0]:.0f}, {cmd['point_2d'][1]:.0f}) in image 1 with top_z "
@@ -269,11 +320,17 @@ class PtEpisode(Episode):
     def _save(self, res):
         res["prompt_id"] = self.prompt_id
         res["prompt_version"] = self.version + ("+px" if self.coords == "px" else "")
-        modes = PS.MODES if self.iface in ("pt", "nd-pt") else ("eef", "edit", "gripper", "stop")
+        modes = PS.MODES if self.iface in ("pt", "nd-pt") else (HY.MODES if self.iface == "h" else
+                                                               ("eef", "edit", "gripper", "stop"))
         res["modes"] = {k: sum(1 for c in self.calls if ((c.get("parsed") or {}).get("command") or {}).get("mode") == k)
                         for k in modes + (("eef",) if self.allow_eef and "eef" not in modes else ())}
         res["n_point_unresolved"] = sum(e["event"] == "point_unresolved" for e in self.events)
         res["interface"] = self.iface
+        if self.iface == "h":
+            n = len(self.h_branches)
+            res["h_depth"] = self.h_depth
+            res["h_branches"] = {b: sum(x["branch"] == b for x in self.h_branches) for b in ("pt", "xyz", "none")}
+            res["fallback_rate"] = round(sum(x["branch"] != "pt" for x in self.h_branches) / n, 4) if n else None
         super()._save(res)
 
 

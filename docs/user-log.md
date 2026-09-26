@@ -648,3 +648,6 @@
 152. 리프트도 쓴다 (20:0x UTC 경, 2026-09-26 = 09-27 05:0x KST, 통제자 경유)
     - "리프트도 쓰자"
     - 반영: prereg_l8d 변경 4 — 고정 리프트 0.74–0.98 m에 더해 리프트(관절 [−0.50, 0.00])로 약 0.45–1.08 m. 리프트 값은 로봇 자기 정보로 요청에 넣는다(§97, 장면 값이 아님). OOD-H-lift(0.45·0.59·1.08 m) 새 보호 분할을 학습 전에 동결(`docs/stage3/l8d_ood_sets_lift.json`), 기존 동결 세트는 그대로. 고정 리프트 편은 유지하고 최종 혼합에 둘 다 넣는다.
+153. 하이브리드 H 설계는 조사 추천안으로 (20:4x UTC 경, 2026-09-26 = 09-27 05:4x KST, 통제자 경유)
+    - "우리 H 설계 (추천)고"
+    - 반영([사용자 결정] + Claude 구현): 트랙 H를 `docs/research/rgb_depth_hybrid_survey_2026-09-27.md` 4절 추천안대로 구현 — 깊이는 두 번째 영상(고정 0.25–1.60 m 회색조, 가까울수록 밝게, 무효 = 검정, 1/2 해상도) + 요청 줄 `depth: sensor|none`; 답 한 번에 PT 점 + 높이 의도와 xyz를 함께; 실행 선택기는 깊이가 유효하고 점이 풀리면 PT 변환기(D 코드), 아니면 모델 xyz(R), 가지·대체율 기록; 학습은 호출마다 깊이 50 % 빼기 + 남긴 것의 절반 zed_mini 잡음(행 id로 결정); 평가 방식 H-on·H-noisy·H-off(대조 D·D-noisy·R). 코드 `harvest/astra_solo/hybrid.py`, `pt_episode.py` iface `h`(h_depth on/noisy/off), `pt_truth.HTruth`, `harvest/teach_pt/hybrid_data.py`, 채점 `metrics` 팔 `h`; 시험 `tests/astra_solo/test_hybrid.py`·`tests/test_teach_pt_h.py`. 실행(E-DIST8)은 L8-X 동결 뒤 사전 등록 후.

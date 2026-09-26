@@ -30,6 +30,9 @@ def validate(reply: str, arm: str):
     if arm == "pt":
         from ..astra_solo import pt_schema as PS
         return PS.validate(reply or "")
+    if arm == "h":
+        from ..astra_solo import hybrid as HY
+        return HY.validate(reply or "")
     from ..astra_solo import nd as ND
     return ND.validate(reply or "", f"{arm}@v1")
 
@@ -43,6 +46,17 @@ def _cam_depth(row):
 
 def goal_of(row: dict, parsed: dict, arm: str, cache: dict | None = None):
     cmd = parsed["command"]
+    if cmd["mode"] == "move":  # track H: the runtime selector on this row's depth (none when h_mode is off)
+        from ..astra_solo import hybrid as HY
+        resolver = None
+        if row.get("h_mode", "off") != "off" and row.get("depth_path"):
+            def resolver(c):
+                g = goal_of(row, {"command": dict(c, mode="point")}, "pt")
+                return (None if g is None else g.tolist()), {}
+        g, branch, _ = HY.select(cmd, resolver)
+        if cache is not None:
+            cache["h_branch"] = branch
+        return None if g is None else np.asarray(g, float)
     if cmd["mode"] in ("eef", "edit"):
         g = LM.goal_of(cmd, row["ex_target"], row["gt"]["tcp"])
         return None if g is None else np.asarray(g, float)
@@ -91,7 +105,10 @@ def score(row: dict, reply: str, arm: str) -> dict:
                                      * 1e3, 1)
         out["est_tgt_h_mm"] = round(abs(est["target_height_m"] - est_l["target_height_m"]) * 1e3, 1)
     try:
-        g = goal_of(row, parsed, arm)
+        cache = {}
+        g = goal_of(row, parsed, arm, cache)
+        if "h_branch" in cache:
+            out["h_branch"] = cache["h_branch"]
     except Exception as e:  # noqa: BLE001 - a scorer failure is recorded, never silently a miss
         out["goal_error"] = f"{type(e).__name__}: {e}"[:200]
         g = None
@@ -123,6 +140,10 @@ def summarize(sc: list) -> dict:
                  "n_grasp": len(gz), "approach_3d_median_mm": _q(a3, 50), "approach_3d_p90_mm": _q(a3, 90),
                  "point_px_median": _q(px, 50), "point_px_p90": _q(px, 90), "n_point": len(px),
                  "n_goal_error": sum(1 for s in sc if s.get("goal_error"))})
+    hb = [s["h_branch"] for s in sc if s.get("h_branch")]
+    if hb:  # track H: how often the runtime selector did not use the PT converter
+        base["h_fallback_rate"] = round(sum(b != "pt" for b in hb) / len(hb), 4)
+        base["h_branches"] = {b: hb.count(b) for b in ("pt", "xyz", "none")}
     for k in ("est_table_mm", "est_tgt_xy_mm", "est_tgt_h_mm"):
         v = [s[k] for s in sc if s.get(k) is not None]
         base[k + "_median"] = _q(v, 50)

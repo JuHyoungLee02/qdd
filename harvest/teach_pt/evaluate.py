@@ -87,7 +87,7 @@ def summarize(rows: list, replies: dict, arm: str, coords: str, out_dir: str | N
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", required=True)
-    ap.add_argument("--arm", required=True, choices=["xyz", "pt", "nd-xyz", "nd-est", "nd-pt"])
+    ap.add_argument("--arm", required=True, choices=["xyz", "pt", "nd-xyz", "nd-est", "nd-pt", "h"])
     ap.add_argument("--url", required=True)
     ap.add_argument("--name", required=True)
     ap.add_argument("--out", required=True)
