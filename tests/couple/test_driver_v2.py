@@ -49,8 +49,10 @@ def test_v2_request_prompt_and_id():
     assert r0["schema"] == "astra-couple@v2" and r0["since_last_request"]["previous_request"] is None
     assert r0["since_last_request"]["vla_phases"] == ["approach"]
     prev = r1["since_last_request"]["previous_request"]
-    assert prev == {"age_s": 3.0, "command": "continue", "segment": {"now": "approach", "do": "none",
-                                                                     "next": "descend"}}
+    assert prev == {"age_s": 3.0, "t_state": 0.0, "command": "continue",  # Task 19 adds t_state / edit / reconcile
+                    "segment": {"now": "approach", "do": "none", "next": "descend"}, "edit": None,
+                    "reconcile": {"verdict": "valid", "reason": "still", "vla_motion_m": [0.0, 0.0, 0.0], "cos": None,
+                                  "frac_done": None, "age_s": 3.0, "action": "none"}}
     assert r1["since_last_request"]["vla_tip_moved_m"] == [0.0, 0.0, 0.0]
     ans = [r for r in drv.log if r["type"] == "answer"]
     assert {r["prompt_id"] for r in ans} == {V2.PROMPT_ID["F0"]} == {"83fa03a5de19"}

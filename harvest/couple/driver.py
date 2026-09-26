@@ -30,7 +30,18 @@ carries since_last_request (canon §91: previous answered command + segment plan
 its state time); answers carry a segment plan, agreed in the layer (two answers, a = 0 freeze with the authority at
 delivery) and exposed as the VLA segment line by segment_intent() (intent.PLAN_TO_LINE for now, do / next from
 intent.SEGMENT_PLAN -- Astra's raw do / next are logged only); an edit with valid_until segment_end is dropped when
-the policy phase changes (the plan names map 1:1 to the phases)."""
+the policy phase changes (the plan names map 1:1 to the phases).
+
+Plan Task 19 (canon §91, controller rulings N2 / R19): predicted_ee_at_arrival = tip now + the executing chunk
+displacement (committed_arrow) + remaining correction (predict_mode "chunk"; the old 0.5 s velocity x latency
+extrapolation, book 02 P113, stays selectable as "extrapolate"), labelled in the request. Every valid delivered
+answer is reconciled BEFORE the gate (reconcile.classify: done / valid / changed / conflict from the state at its
+t_state vs now and the VLA's own motion since = tip displacement minus the offset applied meanwhile; the per-step
+execution trace, gripper events, fast-check contradictions and the prediction error are logged with it); a valid
+verdict lifts the gate's stale drop (the stale rule is subsumed), changed / conflict drop / hold the command, done
+shrinks or skips it; the offset's authority a still multiplies (a = 0 -> nothing applied, verdict logged). The
+verdict and the raw command ride the next request (since_last_request.previous_request). reconcile_apply False =
+verdicts logged only."""
 from __future__ import annotations
 
 from collections import Counter
@@ -49,6 +60,7 @@ from .layer import AstraLayer
 from .offset import OffsetApplier
 from .overlay import CamModel, EETrace, draw_axisguide, draw_overlay, drawn_elements, polylines
 from .prompt import PROMPT_ID, build_input
+from .reconcile import classify, grip_state
 from .schema import SCHEMA_IDS, SchemaError, parse_answer
 from .stream import SerialStream
 from .twolayer import NoProgress, TwoLayerGate, VlaFastCheck, adherence_cos, committed_vector, follows
@@ -120,12 +132,24 @@ def committed_arrow(chunk_vec, committed: dict, phase: str, backend: str | None 
 
 
 def predict_ee(trace: list, horizon: float, cap: float, extra) -> np.ndarray:
+    """predict_mode "extrapolate" (the pre-Task-19 predicted state): the last 0.5 s tip velocity x the latency
+    horizon, capped, + the remaining correction. Not the default: over 9.3 s it jumped 6-9 cm near stops and segment
+    changes and caused needless Astra edits (E-ACC stage 2, book 02 P113)."""
     (t0, p0), (t1, p1) = trace[0], trace[-1]
     d = (p1 - p0) / (t1 - t0) * horizon if t1 > t0 else np.zeros(3)
     n = float(np.linalg.norm(d))
     if n > cap:
         d = d * (cap / n)
     return p1 + d + np.asarray(extra, float)
+
+
+def predict_chunk(tip, chunk_disp, extra) -> np.ndarray:
+    """predict_mode "chunk" (default, controller ruling R19; E-ACC B' f54cc88: reference = current tip + committed
+    arrow removed the false edits, on-plan 5/5): tip now + the currently executing chunk displacement (the committed
+    arrow: fused = the runtime's chunk vector, modular = the decision centre capped by the skill's 0.5 s travel, None
+    = no motion) + the remaining correction; no extrapolation over the latency horizon."""
+    d = np.zeros(3) if chunk_disp is None else np.asarray(chunk_disp, float)
+    return np.asarray(tip, float) + d + np.asarray(extra, float)
 
 
 def gripper_word(phase: str, t1: dict) -> str:
@@ -161,6 +185,11 @@ class CoupleDriver:
         self.a_now = 1.0  # authority a of the last tick (the plan freeze reads it at delivery)
         self._phases, self._t0, self._tip0, self._tip_at = [], None, None, {}
         self._vu_phase = None  # the phase an applied valid_until=segment_end edit belongs to
+        # canon §91 reconciliation (plan Task 19): the state at each request's t_state, the per-step execution trace
+        # (t, executed chunk given), gripper events, fast-check contradictions, the last tick's tip / applied offset
+        self._sent_state, self._exec, self._grip_ev, self._contra_t = {}, [], [], []
+        self._grip_last, self._tip_now, self._applied_now = None, None, np.zeros(3)
+        self._rc = {}  # request_no -> {"edit": raw edit json, "reconcile": verdict summary} for the next request
 
     def prompt_id(self, axisguide: bool | None = None) -> str:
         """The logged prompt id: v1 PROMPT_ID[mode]; v2 prompt_v2.variant_id (+ax when the axis guide is in the
@@ -198,12 +227,20 @@ class CoupleDriver:
         ph = [q for t, q in self._phases if t > t0 + 1e-9]
         before = [q for t, q in self._phases if t <= t0 + 1e-9]
         phases = ([before[-1]] if before else []) + ph
-        out = {"vla_tip_moved_m": _r(np.asarray(v.tcp_p, float) - tip0), "vla_phases": phases}
+        out = {"vla_tip_moved_m": _r(np.asarray(v.tcp_p, float) - tip0), "vla_phases": phases,
+               # plan Task 19: the execution summary since t0 (decision steps, steps with an executed chunk, gripper
+               # changes) -- request data inside the registered since_last_request block
+               "vla_steps": sum(1 for t, _ in self._exec if t >= t0 - 1e-9),
+               "vla_chunks": sum(1 for t, c in self._exec if c and t >= t0 - 1e-9),
+               "vla_gripper_events": [{"t": round(t, 3), "gripper": w} for t, w in self._grip_ev if t > t0 + 1e-9]}
         if last is None:
             out.update(previous_request=None, since_episode_start_s=round(v.now - self._t0, 1))
         else:
-            out["previous_request"] = {"age_s": round(v.now - last.t_state, 1), "command": last.command,
-                                       "segment": last.segment}
+            rc = self._rc.get(last.request_no, {})
+            out["previous_request"] = {"age_s": round(v.now - last.t_state, 1), "t_state": round(last.t_state, 3),
+                                       "command": rc.get("command", last.command), "segment": last.segment,
+                                       "edit": rc.get("edit"),
+                                       "reconcile": rc.get("reconcile")}
         return out
 
     def key(self, no: int) -> str:
@@ -241,6 +278,12 @@ class CoupleDriver:
         self.trace.add(v.now, v.tcp_p)
         if self._t0 is None:
             self._t0, self._tip0 = v.now, np.asarray(v.tcp_p, float).copy()
+        # the tip of this tick reflects the offset applied BEFORE this tick's step (paired for the VLA-own motion)
+        self._tip_now, self._applied_now = np.asarray(v.tcp_p, float).copy(), self.offset.applied[:3].copy()
+        gw = gripper_word(v.phase, v.t1)
+        if self._grip_last is not None and gw != self._grip_last:
+            self._grip_ev.append((v.now, gw))
+        self._grip_last = gw
         if not self._phases or self._phases[-1][1] != v.phase:
             self._phases.append((v.now, v.phase))
             if self._vu_phase is not None and v.phase != self._vu_phase:  # valid_until segment_end (v2)
@@ -285,9 +328,19 @@ class CoupleDriver:
             return next_motion_vec(v.committed), None
         return committed_arrow(self.chunk_vec_last, v.committed, v.phase, self.backend)
 
+    def predict(self, v: TickView):
+        """(predicted tip at arrival, method label) by CoupleParams.predict_mode (plan Task 19, ruling R19)."""
+        rem = self.offset.rem[:3]
+        if self.p.predict_mode == "extrapolate":
+            return (predict_ee(self.trace.window(v.now, 0.5), self.stream.L_hat, self.p.predict_cap_m, rem),
+                    "extrapolate: 0.5 s tip velocity x horizon (capped) + remaining correction")
+        vec, src = committed_arrow(self.chunk_vec_last, v.committed, v.phase, self.backend)
+        return (predict_chunk(v.tcp_p, vec, rem),
+                f"chunk: tip now + executing chunk displacement ({src}) + remaining correction, no extrapolation")
+
     def request(self, v: TickView, no: int, events: list, cams: list) -> dict:
         nxt, src = self.arrow(v)
-        pred = predict_ee(self.trace.window(v.now, 0.5), self.stream.L_hat, self.p.predict_cap_m, self.offset.rem[:3])
+        pred, method = self.predict(v)
         req = {"schema": SCHEMA_IDS[self.p.prompt_version], "mode": self.p.request_mode, "request_no": no,
                "t_state": round(v.now, 3),
                "task": self.task, "active_arm": self.p.active_arm, "cameras": list(cams), "tip_now_m": _r(v.tcp_p),
@@ -295,7 +348,7 @@ class CoupleDriver:
                            "next_motion_m": None if nxt is None else _r(nxt), "motion": v.motion},
                "predicted_ee_at_arrival": {"pos_m": _r(pred), "horizon_s": round(self.stream.L_hat, 2),
                                            "gripper": gripper_word(v.phase, v.t1),
-                                           "method": "0.5 s tip velocity x horizon (capped) + remaining correction"},
+                                           "method": method},
                "events": list(events)}
         if self.p.request_mode == "F1":
             req["flow_state"] = {"last_command": self.layer.flow_last(), "task_progress": self.layer.progress,
@@ -316,6 +369,8 @@ class CoupleDriver:
         tip, off = np.asarray(v.tcp_p, float).copy(), self.offset.rem[:3].copy()
         nxt = self.arrow(v)[0]
         self._tip_at[no] = tip
+        self._sent_state[no] = {"tip": tip, "applied": self._applied_now.copy(), "grip": grip_state(v.t1),
+                                "phase": v.phase, "pred": np.asarray(req["predicted_ee_at_arrival"]["pos_m"], float)}
         self.ledger.reserve(self.key(no), est)
         astra, p, ep = self.astra, self.p, self.episode
         axis, horizon = self.v2 and p.axis_guide, self.stream.L_hat
@@ -387,7 +442,11 @@ class CoupleDriver:
         if not ok:
             self.log.append(row)
             return
-        a = gate_answer(a, self.p, t1)
+        rc = self._reconcile(a, no, now, t1)
+        on = self.p.reconcile_apply  # False: verdict logged only, the pre-Task-19 path (gate incl. stale drop)
+        a = gate_answer(a, self.p, t1, stale_ok=on and rc["verdict"] == "valid")
+        rc["action"] = self._apply_verdict(a, rc) if on else "log_only"
+        self._rc[no]["reconcile"]["action"] = rc["action"]
         res = self.layer.on_answer(a, authority=self.a_now)
         if res.action in ("apply", "confirm"):
             self.offset.command(res.key, res.edit.vec6(), res.weight, now, self.stream.L_hat)
@@ -409,6 +468,62 @@ class CoupleDriver:
             row.update(segment=a.segment, valid_until=a.valid_until, plan=res.plan, authority=round(self.a_now, 4))
         self.log.append(row)
 
+    def _reconcile(self, a, no: int, now: float, t1: dict) -> dict:
+        """canon §91 arrival reconciliation of one valid delivered answer (reconcile.classify, before the gate): the
+        state at its t_state (saved at send) vs now, and its raw command vs the VLA's own motion since t_state (tip
+        displacement minus the coupling offset applied in that time). Logs one `reconcile` row (E-AT label candidate
+        flag on done / conflict, canon §88: joined to the episode outcome later by episode + no) and keeps the
+        verdict for the next request's since_last_request."""
+        st = self._sent_state.pop(no, None) or {"tip": self._tip_now, "applied": self._applied_now,
+                                                 "grip": grip_state(t1), "phase": self._phases[-1][1], "pred": None}
+        tip_now = self._tip_now if self._tip_now is not None else st["tip"]
+        tip_d = tip_now - st["tip"]
+        off_d = self._applied_now - st["applied"]
+        vla = tip_d - off_d
+        e = a.edit if a.command == "edit" else None
+        phase_now, grip_now = self._phases[-1][1], grip_state(t1)
+        c = classify(command=a.command, edit_dp=None if e is None else e.dp, edit_gripper=None if e is None
+                     else e.gripper, plan_do=(a.segment or {}).get("do"), vla_motion=vla, phase0=st["phase"],
+                     phase1=phase_now, grip0=st["grip"], grip1=grip_now, age=a.age, p=self.p)
+        t0 = a.t_state - 1e-9
+        row = {"type": "reconcile", "no": no, "episode": self.episode, "t": round(now, 3), **c,
+               "age_s": round(a.age, 3), "command": a.command, "edit_dp": None if e is None else _r(e.dp),
+               "vla_motion_m": _r(vla), "tip_moved_m": _r(tip_d), "offset_applied_m": _r(off_d),
+               "seg_from": st["phase"], "seg_to": phase_now, "grip_from": st["grip"], "grip_to": grip_now,
+               "steps": sum(1 for t, _ in self._exec if t >= t0),
+               "chunks": sum(1 for t, ch in self._exec if ch and t >= t0),
+               "gripper_events": [{"t": round(t, 3), "gripper": w} for t, w in self._grip_ev if t > t0 + 2e-9],
+               "fast_contra": sum(1 for t in self._contra_t if t >= t0),
+               "pred_err_m": None if st["pred"] is None else _r1(np.linalg.norm(tip_now - st["pred"])),
+               "a": round(self.a_now, 4), "effective": round(c["factor"] * self.a_now, 6),
+               "eat_candidate": c["verdict"] in ("done", "conflict"), "outcome": None}
+        self.log.append(row)
+        raw = None if e is None else {**e.to_json(), "valid_until": a.valid_until}
+        self._rc[no] = {"command": a.command, "edit": raw,
+                        "reconcile": {"verdict": c["verdict"], "reason": c["reason"],
+                                      "vla_motion_m": row["vla_motion_m"], "cos": c["cos"],
+                                      "frac_done": c["frac_done"], "age_s": round(a.age, 1)}}
+        return row
+
+    @staticmethod
+    def _apply_verdict(a, rc: dict) -> str:
+        """The verdict's effect on the GATED answer (what the layer then sees): changed -> an edit / stop becomes
+        continue (assessment kept); conflict -> an edit is held (continue; the evidence rides the next request);
+        done -> the edit translation x factor, skipped (continue) at factor 0; valid -> unchanged."""
+        v = rc["verdict"]
+        if a.command not in ("edit", "stop"):
+            return "none"
+        if v == "changed" or (v == "conflict" and a.command == "edit"):
+            a.command, a.edit = "continue", None
+            return "dropped" if v == "changed" else "held"
+        if v == "done" and a.command == "edit":
+            if rc["factor"] <= 0.0:
+                a.command, a.edit = "continue", None
+                return "skipped"
+            a.edit.dp = np.asarray(a.edit.dp, float) * rc["factor"]
+            return "shrunk"
+        return "unchanged"
+
     # ------------------------------------------------------------------ per decision step / gate
     def on_step(self, committed: dict, outcome: str, now: float, chunk_vec=None) -> None:
         """chunk_vec: the executed motion of the current expert chunk (fused backend, a 3-vector); None on the
@@ -416,6 +531,7 @@ class CoupleDriver:
         decision token alone). An adherence row is logged whenever the offset is active or chunk_vec is given, even
         when the fast check itself is skipped (offset inactive)."""
         self.chunk_vec_last = None if chunk_vec is None else np.asarray(chunk_vec, float).copy()  # v2 arrow
+        self._exec.append((now, chunk_vec is not None))  # the §91 execution trace (plan Task 19)
         dec_vec = committed_vector(committed)
         vla_vec = chunk_vec if chunk_vec is not None else dec_vec
         src = "chunk" if chunk_vec is not None else "decision"
@@ -425,6 +541,7 @@ class CoupleDriver:
         else:
             if self.fast.on_step(vla_vec, self.offset.direction()):
                 self.offset.scale_remaining(self.p.contra_factor, now, "vla_contra")
+                self._contra_t.append(now)
                 self.flag("offset_contradicted", now)
             if outcome in ("DEVIATE", "CONTRADICT"):
                 self.flag("offset_vs_b", now)
@@ -456,7 +573,8 @@ class CoupleDriver:
             xs = [r[field] for r in rows if r[field] is not None]
             return {"n": len(xs), "follow_rate": round(sum(xs) / len(xs), 4) if xs else None}
         adh = [r for r in self.log if r["type"] == "adherence"]
-        T = sum(self.auth_s.values())
+        rec = [r for r in self.log if r["type"] == "reconcile"]
+        T =sum(self.auth_s.values())
         auth = {"share": {k: round(v / T, 4) if T > 0 else None for k, v in self.auth_s.items()},
                 "seconds": round(T, 3)}
         return {"calls_sent": self.stream.n_sent, "answers": len(good),
@@ -477,6 +595,11 @@ class CoupleDriver:
                 "adherence": {"chunk_vs_offset": rate(adh, "follows_offset"),
                              "chunk_vs_decision": rate(adh, "follows_decision")},
                 "authority": auth,
+                "reconcile": {"counts": dict(Counter(r["verdict"] for r in rec)),
+                              "reasons": dict(Counter(r["reason"] for r in rec)),
+                              "actions": dict(Counter(r.get("action") for r in rec)),
+                              "eat_candidates": sum(1 for r in rec if r["eat_candidate"]),
+                              "outcome_join": "episode+no"},
                 "params": self.p.to_json(), "ledger": self.ledger.state()}
 
     def _unanswered(self) -> dict:

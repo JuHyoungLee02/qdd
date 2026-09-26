@@ -9,6 +9,7 @@ from dataclasses import asdict, dataclass
 
 REQUEST_MODES = ("F0", "F1")
 PROMPT_VERSIONS = ("v1", "v2")
+PREDICT_MODES = ("chunk", "extrapolate")
 CAMERAS = ("cam_head", "cam_wrist_left", "cam_wrist_right")
 
 
@@ -62,7 +63,18 @@ class CoupleParams:
     astra_fresh_s: float = 3.0
     mismatch_s: float = 1.0
     irrev_need_aligned: bool = False
-    predict_cap_m: float = 0.10
+    predict_cap_m: float = 0.10  # predict_mode "extrapolate" only
+    # plan Task 19 (controller ruling R19; E-ACC stage 2 / B', book 02 P113): predicted_ee_at_arrival = tip now + the
+    # executing chunk displacement (committed arrow) + remaining correction, no extrapolation; "extrapolate" = the
+    # old 0.5 s velocity x latency (capped predict_cap_m), kept selectable
+    predict_mode: str = "chunk"
+    # canon §91 arrival reconciliation (plan Task 19, controller ruling N2; harvest/couple/reconcile.py)
+    recon_done_frac: float = 0.8  # done: the VLA already moved >= this fraction of the edit translation (cos >
+    # adhere_cos) -- brief value (ruling N2)
+    reconcile_apply: bool = True  # False = verdicts logged only (the pre-Task-19 path, gate stale drop kept): the
+    # with / without arm for canon §92 P7 ("네 판정이 ... 도움이 된다") and for offset-mechanics tests
+    recon_still_m: float = 0.01  # valid-still: VLA motion below this (same phase and gripper); conflict needs at
+    # least this much travel against the edit -- brief value (ruling N2), = NoProgress's 1 cm floor
     # cameras, overlay (spec §12-§13)
     cameras: tuple = CAMERAS
     active_arm: str = "right"
@@ -84,6 +96,10 @@ class CoupleParams:
             raise ValueError(f"single_weight {self.single_weight}: in [0, 1]")
         if self.phase_pause_s is not None and not self.phase_pause_s > 0:
             raise ValueError("phase_pause_s: None (off) or > 0")
+        if self.predict_mode not in PREDICT_MODES:
+            raise ValueError(f"predict_mode {self.predict_mode!r}: one of {PREDICT_MODES}")
+        if not 0.0 < self.recon_done_frac <= 1.0 or not self.recon_still_m > 0.0:
+            raise ValueError("recon_done_frac in (0, 1], recon_still_m > 0")
         if self.active_arm not in ("right", "left"):
             raise ValueError(f"active_arm {self.active_arm!r}")
         if not set(self.cameras) <= set(CAMERAS):

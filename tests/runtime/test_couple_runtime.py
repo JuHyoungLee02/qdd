@@ -13,7 +13,12 @@ from harvest.runtime.models import MockFusedModel, MockSelector, ModelResult
 from .fakeworld import FakeWorld
 
 FRAME = np.full((12, 16, 3), 60, np.uint8)
-NO_FAST = {"contra_steps": 10 ** 6}  # the VLA fast check is Task 7's test; here the offset must run in full
+# the VLA fast check is Task 7's test; here the offset must run in full. Plan Task 19: the same for the canon §91
+# reconciliation -- it drops / holds edits whose world moved on (in the modular FakeWorld the first edit, judged in
+# approach, arrives in descend -> changed; a later one meets the skill heading back to its absolute target ->
+# conflict), so the offset-mechanics tests run its log-only arm (tests/couple/test_reconcile.py covers the verdicts)
+NO_RECON = {"reconcile_apply": False}
+NO_FAST = {"contra_steps": 10 ** 6, **NO_RECON}
 
 
 def _run(backend, astra, seconds, params=None, model=None, acts=None, **cfg_kw):
@@ -209,7 +214,8 @@ def test_sidecar_couple_rows_include_offset_and_gate_logs():
     """Dry-run B3: OffsetApplier.log (command / reset / scale / drop) and TwoLayerGate.log (allow / deny changes)."""
     from harvest.runtime.ir_policy import _couple_rows
     ed = answer("edit", execution="failed", dp=(0.0, 0.0, 0.03))
-    rt, _, _ = _run("modular", ScriptedCoupleAstra([ed, ed, answer("continue")], latency_s=3.0), 12.0)
+    rt, _, _ = _run("modular", ScriptedCoupleAstra([ed, ed, answer("continue")], latency_s=3.0), 12.0,
+                    params=NO_RECON)
     rows = _couple_rows(rt)
     off = [r for r in rows if r["couple_kind"] == "offset"]
     gate = [r for r in rows if r["couple_kind"] == "irrev_gate"]
@@ -218,6 +224,21 @@ def test_sidecar_couple_rows_include_offset_and_gate_logs():
     assert all({"t", "kind", "ok", "why", "wrist_claim"} <= set(r) for r in gate)
     assert any(not r["ok"] and r["why"] == "astra_failed" for r in gate)
     assert all("type" not in r for r in rows)
+    rt.close()
+
+
+def test_runtime_reconciles_an_edit_whose_segment_moved_on():
+    """Plan Task 19 (canon §91) in the runtime: the modular skill passes approach -> descend while the first edit
+    (judged at t_state 0 in approach) is in flight -> changed / segment, dropped (no offset command from it); the
+    predicted state is the chunk method (no extrapolation)."""
+    ed = answer("edit", execution="failed", intent="misaligned", dp=(0.0, 0.0, 0.03))
+    ast = ScriptedCoupleAstra([ed, answer("continue")], latency_s=3.0)
+    rt, _, _ = _run("modular", ast, 6.5)
+    rows = [r for r in rt.driver.log if r["type"] == "reconcile"]
+    assert (rows[0]["verdict"], rows[0]["reason"], rows[0]["action"]) == ("changed", "segment", "dropped")
+    assert (rows[0]["seg_from"], rows[0]["seg_to"]) == ("approach", "descend")
+    assert rt.driver.offset.n["commands"] == 0 and rt.summary()["couple"]["reconcile"]["counts"]["changed"] == 1
+    assert ast.calls[0]["req"]["predicted_ee_at_arrival"]["method"].startswith("chunk")
     rt.close()
 
 
