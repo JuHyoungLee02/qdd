@@ -5,7 +5,9 @@
       --model-path /data/harvest/ckpt/stageA/sftA_pool_v1/merged --layout H --mode lead
   python -m harvest.runtime.run_r5 --out ... --backend fused --selector mock_fused --max-seconds 5
 
-Astra heartbeat: --astra auto = the API (gpt-6-astra, effort low) when /data/.openai_token exists, else the ack mock.
+Astra heartbeat: --astra mock (default) = the ack mock; --astra auto = the API (gpt-6-astra, effort low) when
+/data/.openai_token exists, else the ack mock. A real (paid) client is built only with --approval, the user's explicit
+approval reference (user-log 114; final review I3); OursRuntime refuses it without RuntimeConfig.astra_approval too.
 """
 from __future__ import annotations
 
@@ -37,7 +39,27 @@ def question_ids(layout: str, state: str = "S1-1mm", questions: tuple | None = N
     return out
 
 
-def main(argv=None):
+def build_astra(choice: str, approval: str, tok: str = "/data/.openai_token"):
+    """(client, astra_mode) for --astra; a real client (auto / api with a token) needs the approval reference
+    (user-log 114), refused before it is built."""
+    from .astra_hb import MODEL as ASTRA_MODEL, MockAstra
+    if choice in ("auto", "api") and os.path.exists(tok):
+        if not str(approval).strip():
+            raise SystemExit(f"--astra {choice} would build the paid Astra client: --approval (the user's explicit "
+                             f"approval reference, user-log 114) is missing")
+        from ..clients import astra as A
+        return A.AstraClient(open(tok).read().strip(), ASTRA_MODEL, timeout_s=30.0), "api"
+    if choice == "api":
+        raise SystemExit("--astra api but no /data/.openai_token")
+    if choice in ("auto", "mock"):
+        return MockAstra(3.0), "mock"
+    if choice == "scripted":
+        from .astra_hb import ScriptedAstra
+        return ScriptedAstra(1.0), "scripted"
+    return None, "none"
+
+
+def _args(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
     ap.add_argument("--backend", default="modular", choices=["modular", "fused"])
@@ -51,7 +73,9 @@ def main(argv=None):
     ap.add_argument("--model-path", default="")
     ap.add_argument("--layout", default="HW", choices=["H", "HW"])
     ap.add_argument("--mode", default="lead", choices=["lead", "base"])
-    ap.add_argument("--astra", default="auto", choices=["auto", "api", "mock", "scripted", "none"])
+    ap.add_argument("--astra", default="mock", choices=["auto", "api", "mock", "scripted", "none"])
+    ap.add_argument("--approval", default="", help="the user's explicit approval reference for a paid Astra client "
+                                                   "(user-log 114)")
     ap.add_argument("--clock", default="simlat", choices=["simlat", "sync"])
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--kind", default="P0")
@@ -59,7 +83,12 @@ def main(argv=None):
     ap.add_argument("--max-seconds", type=float, default=60.0)
     ap.add_argument("--mock-latency", type=float, default=0.30)
     ap.add_argument("--tag", default="")
-    a = ap.parse_args(argv)
+    return ap.parse_args(argv)
+
+
+def main(argv=None):
+    a = _args(argv)
+    astra, astra_mode = build_astra(a.astra, a.approval)  # refused before Isaac boots
     os.makedirs(a.out, exist_ok=True)
     os.environ.setdefault("HARVEST_QID_REGISTRY", os.path.join(a.out, "qid_registry.json"))
 
@@ -71,7 +100,6 @@ def main(argv=None):
     from inspect_robots.scorer import episode_length, success_at_end
 
     from ..eval.canary import canary_id_for  # canon §28/§42: the model's latest canary id (or "none")
-    from .astra_hb import MODEL as ASTRA_MODEL, MockAstra
     from .core import OursRuntime, RuntimeConfig
     from .ir_policy import OursPolicy
     from .models import JevLSelector, MockFusedModel, MockSelector, decision_questions
@@ -85,18 +113,6 @@ def main(argv=None):
         model = MockFusedModel(latency_s=a.mock_latency)
     else:
         model = MockSelector(latency_s=a.mock_latency)
-    tok = "/data/.openai_token"
-    astra, astra_mode = None, "none"
-    if a.astra in ("auto", "api") and os.path.exists(tok):
-        from ..clients.astra import AstraClient
-        astra, astra_mode = AstraClient(open(tok).read().strip(), ASTRA_MODEL, timeout_s=30.0), "api"
-    elif a.astra == "api":
-        raise SystemExit("--astra api but no /data/.openai_token")
-    elif a.astra in ("auto", "mock"):
-        astra, astra_mode = MockAstra(3.0), "mock"
-    elif a.astra == "scripted":
-        from .astra_hb import ScriptedAstra
-        astra, astra_mode = ScriptedAstra(1.0), "scripted"
     mb, mw = None, 0.1  # canon §83 motion line: the served checkpoint's bins and data step (none -> unknown line)
     if a.selector == "stageb":
         from .motion import motion_config
@@ -106,7 +122,7 @@ def main(argv=None):
                         call_mode=a.mode if a.selector == "jevl" else "", clock=a.clock,
                         question_ids=question_ids(a.layout, "IMG" if a.selector == "stageb" else "S1-1mm",
                                                   decision_questions(a.backend)),
-                        astra_mode=astra_mode, hb_mode=a.hb_mode, hb_budget=a.hb_budget, verify_cal=a.verify_cal,
+                        astra_mode=astra_mode, astra_approval=a.approval, hb_mode=a.hb_mode, hb_budget=a.hb_budget, verify_cal=a.verify_cal,
                         canary_id=canary_id_for(a.model_path, mock=a.selector in ("mock", "mock_fused")),
                         motion_bins=mb, motion_window_s=mw)
     if a.backend == "fused":

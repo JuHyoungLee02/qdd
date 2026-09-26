@@ -95,6 +95,9 @@ class RuntimeConfig:
     astra_effort: str = EFFORT
     astra_prompt_id: str = HB_PROMPT_ID
     astra_mode: str = "mock"  # api | mock
+    # user-log 114 (final review I3): the user's explicit approval reference; any real (not mock: / local:) Astra
+    # client -- heartbeat or coupling stream -- is refused without it ("" = no approval)
+    astra_approval: str = ""
     hb_N_s: float = 5.0
     hb_timeout_s: float = 15.0
     hb_mode: str = "K2"  # E-M8c cadence (astra_hb.CADENCES): K0 events / K1 +T_sub / K2 +heartbeat N / K3 Gemini / K4
@@ -188,6 +191,8 @@ class OursRuntime:
         if cfg.couple not in ("off", "serial"):
             raise ValueError(f"couple {cfg.couple!r}: off | serial (spec 2026-09-26 §16)")
         self.couple_ledger, self.driver, self.episode = None, None, 0
+        amodel = str(getattr(astra, "model", "") or "")
+        paid_client = astra is not None and (cfg.astra_mode == "api" or not amodel.startswith(("mock:", "local:")))
         if cfg.couple == "serial":
             from ..couple.cost import CostLedger, PriceTable
             if cfg.hb_mode == "K3":
@@ -203,6 +208,10 @@ class OursRuntime:
             prices = PriceTable.load(cfg.couple_prices) if cfg.couple_prices else PriceTable.free()
             self.couple_ledger = CostLedger(cfg.couple_ledger or None, cfg.couple_budget_krw, prices,
                                             run_id=cfg.couple_run_id)
+        if paid_client and not str(cfg.astra_approval).strip():
+            raise ValueError(f"Astra client {amodel!r} (astra_mode {cfg.astra_mode!r}) is a paid client: it needs "
+                             f"astra_approval, the user's explicit approval reference (user-log 114), for the "
+                             f"{'coupling stream' if cfg.couple == 'serial' else 'heartbeat'} too")
         from ..couple.recovery_cache import RecoveryCache
         self.recovery = RecoveryCache()
         self.recovery_apply = lambda lesson: "m9_not_built"  # M9 recovery not built (canon §67 SCOPED)
@@ -236,7 +245,8 @@ class OursRuntime:
         self.calls, self.slots_log, self.astra_log, self.events, self.sampled = [], [], [], [], []
         self.chunks, self.chunk_req, self.chunk_log = {}, set(), []
         self.chunk_stats = {"played": 0, "held": 0, "requested": 0, "delivered": 0, "stale_dec": 0,
-                            "hold_played": 0, "escape_played": 0, "blend_arm": 0, "blend_grip": 0}
+                            "hold_played": 0, "escape_played": 0, "blend_arm": 0, "blend_grip": 0,
+                            "hold_grip_kept": 0}
         self._hold_since, self._grip_blend = None, None  # Task 25: start of the running M4 hold; gripper blend rate
         self.hold_stats = {"escapes": 0, "max_s": 0.0, "total_s": 0.0, "stuck": 0}
         self._escape_step, self._esc_streak, self._t_bprev = False, 0, None  # F25: escape step / streak / held time
@@ -327,12 +337,15 @@ class OursRuntime:
         k's expert chunk = TCP(last joint target) - TCP(first joint target), arm joints only, the raw chunk values
         (no coupling bias). None on the modular backend (skills execute the decision itself), when step k has no
         chunk that will be played (missing, or conditioned on other decisions -> held), when the kinematics service
-        has no fk_pos (FK of an arbitrary joint vector), or when the displacement is below 0.1 mm."""
+        has no fk_pos (FK of an arbitrary joint vector), or when the displacement is below 0.1 mm.
+        Final review I1: during an M4 hold (dec = {}) or an escape step the hold-play fallback (_play_chunk,
+        hold_play_chunk) plays the step's chunk whatever its decisions -- that chunk is the executed motion then."""
         if self.cfg.backend != "fused":
             return None
         c, kin = self.chunks.get(k), getattr(self, "_kin_last", None)
         fk = getattr(kin, "fk_pos", None)
-        if c is None or not dec or c["dec"] != dec or fk is None:
+        hold_play = self.cfg.hold_play_chunk and (self.hold_step or self._escape_step)
+        if c is None or fk is None or not (hold_play or (dec and c["dec"] == dec)):
             return None
         ch = np.asarray(c["chunk"], float)
         try:  # never stops a run (review T10 M3): an FK failure -> None (decision vector), logged once
@@ -1022,17 +1035,37 @@ class OursRuntime:
             # Task 25 item 3: an M4 hold empties the step's decisions, so the step's chunk never matches them; dropping
             # it froze the arm on the action that produced the contradiction (vla_alone_diag.md: 99 % of the unplayed
             # ticks were stale_dec). While held, the step's chunk (the newest one, from an observation <= T_c +
-            # chunk_lead_s old) is played; the skill runs no decisions ('next' events off) and the coupling's gripper
-            # gate (_couple_fused) still applies. hold_play_chunk False = the old hold (last action, chunk dropped)
+            # chunk_lead_s old) is played; the skill runs no decisions ('next' events off), its gripper moves only with
+            # the T1 premise (_hold_grip_gate, final review I2, every mode) and the coupling's gripper gate
+            # (_couple_fused) still applies. hold_play_chunk False = the old hold (last action, chunk dropped)
             else:
                 self.chunk_stats["hold_played"] += 1
             self._chunk_played, self._played_t_state = True, c["t_state"]
             lag = self._play_lag - c.get("lag", 0.0)
-            return chunk_value(c["chunk"], c["dt"], c["t_state"], now - lag if lag else now)
+            return self._hold_grip_gate(chunk_value(c["chunk"], c["dt"], c["t_state"], now - lag if lag else now))
         if c is not None:
             self.chunk_stats["stale_dec"] += 1
         self.chunk_stats["held"] += 1
         return self.last_a if self.last_a is not None else q_meas
+
+    def _hold_grip_gate(self, a):
+        """Final review I2: a chunk played by the hold-play fallback (held or escape step) moves the gripper only when
+        the T1 premise of that direction holds (twolayer.t1_evidence: close = gripper open + near; open / release =
+        holding); otherwise the gripper stays at the last command (the pre-Task-25 hold kept it frozen). Every mode
+        (coupling on or off); the arm joints and the rate limiters (_couple_fused, _blend) are unchanged."""
+        from ..couple.twolayer import t1_evidence
+        if self.last_a is None:
+            return a
+        w_prev = float(self.last_a[7])
+        d = float(a[7]) - w_prev
+        if abs(d) <= 1e-9:
+            return a
+        if t1_evidence("close" if d < 0 else "release", self._t1(), self.near_now):
+            return a
+        a = np.array(a, float, copy=True)
+        a[7] = w_prev
+        self.chunk_stats["hold_grip_kept"] += 1
+        return a
 
     def _blend(self, a):
         """Fused chunk-transition blending (plan 2026-09-26 Task 25 B; user rule: no jumps, joint speed <= 0.04 rad

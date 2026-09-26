@@ -287,11 +287,13 @@ def test_blended_steps_stay_under_004_after_trace_rounding_and_float32():
 
 
 def test_gripper_jump_at_a_chunk_switch_uses_the_task17_catch_rate():
-    rt, w, A, _ = _run(_Switch(grip=True), 6.0)
+    # C3 (no (b) hold): under C5 the 107 -> 30 mm close away from the mug contradicts T1 gripper_open, the M4 hold
+    # plays the chunk and the final review I2 gripper gate keeps the width (no close premise) -- not this test's topic
+    rt, w, A, _ = _run(_Switch(grip=True), 6.0, cond="C3")
     dw = np.abs(np.diff(A[:, 7]))
     assert dw.max() <= 0.077 * 0.01 / 0.5 + 1e-9  # own rate 0 + gap / one chunk horizon (0.5 s) per 10 ms tick
     assert A[:, 7].min() <= 0.03 + 1e-9 and rt.chunk_stats["blend_grip"] > 0
-    raw = _run(_Switch(grip=True), 6.0, blend_max_dq=None)[2]
+    raw = _run(_Switch(grip=True), 6.0, cond="C3", blend_max_dq=None)[2]
     assert np.abs(np.diff(raw[:, 7])).max() >= 0.07
 
 

@@ -204,6 +204,42 @@ def worker_cmd(code: str, spec_path: str, gpu: str, inst: str, timeout_s: int) -
             "./ir_run.sh", "env", *envs, "/isaac-sim/python.sh", "-m", "harvest.eval.closed", "--worker", spec_path]
 
 
+def worker_astra(spec: dict, arm: str, arms: list):
+    """(client, astra_mode) of one worker label (final review I3): a coupling arm -> the stream client only
+    (couple.stream_client; no heartbeat client is built and thrown away); the off arm next to a coupling arm -> none
+    (E-Couple A0 = VLA alone); the off-only run -> the heartbeat client of --astra, whose real (paid) client needs the
+    approval reference (user-log 114), refused before it is built."""
+    from . import couple as CP
+    if arm != "off":
+        return CP.stream_client(spec)
+    if len(arms) > 1:
+        return None, "none"
+    from ..runtime.astra_hb import MODEL as ASTRA_MODEL, MockAstra
+    tok = "/data/.openai_token"
+    if spec["astra"] in ("auto", "api") and os.path.exists(tok):
+        if not str(spec.get("approval") or "").strip():
+            raise SystemExit(f"--astra {spec['astra']} would build the paid Astra heartbeat client: --approval (the "
+                             f"user's explicit approval reference, user-log 114) is missing")
+        from ..clients import astra as A
+        return A.AstraClient(open(tok).read().strip(), ASTRA_MODEL, timeout_s=30.0), "api"
+    if spec["astra"] == "api":
+        raise SystemExit("--astra api but no /data/.openai_token")
+    if spec["astra"] in ("auto", "mock"):
+        return MockAstra(3.0), "mock"
+    if spec["astra"] == "scripted":  # K3 pipeline check without a key: text-summary success detector
+        from ..runtime.astra_hb import ScriptedAstra
+        return ScriptedAstra(1.0), "scripted"
+    return None, "none"
+
+
+def stageb_motion(model_path: str) -> tuple:
+    """canon §83 motion line of a stage-B checkpoint: (bins, window) from its stageb.json; a motion-trained checkpoint
+    without 'hz' raises in motion_config (final review M6: no silent 30 Hz default)."""
+    from ..runtime.motion import motion_config  # raises for an unusable motion record (fix round 1)
+    sb = json.load(open(os.path.join(model_path, "stageb.json"), encoding="utf-8"))
+    return motion_config(sb.get("prompt_config"), sb.get("hz"))
+
+
 def run_worker(spec_path: str) -> None:
     """Inside Isaac: one embodiment (variant), one eval() per condition over all seeds x epochs."""
     spec = json.load(open(spec_path, encoding="utf-8"))
@@ -218,7 +254,6 @@ def run_worker(spec_path: str) -> None:
     from inspect_robots.controller import DefaultController
     from inspect_robots.scorer import episode_length, success_at_end
 
-    from ..runtime.astra_hb import MockAstra
     from ..runtime.conditions import condition
     from ..runtime.core import OursRuntime, RuntimeConfig
     from ..runtime.ir_policy import OursPolicy
@@ -242,29 +277,11 @@ def run_worker(spec_path: str) -> None:
                 model = MockFusedModel(latency_s=spec["mock_latency"])
             else:
                 model = MockSelector(latency_s=spec["mock_latency"])
-            astra, amode = None, "none"
-            tok = "/data/.openai_token"
-            if spec["astra"] in ("auto", "api") and os.path.exists(tok):
-                from ..clients.astra import AstraClient
-                from ..runtime.astra_hb import MODEL as ASTRA_MODEL
-                astra, amode = AstraClient(open(tok).read().strip(), ASTRA_MODEL, timeout_s=30.0), "api"
-            elif spec["astra"] == "api":
-                raise SystemExit("--astra api but no /data/.openai_token")
-            elif spec["astra"] in ("auto", "mock"):
-                astra, amode = MockAstra(3.0), "mock"
-            elif spec["astra"] == "scripted":  # K3 pipeline check without a key: text-summary success detector
-                from ..runtime.astra_hb import ScriptedAstra
-                astra, amode = ScriptedAstra(1.0), "scripted"
-            if arm != "off":
-                astra, amode = CP.stream_client(spec)
-            elif len(arms) > 1:
-                astra, amode = None, "none"  # E-Couple A0 = VLA alone: no Astra at all
+            astra, amode = worker_astra(spec, arm, arms)
             _, rto = condition(cond)
             mb, mw = None, 0.1  # canon §83 motion line: the checkpoint's bins and data step (none -> unknown line)
             if spec["selector"] == "stageb" and spec.get("model_path"):
-                sb = json.load(open(os.path.join(spec["model_path"], "stageb.json"), encoding="utf-8"))
-                from ..runtime.motion import motion_config  # raises for an unusable motion record (fix round 1)
-                mb, mw = motion_config(sb.get("prompt_config"), sb.get("hz", 30))
+                mb, mw = stageb_motion(spec["model_path"])
             cfg = RuntimeConfig(backend=spec["backend"], selector=spec["selector"],
                                 model_id=getattr(model, "model_id", spec["name"]), model_path=spec["model_path"] or "",
                                 layout=spec["layout"] if spec["selector"] == "jevl" else "",
@@ -272,7 +289,7 @@ def run_worker(spec_path: str) -> None:
                                 question_ids=question_ids(spec["layout"] or "H",
                                                           "IMG" if spec["selector"] == "stageb" else "S1-1mm",
                                                           decision_questions(spec["backend"])),
-                                astra_mode=amode, condition=cond,
+                                astra_mode=amode, astra_approval=spec.get("approval") or "", condition=cond,
                                 m4=m4_config(cond, spec.get("m4_H", 3), spec.get("m4_lead_max")),
                                 calibration=spec["calibration"] or "",
                                 j5_alpha=spec["j5_alpha"], model_fingerprint=spec["fingerprint"], hb_N_s=hb_n,
@@ -442,6 +459,9 @@ def run(a) -> dict:
     arms = CP.parse_arms(a.couple)
     if any(x != "off" for x in arms) and a.astra == "api" and a.couple_upper == "astra":
         CP.check_paid(a)
+    if a.astra == "api" and not str(a.approval).strip():  # final review I3: the heartbeat's paid client too
+        raise SystemExit("--astra api builds a paid Astra client: --approval (the user's explicit approval reference, "
+                         "user-log 114) is missing")
     from ..runtime.astra_hb import CADENCES
     modes = [m for m in a.hb_mode.split(",") if m]
     if not modes or any(m not in CADENCES for m in modes):

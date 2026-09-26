@@ -3,7 +3,10 @@ API errors (plan 2026-09-26 Task 21 D1, book 02 P108): a stream `error` event or
 the reported code (e.g. insufficient_quota, rate_limit_exceeded, server_error; "stream_error" / "response_failed"
 without a code), never an empty answer; a non-200 status keeps rec.error = "http_<status>" and records the body's
 code. error_code / error_message hold the API's code and message; api_error = the API itself reported the failure
-(a client-side timeout or transport error is not one: the call may still have been billed)."""
+(a client-side timeout or transport error is not one: the call may still have been billed). Final review I4: a
+malformed `data:` line sets rec.error "bad_response" (the stream is read on, so a later usage is still recorded; the
+`[DONE]` marker is skipped) and an httpx.StreamError (not an HTTPError) is recorded by its type like a transport
+error -- neither raises into the caller."""
 from __future__ import annotations
 
 import base64
@@ -90,7 +93,17 @@ class AstraClient:
                 for line in resp.iter_lines():
                     if not line.startswith("data:"):
                         continue
-                    ev = json.loads(line[5:].strip())
+                    data = line[5:].strip()
+                    if data == "[DONE]":
+                        continue
+                    try:
+                        ev = json.loads(data)
+                    except ValueError:  # final review I4: a malformed line is a bad response, never an exception
+                        rec.error = rec.error or "bad_response"
+                        continue
+                    if not isinstance(ev, dict):
+                        rec.error = rec.error or "bad_response"
+                        continue
                     if ev.get("type") == "response.output_text.delta":
                         if not parts:
                             rec.t_first_token = time.monotonic()
@@ -108,8 +121,9 @@ class AstraClient:
                         r = ev.get("response", {}) or {}
                         rec.model_field, rec.usage = r.get("model"), r.get("usage") or {}
                         _api_error(rec, r.get("error"), "response_failed")
-        except httpx.HTTPError as e:
+        except (httpx.HTTPError, httpx.StreamError) as e:  # StreamError is not an HTTPError (final review I4)
             rec.error = "timeout" if isinstance(e, httpx.TimeoutException) else type(e).__name__
+            rec.error_message = str(e)[:500]
         rec.t_done = time.monotonic()
         rec.t_first_token = rec.t_first_token or rec.t_done
         rec.output_text = "".join(parts)

@@ -45,11 +45,13 @@ ride the next request (since_last_request.previous_request). reconcile_apply Fal
 predict_mode "extrapolate" keeps the old method label byte for byte (EXTRAPOLATE_LABEL)."""
 from __future__ import annotations
 
+import time
 from collections import Counter
 from dataclasses import dataclass, field, replace
 
 import numpy as np
 
+from ..clients.astra import AstraRecord
 from ..intent import PLAN_TO_LINE, SEGMENT_PLAN
 from ..runtime.models import jpeg_bytes
 from ..runtime.reqhash import request_body
@@ -196,6 +198,8 @@ class CoupleDriver:
         self._sent_state, self._exec, self._grip_ev, self._contra_t = {}, [], [], []
         self._grip_last, self._tip_now, self._applied_now = None, None, np.zeros(3)
         self._rc = {}  # request_no -> {"edit": raw edit json, "reconcile": verdict summary} for the next request
+        self._veto_changed = set()  # final review M1: (request_no, kind) already logged as veto_on_changed
+        self._realized = [0.0, 0.0, 0]  # final review M3: [tip along the offset, offset applied, answered intervals]
 
     def prompt_id(self, axisguide: bool | None = None) -> str:
         """The logged prompt id: v1 PROMPT_ID[mode]; v2 prompt_v2.variant_id (+ax when the axis guide is in the
@@ -301,6 +305,7 @@ class CoupleDriver:
         no = self.stream.timed_out(v.now)
         if no is not None:
             self.log.append({"type": "timeout", "no": no, "t": round(v.now, 3)})
+            self._forget(no)
         cams = [c for c in self.p.cameras if v.frames.get(c) is not None]
         est = self.ledger.prices.krw_upper(estimate_input_tokens(self.est_text_tokens, cams), self.p.max_output_tokens)
         ok, why = self.stream.next_send(v.now, bool(v.near or v.phase in CONTACT_PHASES), est)
@@ -381,7 +386,19 @@ class CoupleDriver:
         astra, p, ep = self.astra, self.p, self.episode
         axis, horizon = self.v2 and p.axis_guide, self.stream.L_hat
 
-        def run():  # worker thread: overlay, JPEG, request hash, the call
+        def run():  # final review I4: nothing in the worker raises into act(); a failure -> an error record
+            t0 = time.monotonic()
+            try:
+                return work()
+            except Exception as e:  # noqa: BLE001
+                t1 = time.monotonic()
+                rec = AstraRecord(t_send=t0, t_first_token=t1, t_done=t1, error=f"worker_error:{type(e).__name__}",
+                                  error_message=str(e)[:500], meta={"couple_no": no, "episode": ep})
+                lat = getattr(astra, "synthetic_latency", None)
+                return {"latency_s": lat if lat is not None else t1 - t0, "rec": rec, "req_hash": (None, {}),
+                        "req_body": None, "images_raw": {}, "text_chars": 0, "prompt_id": None}
+
+        def work():  # worker thread: overlay, JPEG, request hash, the call
             images, ax = {}, []
             for c, img in frames.items():
                 if c in models:
@@ -421,7 +438,8 @@ class CoupleDriver:
         if api_error and code in FATAL_ERRORS:  # D1: stop sending for the rest of the run (every ledger on the file)
             self.ledger.mark_fatal(code, getattr(rec, "error_message", None))
         h, ims = r["req_hash"]
-        self.blobs[h] = ("json", r["req_body"])
+        if h is not None:  # a worker error before the request hash (I4) has no request body
+            self.blobs[h] = ("json", r["req_body"])
         for c, b in (r.get("images_raw") or {}).items():
             self.blobs[ims[c]] = ("jpg", b)
         if r.get("text_chars"):
@@ -433,9 +451,12 @@ class CoupleDriver:
                "prompt_id": r.get("prompt_id") or self.prompt_id()}
         if api_error:
             row.update(error_code=getattr(rec, "error_code", None), error_message=getattr(rec, "error_message", None))
+        elif rec.error is not None and getattr(rec, "error_message", None):  # worker / transport error (I4)
+            row["error_message"] = rec.error_message
         if self.stream.is_late(no):
             row["late"] = True
             self.log.append(row)
+            self._forget(no)
             return
         a, ok = None, rec.error is None
         if ok:
@@ -447,8 +468,11 @@ class CoupleDriver:
         self.stream.delivered(no, now, ok, float(r["latency_s"]))
         if not ok:
             self.log.append(row)
+            self._forget(no)
             return
         rc = self._reconcile(a, no, now, t1)
+        for k in [k for k in self._tip_at if k < no]:  # M5: only the newest answered request's tip is read (_since)
+            del self._tip_at[k]
         on = self.p.reconcile_apply  # False: verdict logged only, the pre-Task-19 path
         a = gate_answer(a, self.p, t1)  # the stale drop always holds (canon §86 / §92, fix F19a)
         rc["action"] = self._apply_verdict(a, rc) if on else "log_only"
@@ -474,6 +498,12 @@ class CoupleDriver:
             row.update(segment=a.segment, valid_until=a.valid_until, plan=res.plan, authority=round(self.a_now, 4))
         self.log.append(row)
 
+    def _forget(self, no: int) -> None:
+        """Final review M5: drop the per-request state of a request that will never be answered validly (error,
+        schema error, late, timed out)."""
+        self._sent_state.pop(no, None)
+        self._tip_at.pop(no, None)
+
     def _reconcile(self, a, no: int, now: float, t1: dict) -> dict:
         """canon §91 arrival reconciliation of one valid delivered answer (reconcile.classify, before the gate): the
         state at its t_state (saved at send) vs now, and its raw command vs the VLA's own motion since t_state (tip
@@ -486,6 +516,11 @@ class CoupleDriver:
         tip_d = tip_now - st["tip"]
         off_d = self._applied_now - st["applied"]
         vla = tip_d - off_d
+        n_off = float(np.linalg.norm(off_d))
+        if n_off > 1e-9:  # final review M3: the tip motion along the offset applied over this answer's interval
+            self._realized[0] += float(tip_d @ off_d) / n_off
+            self._realized[1] += n_off
+            self._realized[2] += 1
         e = a.edit if a.command == "edit" else None
         phase_now, grip_now = self._phases[-1][1], grip_state(t1)
         c = classify(command=a.command, edit_dp=None if e is None else e.dp, edit_gripper=None if e is None
@@ -565,7 +600,15 @@ class CoupleDriver:
                          "follows_decision": follows(chunk_vec, dec_vec, self.p)})
 
     def irrev_allowed(self, kind: str, now: float, t1: dict, near: bool) -> bool:
-        ok, _ = self.gate.allow(kind, now, self.last, self.last_t, t1, near)
+        ok, why = self.gate.allow(kind, now, self.last, self.last_t, t1, near)
+        if not ok and why.startswith("astra_") and self.last is not None:
+            # final review M1 (log only): the vetoing fresh answer was reconciled `changed` (its world moved on; the
+            # command was dropped but the assessment still vetoes) -- once per answer and kind
+            no = self.last.request_no
+            verdict = ((self._rc.get(no) or {}).get("reconcile") or {}).get("verdict")
+            if verdict == "changed" and (no, kind) not in self._veto_changed:
+                self._veto_changed.add((no, kind))
+                self.log.append({"type": "veto_on_changed", "t": round(now, 3), "no": no, "kind": kind, "why": why})
         if not ok and self.gate.mismatch_due(kind, now):
             self.flag("layer_mismatch", now)
         return ok
@@ -595,7 +638,9 @@ class CoupleDriver:
                 "answer_age_s": {"p50": pct([r["age_s"] for r in good], 50)},
                 "cost_krw": round(sum(r.get("cost_krw", 0.0) for r in self.log if r["type"] == "answer"), 4),
                 "gates": dict(Counter(r["gate"] for r in good)), "layer": dict(self.layer.counts),
-                "offset": self.offset.stats(), "irrev": dict(self.gate.counts),
+                "offset": {**self.offset.stats(), "realized": self._realized_summary()},
+                "irrev": dict(self.gate.counts),
+                "veto_on_changed": sum(1 for r in self.log if r["type"] == "veto_on_changed"),
                 "events": dict(Counter(e["event"] for e in self.events)),
                 "events_suppressed": dict(self.events_suppressed),
                 "events_persisting": dict(self.events_persisting), "fatal": getattr(self.ledger, "fatal", None),
@@ -611,6 +656,16 @@ class CoupleDriver:
                               "eat_candidates": sum(1 for r in rec if r["eat_candidate"]),
                               "outcome_join": "episode+no"},
                 "params": self.p.to_json(), "ledger": self.ledger.state()}
+
+    def _realized_summary(self) -> dict:
+        """Final review M3 (log only): the realized offset next to applied_m, from the reconciliation trace -- over
+        each answered request's interval (t_state -> delivery) with an offset applied, the tip displacement projected
+        on that applied offset (along_m) vs the applied offset's length (applied_m); along / applied near 1 = the tip
+        followed the offset. The projection also contains any VLA motion along the offset direction."""
+        along, applied, n = self._realized
+        return {"along_m": round(along, 5), "applied_m": round(applied, 5), "n": n,
+                "ratio": round(along / applied, 4) if applied > 1e-9 else None,
+                "src": "reconcile trace: tip displacement along the offset applied per answered interval"}
 
     def _unanswered(self) -> dict:
         """B7: this episode's never-answered requests -- still reserved (charged as unanswered at close) plus those
