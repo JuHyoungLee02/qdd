@@ -9,8 +9,10 @@ from .serialize import MOTION_UNKNOWN, with_intent_last_step
 from .sim.snapshot import SPEC_NAMES, stage_of
 
 QUESTIONS = ("dir_xy", "dir_z", "mag_coarse", "target", "phase", "progress")
-# canon §87 (ser-A-min-3): the fused VLA's DecCall adds the gripper question right after `phase` (gripper=True)
+# canon §87 (ser-A-min-3): the fused VLA's DecCall adds the gripper question right after `phase` (fused=True)
 ORDER_WITH_GRIPPER = ("dir_xy", "dir_z", "mag_coarse", "target", "phase", "gripper", "progress")
+_AXIS = {("x", 1): "+x (away from the robot)", ("x", -1): "-x (toward the robot)", ("y", 1): "+y (robot left)",
+         ("y", -1): "-y (robot right)"}
 ORACLE_FIELD = {"dir_xy": "dir_xy", "dir_z": "dir_z", "mag_coarse": "mag_coarse", "target": "target",
                 "phase": "phase_choice", "progress": "progress"}
 PHASE = [Option("continue", "continue", "Keep executing the current motion phase."),
@@ -27,7 +29,53 @@ def _target_opts(present):
     return out + [NE]
 
 
-_T1 = ("gripper_open", "holding_t", "lifted_holding")  # = runtime.measure.T1 (robot side, hard channel)
+# Controller ruling PH-A1 (ser-A-min-3; prompt_health.md F16 / F17): the FUSED VLA's dir_xy / mag_coarse wording states
+# the labels_v2 definitions exactly (labels unchanged): the remaining displacement d = G - g from the gripper fingertip
+# midpoint g to the current sub-goal G (table frame: +x away from the robot, +y robot left). dir_xy = per-axis sign
+# pattern with the DEADBAND_M dead band (labels_v2.dir_xy_label); mag_coarse = |d| (3D) binned by MAG_EDGES_M
+# (labels_v2.mag_label). Option keys / names (the decision tokens) are the same as the modular tables.
+def _cm(m: float) -> str:
+    return f"{m * 100:.2f} cm"
+
+
+def fused_dir_xy_opts() -> list:
+    from .labels_v2 import _XY, DEADBAND_M
+    db = _cm(DEADBAND_M)
+
+    def part(ax, s):
+        return f"under {db} either way" if s == 0 else f"at least {db} toward {_AXIS[(ax, s)]}"
+    signs = {k: s for s, k in _XY.items()}
+    out = []
+    for o in DIR_XY:  # the modular table's order and names
+        if o.key == NE.key:
+            continue
+        sx, sy = signs[o.key]
+        d = (f"|x| and |y| both under {db}" if (sx, sy) == (0, 0) else f"x {part('x', sx)}; y {part('y', sy)}")
+        out.append(Option(o.key, o.name, f"Remaining offset to the sub-goal: {d}."))
+    return out + [NE]
+
+
+def fused_mag_opts() -> list:
+    from .labels_v2 import MAG_EDGES_M
+    from .sim.planner import MAG_BINS
+    names, e = [n for n, _ in MAG_BINS], MAG_EDGES_M
+    desc = [f"Remaining distance to the sub-goal under {_cm(e[0])}."]
+    desc += [f"Remaining distance to the sub-goal from {_cm(a)} to under {_cm(b)}." for a, b in zip(e, e[1:])]
+    desc += [f"Remaining distance to the sub-goal {_cm(e[-1])} or more."]
+    return [Option(n, n, d) for n, d in zip(names, desc)] + [NE]
+
+
+def fused_texts(ds: str, sid: str) -> dict:
+    """The fused DecCall's dir_xy / mag_coarse question texts (ruling PH-A1)."""
+    from .labels_v2 import DEADBAND_M
+    return {"dir_xy": f"During step {ds}, what is the sign pattern of the remaining horizontal offset (x, y) from the "
+                      f"gripper fingertip midpoint to the current sub-goal of stage {sid}? An axis counts only beyond "
+                      f"{_cm(DEADBAND_M)} (+x = away from the robot, +y = robot left).",
+            "mag_coarse": f"During step {ds}, how far (3D distance) is the gripper fingertip midpoint from the current "
+                          f"sub-goal of stage {sid}?"}
+
+
+_T1 =("gripper_open", "holding_t", "lifted_holding")  # = runtime.measure.T1 (robot side, hard channel)
 
 
 def category_of_check(phase_prev: str, phase_now: str, violations) -> str:
@@ -91,13 +139,15 @@ def segment_of(line: dict) -> str:
     return segment_from_phase(line.get("phase"))
 
 
-def build_snapshot_request(line, text_state=None, shift=0, gripper=False):
+def build_snapshot_request(line, text_state=None, shift=0, fused=False):
     """line: one ep<seed>.jsonl row (cli_pool.write_episode). Returns (request, {qid: oracle key}, {qid: options}).
     text_state: state text to send instead of line["text_state"] (E3-lite S1/S2); shift: cyclic left shift of every
     option list, NONE_ESCALATE stays last (C3'' rotation, e3lite.md prereg). The state ends with the segment-intent
     line (segment_of, canon §90), the motion line (motion_of, canon §83) and the M4 (b) line `last_step: <category>`
-    (last_step_of(line), canon §77), serializer ser-A-min-3. gripper: add the canon §87 gripper decision question
-    after `phase` (the fused VLA's DecCall; its oracle = the rule label of the line's phase, harvest.intent)."""
+    (last_step_of(line), canon §77), serializer ser-A-min-3. fused: the fused VLA's DecCall (stage B and the fused
+    runtime) -- adds the canon §87 gripper decision question after `phase` (its oracle = the rule label of the line's
+    phase, harvest.intent) and words dir_xy / mag_coarse as their labels_v2 definitions (ruling PH-A1:
+    fused_texts / fused_dir_xy_opts / fused_mag_opts); the modular (Jev-L) DecCall is unchanged."""
     ds, sid = line["ds_id"], stage_of(line["phase"])
     q_dir = f"Which direction should the gripper move during step {ds} to make progress toward the exit of stage {sid}?"
     spec = {
@@ -113,8 +163,12 @@ def build_snapshot_request(line, text_state=None, shift=0, gripper=False):
         "gripper": (f"{ds}.gripper", f"During step {ds}, should the gripper close (grasp), open (release), or keep "
                                      f"its current state?", GRIPPER),
     }
+    if fused:
+        ft = fused_texts(ds, sid)
+        spec["dir_xy"] = (f"{ds}.dir_xy", ft["dir_xy"], fused_dir_xy_opts())
+        spec["mag_coarse"] = (f"{ds}.mag_coarse", ft["mag_coarse"], fused_mag_opts())
     qs, oracle, shown = [], {}, {}
-    for q in (ORDER_WITH_GRIPPER if gripper else QUESTIONS):
+    for q in (ORDER_WITH_GRIPPER if fused else QUESTIONS):
         qid, text, opts = spec[q]
         if shift:
             opts = rotate(opts, shift)

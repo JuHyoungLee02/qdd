@@ -82,7 +82,7 @@ def build_live_request(ds: int, phase: str, text_s0: str, present, raw: dict, st
         st = e3lite.state_text(line, "S1", step_cm=step_cm)
     else:
         raise ValueError(f"state {state!r}: S1 | IMG")
-    req, _, shown = build_snapshot_request(line, text_state=st, gripper="gripper" in questions)
+    req, _, shown = build_snapshot_request(line, text_state=st, fused="gripper" in questions)
     keep = {qid for qid, (q, _) in shown.items() if q in questions}
     req = {**req, "questions": {k: v for k, v in req["questions"].items() if k in keep}}
     return req, {k: v for k, v in shown.items() if k in keep}

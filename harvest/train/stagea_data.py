@@ -175,7 +175,7 @@ def build_items(lines, source, state_fn=None, shift: int = 0, dev_val_seeds=None
         split = split_of(line, dev_val_seeds)
         req, _, shown = build_snapshot_request({**blind, "oracle": _NO_ORACLE},
                                                text_state=None if state_fn is None else state_fn(blind), shift=shift,
-                                               gripper="gripper" in questions)
+                                               fused="gripper" in questions)
         for qid, (q, opts) in shown.items():
             if q not in questions:
                 continue

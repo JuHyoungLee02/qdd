@@ -92,12 +92,68 @@ def _line(phase="carry"):
 def test_deccall_gripper_question_only_when_asked_and_after_phase():
     req, oracle, _ = build_snapshot_request(_line())
     assert "ds21.gripper" not in req["questions"]  # the modular (Jev-L) DecCall keeps its five + progress questions
-    req, oracle, shown = build_snapshot_request(_line("close"), gripper=True)
+    req, oracle, shown = build_snapshot_request(_line("close"), fused=True)
     assert list(req["questions"]) == ["ds21.dir_xy", "ds21.dir_z", "ds21.mag_coarse", "ds21.target", "ds21.phase",
                                       "ds21.gripper", "mon.progress"]
     assert list(req["questions"]["ds21.gripper"]["criteria"]) == ["close", "open", "keep", "NONE_ESCALATE"]
     assert oracle["ds21.gripper"] == "close" and shown["ds21.gripper"][0] == "gripper"
-    assert build_snapshot_request(_line("lift"), gripper=True)[1]["ds21.gripper"] == "keep"
+    assert build_snapshot_request(_line("lift"), fused=True)[1]["ds21.gripper"] == "keep"
+
+
+def _fused_desc(q):
+    req, _, _ = build_snapshot_request(_line("descend"), fused=True)
+    return req["questions"][f"ds21.{q}"]
+
+
+def test_fused_dir_xy_and_mag_text_state_the_label_definitions():
+    """Ruling PH-A1: the fused wording describes the labels_v2 definition (remaining offset to the sub-goal, per-axis
+    sign with the 1 cm dead band; |d| binned by MAG_EDGES_M); labels are unchanged."""
+    from harvest.labels_v2 import dir_xy_label, mag_label
+    xy, mag = _fused_desc("dir_xy"), _fused_desc("mag_coarse")
+    assert "sign pattern of the remaining horizontal offset" in xy["instructions"]
+    assert "3D distance" in mag["instructions"] and "sub-goal" in mag["instructions"]
+    table = [  # remaining offset d (m) -> label -> the option text that must describe it
+        ((0.03, 0.0, 0.0), "plus_x", "x at least 1.00 cm toward +x (away from the robot); y under 1.00 cm either way"),
+        ((0.02, 0.02, 0.0), "plus_x_plus_y",
+         "x at least 1.00 cm toward +x (away from the robot); y at least 1.00 cm toward +y (robot left)"),
+        ((-0.01, -0.0099, 0.0), "minus_x", "x at least 1.00 cm toward -x (toward the robot); y under 1.00 cm either way"),
+        ((0.0, -0.05, 0.1), "minus_y", "x under 1.00 cm either way; y at least 1.00 cm toward -y (robot right)"),
+        ((0.009, -0.009, 0.0), "none_xy", "|x| and |y| both under 1.00 cm"),
+    ]
+    for d, key, text in table:
+        assert dir_xy_label(d) == key and text in xy["criteria"][key]
+    mtable = [(0.0, "tiny", "under 0.71 cm"), (0.0071, "small", "from 0.71 cm to under 1.41 cm"),
+              (0.02, "medium", "from 1.41 cm to under 2.83 cm"), (0.03, "large", "from 2.83 cm to under 5.66 cm"),
+              (0.2, "xlarge", "5.66 cm or more")]
+    for n, key, text in mtable:
+        assert mag_label((n, 0.0, 0.0)) == key and text in mag["criteria"][key]
+    # the same option keys / names (decision tokens) and order as the modular tables; the other texts are unchanged
+    mod, _, _ = build_snapshot_request(_line("descend"))
+    for q in ("dir_xy", "mag_coarse"):
+        assert list(mod["questions"][f"ds21.{q}"]["criteria"]) == list(_fused_desc(q)["criteria"])
+        assert "sub-goal" not in mod["questions"][f"ds21.{q}"]["instructions"]  # modular / stage A / E0.5 unchanged
+    fus, _, _ = build_snapshot_request(_line("descend"), fused=True)
+    for qid in ("ds21.dir_z", "ds21.target", "ds21.phase", "mon.progress"):
+        assert fus["questions"][qid] == mod["questions"][qid]
+
+
+def test_fused_text_is_byte_identical_in_training_items_and_the_runtime_request():
+    from harvest.clients.jevl import question_text
+    from harvest.runtime.models import FUSED_QUESTIONS, build_live_request
+    from harvest.train.stagea_data import FnSource, build_items
+    from harvest.train.stageb_data import QUESTIONS, image_only_state
+    raw = {"grip": {"pos": [0.3, -0.1, 0.25], "w": 0.107, "effort": 0.0},
+           "objs": {k: {"pos": [0.4, -0.2, 0.05], "quat": [1, 0, 0, 0], "he": [0.03, 0.03, 0.05]} for k in ("o3", "o5")},
+           "contacts": [], "support": {}}
+    s0 = "t_state: f3\nrobot: gripper=open"
+    req, shown = build_live_request(3, "approach", s0, ["o3", "o5"], raw, state="IMG", questions=FUSED_QUESTIONS)
+    ln = {"seed": 0, "kind": "P0", "k": 30, "ds_id": "ds3", "phase": "approach", "text_state": s0, "split": "fit",
+          "decision": True, "images": {"cam_head": "h.jpg"}, "state": {"present": ["o3", "o5"], "obs": {"raw": raw}},
+          "segment": "segment: now=unknown do=unknown next=unknown", "last_step": "none"}
+    items = build_items([ln], FnSource(lambda line, q, keys: ({keys[0]}, False)), lambda x: image_only_state(s0),
+                        questions=QUESTIONS)
+    live = {shown[qid][0]: question_text(req["state"], qid, spec) for qid, spec in req["questions"].items()}
+    assert {it["question"]: it["text"] for it in items} == live
 
 
 def test_live_request_question_sets_by_backend():
@@ -120,7 +176,10 @@ def test_question_ids_include_the_gripper_for_the_fused_set(tmp_path, monkeypatc
     from harvest.runtime.run_r5 import question_ids
     q5, q6 = question_ids("HW", "IMG"), question_ids("HW", "IMG", questions=FUSED_QUESTIONS)
     assert "gripper" not in q5 and set(q6) == set(FUSED_QUESTIONS) and "@v" in q6["gripper"]
-    assert {q: q6[q] for q in q5} == q5  # the other ids do not depend on the gripper question
+    # ruling PH-A1: the fused dir_xy / mag_coarse wording differs from the modular one (new ids); the rest are shared
+    assert {q: q6[q] for q in q5 if q not in ("dir_xy", "mag_coarse")} == \
+        {q: v for q, v in q5.items() if q not in ("dir_xy", "mag_coarse")}
+    assert q6["dir_xy"] != q5["dir_xy"] and q6["mag_coarse"] != q5["mag_coarse"]
 
 
 def test_stage_b_question_slots_and_decision_ids():
