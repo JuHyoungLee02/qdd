@@ -141,6 +141,17 @@ class RuntimeConfig:
     couple_run_id: str = ""
     motion_bins: dict | None = None  # checkpoint prompt_config["motion"] (canon §83); None = unknown line
     motion_window_s: float = 0.1  # 1 / the checkpoint data rate
+    # plan 2026-09-26 Task 25 (E-VLA-solo Q3 deadlock, docs/stage3/results/vla_alone_diag.md / vla_solo.md):
+    # T1 gripper_open hysteresis: once open (>= 80.5 mm) it stays open down to this width (None = the registered
+    # E-M4b-meas rule); the stuck approach chunks sat at 77.1-80.2 mm, a held mug keeps the pads at ~64 mm
+    grip_open_leave_m: float | None = 0.075
+    # an M4 hold that has lasted this long is escaped: the next step runs its (fresh) decisions once, logged as a
+    # hold_escape event (None = no escape); C3 stalls 0.5-1.2 s vs permanent C5 holds 36.6-56.4 s
+    hold_timeout_s: float | None = 3.0
+    hold_play_chunk: bool = True  # fused: while held, play the step's chunk instead of dropping it as stale
+    # fused: per-tick arm joint rate limit from the last command at chunk transitions (rad / 10 ms tick; the user's
+    # no-jump rule 0.04) + the gripper by the Task 17 catch rate; None = off (no gripper limit either)
+    blend_max_dq: float | None = 0.04
 
 
 def _pct(xs, q):
@@ -168,7 +179,7 @@ class OursRuntime:
             self.cal = Calibration.load(cfg.calibration, fingerprint=cfg.model_fingerprint,
                                         question_ids=cfg.question_ids or None, prompt_config_sha=pcs)
         self.vcal = VerifyCal.load(cfg.verify_cal) if cfg.verify_cal else VerifyCal.default()
-        self.rules = ProprioRules()
+        self.rules = ProprioRules(th_w_leave=cfg.grip_open_leave_m)
         if cfg.couple not in ("off", "serial"):
             raise ValueError(f"couple {cfg.couple!r}: off | serial (spec 2026-09-26 §16)")
         self.couple_ledger, self.driver, self.episode = None, None, 0
@@ -218,7 +229,10 @@ class OursRuntime:
         self.n_calls, self.n_hb, self.dropped_hb = 0, 0, set()
         self.calls, self.slots_log, self.astra_log, self.events, self.sampled = [], [], [], [], []
         self.chunks, self.chunk_req, self.chunk_log = {}, set(), []
-        self.chunk_stats = {"played": 0, "held": 0, "requested": 0, "delivered": 0, "stale_dec": 0}
+        self.chunk_stats = {"played": 0, "held": 0, "requested": 0, "delivered": 0, "stale_dec": 0,
+                            "hold_played": 0, "blend_arm": 0, "blend_grip": 0}
+        self._hold_since, self._grip_blend = None, None  # Task 25: start of the running M4 hold; gripper blend rate
+        self.hold_stats = {"escapes": 0, "max_s": 0.0}
         self.last_a, self.prev_cmd, self.t0_wall, self.t_last, self.q_meas = None, None, None, 0.0, None
         self._last_sample, self._phase_seen = -1e9, None
         self.j5_streak, self.j5_stats = {}, {"held": 0, "escalated": 0, "passed": 0}
@@ -702,7 +716,8 @@ class OursRuntime:
         self._jp_last, self._t_jp = jp.copy(), now
         self.motion.add(now, jp[:7], jp[7])
         proprio = {"width": float(jp[7]), "grip_effort": float(raw["grip"].get("effort", 0.0)),
-                   "tcp_z": float(tcp_p[2] - tz)}
+                   "tcp_z": float(tcp_p[2] - tz),
+                   "prev_open": bool(self.meas_last is not None and self.meas_last["gripper_open"]["value"])}
         v = self.v1h_last
         v1h = v["logits"] if v is not None and now - v["t_state"] <= self.cfg.t2_check_max_age_s else None
         self.meas_last = measure(proprio, v1h, self.vcal, self.rules)
@@ -826,6 +841,7 @@ class OursRuntime:
                 self.driver.clear("b_contradict")
             entry.update(prev_outcome=out, prev_residual_mm=round(resid * 1e3, 1), signals=sig)
             self.hold_step = sig["hold"]
+            self._hold_escape(now, prev, entry)
             if out in ("DEVIATE", "CONTRADICT") and self.cfg.backend != "fused":
                 self.skill.reanchor(tcp_p)
             if sig["early_call"]:
@@ -844,6 +860,31 @@ class OursRuntime:
         if self.slots_log and len(self.slots_log) >= 2:
             self.slots_log[-2]["outcome"] = entry.get("prev_outcome")
         self.cur_k = k
+
+    def _hold_escape(self, now: float, ds: int, entry: dict) -> None:
+        """Hold escape (plan 2026-09-26 Task 25 item 2; canon §4: a hold is 'keep the last committed action', never a
+        stop): a CONTRADICT hold that has run for hold_timeout_s since its first held step is lifted for this one step
+        -- the step's decisions (the early call after each CONTRADICT re-asked them from the current observation) are
+        executed as if the premise held; the skill's own code safety predicates and the coupling's two-layer gate
+        still guard every irreversible event. Logged as a hold_escape event; the hold re-arms at the next CONTRADICT,
+        so no hold lasts longer than hold_timeout_s + one step (E-VLA-solo: 8/12 C5 episodes never left the hold)."""
+        if not self.hold_step:
+            if self._hold_since is not None:
+                self.hold_stats["max_s"] = max(self.hold_stats["max_s"], now - self._hold_since)
+            self._hold_since = None
+            return
+        if self._hold_since is None:
+            self._hold_since = now
+        to = self.cfg.hold_timeout_s
+        if to is None or now - self._hold_since < to - 1e-9:
+            return
+        held = now - self._hold_since
+        self.hold_stats["max_s"] = max(self.hold_stats["max_s"], held)
+        self.hold_step, self._hold_since = False, None
+        self.hold_stats["escapes"] += 1
+        entry["hold_escape"] = True
+        self.events.append({"t": round(now, 4), "event": "hold_escape", "ds": ds, "held_s": round(held, 4),
+                            "t1_false": list(entry.get("t1_check") or []), "phase": self.skill.phase})
 
     def _joint_outcome(self):
         """Fused (b): measured arm joints vs the executed chunk target at the step end (the chunk is the fused
@@ -881,6 +922,7 @@ class OursRuntime:
             a = self._play_chunk(now, q_meas)
             if self.driver is not None:
                 a = self._couple_fused(a, now, kin, tcp_p)
+            a = self._blend(a)
         else:
             q7 = kin.ik(cmd.pos_w, cmd.quat_w, self.cfg.ik_max_dq)
             tgt = {"approach": "o3", "descend": "o3", "close": "o3", "lift": "o3"}.get(self.skill.phase, "o5")
@@ -950,10 +992,69 @@ class OursRuntime:
             self._chunk_played, self._played_t_state = True, c["t_state"]
             lag = self._play_lag - c.get("lag", 0.0)  # lag accrued since this chunk's observation (0.0 when off)
             return chunk_value(c["chunk"], c["dt"], c["t_state"], now - lag if lag else now)
+        if c is not None and self.hold_step and self.cfg.hold_play_chunk:
+            # Task 25 item 3: an M4 hold empties the step's decisions, so the step's chunk never matches them; dropping
+            # it froze the arm on the action that produced the contradiction (vla_alone_diag.md: 99 % of the unplayed
+            # ticks were stale_dec). While held, the step's chunk (the newest one, from an observation <= T_c +
+            # chunk_lead_s old) is played; the skill runs no decisions ('next' events off) and the coupling's gripper
+            # gate (_couple_fused) still applies. hold_play_chunk False = the old hold (last action, chunk dropped)
+            self.chunk_stats["hold_played"] += 1
+            self._chunk_played, self._played_t_state = True, c["t_state"]
+            lag = self._play_lag - c.get("lag", 0.0)
+            return chunk_value(c["chunk"], c["dt"], c["t_state"], now - lag if lag else now)
         if c is not None:
             self.chunk_stats["stale_dec"] += 1
         self.chunk_stats["held"] += 1
         return self.last_a if self.last_a is not None else q_meas
+
+    def _blend(self, a):
+        """Fused chunk-transition blending (plan 2026-09-26 Task 25 B; user rule: no jumps, joint speed <= 0.04 rad
+        per tick): the arm joints move from the last command at most blend_max_dq per tick (a hard per-joint clamp;
+        a chunk switch with a 0.3 rad gap is reached in 8 ticks); the gripper, when a switch jumps by more than the
+        played chunk's own per-tick rate, moves at the Task 17 catch rate (_grip_catch_rate: own rate + the gap over
+        one chunk horizon) until it has caught up. A no-op (the same object returned) when every step is within the
+        limit, so a smooth chunk sequence, the play clock and the coupling bias bookkeeping are untouched; the
+        gripper is left to Task 17's limiter while that one is pending (couple gate catch-up)."""
+        lim = self.cfg.blend_max_dq
+        if lim is None or self.last_a is None:
+            return a
+        prev = np.asarray(self.last_a, float)
+        a = np.asarray(a, float)
+        d = a[:7] - prev[:7]
+        if float(np.max(np.abs(d))) > lim:
+            a = a.copy()
+            q = prev[:7] + np.clip(d, -lim, lim)
+            while np.any(over := np.abs(q - prev[:7]) > lim):  # float rounding: the step as read back stays <= lim
+                q[over] = np.nextafter(q[over], prev[:7][over])
+            a[:7] = q
+            self.chunk_stats["blend_arm"] += 1
+        if self._grip_lim is not None:
+            self._grip_blend = None
+            return a
+        gap = float(a[7] - prev[7])
+        rate = self._grip_blend
+        if rate is not None and not self._chunk_played:
+            return a  # a held tick (a = last_a) keeps the running limit pending, as Task 17's limiter does
+        if rate is None:
+            if not self._chunk_played or abs(gap) <= self._chunk_grip_rate() + 1e-12:
+                return a
+            rate = self._grip_catch_rate(abs(gap))
+        if abs(gap) <= rate + 1e-12:
+            self._grip_blend = None
+            return a
+        self._grip_blend = rate
+        a = a.copy()
+        a[7] = prev[7] + math.copysign(rate, gap)
+        self.chunk_stats["blend_grip"] += 1
+        return a
+
+    def _chunk_grip_rate(self) -> float:
+        """The current step's chunk: its max per-tick gripper change at the control rate (0 without a usable one)."""
+        c = self.chunks.get(self.cur_k)
+        if c is None or len(c["chunk"]) < 2 or not c.get("dt"):
+            return 0.0
+        w = np.asarray(c["chunk"], float)[:, 7]
+        return float(np.max(np.abs(np.diff(w)))) * self.dt / float(c["dt"])
 
     def _sample_frames(self, now):
         ph = self.skill.phase
@@ -987,6 +1088,9 @@ class OursRuntime:
                 "astra_latency_s": {"p50": _pct(hb_lat, 50), "max": max(hb_lat) if hb_lat else None},
                 "final_phase": self.skill.phase, "final_stage": self.skill.stage,
                 "grasp_retries": self.skill.retries, "chunk": dict(self.chunk_stats),
+                "hold": {"escapes": self.hold_stats["escapes"], "timeout_s": self.cfg.hold_timeout_s,
+                         "max_s": round(max(self.hold_stats["max_s"], self.t_last - self._hold_since
+                                            if self._hold_since is not None else 0.0), 4)},
                 "condition": self.cfg.condition, "stop_ticks": getattr(self, "n_stop_ticks", 0),
                 "dec_inflight": {"max": max(self.inflight_at_send, default=None),
                                  "mean": round(float(np.mean(self.inflight_at_send)), 3)

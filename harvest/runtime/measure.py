@@ -34,16 +34,22 @@ UNCAL_QHAT = 0.5  # uncalibrated head: the argmax singleton (flagged calibrated 
 class ProprioRules:
     """E-M4b-meas P rule (m4b.prules) with the registered thresholds (results.json m4b.P_params, e_m4b_meas.md §4.2):
     open = width >= 80.5 mm; holding = 50.1 mm < width < 80 mm and |grip effort| >= 1.14; lifted_holding = holding and
-    TCP z (table frame) >= 12.4 cm."""
+    TCP z (table frame) >= 12.4 cm.
+    th_w_leave (plan 2026-09-26 Task 25, hysteresis): None = the registered rule above; a value = 'open' is entered at
+    width >= th_w and, once open (prev_open), left only below th_w_leave or when holding is measured (a held object is
+    never 'open'). E-VLA-solo: approach chunks at 77-80 mm under the 80.5 mm entry made T1 false (vla_alone_diag.md)."""
     th_w: float = 0.08050180748425541
     th_lo: float = 0.050083791321819116
     th_hi: float = 0.08
     th_I: float = 1.1361367473628952
     th_z: float = 0.12399572093997799
+    th_w_leave: float | None = None
 
-    def eval(self, width: float, grip_effort: float, tcp_z: float) -> dict:
+    def eval(self, width: float, grip_effort: float, tcp_z: float, prev_open: bool = False) -> dict:
         hold = self.th_lo < width < self.th_hi and abs(grip_effort) >= self.th_I
-        return {"gripper_open": bool(width >= self.th_w), "holding_t": bool(hold),
+        is_open = width >= self.th_w or (self.th_w_leave is not None and prev_open and width >= self.th_w_leave
+                                         and not hold)
+        return {"gripper_open": bool(is_open), "holding_t": bool(hold),
                 "lifted_holding": bool(hold and tcp_z >= self.th_z)}
 
     @classmethod
@@ -115,9 +121,11 @@ def conformal_value(p_true: float, qhat: float):
 
 def measure(proprio: dict | None, v1h_logits: dict | None, cal: VerifyCal, rules: ProprioRules | None = None) -> dict:
     """{predicate: {value (True/False/None = unknown), p, source, tier}} from the source table.
-    proprio = {"width": m, "grip_effort": joint effort, "tcp_z": m above the table top (FK)} (None = not available)."""
+    proprio = {"width": m, "grip_effort": joint effort, "tcp_z": m above the table top (FK)} (None = not available);
+    optional "prev_open" = the last tick's gripper_open (the rules' hysteresis, Task 25)."""
     rules = rules or ProprioRules()
-    robot = rules.eval(proprio["width"], proprio["grip_effort"], proprio["tcp_z"]) if proprio else {}
+    robot = rules.eval(proprio["width"], proprio["grip_effort"], proprio["tcp_z"],
+                       bool(proprio.get("prev_open", False))) if proprio else {}
     prob = v1h_probs(v1h_logits, cal) if v1h_logits else {}
     out = {}
     for p in PREDS:

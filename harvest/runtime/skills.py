@@ -106,6 +106,7 @@ class PickPlaceSkill:
         self.pending_outcome = None  # CONTRADICT from an expected_after check in this step
         self.events: list = []
         self._t_hold = None  # last tick with holding(o3) measured true (debounce)
+        self._held = False  # holding(o3) seen since the gripper was last measured open (Task 25 item 4)
         self.bias = np.zeros(3)  # sum of the Astra offset translations applied by nudge (plan Task 19 fix F19 I2)
         self._floor_z = None  # the last tick's grasp floor (nudge keeps cmd_pos and the bias above it, F19c)
 
@@ -144,6 +145,10 @@ class PickPlaceSkill:
         elif self._t_hold is not None and t - self._t_hold < HOLD_DEBOUNCE_S - 1e-9:
             pred = {**pred, "holding(o3)": True}
         gs = gripper_state(pred)
+        if gs == "closed_holding":
+            self._held = True
+        elif gs == "open":
+            self._held = False
         if self.wait_until is not None:
             if t < self.wait_until - 1e-9:
                 return self._cmd(t, "wait", False)
@@ -160,7 +165,13 @@ class PickPlaceSkill:
                 if pred.get("holding(o3)"):
                     self.pending_outcome = "CONTRADICT"
                 self._set_phase("retreat", t, "released")
-        if gs == "closed_empty" and self.cmd_w < self.w_open:  # grasp lost outside a wait: re-open, pick again
+        # grasp lost outside a wait: re-open, pick again. Also when the gripper was closed by someone else (the fused
+        # VLA's chunk; the skill's cmd_w stays open there) and the holding flag drops in lift / carry after a hold
+        # (plan 2026-09-26 Task 25 item 4, vla_alone_diag.md ②: the arm lifted without the mug) -- not in
+        # place_descend, where a release is the task. On the modular path _held implies cmd_w < w_open: unchanged.
+        lost_vla = self._held and self.phase in ("lift", "carry")
+        if gs == "closed_empty" and (self.cmd_w < self.w_open or lost_vla):
+            self._held = False
             self.pending_outcome = "CONTRADICT"
             self.cmd_w, self.stage, self.retries = self.w_open, "S1", self.retries + 1
             self.events.append({"t": round(t, 3), "event": "object_lost", "retry": self.retries})
