@@ -122,4 +122,7 @@ def test_split_guards():
             D.check_row({"seed": 31201, "variant": "drx", "task": t}, "train")
     D.check_row({"seed": 31201, "variant": "drx", "task": "mug_bin"}, "train")
     with pytest.raises(ValueError):
+        D.check_row({"seed": 34850, "variant": "drx", "task": "mug_tray"}, "train")  # L8-X DEV
+    D.check_row({"seed": 34850, "variant": "drx", "task": "mug_tray"}, "dev_x")
+    with pytest.raises(ValueError):
         D.check_row({"seed": 30001, "variant": "standard"}, "ood_h")

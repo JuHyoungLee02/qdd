@@ -21,7 +21,8 @@ GATE_SEEDS = range(35000, 35200)
 OOD_SEEDS = range(70000, 71000)
 OOD_SETS = {"ood_h": range(70000, 70100), "ood_o": range(70100, 70300), "ood_d": range(70300, 70500),
             "ood_s": range(70500, 70700), "ood_t": range(70700, 70900), "ood_hl": range(70900, 71000)}
-SPLITS = ("train", "gate") + tuple(OOD_SETS)
+DEV_X = range(34800, 35000)  # L8-X DEV (in-distribution, never trained; change 6): not a TRAIN seed for training
+SPLITS = ("train", "gate", "dev_x") + tuple(OOD_SETS)
 PT_OOD_H = (0.78, 0.82, 0.88, 0.92)  # E-PT OOD-H (registered 0.82 / 0.88, change 2 0.78 / 0.92), reused by E-STRIP8
 OOD_GAP = 0.015  # a train height is >= 1.5 cm from every OOD-H height
 HEIGHT_CANDIDATES = (0.72, 0.74, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.96, 0.98)
@@ -55,7 +56,9 @@ def _r(v, n=3):
 
 def check_seed(seed: int, split: str, confirm_ood: bool = False) -> int:
     s = int(seed)
-    if split == "train" and s in TRAIN_SEEDS:
+    if split == "train" and s in TRAIN_SEEDS and s not in DEV_X:
+        return s
+    if split == "dev_x" and s in DEV_X:
         return s
     if split == "gate" and s in GATE_SEEDS:
         return s

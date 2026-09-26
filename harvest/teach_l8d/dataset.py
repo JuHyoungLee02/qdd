@@ -42,13 +42,16 @@ def with_lift(text: str, lift_q: float) -> str:
 def check_row(r: dict, split: str) -> None:
     s, v = int(r["seed"]), r["variant"]
     if split == "train":
-        if s not in SP.TRAIN_SEEDS or v not in TRAIN_VARIANTS:
+        if s not in SP.TRAIN_SEEDS or s in SP.DEV_X or v not in TRAIN_VARIANTS:
             raise ValueError(f"train row refused: seed {s} / variant {v} (TRAIN 30000-34999, standard / drx)")
         if r.get("task") in SP.OOD_O_TASKS + SP.OOD_T_TASKS:
             raise ValueError(f"train row refused: task {r['task']} is held out (OOD-O / OOD-T)")
     elif split == "gate":
         if s not in SP.GATE_SEEDS:
             raise ValueError(f"gate row refused: seed {s}")
+    elif split == "dev_x":
+        if s not in SP.DEV_X:
+            raise ValueError(f"dev_x row refused: seed {s}")
     elif split in SP.OOD_SETS:
         if s not in SP.OOD_SETS[split]:
             raise ValueError(f"{split} row refused: seed {s}")
