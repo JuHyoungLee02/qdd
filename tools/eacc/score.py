@@ -209,7 +209,7 @@ def stage2(srows: list, tab: dict) -> dict:
         rs = [r for r in srows if r["arm"] == arm and r["kind"] in S2_OFF]
         return {"n": len(rs), "detects": sum(r.get("command") == "edit" for r in rs),
                 "correct": sum(bool(r["score"].get("dir_ok")) for r in rs)}
-    for arm, key in (("v2_med", "S2A_effort_medium"), ("v2_gc", "S2B_goal_check")):
+    for arm, key in (("v2_med", "S2A_effort_medium"), ("v2_gc", "S2B_goal_check"), ("v2_gc2", "S2Bp_goal_check_tip")):
         if arm not in have or "v2" not in have:
             continue
         m1 = paired(srows, "v2", arm, "dir_ok", S2_OFF)

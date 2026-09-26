@@ -153,6 +153,15 @@ GOALCHECK = ("Target check before you answer: compare where the tip will be when
              "for, or hovering at, a spot several cm beside the correct object or place pursues the wrong subgoal: "
              "intent=misaligned.\n")
 GOALCHECK_ID = hashlib.sha256(GOALCHECK.encode()).hexdigest()[:6]
+# B' (prereg change 6): the reference is the tip NOW plus the committed arrow (executed 0.5 s chunk motion), not the
+# 9.3 s extrapolation predicted_ee_at_arrival (the false edits of B came from that extrapolation, P113)
+GOALCHECK2 = ("Target check before you answer: take the gripper tip as it is now (white ring, tip_now_m) and the "
+              "direction of the committed arrow, and compare them with the object or place that the current segment "
+              "needs; state in evidence roughly how many cm apart the tip is horizontally from it and whether the "
+              "committed motion heads toward it. Do not use predicted_ee_at_arrival for this check (it is a rough "
+              "straight-line extrapolation). A policy that is heading for, or hovering at, a spot several cm beside the "
+              "correct object or place pursues the wrong subgoal: intent=misaligned.\n")
+GOALCHECK2_ID = hashlib.sha256(GOALCHECK2.encode()).hexdigest()[:6]
 
 
 def _v3(v) -> str:
@@ -175,7 +184,7 @@ def campose_text(cams: dict, order: list, tip_above_table_m: float) -> str:
 
 def build_v2(req: dict, images: dict, cams_order: list, task: str, *, arm: str = "right", trace_s: float = 2.5,
              horizon_s: float = 9.3, drawn: dict | None = None, campose: str = "", detail: str | None = None,
-             goalcheck: bool = False) -> list:
+             goalcheck: bool | str = False) -> list:
     """Same message layout as the production build_input: text first, then 'cam:' label + JPEG per camera sent.
     goalcheck (E-ACC stage 2 arm 'gc', prereg change 5): GOALCHECK goes right before the mode rule line; off ->
     byte-identical v2 text."""
@@ -184,7 +193,8 @@ def build_v2(req: dict, images: dict, cams_order: list, task: str, *, arm: str =
                            cameras=camera_text(sent, arm), legend=legend_text(drawn, trace_s),
                            events=events_text(req.get("events", [])),
                            context=CONTEXT_RULE if "since_last_request" in req else "",
-                           mode_rules=(GOALCHECK + MODE_RULE) if goalcheck else MODE_RULE,
+                           mode_rules=({"gc2": GOALCHECK2}.get(goalcheck, GOALCHECK) + MODE_RULE) if goalcheck
+                           else MODE_RULE,
                            req_open=CP.REQ_OPEN, request_json=json.dumps(req, sort_keys=True, ensure_ascii=False),
                            req_close=CP.REQ_CLOSE, answer_form=ANSWER_FORM)
     content = [{"type": "input_text", "text": text}]

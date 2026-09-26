@@ -125,7 +125,7 @@ def run(a) -> dict:
     arms = [A.parse_arm(x) for x in a.arms.split(",")]
     prices = PriceTable.load(a.prices) if a.model == "astra" else PriceTable.free()
     ledger = CostLedger(a.ledger if a.model == "astra" else None, a.cap_krw if a.model == "astra" else 0.0, prices,
-                        stop_frac=0.8, run_id=f"eacc_{a.tag}")
+                        stop_frac=a.stop_frac, run_id=f"eacc_{a.tag}")
     clients = {}
     done = set()
     if os.path.exists(a.out):
@@ -196,6 +196,7 @@ def main(argv=None):
     ap.add_argument("--ledger", default="/data/harvest/logs/eacc/astra_ledger.jsonl")
     ap.add_argument("--prices", default="/data/harvest/logs/eacc/prices_2026-09-26.json")
     ap.add_argument("--cap-krw", type=float, default=8000.0)
+    ap.add_argument("--stop-frac", type=float, default=0.8, help="prereg change 6: 0.95 for B-prime")
     ap.add_argument("--tag", default="main")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--kinds", default="", help="only these snapshot kinds of the set (e.g. off_a,off_b,off_c)")

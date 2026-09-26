@@ -222,7 +222,7 @@ def _bench(tmp_path):
 def test_build_every_arm(tmp_path):
     root = _bench(tmp_path)
     m = json.loads((root / "off_a_00" / "meta.json").read_text())
-    for name in ("v1", "v2", "v2cp", "v2_2cam", "v2_noov", "v2_noctx", "v2cp_dlow", "v2_ax", "v2_gc", "v2_med"):
+    for name in ("v1", "v2", "v2cp", "v2_2cam", "v2_noov", "v2_noctx", "v2cp_dlow", "v2_ax", "v2_gc", "v2_med", "v2_gc2"):
         arm = A.parse_arm(name)
         inp, req, pid, text = A.build(str(root / "off_a_00"), m, arm)
         n_img = sum(c.get("type") == "input_image" for c in inp[0]["content"])
@@ -232,8 +232,10 @@ def test_build_every_arm(tmp_path):
         else:
             ax = "Axis guide on" in text
             assert ax == arm["axis"]  # the synthetic camera sees the tip
-            assert pid == P2.PROMPT_ID + (f"+ax{P2.AXISGUIDE_ID}" if ax else "") + (f"+gc{P2.GOALCHECK_ID}" if arm["goalcheck"] else "")
-            assert (P2.GOALCHECK in text) == arm["goalcheck"] and "\"segment\": {\"now\"" in text
+            gcid = f"+gc2{P2.GOALCHECK2_ID}" if arm["goalcheck"] == "gc2" else f"+gc{P2.GOALCHECK_ID}" if arm["goalcheck"] else ""
+            assert pid == P2.PROMPT_ID + (f"+ax{P2.AXISGUIDE_ID}" if ax else "") + gcid
+            assert (P2.GOALCHECK in text) == (arm["goalcheck"] is True) and (P2.GOALCHECK2 in text) == (arm["goalcheck"] == "gc2")
+            assert "\"segment\": {\"now\"" in text
             assert ("Camera poses now" in text) == arm["campose"]
             assert ("since_last_request (in the request)" in text) == arm["context"]
             assert ("No overlay is drawn" in text) == (not arm["overlay"])

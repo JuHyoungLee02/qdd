@@ -8,13 +8,19 @@ PY=/data/harvest/venv_vllm/bin/python
 L=/data/harvest/logs/eacc; O=/data/harvest/out/eacc
 cd $C
 export PYTHONPATH=$C OMP_WAIT_POLICY=PASSIVE
+SF=${SF:-0.8}
 run() {  # run <arms> <kinds> <limit> <out tag>
   $PY tools/eacc/run_eacc.py --bench $O/bench --set paid --kinds $2 --limit $3 --arms $1 --model astra \
     --out $O/astra_$4.jsonl --tag $4 --ledger $L/astra_ledger_r2.jsonl --prices $L/prices_2026-09-26.json \
-    --cap-krw 8000 >> $L/astra_$4.log 2>&1
+    --cap-krw 8000 --stop-frac $SF >> $L/astra_$4.log 2>&1
   echo "EXIT $? $1 $2 $3 $(date -u +%FT%TZ)" >> $L/astra_$4.log
 }
-if [ "$MODE" = probe ]; then
+if [ "$MODE" = bprime_probe ]; then  # prereg change 6: B-prime, stop ratio 0.95 (SF set by the caller)
+  run v2_gc2 off_a,off_c 3 s2bp
+elif [ "$MODE" = bprime ]; then
+  run v2_gc2 off_a,off_c 0 s2bp
+  run v2_gc2 on 5 s2bp
+elif [ "$MODE" = probe ]; then
   run v2_med off_a,off_c 3 s2a
   run v2_gc off_a,off_c 3 s2b
 else
