@@ -494,3 +494,4 @@
 - 01:20 UTC 기록(2026-09-26): E-MA2 결과(`docs/stage3/results/ma2.md`, 사전 등록 `fde4f6a`) — C0 없음/C1 문장/C2 화살표 × R2_TRAIN 결정 스냅샷, 준수율 0.001/0.177/0.001 → NONE(§84 보충 4). 교훈: 결정층이 명령을 읽어도 expert 청크는 따르지 않을 수 있다 — 준수는 행동 수준으로 잰다; 명령 칸과 labels_v2 방향 일치가 0.74뿐이라 명령 준 표본의 방향 정답을 명령 칸으로 바꿔 등록했다.
 - 01:16 UTC 기록(2026-09-26): 결합 구현 계획 Task 2 — `harvest/couple/gate.py`(의미 게이트: 나이·불확실·개입 자격·손목 근거) + `tests/couple/test_gate.py`, stale 기준 15s(정본 §86) 반영, 시험 8개 통과.
 - 01:33 UTC 기록(2026-09-26): 결합 구현 계획 Task 3 — `harvest/couple/cost.py`(PriceTable·CostLedger, TOK_HEAD 302·TOK_WRIST 152 — 결과 §2 G1 v2 영상 장수별 토큰 1장 588/2장 738/3장 892, +150/+154) + `tests/couple/test_cost.py`, 시험 6개 통과.
+- 01:44 UTC 기록(2026-09-26): 결합 구현 계획 Task 4 — `harvest/couple/stream.py`(SerialStream, 직렬 흐름: 동시 1개, 이벤트는 다음 요청에 한 번만 실림)와 `mock.py`의 `ScriptedCoupleAstra`(모의 Astra 클라이언트, AstraRecord 반환) + `tests/couple/test_stream.py`, 시험 6개 통과.

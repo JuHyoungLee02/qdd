@@ -14,7 +14,7 @@
 | `harvest/perception/`, `harvest/stereo/`, `harvest/m4b/` | R1 인식(기준선·진단), E3-ST, 확인 헤드 V1h |
 | `harvest/clients/` | `astra`·`jevl`·`jev` 클라이언트 |
 | `harvest/astra_motion/` | E-Astra-motion 탐침 코드(3500f54) [→ 2026-09-25 21:07 UTC, R7 28회차 D-2] |
-| `harvest/couple/` | 결합 패키지: `params`(`CoupleParams`)·`schema`(astra-couple@v1)·`prompt`·`mock`(Task 1)·`gate`(의미 게이트: 나이·불확실·개입 자격·손목 근거, Task 2)·`cost`(가격표·비용 장부, Task 3); 뒤 과제가 모듈을 더한다 |
+| `harvest/couple/` | 결합 패키지: `params`(`CoupleParams`)·`schema`(astra-couple@v1)·`prompt`·`mock`(Task 1)·`gate`(의미 게이트: 나이·불확실·개입 자격·손목 근거, Task 2)·`cost`(가격표·비용 장부, Task 3)·`stream`(`SerialStream`, 직렬 흐름: 동시 1개)·`mock`의 `ScriptedCoupleAstra`(모의 Astra 클라이언트, Task 4); 뒤 과제가 모듈을 더한다 |
 | `harvest/serialize.py`, `deccall_snap.py`, `labels_v2.py`, `qid.py` | 직렬화(ser-A-min-2)·결정 호출·정답·질문 id |
 | `tools/se2e/` | `se2e_verdict`·`temporal_verdict`·`temporal_latency`·`motion_confirm_verdict`(등록 때 고정) |
 | `tools/ma1/` | `g0`·`g0_point`·`ma1_verdict`·`build_a3d`·`ma1b_verdict` |
@@ -22,7 +22,7 @@
 | `tools/ma2/`, `harvest/train/r2_ma2.py` | E-MA2(명령 입력, R2): 옵션 파일 CLI 포장 `r2_ma2`(`--ma2 c0/c1/c2`, `ma2eval` 돌린 명령 평가) + `build_ma2`(결정 스냅샷 뷰·되짚기 명령·평가 집합·화살표)·`ma2_latency`·`ma2_verdict`(등록 때 고정) |
 | `tools/` 기타 | `se2e_convert.py`(`reconvert --hist`), `labels_v2_eval.py`, `prereg_hash.py --check`, `intent_check.py`·`user_line_check.py`(빨간 줄·[사용자] 줄), `stagea_merge.py`, `r5/`·`r6/`(파드 동기화), `pod_sync.sh` |
 | `tests/` | 전체 시험(로컬은 Git Bash에서 `pytest`; PowerShell에서는 2개 실패 — P33) |
-| `tests/couple/` | `harvest/couple/` 시험(`test_schema.py`, Task 1; `test_gate.py`, Task 2; `test_cost.py`, Task 3) |
+| `tests/couple/` | `harvest/couple/` 시험(`test_schema.py`, Task 1; `test_gate.py`, Task 2; `test_cost.py`, Task 3; `test_stream.py`, Task 4) |
 | `docs/design/00-interfaces.md` | **정본**(마지막 절까지가 현재 판) |
 | `docs/stage3/` | 사전 등록 `prereg_*.md`·`prereg.json`, 결과 `results/`, `direction-log.md` |
 | `docs/superpowers/specs/`·`plans/` | 결합 설계(승인)·구현 계획(16과제) |

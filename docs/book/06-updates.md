@@ -34,3 +34,4 @@
 | 2026-09-26 01:20 | 01·02·03·04·05 | E-MA2 결과 반영: 01 E-MA2 줄 `[결과 전]` → `끝`(실측·NONE·바뀐 결정), 03 §84 보충 4 행, 05 GPU ≈ 2.6 GPU-h, 04 E-MA2 코드·데이터 경로 2행과 `code_ma2`, 02 함정 P75(결정 준수 ≠ 청크 준수)·P76(기다림 루프 pgrep 자기 일치)·P77(덧그림 색이 장면 물체와 겹침)(자. 절 신설) + P68 행의 코드 속 세로줄을 역슬래시로 이스케이프(표 칸 수 기계 검사에서 6칸) | [R/ma2](../stage3/results/ma2.md), 이 줄과 같은 커밋 |
 | 2026-09-26 01:16 | 04 | 결합 구현 계획 Task 2 기록: 04 `harvest/couple/` 행에 `gate`(의미 게이트: 나이·불확실·개입 자격·손목 근거) 추가 | plan Task 2, 이 줄과 같은 커밋 |
 | 2026-09-26 01:33 | 04 | 결합 구현 계획 Task 3 기록: 04 `harvest/couple/` 행에 `cost`(가격표·비용 장부) 추가, `tests/couple/` 행에 `test_cost.py`(및 누락됐던 `test_gate.py`) 추가 | plan Task 3, 이 줄과 같은 커밋 |
+| 2026-09-26 01:44 | 04 | 결합 구현 계획 Task 4 기록: 04 `harvest/couple/` 행에 `stream`(`SerialStream`, 직렬 흐름)과 `mock`의 `ScriptedCoupleAstra` 추가, `tests/couple/` 행에 `test_stream.py` 추가 | plan Task 4, 이 줄과 같은 커밋 |
