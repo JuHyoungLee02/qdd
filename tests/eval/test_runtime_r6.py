@@ -158,3 +158,25 @@ def test_calibration_refused_for_another_prompt_config(tmp_path):
         OursRuntime(RuntimeConfig(calibration=str(p), j5_alpha=0.1, prompt_config_sha="new-sha"), MockSelector())
     rt = OursRuntime(RuntimeConfig(calibration=str(p), j5_alpha=0.1, prompt_config_sha="old-sha"), MockSelector())
     rt.close()
+
+
+def test_calibration_sha_derivation_uses_the_served_layout_not_the_checkpoint_default(tmp_path):
+    """F19 fix round 1 (controller ruling F20 item 2): eval/calib.py's writer can be given an explicit --layout
+    (calib.py:130 `layout = C.default_layout(pc) if a.layout == "auto" else a.layout`), and eval/closed.py serves
+    that same explicit layout (closed.py:453) and threads it into RuntimeConfig.layout (closed.py:265-267). The
+    runtime's auto-derivation (core.py, cfg.prompt_config_sha is None) must use cfg.layout when the caller set one,
+    not blindly recompute default_layout(training_prompt_config(...)) -- a checkpoint with an unrelated / missing
+    prompt_config (default_layout -> "H") served under an explicit non-default layout ("HW") must still load a
+    calibration file built with prompt_config_eval("HW")."""
+    from harvest.eval.common import prompt_config_eval
+    from harvest.runtime.core import OursRuntime, RuntimeConfig
+    from harvest.runtime.models import MockSelector
+
+    model_path = str(tmp_path / "no_such_checkpoint")  # training_prompt_config(model_path) -> None -> default "H"
+    hw_sha = prompt_config_eval("HW")["sha"]
+    p = tmp_path / "c_hw.json"
+    p.write_text(json.dumps({"format": "r6-calib-v1", "model": {"fingerprint": None}, "question_ids": {},
+                             "prompt_config_sha": hw_sha, "questions": {}}))
+    rt = OursRuntime(RuntimeConfig(calibration=str(p), j5_alpha=0.1, model_path=model_path, layout="HW"),
+                      MockSelector())
+    rt.close()

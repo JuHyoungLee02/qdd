@@ -159,7 +159,11 @@ class OursRuntime:
             pcs = cfg.prompt_config_sha
             if pcs is None and cfg.model_path:  # F19: derive the checkpoint's current sha (eval/calib.py's writer)
                 from ..eval.common import default_layout, prompt_config_eval, training_prompt_config
-                pcs = prompt_config_eval(default_layout(training_prompt_config(cfg.model_path)))["sha"]
+                # F20 fix (item 2): the served layout wins when the caller set one (cfg.layout, threaded by
+                # eval/closed.py from its own --layout/auto resolution, canon §59) -- it is what calib.py's writer
+                # actually hashed when given an explicit --layout, not necessarily the checkpoint's own default.
+                layout = cfg.layout or default_layout(training_prompt_config(cfg.model_path))
+                pcs = prompt_config_eval(layout)["sha"]
             self.cal = Calibration.load(cfg.calibration, fingerprint=cfg.model_fingerprint,
                                         question_ids=cfg.question_ids or None, prompt_config_sha=pcs)
         self.vcal = VerifyCal.load(cfg.verify_cal) if cfg.verify_cal else VerifyCal.default()
@@ -631,8 +635,12 @@ class OursRuntime:
         if m["hb_no"] in self.dropped_hb:
             self.astra_log.append({"hb_no": m["hb_no"], "late_after_timeout": True, "t": round(now, 3)})
             return
-        dec, note, parse_mode = parse_decision_ex(rec_.output_text,
-                                                  tuple(m.get("allowed") or ("ack", "patch", "replace")))
+        if rec_.error or rec_.incomplete:  # F20 fix (item 1): an errored/incomplete record is never parsed for a
+            # decision -- regex_fallback could otherwise find an allowed word (e.g. "patch") inside truncated text
+            dec, note, parse_mode = "invalid", "", "failed"
+        else:
+            dec, note, parse_mode = parse_decision_ex(rec_.output_text,
+                                                      tuple(m.get("allowed") or ("ack", "patch", "replace")))
         self.hb.responded(now)
         entry = {"hb_no": m["hb_no"], "kind": m.get("call_kind", "hb"), "cadence": self.cfg.hb_mode,
                  "prompt_id": m.get("prompt_id"), "t_send": round(r["t_send"], 3),
