@@ -128,6 +128,51 @@ def test_stage_switch_needs_next_and_exit_predicates():
     assert s.stage == "S2" and s.phase == "carry"
 
 
+def _lifted_skill_with_bias():
+    g = (0.40, -0.20, 0.12)
+    tcp = np.array(g) + [0, 0, TZ]
+    s = PickPlaceSkill(dt=0.01)
+    s.reset(0.0, tcp, [1, 0, 0, 0])
+    s.nudge([0.0, 0.02, 0.0, 0.0, 0.0, 0.0], TZ)  # an Astra offset applied during S1 (pick)
+    return s, g, tcp
+
+
+def test_bias_is_cleared_at_the_s1_to_s2_stage_change():
+    """Task 19 fix 2 (ruling F19b): a pick-time correction must not shift the place sub-goal -- the bias is cleared
+    (and logged) when the stage switches S1 -> S2; phase changes inside a stage keep it."""
+    s, g, tcp = _lifted_skill_with_bias()
+    raw, pred = _raw(g, mug=(0.40, -0.20, 0.12 - 0.03)), {**HOLD, "lifted(o3)": True}
+    s.begin_slot(0, {**DEC, "dir_xy": "none_xy", "dir_z": "up", "phase": "continue"})
+    s.tick(0.0, raw, pred, tcp, TZ)
+    assert s.phase == "lift" and s.bias[1] == pytest.approx(0.02)  # phase change inside S1 keeps it
+    s.begin_slot(1, {**DEC, "dir_xy": "none_xy", "dir_z": "up", "phase": "next"})
+    ev = s.tick(0.33, raw, pred, tcp, TZ).events
+    assert s.stage == "S2" and np.all(s.bias == 0.0)
+    clr = [e for e in ev if e.get("event") == "bias_cleared"]
+    assert len(clr) == 1 and clr[0]["why"] == "stage_S2" and clr[0]["bias"] == [0.0, 0.02, 0.0]
+    # the place sub-goal is unshifted: the next S2 tick moves exactly like a skill that never had a bias
+    ref = PickPlaceSkill(dt=0.01)
+    ref.reset(0.0, tcp, [1, 0, 0, 0])
+    ref.begin_slot(0, {**DEC, "dir_xy": "none_xy", "dir_z": "up", "phase": "continue"})
+    ref.tick(0.0, raw, pred, tcp, TZ)
+    ref.begin_slot(1, {**DEC, "dir_xy": "none_xy", "dir_z": "up", "phase": "next"})
+    ref.tick(0.33, raw, pred, tcp, TZ)
+    carry = {**DEC, "dir_xy": "plus_x_plus_y", "dir_z": "none_z", "phase": "continue", "target": "o5"}
+    for sk in (s, ref):
+        sk.cmd_pos = tcp.copy()
+        sk.begin_slot(2, carry)
+    a, b = s.tick(0.66, raw, pred, tcp, TZ), ref.tick(0.66, raw, pred, tcp, TZ)
+    assert b.allowed and float(np.linalg.norm(b.pos_w - tcp)) > 1e-4  # the reference skill does move
+    np.testing.assert_allclose(a.pos_w, b.pos_w)
+
+
+def test_astra_run_instruction_stage_change_also_clears_the_bias():
+    s, g, tcp = _lifted_skill_with_bias()
+    assert s.astra_advance("run_instruction", 1.0, {**HOLD, "lifted(o3)": True}) == "applied"
+    assert s.stage == "S2" and np.all(s.bias == 0.0)
+    assert [e["why"] for e in s.events if e.get("event") == "bias_cleared"] == ["stage_S2"]
+
+
 def test_step_outcome_thresholds():
     s, tcp = _skill()
     assert s.step_outcome(tcp)[0] == "OK"

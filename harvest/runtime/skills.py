@@ -187,7 +187,7 @@ class PickPlaceSkill:
                 return self._cmd(t, "close", False)
             if (self.stage == "S1" and pred.get("holding(o3)") and pred.get("lifted(o3)")
                     and self.stage_gate == "self" and self._gate("stage", t)):
-                self.stage = "S2"
+                d = d - self._enter_s2(t)  # this tick's sub-goal without the cleared bias too
                 self._set_phase("carry", t, "next+exit_S1")
             elif (self.stage == "S2" and gs == "closed_holding" and M == "place"
                   and (pred.get("in_contact(o3,o5)") or reached) and self._gate("release", t)):
@@ -215,6 +215,18 @@ class PickPlaceSkill:
                                      np.clip(self.cmd_pos[2], z_lo, table_z + WS_Z[1])])
         return self._cmd(t, M, allowed)
 
+    def _enter_s2(self, t: float) -> np.ndarray:
+        """Stage S1 -> S2; returns the cleared bias. The coupling bias is cleared here (plan Task 19 fix 2, ruling
+        F19b): a pick-time Astra correction must not shift the place sub-goal; phase changes inside a stage keep it.
+        Logged as a skill event (bias_cleared, with the cleared vector) when a bias was held."""
+        self.stage = "S2"
+        old = self.bias
+        if np.any(old):
+            self.events.append({"t": round(t, 3), "event": "bias_cleared", "why": "stage_S2",
+                                "bias": [round(float(v), 4) for v in old]})
+        self.bias = np.zeros(3)
+        return old
+
     def _gate(self, kind: str, t: float) -> bool:
         return self.irrev_gate is None or bool(self.irrev_gate(kind, t))
 
@@ -222,8 +234,8 @@ class PickPlaceSkill:
         """One tick of the Astra offset (couple.offset): the reference itself moves (the skill goes on from the shifted
         point and M4 (b) compares the measured TCP with it); rotation turns cmd_quat (the skill slerps it back). The
         clipped translation also accumulates in self.bias, which shifts the skill's sub-goal (tick: d + bias) so the
-        skill does not pull the reference back to its object-derived goal (plan Task 19 fix F19 I2; zeroed by reset
-        and reanchor)."""
+        skill does not pull the reference back to its object-derived goal (plan Task 19 fix F19 I2; zeroed by reset,
+        reanchor and the S1 -> S2 stage change, fix 2 F19b -- phase changes inside a stage keep it)."""
         from ..couple.geom import quat_from_rotvec, quat_mul
         s = np.asarray(step6, float)
         p = self.cmd_pos + s[:3]
@@ -241,7 +253,7 @@ class PickPlaceSkill:
         Returns applied | rejected | noop."""
         if decision == "run_instruction":
             if self.stage == "S1" and pred.get("holding(o3)") and pred.get("lifted(o3)"):
-                self.stage = "S2"
+                self._enter_s2(t)
                 self._set_phase("carry", t, "astra_run_instruction")
                 return "applied"
             return "rejected"
