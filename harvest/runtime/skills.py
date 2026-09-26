@@ -39,6 +39,7 @@ OK_M, LAG_M = 0.015, 0.04  # (b) residual thresholds, TCP command vs measured at
 WS_X, WS_Y, WS_Z = (0.25, 0.65), (-0.50, 0.10), (0.03, 0.35)  # safety box (world x/y, z above the table)
 GRASP_FLOOR_M = 0.003  # TCP grasp floor below the planner's grasp height
 HOLD_DEBOUNCE_S = 0.15  # planner.HOLD_DEBOUNCE = 3 control steps at 20 Hz (datagen: 5 at 30 Hz)
+LOST_W = 0.050083791321819116  # measure.ProprioRules.th_lo: the T1 holding band's lower edge (pads closed past)
 
 
 def constraint(dec: dict):
@@ -93,6 +94,7 @@ class PickPlaceSkill:
         self.goal_quat = np.array([math.cos(TOP_DOWN_YAW / 2), 0, 0, math.sin(TOP_DOWN_YAW / 2)])
         self.irrev_gate = None  # couple.driver irrev_allowed(kind, t): two-layer gate (spec §5); None = off
         self.speed_scale = 1.0  # couple slow down (spec §7, info_request slow_down)
+        self.lost_w = LOST_W  # VLA-closed grasp: object lost only below this pad gap (Task 25 fix F25 I3)
 
     def reset(self, t: float, tcp_pos_w, tcp_quat_w) -> None:
         self.phase, self.stage, self.t_phase0 = "approach", "S1", t
@@ -107,6 +109,7 @@ class PickPlaceSkill:
         self.events: list = []
         self._t_hold = None  # last tick with holding(o3) measured true (debounce)
         self._held = False  # holding(o3) seen since the gripper was last measured open (Task 25 item 4)
+        self._force_low = False  # grip_force_low logged for the current force-only drop (Task 25 fix F25 I3)
         self.bias = np.zeros(3)  # sum of the Astra offset translations applied by nudge (plan Task 19 fix F19 I2)
         self._floor_z = None  # the last tick's grasp floor (nudge keeps cmd_pos and the bias above it, F19c)
 
@@ -168,10 +171,22 @@ class PickPlaceSkill:
         # grasp lost outside a wait: re-open, pick again. Also when the gripper was closed by someone else (the fused
         # VLA's chunk; the skill's cmd_w stays open there) and the holding flag drops in lift / carry after a hold
         # (plan 2026-09-26 Task 25 item 4, vla_alone_diag.md ②: the arm lifted without the mug) -- not in
-        # place_descend, where a release is the task. On the modular path _held implies cmd_w < w_open: unchanged.
-        lost_vla = self._held and self.phase in ("lift", "carry")
+        # place_descend, where a release is the task. Fix F25 I3: only with width evidence -- the pads closed past
+        # the object (width < lost_w = the T1 holding band's lower edge 50.1 mm); a force-only drop with the pads
+        # still apart (diag ②: 58-77 mm, 3/5 mugs moved) is logged once as grip_force_low (no failure, no phase
+        # change). On the modular path _held in lift / carry implies cmd_w < w_open: unchanged.
+        lost_vla = self._held and self.phase in ("lift", "carry") and gs == "closed_empty"
+        w_now = float(raw["grip"].get("w", math.inf))
+        if lost_vla and self.cmd_w >= self.w_open and w_now >= self.lost_w:
+            if not self._force_low:
+                self._force_low = True
+                self.events.append({"t": round(t, 3), "event": "grip_force_low", "phase": self.phase,
+                                    "w": round(w_now, 4)})
+            lost_vla = False
+        elif gs == "closed_holding":
+            self._force_low = False
         if gs == "closed_empty" and (self.cmd_w < self.w_open or lost_vla):
-            self._held = False
+            self._held, self._force_low = False, False
             self.pending_outcome = "CONTRADICT"
             self.cmd_w, self.stage, self.retries = self.w_open, "S1", self.retries + 1
             self.events.append({"t": round(t, 3), "event": "object_lost", "retry": self.retries})

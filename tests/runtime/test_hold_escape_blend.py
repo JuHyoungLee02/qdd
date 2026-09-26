@@ -66,10 +66,10 @@ class _Ramp(_ChunkEdit):
 
 
 class _Lift(_ChunkEdit):
-    """Keeps the gripper closed (50 mm) and lifts the TCP 3 mm per row (joint 2 = z here)."""
+    """Keeps the gripper closed (40 mm command) and lifts the TCP 3 mm per row (joint 2 = z here)."""
 
     def edit(self, c, ctx):
-        c[:, 7] = 0.05
+        c[:, 7] = 0.04
         c[:, 2] += 0.003 * np.arange(len(c))
         return c
 
@@ -78,29 +78,36 @@ class _SlipWorld(FakeWorld):
     """The mug starts between the closed pads (held, effort 5); the pad force drops to 0 at t_slip while the pads
     stay on the mug (vla_alone_diag.md ②: width 58-77 mm, force under the 1.14 holding threshold)."""
 
-    def __init__(self, t_slip):
+    def __init__(self, t_slip, drop=False):
         super().__init__()
-        self.t_slip = t_slip
+        self.t_slip, self.drop = t_slip, drop
         self.tcp = np.array([self.mug[0], self.mug[1], TZ + self.mug[2] + HM - 0.018])
-        self.width = 0.05
+        self.width = 0.04
         self.a = np.r_[self.tcp, 0, 0, 0, 0, self.width]
 
     def m1(self):
+        if self.drop and self.held and self.t >= self.t_slip - 1e-9:
+            # drop: the mug falls away from the pads, which close past it (measured gap = the commanded 40 mm)
+            self.held, self.mug = False, np.array([0.30, -0.35, HM])
         o = super().m1()
         if self.t >= self.t_slip - 1e-9:
             o["raw"]["grip"]["effort"] = 0.0
         return o
 
 
-def _run(model, seconds, world=None, cond="C5", **over):
+def _run(model, seconds, world=None, cond="C5", astra=None, **over):
     m4 = {**asdict(M4Params()), **condition(cond)[0]}
     cfg = RuntimeConfig(backend="fused", clock="simlat", condition=cond, m4=m4, **over)
-    rt = OursRuntime(cfg, model)
+    rt = OursRuntime(cfg, model, astra=astra)
     rt.reset()
     w = world or FakeWorld()
     acts, tcps = [], []
-    for _ in range(int(round(seconds * 100))):
-        a, _ = rt.act(w.obs())
+    for i in range(int(round(seconds * 100))):
+        o = w.obs()
+        if astra is not None and i % 10 == 0:
+            o["images"] = {c: np.full((12, 16, 3), 60, np.uint8) for c in ("cam_head", "cam_wrist_left",
+                                                                            "cam_wrist_right")}
+        a, _ = rt.act(o)
         w.step(a)
         acts.append(np.asarray(a, float).copy())
         tcps.append(w.tcp.copy())
@@ -171,6 +178,34 @@ def test_hold_escape_bounds_every_hold_and_logs_it():
     assert s["hold"]["timeout_s"] == 3.0
 
 
+def test_the_escape_step_plays_its_chunk():
+    """Fix F25 I1: the escape step's chunk was requested during the hold (reopened slots -> committed {}), so its
+    decisions never match the escape step's; it is played by the hold-play fallback, not dropped as stale."""
+    rt, *_ = _run(_NarrowGrip(dx=0.0005), 12.0, grip_open_leave_m=None)
+    esc = [e for e in rt.slots_log if e.get("hold_escape")]
+    assert esc and all(e["decisions"] and not e["hold"] for e in esc)
+    assert rt.chunk_stats["escape_played"] >= 33  # at least one whole escape step (~33 ticks) played its chunk
+    off = _run(_NarrowGrip(dx=0.0005), 12.0, grip_open_leave_m=None, hold_play_chunk=False)[0]
+    assert off.chunk_stats["escape_played"] == 0
+
+
+def test_repeated_escapes_escalate_and_the_held_time_is_reported():
+    """Fix F25 I2: 3 escapes with no non-hold step between -> hold_stuck event + fail path (mode hold_stuck), the
+    streak restarts; summary hold.total_s / frac = the held time (analysis replaces 'permanent hold')."""
+    rt, *_ = _run(_NarrowGrip(), 30.0, grip_open_leave_m=None)
+    esc = [e for e in rt.events if e["event"] == "hold_escape"]
+    assert [e["streak"] for e in esc][:6] == [1, 2, 3, 1, 2, 3]
+    stuck = [e for e in rt.events if e["event"] == "hold_stuck"]
+    assert len(stuck) == len(esc) // 3 >= 2 and all(s["escapes"] == 3 for s in stuck)
+    fp = [e for e in rt.events if e.get("event") == "fail_path" and e["sig"]["mode"] == "hold_stuck"]
+    assert len(fp) == len(stuck) and all(e["sig"]["evidence"] == "m4_hold" for e in fp)
+    h = rt.summary()["hold"]
+    assert h["stuck"] == len(stuck) and h["escape_cap"] == 3
+    assert abs(h["total_s"] - sum(_hold_runs(rt))) < 0.02 and 0.5 < h["frac"] < 1.0
+    none = _run(_NarrowGrip(), 10.0)[0].summary()["hold"]  # hysteresis on: nothing held
+    assert none["total_s"] == 0.0 and none["frac"] == 0.0 and none["stuck"] == 0
+
+
 def test_holding_plays_the_current_chunk_instead_of_dropping_it():
     """While held, the step's chunk is played (not dropped as stale): the arm keeps following the VLA."""
     on = _run(_NarrowGrip(dx=0.0005), 6.0, grip_open_leave_m=None, hold_timeout_s=None)
@@ -186,10 +221,11 @@ def test_holding_plays_the_current_chunk_instead_of_dropping_it():
     assert tcp_on[-1][0] - tcp_on[i][0] > 0.01  # moving with the chunks
 
 
-def test_grasp_flag_drop_after_lift_takes_the_fail_path():
-    """The VLA closed the gripper itself (skill cmd_w stays open on the fused path); the holding flag drops in lift ->
-    object_lost (skill) -> T_fail stand-in (_fail_event), phase back to approach -- not a silent lift."""
-    rt, w, A, _ = _run(_Lift(), 4.0, world=_SlipWorld(t_slip=1.5))
+def test_pads_closed_past_after_lift_take_the_fail_path():
+    """The VLA closed the gripper itself (skill cmd_w stays open on the fused path); the mug drops and the pads close
+    past it (40 mm < 50.1 mm) in lift -> object_lost (skill) -> T_fail stand-in (_fail_event), phase back to
+    approach -- not a silent lift."""
+    rt, w, A, _ = _run(_Lift(), 4.0, world=_SlipWorld(t_slip=1.5, drop=True))
     ph = [e for e in rt.events if e.get("event") == "phase"]
     assert any(e["to"] == "lift" for e in ph)
     lost = [e for e in rt.events if e.get("event") == "object_lost"]
@@ -197,6 +233,18 @@ def test_grasp_flag_drop_after_lift_takes_the_fail_path():
     fp = [e for e in rt.events if e.get("event") == "fail_path" and e["sig"]["mode"] == "object_lost"]
     assert len(fp) == 1
     assert any(e["to"] == "approach" and e["why"] == "object_lost" for e in ph)
+    assert not any(e.get("event") == "grip_force_low" for e in rt.events)
+
+
+def test_force_only_grip_loss_on_a_carried_mug_is_logged_not_object_lost():
+    """Fix F25 I3: pad force 0 with the pads still on the mug (64 mm, diag ② 58-77 mm) -> one grip_force_low event,
+    no object_lost / fail path from the skill, the phase stays lift."""
+    rt, w, A, _ = _run(_Lift(), 4.0, world=_SlipWorld(t_slip=1.5))
+    assert not any(e.get("event") == "object_lost" for e in rt.events)
+    low = [e for e in rt.events if e.get("event") == "grip_force_low"]
+    assert len(low) == 1 and low[0]["phase"] == "lift" and abs(low[0]["w"] - 0.064) < 1e-9
+    assert not any(e.get("event") == "fail_path" and e["sig"]["mode"] == "object_lost" for e in rt.events)
+    assert rt.skill.phase == "lift" and w.held
 
 
 def test_c3_is_unchanged_by_the_escape_and_the_hold_play():
@@ -213,7 +261,9 @@ def test_c3_is_unchanged_by_the_escape_and_the_hold_play():
 def test_chunk_switch_discontinuity_is_blended_to_004_rad_per_tick():
     rt, w, A, _ = _run(_Switch(), 6.0)
     d = np.abs(np.diff(A[:, :7], axis=0))
-    assert d.max() <= 0.04  # exactly: tools/vla_alone/analyze_vla.py counts |delta| > 0.04 as a jump tick
+    assert d.max() < 0.04  # tools/vla_alone/analyze_vla.py counts |delta| > 0.04 as a jump tick
+    f32 = np.abs(np.diff(A[:, :7].astype(np.float32), axis=0))
+    assert f32.max() <= np.float32(0.04)  # fix F25 M7: the margin survives float32 logging
     assert A[:, 4].max() >= 0.3 - 1e-9  # the blend catches up with the new chunk
     assert rt.chunk_stats["blend_arm"] > 0
     raw = _run(_Switch(), 6.0, blend_max_dq=None)[2]
@@ -227,6 +277,22 @@ def test_gripper_jump_at_a_chunk_switch_uses_the_task17_catch_rate():
     assert A[:, 7].min() <= 0.03 + 1e-9 and rt.chunk_stats["blend_grip"] > 0
     raw = _run(_Switch(grip=True), 6.0, blend_max_dq=None)[2]
     assert np.abs(np.diff(raw[:, 7])).max() >= 0.07
+
+
+def test_couple_mode_offset_bias_with_a_chunk_switch_is_blended(monkeypatch):
+    """Fix F25 M8: coupling on (driver present, Astra y-edits at authority 1 -> joint bias via IK) with a 0.3 rad
+    chunk switch: every tick stays under 0.04 rad and the offset still reaches the arm."""
+    from harvest.couple.mock import ScriptedCoupleAstra, answer
+    monkeypatch.setattr("harvest.train.sr1c_authority.Hysteresis.step", lambda self, d, phase, contact=False: 1.0)
+    ed = answer("edit", execution="failed", dp=(0.0, 0.02, 0.0))
+    params = {"request_mode": "F0", "contra_steps": 10 ** 6, "reconcile_apply": False}
+    rt, w, A, _ = _run(_Switch(), 12.0, astra=ScriptedCoupleAstra([ed, ed, answer("continue")], latency_s=3.0),
+                       couple="serial", couple_params=params)
+    assert rt.driver is not None and rt.chunk_stats["blend_arm"] > 0
+    assert rt.summary()["couple"]["offset"]["applied_m"][1] > 0.01
+    assert np.abs(np.diff(A[:, :7], axis=0)).max() < 0.04
+    assert A[:, 1].max() - A[0, 1] > 0.01  # the y bias moved the arm (joint 1 = y in the fake kinematics)
+    rt.close()
 
 
 def test_blending_is_a_no_op_on_a_smooth_chunk_sequence():

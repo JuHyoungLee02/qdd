@@ -146,9 +146,13 @@ class RuntimeConfig:
     # E-M4b-meas rule); the stuck approach chunks sat at 77.1-80.2 mm, a held mug keeps the pads at ~64 mm
     grip_open_leave_m: float | None = 0.075
     # an M4 hold that has lasted this long is escaped: the next step runs its (fresh) decisions once, logged as a
-    # hold_escape event (None = no escape); C3 stalls 0.5-1.2 s vs permanent C5 holds 36.6-56.4 s
+    # hold_escape event (None = no escape). [가정] value (fix F25 M4): the committed records give no distribution of
+    # self-resolved C5 hold lengths (dr dev1 resolved once and re-held 1.3 s later); 3.0 s > the planner's whole
+    # approach (median 1.33 s, p90 1.67 s) and far below the permanent holds (36.6-56.4 s); pod Task 25 C measures it
     hold_timeout_s: float | None = 3.0
-    hold_play_chunk: bool = True  # fused: while held, play the step's chunk instead of dropping it as stale
+    hold_play_chunk: bool = True  # fused: while held (and in an escape step), play the step's chunk, not drop it
+    # Task 25 fix F25 I2: this many escapes in a row (no non-hold step between) -> hold_stuck T_fail stand-in
+    hold_escape_cap: int | None = 3
     # fused: per-tick arm joint rate limit from the last command at chunk transitions (rad / 10 ms tick; the user's
     # no-jump rule 0.04) + the gripper by the Task 17 catch rate; None = off (no gripper limit either)
     blend_max_dq: float | None = 0.04
@@ -217,6 +221,7 @@ class OursRuntime:
         self.segment_intent = SEGMENT_UNKNOWN
         self.q = DeliveryQueue(self.cfg.clock, wall=self.wall)
         self.skill = PickPlaceSkill(dt=self.dt)
+        self.skill.lost_w = self.rules.th_lo  # fix F25 I3: 'pads closed past the object' = the T1 holding band edge
         self.hb = HeartbeatScheduler(self.cfg.hb_N_s, self.cfg.hb_timeout_s, budget=self.cfg.hb_budget,
                                      mode=self.cfg.hb_mode, k3_period_s=self.cfg.k3_period_s)
         self.skill.stage_gate = "astra" if self.cfg.hb_mode == "K3" else "self"  # K3: Astra says when a step ends
@@ -230,9 +235,10 @@ class OursRuntime:
         self.calls, self.slots_log, self.astra_log, self.events, self.sampled = [], [], [], [], []
         self.chunks, self.chunk_req, self.chunk_log = {}, set(), []
         self.chunk_stats = {"played": 0, "held": 0, "requested": 0, "delivered": 0, "stale_dec": 0,
-                            "hold_played": 0, "blend_arm": 0, "blend_grip": 0}
+                            "hold_played": 0, "escape_played": 0, "blend_arm": 0, "blend_grip": 0}
         self._hold_since, self._grip_blend = None, None  # Task 25: start of the running M4 hold; gripper blend rate
-        self.hold_stats = {"escapes": 0, "max_s": 0.0}
+        self.hold_stats = {"escapes": 0, "max_s": 0.0, "total_s": 0.0, "stuck": 0}
+        self._escape_step, self._esc_streak, self._t_bprev = False, 0, None  # F25: escape step / streak / held time
         self.last_a, self.prev_cmd, self.t0_wall, self.t_last, self.q_meas = None, None, None, 0.0, None
         self._last_sample, self._phase_seen = -1e9, None
         self.j5_streak, self.j5_stats = {}, {"held": 0, "escalated": 0, "passed": 0}
@@ -813,6 +819,9 @@ class OursRuntime:
             entry["w"] = round(float(raw["grip"]["w"]), 4)
             if "o3" in raw["objs"]:
                 entry["o3_tbl"] = [round(float(v), 4) for v in raw["objs"]["o3"]["pos"]]
+        if self._t_bprev is not None and self.hold_step:  # F25 I2: held time of the step that just ended
+            self.hold_stats["total_s"] += now - self._t_bprev
+        self._t_bprev, self._escape_step = now, False
         if prev is not None:
             if self.cfg.backend == "fused":
                 out, resid = self._joint_outcome()
@@ -867,11 +876,14 @@ class OursRuntime:
         -- the step's decisions (the early call after each CONTRADICT re-asked them from the current observation) are
         executed as if the premise held; the skill's own code safety predicates and the coupling's two-layer gate
         still guard every irreversible event. Logged as a hold_escape event; the hold re-arms at the next CONTRADICT,
-        so no hold lasts longer than hold_timeout_s + one step (E-VLA-solo: 8/12 C5 episodes never left the hold)."""
+        so no hold lasts longer than hold_timeout_s + one step (E-VLA-solo: 8/12 C5 episodes never left the hold).
+        Fix F25: the escape step plays its own chunk on the fused path (_play_chunk, `_escape_step`); hold_escape_cap
+        escapes in a row with no non-hold step between -> a `hold_stuck` event and the T_fail stand-in
+        (_fail_event mode hold_stuck, evidence m4_hold), then the count restarts."""
         if not self.hold_step:
             if self._hold_since is not None:
                 self.hold_stats["max_s"] = max(self.hold_stats["max_s"], now - self._hold_since)
-            self._hold_since = None
+            self._hold_since, self._esc_streak = None, 0
             return
         if self._hold_since is None:
             self._hold_since = now
@@ -883,8 +895,17 @@ class OursRuntime:
         self.hold_step, self._hold_since = False, None
         self.hold_stats["escapes"] += 1
         entry["hold_escape"] = True
+        self._escape_step, self._esc_streak = True, self._esc_streak + 1
         self.events.append({"t": round(now, 4), "event": "hold_escape", "ds": ds, "held_s": round(held, 4),
-                            "t1_false": list(entry.get("t1_check") or []), "phase": self.skill.phase})
+                            "t1_false": list(entry.get("t1_check") or []), "phase": self.skill.phase,
+                            "streak": self._esc_streak})
+        cap = self.cfg.hold_escape_cap
+        if cap is not None and self._esc_streak >= cap:
+            self.hold_stats["stuck"] += 1
+            self.events.append({"t": round(now, 4), "event": "hold_stuck", "ds": ds, "escapes": self._esc_streak,
+                                "t1_false": list(entry.get("t1_check") or []), "phase": self.skill.phase})
+            self._esc_streak = 0
+            self._fail_event(now, "hold_stuck", "m4_hold")
 
     def _joint_outcome(self):
         """Fused (b): measured arm joints vs the executed chunk target at the step end (the chunk is the fused
@@ -992,13 +1013,18 @@ class OursRuntime:
             self._chunk_played, self._played_t_state = True, c["t_state"]
             lag = self._play_lag - c.get("lag", 0.0)  # lag accrued since this chunk's observation (0.0 when off)
             return chunk_value(c["chunk"], c["dt"], c["t_state"], now - lag if lag else now)
-        if c is not None and self.hold_step and self.cfg.hold_play_chunk:
+        if c is not None and (self.hold_step or self._escape_step) and self.cfg.hold_play_chunk:
+            # fix F25 I1: the escape step's chunk was requested during the hold (reopened slots -> committed {}),
+            # its decisions never match the escape step's ones -> played by the same fallback (escape_played)
+            if not self.hold_step:
+                self.chunk_stats["escape_played"] += 1
             # Task 25 item 3: an M4 hold empties the step's decisions, so the step's chunk never matches them; dropping
             # it froze the arm on the action that produced the contradiction (vla_alone_diag.md: 99 % of the unplayed
             # ticks were stale_dec). While held, the step's chunk (the newest one, from an observation <= T_c +
             # chunk_lead_s old) is played; the skill runs no decisions ('next' events off) and the coupling's gripper
             # gate (_couple_fused) still applies. hold_play_chunk False = the old hold (last action, chunk dropped)
-            self.chunk_stats["hold_played"] += 1
+            else:
+                self.chunk_stats["hold_played"] += 1
             self._chunk_played, self._played_t_state = True, c["t_state"]
             lag = self._play_lag - c.get("lag", 0.0)
             return chunk_value(c["chunk"], c["dt"], c["t_state"], now - lag if lag else now)
@@ -1009,7 +1035,8 @@ class OursRuntime:
 
     def _blend(self, a):
         """Fused chunk-transition blending (plan 2026-09-26 Task 25 B; user rule: no jumps, joint speed <= 0.04 rad
-        per tick): the arm joints move from the last command at most blend_max_dq per tick (a hard per-joint clamp;
+        per tick): the arm joints move from the last command at most blend_max_dq x (1 - 1e-6) per tick (a hard
+        per-joint clamp with a small margin so the logged step stays under the limit also in float32, fix F25 M7;
         a chunk switch with a 0.3 rad gap is reached in 8 ticks); the gripper, when a switch jumps by more than the
         played chunk's own per-tick rate, moves at the Task 17 catch rate (_grip_catch_rate: own rate + the gap over
         one chunk horizon) until it has caught up. A no-op (the same object returned) when every step is within the
@@ -1023,10 +1050,8 @@ class OursRuntime:
         d = a[:7] - prev[:7]
         if float(np.max(np.abs(d))) > lim:
             a = a.copy()
-            q = prev[:7] + np.clip(d, -lim, lim)
-            while np.any(over := np.abs(q - prev[:7]) > lim):  # float rounding: the step as read back stays <= lim
-                q[over] = np.nextafter(q[over], prev[:7][over])
-            a[:7] = q
+            m = lim * (1.0 - 1e-6)
+            a[:7] = prev[:7] + np.clip(d, -m, m)
             self.chunk_stats["blend_arm"] += 1
         if self._grip_lim is not None:
             self._grip_blend = None
@@ -1065,6 +1090,19 @@ class OursRuntime:
             self._last_sample, self._phase_seen = now, ph
 
     # ------------------------------------------------------------------ summary
+    def _hold_summary(self) -> dict:
+        """M4 hold record (Task 25 + fix F25 I2): escapes, hold_stuck escalations, longest continuous hold, total held
+        time and its share of the episode (the running step counted up to the last tick). A permanent hold cannot
+        occur any more, so the pod analysis reads total_s / frac / stuck instead of 'held from first hold to the end'."""
+        live = self.t_last - self._t_bprev if self._t_bprev is not None and self.hold_step else 0.0
+        total = self.hold_stats["total_s"] + max(live, 0.0)
+        run = self.t_last - self._hold_since if self._hold_since is not None else 0.0
+        T = max(self.t_last, 1e-9)
+        return {"escapes": self.hold_stats["escapes"], "stuck": self.hold_stats["stuck"],
+                "timeout_s": self.cfg.hold_timeout_s, "escape_cap": self.cfg.hold_escape_cap,
+                "max_s": round(max(self.hold_stats["max_s"], run), 4), "total_s": round(total, 4),
+                "frac": round(total / T, 4)}
+
     def summary(self) -> dict:
         lat = [c["latency_s"] for c in self.calls if c["error"] is None]
         wall = self.wall() - self.t0_wall if self.t0_wall is not None else None
@@ -1088,9 +1126,7 @@ class OursRuntime:
                 "astra_latency_s": {"p50": _pct(hb_lat, 50), "max": max(hb_lat) if hb_lat else None},
                 "final_phase": self.skill.phase, "final_stage": self.skill.stage,
                 "grasp_retries": self.skill.retries, "chunk": dict(self.chunk_stats),
-                "hold": {"escapes": self.hold_stats["escapes"], "timeout_s": self.cfg.hold_timeout_s,
-                         "max_s": round(max(self.hold_stats["max_s"], self.t_last - self._hold_since
-                                            if self._hold_since is not None else 0.0), 4)},
+                "hold": self._hold_summary(),
                 "condition": self.cfg.condition, "stop_ticks": getattr(self, "n_stop_ticks", 0),
                 "dec_inflight": {"max": max(self.inflight_at_send, default=None),
                                  "mean": round(float(np.mean(self.inflight_at_send)), 3)
