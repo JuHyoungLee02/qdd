@@ -41,12 +41,15 @@ class LocalVLMAstra:
             if r.status_code != 200:
                 rec.error = f"http_{r.status_code}"
             else:
-                d = r.json()
-                rec.output_text = d["choices"][0]["message"]["content"] or ""
-                u = d.get("usage") or {}
-                rec.usage = {"input_tokens": int(u.get("prompt_tokens", 0)),
-                             "output_tokens": int(u.get("completion_tokens", 0))}
-                rec.model_field = d.get("model")
+                try:
+                    d = r.json()
+                    rec.output_text = d["choices"][0]["message"]["content"] or ""
+                    u = d.get("usage") or {}
+                    rec.usage = {"input_tokens": int(u.get("prompt_tokens", 0)),
+                                 "output_tokens": int(u.get("completion_tokens", 0))}
+                    rec.model_field = d.get("model")
+                except (ValueError, KeyError, IndexError, TypeError):
+                    rec.error = "bad_response"
         except httpx.HTTPError as e:
             rec.error = "timeout" if isinstance(e, httpx.TimeoutException) else type(e).__name__
         rec.t_done = time.monotonic()

@@ -38,3 +38,15 @@ def test_http_error_and_timeout_are_recorded():
         raise httpx.ReadTimeout("slow", request=req)
     t = LocalVLMAstra("http://vllm:8000", "m", transport=httpx.MockTransport(boom))
     assert t.call(INP, "low", 10, {}).error == "timeout"
+
+
+def test_malformed_200_response_is_recorded_not_raised():
+    bad_json = LocalVLMAstra("http://vllm:8000", "m",
+                              transport=httpx.MockTransport(lambda r: httpx.Response(200, text="not json")))
+    rec = bad_json.call(INP, "low", 10, {})
+    assert rec.error == "bad_response" and rec.http_status == 200
+
+    empty_choices = LocalVLMAstra("http://vllm:8000", "m",
+                                   transport=httpx.MockTransport(lambda r: httpx.Response(200, json={"choices": []})))
+    rec2 = empty_choices.call(INP, "low", 10, {})
+    assert rec2.error == "bad_response" and rec2.http_status == 200
