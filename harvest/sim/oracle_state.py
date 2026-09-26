@@ -30,6 +30,27 @@ def support_from_contacts(pos: dict, half_z: dict, contacts: set, table_tol: flo
     return sup
 
 
+REST_TOL_M = 0.006  # mesh object bottom within 6 mm of another object's top (convex-hull colliders sit a few mm off)
+
+
+def mesh_rest_contacts(k: str, objs: dict, tol: float = REST_TOL_M) -> set:
+    """{k, j} when mesh object k rests on object j: k's lowest point within tol of j's top face and k's centre inside
+    j's upright box in xy (table frame positions; boxes as OBJ_GEOM half extents, j assumed upright)."""
+    from .scene import OBJ_GEOM, SUPPORT_TOP
+    from .tasks import lowest_z
+    a = objs[k]
+    bot = lowest_z(k, a.pos, a.quat_wxyz)
+    out = set()
+    for j, b in objs.items():
+        if j == k or OBJ_GEOM[j]["shape"] in ("marker", "surface"):
+            continue
+        he = OBJ_GEOM[j]["half_extents"]
+        top = b.pos[2] - he[2] + SUPPORT_TOP.get(j, 2 * he[2])
+        if abs(bot - top) <= tol and abs(a.pos[0] - b.pos[0]) <= he[0] and abs(a.pos[1] - b.pos[1]) <= he[1]:
+            out.add(frozenset({k, j}))
+    return out
+
+
 def oracle_objects(env):
     """(objs, gripper, contacts, support) for PredicateState.update, table frame (z = 0 at the table top).
 
@@ -67,6 +88,9 @@ def oracle_objects(env):
         for j, m in zip(others, mag[n_f:]):
             if m > CONTACT_FORCE_N and j in env.present:
                 contacts.add(frozenset({k, j}))
+        if OBJ_GEOM[k]["shape"] == "mesh":  # L8-X mesh objects report finger contacts but not object contacts
+            # (nested rigid body of the physics USD, debug_objv_contact): resting on another object = geometric
+            contacts |= mesh_rest_contacts(k, objs)
     tcp = to_table_frame(env.finger_mid(), z0)
     grip = Gripper(width_m=env.gripper_width(), effort=env.gripper_effort(), pos=tcp)
     support = support_from_contacts({k: o.pos for k, o in objs.items()}, half_z, contacts)

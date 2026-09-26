@@ -32,6 +32,22 @@ def test_canonical_roundtrip(rows):
     assert r[2] == pytest.approx(0.85 + g["root_above_bottom"], abs=1e-9)
 
 
+def test_mesh_rest_contacts(rows):
+    from harvest.predicates import Obj
+    from harvest.sim.oracle_state import mesh_rest_contacts
+    k = sorted(OV.eligible(rows, "train"))[0]
+    OV.register({k: rows[k]})
+    h = S.OBJ_GEOM[k]["height"]
+    tray = Obj("o5", np.array([0.47, -0.30, 0.0075]), np.array([1.0, 0, 0, 0]), np.array(S.OBJ_GEOM["o5"]["half_extents"]))
+    on = Obj(k, np.array([0.48, -0.31, 0.015 + h / 2 + 0.002]), np.array([1.0, 0, 0, 0]),
+             np.array(S.OBJ_GEOM[k]["half_extents"]))
+    assert mesh_rest_contacts(k, {"o5": tray, k: on}) == {frozenset({k, "o5"})}
+    off = Obj(k, np.array([0.70, -0.31, 0.015 + h / 2]), np.array([1.0, 0, 0, 0]), on.half_extents)
+    assert not mesh_rest_contacts(k, {"o5": tray, k: off})
+    high = Obj(k, np.array([0.48, -0.31, 0.05 + h / 2]), np.array([1.0, 0, 0, 0]), on.half_extents)
+    assert not mesh_rest_contacts(k, {"o5": tray, k: high})
+
+
 def test_register_tasks_and_eligibility(rows):
     el = OV.eligible(rows, "train")
     assert el and all(r["stable_upright"] for r in el.values()) and all(r["split"] == "train" for r in el.values())
