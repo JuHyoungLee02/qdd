@@ -60,6 +60,18 @@ def test_inflight_violations():
     assert AN.inflight_violations(bad)["violations"] == 1
 
 
+def test_action_steps_and_path(tmp_path):
+    p = tmp_path / "a.jsonl"
+    rows = [{"kind": "header"}] + [{"t": i, "action": [0.0] * 7 + [0.10]} for i in range(5)]
+    rows += [{"t": 5, "action": [0.05] + [0.0] * 6 + [0.09]}]
+    p.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    s = AN.action_steps(str(p))
+    assert s["grip_steps_gt5mm"] == 1 and math.isclose(s["grip_step_max_m"], 0.01)
+    assert s["joint_steps_gt0p04"] == 1 and s["grip_frozen_max_s"] == 0.04
+    side = os.path.join("L", "ours", "RUN", "dev0-P0-standard-e0.jsonl")
+    assert AN.actions_path(side) == os.path.join("L", "actions", "RUN", "dev0-P0-standard-e0.jsonl")
+
+
 def test_a_priv_contact_and_far():
     raw = {"objs": {"o3": {"pos": [0.3, 0.0, 0.0]}, "o5": {"pos": [0.0, 0.0, 0.0]}}, "grip": {"pos": [0.0, 0.0, 0.0]}}
     assert DC.a_priv(raw, "approach", False)[0] == 1.0

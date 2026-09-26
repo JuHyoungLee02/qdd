@@ -96,6 +96,31 @@ def trace_stats(rows: list, v_max: float, a_max: float) -> dict:
     return out
 
 
+def actions_path(side: str) -> str:
+    """<log_dir>/ours/<run>/<stem>.jsonl -> <log_dir>/actions/<run>/<stem>.jsonl (Inspect Robots action log)."""
+    run_dir = os.path.dirname(side)
+    return os.path.join(os.path.dirname(os.path.dirname(run_dir)), "actions", os.path.basename(run_dir),
+                        os.path.basename(side))
+
+
+def action_steps(path: str) -> dict | None:
+    """Per-tick command steps actually sent (prereg change 1, found in the smoke): gripper width |dw| max and count
+    > 5 mm, arm joints max |dq| (7 joints) and p99, the longest run (s) of a frozen gripper command."""
+    rows = [r for r in read_jsonl(path) if "action" in r]
+    if len(rows) < 3:
+        return None
+    A = np.array([r["action"] for r in rows], float)
+    dw = np.abs(np.diff(A[:, 7]))
+    dq = np.abs(np.diff(A[:, :7], axis=0)).max(axis=1)
+    run, best = 0, 0
+    for x in dw:
+        run = run + 1 if x < 1e-9 else 0
+        best = max(best, run)
+    return {"grip_step_max_m": round(float(dw.max()), 5), "grip_steps_gt5mm": int((dw > 0.005).sum()),
+            "joint_step_max_rad": round(float(dq.max()), 5), "joint_step_p99_rad": round(float(np.percentile(dq, 99)), 5),
+            "joint_steps_gt0p04": int((dq > 0.04).sum()), "grip_frozen_max_s": round(best * DT, 2)}
+
+
 def episode_key(variant, scene):
     return f"{variant}/{scene}"
 
@@ -131,6 +156,7 @@ def analyze(out: str, v_max: float, a_max: float) -> dict:
              "chunk": sm.get("chunk")}
         tr = traces.get((t["variant"], arm, scene))
         e["trace"] = trace_stats(tr, v_max, a_max) if tr else None
+        e["actions"] = action_steps(actions_path(side)) if side else None
         c = sm.get("couple")
         if c:
             ans = [r for r in cr if r.get("couple_kind") == "answer"]
@@ -202,6 +228,13 @@ def analyze(out: str, v_max: float, a_max: float) -> dict:
                            "jerk_rms_med": pct([(e["trace"] or {}).get("jerk_rms") for e in E], 50),
                            "max_speed_med": pct([(e["trace"] or {}).get("max_speed") for e in E], 50),
                            "rtf_med": pct([e["rtf"] for e in E], 50),
+                           "grip_step_max_m": max([(e["actions"] or {}).get("grip_step_max_m", 0) for e in E] or [0]),
+                           "grip_steps_gt5mm": sum((e["actions"] or {}).get("grip_steps_gt5mm", 0) for e in E),
+                           "joint_step_max_rad": max([(e["actions"] or {}).get("joint_step_max_rad", 0) for e in E]
+                                                     or [0]),
+                           "joint_steps_gt0p04": sum((e["actions"] or {}).get("joint_steps_gt0p04", 0) for e in E),
+                           "grip_frozen_max_s_med": pct([(e["actions"] or {}).get("grip_frozen_max_s") for e in E], 50),
+                           "terminations": dict(Counter(e["termination"] for e in E)),
                            "final_phase": dict(Counter(e["final_phase"] for e in E))}
     return {"out": out, "git": meta.get("git"), "code_sha": meta.get("code_sha"), "plumbing": plumbing,
             "behaviour": beh, "episodes": eps, "cells": {k: {"n": c["n"], "success": c["success"], "couple": c["couple"]}
