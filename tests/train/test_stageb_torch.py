@@ -385,12 +385,24 @@ def test_resume_from_a_mid_checkpoint_reproduces_the_next_steps_exactly():
 
 
 def test_resume_refuses_a_changed_training_setting():
-    base = {"lr": 1e-4, "batch": 8, "seed": 0, "val_per_kind": 150, "run": "a", "stop_at": 0}
+    # segment_dropout is declared explicitly (matching the current default) so this fixture isolates lr/seed, not
+    # the SAVED_BEFORE back-compat resolution covered separately below.
+    base = {"lr": 1e-4, "batch": 8, "seed": 0, "val_per_kind": 150, "run": "a", "stop_at": 0, "segment_dropout": 0.3}
     T.check_resume_args(base, {**base, "run": "b", "stop_at": 50})  # run name / stop point may differ
     with pytest.raises(SystemExit):
         T.check_resume_args(base, {**base, "lr": 2e-4})
     with pytest.raises(SystemExit):
         T.check_resume_args(base, {**base, "seed": 1})
+
+
+def test_resume_of_an_old_checkpoint_without_segment_dropout_key_needs_the_pre_existing_value():
+    """A checkpoint saved before --segment-dropout existed has no segment_dropout key in its saved args
+    (SAVED_BEFORE = 0.0, ser-A-min-3 fix round 1). Resuming it with the new parser default (0.3) is a real change
+    in the training trajectory and must be refused; resuming with --segment-dropout 0.0 reproduces the old run."""
+    old_saved = {"lr": 1e-4, "batch": 8, "seed": 0, "val_per_kind": 150, "run": "a", "stop_at": 0}
+    with pytest.raises(SystemExit):
+        T.check_resume_args(old_saved, {**old_saved, "run": "b", "segment_dropout": 0.3})
+    T.check_resume_args(old_saved, {**old_saved, "run": "b", "segment_dropout": 0.0})
 
 
 # ---------------------------------------------------------------------------------- S-E2E diagnostics (prereg_se2e_diag)
