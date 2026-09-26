@@ -35,6 +35,10 @@ def test_price_table_has_gpt52():
     assert abs(cost_usd(G52, {"input_tokens": 1_000_000, "output_tokens": 1_000_000}) - (1.75 + 14.0)) < 1e-9
 
 
+def test_price_table_has_gpt5_mini():  # prereg change 1: trainable-size proxy
+    assert abs(cost_usd("gpt-5-mini-2025-08-07", {"input_tokens": 1_000_000, "output_tokens": 1_000_000}) - 2.25) < 1e-9
+
+
 def test_proxy_changes_only_the_model_id(tmp_path):
     ma, _, ba, _, _ = _run(tmp_path / "a")
     mp, rp, bp, row, led = _run(tmp_path / "p", model_id=G52, name="gpt52")

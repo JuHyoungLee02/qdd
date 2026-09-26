@@ -13,7 +13,8 @@ import time
 
 PRICES_USD_PER_1M = {"gpt-6-astra": {"input": 10.0, "cached": 1.0, "output": 50.0},
                      # open-VLM proxy (prereg_open_vlm_solo.md; same pricing page, read 2026-09-26)
-                     "gpt-5.2-2025-12-11": {"input": 1.75, "cached": 0.175, "output": 14.0}}
+                     "gpt-5.2-2025-12-11": {"input": 1.75, "cached": 0.175, "output": 14.0},
+                     "gpt-5-mini-2025-08-07": {"input": 0.25, "cached": 0.025, "output": 2.0}}
 KRW_PER_USD = 1450.0
 HARD_STOP_KRW = 15000.0  # probe re-scope (main session, 2026-09-25 ~17:55 UTC): cumulative hard stop 15,000 KRW
 
