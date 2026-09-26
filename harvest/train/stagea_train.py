@@ -127,15 +127,24 @@ def require_serializer(pc: dict | None, what: str) -> None:
                          f"'last_step:' lines) -- retrain on the new format")
 
 
+def format_checks(pc: dict) -> dict:
+    """The DecCall format a checkpoint recorded (serialize.format_record, controller ruling PH-A 2) against this code:
+    {"serializer_ok", "last_step_ok"} -- the state serializer version (serializer_of) and the exact (b) `last_step`
+    category list (a config without it predates ser-A-min-3's record and fails)."""
+    from ..serialize import LAST_STEP_VALUES, SERIALIZER_VERSION
+    return {"serializer_ok": serializer_of(pc) == SERIALIZER_VERSION,
+            "last_step_ok": pc.get("last_step_values") == list(LAST_STEP_VALUES)}
+
+
 def prompt_config(items, a):
     """Training-side record of what inference must match (question_id@vN hash input, canon §59): camera
-    configuration(s), state mode and grid, system prompt, state serializer version (ser-A-min-2 = with the M4 (b)
-    `last_step:` line, canon §77), prompt-building files; sha = hash of all of it."""
+    configuration(s), state mode and grid, system prompt, DecCall format (serialize.format_record: serializer version
+    + the (b) `last_step` categories), prompt-building files; sha = hash of all of it."""
     from ..clients.jevl import SYSTEM
-    from ..serialize import SERIALIZER_VERSION
+    from ..serialize import format_record
     from .stagea_data import camera_of
     cfg = {"camera": sorted({camera_of(x) for x in items}), "state": a.state, "step_cm": a.step_cm,
-           "system_sha": hashlib.sha256(SYSTEM.encode()).hexdigest()[:12], "serializer": SERIALIZER_VERSION,
+           "system_sha": hashlib.sha256(SYSTEM.encode()).hexdigest()[:12], **format_record(),
            "files_sha": file_sha(PROMPT_FILES)}
     cfg["sha"] = hashlib.sha256(json.dumps(cfg, sort_keys=True).encode()).hexdigest()[:12]
     return cfg

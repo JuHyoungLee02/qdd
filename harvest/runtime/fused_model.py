@@ -320,15 +320,15 @@ def _jpegs(images: dict) -> dict:
 def check_prompt(pc: dict, strict: bool = True) -> dict:
     """The checkpoint's training prompt_config against what this runtime feeds (§59 camera layout, IMG state,
     system prompt, state serializer version (canon §77 / §83 / §87 / §90 ser-A-min-3: segment + motion + `last_step:`
-    lines, fused gripper question), prompt-building source files). A checkpoint trained with the motion line
-    (prompt_config_t: "motion" bins, TEMPORAL_FILES in files_sha) is accepted in the default layout; a video2 layout
-    (not adopted, canon §83) is refused."""
+    lines, fused gripper question; the recorded `last_step` categories, controller ruling PH-A 2), prompt-building
+    source files). A checkpoint trained with the motion line (prompt_config_t: "motion" bins, TEMPORAL_FILES in
+    files_sha) is accepted in the default layout; a video2 layout (not adopted, canon §83) is refused."""
     import hashlib
 
     from ..clients.jevl import SYSTEM
     from ..serialize import SERIALIZER_VERSION
     from ..train import stageb_data as D
-    from ..train.stagea_train import PROMPT_FILES, file_sha, serializer_of
+    from ..train.stagea_train import PROMPT_FILES, file_sha, format_checks, serializer_of
     from ..train.stageb_train import PROMPT_FILES_B, TEMPORAL_FILES
     cam = D.CAMERA_LAYOUT + ":" + "|".join(lab for _, lab in CAMS)
     ser = serializer_of(pc)
@@ -336,7 +336,7 @@ def check_prompt(pc: dict, strict: bool = True) -> dict:
     now = {"camera_ok": cam in (pc.get("camera") or []), "state_ok": pc.get("state") == "IMG",
            "layout_ok": pc.get("layout", D.CAMERA_LAYOUT) == D.CAMERA_LAYOUT,
            "system_ok": pc.get("system_sha") == hashlib.sha256(SYSTEM.encode()).hexdigest()[:12],
-           "serializer_ok": ser == SERIALIZER_VERSION,
+           **format_checks(pc),  # serializer_ok, last_step_ok
            "files_ok": pc.get("files_sha") == file_sha(files), "sha": pc.get("sha"), "serializer": ser}
     now["mismatch"] = [k for k, v in now.items() if k.endswith("_ok") and not v]
     if now["mismatch"] and strict:

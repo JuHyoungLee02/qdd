@@ -20,6 +20,13 @@ SEGMENT_ACTIONS = ("close", "open", "none")
 SEGMENT_UNKNOWN = "segment: now=unknown do=unknown next=unknown"
 
 
+def format_record() -> dict:
+    """What every checkpoint prompt_config records about the DecCall state format (controller ruling PH-A 2,
+    ser-A-min-3): the serializer version and the (b) `last_step` categories; checked by
+    train.stagea_train.format_checks (fused_model.check_prompt)."""
+    return {"serializer": SERIALIZER_VERSION, "last_step_values": list(LAST_STEP_VALUES)}
+
+
 def with_last_step(state: str, last_step: str) -> str:
     if last_step not in LAST_STEP_VALUES:
         raise ValueError(f"last_step {last_step!r}: one of {LAST_STEP_VALUES}")

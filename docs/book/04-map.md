@@ -34,6 +34,7 @@
 | `tests/eval/` | `harvest/eval/` 시험; 결합: `test_couple_eval.py`(Task 14 — 팔 파싱·설정·라벨, 유료 가드, 모의 스트림 클라이언트, 예산 추정, `aggregate`의 예산 초과 제외·짝지은 팔 차이·칸별 청크 수준 준수 집계) |
 | `tests/couple/` | `harvest/couple/` 시험(`test_schema.py`, Task 1; `test_gate.py`, Task 2; `test_cost.py`, Task 3; `test_stream.py`, Task 4; `test_layer.py`, Task 5; `test_offset.py`, Task 6; `test_twolayer.py`, Task 7; `test_overlay.py`, Task 8; `test_overlay_colours.py`, Task 8 통제자 판정 O2; `test_overlay_patterns.py`, Task 8 통제자 판정 O2b(모양으로 구분: 채움/속이 빈 화살촉·실선/점선·화살촉 없는 축선); `test_driver.py`, Task 9 — 직렬 흐름·편향·게이트·청크 수준 준수 로그; `test_geom.py`, Task 10; `test_local_vlm.py`, Task 13; `test_recovery_cache.py`, Task 11) |
 | `tests/runtime/` | `harvest/runtime/` 시험; 결합: `test_couple_runtime.py`(Task 10 — 직렬 흐름·편향·두 층 관문·리셋 때 비행 중 요청 청구·유료 모드 조건·청크 수준 준수 C3), `test_recovery_hook.py`(Task 11 — `_fail_event` 재사용이 Astra 호출을 당기지 않음·재사용 상한 뒤 J2), `fakeworld.py`의 `Kin.fk_pos`; ser-A-min-3(Task 12): `test_motion_line.py`(움직임 줄 판본·순서·학습 규칙 일치), `test_gripper_intent_runtime.py`(융합만 그리퍼 질문·T1 전제 없는 close 의도는 안 쥠·구간 줄 자리) |
+| `tests/train/test_format_record.py` | `prompt_config` DecCall 형식 기록(`serialize.format_record`)·검사(`stagea_train.format_checks`, `fused_model.check_prompt`의 `last_step_ok`) 시험(Task 12, 통제 판정 PH-A 2) |
 | `docs/design/00-interfaces.md` | **정본**(마지막 절까지가 현재 판) |
 | `docs/stage3/` | 사전 등록 `prereg_*.md`·`prereg.json`, 결과 `results/`, `direction-log.md` |
 | `docs/stage3/qid_registry.json` | 질문 id 등록부(`harvest/qid.py` 기본 경로; ser-A-min-3: 융합 HW/IMG 6질문 v1–v6, 모듈형 H/S1-1mm 5질문 v7–v11, Task 12) |

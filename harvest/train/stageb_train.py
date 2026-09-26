@@ -64,10 +64,12 @@ def prompt_config(samples, state):
     import hashlib
 
     from ..clients.jevl import SYSTEM
+    from ..serialize import format_record
     from .stagea_train import PROMPT_FILES, file_sha
     cams = sorted({D.camera_config(s["context"]["images"]) for s in samples if s.get("context")})
     cfg = {"camera": cams, "state": state, "layout": D.CAMERA_LAYOUT,
            "system_sha": hashlib.sha256(SYSTEM.encode()).hexdigest()[:12],
+           **format_record(),  # ser-A-min-3 (canon §77 supplement (4), controller ruling PH-A 2)
            "files_sha": file_sha(PROMPT_FILES + PROMPT_FILES_B)}
     cfg["sha"] = hashlib.sha256(json.dumps(cfg, sort_keys=True).encode()).hexdigest()[:12]
     return cfg
@@ -89,11 +91,12 @@ def prompt_config_t(samples, state, layout, bins=None, aux=None):
     import hashlib
 
     from ..clients.jevl import SYSTEM
+    from ..serialize import format_record
     from .stagea_train import PROMPT_FILES, file_sha
     cams = sorted({layout + ":" + "|".join(im[0] for im in s["context"]["images"]) for s in samples
                    if s.get("context")})
     cfg = {"camera": cams, "state": state, "layout": layout, "motion": bins,
-           "system_sha": hashlib.sha256(SYSTEM.encode()).hexdigest()[:12],
+           "system_sha": hashlib.sha256(SYSTEM.encode()).hexdigest()[:12], **format_record(),
            "files_sha": file_sha(PROMPT_FILES + PROMPT_FILES_B + TEMPORAL_FILES + (AUX_FILES if aux else ()))}
     if aux:
         cfg["aux"] = aux
