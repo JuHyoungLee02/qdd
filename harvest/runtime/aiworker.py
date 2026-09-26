@@ -10,11 +10,11 @@ variant standard / random / dr) as one FFW-SG2 right arm.
   on those steps (new frames); depth / intrinsics are callables in extra (never arrays: TrialRecord keeps extras).
 - extra: sim_time, m1 (sim oracle M1 observation, table frame -- the E0 oracle condition; our policy reads it, the
   harness baselines never see it, canon §42 정보 동등), kin (sim kinematics service: TCP pose + DLS IK with the
-  static gravity offset of the PD arm, the planner's; a real robot would use its URDF IK), table_z, rtf, cams
-  (callable -> camera_models(): live camera pose x mount per camera, evaluated only when an Astra request goes out;
-  Astra-VLA coupling Task 8, reuses harvest.astra_motion.world_isaac.camera_pose, P40), ee_sim (callable ->
-  ee_sim(): the simulator's own EE/TCP position, same frame as camera_models, no URDF FK error; controller ruling
-  O1, Task 8).
+  static gravity offset of the PD arm, the planner's; a real robot would use its URDF IK -- kin.tcp_pose() is the
+  PAD-CENTRE TCP the planner/IK actually targets, env.ee_pose() + env.tcp_offset, NOT env.finger_mid()/R2's own "tcp"
+  label -- the two differ by ~7.8 mm, docs/stage3/results/r5_closed_loop.md), table_z, rtf, cams (callable ->
+  camera_models(): live camera pose x mount per camera, evaluated only when an Astra request goes out; Astra-VLA
+  coupling Task 8, reuses harvest.astra_motion.world_isaac.camera_pose, P40).
 - success: planner.success_from_history (on(o3,o5) & not holding(o3) & upright(o3) held 1 s) -> terminated "success";
   mug below the floor -> terminated "off_table". self_paced only when asked (wall clock); the sim uses simlat.
 Seeds: DEV (0-29); CAL/TEST only behind HARVEST_ALLOW_SPLIT (check_layout_seed, R6 guard).
@@ -188,9 +188,11 @@ class AIWorkerEmbodiment:
         return {"raw": obs_to_json(*oracle_objects(self.env)), "present": list(self.env.present)}
 
     def camera_models(self) -> dict:
-        """{cam: {K, R (base_from_optical), t, W, H}} now: live parent-link pose x mount (the E-Astra-motion probe's
-        camera_pose; Isaac camera pos_w / quat_w do not follow physics, P40). Evaluated only when an Astra request
-        goes out (couple/overlay.py consumes this dict as obs["cams"], Task 8).
+        """{cam: {K, R, t, W, H}} now: live parent-link pose x mount (the E-Astra-motion probe's camera_pose; Isaac
+        camera pos_w / quat_w do not follow physics, P40). R is world_from_optical; it equals base_from_optical here
+        only because this embodiment's robot is fixed-base at the world origin with identity rotation (aiworker
+        docstring) -- on a mobile or re-based robot the two would differ and R would need a base-pose correction.
+        Evaluated only when an Astra request goes out (couple/overlay.py consumes this dict as obs["cams"], Task 8).
 
         Frame check (Task 8 Step 6, no conversion applied): camera_pose (harvest/astra_motion/world_isaac.py) reads
         (R, t) straight from robot.data.body_pos_w / body_quat_w -- Isaac's world/PhysX frame. kin.tcp_pose() ->
@@ -208,16 +210,6 @@ class AIWorkerEmbodiment:
             out[n] = _camera_model_dict(R, t, self.K[n], rows[n]["width"], rows[n]["height"])
         return out
 
-    def ee_sim(self) -> np.ndarray:
-        """The simulator's own EE/TCP position (controller ruling O1): kin.tcp_pose()[0], i.e.
-        OraclePlanner.tcp_pose() -> self.env.ee_pose() (harvest/sim/scene.py, finger-link-2 midpoint,
-        env.tcp_offset) -- the SAME body_pos_w world frame camera_models() uses (see camera_models' docstring), so
-        no conversion is needed to project this point with those camera models. Exact in this plan (no URDF FK
-        error); on the real robot only URDF FK is available and the E-Astra-motion/MolmoAct-readiness probe found a
-        9.5 mm median residual against this exact point (P40, docs/stage3/molmoact_r2_readiness.md G-fk) -- the
-        runtime (Task 10) should prefer this callable's value over an FK estimate whenever a live sim is present."""
-        return np.asarray(self.kin.tcp_pose()[0], float)
-
     def _obs(self, imgs, m1):
         from inspect_robots import Observation
         e = self.env
@@ -226,7 +218,7 @@ class AIWorkerEmbodiment:
         extra = {"sim_time": t, "m1": m1, "kin": self.kin, "table_z": e.table_top_z,
                  "depth": {n: (lambda n=n: e.camera_depth(n)) for n in self.cameras},
                  "intrinsics": {n: (lambda n=n: self.K[n].copy()) for n in self.cameras},
-                 "cams": self.camera_models, "ee_sim": self.ee_sim,
+                 "cams": self.camera_models,
                  "rtf": t / max(time.monotonic() - self.t_wall0, 1e-9)}
         return Observation(images=imgs, state={"joint_pos": q}, image_times={n: t for n in imgs}, state_time=t,
                            extra=extra)

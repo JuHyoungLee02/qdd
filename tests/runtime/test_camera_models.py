@@ -1,10 +1,16 @@
-"""AIWorkerEmbodiment.camera_models() and .ee_sim() (Astra-VLA coupling plan Task 8 Step 6 + controller ruling O1):
-the live camera-model adapter that reuses the E-Astra-motion probe's camera_pose (P40, world_isaac.py) and feeds
-obs["cams"] for harvest/couple/overlay.py, plus the simulator's own EE/TCP position (obs["ee_sim"], same frame,
-exact vs. the ~9.5 mm URDF-FK residual found by the MolmoAct-readiness probe). No Isaac needed:
-harvest.runtime.aiworker imports cleanly stand-alone (all Isaac-only calls are lazy, inside methods), so this stubs
-env/robot/K/kin on a bare AIWorkerEmbodiment via object.__new__ and monkeypatches the three lazily-imported
-functions (camera_pose, load_realcam, camera_table)."""
+"""AIWorkerEmbodiment.camera_models() (Astra-VLA coupling plan Task 8 Step 6): the live camera-model adapter that
+reuses the E-Astra-motion probe's camera_pose (P40, world_isaac.py) and feeds obs["cams"] for harvest/couple/overlay.py.
+
+(An earlier revision of this file also covered a since-removed AIWorkerEmbodiment.ee_sim() -- controller ruling O1
+proposed exposing kin.tcp_pose() as "the simulator's own EE/TCP position" comparable to R2's/MolmoAct's "tcp" label
+and the URDF-FK residual G-fk measured; review ruling O1b found kin.tcp_pose() is actually the PAD-CENTRE TCP the
+planner/IK targets, a different point from env.finger_mid() (R2's "tcp", what G-fk actually compared FK against;
+the two differ ~7.8 mm, docs/stage3/results/r5_closed_loop.md), so ee_sim added no information kin didn't already
+provide and was removed along with its tests; see harvest/runtime/aiworker.py's docstrings for the corrected facts.)
+
+No Isaac needed: harvest.runtime.aiworker imports cleanly stand-alone (all Isaac-only calls are lazy, inside
+methods), so this stubs env/robot/K on a bare AIWorkerEmbodiment via object.__new__ and monkeypatches the three
+lazily-imported functions (camera_pose, load_realcam, camera_table)."""
 import numpy as np
 
 from harvest.runtime.aiworker import AIWorkerEmbodiment, _camera_model_dict
@@ -73,26 +79,3 @@ def test_camera_models_is_not_evaluated_eagerly_in_obs_extra(monkeypatch):
     assert calls == []  # storing the bound method must not call it
     out = extra["cams"]()
     assert calls == ["cam_head"] and set(out) == {"cam_head"}
-
-
-class _StubKin:
-    def __init__(self, p):
-        self._p = np.asarray(p, float)
-
-    def tcp_pose(self):
-        return self._p, np.array([1.0, 0.0, 0.0, 0.0])
-
-
-def test_ee_sim_returns_kin_tcp_pose_position_same_frame_as_camera_models():
-    e = _make_embodiment(cameras=("cam_head",))
-    e.kin = _StubKin([0.31, -0.07, 0.94])
-    out = e.ee_sim()
-    assert isinstance(out, np.ndarray) and out.shape == (3,)
-    assert out.tolist() == [0.31, -0.07, 0.94]  # kin.tcp_pose()[0] passed through, no conversion (body_pos_w both)
-
-
-def test_ee_sim_is_a_plain_callable_suitable_for_obs_extra():
-    e = _make_embodiment(cameras=("cam_head",))
-    e.kin = _StubKin([1.0, 2.0, 3.0])
-    extra = {"ee_sim": e.ee_sim}
-    assert extra["ee_sim"]().tolist() == [1.0, 2.0, 3.0]
