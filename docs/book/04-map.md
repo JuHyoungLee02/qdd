@@ -5,7 +5,7 @@
 ## 저장소 (`D:\qdd`, 브랜치 dev만 — main 금지)
 | 경로 | 무엇 |
 |---|---|
-| `harvest/runtime/` | 런타임: `core`(실행기), `m4`(확정·교체), `conditions`(C0–C6), `skills`(스킬 S·쥠 디바운스), `calibration`(J5), `measure`(V1h·T1), `fused_model`(단계 B 서버), `fused_action`, `astra_hb`(K0–K4), `aiworker`·`ir_policy`(Inspect Robots; `aiworker.camera_models`: 결합용 실시간 카메라 모델 어댑터, 탐침 `camera_pose` 재사용, Task 8), `clock`·`latency_ctrl`·`reqhash` |
+| `harvest/runtime/` | 런타임: `core`(실행기), `m4`(확정·교체), `conditions`(C0–C6), `skills`(스킬 S·쥠 디바운스), `calibration`(J5), `measure`(V1h·T1), `fused_model`(단계 B 서버), `fused_action`, `astra_hb`(K0–K4), `aiworker`·`ir_policy`(Inspect Robots; `aiworker.camera_models`: 결합용 실시간 카메라 모델 어댑터, 탐침 `camera_pose` 재사용, Task 8; `aiworker.ee_sim`: 시뮬 손끝 그대로 노출(URDF FK 9.5 mm 오차 회피), 통제자 판정 O1), `clock`·`latency_ctrl`·`reqhash` |
 | `harvest/eval/` | `e05`(E0.5 재생)·`rd`·`calib`·`closed`(폐루프 묶음)·`canary`·`splits`(분할 보호)·`common` |
 | `harvest/analysis/` | `stats`(`N_BOOT` 10,000, `CMP_EPS` 절대 1e-12)·`replay`·`latency` |
 | `harvest/sim/` | `scene`(하드 리셋 `Env.reset`)·`planner`(오라클)·`labeler`·`randomize`(random/dr)·`determinism`·`perturb`·`snapshot`·`run_dev` |
@@ -24,7 +24,7 @@
 | `tools/mar2/` | MolmoAct R2 준비 관문(CPU, 기존 녹화 위): `mar2_lib`(MolmoAct 궤적 부분표집·0–255 좌표·볼록 윤곽 투영·HSV 규칙 v1/v2·URDF FK 자세·부트스트랩), `mar2_gates`(`cam`·`camdiag`·`fk`·`trace`·`traceend`·`p1crops`·`cond`·`resprep`·`res`), `run_mar2.sh`; 시험 `tests/test_mar2_lib.py` |
 | `tools/` 기타 | `se2e_convert.py`(`reconvert --hist`), `labels_v2_eval.py`, `prereg_hash.py --check`, `intent_check.py`·`user_line_check.py`(빨간 줄·[사용자] 줄), `stagea_merge.py`, `r5/`·`r6/`(파드 동기화), `pod_sync.sh` |
 | `tests/` | 전체 시험(로컬은 Git Bash에서 `pytest`; PowerShell에서는 2개 실패 — P33) |
-| `tests/couple/` | `harvest/couple/` 시험(`test_schema.py`, Task 1; `test_gate.py`, Task 2; `test_cost.py`, Task 3; `test_stream.py`, Task 4; `test_layer.py`, Task 5; `test_offset.py`, Task 6; `test_twolayer.py`, Task 7; `test_overlay.py`, Task 8) |
+| `tests/couple/` | `harvest/couple/` 시험(`test_schema.py`, Task 1; `test_gate.py`, Task 2; `test_cost.py`, Task 3; `test_stream.py`, Task 4; `test_layer.py`, Task 5; `test_offset.py`, Task 6; `test_twolayer.py`, Task 7; `test_overlay.py`, Task 8; `test_overlay_colours.py`, Task 8 통제자 판정 O2) |
 | `docs/design/00-interfaces.md` | **정본**(마지막 절까지가 현재 판) |
 | `docs/stage3/` | 사전 등록 `prereg_*.md`·`prereg.json`, 결과 `results/`, `direction-log.md` |
 | `docs/superpowers/specs/`·`plans/` | 결합 설계(승인)·구현 계획(16과제) |

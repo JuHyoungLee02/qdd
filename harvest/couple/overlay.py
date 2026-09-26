@@ -1,9 +1,31 @@
 """Code-drawn overlay for the Astra images only (spec §13-§14, canon §84: the next-chunk arrow never goes into the VLA
 input). Projection from the robot's own kinematics (tip = kin.tcp_pose) and the camera models (live parent-link pose
 x mount, the E-Astra-motion probe's camera_pose), never object ground truth. Head image: tip ring, fading trace
-(MolmoAct / PEEK style), cyan committed-next-motion arrow, magenta remaining Astra correction, robot-frame axes at
-the tip (plan ruling 4). Wrist images: only a corner box with the same arrows as directions (edges only, spec §13).
-polylines(): MolmoAct trace format for the request JSON -- <= 5 points, current point first, 0-255 image ints."""
+(MolmoAct / PEEK style), pale-green committed-next-motion arrow, yellow-green remaining Astra correction, robot-frame
+axes at the tip (plan ruling 4). Wrist images: only a corner box with the same arrows as directions (edges only,
+spec §13). polylines(): MolmoAct trace format for the request JSON -- <= 5 points, current point first, 0-255 image
+ints.
+
+Colours (controller ruling O2, 2026-09-26, docs/stage3/molmoact_r2_readiness.md C6/M5): the original cyan/magenta
+arrows collided with R2's own palette (dr distractor col_cyan, mug_marker o11) and the fading trace's yellow
+collided with the o9 box. TRACE_COLOR/NEXT_COLOR/OFFSET_COLOR were chosen (exhaustive RGB grid search over
+harvest/sim/randomization_pools.json's distractor_colors + harvest/sim/scene.py OBJ_GEOM's object colours) to each
+clear >= 120 RGB units from every one of those ~15 colours -- tests/couple/test_overlay_colours.py checks this
+against the live palette, not a hard-coded copy. The 15-colour R2 palette occupies nearly the whole hue wheel, so
+the only clear margin left is a narrow pale-green/spring-green/chartreuse band; the three new colours are shades
+within that band (mutually 90-146 RGB units apart) rather than fully separate hues, and the two arrows/trace are
+still told apart by which vector they follow (committed motion vs. remaining correction) plus the trace's fading
+alpha. AXIS_COLORS were left as the conventional red/green/blue (checked, not changed): each does clear < 120 from
+one saturated object colour by strict Euclidean distance, but the three short perpendicular lines radiating from the
+tip are a distinctive geometric pattern (not a solid colour patch), and departing from the universal x/y/z=r/g/b
+convention would cost more legibility than it buys.
+
+Known limitation (controller ruling O1): the tip drawn here is kin.tcp_pose() -- the simulator's own EE pose, exact
+in this plan. On the real robot only URDF FK is available (no simulator ground truth), and the E-Astra-motion /
+MolmoAct-readiness probe measured URDF FK vs. the simulator's own tip at a median residual of 9.5 mm (~6 px in the
+head image, P40 gate G-fk, docs/stage3/molmoact_r2_readiness.md §4.2) -- not a constant offset but a kinematic model
+difference. Real-robot deployment must calibrate FK against a measured EE pose before trusting this overlay's tip
+placement; that calibration is out of scope for this plan."""
 from __future__ import annotations
 
 import math
@@ -14,8 +36,11 @@ import numpy as np
 
 INSET = 64
 AXES_M = 0.03
-WHITE, YELLOW, CYAN, MAGENTA = (255, 255, 255), (255, 230, 0), (0, 255, 255), (255, 0, 255)
-AXIS_COLORS = ((255, 40, 40), (40, 220, 40), (60, 120, 255))
+WHITE = (255, 255, 255)
+TRACE_COLOR = (120, 255, 85)   # pale green (was yellow -- collided with the o9 box)
+NEXT_COLOR = (35, 255, 135)    # spring green (was cyan -- collided with dr col_cyan)
+OFFSET_COLOR = (90, 255, 0)    # chartreuse (was magenta -- collided with the o11/mug_marker marker)
+AXIS_COLORS = ((255, 40, 40), (40, 220, 40), (60, 120, 255))  # conventional red/green/blue x/y/z; kept, see docstring
 
 
 @dataclass(frozen=True)
@@ -79,7 +104,7 @@ def draw_overlay(img, cam: CamModel, *, tip, trace, next_vec=None, offset_vec=No
     layer = Image.new("RGBA", base.size, (0, 0, 0, 0))
     d = ImageDraw.Draw(layer)
     tip = np.asarray(tip, float)
-    arrows = [(v, c) for v, c in ((next_vec, CYAN), (offset_vec, MAGENTA))
+    arrows = [(v, c) for v, c in ((next_vec, NEXT_COLOR), (offset_vec, OFFSET_COLOR))
               if v is not None and float(np.linalg.norm(v)) > 1e-6]
     if wrist:
         W = base.size[0]
@@ -94,7 +119,7 @@ def draw_overlay(img, cam: CamModel, *, tip, trace, next_vec=None, offset_vec=No
     else:
         pts = [q for q in (_px(cam, p) for p in trace) if q is not None]
         for i in range(1, len(pts)):
-            d.line([pts[i - 1], pts[i]], fill=YELLOW + (int(60 + 160 * i / max(len(pts) - 1, 1)),), width=2)
+            d.line([pts[i - 1], pts[i]], fill=TRACE_COLOR + (int(60 + 160 * i / max(len(pts) - 1, 1)),), width=2)
         pt = _px(cam, tip)
         if pt is not None:
             for e, col in zip(np.eye(3), AXIS_COLORS):

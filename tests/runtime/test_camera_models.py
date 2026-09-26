@@ -1,7 +1,9 @@
-"""AIWorkerEmbodiment.camera_models() (Astra-VLA coupling plan Task 8 Step 6): the live camera-model adapter that
-reuses the E-Astra-motion probe's camera_pose (P40, world_isaac.py) and feeds obs["cams"] for harvest/couple/overlay.py.
-No Isaac needed: harvest.runtime.aiworker imports cleanly stand-alone (all Isaac-only calls are lazy, inside methods),
-so this stubs env/robot/K on a bare AIWorkerEmbodiment via object.__new__ and monkeypatches the three lazily-imported
+"""AIWorkerEmbodiment.camera_models() and .ee_sim() (Astra-VLA coupling plan Task 8 Step 6 + controller ruling O1):
+the live camera-model adapter that reuses the E-Astra-motion probe's camera_pose (P40, world_isaac.py) and feeds
+obs["cams"] for harvest/couple/overlay.py, plus the simulator's own EE/TCP position (obs["ee_sim"], same frame,
+exact vs. the ~9.5 mm URDF-FK residual found by the MolmoAct-readiness probe). No Isaac needed:
+harvest.runtime.aiworker imports cleanly stand-alone (all Isaac-only calls are lazy, inside methods), so this stubs
+env/robot/K/kin on a bare AIWorkerEmbodiment via object.__new__ and monkeypatches the three lazily-imported
 functions (camera_pose, load_realcam, camera_table)."""
 import numpy as np
 
@@ -71,3 +73,26 @@ def test_camera_models_is_not_evaluated_eagerly_in_obs_extra(monkeypatch):
     assert calls == []  # storing the bound method must not call it
     out = extra["cams"]()
     assert calls == ["cam_head"] and set(out) == {"cam_head"}
+
+
+class _StubKin:
+    def __init__(self, p):
+        self._p = np.asarray(p, float)
+
+    def tcp_pose(self):
+        return self._p, np.array([1.0, 0.0, 0.0, 0.0])
+
+
+def test_ee_sim_returns_kin_tcp_pose_position_same_frame_as_camera_models():
+    e = _make_embodiment(cameras=("cam_head",))
+    e.kin = _StubKin([0.31, -0.07, 0.94])
+    out = e.ee_sim()
+    assert isinstance(out, np.ndarray) and out.shape == (3,)
+    assert out.tolist() == [0.31, -0.07, 0.94]  # kin.tcp_pose()[0] passed through, no conversion (body_pos_w both)
+
+
+def test_ee_sim_is_a_plain_callable_suitable_for_obs_extra():
+    e = _make_embodiment(cameras=("cam_head",))
+    e.kin = _StubKin([1.0, 2.0, 3.0])
+    extra = {"ee_sim": e.ee_sim}
+    assert extra["ee_sim"]().tolist() == [1.0, 2.0, 3.0]
