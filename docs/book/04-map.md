@@ -52,6 +52,7 @@
 | `docs/research/diversity_plan_2026-09-26.md` | 다양한 데이터 필수 계획(user-log 116): 자체 시뮬 다양화 명세·공개 변환 필수 격상(요약)·OOD-H/O/D/X·E-XEMB8 개정(A·B·D·E) |
 | `docs/research/no_metric_xyz_control_survey_2026-09-26.md` | 로봇 좌표 m 값 없이 조종하는 법(8계열 분류) + metric 추정 방법론, 추천 3·E-PT 팔·무료 시험 F0–F5(user-log 118) |
 | `docs/research/public_data_conversion_howto_2026-09-26.md` | 공개 데이터 → P·C′ 변환 방법(user-log 119): MolmoAct 방식 양 판정, 남들의 변환 코드 근거, 데이터셋별 필드 조리법, 관문 G1–G10·누수 시험, 시제품 `tools/xemb/` 결과 |
+| `docs/research/no_frame_data_methods_2026-09-27.md` | 좌표계 없는 공개 데이터 방법 비교·채택(user-log 124): T0–T3 + 새 T4(로봇 몸 정합 보정)·T5(점 추적 픽셀 감독), 수율·정확도·비용·표본·위험 표, 효율 순위, 추천안(픽셀 주 + 보정 보조), 무료 검증 L단계·T단계 |
 | `paper/` | CVPR author-kit 구조 논문 + 한국어 마인드맵(`mindmap.tex`), 그림 `figures/src/make_figs.py`; PDF는 `D:\tools\pdf_out\` |
 | `D:\tools\scratch_qdd\` | 로컬 임시(작업별 하위 폴더). C: 금지 |
 
