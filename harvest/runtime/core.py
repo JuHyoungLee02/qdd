@@ -39,6 +39,7 @@ from .models import build_live_request, decision_questions, fused_state_text, jp
 from .reqhash import json_blob, request_body, request_hash
 from .skills import PickPlaceSkill, apply_residual, residual_hook_zero
 
+BLEND_MARGIN = 2e-5  # rad: _blend's absolute clamp margin (5-decimal trace rounding, Task 25 fix F25b)
 FRAME_SAMPLE_S = 5.0  # sampled frames kept for inspection (plus one per phase change)
 _PHASE_TARGET = {"approach": "o3", "descend": "o3", "close": "o3", "lift": "o3"}  # later phases: o5
 
@@ -1035,8 +1036,10 @@ class OursRuntime:
 
     def _blend(self, a):
         """Fused chunk-transition blending (plan 2026-09-26 Task 25 B; user rule: no jumps, joint speed <= 0.04 rad
-        per tick): the arm joints move from the last command at most blend_max_dq x (1 - 1e-6) per tick (a hard
-        per-joint clamp with a small margin so the logged step stays under the limit also in float32, fix F25 M7;
+        per tick): the arm joints move from the last command at most blend_max_dq - 2e-5 per tick (a hard per-joint
+        clamp with an absolute margin: the pod trace rounds actions to 5 decimals, +-5e-6 per value, so a logged step
+        stays <= 0.03999 also after rounding or float32 near +-1 rad; fix F25 M7 / F25b; steps above the margin are
+        clamped too, so nothing between 0.03998 and 0.04 slips through;
         a chunk switch with a 0.3 rad gap is reached in 8 ticks); the gripper, when a switch jumps by more than the
         played chunk's own per-tick rate, moves at the Task 17 catch rate (_grip_catch_rate: own rate + the gap over
         one chunk horizon) until it has caught up. A no-op (the same object returned) when every step is within the
@@ -1048,9 +1051,9 @@ class OursRuntime:
         prev = np.asarray(self.last_a, float)
         a = np.asarray(a, float)
         d = a[:7] - prev[:7]
-        if float(np.max(np.abs(d))) > lim:
+        m = lim - BLEND_MARGIN
+        if float(np.max(np.abs(d))) > m:
             a = a.copy()
-            m = lim * (1.0 - 1e-6)
             a[:7] = prev[:7] + np.clip(d, -m, m)
             self.chunk_stats["blend_arm"] += 1
         if self._grip_lim is not None:

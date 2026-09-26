@@ -46,12 +46,14 @@ class _Switch(_ChunkEdit):
     """Joint 4 at 0.3 rad on odd steps and 0 on even ones (a 0.3 rad discontinuity at every chunk switch); the
     gripper optionally steps 107 -> 30 mm between two chunks (from step 6 on)."""
 
-    def __init__(self, grip=False, **kw):
+    def __init__(self, grip=False, base=0.0, **kw):
         super().__init__(**kw)
-        self.grip = grip
+        self.grip, self.base = grip, base
 
     def edit(self, c, ctx):
-        c[:, 4] = 0.3 * (ctx["ds"] % 2)
+        c[:, 4] = self.base + 0.3 * (ctx["ds"] % 2)
+        if self.base:  # joint 5 near -base (both signs near +-1 rad for the float32 check)
+            c[:, 5] = -self.base - 0.3 * (ctx["ds"] % 2)
         if self.grip:
             c[:, 7] = 0.03 if ctx["ds"] >= 6 else 0.107
         return c
@@ -268,6 +270,20 @@ def test_chunk_switch_discontinuity_is_blended_to_004_rad_per_tick():
     assert rt.chunk_stats["blend_arm"] > 0
     raw = _run(_Switch(), 6.0, blend_max_dq=None)[2]
     assert np.abs(np.diff(raw[:, :7], axis=0)).max() >= 0.29  # the discontinuity exists without the blend
+
+
+def test_blended_steps_stay_under_004_after_trace_rounding_and_float32():
+    """Fix F25b: tools/vla_alone/vla_closed.py logs actions rounded to 5 decimals and analyze_vla.py counts
+    |delta| > 0.04 as a jump; with joints near +-1 rad float32 is coarser too. Both read 0 jump ticks."""
+    for base in (0.0, 1.0):
+        rt, w, A, _ = _run(_Switch(base=base), 6.0)
+        assert rt.chunk_stats["blend_arm"] > 50
+        r5 = np.round(A[:, :7], 5)
+        assert int((np.abs(np.diff(r5, axis=0)).max(1) > 0.04).sum()) == 0
+        f32 = A[:, :7].astype(np.float32)
+        assert int((np.abs(np.diff(f32, axis=0)).max(1) > np.float32(0.04)).sum()) == 0
+        assert np.abs(np.diff(A[:, :7], axis=0)).max() <= 0.04 - 2e-5 + 1e-15
+    assert A[:, 4].max() >= 1.3 - 1e-9 and A[:, 5].min() <= -1.3 + 1e-9  # near +-1 rad, catches up
 
 
 def test_gripper_jump_at_a_chunk_switch_uses_the_task17_catch_rate():
