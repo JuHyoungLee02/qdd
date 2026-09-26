@@ -83,3 +83,4 @@
 | 2026-09-26 10:07 | 01·02·03·04·05 | E-CONF 결과(NONE): 01 행 추가, 02 새 절 '버' P109(옛 체크포인트 코드 기반)·P110(관문 묶음 크기)·P111(재현율 문턱의 운용 모의), 03 §95 보충 1 행, 04 `tools/conf`·`logs/conf` 행, 05 GPU 행 | [R/conf](../stage3/results/conf.md), 이 줄과 같은 커밋 |
 | 2026-09-26 10:12 | 03·04 | 결합 Task 21(사건 불응기·미응답 별도 보고·Astra 스트림 오류와 할당량 치명 정지): 03 §84 보충 2 구현기록 행, 04 `harvest/couple`·`harvest/clients`·`harvest/eval`·시험 행 | plan Task 21, 이 줄과 같은 커밋 |
 | 2026-09-26 10:14 | 01·02·05 | E-ACC P1 재개 결과(R1 v2 채택, R2′ 미정): 01 E-ACC 행(`끝`, P1), 02 '머' 절 P112(방향만 재면 놓침이 빠짐), 05 재개 2,760.7원 행·누적 16,221.6원 | [R/eacc](../stage3/results/eacc.md), 이 줄과 같은 커밋 |
+| 2026-09-26 10:21 | 04 | E-Astra-solo 영상 7편(`/data/harvest/videos/astra_solo/`, 색인 index.json·md, 4 fps) 지도 행 | 사용자 지시(영상 저장), 이 줄과 같은 커밋 |
