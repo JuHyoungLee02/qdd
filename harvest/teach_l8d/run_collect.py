@@ -16,11 +16,14 @@ import time
 OUT = "/data/harvest/out/teach_l8d/collect"
 
 
-def make_world(variant: str, table_z: float, ws, lift, objset=None):
-    from ..astra_motion.world_isaac import CAMS, NO_RENDER, IsaacWorld
+def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=None, reach_path=None):
+    from ..astra_motion.world_isaac import CAMS, NO_RENDER, PRE_RENDER, IsaacWorld
     from ..astra_solo.world import SoloWorld
     from ..sim.scene import GRIP_MAX_W, make_env
     from .xlabels import x_info
+    if furniture is not None:  # L8-X furniture: no L8 table, furniture slots (helper L8X-assets, 85a37da)
+        from ..sim.assets_x import isaac as FX
+        FX.without_table(None)
 
     class L8DWorld(SoloWorld):
         """SoloWorld (depth on) with the R2 tasks, one table height, the height's workspace box and the lift flag;
@@ -37,7 +40,53 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None):
             self.last_obs = None
 
         def reset(self, seed, task="mug_tray"):
-            IsaacWorld.reset(self, seed, task)
+            if furniture is None:
+                IsaacWorld.reset(self, seed, task)
+                return
+            self._reset_furniture(seed, task)
+
+        def _reset_furniture(self, seed, task):
+            """= IsaacWorld.reset with a furniture scene: sample it, work on its best surface (fx.choose_surface),
+            author the parts (USD, applied by the hard reset), set the scene's lift as the lift joint default."""
+            import numpy as np
+
+            from ..sim import scene as SC
+            from ..sim.assets_x import furniture as FU
+            from ..sim.assets_x import isaac as FX
+            from ..sim.assets_x.reach import ReachModel
+            from ..sim.perturb import perturb
+            from ..sim.planner import OraclePlanner
+            from ..sim.tasks import TASKS, X_STEPS
+            from . import fx
+            env = self.env
+            if not hasattr(self, "_rm"):
+                self._rm = ReachModel.load(reach_path)
+            sc = FU.sample_scene(furniture, seed, reach=self._rm)
+            surf, region = fx.choose_surface(sc)
+            env.ws = fx.ws_from_region(region)
+            tz = float(surf["top_z"])
+            env.table_top_z, self.table_z = tz, tz
+            SC._LAYOUT["table_z"] = tz
+            env.lift = float(sc["lift"])
+            rob = env.robot
+            li = rob.joint_names.index("lift_joint")
+            rob.data.default_joint_pos[0, li] = env.lift
+            FX.author_scene(env, sc)
+            env.set_seed(seed, task)
+            keep = {TASKS[task].target, TASKS[task].place} | {o for st in X_STEPS.get(task, ()) for o in st[:2]}
+            lay, dropped = fx.filter_layout(env.layout, surf, keep)
+            env.layout = lay
+            SC._LAYOUT["layout"] = lay
+            self.furniture_scene = fx.summary(sc, surf, region, dropped)
+            env.reset()
+            perturb(env, "P0", seed)
+            for _ in range(PRE_RENDER):
+                env.env.sim.render()
+            self.pl = OraclePlanner(env)
+            self.cmd_quat = np.asarray(self.pl.cmd_quat, float)
+            self.quat0 = np.asarray(self.pl.goal_quat, float)
+            self.w_close = float(self.pl.w_close)
+            self._st = None
 
         def task_info(self):
             from ..sim.tasks import X_STEPS
@@ -54,8 +103,25 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None):
     return L8DWorld()
 
 
-def vdir(variant: str, table_z: float, lift) -> str:
-    return f"{variant}_tz{float(table_z):.3f}" + ("" if lift is None else f"_lift{float(lift):+.3f}")
+def vdir(variant: str, table_z: float, lift, furniture=None) -> str:
+    return (f"{variant}_tz{float(table_z):.3f}" + ("" if lift is None else f"_lift{float(lift):+.3f}")
+            if furniture is None else f"{variant}_fx_{furniture}")
+
+
+def select_plan(plan: list, variant: str, table_z: float, split: str, objset=None, lift=None, furniture=None) -> list:
+    """The plan rows this process runs: same split, variant, objset, lift and table height (or furniture kind)."""
+    out = []
+    for e in plan:
+        if e["variant"] != variant or e.get("split", "train") != split or (e.get("objset") or None) != objset:
+            continue
+        if furniture is not None:
+            if e.get("furniture") != furniture:
+                continue
+        elif e.get("furniture") is not None or abs(e["table_z"] - table_z) > 1e-6 or \
+                (e.get("lift") is not None and (lift is None or abs(e["lift"] - lift) > 1e-6)):
+            continue
+        out.append(e)
+    return out
 
 
 def main(argv=None):
@@ -66,6 +132,8 @@ def main(argv=None):
     ap.add_argument("--ws-x", required=True, help="x0,x1 of the height's workspace box (gate G-H)")
     ap.add_argument("--lift", type=float, default=None)
     ap.add_argument("--objset", default=None, help="x = L8-X objects and tasks")
+    ap.add_argument("--furniture", default=None, help="L8-X furniture kind (harvest.sim.assets_x.furniture.KINDS)")
+    ap.add_argument("--reach", default="/data/harvest/out/teach_l8d/gate/reach_base.json")
     ap.add_argument("--seeds", default=None)
     ap.add_argument("--plan", default=None)
     ap.add_argument("--task", default=None, help="override the per-seed task (gate / OOD sets)")
@@ -84,6 +152,7 @@ def main(argv=None):
         from ..teach_l8.run_collect import parse_seeds, style_of
         from . import spec as S
         from .collect import collect_episode
+        from .fx import SkipScene
         if a.split == "train":
             R.check_train_variant(a.variant)
         if a.variant == "randx" and a.split != "ood_d":
@@ -91,8 +160,7 @@ def main(argv=None):
         x0, x1 = (float(v) for v in a.ws_x.split(","))
         ws = S.ws_of((x0, x1))
         if a.plan:
-            eps = [e for e in json.load(open(a.plan)) if e["variant"] == a.variant
-                   and abs(e["table_z"] - a.table_z) < 1e-6 and e.get("split", "train") == a.split]
+            eps = select_plan(json.load(open(a.plan)), a.variant, a.table_z, a.split, a.objset, a.lift, a.furniture)
         else:
             eps = [{"seed": s, "task": a.task or S.task_of(s)} for s in parse_seeds(a.seeds)]
         for e in eps:
@@ -100,7 +168,10 @@ def main(argv=None):
             if a.task:
                 e["task"] = a.task
         vids = {int(v) for v in a.video_seeds.split(",") if v.strip()}
-        world = make_world(a.variant, a.table_z, ws, a.lift, a.objset)
+        if a.furniture and a.variant != "standard":
+            raise ValueError("furniture scenes: variant standard only (the drx table material / pool distractors "
+                             "assume the L8 table)")
+        world = make_world(a.variant, a.table_z, ws, a.lift, a.objset, a.furniture, a.reach)
         lim = None
         if a.lift is not None:
             rob = world.env.robot
@@ -110,13 +181,19 @@ def main(argv=None):
                                      "lift_limits": lim, "n": len(eps)}), flush=True)
         for e in eps:
             s, task = e["seed"], e["task"]
-            od = os.path.join(a.out, a.split, vdir(a.variant, a.table_z, a.lift), f"{task}_s{s}")
-            if os.path.exists(os.path.join(od, "meta.json")):
+            od = os.path.join(a.out, a.split, vdir(a.variant, a.table_z, a.lift, a.furniture), f"{task}_s{s}")
+            if os.path.exists(os.path.join(od, "meta.json")) or os.path.exists(os.path.join(od, "skipped.json")):
                 continue
             style = "clean" if a.clean else style_of(s, S.CLEAN_SHARE)
             t0 = time.perf_counter()
-            meta = collect_episode(world, s, task, a.variant, a.split, od, 0.0 if style == "clean" else a.p,
-                                   a.max_perturb, a.stop_calls, a.stop_motion, style, video=s in vids)
+            try:
+                meta = collect_episode(world, s, task, a.variant, a.split, od, 0.0 if style == "clean" else a.p,
+                                       a.max_perturb, a.stop_calls, a.stop_motion, style, video=s in vids)
+            except SkipScene as ex:  # furniture scene without a usable surface for this task
+                os.makedirs(od, exist_ok=True)
+                json.dump({"seed": s, "task": task, "reason": str(ex)}, open(os.path.join(od, "skipped.json"), "w"))
+                print("SKIP " + json.dumps({"seed": s, "task": task, "reason": str(ex)}), flush=True)
+                continue
             print("EP " + json.dumps(dict(meta, wall_total_s=round(time.perf_counter() - t0, 1))), flush=True)
         print("RUN_DONE", flush=True)
     except BaseException:  # noqa: BLE001

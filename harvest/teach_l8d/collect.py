@@ -101,7 +101,9 @@ def scene_record(world, seed: int, task: str, variant: str, split: str, style: s
                 "lift": getattr(env, "lift", None), "lift_joint_measured": lift_q,
                 "ws": getattr(env, "ws", None), "layout": layout,
                 "randomization": rand, "rand_settle": getattr(env, "rand_settle", None),
-                "steps": _steps(task), "distractors": distractor_count(layout, info, rand)})
+                "steps": _steps(task), "furniture": getattr(world, "furniture_scene", None),
+                "surface": (getattr(world, "furniture_scene", None) or {}).get("kind", "table"),
+                "distractors": distractor_count(layout, info, rand)})
 
 
 def _steps(task: str):
