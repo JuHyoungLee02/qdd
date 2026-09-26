@@ -211,3 +211,18 @@ def merge_meshes(meshes):
         Fs.append(np.asarray(F, int) + k)
         k += len(P)
     return np.concatenate(Ps), np.concatenate(Fs)
+
+
+def supported_by(bottom_z: float, xy, surface: dict, z_tol: float = 0.004, xy_margin: float = 0.0) -> bool:
+    """Virtual support by a static furniture surface (no contact sensor on static colliders): the object's bottom
+    is within z_tol of the surface top and its centre xy inside the surface box (shrunk by xy_margin)."""
+    (x0, x1), (y0, y1) = surface["xy_box"]
+    x, y = float(xy[0]), float(xy[1])
+    return bool(abs(float(bottom_z) - surface["top_z"]) <= z_tol and x0 + xy_margin <= x <= x1 - xy_margin
+                and y0 + xy_margin <= y <= y1 - xy_margin)
+
+
+def support_of(bottom_z: float, xy, surfaces, z_tol: float = 0.004):
+    """Id of the surface supporting an object (bottom z, centre xy), or None; the highest match wins."""
+    hits = [s for s in surfaces if supported_by(bottom_z, xy, s, z_tol)]
+    return max(hits, key=lambda s: s["top_z"])["id"] if hits else None

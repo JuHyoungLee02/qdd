@@ -122,3 +122,13 @@ def test_rotated_collider_boxes_give_the_same_top():
     assert len(s) == 1 and s[0]["top_z"] == pytest.approx(0.75)
     (x0, x1), (y0, y1) = s[0]["free_box"]
     assert x1 - x0 == pytest.approx(0.4, abs=0.011) and y1 - y0 == pytest.approx(0.6, abs=0.011)
+
+
+def test_virtual_support_by_a_surface():
+    s1 = {"id": "counter_0", "top_z": 0.90, "xy_box": [[0.3, 0.6], [-0.4, 0.0]]}
+    s2 = {"id": "stand_1", "top_z": 0.98, "xy_box": [[0.4, 0.5], [-0.3, -0.2]]}
+    assert S.supported_by(0.903, (0.35, -0.1), s1) and not S.supported_by(0.91, (0.35, -0.1), s1)
+    assert not S.supported_by(0.90, (0.65, -0.1), s1)
+    assert S.support_of(0.978, (0.45, -0.25), [s1, s2]) == "stand_1"
+    assert S.support_of(0.90, (0.45, -0.25), [s1, s2]) == "counter_0"
+    assert S.support_of(0.50, (0.45, -0.25), [s1, s2]) is None

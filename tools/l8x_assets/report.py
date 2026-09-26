@@ -11,8 +11,9 @@ def table(summ: list) -> dict:
     for r in summ:
         d = out.setdefault(r["kind"], {"scenes": 0, "spawn_ok": 0, "surfaces": 0, "drop_n": 0, "drop_ok": 0,
                                         "usable": 0, "reach_ok": 0, "ray_n": 0, "ray_ok": 0, "tops": [],
-                                        "usable_tops": []})
+                                        "usable_tops": [], "lifts": []})
         d["scenes"] += 1
+        d["lifts"].append(r.get("lift_measured"))
         d["spawn_ok"] += bool(r["spawn"]["ok"])
         for s in r["surfaces"]:
             d["surfaces"] += 1
@@ -34,12 +35,12 @@ def table(summ: list) -> dict:
 def main(argv=None):
     a = argv or sys.argv[1:]
     t = table(json.load(open(a[0])))
-    print("kind | scenes | spawn ok | surfaces (top range) | drop ok | ray |dz|<=5mm | usable (tops) | reach ok")
+    print("kind | scenes | spawn ok | surfaces (top range) | drop ok | ray |dz|<=5mm | usable (tops) | reach ok | lift")
     for k, d in t.items():
         ut = d["usable_tops"]
         print(f"{k} | {d['scenes']} | {d['spawn_ok']} | {d['surfaces']} ({min(d['tops']):.2f}-{max(d['tops']):.2f}) | "
               f"{d['drop_ok']}/{d['drop_n']} | {d['ray_ok']}/{d['ray_n']} | {d['usable']}"
-              + (f" ({min(ut):.2f}-{max(ut):.2f})" if ut else "") + f" | {d['reach_ok']}/{d['usable']}")
+              + (f" ({min(ut):.2f}-{max(ut):.2f})" if ut else "") + f" | {d['reach_ok']}/{d['usable']} | lift {d['lifts']}")
 
 
 if __name__ == "__main__":
