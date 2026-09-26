@@ -11,6 +11,7 @@
 - **R7** (확인 2026-09-26 00:46 UTC): **E2E 준비 기준점 도달** — 36·37회차 연속 무결(대상 ffe335c·3d4738a), 태그 `stage3-e2e-ready` = 3d4738a. 이후 코드 변경은 새 회차로 검토한다(기준점은 태그로 고정). 태그 뒤 할 일: 결합 설계 구현 계획 실행(subagent-driven), 논문 N192.
 - **결합 구현(계획 2026-09-26, subagent-driven)** (확인 2026-09-26 02:37 UTC): Task 1–7(`harvest/couple/` — params·schema·prompt astra-couple@v1·mock·gate·cost·stream·layer·offset·twolayer) 끝. Task 12는 E-MA2 결과 커밋(`399d1cb`)으로 보류 해제, 범위는 정본 §87(그리퍼 판단을 VLA 선택지로)까지 확장해 다룬다.
 - **E-SR1b 조이스틱 결정 조건 강화(학습 8판)** (확인 2026-09-26 02:30 UTC): 사전 등록 `docs/stage3/prereg_sr1b.md` 커밋 뒤 x2 파드 GPU 0·1(X0 A s0 → B s1, X1 B s0 → AB s1)·메인 파드 GPU 2·3(M2 AB s0 → C0 s1 → 지연, M3 A s1 → A02 s0 → C0 s0 평가)에서 `tools/sr1b/run_sr1b.sh` 실행, 출력 `/data/harvest/logs/sr1b/`·`/data/harvest/ckpt/sr1b/`. 결과 문서 `docs/stage3/results/sr1b.md` 커밋 때 이 줄을 지운다.
+- **E-SR1c 먼 구간 반사실 분기 + 권한 게이트 adaLN(학습 2판)** (확인 2026-09-26 03:09 UTC): 사전 등록 `docs/stage3/prereg_sr1c.md` 커밋 뒤 메인 파드 GPU 0(Isaac G-br 재생, 끝나면 비움)·GPU 1(C0 평가 → C1 → C2 학습·평가)에서 `tools/sr1c/run_sr1c.sh` 실행, 분기 `/data/harvest/data/sr1c/branches/`(128,661행), 출력 `/data/harvest/logs/sr1c/`·`/data/harvest/ckpt/sr1c/`. 결과 문서 `docs/stage3/results/sr1c.md` 커밋 때 이 줄을 지운다.
 
 ## 1. 먼저 할 일
 1. `dev` 브랜치인지 확인한다. **모든 작업(글, 코드)은 `dev`에서 시작하고 `dev`에만 푸시한다. `main`은 절대 건드리지 않는다**(사용자가 직접 반영).
