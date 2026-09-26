@@ -1,6 +1,6 @@
 # RGB만·하이브리드·깊이 필수 — 세 줄기 입력 방식 조사, 하이브리드(H) 설계, 깊이 있는 공개 데이터 목록 (2026-09-27)
 
-작성 2026-09-26 19:5x–20:3x UTC(2026-09-27 04:5x–05:3x KST), 조사 에이전트. **구현·학습·유료 호출·데이터 내려받기는 하지 않았다.** 웹 검색, arXiv API(날짜·Comments)와 HTML 본문, GitHub API(별 수), HF 논문 API(좋아요), HF 데이터셋 API(라이선스·게이트), TFDS 카탈로그(OXE 깊이 필드), OXE 공식 시트(CSV)만 썼다. 확인 스크립트: `D:\tools\scratch_qdd\hyb_cred.py`·`hyb_arxiv_parse.py`·`hyb_ds.py`·`oxe_depth.py`.
+작성 2026-09-26 19:0x–19:5x UTC(2026-09-27 04:0x–04:5x KST), 조사 에이전트. **구현·학습·유료 호출·데이터 내려받기는 하지 않았다.** 웹 검색, arXiv API(날짜·Comments)와 HTML 본문, GitHub API(별 수), HF 논문 API(좋아요), HF 데이터셋 API(라이선스·게이트), TFDS 카탈로그(OXE 깊이 필드), OXE 공식 시트(CSV)만 썼다. 확인 스크립트: `D:\tools\scratch_qdd\hyb_cred.py`·`hyb_arxiv_parse.py`·`hyb_ds.py`·`oxe_depth.py`.
 
 ## 사용자 원문 (user-log 148·149, 통제자 경유)
 
