@@ -29,11 +29,12 @@ def _r(v, n=4):
 
 
 class Runner:
-    def __init__(self, mesh_assets=None):
+    def __init__(self, mesh_assets=None, rooms=None):
         from harvest.astra_motion.world_isaac import CAMS, NO_RENDER
         from harvest.sim.assets_x.isaac import without_table
         from harvest.sim.scene import GRIP_MAX_W, make_env
-        self.undo = without_table(mesh_assets)
+        self.undo = without_table(mesh_assets, rooms)
+        self.rooms = rooms or {}
         self.env = make_env(0, headless=True, cameras=CAMS, depth=False, render_interval=NO_RENDER)
         self.mesh_assets = mesh_assets or {}
         self.collider_boxes = None
@@ -96,7 +97,7 @@ class Runner:
         from harvest.sim.planner import OraclePlanner
         env = self.env
         self.frames = []
-        used = author_scene(env, sc, self.mesh_assets)
+        used = author_scene(env, sc, self.mesh_assets, self.rooms)
         li = env.robot.joint_names.index("lift_joint")
         lift = sc.get("lift")
         lv = float(SC.INIT_JOINTS["lift_joint"] if lift is None else lift)
@@ -251,6 +252,8 @@ def main(argv=None):
     ap.add_argument("--seeds", default="0,1")
     ap.add_argument("--mesh-table", default=None)
     ap.add_argument("--collider-boxes", default=None, help="tools/l8x_assets/collider_boxes.py output")
+    ap.add_argument("--rooms", default=None, help="rooms_table.py output (render-only room backgrounds)")
+    ap.add_argument("--room-each", action="store_true")
     a = ap.parse_args(argv)
     code = 0
     try:
@@ -266,15 +269,22 @@ def main(argv=None):
         kinds = a.kinds.split(",") if a.kinds else list(FU.KINDS) + (list(FU.mesh_kinds(mesh_assets))
                                                                    if mesh_assets else [])
         seeds = [int(s) for s in a.seeds.split(",")]
-        scenes = [FU.sample_scene(k, s, reach=rm, mesh_assets=mesh_assets) for k in kinds for s in seeds]
+        rooms = json.load(open(a.rooms))["rooms"] if a.rooms else None
+        scenes = [FU.sample_scene(k, s, reach=rm, mesh_assets=mesh_assets, rooms=rooms) for k in kinds for s in seeds]
+        if a.room_each:  # one plain table scene per room (render check of every room)
+            scenes = [FU.sample_scene("table", i, reach=rm, rooms={n: rooms[n]}) for i, n in enumerate(sorted(rooms))]
+        used_rooms = {sc["room"]["name"] for sc in scenes if sc.get("room")}
         used = {p["asset"] for sc in scenes for p in sc["furniture"] if p.get("asset")}
-        run = Runner({n: v for n, v in (mesh_assets or {}).items() if n in used})  # load only the pieces used
+        run = Runner({n: v for n, v in (mesh_assets or {}).items() if n in used},  # load only the pieces used
+                     {n: v for n, v in (rooms or {}).items() if n in used_rooms})
         if a.collider_boxes:
             with open(a.collider_boxes) as f:
                 run.collider_boxes = json.load(f)
         summ = []
         for sc in scenes:
             kind, seed = sc["kind"], sc["seed"]
+            if sc.get("room") and a.room_each:
+                kind = "room_" + sc["room"]["name"]
             if True:
                 d = os.path.join(a.out, f"{kind}_s{seed}")
                 os.makedirs(d, exist_ok=True)
