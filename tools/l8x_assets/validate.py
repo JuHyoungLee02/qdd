@@ -36,6 +36,7 @@ class Runner:
         self.undo = without_table(mesh_assets)
         self.env = make_env(0, headless=True, cameras=CAMS, depth=False, render_interval=NO_RENDER)
         self.mesh_assets = mesh_assets or {}
+        self.collider_boxes = None
         self.w = float(GRIP_MAX_W)
         self.frames = []
 
@@ -118,7 +119,7 @@ class Runner:
         regions = {p["surface"]: p for p in sc["placement_regions"]}
         res = {"kind": sc["kind"], "seed": sc["seed"], "params": sc["params"], "slots": used, "lift": lift,
                "lift_measured": _r(float(env.robot.data.joint_pos[0, li])),
-               "spawn": _spawn_check(dq, bp, names, sc), "surfaces": [], "reset_s": _r(time.time() - t0, 1)}
+               "spawn": _spawn_check(dq, bp, names, sc, self.collider_boxes), "surfaces": [], "reset_s": _r(time.time() - t0, 1)}
         _overlay(img, cam, sc, regions, os.path.join(out_dir, "head_overlay.png"))
         _save(img, os.path.join(out_dir, "head.png"))
         for s in sc["surfaces"][:6]:
@@ -162,18 +163,17 @@ class Runner:
         return res
 
 
-def _spawn_check(dq, bp, names, sc):
-    """Robot bodies in front of the torso (x > 0.15) that sit on / inside a furniture part's box after the settle:
-    a body within 1.5 cm of or below a part's top inside its xy footprint = the robot rests on the furniture."""
+def _spawn_check(dq, bp, names, sc, collider_boxes=None):
+    """Robot bodies in front of the torso (x > 0.15) inside a furniture part (1 cm margin): its box for cuboid
+    parts, its real collider boxes for mesh parts (furniture.part_hits; the bbox gave false positives above a
+    desk top with a tall back part: Desk_301_1, Dresser_219_1)."""
+    from harvest.sim.assets_x.furniture import part_hits
+    idx = [i for i in range(len(names)) if bp[i][0] > 0.15]
+    pts = np.asarray([bp[i] for i in idx], float).reshape(-1, 3)
     hits = []
     for p in list(sc["furniture"]) + list(sc["walls"]):
-        c, s = np.asarray(p["pos"], float), np.asarray(p["size"], float)
-        lo, hi = c - s / 2, c + s / 2
-        for i, n in enumerate(names):
-            x, y, z = bp[i]
-            if x > 0.15 and lo[0] - 0.01 <= x <= hi[0] + 0.01 and lo[1] - 0.01 <= y <= hi[1] + 0.01 \
-                    and lo[2] - 0.01 <= z <= hi[2] + 0.015:
-                hits.append(f"{n}@{p['id']}")
+        for k in part_hits(p, pts, collider_boxes):
+            hits.append(f"{names[idx[k]]}@{p['id']}")
     return {"arm_dq_max_rad": _r(dq), "robot_in_furniture": hits[:8], "ok": not hits}
 
 
@@ -250,6 +250,7 @@ def main(argv=None):
     ap.add_argument("--kinds", default=None)
     ap.add_argument("--seeds", default="0,1")
     ap.add_argument("--mesh-table", default=None)
+    ap.add_argument("--collider-boxes", default=None, help="tools/l8x_assets/collider_boxes.py output")
     a = ap.parse_args(argv)
     code = 0
     try:
@@ -257,15 +258,20 @@ def main(argv=None):
         from harvest.sim.assets_x.reach import ReachModel
         rm = ReachModel.load(a.reach)
         mesh_assets = None
-        if a.mesh_table:
-            with open(a.mesh_table) as f:
-                mesh_assets = json.load(f)["assets"]
+        if a.mesh_table:  # comma-separated tables, merged (THOR, cyclo_lab, ...)
+            mesh_assets = {}
+            for path in a.mesh_table.split(","):
+                with open(path) as f:
+                    mesh_assets.update(json.load(f)["assets"])
         kinds = a.kinds.split(",") if a.kinds else list(FU.KINDS) + (list(FU.mesh_kinds(mesh_assets))
                                                                    if mesh_assets else [])
         seeds = [int(s) for s in a.seeds.split(",")]
         scenes = [FU.sample_scene(k, s, reach=rm, mesh_assets=mesh_assets) for k in kinds for s in seeds]
         used = {p["asset"] for sc in scenes for p in sc["furniture"] if p.get("asset")}
         run = Runner({n: v for n, v in (mesh_assets or {}).items() if n in used})  # load only the pieces used
+        if a.collider_boxes:
+            with open(a.collider_boxes) as f:
+                run.collider_boxes = json.load(f)
         summ = []
         for sc in scenes:
             kind, seed = sc["kind"], sc["seed"]

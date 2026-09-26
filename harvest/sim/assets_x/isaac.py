@@ -16,6 +16,7 @@ import numpy as np
 
 N_SLOTS = 28
 PARK = (-6.0, -6.0, -4.0)  # below the ground plane, outside every camera
+ROOM_PARK = (-30.0, 30.0, -10.0)  # rooms: far away and below the ground plane
 ROOT = "/World/envs/env_0"
 
 
@@ -39,7 +40,7 @@ def spawn_fx(prim_path, cfg, translation=None, orientation=None, **kwargs):
     return prim
 
 
-def slot_cfgs(mesh_assets: dict | None = None, n: int = N_SLOTS) -> dict:
+def slot_cfgs(mesh_assets: dict | None = None, n: int = N_SLOTS, rooms: dict | None = None) -> dict:
     import isaaclab.sim as sim_utils
     from isaaclab.assets import AssetBaseCfg
     out = {}
@@ -55,10 +56,14 @@ def slot_cfgs(mesh_assets: dict | None = None, n: int = N_SLOTS) -> dict:
         out[f"fm_{name}"] = AssetBaseCfg(
             prim_path="{ENV_REGEX_NS}/FM_" + name, spawn=sim_utils.UsdFileCfg(usd_path=a["dst"]),
             init_state=AssetBaseCfg.InitialStateCfg(pos=(PARK[0] - 3.0 * j, PARK[1] - 6.0, PARK[2])))
+    for j, (name, r) in enumerate(sorted((rooms or {}).items())):  # render-only room backgrounds, parked
+        out[f"fr_{name}"] = AssetBaseCfg(
+            prim_path="{ENV_REGEX_NS}/FR_" + name, spawn=sim_utils.UsdFileCfg(usd_path=r["usd"]),
+            init_state=AssetBaseCfg.InitialStateCfg(pos=(ROOM_PARK[0] - 12.0 * j, ROOM_PARK[1], ROOM_PARK[2])))
     return out
 
 
-def without_table(mesh_assets: dict | None = None):
+def without_table(mesh_assets: dict | None = None, rooms: dict | None = None):
     """Patch scene._build_cfg in this process: no L8 table, + furniture slots. Returns the undo function."""
     from .. import scene as SC
     orig = SC._build_cfg
@@ -66,7 +71,7 @@ def without_table(mesh_assets: dict | None = None):
     def patched(*a, **k):
         cfg, layout = orig(*a, **k)
         cfg.scene.table = None
-        for name, c in slot_cfgs(mesh_assets).items():
+        for name, c in slot_cfgs(mesh_assets, rooms=rooms).items():
             setattr(cfg.scene, name, c)
         return cfg, layout
 
@@ -87,7 +92,7 @@ def yaw_quat(yaw: float):
     return (float(np.cos(yaw / 2)), 0.0, 0.0, float(np.sin(yaw / 2)))
 
 
-def author_scene(env, scene: dict, mesh_assets: dict | None = None) -> dict:
+def author_scene(env, scene: dict, mesh_assets: dict | None = None, rooms: dict | None = None) -> dict:
     """USD pose / scale / colour of every part of `scene` (furniture + walls); unused slots and meshes parked.
     Takes effect physically at the next hard reset. -> {slots_used, meshes_used}."""
     import omni.usd
@@ -125,4 +130,11 @@ def author_scene(env, scene: dict, mesh_assets: dict | None = None) -> dict:
         if name not in used:
             _set_pose(stage.GetPrimAtPath(_mesh_path(name)), (PARK[0] - 3.0 * j, PARK[1] - 6.0, PARK[2]),
                       (1.0, 0.0, 0.0, 0.0))
-    return {"slots_used": len(cub), "meshes_used": sorted(used)}
+    room = scene.get("room")
+    for j, name in enumerate(sorted(rooms or {})):
+        prim = stage.GetPrimAtPath(f"{ROOT}/FR_{name}")
+        if room is not None and room["name"] == name:  # +1 mm: no z-fighting with the grid ground plane
+            _set_pose(prim, (room["pos"][0], room["pos"][1], room["pos"][2] + 0.001), yaw_quat(room["yaw"]))
+        else:
+            _set_pose(prim, (ROOM_PARK[0] - 12.0 * j, ROOM_PARK[1], ROOM_PARK[2]), (1.0, 0.0, 0.0, 0.0))
+    return {"slots_used": len(cub), "meshes_used": sorted(used), "room": None if room is None else room["name"]}

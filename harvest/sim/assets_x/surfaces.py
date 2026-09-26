@@ -33,6 +33,23 @@ def _tri_normals(P, F):
     return n, ln
 
 
+def _sliver(a, b, c, t, n, x0, y0, nx, ny, cells, zs, fac, tri):
+    """Cells of points sampled on a triangle that covers no cell centre (thin walls stay solid)."""
+    m = max(2, int(np.ceil(max(np.linalg.norm(b - a), np.linalg.norm(c - b), np.linalg.norm(a - c)) / (RES / 2))))
+    u, v = np.meshgrid(np.linspace(0, 1, m + 1), np.linspace(0, 1, m + 1), indexing="ij")
+    keep = u + v <= 1 + 1e-9
+    u, v = u[keep], v[keep]
+    p = a[None, :] + u[:, None] * (b - a)[None, :] + v[:, None] * (c - a)[None, :]
+    i = np.floor((p[:, 0] - x0) / RES).astype(int)
+    j = np.floor((p[:, 1] - y0) / RES).astype(int)
+    ok = (i >= 0) & (i < nx) & (j >= 0) & (j < ny)
+    cid, first = np.unique(i[ok] * ny + j[ok], return_index=True)
+    cells.append(cid)
+    zs.append(p[ok][first, 2])
+    fac.append(np.full(len(cid), 1 if n[t, 2] > 0 else -1))
+    tri.append(np.full(len(cid), t))
+
+
 def _raster(P, F, n, x0, y0, nx, ny):
     """(cell index, z at the cell centre, facing +1 up / -1 down, triangle index) for every cell centre inside a
     non-vertical triangle's xy projection."""
@@ -46,6 +63,7 @@ def _raster(P, F, n, x0, y0, nx, ny):
         j0 = max(int(math.ceil((lo[1] - y0) / RES - 0.5)), 0)
         j1 = min(int(math.floor((hi[1] - y0) / RES - 0.5)), ny - 1)
         if i1 < i0 or j1 < j0:
+            _sliver(a, b, c, t, n, x0, y0, nx, ny, cells, zs, fac, tri)
             continue
         ii, jj = np.meshgrid(np.arange(i0, i1 + 1), np.arange(j0, j1 + 1), indexing="ij")
         px = x0 + (ii.ravel() + 0.5) * RES
@@ -55,7 +73,8 @@ def _raster(P, F, n, x0, y0, nx, ny):
         l2 = ((c[1] - a[1]) * (px - c[0]) + (a[0] - c[0]) * (py - c[1])) / d
         l3 = 1.0 - l1 - l2
         k = (l1 >= -1e-9) & (l2 >= -1e-9) & (l3 >= -1e-9)
-        if not k.any():
+        if not k.any():  # a sliver thinner than a cell (a 3 mm basket wall top): its sample points mark cells
+            _sliver(a, b, c, t, n, x0, y0, nx, ny, cells, zs, fac, tri)
             continue
         cells.append(ii.ravel()[k] * ny + jj.ravel()[k])
         zs.append(l1[k] * a[2] + l2[k] * b[2] + l3[k] * c[2])
@@ -160,8 +179,8 @@ def mesh_support_surfaces(P, F, min_area: float = MIN_AREA, min_side: float = MI
             covered = float(cov.min()) if cov.size else None
             # rim: highest solid above the surface in the one-cell ring just outside each side of the box
             sides = []
-            for ring in (allz[max(i0 - 1, 0), j0:j1 + 1], allz[min(i1 + 1, nx - 1), j0:j1 + 1],
-                         allz[i0:i1 + 1, max(j0 - 1, 0)], allz[i0:i1 + 1, min(j1 + 1, ny - 1)]):
+            for ring in (allz[max(i0 - 2, 0):i0, j0:j1 + 1], allz[i1 + 1:i1 + 3, j0:j1 + 1],  # 2-cell ring
+                         allz[i0:i1 + 1, max(j0 - 2, 0):j0], allz[i0:i1 + 1, j1 + 1:j1 + 3]):
                 sides.append(float(ring.max()) if ring.size else -np.inf)
             rim = min(sides)
             container = bool(np.isfinite(rim) and rim - top >= RIM_MIN)

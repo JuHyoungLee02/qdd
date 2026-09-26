@@ -172,3 +172,26 @@ def test_counter_cabinet_front_band_is_a_workspace():
         sc = FU.sample_scene("counter_cabinet", seed, reach=rm)
         regs = [p["region"] for p in sc["placement_regions"] if p["region"]]
         assert regs and max(r[0][1] - r[0][0] for r in regs) >= 0.08, seed  # L8D gate G-H minimum
+
+
+def test_part_hits_uses_collider_boxes_not_the_bbox():
+    import math as m
+    I = [1, 0, 0, 0, 1, 0, 0, 0, 1]
+    boxes = {"Desk": [[0.0, 0.0, 0.375, 0.6, 0.3, 0.375] + I, [0.0, 0.25, 1.0, 0.6, 0.05, 0.25] + I]}
+    part = {"id": "Desk", "asset": "Desk", "usd": "/x.usda", "yaw": -m.pi / 2, "base_pos": [0.6, -0.1, 0.0],
+            "pos": [0.6, -0.1, 0.625], "size": [0.6, 1.2, 1.25]}
+    above_top = [0.5, -0.1, 0.9]  # inside the bbox, above the desk top, in front of the back part
+    in_top = [0.6, -0.1, 0.70]
+    in_back = [0.6 + 0.25, -0.1, 1.1]  # piece +y (back) -> world +x after yaw -90 deg
+    assert FU.part_hits(part, [above_top, in_top, in_back], boxes) == [1, 2]
+    assert FU.part_hits(part, [above_top], None) == [0]  # bbox only: the false positive
+
+
+def test_room_is_attached_only_when_the_furniture_fits_its_zone():
+    rooms = {"FloorPlanX": {"usd": "/r.usdc", "pos": [1.0, 2.0, 0.0], "yaw": 0.0, "kind": "kitchen"}}
+    sc = FU.sample_scene("table", 0, rooms=rooms)
+    assert sc["room"]["name"] == "FloorPlanX" and sc["walls"] == [] and sc["room_skip"] is None
+    assert FU.sample_scene("table", 0)["room"] is None
+    big = [s for s in range(40) if FU.sample_scene("counter", s)["furniture"][0]["size"][1] > 2.0]
+    for s in big:
+        assert FU.sample_scene("counter", s, rooms=rooms)["room"] is None

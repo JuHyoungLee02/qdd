@@ -214,31 +214,38 @@ def check_keep_out(parts) -> list:
     return bad
 
 
-MESH_PREFIX = "thor_"
+MESH_PREFIX = "thor_"  # the first mesh source; mesh kinds are <tag>_<category> (tag = asset "tag", default thor)
+MESH_TAGS = ("thor_", "cyclo_")
 MESH_YAW = -math.pi / 2  # THOR fronts face -y after the Y-up fix; yaw -90 deg turns them to face the robot (-x)
 MESH_X_FRONT = {"table": (0.15, 0.22), "side_table": (0.15, 0.22), "low_table": (0.18, 0.25), "low": (0.18, 0.25),
+                "work_table": (0.15, 0.22),
                 "counter": (0.20, 0.28), "shelf": (0.25, 0.35), "bin": (0.30, 0.40)}
 
 
 def mesh_kinds(mesh_assets: dict | None) -> tuple:
-    return tuple(sorted({MESH_PREFIX + a["category"] for a in (mesh_assets or {}).values()}))
+    return tuple(sorted({a.get("tag", "thor") + "_" + a["category"] for a in (mesh_assets or {}).values()}))
 
 
-def _mesh_piece(rng, kind: str, mesh_assets: dict, split: str):
-    cat = kind[len(MESH_PREFIX):]
-    names = sorted(n for n, a in mesh_assets.items() if a["category"] == cat and a["split"] == split)
+def _mesh_piece(rng, kind: str, mesh_assets: dict, split: str, base_xy=None, base_z: float = 0.0):
+    tag, cat = kind.split("_", 1)
+    names = sorted(n for n, a in mesh_assets.items() if a["category"] == cat and a["split"] == split
+                   and a.get("tag", "thor") == tag)
     if not names:
         raise ValueError(f"no {split} assets of category {cat}")
     name = names[int(rng.integers(len(names)))]
     a = mesh_assets[name]
     sx, sy, sz = a["collider_size"]
-    yaw = MESH_YAW
+    yaw = float(a.get("yaw", MESH_YAW))
     dx, dy = abs(math.sin(yaw)) * sy + abs(math.cos(yaw)) * sx, abs(math.sin(yaw)) * sx + abs(math.cos(yaw)) * sy
-    xf = rng.uniform(*MESH_X_FRONT[cat])
-    yc = rng.uniform(-0.25, -0.10)
-    base = [xf + dx / 2, yc, 0.0]
+    if base_xy is None:  # standing on the floor in front of the robot (draw order unchanged for THOR kinds)
+        xf = rng.uniform(*MESH_X_FRONT[cat])
+        yc = rng.uniform(-0.25, -0.10)
+        base = [xf + dx / 2, yc, float(base_z)]
+    else:  # standing on another surface (a basket on a table): centre given
+        base = [float(base_xy[0]), float(base_xy[1]), float(base_z)]
+        xf, yc = base[0] - dx / 2, base[1]
     p = {"id": name, "usd": a["dst"], "asset": name, "prim": "mesh", "size": [_r(dx), _r(dy), _r(sz)],
-         "pos": [_r(base[0]), _r(yc), _r(sz / 2)], "base_pos": [_r(v) for v in base], "yaw": _r(yaw, 6),
+         "pos": [_r(base[0]), _r(yc), _r(base[2] + sz / 2)], "base_pos": [_r(v) for v in base], "yaw": _r(yaw, 6),
          "static": True, "color": None, "role": "mesh", "surface_kind": a["top_kind"], "category": cat,
          "license": a["license"], "source": a["source"], "split": a["split"]}
     surfs = []
@@ -257,7 +264,32 @@ def _mesh_piece(rng, kind: str, mesh_assets: dict, split: str):
 
 
 def sample_scene(kind: str, seed: int, reach=None, mesh_assets: dict | None = None, split: str = "train",
-                 lift="auto") -> dict:
+                 lift="auto", rooms: dict | None = None) -> dict:
+    """sample_scene_core + an optional room background (rooms: rooms_ithor.json "rooms"): a room is picked by seed
+    among those whose clear zone (rooms.ZONE) holds every furniture part; the room replaces the plain walls
+    (walls never reach the reach band, so placement regions stay the same). scene["room"] = {name, usd, pos, yaw,
+    kind} or None, scene["room_skip"] = why none."""
+    out = sample_scene_core(kind, seed, reach, mesh_assets, split, lift)
+    out["room"], out["room_skip"] = None, None
+    if rooms:
+        from .rooms import ZONE
+        (zx0, zx1), (zy0, zy1) = ZONE
+        fits = all(zx0 <= lo[0] and hi[0] <= zx1 and zy0 <= lo[1] and hi[1] <= zy1
+                   for lo, hi in (_bounds(p) for p in out["furniture"]))
+        if not fits:
+            out["room_skip"] = "furniture outside the room zone"
+        else:
+            names = sorted(rooms)
+            name = names[int(np.random.default_rng([int(seed), 97, 200]).integers(len(names)))]
+            r = rooms[name]
+            out["room"] = {"name": name, "usd": r["usd"], "pos": r["pos"], "yaw": r["yaw"], "kind": r.get("kind"),
+                           "license": r.get("license"), "source": r.get("source")}
+            out["walls"] = []
+    return out
+
+
+def sample_scene_core(kind: str, seed: int, reach=None, mesh_assets: dict | None = None, split: str = "train",
+                      lift="auto") -> dict:
     """-> {kind, seed, kind_split, params, furniture [parts], walls [parts], surfaces [...], lift, lift_usable,
     placement_regions [...]}.
     reach: optional reach.ReachModel (the L8-D probe); with it every surface gets its reachable / visible / free
@@ -266,7 +298,29 @@ def sample_scene(kind: str, seed: int, reach=None, mesh_assets: dict | None = No
     surface, every probed lift at which it is usable. The lift moves torso + head camera + arms rigidly in z.
     Mesh kinds (thor_<category>, mesh_kinds(assets_table)) pick one licensed piece of that category and split
     ("train" | "ood": the OOD-O held-out pieces, 20 % by name hash). kind_split: KIND_SPLIT (OOD-S kinds)."""
-    if kind.startswith(MESH_PREFIX):
+    if kind.startswith(MESH_TAGS) and kind.endswith("_basket"):  # a licensed basket on a parametric table
+        rng = np.random.default_rng([int(seed), 97, 100, sum(kind.encode())])
+        top, xf = rng.uniform(0.80, 0.90), rng.uniform(0.15, 0.22)
+        dx, dy, yc = rng.uniform(0.60, 0.85), rng.uniform(0.90, 1.20), rng.uniform(-0.15, -0.05)
+        table = _table(rng, "table", top, xf, dx, yc - dy / 2, yc + dy / 2, _pick(rng, WOOD))
+        p, bsurfs, prm = _mesh_piece(rng, kind, mesh_assets or {}, split,
+                                     base_xy=(rng.uniform(0.42, 0.46), rng.uniform(-0.34, -0.26)), base_z=top)
+        walls = _walls(rng, xf + dx)
+        blk = part(p["id"], np.asarray(p["pos"]) - np.asarray(p["size"]) / 2,  # the basket as an obstacle
+                   np.asarray(p["pos"]) + np.asarray(p["size"]) / 2, (0, 0, 0), "block")
+        P, F = S.merge_meshes([S.box_mesh(*_bounds(q)) for q in table + walls + [blk]])
+        surfs = _label(S.mesh_support_surfaces(P, F), table) + bsurfs
+        furn = table + [p]
+        bad = check_keep_out(furn + walls)
+        if bad:
+            raise RuntimeError(f"{kind} seed {seed}: parts in the robot keep-out box: {bad}")
+        out = {"kind": kind, "seed": int(seed), "kind_split": p["split"], "params": dict(prm, top=_r(top)),
+               "furniture": furn, "walls": walls, "lift": None, "lift_usable": None, "surfaces": surfs,
+               "placement_regions": []}
+        if reach is not None:
+            _with_lift(out, reach, obstacles_of(walls + [blk]), lift)
+        return out
+    if kind.startswith(MESH_TAGS):
         rng = np.random.default_rng([int(seed), 97, 100, sum(kind.encode())])
         p, surfs, prm = _mesh_piece(rng, kind, mesh_assets or {}, split)
         walls = _walls(rng, p["pos"][0] + p["size"][0] / 2)
@@ -313,12 +367,35 @@ def _with_lift(out: dict, reach, obstacles, lift) -> None:
 
 
 def obstacles_of(parts) -> list:
-    """[((x0, x1), (y0, y1), z_top)] of parts (axis-aligned; parametric parts have yaw 0)."""
+    """[((x0, x1), (y0, y1), z_top, part id)] of parts (axis-aligned; parametric parts have yaw 0)."""
     out = []
     for p in parts:
         lo, hi = _bounds(p)
-        out.append(((float(lo[0]), float(hi[0])), (float(lo[1]), float(hi[1])), float(hi[2])))
+        out.append(((float(lo[0]), float(hi[0])), (float(lo[1]), float(hi[1])), float(hi[2]), p["id"]))
     return out
+
+
+def part_hits(part: dict, points, collider_boxes: dict | None = None, margin: float = 0.01) -> list:
+    """Indices of points (N, 3 world) inside a part: its own box (cuboid parts) or, for a mesh part with an entry
+    in collider_boxes (tools/l8x_assets/collider_boxes.py: [cx, cy, cz, hx, hy, hz, R(3x3 row-major)] in the piece's
+    normalised frame), inside any of its collider boxes -- not the bbox (a desk's tall back part is no top)."""
+    P = np.atleast_2d(np.asarray(points, float))
+    boxes = (collider_boxes or {}).get(part.get("asset")) if part.get("usd") else None
+    if not boxes:
+        lo, hi = _bounds(part)
+        ok = np.all((P >= lo - margin) & (P <= hi + margin), axis=1)
+        return [int(i) for i in np.nonzero(ok)[0]]
+    yaw = float(part.get("yaw", 0.0))
+    c, s = math.cos(yaw), math.sin(yaw)
+    Rz = np.array([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
+    base = np.asarray(part["base_pos"], float)
+    Q = (P - base) @ Rz  # world -> piece frame (spawned at base_pos with yaw about the piece origin)
+    hit = np.zeros(len(P), bool)
+    for b in boxes:
+        ctr, h, R = np.asarray(b[:3]), np.asarray(b[3:6]), np.asarray(b[6:15]).reshape(3, 3)
+        L = (Q - ctr) @ R  # coordinates along the box axes
+        hit |= np.all(np.abs(L) <= h + margin, axis=1)
+    return [int(i) for i in np.nonzero(hit)[0]]
 
 
 def all_parts(scene: dict) -> list:

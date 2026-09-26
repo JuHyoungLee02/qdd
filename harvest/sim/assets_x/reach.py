@@ -139,11 +139,14 @@ def surface_cells(s: dict, margin=EDGE_MARGIN):
     return xs, ys
 
 
-def free_of_obstacles(xs, ys, top: float, obstacles) -> np.ndarray:
+def free_of_obstacles(xs, ys, top: float, obstacles, part=None) -> np.ndarray:
     """Cells where the open gripper can go down: no obstacle part (xy box, top z) rising above the surface within
     FINGER_X (fingers close along world x) / FINGER_Y of the cell. obstacles: [((x0, x1), (y0, y1), z_top)]."""
     F = np.ones((len(xs), len(ys)), bool)
-    for (ox0, ox1), (oy0, oy1), oz in obstacles:
+    for ob in obstacles:  # ((x0, x1), (y0, y1), z_top[, part id]): a part never blocks its own surfaces
+        (ox0, ox1), (oy0, oy1), oz = ob[:3]
+        if len(ob) > 3 and part is not None and ob[3] == part:
+            continue
         if oz <= top + 0.005:
             continue
         bx = (xs[:, None] > ox0 - FINGER_X) & (xs[:, None] < ox1 + FINGER_X)
@@ -165,7 +168,7 @@ def region_of(s: dict, rm: ReachModel, obj_h: float = OBJ_H, obstacles=()) -> di
         return dict(out, reach_frac=0.0, view_frac=0.0, usable_frac=0.0, region=None, area=0.0, reason="covered")
     R = rm.reach_grid(xs, ys, z_lo, z_hi)
     V = rm.visible_grid(xs, ys, top, obj_h)
-    F = free_of_obstacles(xs, ys, top, obstacles)
+    F = free_of_obstacles(xs, ys, top, obstacles, s.get("part"))
     U = R & V & F
     r, W = None, U.copy()
     for _ in range(8):  # the largest rectangle at least MIN_REGION x MIN_REGION (a thin strip is no workspace)

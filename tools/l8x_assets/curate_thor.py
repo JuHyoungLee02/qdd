@@ -20,7 +20,8 @@ CATEGORY = {  # name prefix -> (category, surface kind of its top-most open surf
     "Laundry_Hamper": ("bin", "bin_floor"), "Stool": ("low", "low_table"), "Footstool": ("low", "low_table"),
     "Ottoman": ("low", "low_table"),
 }
-SKIP = ("Sink", "Cart")  # a sink basin needs its counter; a cart has wheels / handles
+SKIP = ("Sink", "Cart", "Desk_Lamp")  # a sink basin needs its counter; a cart has wheels / handles; a lamp
+# is no table (Desk_Lamp_* matched the Desk prefix and sat in thor_table until 2026-09-27 c2)
 MAX_RENDER_GAP_MM = 40.0
 LICENSE = "CC BY 4.0"
 SOURCE = "MolmoSpaces (allenai/molmospaces, isaac/objects/thor/20260128), AI2-THOR assets"

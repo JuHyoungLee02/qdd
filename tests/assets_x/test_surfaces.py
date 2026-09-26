@@ -132,3 +132,12 @@ def test_virtual_support_by_a_surface():
     assert S.support_of(0.978, (0.45, -0.25), [s1, s2]) == "stand_1"
     assert S.support_of(0.90, (0.45, -0.25), [s1, s2]) == "counter_0"
     assert S.support_of(0.50, (0.45, -0.25), [s1, s2]) is None
+
+
+def test_thin_walled_basket_is_a_container():
+    floor = box_mesh((0, 0, 0.0), (0.28, 0.20, 0.006))
+    t = 0.003
+    walls = [box_mesh((0, 0, 0), (0.28, t, 0.12)), box_mesh((0, 0.20 - t, 0), (0.28, 0.20, 0.12)),
+             box_mesh((0, 0, 0), (t, 0.20, 0.12)), box_mesh((0.28 - t, 0, 0), (0.28, 0.20, 0.12))]
+    s = [x for x in S.mesh_support_surfaces(*merge(floor, *walls)) if abs(x["top_z"] - 0.006) < 1e-6]
+    assert len(s) == 1 and s[0]["container"] and s[0]["rim_z"] == pytest.approx(0.12, abs=1e-6)

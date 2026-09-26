@@ -88,6 +88,63 @@ def boxes_mesh(boxes):
     return S.merge_meshes(meshes)
 
 
+
+def _mesh_world(prim, xc):
+    """A Mesh prim as world-space triangles (fan triangulation of each face)."""
+    from pxr import UsdGeom
+    m = UsdGeom.Mesh(prim)
+    pts = np.asarray(m.GetPointsAttr().Get(), float)
+    cnt = np.asarray(m.GetFaceVertexCountsAttr().Get(), int)
+    idx = np.asarray(m.GetFaceVertexIndicesAttr().Get(), int)
+    M = np.asarray(xc.GetLocalToWorldTransform(prim), float)
+    W = (np.c_[pts, np.ones(len(pts))] @ M)[:, :3]
+    F, k = [], 0
+    for c in cnt:
+        f = idx[k:k + c]
+        F += [[f[0], f[i], f[i + 1]] for i in range(1, c - 1)]
+        k += c
+    F = np.asarray(F, int).reshape(-1, 3)
+    if str(m.GetOrientationAttr().Get()) == "leftHanded" or np.linalg.det(M[:3, :3]) < 0:
+        F = F[:, ::-1]
+    return W, F
+
+
+def render_mesh(stage):
+    """Every render Mesh prim (purpose default / render) as one world-space triangle mesh."""
+    from pxr import Usd, UsdGeom
+    xc = _xf_cache()
+    parts = []
+    for p in stage.Traverse(Usd.TraverseInstanceProxies()):
+        if p.GetTypeName() == "Mesh" and UsdGeom.Imageable(p).ComputePurpose() in ("default", "render"):
+            W, F = _mesh_world(p, xc)
+            if len(F):
+                parts.append((W, F))
+    return S.merge_meshes(parts)
+
+
+def collider_mesh(stage, exact_mesh: bool = False):
+    """All colliders as one triangle mesh: primitives as their boxes; Mesh colliders as their boxes, or with
+    exact_mesh as their own triangles (cyclo_lab tables have one mesh collider for the whole table)."""
+    from pxr import Usd, UsdPhysics
+    if not exact_mesh:
+        return boxes_mesh(collider_boxes(stage))
+    xc = _xf_cache()
+    parts, boxes = [], []
+    for p in stage.Traverse(Usd.TraverseInstanceProxies()):
+        if p.GetTypeName() in COLLIDER_TYPES and p.HasAPI(UsdPhysics.CollisionAPI):
+            en = p.GetAttribute("physics:collisionEnabled")
+            if en and en.Get() is False:
+                continue
+            if p.GetTypeName() == "Mesh":
+                parts.append(_mesh_world(p, xc))
+            else:
+                boxes.append((str(p.GetPath()), _world_corners(p, xc)))
+    if boxes:
+        parts.append(boxes_mesh(boxes))
+    if not parts:
+        raise ValueError("no colliders")
+    return S.merge_meshes(parts)
+
 def render_bbox(stage):
     from pxr import Usd, UsdGeom
     bb = UsdGeom.BBoxCache(Usd.TimeCode.Default(), ["default", "render"]).ComputeWorldBound(stage.GetPseudoRoot())
@@ -95,13 +152,21 @@ def render_bbox(stage):
     return np.array(r.GetMin(), float), np.array(r.GetMax(), float)
 
 
-def make_static(src: str, dst: str | None = None, y_up_fix: bool = True) -> dict:
-    """Write the static, flattened copy next to src -> {dst, stripped, joints, meters_per_unit, up_axis}."""
+def make_static(src: str, dst: str | None = None, y_up_fix: bool = True, mode: str = "thor") -> dict:
+    """Write the static, flattened copy next to src -> {dst, stripped, joints, meters_per_unit, up_axis}.
+    mode "thor": the layer must say metersPerUnit 1 / upAxis Z and y_up_fix applies (THOR geometry is Y-up).
+    mode "declared" (cyclo_lab): trust the declared up axis (Y -> rotateX 90) and take the coordinates as metres
+    whatever metersPerUnit says (cyclo_lab spawns these files unscaled; their numbers are metres: a 0.75 table),
+    and the flat copy is re-labelled metersPerUnit 1 / upAxis Z so no metrics correction can apply on load."""
     from pxr import Sdf, Usd, UsdGeom
     stage = Usd.Stage.Open(src)
     mpu, up = float(UsdGeom.GetStageMetersPerUnit(stage)), str(UsdGeom.GetStageUpAxis(stage))
-    if abs(mpu - 1.0) > 1e-9 or up != "Z":
+    if mode == "thor" and (abs(mpu - 1.0) > 1e-9 or up != "Z"):
         raise ValueError(f"{src}: metersPerUnit {mpu} upAxis {up} (only 1 / Z accepted)")
+    if mode == "declared":
+        y_up_fix = up == "Y"
+    elif mode != "thor":
+        raise ValueError(mode)
     layer = stage.Flatten()
     dst = dst or os.path.splitext(src)[0] + "_static.usda"
     stripped, joints = 0, 0
@@ -124,6 +189,8 @@ def make_static(src: str, dst: str | None = None, y_up_fix: bool = True) -> dict
 
     for root in layer.rootPrims:
         visit(root)
+    layer.pseudoRoot.SetInfo("metersPerUnit", 1.0)
+    layer.pseudoRoot.SetInfo("upAxis", "Z")
     flat = os.path.splitext(dst)[0] + "_flat.usda"
     layer.Export(flat)
     # wrapper: /Piece (free for the spawner's translate / orient) / norm (translate: collider bbox bottom-centre
@@ -142,7 +209,7 @@ def make_static(src: str, dst: str | None = None, y_up_fix: bool = True) -> dict
     if y_up_fix:
         yup.AddRotateXOp().Set(90.0)
     yup.GetPrim().GetReferences().AddReference(os.path.basename(flat))
-    lo, hi = _collider_range(st)
+    lo, hi = _collider_range(st, exact_mesh=mode == "declared")
     tr = norm.AddTranslateOp()
     tr.Set((-float((lo[0] + hi[0]) / 2), -float((lo[1] + hi[1]) / 2), -float(lo[2])))
     st.GetRootLayer().Save()
@@ -151,12 +218,45 @@ def make_static(src: str, dst: str | None = None, y_up_fix: bool = True) -> dict
             "raw_origin": [round(float(v), 4) for v in ((lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2])]}
 
 
-def _collider_range(stage):
-    P, _ = boxes_mesh(collider_boxes(stage))
+VISUAL_STRIP = STRIP_APIS + ("PhysicsCollisionAPI", "PhysicsMeshCollisionAPI", "PhysxCollisionAPI",
+                             "PhysxConvexHullCollisionAPI", "PhysxConvexDecompositionCollisionAPI",
+                             "PhysxSDFMeshCollisionAPI", "PhysicsMaterialAPI")
+
+
+def make_visual(src: str, dst: str | None = None, ext: str = ".usda") -> dict:
+    """A render-only flattened copy next to src (no rigid body, collider, joint or physics scene): the mesh a
+    spawner can reference under its own collider (randomize.spawn_rd style, up = "Y" for MolmoSpaces)."""
+    from pxr import Sdf, Usd
+    layer = Usd.Stage.Open(src).Flatten()
+    dst = dst or os.path.splitext(src)[0] + "_visual" + ext
+    n = 0
+
+    def visit(spec):
+        nonlocal n
+        if spec.typeName == "PhysicsScene" or "Joint" in spec.typeName:
+            spec.active = False
+        if spec.HasInfo("apiSchemas"):
+            info = spec.GetInfo("apiSchemas")
+            items = [x for x in info.GetAddedOrExplicitItems() if x not in VISUAL_STRIP]
+            n += len(info.GetAddedOrExplicitItems()) - len(items)
+            lo = Sdf.TokenListOp()
+            lo.prependedItems = items
+            spec.SetInfo("apiSchemas", lo)
+        for c in spec.nameChildren:
+            visit(c)
+
+    for root in layer.rootPrims:
+        visit(root)
+    layer.Export(dst)
+    return {"visual": dst, "stripped_apis": n}
+
+
+def _collider_range(stage, exact_mesh: bool = False):
+    P, _ = collider_mesh(stage, exact_mesh)
     return P.min(0), P.max(0)
 
 
-def inspect(src_static: str) -> dict:
+def inspect(src_static: str, exact_mesh: bool = False) -> dict:
     """Static copy -> {bbox (render), collider bbox, n_colliders, surfaces (asset frame, origin = collider bbox
     bottom-centre)}."""
     from pxr import Usd
@@ -164,7 +264,7 @@ def inspect(src_static: str) -> dict:
     boxes = collider_boxes(stage)
     if not boxes:
         raise ValueError(f"{src_static}: no colliders")
-    P, F = boxes_mesh(boxes)
+    P, F = collider_mesh(stage, exact_mesh)
     lo, hi = P.min(0), P.max(0)
     origin = np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]])
     P0 = P - origin
@@ -182,13 +282,14 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="static copy + surfaces of licensed furniture USDs")
     ap.add_argument("usd", nargs="+")
     ap.add_argument("--out", required=True, help="json table (one row per asset)")
+    ap.add_argument("--mode", default="thor", choices=("thor", "declared"))
     a = ap.parse_args(argv)
     rows = {}
     for src in a.usd:
         name = os.path.splitext(os.path.basename(src))[0]
         try:
-            st = make_static(src)
-            rows[name] = dict(src=src, **st, **inspect(st["dst"]))
+            st = make_static(src, mode=a.mode)
+            rows[name] = dict(src=src, **st, **inspect(st["dst"], exact_mesh=a.mode == "declared"))
         except Exception as e:  # noqa: BLE001 - recorded per asset, the table keeps going
             rows[name] = {"src": src, "error": f"{type(e).__name__}: {e}"}
         r = rows[name]
