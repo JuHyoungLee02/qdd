@@ -24,6 +24,7 @@
 | `tools/sr1b/`, `harvest/train/sr1b.py` | E-SR1b(조이스틱 조건 강화, R2): 옵션 파일 `sr1b`(`--sr1b-drop` 결정 드롭아웃·`--sr1b-relabel` 되짚기 결정 라벨·`sample_actions_cfg` 결정 CFG·`near_snap` 접촉 근처, `r2_ma2` 위), `sr1b_eval`(sr0 조건 집합 × w 격자, `--null-slots`), `sr1b_gate`(G1 재현·학습 관문), `sr1b_verdict`(스트레스 A_xy·그럴듯한 P_xy·거리 층·그리퍼 비열등·거리 CFG), `sr1b_latency`, `make_manifest`, `run_sr1b.sh` |
 | `tools/sr1c/`, `harvest/train/sr1c*.py` | E-SR1c(먼 구간 반사실 분기, R2): `sr1c`(`--cf-branch`·`--cf-frac`·`--dec-cond adaln@v1`, `r2_ma2` 위), `sr1c_authority`(권한 a: 특권·보조 헤드 추정·런타임 히스테리시스 — 결합 층이 쓸 함수), `sr1c_branch`(URDF FK·기하 야코비안·DLS IK 분기·필터), `sr1c_film`(권한 게이트 adaLN expert·`load_heads_sr1c`); 도구 `gen_branches`·`replay_check`(Isaac G-br)·`strata`·`branch_sheet`·`sr1c_eval`(sr0 조건 + 편집·층·권한)·`sr1c_gate`·`sr1c_verdict`·`run_sr1c.sh` |
 | `tools/mar2/` | MolmoAct R2 준비 관문(CPU, 기존 녹화 위): `mar2_lib`(MolmoAct 궤적 부분표집·0–255 좌표·볼록 윤곽 투영·HSV 규칙 v1/v2·URDF FK 자세·부트스트랩), `mar2_gates`(`cam`·`camdiag`·`fk`·`trace`·`traceend`·`p1crops`·`cond`·`resprep`·`res`), `run_mar2.sh`; 시험 `tests/test_mar2_lib.py` |
+| `tools/prompt_health/`, `tests/prompt_health/` | 프롬프트 검진(user-log 96·97): `variants`(운영 문장에서 만든 흔들기 변형, 기준 = 운영 바이트), `run_dyn`(무료 VLM 시험 grasp·couple_g·couple_r·frame), `analyze`·`report_tables`(뒤집힘·정답·명령 정답), `probe_acc`(탐침 답 호출 단위 방향 정확도), `static_checks`(정적 결함 C1–C11·P1), `astra_spot`(유료 표본), `day_consistency`, `serve.sh`(vLLM 영상 3장), `overlay_sheet`(눈 검사) |
 | `tools/` 기타 | `se2e_convert.py`(`reconvert --hist`), `labels_v2_eval.py`, `prereg_hash.py --check`, `intent_check.py`·`user_line_check.py`(빨간 줄·[사용자] 줄), `stagea_merge.py`, `r5/`·`r6/`(파드 동기화), `pod_sync.sh` |
 | `tests/` | 전체 시험(로컬은 Git Bash에서 `pytest`; PowerShell에서는 2개 실패 — P33) |
 | `tests/eval/` | `harvest/eval/` 시험; 결합: `test_couple_eval.py`(Task 14 — 팔 파싱·설정·라벨, 유료 가드, 모의 스트림 클라이언트, 예산 추정, `aggregate`의 예산 초과 제외·짝지은 팔 차이·칸별 청크 수준 준수 집계) |
@@ -68,6 +69,7 @@
 | `logs/sr1b/`, `ckpt/sr1b/`, `code_sr1b` | E-SR1b 평가 출력 `ev_<팔>_s<시드>_w<w>.jsonl`(34개)·`verdict.json`(NOT_REACHED, `results/sr1b.md`)·`recount.json`·`tables.md`·`latency.json`·`probe.json`·`x2_sanity.out`; 체크포인트 A·B·AB × s0·s1, A02 s0, C0 s1 |
 | `logs/sr1c/`, `ckpt/sr1c/`, `data/sr1c/branches/`, `code_sr1c` | E-SR1c 평가 `eval_c0.jsonl`·`eval_c0_rerun.jsonl`·`eval_c1.jsonl`·`eval_c2.jsonl`, G-br `gbr_*.jsonl`·`gate_gbr.json`, `verdict.json`(ADOPT_C1, `results/sr1c.md`)·`recount.json`·`branch_sheet.jpg`; 체크포인트 c1(채택, 표준 적재기로 읽힘)·c2(adaLN, `load_heads_sr1c`만); 분기 128,661행 + `stats.json` |
 | `logs/mar2/`, `code_mar2` | MolmoAct R2 준비 관문 출력(`gcam*.json`·`gfk.json`·`gtrace*.json`·`gres.json`·`gcond_b.json`·시트 JPEG, 도구 사본 `tools/`), 코드 사본 = ad85725 일부; 합본은 저장소 `docs/stage3/results/mar2_gates.json` |
+| `logs/prompt_health/`, `tmp/prompt_health/code` | 프롬프트 검진 출력(`dyn_qwen{8b,4b}_*.jsonl`·`astra_spot.jsonl`·장부 `astra_ledger.jsonl`·`res_final.json`·`tables.md`·`probe_acc.json`·`overlay_sheet.jpg`), 코드 사본(17f7513 + 도구) |
 | `ckpt/stageA/sftA_pool_v1` | 단계 A SFT(병합 `merged/`) |
 | `logs/<실험>/` | 예측·판정 JSON(`se2e_confirm/verdict_full.json` 등), 탐침 비용 장부 `logs/astra_motion/cost.jsonl` |
 | `out/<작업>/` | 폐루프·장면·E3-ST 산출물 |

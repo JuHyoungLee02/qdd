@@ -12,6 +12,7 @@ ask (anywhere with network): per snapshot the question GRASP_Q under the pre-reg
   repeats); rows appended to a JSONL (resumable)."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 
@@ -136,7 +137,8 @@ def ask(model, root: str, out_jsonl: str, conds=CONDS, only: list | None = None)
                 row = {"snap": key, "state": meta["gt"]["state"], "gt_holding": meta["gt"]["holding"],
                        "views": views, "overlay": overlay, "rep": r, "model": model.name, "valid": p is not None,
                        "errors": err[:4], "answer": p, "raw": (rep.text or "")[:600],
-                       "latency_s": round(rep.latency_s, 3), "usage": rep.usage, "cost_usd": round(rep.cost_usd, 6)}
+                       "latency_s": round(rep.latency_s, 3), "usage": rep.usage, "cost_usd": round(rep.cost_usd, 6),
+                       "prompt_id": PR.PROMPT_ID, "prompt_sha": hashlib.sha256(text.encode()).hexdigest()[:12]}
                 with open(out_jsonl, "a") as f:
                     f.write(json.dumps(row) + "\n")
                 print("GRASP " + json.dumps({k: row[k] for k in ("snap", "views", "overlay", "rep", "gt_holding")}

@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 
 FIELDS = {"grasp": ("grasp_state",), "couple_g": ("execution", "intent", "command", "claim_raw"),
           "couple_r": ("execution", "intent", "command", "claim_raw")}
@@ -24,9 +25,10 @@ def load(paths) -> list:
 
 
 def _cond(r) -> str:
-    if r["temp"] == 0.0 and r["rep"] == 0:
+    t = r["temp"] or 0.0  # None = Astra (no temperature parameter; P49)
+    if t == 0.0 and r["rep"] == 0:
         return r["variant"]
-    return f"{r['variant']}@t{r['temp']:g}r{r['rep']}"
+    return f"{r['variant']}@t{t:g}r{r['rep']}"
 
 
 def angle_deg(a, b) -> float | None:
@@ -37,6 +39,7 @@ def angle_deg(a, b) -> float | None:
     return math.degrees(math.acos(max(-1.0, min(1.0, c))))
 
 
+ARROW_RE = re.compile(r"arrow|committed motion", re.I)
 MISS_FIX = (0.09, 0.0, -0.03)  # G1 'miss' snapshots: the object stays 9 cm further along +x, 3 cm below the lifted TCP
 
 
@@ -83,6 +86,9 @@ def truth_stats(test: str, rs: list) -> dict:
                 "false_claim_gated": _rate(sum(r["claim_gated"] == "grasped" for r in neg), len(neg)),
                 "missed_claim_raw": _rate(sum(r["claim_raw"] != "grasped" for r in pos), len(pos)),
                 "no_claim": sum(r["claim_raw"] == "none" for r in ok),
+                # no arrow is drawn in these tests (G set: ring + trace + axes only; R set: no overlay), so an answer
+                # that cites an arrow / committed-motion overlay took it from the legend text, not the image
+                "cites_absent_arrow": _rate(sum(bool(ARROW_RE.search(r.get("raw", ""))) for r in ok), len(ok)),
                 "edit_raw": sum(r["command_raw"] == "edit" for r in ok),
                 "stop_raw": sum(r["command_raw"] == "stop" for r in ok),
                 "edit_after_gate": sum(r["command"] == "edit" for r in ok),
@@ -101,7 +107,9 @@ def truth_stats(test: str, rs: list) -> dict:
         errs.sort()
         med = errs[len(errs) // 2] if errs else None
         return {"xy_err_deg_median": None if med is None else round(med, 1),
+                "xy_ok_lt60": _rate(sum(e < 60 for e in errs), len(ok)),  # registered Q1 metric (zero xy = wrong)
                 "xy_err_gt90": _rate(sum(e > 90 for e in errs), len(errs)),
+                "over_limit": sum(bool(r.get("over_limit")) for r in ok),
                 "x_sign_agree": _rate(sum(sx), len(sx)), "y_sign_agree": _rate(sum(sy), len(sy)),
                 "zero_xy": len(ok) - len(errs)}
     raise ValueError(test)
@@ -135,7 +143,8 @@ def score(rows: list) -> dict:
     for r in rows:
         groups.setdefault((r["test"], r["model"]), []).append(r)
     for (test, model), rs in sorted(groups.items()):
-        base = {r["snap"]: r for r in rs if r["variant"] == BASE[test] and r["temp"] == 0.0 and r["rep"] == 0}
+        bname = BASE[test] if any(r["variant"] == BASE[test] for r in rs) else "prod_ov"  # Astra spot: overlay arms only
+        base = {r["snap"]: r for r in rs if r["variant"] == bname and not r["temp"] and r["rep"] == 0}
         conds: dict = {}
         for r in rs:
             conds.setdefault(_cond(r), []).append(r)
@@ -145,9 +154,9 @@ def score(rows: list) -> dict:
             api = sum(bool(r.get("api_error")) for r in cr)
             bad = sum((not r.get("valid")) and not r.get("api_error") for r in cr)
             out[c] = {"n": n, "api_error": api, "parse_fail": _rate(bad, n - api), "truth": truth_stats(test, cr),
-                      "flip_vs_base": flips(test, base, cr) if c != BASE[test] else None,
+                      "flip_vs_base": flips(test, base, cr) if c != bname else None,
                       "prompt_sha": sorted({r.get("prompt_sha") for r in cr})}
-            if c == f"{BASE[test]}@t0r1":
+            if c == f"{bname}@t0r1":
                 same = sum(1 for r in cr if base.get(r["snap"]) and base[r["snap"]]["raw"] == r["raw"])
                 out[c]["identical_text_vs_rep0"] = _rate(same, n)
         res[f"{test}|{model}"] = out

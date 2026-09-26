@@ -15,7 +15,8 @@
 | E-Astra-motion S2 직렬 흐름 (F0·F1 각 3편, low) | 72(끝난 뒤 도착 6 포함) [→ 정정 2026-09-25 20:37 UTC, R7 27회차 E-D1/N70] | **3,824원** | 호출당 **49.7원(F0)·58.0원(F1)**, 입력 2,207/2,486, 출력 244/302, 지연 p50 **9.3 s(F0)·10.3 s(F1)**, 첫 토큰 약 6 s, 로봇 1분당 350–500원, 캐시 적중 0 | 같은 문서 5절 |
 | E-Astra-motion G2 표적 (8장, high) | 8 | **224원** | 호출당 **27.9원**, 추론 64–289토큰, 지연 p50 5.7 s | 같은 문서 4절 |
 | E-Astra-motion API 설정 시험 | 3 (HTTP 400) | 0원 | temperature·top_p·seed 모두 거부 | 사전 등록 수정 1 |
-| **누적(확정분)** | | **6,933.4원**(E-Astra-motion 전체, 장부 `H/logs/astra_motion/cost.jsonl` 256행 합; 상한 15,000원) + 이전 `[금액 미기록]` 분 | | |
+| 프롬프트 검진 Astra 표본(Q1 방향 60 + Q2 잡기 60, low) | 120 | **2,093.9원** | 호출당 16.45원(방향, 영상 2장 JPEG)·18.45원(잡기, 3장 PNG detail high), 무효 0 | [R/prompt_health](../stage3/results/prompt_health.md) 5절, 장부 `H/logs/prompt_health/astra_ledger.jsonl`(상한 3,000원) |
+| **누적(확정분)** | | **9,027.3원** = E-Astra-motion 6,933.4원(장부 `H/logs/astra_motion/cost.jsonl` 256행 합; 상한 15,000원) + 프롬프트 검진 2,093.9원(장부 `H/logs/prompt_health/astra_ledger.jsonl` 120행; 상한 3,000원) + 이전 `[금액 미기록]` 분 | | |
 
 ### 예정 예산 (계획 [Task 14–16](../superpowers/plans/2026-09-26-astra-vla-coupling.md))
 | 실험 | 상한 | 비고 |
@@ -39,5 +40,6 @@
 | E-SR0 진단(학습 없음, 3판 추론) | 2·3 | ≈ 0.3 GPU-h(사전 실행 01:33–01:35; GPU 2 01:37–01:47, GPU 3 01:37–01:43) | [R/sr0](../stage3/results/sr0.md) 7절 |
 | E-SR1b(학습 8판 + 평가 9판·지연) | x2 0·1 + 메인 2·3 | ≈ 7.9 GPU-h(x2 3.72 + 메인 4.21; 사전 실행 02:20–02:29; 본 02:31–04:43; 학습 루프 37.6–39.0분) | [R/sr1b](../stage3/results/sr1b.md) 7절 |
 | E-SR1c(분기 생성 CPU + Isaac G-br + 학습 2판·평가 4판) | 메인 1(학습·평가) + 0(Isaac CPU PhysX, 렌더 없음) | ≈ 2.5 GPU-h(GPU 1 ≈ 2.2: 사전 실행 02:50–02:57, 본 03:09–05:23; GPU 0 ≈ 0.3) | [R/sr1c](../stage3/results/sr1c.md) 7절 |
+| 프롬프트 검진(vLLM Qwen3-VL 8B·4B, 추론만) | 3 | ≈ 0.8 GPU-h(05:24–06:10, 두 서버 한 GPU) | [R/prompt_health](../stage3/results/prompt_health.md) 10절 |
 | R2_TRAIN 생성 | 0·1(렌더) + 2(로더 확인) | ≈ 21.3 GPU-h(21.34; GPU 0·1 각 11:16–21:56 ≈ 10.7 h 점유, 동시 Isaac 최대 5 = 누적 52.8 프로세스-시간, 사용률 20–50 % `[미검증]` — 저장된 로그에 없음) [→ 정정 2026-09-25 23:58 UTC, R7 35회차 N178·N179] + GPU 2 약 0.2 h(로더 확인 2회); 첫 파일럿(6b013ac, 폐기) GPU 1 약 0.7 h 별도 | [R/r2_train_gen](../stage3/results/r2_train_gen.md) 8절 |
 | R7 순회 | 1(Isaac 한 프로세스) | 회차당 폐루프 한 판 | `R/r7_cycle*.md` |

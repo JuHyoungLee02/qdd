@@ -10,6 +10,7 @@ packaging variants, to separate a packaging or prompt bug from a genuine model t
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 
@@ -62,7 +63,8 @@ def main(argv=None):
                 p, err = SC.validate("G", rep.text) if rep.text else (None, [str(rep.error)])
                 row = {"snap": f"{ep}/{st}", "state": st, "gt_holding": meta["gt"]["holding"], "variant": v,
                        "answer": (p or {}).get("grasp_state"), "view": (p or {}).get("evidence_view"),
-                       "evidence": (p or {}).get("evidence"), "valid": p is not None}
+                       "evidence": (p or {}).get("evidence"), "valid": p is not None,
+                       "prompt_id": PR.PROMPT_ID, "prompt_sha": hashlib.sha256(text.encode()).hexdigest()[:12]}
                 with open(a.out, "a") as f:
                     f.write(json.dumps(row) + "\n")
     rows = [json.loads(x) for x in open(a.out)]
