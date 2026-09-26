@@ -72,7 +72,8 @@ SEGMENT_TEXT = (
     "onto the place; release = open the gripper; retreat = move the empty gripper up and away; done = the task is "
     "complete. In your segment plan: now = the segment the policy should be in when your answer arrives; do = the "
     "gripper action of that segment (close for grasp, open for release, none otherwise); next = the segment after "
-    "now.\n")
+    "now. Use only these segment names; the policy's own phase names in the request map to them (close = grasp, "
+    "place_descend = place, open = release, the rest are the same).\n")
 CONTEXT_RULE = (
     "since_last_request (in the request) = what happened since your previous request: your previous command and "
     "segment plan, the tip displacement the policy actually executed since then (robot frame, m) and the policy's "
@@ -101,7 +102,8 @@ TEMPLATE = (
     "{horizon:g} s after these images were taken: judge the situation at predicted_ee_at_arrival.\n"
     + FRAME + "{campose}{cameras}" + DEFS + "{legend}{events}" + SEGMENT_TEXT + "{context}" + ASSESS + COMMANDS
     + "{mode_rules}\n{req_open}\n{request_json}\n{req_close}\n"
-    "Answer with one JSON object only, in this form:\n{answer_form}")
+    "Answer with one JSON object only, in this form (assessment, segment, command, edit and info_request are five "
+    "top-level keys; nothing is nested inside assessment except its own fields):\n{answer_form}")
 PROMPT_ID = hashlib.sha256((TEMPLATE + ANSWER_FORM + json.dumps(LEGEND, sort_keys=True) + WRIST_BOX
                             + json.dumps(WRIST_ARROW, sort_keys=True) + json.dumps(EVENT_LEGEND, sort_keys=True)
                             + json.dumps(CAM_ROLE, sort_keys=True)).encode()).hexdigest()[:12]

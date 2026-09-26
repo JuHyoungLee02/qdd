@@ -108,6 +108,7 @@ Astra 답은 약 9.3 s 뒤에 적용된다(정본 §86 보충 2 `latency_init_s`
 
 ## 8. 변경 기록
 - **변경 1 (2026-09-26 07:08 UTC, 모델 답을 보기 전; 코드는 7865928)**: 캡처 38편 중 점검 통과 on 12 · off_a 7 · off_b 8 · off_c **5**(off_c_01·03은 보낸 시점 부분 목표까지 4.1–4.6 cm < 5 cm, off_c_05는 스냅숏 없음) — paid의 off_c 6장을 채우지 못함. 계획에 off_c 예비 4편(off_c_08–11, 시드 26–29, 같은 규칙)을 더한다(`bench.plan` 38 → 42편). 점검·집합 규칙·문턱은 그대로. 이 시점까지 벤치에 대한 Qwen·Astra 답은 없다(Qwen 형식 확인은 캡처 사전 실행 5편 `smoke2`에서만 돌았고 그 행은 형식 관문 판단에만 쓴다).
+- **변경 2 (2026-09-26 07:44 UTC, 유료 호출 전, 형식만)**: Qwen 선별(35장 × 6팔) G-fmt **실패** — v2 전용 오류 v2 2/35(5.7 %), v2_2cam 4/35, v2_noctx 2/35. 원인을 행 원문으로 확인: (i) 대부분은 Qwen이 segment·command를 assessment 안에 넣은 **중첩**(v1에서도 같은 원인의 command 오류 2/35 — 프롬프트 검진 3절의 'command를 assessment 안에' 결함); (ii) 1건은 구간 이름에 VLA 단계 이름 `place_descend`를 씀. 고침(형식만, `prompt_v2.py`): 답 형식 줄에 '다섯 최상위 키, assessment 안에 넣지 않음' 한 구절, 구간 문단에 'VLA 단계 이름 대응(close = grasp, place_descend = place, open = release)' 한 문장. 내용·지표·문턱·집합 불변. v2 계열 팔만 다시 선별(`screen2_qwen8b.jsonl`, v1 행은 첫 선별 재사용)해 G-fmt를 다시 판정한 뒤 유료로 간다. **재선별 결과 G-fmt 통과**(v2 계열 무효 0–5.7 %, v2 전용 오류 0/35 전 팔; v1 5.7 %).
 
 ## 9. 등록 전 이탈 기록(P03 보고 의무)
 - 파드에서 E-Couple 무료 사전 실행 스모크 경로의 단계 시각을 볼 때 `python -c` 한 번(06:4x UTC, 읽기만).
