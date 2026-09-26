@@ -68,3 +68,21 @@ def test_v1_ignores_the_v2_fields():
     d = answer("continue")
     d.pop("segment", None)
     assert _p(_j(d), version="v1").command == "continue"
+
+
+def test_fix_m2_errors_carry_the_received_value_and_v2_normalises_case_and_space():
+    d = answer("continue")
+    d["command"] = "proceed"
+    with pytest.raises(SchemaError, match=r"command: 'proceed' not one of"):
+        _p(_j(d))
+    d = answer("edit", execution="failed", dp=(0.0, 0.0, 0.01), segment={"now": " Approach", "do": "NONE",
+                                                                         "next": "descend"})
+    d["command"], d["edit"]["valid_until"] = "Edit ", "Next_Answer"
+    d["assessment"]["intent"] = "Aligned"
+    a = _p(_j(d))
+    assert a.command == "edit" and a.valid_until == "next_answer" and a.segment["now"] == "approach"
+    assert a.intent == "aligned" and {"normalised:command", "normalised:edit.valid_until", "normalised:segment.now",
+                                      "normalised:segment.do", "normalised:assessment.intent"} <= set(a.notes)
+    with pytest.raises(SchemaError, match=r"command: 'Edit ' not one of"):  # v1 stays strict
+        _p(_j(d), version="v1")
+    assert not _p(_j(answer("continue"))).notes  # nothing normalised, no note

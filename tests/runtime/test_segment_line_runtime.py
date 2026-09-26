@@ -39,6 +39,7 @@ def test_fused_decision_state_carries_the_mapped_line_after_two_agreeing_answers
     ctx = rt._decision_ctx(rt.t_last, *rt._m1_last[:4], w.obs())
     assert ctx["segment"] == line and ctx["ctx_text"].split("\n")[-2] == line
     assert ctx["req"]["state"].split("\n")[-3] == line
+    assert rt.driver.backend == "fused"  # Task 18 fix I1: the runtime tells the driver its backend
     rt.close()
 
 

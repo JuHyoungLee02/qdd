@@ -107,6 +107,29 @@ def _vec3(x, lim: float, name: str, err: list):
     return v
 
 
+def _norm(obj, key: str, where: str, notes: list) -> None:
+    """v2 (Task 18 fix M2): strip + lowercase one enum string in place; a note when that changed it."""
+    v = obj.get(key) if isinstance(obj, dict) else None
+    if isinstance(v, str) and v.strip().lower() != v:
+        obj[key] = v.strip().lower()
+        notes.append(f"normalised:{where}")
+
+
+def _norm_enums(d: dict, notes: list) -> None:
+    a = d.get("assessment")
+    for k in ("execution", "intent", "confidence"):
+        _norm(a, k, f"assessment.{k}", notes)
+    if isinstance(a, dict) and isinstance(a.get("claims"), list):
+        for c in a["claims"]:
+            _norm(c, "kind", "assessment.claims.kind", notes)
+    for k in ("diff", "command", "info_request"):
+        _norm(d, k, k, notes)
+    for k in ("now", "do", "next"):
+        _norm(d.get("segment"), k, f"segment.{k}", notes)
+    for k in ("gripper", "valid_until"):
+        _norm(d.get("edit"), k, f"edit.{k}", notes)
+
+
 def _progress_ok(tp) -> bool:
     return (isinstance(tp, dict)
             and all(isinstance(tp.get(k), list) and all(isinstance(s, str) and s.strip() for s in tp[k])
@@ -119,6 +142,9 @@ def parse_answer(text: str, mode: str, sent_cameras, request_no: int, t_state: f
     d = extract_json(text)
     sent = tuple(sent_cameras)
     err, notes = [], []
+    v2 = version == "v2"
+    if v2:
+        _norm_enums(d, notes)
     a = d.get("assessment")
     if not isinstance(a, dict):
         raise SchemaError(["assessment: object required"])
@@ -127,7 +153,7 @@ def parse_answer(text: str, mode: str, sent_cameras, request_no: int, t_state: f
         err.append("assessment.task_progress: verified_completed[], currently_attempting, remaining[]")
     for k, allowed in (("execution", EXEC_STATUS), ("intent", INTENT_STATUS), ("confidence", CONFIDENCE)):
         if a.get(k) not in allowed:
-            err.append(f"assessment.{k}: one of {allowed}")
+            err.append(f"assessment.{k}: {a.get(k)!r} not one of {allowed}")
     ev = a.get("evidence", "")
     if not isinstance(ev, str):
         err.append("assessment.evidence: string")
@@ -140,18 +166,17 @@ def parse_answer(text: str, mode: str, sent_cameras, request_no: int, t_state: f
     raw_claims = a.get("claims", [])
     for c in raw_claims if isinstance(raw_claims, list) else [None]:
         if not (isinstance(c, dict) and c.get("kind") in CLAIM_KINDS and c.get("view") in sent):
-            err.append(f"assessment.claims: {{kind in {CLAIM_KINDS}, view in the cameras sent}}")
+            err.append(f"assessment.claims: {c!r} not {{kind in {CLAIM_KINDS}, view in the cameras sent}}")
             break
         claims.append((c["kind"], c["view"]))
     diff = None
     if mode == "F1":
         diff = d.get("diff")
         if diff not in DIFFS:
-            err.append(f"diff: one of {DIFFS}")
+            err.append(f"diff: {diff!r} not one of {DIFFS}")
     cmd = "continue" if diff == "keep" else d.get("command")
     if cmd not in COMMANDS:
-        err.append(f"command: one of {COMMANDS}")
-    v2 = version == "v2"
+        err.append(f"command: {cmd!r} not one of {COMMANDS}")
     if v2 and diff == "keep" and d.get("edit") not in (None, {}):
         d = {k: v for k, v in d.items() if k != "edit"}  # F9: keep confirms the command being applied
         notes.append("keep_edit_ignored")
@@ -162,7 +187,7 @@ def parse_answer(text: str, mode: str, sent_cameras, request_no: int, t_state: f
                 and s.get("next") in SEGMENTS):
             seg = {k: s[k] for k in ("now", "do", "next")}
         else:
-            err.append(f"segment: {{now, next in {SEGMENTS}, do in {SEGMENT_ACTIONS}}}")
+            err.append(f"segment: {s!r} not {{now, next in {SEGMENTS}, do in {SEGMENT_ACTIONS}}}")
     if cmd == "edit":
         e = d.get("edit")
         if not isinstance(e, dict):
@@ -174,16 +199,16 @@ def parse_answer(text: str, mode: str, sent_cameras, request_no: int, t_state: f
             if v2:
                 vu = e.get("valid_until")
                 if vu not in VALID_UNTIL:
-                    err.append(f"edit.valid_until: one of {VALID_UNTIL}")
+                    err.append(f"edit.valid_until: {vu!r} not one of {VALID_UNTIL}")
             if g not in GRIPPER:
-                err.append(f"edit.gripper: one of {GRIPPER}")
+                err.append(f"edit.gripper: {g!r} not one of {GRIPPER}")
             elif dp is not None and dr is not None:
                 edit = Edit(dp, dr, g)
     elif d.get("edit") not in (None, {}):
         err.append("edit: only with command edit")
     info = d.get("info_request", "none")
     if info not in INFO_REQUESTS:
-        err.append(f"info_request: one of {INFO_REQUESTS}")
+        err.append(f"info_request: {info!r} not one of {INFO_REQUESTS}")
     if err:
         raise SchemaError(err)
     return AstraAnswer(request_no=request_no, t_state=float(t_state), t_deliver=float(t_deliver), diff=diff,

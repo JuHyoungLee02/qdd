@@ -115,3 +115,11 @@ def test_params_prompt_version_guard():
         CoupleParams(prompt_version="v3")
     p = CoupleParams()
     assert p.axis_guide is False and p.extra_instruction == "" and p.to_json()["prompt_version"] == "v2"
+
+
+def test_fix_m3_campose_and_detail_change_the_variant_id():
+    base = V2.variant_id()
+    ids = {base, V2.variant_id(campose=True), V2.variant_id(detail="low"), V2.variant_id(detail="high"),
+           V2.variant_id(campose=True, detail="low")}
+    assert len(ids) == 5 and V2.variant_id(campose=True) == base + "+cp"
+    assert V2.variant_id(detail="low") == base + "+dlow" and V2.variant_id(detail=None) == base == "83fa03a5de19"

@@ -22,11 +22,13 @@ D = {"now": "descend", "do": "none", "next": "grasp"}
 G = {"now": "grasp", "do": "close", "next": "lift"}
 
 
-def _loop(astra, seconds, p=None, phase=lambda now: "approach", auth=lambda now: None, step=None, tip=None):
+def _loop(astra, seconds, p=None, phase=lambda now: "approach", auth=lambda now: None, step=None, tip=None,
+          backend=None):
     """step: callable(drv, now) run at every 0.33 s boundary (on_step calls); tip: callable(now) -> tcp."""
     p = p or CoupleParams()
     q = MiniQueue()
-    drv = CoupleDriver(p, astra, CostLedger(None, 0.0, PriceTable.free()), q.submit, "Put the red mug on the tray.")
+    drv = CoupleDriver(p, astra, CostLedger(None, 0.0, PriceTable.free()), q.submit, "Put the red mug on the tray.",
+                       backend=backend)
     outs = []
     for i in range(int(round(seconds * 100))):
         now = round(i * 0.01, 6)
@@ -140,4 +142,42 @@ def test_v1_is_selectable_and_logs_the_v1_id():
     r = ast.calls[0]["req"]
     assert r["schema"] == "astra-couple@v1" and "since_last_request" not in r
     assert {x["prompt_id"] for x in drv.log if x["type"] == "answer"} == {CP.PROMPT_ID["F0"]}
+    assert drv.segment_intent() == SEGMENT_UNKNOWN
+
+
+def _texts(drv):
+    return [json.loads(b)["payload"]["input"][0]["content"][0]["text"] for ext, b in drv.blobs.values()
+            if ext == "json"]
+
+
+def test_fix_i1_fused_without_an_executing_chunk_draws_no_arrow():
+    ast = ScriptedCoupleAstra([answer("continue")], latency_s=3.0)
+    drv = _loop(ast, 3.5, backend="fused", step=lambda d, now: d.on_step(SMALL_X, "OK", now, chunk_vec=None))
+    va = ast.calls[0]["req"]["vla_now"]
+    assert va["next_motion_m"] is None and va["arrow_src"] == "none"
+    t = _texts(drv)[0]
+    assert "THICK SOLID" not in t and "Overlay on cam_head" in t and "; cyan solid arrow" not in t
+    assert drv.prompt_id() == "83fa03a5de19"  # the adopted bytes, only the drawn legend differs
+    ast2 = ScriptedCoupleAstra([answer("continue")], latency_s=3.0)
+    drv2 = _loop(ast2, 3.5, backend="fused",
+                 step=lambda d, now: d.on_step(SMALL_X, "OK", now, chunk_vec=np.array([0.0, 0.03, 0.0])))
+    assert ast2.calls[0]["req"]["vla_now"]["arrow_src"] == "chunk" and "THICK SOLID" in _texts(drv2)[0]
+    ast3 = ScriptedCoupleAstra([answer("continue")], latency_s=3.0)
+    _loop(ast3, 1.0, backend="modular")
+    assert ast3.calls[0]["req"]["vla_now"]["next_motion_m"] == [0.01, 0.0, 0.0]  # modular keeps the capped arrow
+
+
+def test_fix_m1_segment_end_clears_the_layer_edit():
+    ed = answer("edit", execution="failed", intent="misaligned", dp=(0.0, 0.0, 0.02), valid_until="segment_end")
+    drv = _loop(ScriptedCoupleAstra([ed, answer("continue")], latency_s=3.0), 3.6,
+                phase=lambda now: "approach" if now < 3.5 else "descend", auth=lambda now: 1.0)
+    row = [r for r in drv.log if r.get("type") == "segment_end"][0]
+    assert row["layer_cleared"] is True and drv.layer.pending is None and drv.layer.confirmed is None
+    assert drv.layer.counts["edit_cleared"] == 1
+
+
+def test_fix_m4_stale_answers_do_not_move_the_plan():
+    drv = _loop(ScriptedCoupleAstra([answer("continue", segment=D)], latency_s=16.0), 34.0)
+    plans = [r["plan"] for r in drv.log if r["type"] == "answer"]
+    assert plans == ["plan_stale", "plan_stale"] and drv.layer.plan is None
     assert drv.segment_intent() == SEGMENT_UNKNOWN

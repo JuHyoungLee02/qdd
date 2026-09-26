@@ -101,12 +101,16 @@ def next_motion_vec(committed: dict):
 ARROW_S = 0.5  # the committed arrow = the tip motion over the next 0.5 s (v2 legend)
 
 
-def committed_arrow(chunk_vec, committed: dict, phase: str):
+def committed_arrow(chunk_vec, committed: dict, phase: str, backend: str | None = None):
     """(vector or None, source) of the v2 committed arrow (prompt health F3): the executed chunk displacement when the
-    fused backend gave one at the last decision step, else the decision centre (MAG_CENTER_M) capped by what the skill
+    fused backend gave one at the last decision step; on the fused backend without one (no chunk, held, FK failure,
+    < 0.1 mm) NO arrow (source "none" -- the legend calls the arrow executed motion, so a decision centre must not
+    stand in, Task 18 fix I1); modular / unknown backend: the decision centre (MAG_CENTER_M) capped by what the skill
     travels in ARROW_S at its phase speed (skills.V; 0 in close / open / done -> no arrow)."""
     if chunk_vec is not None:
         return np.asarray(chunk_vec, float), "chunk"
+    if backend == "fused":
+        return None, "none"
     from ..runtime.skills import V as SKILL_V
     v = committed_vector(committed)
     n = min(MAG_CENTER_M.get(committed.get("mag_coarse"), 0.0), SKILL_V.get(phase, 0.0) * ARROW_S)
@@ -134,8 +138,11 @@ def gripper_word(phase: str, t1: dict) -> str:
 
 
 class CoupleDriver:
-    def __init__(self, p, astra, ledger, submit, task: str, episode: int = 1):
+    def __init__(self, p, astra, ledger, submit, task: str, episode: int = 1, backend: str | None = None):
+        """backend: the runtime's backend ("fused" / "modular"; None = unknown, the modular arrow rule) -- decides
+        the v2 committed arrow when no chunk vector is given (committed_arrow)."""
         self.p, self.astra, self.ledger, self.submit, self.task, self.episode = p, astra, ledger, submit, task, episode
+        self.backend = backend
         self.stream = SerialStream(p, ledger)
         self.layer, self.offset, self.gate = AstraLayer(p), OffsetApplier(p), TwoLayerGate(p)
         self.fast, self.stag = VlaFastCheck(p), NoProgress(p)
@@ -238,8 +245,9 @@ class CoupleDriver:
             self._phases.append((v.now, v.phase))
             if self._vu_phase is not None and v.phase != self._vu_phase:  # valid_until segment_end (v2)
                 self.offset.reset(v.now, "segment_end")
+                cleared = self.layer.clear_edit()  # Task 18 fix M1: a repeat after the change starts at 50 % again
                 self.log.append({"type": "segment_end", "t": round(v.now, 3), "from": self._vu_phase,
-                                 "to": v.phase})
+                                 "to": v.phase, "layer_cleared": cleared})
                 self._vu_phase = None
         no = self.stream.timed_out(v.now)
         if no is not None:
@@ -275,7 +283,7 @@ class CoupleDriver:
         """(vector or None, source) of the committed arrow: v1 the decision-token centre; v2 committed_arrow."""
         if not self.v2:
             return next_motion_vec(v.committed), None
-        return committed_arrow(self.chunk_vec_last, v.committed, v.phase)
+        return committed_arrow(self.chunk_vec_last, v.committed, v.phase, self.backend)
 
     def request(self, v: TickView, no: int, events: list, cams: list) -> dict:
         nxt, src = self.arrow(v)

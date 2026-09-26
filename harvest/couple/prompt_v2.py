@@ -16,9 +16,9 @@ v2 = the v1 wording kept where the content does not change, plus (prompt health 
   limit       prompt 0.04 m, parser tolerance 0.05 m (F7 / P62)
   answer form 'five top-level keys' sentence (E-ACC change 2: invalid 0/90 in P1; couple_dry B8 command-value errors)
 Options (all off by default = the adopted arm's bytes): AxisGuide legend line (E-ACC R2' undecided -> off; id suffix
-+ax<sha6>), camera pose lines (E-ACC R2 not run -> off), extra_instruction (one extra sentence right before the mode
-rule line, e.g. the E-ACC stage-2 target-check sentence; id suffix +x<sha6>), image detail (None = no field, as
-adopted). F1 (flow mode, not registered by E-ACC): the same parts with the F1 mode rule and a diff key; an F1
++ax<sha6>), camera pose lines (E-ACC R2 not run -> off; id suffix +cp), extra_instruction (one extra sentence right
+before the mode rule line, e.g. the E-ACC stage-2 target-check sentence; id suffix +x<sha6>), image detail (None = no
+field, as adopted; id suffix +d<detail>). F1 (flow mode, not registered by E-ACC): the same parts with the F1 mode rule and a diff key; an F1
 'keep' answer's accompanying edit is ignored, not a schema error (F9, schema.parse_answer version v2).
 
 PROMPT_ID covers every template part: the E-ACC formula (core parts) is kept so the adopted F0 bytes keep their
@@ -171,11 +171,15 @@ PROMPT_ID = {m: prompt_id_of(parts(m), m) for m in ("F0", "F1")}
 AXISGUIDE_ID = _sha(AXISGUIDE_LINE, 6)
 
 
-def variant_id(mode: str = "F0", *, axisguide: bool = False, extra: str = "") -> str:
+def variant_id(mode: str = "F0", *, axisguide: bool = False, extra: str = "", campose: bool = False,
+               detail: str | None = None) -> str:
     """The id of one built prompt: PROMPT_ID[mode] + '+ax<sha6>' when the axis guide line is in the text (as E-ACC)
-    + '+x<sha6 of the extra sentence>' when extra_instruction is set."""
+    + '+x<sha6 of the extra sentence>' when extra_instruction is set + '+cp' when camera pose lines are in the text
+    (their wording is in PROMPT_ID's parts; the numbers are request data) + '+d<detail>' when the image parts carry a
+    detail field (Task 18 fix M3; E-ACC logged neither)."""
     return (PROMPT_ID[mode] + (f"+ax{AXISGUIDE_ID}" if axisguide else "")
-            + (f"+x{_sha(extra_line(extra), 6)}" if extra_line(extra) else ""))
+            + (f"+x{_sha(extra_line(extra), 6)}" if extra_line(extra) else "")
+            + ("+cp" if campose else "") + (f"+d{detail}" if detail else ""))
 
 
 def extra_line(extra: str) -> str:

@@ -253,7 +253,8 @@ class OursRuntime:
             if self.astra is None:
                 raise ValueError("couple serial needs an Astra client (api, mock or local)")
             self.driver = CoupleDriver(CoupleParams(**self.cfg.couple_params), self.astra, self.couple_ledger,
-                                       self._submit_couple, self.instruction, episode=self.episode)
+                                       self._submit_couple, self.instruction, episode=self.episode,
+                                       backend=self.cfg.backend)  # Task 18 fix I1: fused -> no arrow w/o a chunk
             self.hb = HeartbeatScheduler(self.cfg.hb_N_s, self.cfg.hb_timeout_s, mode="K0")
             self.skill.irrev_gate = self._irrev_gate
 

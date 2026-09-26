@@ -11,7 +11,8 @@ Segment plan (astra-couple@v2, plan 2026-09-26 Task 18, canon §90 caution), ind
   the candidate again           -> plan_agreed (two consecutive answers)
   ... but authority a == 0 at delivery and `do` differs from the agreed plan's -> plan_frozen (held, logged; the
       candidate stays, so the next agreeing answer once a > 0 applies it); now / next update when `do` is unchanged.
-  v1 answers carry no plan (plan None)."""
+  v1 answers carry no plan (plan None); a stale answer (age > stale_edit_s) does not move the plan (plan_stale).
+clear_edit(): valid_until segment_end drops the candidate / confirmed edit with the offset."""
 from __future__ import annotations
 
 import math
@@ -91,10 +92,25 @@ class AstraLayer:
         return act
 
     def on_answer(self, a, authority: float = 1.0) -> LayerResult:
-        """authority: the driver's current a at delivery (canon §84 supplement 8), used by the plan freeze only."""
+        """authority: the driver's current a at delivery (canon §84 supplement 8), used by the plan freeze only. A
+        stale answer (age > stale_edit_s) leaves the plan state as it is (plan_stale, Task 18 fix M4)."""
         res = self._on_answer(a)
-        res.plan = self.on_plan(getattr(a, "segment", None), authority)
+        seg = getattr(a, "segment", None)
+        if seg is not None and a.age > self.p.stale_edit_s + 1e-9:
+            self.counts["plan_stale"] += 1
+            res.plan = "plan_stale"
+        else:
+            res.plan = self.on_plan(seg, authority)
         return res
+
+    def clear_edit(self) -> bool:
+        """Drop the candidate and the confirmed edit (valid_until segment_end, Task 18 fix M1); True if one was
+        held."""
+        held = self.pending is not None or self.confirmed is not None
+        self.pending, self.confirmed = None, None
+        if held:
+            self.counts["edit_cleared"] += 1
+        return held
 
     def _on_answer(self, a) -> LayerResult:
         self.counts["answers"] += 1
