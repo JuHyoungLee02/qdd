@@ -40,6 +40,13 @@ def test_different_direction_is_a_new_candidate_and_opposite_is_a_flip():
     assert (c.action, c.key, c.weight) == ("confirm", 3, 1.0)
 
 
+def test_rotation_only_reversal_is_also_a_flip():
+    L = AstraLayer(P0)
+    L.on_answer(_a(_edit((0, 0, 0), dr=(0, 0, 0.2)), 1))
+    r = L.on_answer(_a(_edit((0, 0, 0), dr=(0, 0, -0.2)), 2))  # dp both ~0, dr reversed 180 deg
+    assert (r.action, r.key, r.weight) == ("flip", 2, 0.0)
+
+
 def test_a_continue_between_two_edits_breaks_the_confirmation():
     L = AstraLayer(P0)
     L.on_answer(_a(_edit((0, 0, 0.02)), 1))

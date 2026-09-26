@@ -31,9 +31,14 @@ def same_edit(a, b, p) -> bool:
             and _same_part(a.dr, b.dr, p.small_rot_rad, p.same_dir_deg))
 
 
+def _part_flipped(x, y, small: float, deg: float) -> bool:
+    return (float(np.linalg.norm(x)) >= small and float(np.linalg.norm(y)) >= small
+            and _ang(x, y) > deg + 1e-9)
+
+
 def flipped(a, b, p) -> bool:
-    return (float(np.linalg.norm(a.dp)) >= p.small_edit_m and float(np.linalg.norm(b.dp)) >= p.small_edit_m
-            and _ang(a.dp, b.dp) > p.flip_deg + 1e-9)
+    return (_part_flipped(a.dp, b.dp, p.small_edit_m, p.flip_deg)
+            or _part_flipped(a.dr, b.dr, p.small_rot_rad, p.flip_deg))
 
 
 @dataclass
