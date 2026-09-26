@@ -1,0 +1,2254 @@
+{
+ "source": "/data/harvest/logs/mar2 (pod juhyoung-native-7a2a), tools/mar2/mar2_gates.py",
+ "gate_spec_fixed_utc": "2026-09-26T02:35:47Z",
+ "gcam": {
+  "gate": "G-cam",
+  "utc": "2026-09-26T02:40:48Z",
+  "episodes": 249,
+  "summary": {
+   "o11": {
+    "n_candidates": 94,
+    "n": 65,
+    "excluded": {
+     "outside_image": 18,
+     "area_ratio": 11
+    },
+    "err_median": 0.212,
+    "err_p90": 0.378,
+    "err_max": 6.196,
+    "iou_median": 0.909,
+    "iou_p10": 0.9015,
+    "du_mean": 0.072,
+    "dv_mean": 0.085,
+    "by_variant": {
+     "standard": {
+      "n": 38,
+      "err_median": 0.222
+     },
+     "dr": {
+      "n": 27,
+      "err_median": 0.19
+     }
+    }
+   },
+   "o3": {
+    "n_candidates": 249,
+    "n": 132,
+    "excluded": {
+     "outside_image": 35,
+     "area_ratio": 82
+    },
+    "err_median": 12.402,
+    "err_p90": 15.169,
+    "err_max": 28.079,
+    "iou_median": 0.5371,
+    "iou_p10": 0.4705,
+    "du_mean": -5.135,
+    "dv_mean": 10.014,
+    "by_variant": {
+     "standard": {
+      "n": 71,
+      "err_median": 12.394
+     },
+     "dr": {
+      "n": 61,
+      "err_median": 12.409
+     }
+    }
+   },
+   "o8": {
+    "n_candidates": 169,
+    "n": 92,
+    "excluded": {
+     "outside_image": 16,
+     "area_ratio": 61
+    },
+    "err_median": 9.896,
+    "err_p90": 11.494,
+    "err_max": 12.429,
+    "iou_median": 0.5556,
+    "iou_p10": 0.5163,
+    "du_mean": -2.382,
+    "dv_mean": 9.128,
+    "by_variant": {
+     "standard": {
+      "n": 60,
+      "err_median": 10.046
+     },
+     "dr": {
+      "n": 32,
+      "err_median": 9.832
+     }
+    }
+   },
+   "o5": {
+    "n_candidates": 101,
+    "n": 0,
+    "excluded": {
+     "outside_image": 46,
+     "area_ratio": 55
+    }
+   }
+  },
+  "verdict": {
+   "marker": true,
+   "mug": false,
+   "tray": false,
+   "bottle": false,
+   "PASS": false
+  },
+  "camera": {
+   "K": {
+    "fx": 367.0,
+    "fy": 367.0,
+    "cx": 336.0,
+    "cy": 188.0,
+    "width": 672,
+    "height": 376
+   },
+   "pos": [
+    0.1050633,
+    0.0249816,
+    1.4046419
+   ],
+   "R": [
+    [
+     0.7702197,
+     1.24e-05,
+     0.6377787
+    ],
+    [
+     -1.59e-05,
+     1.0,
+     -1e-07
+    ],
+    [
+     -0.6377787,
+     -1.01e-05,
+     0.7702197
+    ]
+   ]
+  }
+ },
+ "gcam_v2": {
+  "gate": "G-cam",
+  "utc": "2026-09-26T02:44:23Z",
+  "rules": "v2",
+  "episodes": 249,
+  "summary": {
+   "o11": {
+    "n_candidates": 94,
+    "n": 65,
+    "excluded": {
+     "outside_image": 18,
+     "area_ratio": 11
+    },
+    "err_median": 0.212,
+    "err_p90": 0.378,
+    "err_max": 6.196,
+    "iou_median": 0.909,
+    "iou_p10": 0.9015,
+    "du_mean": 0.072,
+    "dv_mean": 0.085,
+    "by_variant": {
+     "standard": {
+      "n": 38,
+      "err_median": 0.222
+     },
+     "dr": {
+      "n": 27,
+      "err_median": 0.19
+     }
+    }
+   },
+   "o3": {
+    "n_candidates": 249,
+    "n": 187,
+    "excluded": {
+     "outside_image": 35,
+     "area_ratio": 27
+    },
+    "err_median": 0.897,
+    "err_p90": 13.51,
+    "err_max": 43.705,
+    "iou_median": 0.9528,
+    "iou_p10": 0.5404,
+    "du_mean": -2.558,
+    "dv_mean": 3.47,
+    "by_variant": {
+     "standard": {
+      "n": 100,
+      "err_median": 0.748
+     },
+     "dr": {
+      "n": 87,
+      "err_median": 6.235
+     }
+    }
+   },
+   "o8": {
+    "n_candidates": 169,
+    "n": 133,
+    "excluded": {
+     "outside_image": 16,
+     "area_ratio": 20
+    },
+    "err_median": 0.794,
+    "err_p90": 11.181,
+    "err_max": 14.999,
+    "iou_median": 0.9411,
+    "iou_p10": 0.5709,
+    "du_mean": -1.386,
+    "dv_mean": 3.706,
+    "by_variant": {
+     "standard": {
+      "n": 68,
+      "err_median": 0.653
+     },
+     "dr": {
+      "n": 65,
+      "err_median": 8.713
+     }
+    }
+   },
+   "o5": {
+    "n_candidates": 101,
+    "n": 0,
+    "excluded": {
+     "outside_image": 46,
+     "area_ratio": 55
+    }
+   }
+  },
+  "verdict": {
+   "marker": true,
+   "mug": false,
+   "tray": false,
+   "bottle": false,
+   "PASS": false
+  },
+  "camera": {
+   "K": {
+    "fx": 367.0,
+    "fy": 367.0,
+    "cx": 336.0,
+    "cy": 188.0,
+    "width": 672,
+    "height": 376
+   },
+   "pos": [
+    0.1050633,
+    0.0249816,
+    1.4046419
+   ],
+   "R": [
+    [
+     0.7702197,
+     1.24e-05,
+     0.6377787
+    ],
+    [
+     -1.59e-05,
+     1.0,
+     -1e-07
+    ],
+    [
+     -0.6377787,
+     -1.01e-05,
+     0.7702197
+    ]
+   ]
+  }
+ },
+ "gfk": {
+  "gate": "G-fk",
+  "utc": "2026-09-26T02:50:43Z",
+  "urdf": "/data/harvest/data/se2e/urdf/ffw_bg2_rev4_follower.urdf",
+  "n_fit_eps": 60,
+  "n_test_eps": 60,
+  "n_fit_frames": 3515,
+  "n_test_frames": 17405,
+  "offset_ee_m": [
+   0.02387,
+   0.05307,
+   0.06896
+  ],
+  "base_translation_m": [
+   0.03033,
+   -0.02372,
+   1.28837
+  ],
+  "fit_res_mm": {
+   "median": 9.501,
+   "p95": 12.759
+  },
+  "test_res_mm": {
+   "median": 9.521,
+   "p95": 12.73,
+   "max": 20.563,
+   "open_median": 9.69,
+   "closed_median": 9.254
+  },
+  "test_head_px": {
+   "median": 5.998,
+   "p95": 9.712
+  },
+  "PASS": false,
+  "diag_free_rotation": {
+   "base_rot_deg": 1.957,
+   "R": [
+    [
+     0.99942,
+     -0.00274,
+     0.03403
+    ],
+    [
+     0.00272,
+     1.0,
+     0.00073
+    ],
+    [
+     -0.03403,
+     -0.00064,
+     0.99942
+    ]
+   ],
+   "offset_ee_m": [
+    0.00638,
+    0.00951,
+    0.00791
+   ],
+   "test_res_mm": {
+    "median": 10.274,
+    "p95": 13.21
+   }
+  },
+  "diag_disp_0p5s_mm": {
+   "n": 16505,
+   "median": 2.355,
+   "p95": 14.287,
+   "moving_ge_1cm_median": 2.082,
+   "moving_rel_median": 0.0405
+  }
+ },
+ "gtrace": {
+  "gate": "G-trace",
+  "utc": "2026-09-26T02:46:20Z",
+  "episodes": 249,
+  "frames": 72243,
+  "current_in_image": 0.99419,
+  "in_image_by_phase": {
+   "approach": 0.991,
+   "descend": 0.9849,
+   "close": 1.0,
+   "lift": 0.9934,
+   "carry": 0.9975,
+   "place_descend": 1.0,
+   "open": 1.0,
+   "retreat": 1.0,
+   "done": 0.9942
+  },
+  "frames_by_phase": {
+   "approach": 8423,
+   "descend": 15278,
+   "close": 4660,
+   "lift": 11763,
+   "carry": 12135,
+   "place_descend": 11045,
+   "open": 3743,
+   "retreat": 4162,
+   "done": 1034
+  },
+  "in_image_by_task": {
+   "standard/mug_tray": 0.9898,
+   "standard/mug_marker": 0.997,
+   "standard/bottle_tray": 0.9971,
+   "dr/mug_tray": 0.9898,
+   "dr/mug_marker": 0.997,
+   "dr/bottle_tray": 0.9972
+  },
+  "trace_len_rule_ok": true,
+  "trace_len_hist": {
+   "0": 6,
+   "1": 249,
+   "2": 249,
+   "3": 249,
+   "4": 249,
+   "5": 71241
+  },
+  "frames_with_dropped_future": 2262,
+  "trace_px_length": {
+   "median": 228.7,
+   "p10": 61.3,
+   "p90": 313.8
+  },
+  "ee_depth_m": {
+   "min": 0.374,
+   "median": 0.498,
+   "max": 0.606
+  },
+  "px_per_cm_at_median_depth": 7.38,
+  "quantisation_px": {
+   "u": 1.316,
+   "v": 0.735
+  },
+  "PASS_stats": true
+ },
+ "gtrace_end": {
+  "gate": "G-trace(end)",
+  "utc": "2026-09-26T02:48:12Z",
+  "episodes": 249,
+  "episode_end": {
+   "xy_cm": {
+    "median": 0.25,
+    "p90": 1.53
+   },
+   "z_cm": {
+    "median": 22.04,
+    "p90": 22.98
+   },
+   "px": {
+    "median": 110.4,
+    "p90": 122.9
+   }
+  },
+  "release": {
+   "xy_cm": {
+    "median": 0.09,
+    "p90": 0.17
+   },
+   "z_cm": {
+    "median": 12.68,
+    "p90": 12.88
+   },
+   "px": {
+    "median": 51.5,
+    "p90": 59.8
+   }
+  },
+  "frames_after_release": {
+   "median": 19.0,
+   "max": 37
+  }
+ },
+ "gres": {
+  "gate": "G-res",
+  "utc": "2026-09-26T02:49:27Z",
+  "model": "/data/harvest/models/Qwen3-VL-4B-Instruct",
+  "episode": "standard/mug_tray/P0/ep10000",
+  "native": [
+   376,
+   672
+  ],
+  "processor_input_hw": [
+   384,
+   672
+  ],
+  "patch": 16,
+  "merge": 2,
+  "visual_tokens": 252,
+  "linear_scale": 1.0,
+  "line_contrast_native": 276.02,
+  "line_contrast_resized": 269.43,
+  "contrast_kept": 0.9761,
+  "trace": [
+   [
+    229,
+    189
+   ],
+   [
+    179,
+    212
+   ],
+   [
+    180,
+    207
+   ],
+   [
+    242,
+    181
+   ],
+   [
+    251,
+    161
+   ]
+  ],
+  "PASS": true
+ },
+ "gcond_b": {
+  "gate": "G-cond(b)",
+  "utc": "2026-09-26T02:49:58Z",
+  "source": "/data/harvest/logs/sr0/sr0_c0.jsonl",
+  "snapshots": 1200,
+  "eligible": 16,
+  "skipped": {
+   "not_far": 816,
+   "not_discriminable": 40,
+   "alt_off_table": 328
+  },
+  "esr0_axy_recount": {
+   "value": 0.4306,
+   "pairs": 9220
+  },
+  "steer_hit": {
+   "mean": 0.5,
+   "lo": 0.25,
+   "hi": 0.75
+  },
+  "leak_true_decision": {
+   "mean": 0.1875,
+   "lo": 0.0,
+   "hi": 0.375
+  },
+  "by_task": {
+   "mug_tray": {
+    "n": 5,
+    "hit": 0.6
+   },
+   "mug_marker": {
+    "n": 5,
+    "hit": 0.4
+   },
+   "bottle_tray": {
+    "n": 6,
+    "hit": 0.5
+   }
+  }
+ },
+ "trace_sheet_tiles": {
+  "A_standard": [
+   {
+    "i": 0,
+    "variant": "standard",
+    "task": "mug_tray",
+    "kind": "P0",
+    "seed": 10000,
+    "k": 0,
+    "phase": "approach",
+    "p1_uv": [
+     602.4,
+     279.2
+    ],
+    "trace255": [
+     [
+      229,
+      189
+     ],
+     [
+      179,
+      212
+     ],
+     [
+      180,
+      207
+     ],
+     [
+      242,
+      181
+     ],
+     [
+      251,
+      161
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 1,
+    "variant": "standard",
+    "task": "mug_tray",
+    "kind": "P0",
+    "seed": 10000,
+    "k": 89,
+    "phase": "close",
+    "p1_uv": [
+     463.2,
+     328.7
+    ],
+    "trace255": [
+     [
+      176,
+      223
+     ],
+     [
+      180,
+      207
+     ],
+     [
+      218,
+      184
+     ],
+     [
+      236,
+      194
+     ],
+     [
+      251,
+      161
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 2,
+    "variant": "standard",
+    "task": "mug_tray",
+    "kind": "P0",
+    "seed": 10000,
+    "k": 159,
+    "phase": "carry",
+    "p1_uv": [
+     490.2,
+     275.3
+    ],
+    "trace255": [
+     [
+      186,
+      187
+     ],
+     [
+      234,
+      179
+     ],
+     [
+      239,
+      188
+     ],
+     [
+      233,
+      199
+     ],
+     [
+      251,
+      161
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 3,
+    "variant": "standard",
+    "task": "mug_tray",
+    "kind": "P0",
+    "seed": 10000,
+    "k": 242,
+    "phase": "open",
+    "p1_uv": [
+     613.5,
+     292.4
+    ],
+    "trace255": [
+     [
+      233,
+      199
+     ],
+     [
+      234,
+      196
+     ],
+     [
+      236,
+      195
+     ],
+     [
+      244,
+      177
+     ],
+     [
+      251,
+      161
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 4,
+    "variant": "standard",
+    "task": "mug_marker",
+    "kind": "P0",
+    "seed": 10000,
+    "k": 0,
+    "phase": "approach",
+    "p1_uv": [
+     602.4,
+     279.2
+    ],
+    "trace255": [
+     [
+      229,
+      189
+     ],
+     [
+      158,
+      165
+     ],
+     [
+      157,
+      177
+     ],
+     [
+      231,
+      152
+     ],
+     [
+      235,
+      139
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 5,
+    "variant": "standard",
+    "task": "mug_marker",
+    "kind": "P0",
+    "seed": 10000,
+    "k": 110,
+    "phase": "close",
+    "p1_uv": [
+     409.1,
+     274.6
+    ],
+    "trace255": [
+     [
+      155,
+      186
+     ],
+     [
+      158,
+      170
+     ],
+     [
+      203,
+      150
+     ],
+     [
+      225,
+      169
+     ],
+     [
+      235,
+      139
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 6,
+    "variant": "standard",
+    "task": "mug_marker",
+    "kind": "P0",
+    "seed": 10000,
+    "k": 177,
+    "phase": "carry",
+    "p1_uv": [
+     429.2,
+     225.5
+    ],
+    "trace255": [
+     [
+      163,
+      153
+     ],
+     [
+      211,
+      149
+     ],
+     [
+      227,
+      162
+     ],
+     [
+      221,
+      178
+     ],
+     [
+      235,
+      139
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 7,
+    "variant": "standard",
+    "task": "mug_marker",
+    "kind": "P0",
+    "seed": 10000,
+    "k": 267,
+    "phase": "open",
+    "p1_uv": [
+     583.9,
+     259.3
+    ],
+    "trace255": [
+     [
+      222,
+      176
+     ],
+     [
+      223,
+      173
+     ],
+     [
+      224,
+      170
+     ],
+     [
+      230,
+      154
+     ],
+     [
+      235,
+      139
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 8,
+    "variant": "standard",
+    "task": "bottle_tray",
+    "kind": "P0",
+    "seed": 10020,
+    "k": 0,
+    "phase": "approach",
+    "p1_uv": [
+     602.4,
+     279.2
+    ],
+    "trace255": [
+     [
+      229,
+      189
+     ],
+     [
+      199,
+      171
+     ],
+     [
+      200,
+      167
+     ],
+     [
+      164,
+      190
+     ],
+     [
+      167,
+      171
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 9,
+    "variant": "standard",
+    "task": "bottle_tray",
+    "kind": "P0",
+    "seed": 10020,
+    "k": 94,
+    "phase": "close",
+    "p1_uv": [
+     513.1,
+     274.8
+    ],
+    "trace255": [
+     [
+      195,
+      187
+     ],
+     [
+      200,
+      167
+     ],
+     [
+      158,
+      179
+     ],
+     [
+      162,
+      205
+     ],
+     [
+      167,
+      171
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 10,
+    "variant": "standard",
+    "task": "bottle_tray",
+    "kind": "P0",
+    "seed": 10020,
+    "k": 157,
+    "phase": "carry",
+    "p1_uv": [
+     530.7,
+     229.9
+    ],
+    "trace255": [
+     [
+      201,
+      156
+     ],
+     [
+      158,
+      179
+     ],
+     [
+      163,
+      196
+     ],
+     [
+      160,
+      209
+     ],
+     [
+      167,
+      171
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 11,
+    "variant": "standard",
+    "task": "bottle_tray",
+    "kind": "P0",
+    "seed": 10020,
+    "k": 245,
+    "phase": "open",
+    "p1_uv": [
+     422.7,
+     309.1
+    ],
+    "trace255": [
+     [
+      160,
+      210
+     ],
+     [
+      162,
+      206
+     ],
+     [
+      163,
+      206
+     ],
+     [
+      165,
+      196
+     ],
+     [
+      167,
+      171
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 12,
+    "variant": "standard",
+    "task": "mug_tray",
+    "kind": "P1",
+    "seed": 10600,
+    "k": 0,
+    "phase": "approach",
+    "p1_uv": [
+     602.4,
+     279.2
+    ],
+    "trace255": [
+     [
+      229,
+      189
+     ],
+     [
+      181,
+      208
+     ],
+     [
+      185,
+      208
+     ],
+     [
+      247,
+      187
+     ],
+     [
+      255,
+      171
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 13,
+    "variant": "standard",
+    "task": "mug_tray",
+    "kind": "P1",
+    "seed": 10600,
+    "k": 95,
+    "phase": "close",
+    "p1_uv": [
+     479.0,
+     317.8
+    ],
+    "trace255": [
+     [
+      182,
+      216
+     ],
+     [
+      186,
+      205
+     ],
+     [
+      219,
+      184
+     ],
+     [
+      239,
+      203
+     ],
+     [
+      255,
+      171
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 14,
+    "variant": "standard",
+    "task": "mug_tray",
+    "kind": "P1",
+    "seed": 10600,
+    "k": 162,
+    "phase": "carry",
+    "p1_uv": [
+     513.4,
+     268.4
+    ],
+    "trace255": [
+     [
+      195,
+      182
+     ],
+     [
+      237,
+      185
+     ],
+     [
+      242,
+      198
+     ],
+     [
+      237,
+      206
+     ],
+     [
+      255,
+      171
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 15,
+    "variant": "standard",
+    "task": "mug_tray",
+    "kind": "P1",
+    "seed": 10600,
+    "k": 234,
+    "phase": "open",
+    "p1_uv": [
+     622.9,
+     307.5
+    ],
+    "trace255": [
+     [
+      237,
+      209
+     ],
+     [
+      238,
+      205
+     ],
+     [
+      239,
+      203
+     ],
+     [
+      247,
+      186
+     ],
+     [
+      255,
+      171
+     ]
+    ],
+    "inside": true
+   }
+  ],
+  "B_dr": [
+   {
+    "i": 0,
+    "variant": "dr",
+    "task": "mug_tray",
+    "kind": "P0",
+    "seed": 10000,
+    "k": 0,
+    "phase": "approach",
+    "p1_uv": [
+     602.4,
+     279.2
+    ],
+    "trace255": [
+     [
+      229,
+      189
+     ],
+     [
+      179,
+      212
+     ],
+     [
+      180,
+      207
+     ],
+     [
+      242,
+      181
+     ],
+     [
+      251,
+      161
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 1,
+    "variant": "dr",
+    "task": "mug_tray",
+    "kind": "P0",
+    "seed": 10000,
+    "k": 89,
+    "phase": "close",
+    "p1_uv": [
+     463.2,
+     328.7
+    ],
+    "trace255": [
+     [
+      176,
+      223
+     ],
+     [
+      180,
+      207
+     ],
+     [
+      218,
+      184
+     ],
+     [
+      236,
+      194
+     ],
+     [
+      251,
+      161
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 2,
+    "variant": "dr",
+    "task": "mug_tray",
+    "kind": "P0",
+    "seed": 10000,
+    "k": 159,
+    "phase": "carry",
+    "p1_uv": [
+     490.2,
+     275.3
+    ],
+    "trace255": [
+     [
+      186,
+      187
+     ],
+     [
+      234,
+      179
+     ],
+     [
+      239,
+      188
+     ],
+     [
+      233,
+      199
+     ],
+     [
+      251,
+      161
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 3,
+    "variant": "dr",
+    "task": "mug_tray",
+    "kind": "P0",
+    "seed": 10000,
+    "k": 242,
+    "phase": "open",
+    "p1_uv": [
+     613.5,
+     292.4
+    ],
+    "trace255": [
+     [
+      233,
+      199
+     ],
+     [
+      234,
+      196
+     ],
+     [
+      236,
+      195
+     ],
+     [
+      244,
+      177
+     ],
+     [
+      251,
+      161
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 4,
+    "variant": "dr",
+    "task": "mug_marker",
+    "kind": "P0",
+    "seed": 10000,
+    "k": 0,
+    "phase": "approach",
+    "p1_uv": [
+     602.4,
+     279.2
+    ],
+    "trace255": [
+     [
+      229,
+      189
+     ],
+     [
+      158,
+      165
+     ],
+     [
+      157,
+      177
+     ],
+     [
+      231,
+      152
+     ],
+     [
+      235,
+      139
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 5,
+    "variant": "dr",
+    "task": "mug_marker",
+    "kind": "P0",
+    "seed": 10000,
+    "k": 110,
+    "phase": "close",
+    "p1_uv": [
+     409.1,
+     274.6
+    ],
+    "trace255": [
+     [
+      155,
+      186
+     ],
+     [
+      158,
+      170
+     ],
+     [
+      203,
+      150
+     ],
+     [
+      225,
+      169
+     ],
+     [
+      235,
+      139
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 6,
+    "variant": "dr",
+    "task": "mug_marker",
+    "kind": "P0",
+    "seed": 10000,
+    "k": 177,
+    "phase": "carry",
+    "p1_uv": [
+     429.2,
+     225.5
+    ],
+    "trace255": [
+     [
+      163,
+      153
+     ],
+     [
+      211,
+      149
+     ],
+     [
+      227,
+      162
+     ],
+     [
+      221,
+      178
+     ],
+     [
+      235,
+      139
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 7,
+    "variant": "dr",
+    "task": "mug_marker",
+    "kind": "P0",
+    "seed": 10000,
+    "k": 267,
+    "phase": "open",
+    "p1_uv": [
+     583.9,
+     259.3
+    ],
+    "trace255": [
+     [
+      222,
+      176
+     ],
+     [
+      223,
+      173
+     ],
+     [
+      224,
+      170
+     ],
+     [
+      230,
+      154
+     ],
+     [
+      235,
+      139
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 8,
+    "variant": "dr",
+    "task": "bottle_tray",
+    "kind": "P0",
+    "seed": 10020,
+    "k": 0,
+    "phase": "approach",
+    "p1_uv": [
+     602.4,
+     279.2
+    ],
+    "trace255": [
+     [
+      229,
+      189
+     ],
+     [
+      199,
+      171
+     ],
+     [
+      200,
+      167
+     ],
+     [
+      164,
+      190
+     ],
+     [
+      167,
+      171
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 9,
+    "variant": "dr",
+    "task": "bottle_tray",
+    "kind": "P0",
+    "seed": 10020,
+    "k": 94,
+    "phase": "close",
+    "p1_uv": [
+     513.1,
+     274.8
+    ],
+    "trace255": [
+     [
+      195,
+      187
+     ],
+     [
+      200,
+      167
+     ],
+     [
+      158,
+      179
+     ],
+     [
+      162,
+      205
+     ],
+     [
+      167,
+      171
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 10,
+    "variant": "dr",
+    "task": "bottle_tray",
+    "kind": "P0",
+    "seed": 10020,
+    "k": 157,
+    "phase": "carry",
+    "p1_uv": [
+     530.7,
+     229.9
+    ],
+    "trace255": [
+     [
+      201,
+      156
+     ],
+     [
+      158,
+      179
+     ],
+     [
+      163,
+      196
+     ],
+     [
+      160,
+      209
+     ],
+     [
+      167,
+      171
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 11,
+    "variant": "dr",
+    "task": "bottle_tray",
+    "kind": "P0",
+    "seed": 10020,
+    "k": 245,
+    "phase": "open",
+    "p1_uv": [
+     422.7,
+     309.1
+    ],
+    "trace255": [
+     [
+      160,
+      210
+     ],
+     [
+      162,
+      206
+     ],
+     [
+      163,
+      206
+     ],
+     [
+      165,
+      196
+     ],
+     [
+      167,
+      171
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 12,
+    "variant": "dr",
+    "task": "mug_marker",
+    "kind": "P2",
+    "seed": 10800,
+    "k": 0,
+    "phase": "approach",
+    "p1_uv": [
+     602.4,
+     279.2
+    ],
+    "trace255": [
+     [
+      229,
+      189
+     ],
+     [
+      237,
+      210
+     ],
+     [
+      249,
+      190
+     ],
+     [
+      173,
+      164
+     ],
+     [
+      174,
+      144
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 13,
+    "variant": "dr",
+    "task": "mug_marker",
+    "kind": "P2",
+    "seed": 10800,
+    "k": 85,
+    "phase": "close",
+    "p1_uv": [
+     616.3,
+     313.0
+    ],
+    "trace255": [
+     [
+      234,
+      213
+     ],
+     [
+      245,
+      197
+     ],
+     [
+      204,
+      156
+     ],
+     [
+      171,
+      176
+     ],
+     [
+      174,
+      144
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 14,
+    "variant": "dr",
+    "task": "mug_marker",
+    "kind": "P2",
+    "seed": 10800,
+    "k": 150,
+    "phase": "carry",
+    "p1_uv": [
+     650.1,
+     266.5
+    ],
+    "trace255": [
+     [
+      247,
+      181
+     ],
+     [
+      204,
+      156
+     ],
+     [
+      173,
+      166
+     ],
+     [
+      169,
+      185
+     ],
+     [
+      174,
+      144
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 15,
+    "variant": "dr",
+    "task": "mug_marker",
+    "kind": "P2",
+    "seed": 10800,
+    "k": 248,
+    "phase": "open",
+    "p1_uv": [
+     445.4,
+     271.7
+    ],
+    "trace255": [
+     [
+      169,
+      184
+     ],
+     [
+      170,
+      180
+     ],
+     [
+      170,
+      178
+     ],
+     [
+      172,
+      159
+     ],
+     [
+      174,
+      144
+     ]
+    ],
+    "inside": true
+   }
+  ],
+  "C_random": [
+   {
+    "i": 0,
+    "variant": "dr",
+    "task": "mug_marker",
+    "kind": "P2",
+    "seed": 10820,
+    "k": 170,
+    "phase": "carry",
+    "p1_uv": [
+     589.2,
+     274.7
+    ],
+    "trace255": [
+     [
+      224,
+      186
+     ],
+     [
+      196,
+      174
+     ],
+     [
+      192,
+      190
+     ],
+     [
+      191,
+      194
+     ],
+     [
+      197,
+      157
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 1,
+    "variant": "dr",
+    "task": "mug_tray",
+    "kind": "P0",
+    "seed": 10060,
+    "k": 68,
+    "phase": "descend",
+    "p1_uv": [
+     476.0,
+     264.1
+    ],
+    "trace255": [
+     [
+      181,
+      179
+     ],
+     [
+      179,
+      189
+     ],
+     [
+      199,
+      155
+     ],
+     [
+      227,
+      169
+     ],
+     [
+      239,
+      138
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 2,
+    "variant": "standard",
+    "task": "mug_marker",
+    "kind": "P0",
+    "seed": 10540,
+    "k": 11,
+    "phase": "approach",
+    "p1_uv": [
+     563.0,
+     262.2
+    ],
+    "trace255": [
+     [
+      214,
+      178
+     ],
+     [
+      170,
+      192
+     ],
+     [
+      172,
+      187
+     ],
+     [
+      227,
+      189
+     ],
+     [
+      234,
+      169
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 3,
+    "variant": "standard",
+    "task": "mug_tray",
+    "kind": "P0",
+    "seed": 10360,
+    "k": 5,
+    "phase": "approach",
+    "p1_uv": [
+     606.4,
+     266.7
+    ],
+    "trace255": [
+     [
+      230,
+      181
+     ],
+     [
+      228,
+      179
+     ],
+     [
+      236,
+      155
+     ],
+     [
+      177,
+      161
+     ],
+     [
+      178,
+      152
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 4,
+    "variant": "standard",
+    "task": "mug_tray",
+    "kind": "P2",
+    "seed": 10880,
+    "k": 218,
+    "phase": "place_descend",
+    "p1_uv": [
+     455.3,
+     248.3
+    ],
+    "trace255": [
+     [
+      173,
+      169
+     ],
+     [
+      172,
+      176
+     ],
+     [
+      171,
+      174
+     ],
+     [
+      173,
+      164
+     ],
+     [
+      175,
+      135
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 5,
+    "variant": "dr",
+    "task": "mug_tray",
+    "kind": "P1",
+    "seed": 10760,
+    "k": 267,
+    "phase": "open",
+    "p1_uv": [
+     610.4,
+     299.0
+    ],
+    "trace255": [
+     [
+      232,
+      203
+     ],
+     [
+      232,
+      202
+     ],
+     [
+      237,
+      192
+     ],
+     [
+      243,
+      179
+     ],
+     [
+      248,
+      167
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 6,
+    "variant": "dr",
+    "task": "mug_tray",
+    "kind": "P0",
+    "seed": 10020,
+    "k": 186,
+    "phase": "carry",
+    "p1_uv": [
+     462.0,
+     236.8
+    ],
+    "trace255": [
+     [
+      175,
+      161
+     ],
+     [
+      170,
+      174
+     ],
+     [
+      170,
+      197
+     ],
+     [
+      168,
+      209
+     ],
+     [
+      173,
+      178
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 7,
+    "variant": "dr",
+    "task": "bottle_tray",
+    "kind": "P1",
+    "seed": 10680,
+    "k": 221,
+    "phase": "carry",
+    "p1_uv": [
+     556.3,
+     272.9
+    ],
+    "trace255": [
+     [
+      211,
+      185
+     ],
+     [
+      219,
+      194
+     ],
+     [
+      215,
+      207
+     ],
+     [
+      216,
+      203
+     ],
+     [
+      228,
+      170
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 8,
+    "variant": "dr",
+    "task": "mug_tray",
+    "kind": "P1",
+    "seed": 10660,
+    "k": 154,
+    "phase": "lift",
+    "p1_uv": [
+     448.5,
+     262.2
+    ],
+    "trace255": [
+     [
+      170,
+      178
+     ],
+     [
+      186,
+      159
+     ],
+     [
+      226,
+      169
+     ],
+     [
+      218,
+      187
+     ],
+     [
+      233,
+      147
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 9,
+    "variant": "dr",
+    "task": "mug_tray",
+    "kind": "P0",
+    "seed": 10300,
+    "k": 242,
+    "phase": "retreat",
+    "p1_uv": [
+     602.9,
+     259.1
+    ],
+    "trace255": [
+     [
+      229,
+      176
+     ],
+     [
+      233,
+      166
+     ],
+     [
+      237,
+      157
+     ],
+     [
+      240,
+      148
+     ],
+     [
+      242,
+      142
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 10,
+    "variant": "standard",
+    "task": "mug_marker",
+    "kind": "P0",
+    "seed": 10400,
+    "k": 232,
+    "phase": "place_descend",
+    "p1_uv": [
+     447.6,
+     284.5
+    ],
+    "trace255": [
+     [
+      170,
+      193
+     ],
+     [
+      169,
+      201
+     ],
+     [
+      168,
+      201
+     ],
+     [
+      170,
+      196
+     ],
+     [
+      173,
+      171
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 11,
+    "variant": "dr",
+    "task": "mug_tray",
+    "kind": "P2",
+    "seed": 10880,
+    "k": 0,
+    "phase": "approach",
+    "p1_uv": [
+     602.4,
+     279.2
+    ],
+    "trace255": [
+     [
+      229,
+      189
+     ],
+     [
+      220,
+      177
+     ],
+     [
+      220,
+      178
+     ],
+     [
+      175,
+      158
+     ],
+     [
+      175,
+      135
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 12,
+    "variant": "standard",
+    "task": "bottle_tray",
+    "kind": "P0",
+    "seed": 10080,
+    "k": 245,
+    "phase": "open",
+    "p1_uv": [
+     609.1,
+     295.3
+    ],
+    "trace255": [
+     [
+      231,
+      200
+     ],
+     [
+      234,
+      196
+     ],
+     [
+      244,
+      173
+     ],
+     [
+      247,
+      166
+     ],
+     [
+      247,
+      165
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 13,
+    "variant": "dr",
+    "task": "mug_tray",
+    "kind": "P0",
+    "seed": 10280,
+    "k": 9,
+    "phase": "approach",
+    "p1_uv": [
+     569.4,
+     279.8
+    ],
+    "trace255": [
+     [
+      216,
+      190
+     ],
+     [
+      169,
+      212
+     ],
+     [
+      170,
+      208
+     ],
+     [
+      239,
+      180
+     ],
+     [
+      247,
+      164
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 14,
+    "variant": "dr",
+    "task": "mug_marker",
+    "kind": "P0",
+    "seed": 10340,
+    "k": 188,
+    "phase": "place_descend",
+    "p1_uv": [
+     440.4,
+     255.9
+    ],
+    "trace255": [
+     [
+      167,
+      174
+     ],
+     [
+      166,
+      184
+     ],
+     [
+      164,
+      194
+     ],
+     [
+      164,
+      191
+     ],
+     [
+      168,
+      158
+     ]
+    ],
+    "inside": true
+   },
+   {
+    "i": 15,
+    "variant": "dr",
+    "task": "mug_marker",
+    "kind": "P2",
+    "seed": 10800,
+    "k": 48,
+    "phase": "descend",
+    "p1_uv": [
+     643.8,
+     287.9
+    ],
+    "trace255": [
+     [
+      244,
+      195
+     ],
+     [
+      234,
+      203
+     ],
+     [
+      229,
+      172
+     ],
+     [
+      172,
+      170
+     ],
+     [
+      174,
+      144
+     ]
+    ],
+    "inside": true
+   }
+  ]
+ }
+}

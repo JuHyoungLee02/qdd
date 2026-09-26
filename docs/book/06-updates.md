@@ -45,3 +45,4 @@
 | 2026-09-26 02:37 | 03·04 | 결합 구현 계획 Task 7 기록: 03 두 층 비가역 관문 근거=T1 전제만·VLA 청크 준수(`adhere_cos`) 결정 행 추가, 04 `harvest/couple/` 행에 `twolayer`(두 층 관문·빠른 검증·진전 없음) 추가, `tests/couple/` 행에 `test_twolayer.py` 추가 | plan Task 7, 이 줄과 같은 커밋 |
 | 2026-09-26 02:56 | 04 | 결합 구현 계획 Task 8 기록: 04 `harvest/couple/` 행에 `overlay`(Astra 영상 전용 덧그림·카메라 모델·MolmoAct 자취 polylines) 추가, `tests/couple/` 행에 `test_overlay.py` 추가; `ir_policy.py` obs에 `cams` 배선 | plan Task 8, 이 줄과 같은 커밋 |
 | 2026-09-26 02:58 | 01·02·04 | MolmoAct R2 준비 관문(user-log 95): 01 'MAR 준비 관문'(끝)·'E-MAR(AO·S)'(`[예정]`) 행, 02 P82(카메라 검사의 색 분할 결함 — 평면 표지 기준)·P83(라벨·그림 규칙의 뜻 번역 — 편 끝·덧그림 색), 04 `tools/mar2/`·파드 `logs/mar2/`·`code_mar2` 행 | [molmoact_r2_readiness](../stage3/molmoact_r2_readiness.md), 이 줄과 같은 커밋 |
+| 2026-09-26 02:59 | 02·06 | 정정: 바로 위 02:58 줄과 04 두 행·draft-log 02:58 줄은 결합 Task 8 커밋 8350c7e에 섞여 먼저 들어갔다(공유 파일 경로 커밋 경합) — 01·02 행과 준비 문서·그림·도구는 이 줄과 같은 커밋; 02 P80 발생 칸에 반대 방향 재발 기록 | 이 줄과 같은 커밋 |
