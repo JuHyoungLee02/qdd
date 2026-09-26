@@ -14,7 +14,7 @@
 | `harvest/perception/`, `harvest/stereo/`, `harvest/m4b/` | R1 인식(기준선·진단), E3-ST, 확인 헤드 V1h |
 | `harvest/clients/` | `astra`·`jevl`·`jev` 클라이언트 |
 | `harvest/astra_motion/` | E-Astra-motion 탐침 코드(3500f54) [→ 2026-09-25 21:07 UTC, R7 28회차 D-2] |
-| `harvest/couple/` | 결합 패키지: `params`(`CoupleParams`)·`schema`(astra-couple@v1)·`prompt`·`mock`(Task 1); 뒤 과제가 모듈을 더한다 |
+| `harvest/couple/` | 결합 패키지: `params`(`CoupleParams`)·`schema`(astra-couple@v1)·`prompt`·`mock`(Task 1)·`gate`(의미 게이트: 나이·불확실·개입 자격·손목 근거, Task 2); 뒤 과제가 모듈을 더한다 |
 | `harvest/serialize.py`, `deccall_snap.py`, `labels_v2.py`, `qid.py` | 직렬화(ser-A-min-2)·결정 호출·정답·질문 id |
 | `tools/se2e/` | `se2e_verdict`·`temporal_verdict`·`temporal_latency`·`motion_confirm_verdict`(등록 때 고정) |
 | `tools/ma1/` | `g0`·`g0_point`·`ma1_verdict`·`build_a3d`·`ma1b_verdict` |
