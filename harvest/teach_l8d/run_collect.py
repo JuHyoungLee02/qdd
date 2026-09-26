@@ -17,7 +17,7 @@ OUT = "/data/harvest/out/teach_l8d/collect"
 
 
 def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=None, reach_path=None,
-               mesh_split: str = "train"):
+               mesh_split: str = "train", rooms_split: str | None = None):
     import os
 
     from ..astra_motion.world_isaac import CAMS, NO_RENDER, PRE_RENDER, IsaacWorld
@@ -33,7 +33,11 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             mesh = _fx.mesh_subset(_fx.load_mesh_assets(d), furniture, mesh_split)
             if not mesh:
                 raise ValueError(f"no {mesh_split} mesh pieces for {furniture}")
-        FX.without_table(mesh)
+        rooms = None
+        if rooms_split:  # iTHOR room backgrounds (render only; helper 5473bb8), this split only
+            d = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sim", "assets_x")
+            rooms = _fx.rooms_of(d, rooms_split)
+        FX.without_table(mesh, rooms)
 
     class L8DWorld(SoloWorld):
         """SoloWorld (depth on) with the R2 tasks, one table height, the height's workspace box and the lift flag;
@@ -72,7 +76,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             if not hasattr(self, "_rm"):
                 self._rm = ReachModel.load(reach_path)
             from ..sim.tasks import X_FURNITURE_TASKS
-            sc = FU.sample_scene(furniture, seed, reach=self._rm, mesh_assets=mesh, split=mesh_split)
+            sc = FU.sample_scene(furniture, seed, reach=self._rm, mesh_assets=mesh, split=mesh_split, rooms=rooms)
             upper, vid = None, TASKS[task].place
             if task in X_FURNITURE_TASKS:  # cross-surface: o19 = a higher surface, o20 = a container's floor
                 pick = fx.choose_container if vid == "o20" else fx.choose_two_surfaces
@@ -93,7 +97,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             # the hard reset re-initialises the articulation from cfg.init_state (default_joint_pos alone was reset
             # to the INIT_JOINTS lift: measured -0.125 in every scene, L8X-assets finding): set it there too
             rob.cfg.init_state.joint_pos["lift_joint"] = env.lift
-            FX.author_scene(env, sc, mesh)
+            FX.author_scene(env, sc, mesh, rooms)
             try:
                 env.set_seed(seed, task)
             except RuntimeError as ex:  # task_layout found no layout in this box
@@ -167,6 +171,7 @@ def main(argv=None):
     ap.add_argument("--objset", default=None, help="x = L8-X objects and tasks")
     ap.add_argument("--furniture", default=None, help="L8-X furniture kind (harvest.sim.assets_x.furniture.KINDS)")
     ap.add_argument("--reach", default="/data/harvest/out/teach_l8d/gate/reach_base.json")
+    ap.add_argument("--rooms", action="store_true", help="iTHOR room backgrounds (furniture scenes)")
     ap.add_argument("--seeds", default=None)
     ap.add_argument("--plan", default=None)
     ap.add_argument("--task", default=None, help="override the per-seed task (gate / OOD sets)")
@@ -207,7 +212,8 @@ def main(argv=None):
             raise ValueError("furniture scenes: variant standard only (the drx table material / pool distractors "
                              "assume the L8 table)")
         world = make_world(a.variant, a.table_z, ws, a.lift, a.objset, a.furniture, a.reach,
-                           "ood" if a.split == "ood_s" else "train")
+                           "ood" if a.split == "ood_s" else "train",
+                           ("ood" if a.split == "ood_s" else "train") if a.rooms else None)
         lim = None
         if a.lift is not None:
             rob = world.env.robot

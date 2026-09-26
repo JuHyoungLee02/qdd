@@ -40,6 +40,24 @@ def mesh_subset(mesh_assets: dict, kind: str, split: str) -> dict:
             if a.get("tag", "thor") == tag and a["category"] == cat and a["split"] == split}
 
 
+ROOMS_TABLE = "rooms_ithor.json"
+ROOM_OOD_SHARE = 0.2
+
+
+def room_split(name: str) -> str:
+    """iTHOR rooms held out for OOD-S by name hash (20 %); the rest may appear in training scenes."""
+    import hashlib
+    u = int(hashlib.sha256(("l8x-room:" + name).encode()).hexdigest()[:8], 16) / 0xFFFFFFFF
+    return "ood" if u < ROOM_OOD_SHARE else "train"
+
+
+def rooms_of(directory: str, split: str) -> dict:
+    import json
+    import os
+    rooms = json.load(open(os.path.join(directory, ROOMS_TABLE)))["rooms"]
+    return {n: r for n, r in rooms.items() if room_split(n) == split}
+
+
 def choose_surface(scene: dict) -> tuple:
     """-> (surface dict, region [[x0, x1], [y0, y1]]) of the usable surface with the largest region area."""
     by_id = {s["id"]: s for s in scene["surfaces"]}

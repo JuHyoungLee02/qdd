@@ -63,6 +63,15 @@ def test_mesh_kind_subsets():
         assert sc2["surfaces"]
 
 
+def test_room_split():
+    import os
+    d = os.path.join(os.path.dirname(fx.__file__), "..", "sim", "assets_x")
+    tr, ood = fx.rooms_of(d, "train"), fx.rooms_of(d, "ood")
+    assert tr and ood and not set(tr) & set(ood)
+    assert 0.05 <= len(ood) / (len(tr) + len(ood)) <= 0.4
+    assert all(fx.room_split(n) == "ood" for n in ood)
+
+
 def test_choose_container():
     box = {"id": "s2", "kind": "bin_floor", "top_z": 0.87, "container": True,
            "xy_box": [[0.45, 0.58], [-0.20, -0.07]]}
