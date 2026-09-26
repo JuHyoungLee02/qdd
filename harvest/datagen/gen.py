@@ -4,6 +4,8 @@ Isaac modes (pod only: ir_run.sh IR_ROOT=cyclo, CPU PhysX, rendering on the GPU 
   gen    --variant {standard|dr} --tasks all|a,b --kinds P0[,P1,P2] --seeds 0-5 --out DIR [--stale-s 1800]
          several processes may run the same command: items (variant, task, kind, seed) are shared through file locks
          (queue.py), done items are skipped (resumable). One Isaac env per process (the variant is fixed per env).
+         MolmoAct R2 data (plan 2026-09-26-molmoact-r2-data), explicit and P0 only: --waypoints (M3, approach / carry
+         through a sideways waypoint, sim/waypoint.py) or --layout pair (M4, mug + bottle + tray in one layout).
   replay --out DIR --variant V --task T --kind K --seed S
          re-executes the recorded action_exec (same 3/4-substep holds, same perturbation writes at the same ticks)
          after the same canonical prefix and compares object / joint trajectories with the recording.
@@ -66,7 +68,25 @@ def parse_seeds(spec: str, allow_train: bool = False) -> list:
 
 
 # ================================================================================ Isaac part
-def _planner_cls():
+def check_molmo_opts(kinds, tasks, waypoints: bool, layout: str) -> None:
+    """MolmoAct R2 data options (plan 2026-09-26-molmoact-r2-data): --waypoints (M3) and --layout pair (M4) are P0
+    only, one at a time; pair only for tasks.PAIR_TASKS. No option = no restriction (the default path)."""
+    if layout not in TK.LAYOUTS:
+        raise SystemExit(f"--layout {layout!r}: one of {TK.LAYOUTS}")
+    if not waypoints and layout == "task":
+        return
+    if waypoints and layout != "task":
+        raise SystemExit("--waypoints and --layout pair: one option at a time")
+    if list(kinds) != ["P0"]:
+        raise SystemExit("--waypoints / --layout pair: --kinds P0 only")
+    if layout == "pair" and not set(tasks) <= set(TK.PAIR_TASKS):
+        raise SystemExit(f"--layout pair: tasks {TK.PAIR_TASKS} only")
+
+
+def _planner_cls(waypoints: bool = False):
+    if waypoints:
+        from ..sim.waypoint import waypoint_mixin
+        return waypoint_mixin(_planner_cls())
     from ..config import CFG
     from ..sim.planner import OraclePlanner
 
@@ -107,8 +127,9 @@ def prefix(env, task: str = "mug_tray") -> None:
 
 
 def record_episode(env, seed: int, task: str, kind: str, folder: str, cams=CAMS, limit_s: float = 60.0,
-                   done_grace_s: float = 3.0) -> dict:
-    """Run one oracle episode on the 30 Hz grid and record it (images written now, the rest returned)."""
+                   done_grace_s: float = 3.0, waypoints: bool = False, layout: str = "task") -> dict:
+    """Run one oracle episode on the 30 Hz grid and record it (images written now, the rest returned).
+    waypoints / layout: MolmoAct R2 data options (check_molmo_opts); off = the default path, meta without 'molmo'."""
     from PIL import Image
 
     from ..m4b.spec import contact_open
@@ -119,13 +140,19 @@ def record_episode(env, seed: int, task: str, kind: str, folder: str, cams=CAMS,
 
     spec = TK.TASKS[task]
     tgt, place = spec.target, spec.place
-    env.set_seed(seed, task)
+    if layout == "task":
+        env.set_seed(seed, task)
+    else:
+        env.set_seed(seed, task, layout=layout)
     env.reset()
     perturb(env, kind, seed)
     for _ in range(PRE_RENDER):  # renderer warm-up after the reset (no physics step): a new dr seed's first frames
         env.env.sim.render()  # otherwise carry a 4-frame exposure / accumulation transient (r2_datagen.md)
-    pl = _planner_cls()(env)
+    pl = _planner_cls(waypoints)(env)
     pl.hold_debounce = HOLD_DEBOUNCE_30
+    if waypoints:
+        from ..sim.waypoint import sample_offsets
+        pl.setup_waypoints(sample_offsets(seed, task))
     img_dir = f"{folder}/img/ep{seed}"
     os.makedirs(img_dir, exist_ok=True)
     rd = env.robot.data
@@ -225,6 +252,11 @@ def record_episode(env, seed: int, task: str, kind: str, folder: str, cams=CAMS,
                 cams=list(cams), obj_ids=obj_ids, sim_device=env.sim_device, hold_debounce=pl.hold_debounce,
                 **place_metrics(env, tgt, place))
     randomization_meta(env, meta)
+    if waypoints:
+        meta["molmo"] = {"mode": "waypoints", "waypoints": pl.waypoint_log()}
+    elif layout != "task":
+        meta["molmo"] = {"mode": "pair", "layout": layout, "pair_tasks": list(TK.PAIR_TASKS),
+                         "layout_xy_yaw": {k: [round(float(x), 6) for x in v] for k, v in sorted(env.layout.items())}}
     st["obj_ids"] = obj_ids
     return {"seed": seed, "kind": kind, "task": task, "variant": env.variant, "split": split_of(seed),
             "frames": frames, "actions": actions, "hold_n": hold_n, "stream": st, "meta": meta}
@@ -238,7 +270,7 @@ def _make_env(variant: str):
 
 
 def gen(out: str, variant: str, tasks, kinds, seeds, stale_s: float = 1800.0, H: int = H_DEFAULT,
-        max_items: int | None = None) -> None:
+        max_items: int | None = None, waypoints: bool = False, layout: str = "task") -> None:
     from ..cli_pool import warmup
     from ..sim.randomize import check_train_variant
     from .episode import finalize
@@ -247,6 +279,8 @@ def gen(out: str, variant: str, tasks, kinds, seeds, stale_s: float = 1800.0, H:
     for kd in kinds:
         if kd not in ("P0", "P1", "P2"):
             raise SystemExit("DEV perturbations P0-P2 only")
+    check_molmo_opts(kinds, tasks, waypoints, layout)
+    opts = {} if (not waypoints and layout == "task") else {"waypoints": waypoints, "layout": layout}
     items = Q.plan([variant], tasks, kinds, seeds)
     env, n_done = None, 0
     chain = f"{out}/_workers/{variant}_{os.uname().nodename if hasattr(os, 'uname') else 'host'}_{os.getpid()}_" \
@@ -268,7 +302,7 @@ def gen(out: str, variant: str, tasks, kinds, seeds, stale_s: float = 1800.0, H:
                 os.makedirs(os.path.dirname(chain), exist_ok=True)
             prefix(env, task)
             t_pre = time.perf_counter() - t0
-            ep = record_episode(env, seed, task, kind, folder)
+            ep = record_episode(env, seed, task, kind, folder, **opts)
             ep["meta"].update(prefix_wall_s=round(t_pre, 2),
                               worker={"pid": os.getpid(), "gpu": os.environ.get("CUDA_VISIBLE_DEVICES"),
                                       "chain": os.path.relpath(chain, out), "seq": seq},
@@ -296,7 +330,11 @@ def _replay_actions(env, folder: str, seed: int, task: str):
     from ..sim import snapshot as S
     z = np.load(f"{folder}/ep{seed}.npz")
     meta = json.load(open(f"{folder}/ep{seed}.meta.json"))
-    env.set_seed(seed, task)
+    lay = (meta.get("molmo") or {}).get("layout", "task")
+    if lay == "task":
+        env.set_seed(seed, task)
+    else:  # MolmoAct M4 pair-layout episode
+        env.set_seed(seed, task, layout=lay)
     env.reset()
     ev_at = {e["k"]: e for e in meta.get("events", [])}
     obj_ids = [str(x) for x in z["obj_ids"]]
@@ -451,6 +489,10 @@ def main(argv=None):
     ap.add_argument("--max-items", type=int, default=None)
     ap.add_argument("--H", type=int, default=H_DEFAULT)
     ap.add_argument("--dst", default=None)
+    ap.add_argument("--waypoints", action="store_true",
+                    help="MolmoAct M3: approach / carry through one sideways waypoint each (P0 only)")
+    ap.add_argument("--layout", default="task", choices=list(TK.LAYOUTS),
+                    help="MolmoAct M4: 'pair' = mug + bottle + tray in one layout (mug_tray / bottle_tray, P0 only)")
     a = ap.parse_args(argv)
     if a.mode == "check":
         check(a.out)
@@ -461,7 +503,7 @@ def main(argv=None):
     if a.mode == "gen":
         tasks = list(TK.TASK_IDS) if a.tasks == "all" else [TK.check_task(t) for t in a.tasks.split(",")]
         gen(a.out, a.variant, tasks, a.kinds.split(","), parse_seeds(a.seeds, a.confirm_train), a.stale_s, a.H,
-            a.max_items)
+            a.max_items, waypoints=a.waypoints, layout=a.layout)
     else:
         check_r2_seed(a.seed, a.confirm_train)
         replay(a.out, a.variant, TK.check_task(a.task), a.kind, a.seed, a.chain)
