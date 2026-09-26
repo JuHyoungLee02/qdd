@@ -16,7 +16,8 @@
 | E-Astra-motion G2 표적 (8장, high) | 8 | **224원** | 호출당 **27.9원**, 추론 64–289토큰, 지연 p50 5.7 s | 같은 문서 4절 |
 | E-Astra-motion API 설정 시험 | 3 (HTTP 400) | 0원 | temperature·top_p·seed 모두 거부 | 사전 등록 수정 1 |
 | 프롬프트 검진 Astra 표본(Q1 방향 60 + Q2 잡기 60, low) | 120 | **2,093.9원** | 호출당 16.45원(방향, 영상 2장 JPEG)·18.45원(잡기, 3장 PNG detail high), 무효 0 | [R/prompt_health](../stage3/results/prompt_health.md) 5절, 장부 `H/logs/prompt_health/astra_ledger.jsonl`(상한 3,000원) |
-| **누적(확정분)** | | **9,027.3원** = E-Astra-motion 6,933.4원(장부 `H/logs/astra_motion/cost.jsonl` 256행 합; 상한 15,000원) + 프롬프트 검진 2,093.9원(장부 `H/logs/prompt_health/astra_ledger.jsonl` 120행; 상한 3,000원) + 이전 `[금액 미기록]` 분 | | |
+| E-Astra-solo P1 폐루프 low 4편 + P2 medium 짝 재질문 12 | 44 + 12 | **3,080.9원**(P1 2,366.1 + P2 714.8) | low **53.8원/호출**(입력 2,339·출력 274·추론 118), 지연 p50 6.8 s·p95 16.5 s, **원/성공 591.5원**; medium 59.6원/호출(추론 약 200), 지연 p50 10.0 s | [R/astra_solo_pilot](../stage3/results/astra_solo_pilot.md) 8절, 장부 `H/logs/astra_solo/ledger.jsonl` 56행(상한 5,000원) |
+| **누적(확정분)** | | **12,108.2원** = E-Astra-motion 6,933.4원(장부 `H/logs/astra_motion/cost.jsonl` 256행 합; 상한 15,000원) + 프롬프트 검진 2,093.9원(장부 `H/logs/prompt_health/astra_ledger.jsonl` 120행; 상한 3,000원) + E-Astra-solo 3,080.9원(장부 `H/logs/astra_solo/ledger.jsonl` 56행; 상한 5,000원) + 이전 `[금액 미기록]` 분 | | |
 
 ### 예정 예산 (계획 [Task 14–16](../superpowers/plans/2026-09-26-astra-vla-coupling.md))
 | 실험 | 상한 | 비고 |
@@ -43,6 +44,7 @@
 | E-SR1d(층·분기 CPU + 학습 2판·평가 4판, 시뮬 없음) | x2 0·1 | ≈ 2.2 GPU-h(사전 실행 GPU 0 ≈ 0.1: 05:52–05:57; 본 두 레인 06:00–07:02; 학습 루프 47.5·47.8분) | [R/sr1d](../stage3/results/sr1d.md) 6절 |
 | E-NOV0(학습 없음, 특징 추출 27,107스냅샷 + 지연·재집계) | 2 | ≈ 1.0 GPU-h(사전 실행 05:15–05:35 ≈ 0.33 h; 본 05:37–06:15 ≈ 0.62 h; 재집계 06:17 ≈ 0.02 h; 판정은 CPU) | [R/nov0](../stage3/results/nov0.md) 7절 |
 | 프롬프트 검진(vLLM Qwen3-VL 8B·4B, 추론만) | 3 | ≈ 0.8 GPU-h(05:24–06:10, 두 서버 한 GPU) | [R/prompt_health](../stage3/results/prompt_health.md) 10절 |
+| E-Astra-solo(Isaac + Qwen vLLM 사전 실행, 유료 폐루프) | 3 | ≈ 1.5 GPU-h(프로세스 합: vLLM 06:37–07:07 ≈ 0.48 h + Isaac 약 1.06 h, 06:34–07:31 한 장 공유) | [R/astra_solo_pilot](../stage3/results/astra_solo_pilot.md) 8절 |
 | E-Couple 무료 사전 실행(Isaac + 융합 VLA + Qwen3-VL-8B vLLM, 한 GPU) | 메인 1 | ≈ 1.3 GPU-h(Qwen 서버 06:07–07:23; 스모크 06:08–06:12, 본 06:14–07:22), 유료 0원 | [R/couple_dry](../stage3/results/couple_dry.md) 5절 |
 | MAR-real 준비(Molmo2-ER 포인팅 10,834회, 추론만) + MAR2D 시뮬 파일럿(중단) | 메인 0(포인팅·Isaac) + x2 1(Isaac 렌더 시험) | ≈ 0.56 GPU-h(포인팅 0.37: 일괄 시험 05:38–05:46 + 본 05:46–06:01; Isaac 약 0.19: 메인 0 05:22–05:30·x2 1 05:22–05:27) | [molmoact_real_readiness](../stage3/molmoact_real_readiness.md) 7절 |
 | R2_TRAIN 생성 | 0·1(렌더) + 2(로더 확인) | ≈ 21.3 GPU-h(21.34; GPU 0·1 각 11:16–21:56 ≈ 10.7 h 점유, 동시 Isaac 최대 5 = 누적 52.8 프로세스-시간, 사용률 20–50 % `[미검증]` — 저장된 로그에 없음) [→ 정정 2026-09-25 23:58 UTC, R7 35회차 N178·N179] + GPU 2 약 0.2 h(로더 확인 2회); 첫 파일럿(6b013ac, 폐기) GPU 1 약 0.7 h 별도 | [R/r2_train_gen](../stage3/results/r2_train_gen.md) 8절 |
