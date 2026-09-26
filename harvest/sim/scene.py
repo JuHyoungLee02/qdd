@@ -142,8 +142,8 @@ def check_ws(ws):
     if ws is None:
         return None
     (x0, x1), (y0, y1) = ws
-    if not (x1 - x0 >= WS_MIN_W - 1e-9 and y1 - y0 >= 0.10):
-        raise ValueError(f"workspace {ws}: x width >= {WS_MIN_W} m and y width >= 0.10 m")
+    if not (x1 - x0 >= WS_MIN_W - 1e-9 and y1 - y0 >= 0.08):
+        raise ValueError(f"workspace {ws}: x width >= {WS_MIN_W} m and y width >= 0.08 m")
     return (float(x0), float(x1)), (float(y0), float(y1))
 
 

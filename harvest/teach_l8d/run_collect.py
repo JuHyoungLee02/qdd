@@ -81,7 +81,10 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             # to the INIT_JOINTS lift: measured -0.125 in every scene, L8X-assets finding): set it there too
             rob.cfg.init_state.joint_pos["lift_joint"] = env.lift
             FX.author_scene(env, sc)
-            env.set_seed(seed, task)
+            try:
+                env.set_seed(seed, task)
+            except RuntimeError as ex:  # task_layout found no layout in this box
+                raise fx.SkipScene(f"layout: {ex}") from ex
             keep = {TASKS[task].target, TASKS[task].place} | {o for st in X_STEPS.get(task, ()) for o in st[:2]}
             lay, dropped = fx.filter_layout(env.layout, surf, keep)
             if upper is not None:  # the place surface centre (its region, not the layout box)

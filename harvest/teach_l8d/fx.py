@@ -54,12 +54,19 @@ def choose_two_surfaces(scene: dict, min_rise: float = 0.02) -> tuple:
     return best[1:]
 
 
+MIN_DIAG = 0.20  # target and place need >= 0.16 m apart (task_layout): a narrower box cannot hold a layout
+
+
 def ws_from_region(region) -> tuple:
     from ..sim.scene import check_ws
     try:
-        return check_ws((tuple(region[0]), tuple(region[1])))
+        ws = check_ws((tuple(region[0]), tuple(region[1])))
     except ValueError as ex:
         raise SkipScene(f"region {region}: {ex}") from ex
+    (x0, x1), (y0, y1) = ws
+    if math.hypot(x1 - x0, y1 - y0) < MIN_DIAG:
+        raise SkipScene(f"region {region}: diagonal < {MIN_DIAG} m")
+    return ws
 
 
 def on_surface(xy, footprint_r: float, surface: dict, margin: float = 0.01) -> bool:

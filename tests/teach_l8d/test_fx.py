@@ -23,6 +23,9 @@ def test_choose_the_largest_usable_region():
         fx.choose_surface(_scene([{"surface": "s0", "region": None}]))
     with pytest.raises(fx.SkipScene):
         fx.ws_from_region([[0.40, 0.45], [-0.40, -0.06]])  # narrower than 8 cm
+    assert fx.ws_from_region([[0.36, 0.56], [-0.40, -0.32]]) == ((0.36, 0.56), (-0.40, -0.32))  # bin kind strip
+    with pytest.raises(fx.SkipScene):
+        fx.ws_from_region([[0.36, 0.48], [-0.39, -0.31]])  # diagonal 0.144 < 0.20
 
 
 def test_two_surfaces_and_virtual_surface_contacts():
