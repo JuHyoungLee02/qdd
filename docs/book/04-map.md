@@ -48,6 +48,7 @@
 | `docs/stage3/qid_registry.json` | 질문 id 등록부(`harvest/qid.py` 기본 경로; ser-A-min-3: 모듈형 HW/IMG 5질문 v1–v5, 융합 추가 gripper v6·dir_xy v12·mag_coarse v13, 모듈형 H/S1-1mm 5질문 v7–v11, Task 12) |
 | `docs/superpowers/specs/`·`plans/` | 결합 설계(승인)·구현 계획(16과제) |
 | `docs/research/` | 조사 문서(1.5년·신뢰도 규칙) |
+| `docs/research/cross_embodiment_data_use_2026-09-26.md` | 교차 기체(맞지 않는) 로봇 데이터 활용법 조사 + 35B 혼합 계획·무료 시험 E-XEMB8 설계(user-log 115) |
 | `paper/` | CVPR author-kit 구조 논문 + 한국어 마인드맵(`mindmap.tex`), 그림 `figures/src/make_figs.py`; PDF는 `D:\tools\pdf_out\` |
 | `D:\tools\scratch_qdd\` | 로컬 임시(작업별 하위 폴더). C: 금지 |
 
