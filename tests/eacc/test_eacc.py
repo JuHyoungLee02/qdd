@@ -186,7 +186,7 @@ def test_committed_decision_and_token_vec():
 def test_plan_fixed_and_dev_only():
     p = B.plan()
     ids = [e["id"] for e in p]
-    assert len(ids) == len(set(ids)) == 38
+    assert len(ids) == len(set(ids)) == 42
     assert all(0 <= e["seed"] <= 29 for e in p)
     assert sum(e["kind"] == "on" for e in p) == 12
     assert B.plan() == p

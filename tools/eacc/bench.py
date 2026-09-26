@@ -60,7 +60,7 @@ def plan() -> list:
     for i, ph in enumerate(ON_PHASES):  # 12: 10 + 2 spare
         s = 6 + i
         out.append({"id": f"on_{i:02d}", "kind": "on", "seed": s, "task": TASKS3[i % 3], "phase": ph})
-    for kind, base, n in (("off_a", 16, 9), ("off_b", 6, 9), ("off_c", 18, 8)):
+    for kind, base, n in (("off_a", 16, 9), ("off_b", 6, 9), ("off_c", 18, 12)):
         for i in range(n):
             s = (base + i) % 30
             out.append({"id": f"{kind}_{i:02d}", "kind": kind, "seed": s, "task": TASKS3[(i + 1) % 3], "phase": None})
