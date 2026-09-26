@@ -624,5 +624,8 @@ def fig_prelim():
 
 
 if __name__ == "__main__":
-    fig_overview(); fig_model(); fig_training(); fig_m4(); fig_recovery(); fig_eval(); fig_latency(); fig_prelim()
+    # 2026-09-27 PaceNotes figure pass: overview, model and eval_protocol are drawn by make_figs_pn.py;
+    # training, recovery, latency and prelim figures were dropped from the paper (files deleted).
+    # This script now only draws the M4 figure (appendix); the other functions stay for the record.
+    fig_m4()
     print("ok")
