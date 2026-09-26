@@ -105,6 +105,22 @@ class Kinematics:
     def ik(self, pos_w, quat_w, max_dq):
         return self.pl._ik(np.asarray(pos_w, float), np.asarray(quat_w, float), max_dq)
 
+    def fk_pos(self, q7):
+        """TCP position (world) of the arm joint vector q7, first order about the measured joints: tcp + J_tcp dq
+        (the physics TCP Jacobian with the planner _ik's lever-arm correction). No joint-state write (P36: writing
+        state perturbs the contacts). Used for chunk displacements (core._chunk_vec: fk_pos(last) - fk_pos(first)),
+        where a constant offset between targets and measured joints (the gravity-sag offset) cancels."""
+        from isaaclab.utils.math import quat_apply, skew_symmetric_matrix
+        env, torch = self.pl.env, self.pl.torch
+        r = env.robot
+        jac = r.root_physx_view.get_jacobians()[:, env.ee_idx - 1, :, :][:, :, env.arm_ids]
+        off = torch.tensor([[0.0, 0.0, -env.tcp_offset]], device=env.env.device)
+        r_off = quat_apply(r.data.body_quat_w[:, env.ee_idx], off)
+        j_lin = (jac[:, 0:3, :] - torch.bmm(skew_symmetric_matrix(r_off), jac[:, 3:6, :]))[0].cpu().numpy()
+        q_now = r.data.joint_pos[0, env.arm_ids].cpu().numpy()
+        p_now, _ = self.tcp_pose()
+        return np.asarray(p_now, float) + j_lin @ (np.asarray(q7, float)[:7] - q_now)
+
 
 class AIWorkerEmbodiment:
     def __init__(self, variant: str = "standard", cameras=("cam_head", "cam_wrist_right"), render_interval: int = 3,

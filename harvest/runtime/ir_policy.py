@@ -54,7 +54,8 @@ class OursPolicy:
         with open(side, "w", encoding="utf-8") as f:
             for kind, rows in (("call", rt.calls), ("step", rt.slots_log), ("astra", rt.astra_log),
                                ("event", rt.events), ("m4", rt.ledger.log), ("chunk", rt.chunk_log),
-                               ("measure", getattr(rt, "measure_log", []))):
+                               ("measure", getattr(rt, "measure_log", [])),
+                               ("couple", _couple_rows(rt))):
                 for r in rows:
                     f.write(json.dumps({"type": kind, **_jsonable(r)}) + "\n")
         nb = write_blobs(d, getattr(rt, "blobs", {}))  # raw requests / responses / Astra images (canon §77)
@@ -73,6 +74,15 @@ class OursPolicy:
                                 "ours_blobs": os.path.join(d, "blobs")})
         with open(os.path.join(d, stem + "_summary.json"), "w", encoding="utf-8") as f:
             json.dump(_jsonable(s), f, indent=1)
+
+
+def _couple_rows(rt) -> list:
+    """The coupling driver's log (spec 2026-09-26 §16). Its rows carry their own "type" (send / answer / timeout /
+    adherence / ...), which would overwrite the sidecar type "couple": it is kept as "couple_kind"."""
+    drv = getattr(rt, "driver", None)
+    if drv is None:
+        return []
+    return [{"couple_kind": r.get("type"), **{k: v for k, v in r.items() if k != "type"}} for r in drv.log]
 
 
 def write_blobs(d: str, blobs: dict) -> int:

@@ -91,6 +91,8 @@ class PickPlaceSkill:
         self.w_open, self.w_close = GRIP_MAX_W, max(0.0, 2 * MUG_R - SQUEEZE)
         self.stage_gate = "self"  # "astra" (E-M8c K3, Gemini faithful): stage ends only on Astra's instruction
         self.goal_quat = np.array([math.cos(TOP_DOWN_YAW / 2), 0, 0, math.sin(TOP_DOWN_YAW / 2)])
+        self.irrev_gate = None  # couple.driver irrev_allowed(kind, t): two-layer gate (spec §5); None = off
+        self.speed_scale = 1.0  # couple slow down (spec §7, info_request slow_down)
 
     def reset(self, t: float, tcp_pos_w, tcp_quat_w) -> None:
         self.phase, self.stage, self.t_phase0 = "approach", "S1", t
@@ -175,16 +177,17 @@ class PickPlaceSkill:
         ph = self.dec.get("phase")
         # gripper events and stage switch: decision 'next' + code safety predicate
         if ph == "next":
-            if self.stage == "S1" and gs == "open" and M == "grasp" and reached and self.retries <= self.max_retries:
+            if (self.stage == "S1" and gs == "open" and M == "grasp" and reached and self.retries <= self.max_retries
+                    and self._gate("close", t)):
                 self.cmd_w, self.wait_until = self.w_close, t + CLOSE_WAIT_S
                 self._set_phase("close", t, "next+reached")
                 return self._cmd(t, "close", False)
             if (self.stage == "S1" and pred.get("holding(o3)") and pred.get("lifted(o3)")
-                    and self.stage_gate == "self"):
+                    and self.stage_gate == "self" and self._gate("stage", t)):
                 self.stage = "S2"
                 self._set_phase("carry", t, "next+exit_S1")
             elif (self.stage == "S2" and gs == "closed_holding" and M == "place"
-                  and (pred.get("in_contact(o3,o5)") or reached)):
+                  and (pred.get("in_contact(o3,o5)") or reached) and self._gate("release", t)):
                 self.cmd_w, self.wait_until = self.w_open, t + OPEN_WAIT_S
                 self._set_phase("open", t, "next+placed")
                 return self._cmd(t, "open", False)
@@ -199,7 +202,7 @@ class PickPlaceSkill:
             goal_w = tcp_pos_w + d  # the sub-goal in TCP space: measured TCP + remaining displacement (fresh)
             step_dir = project(goal_w - self.cmd_pos, c[0])
             n = float(np.linalg.norm(step_dir))
-            step = min(V.get(self.phase, 0.06) * self.dt, n, self.cap_left)
+            step = min(V.get(self.phase, 0.06) * self.speed_scale * self.dt, n, self.cap_left)
             if step > 0:
                 self.cmd_pos = self.cmd_pos + step_dir * (step / n)
                 self.cap_left -= step
@@ -208,6 +211,21 @@ class PickPlaceSkill:
             self.cmd_pos = np.array([np.clip(self.cmd_pos[0], *WS_X), np.clip(self.cmd_pos[1], *WS_Y),
                                      np.clip(self.cmd_pos[2], z_lo, table_z + WS_Z[1])])
         return self._cmd(t, M, allowed)
+
+    def _gate(self, kind: str, t: float) -> bool:
+        return self.irrev_gate is None or bool(self.irrev_gate(kind, t))
+
+    def nudge(self, step6, table_z: float):
+        """One tick of the Astra offset (couple.offset): the reference itself moves (the skill goes on from the shifted
+        point and M4 (b) compares the measured TCP with it); rotation turns cmd_quat (the skill slerps it back)."""
+        from ..couple.geom import quat_from_rotvec, quat_mul
+        s = np.asarray(step6, float)
+        p = self.cmd_pos + s[:3]
+        self.cmd_pos = np.array([np.clip(p[0], *WS_X), np.clip(p[1], *WS_Y),
+                                 np.clip(p[2], table_z + WS_Z[0], table_z + WS_Z[1])])
+        if np.any(s[3:]):
+            self.cmd_quat = quat_mul(quat_from_rotvec(s[3:]), self.cmd_quat)
+        return self.cmd_pos.copy(), self.cmd_quat.copy()
 
     def astra_advance(self, decision: str, t: float, pred: dict) -> str:
         """E-M8c K3 (Gemini streaming faithful variant): Astra's run_instruction / reset end the current step, applied

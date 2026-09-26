@@ -13,7 +13,8 @@ the chunk is played only while its own decisions agree with the committed ones (
 obs (dict, built by a harness adapter):
   sim_time, joint_pos (8), images {name: new frame} (only on new frames), m1 {"raw", "present"} (M1 observation,
   table frame; here the sim oracle = E0 oracle condition), kin (tcp_pose() -> (p, q) world; ik(p, q, max_dq) -> 7
-  joints), table_z, low / high (action bounds).
+  joints; optional fk_pos(q7) -> TCP position, read by the coupling's chunk-level adherence), table_z, low / high
+  (action bounds), cams (optional, the coupling overlay's camera models).
 """
 from __future__ import annotations
 
@@ -111,6 +112,15 @@ class RuntimeConfig:
     # canary needs paid API calls and is not run; Astra is mock / scripted in these runs). Logged on every call row.
     canary_id: str = "none"
     astra_canary_id: str = "none"
+    # spec 2026-09-26 Astra–VLA coupling: "off" = no stream (E-M8c heartbeat cadences as before); "serial" = one
+    # general-control Astra request in flight (canon §84 supp 2), two-layer M4, smooth offset; the heartbeat is off
+    # and the event calls mark the next stream request (plan ruling 9)
+    couple: str = "off"
+    couple_params: dict = field(default_factory=dict)  # CoupleParams overrides (logged in summary couple.params)
+    couple_budget_krw: float = 0.0  # the experiment cap from its pre-registration (spec §15)
+    couple_ledger: str = ""  # JSONL cost ledger under /data, shared by the workers of one experiment
+    couple_prices: str = ""  # the run day's price table (required with the paid API)
+    couple_run_id: str = ""
 
 
 def _pct(xs, q):
@@ -131,6 +141,17 @@ class OursRuntime:
                                         question_ids=cfg.question_ids or None)
         self.vcal = VerifyCal.load(cfg.verify_cal) if cfg.verify_cal else VerifyCal.default()
         self.rules = ProprioRules()
+        if cfg.couple not in ("off", "serial"):
+            raise ValueError(f"couple {cfg.couple!r}: off | serial (spec 2026-09-26 §16)")
+        self.couple_ledger, self.driver, self.episode = None, None, 0
+        if cfg.couple == "serial":
+            from ..couple.cost import CostLedger, PriceTable
+            if cfg.astra_mode == "api" and not (cfg.couple_prices and cfg.couple_budget_krw > 0 and cfg.couple_ledger):
+                raise ValueError("couple serial on the paid API needs couple_prices (the run day's price table), "
+                                 "couple_budget_krw > 0 and couple_ledger (canon §82 supplement, spec §15)")
+            prices = PriceTable.load(cfg.couple_prices) if cfg.couple_prices else PriceTable.free()
+            self.couple_ledger = CostLedger(cfg.couple_ledger or None, cfg.couple_budget_krw, prices,
+                                            run_id=cfg.couple_run_id)
 
     # ------------------------------------------------------------------ lifecycle
     def reset(self) -> None:
@@ -168,8 +189,24 @@ class OursRuntime:
                               "critic_alarms": 0, "hard_events": 0, "verify_outputs": 0}
         self._jp_prev, self._t_prev, self._jp_last, self._t_jp = None, None, None, None
         self._trace = deque(maxlen=40)
+        if self.driver is not None:
+            self.driver.close()  # the last episode's request in flight: charged as unanswered, never applied
+        self.driver, self.couple_out, self._off_hist = None, None, []
+        self._bias_q, self._chunk_played = np.zeros(7), False
+        self.episode += 1
+        if self.cfg.couple == "serial":
+            from ..couple.driver import CoupleDriver
+            from ..couple.params import CoupleParams
+            if self.astra is None:
+                raise ValueError("couple serial needs an Astra client (api, mock or local)")
+            self.driver = CoupleDriver(CoupleParams(**self.cfg.couple_params), self.astra, self.couple_ledger,
+                                       self._submit_couple, self.instruction, episode=self.episode)
+            self.hb = HeartbeatScheduler(self.cfg.hb_N_s, self.cfg.hb_timeout_s, mode="K0")
+            self.skill.irrev_gate = self._irrev_gate
 
     def close(self) -> None:
+        if getattr(self, "driver", None) is not None:
+            self.driver.close()
         self.pool.shutdown(wait=False, cancel_futures=True)
         if hasattr(self.model, "close"):
             self.model.close()
@@ -179,6 +216,69 @@ class OursRuntime:
         if self.cfg.clock == "wall":
             return self.wall() - self.t0_wall
         return float(obs["sim_time"])
+
+    def _t1(self) -> dict:
+        return values(self.meas_last) if self.meas_last is not None else {}
+
+    def _submit_couple(self, now, fn, fixed_latency, meta):
+        self.q.submit(now, self.pool.submit(fn), fixed_latency=fixed_latency, meta=meta)
+
+    def _irrev_gate(self, kind: str, t: float) -> bool:
+        return self.driver.irrev_allowed(kind, t, self._t1(), self.near_now)
+
+    def _event(self, now: float, name: str) -> None:
+        """An event call (canon §45): pulls the heartbeat forward (off in couple mode) and marks the next coupling
+        request (spec §16: the request in flight is not cancelled)."""
+        self.hb.advance(now)
+        if self.driver is not None:
+            self.driver.flag(name, now)
+
+    def _chunk_vec(self, k, dec):
+        """Chunk-level adherence input (canon §84 supplements 4-5, controller ruling C3): the executed motion of step
+        k's expert chunk = TCP(last joint target) - TCP(first joint target), arm joints only, the raw chunk values
+        (no coupling bias). None on the modular backend (skills execute the decision itself), when step k has no
+        chunk that will be played (missing, or conditioned on other decisions -> held), when the kinematics service
+        has no fk_pos (FK of an arbitrary joint vector), or when the displacement is below 0.1 mm."""
+        if self.cfg.backend != "fused":
+            return None
+        c, kin = self.chunks.get(k), getattr(self, "_kin_last", None)
+        fk = getattr(kin, "fk_pos", None)
+        if c is None or not dec or c["dec"] != dec or fk is None:
+            return None
+        ch = np.asarray(c["chunk"], float)
+        d = np.asarray(fk(ch[-1, :7]), float) - np.asarray(fk(ch[0, :7]), float)
+        return d if float(np.linalg.norm(d)) >= 1e-4 else None
+
+    def _couple_fused(self, a, now, kin, tcp_p):
+        """Fused path: the offset moved since the current chunk's observation is added as a joint bias (IK difference
+        at the measured tip; the chunk already contains earlier shifts, plan ruling 5). A held action (no chunk played
+        this tick = last_a) already carries last tick's bias, so that bias is taken out first (no double count). A
+        gripper transition in the chunk is held unless the two layers agree (spec §5)."""
+        from ..couple.geom import quat_from_rotvec, quat_mul
+        a = np.asarray(a, float).copy()
+        if not self._chunk_played:
+            a[:7] = a[:7] - self._bias_q
+        st = self.couple_out.step6 if self.couple_out is not None else None
+        if st is not None and np.any(st):
+            self._off_hist.append((now, st.copy()))
+        c = self.chunks.get(self.cur_k)
+        t0 = c["t_state"] if c is not None else -math.inf
+        self._off_hist = [(t, s) for t, s in self._off_hist if t > t0]
+        self._bias_q = np.zeros(7)
+        if self._off_hist:
+            b = np.sum([s for _, s in self._off_hist], axis=0)
+            p0, q0 = kin.tcp_pose()
+            q_to = kin.ik(np.asarray(p0, float) + b[:3], quat_mul(quat_from_rotvec(b[3:]), q0), 0.2)
+            q_at = kin.ik(np.asarray(p0, float), q0, 0.2)
+            self._bias_q = (np.asarray(q_to, float) - np.asarray(q_at, float))[:7]
+            a[:7] = a[:7] + self._bias_q
+        w_prev = float(self.last_a[7]) if self.last_a is not None else float(a[7])
+        t1 = self._t1()
+        kind = ("close" if a[7] < w_prev - 0.005 and t1.get("gripper_open") else
+                "release" if a[7] > w_prev + 0.005 and t1.get("holding_t") else None)
+        if kind is not None and not self.driver.irrev_allowed(kind, now, t1, self.near_now):
+            a[7] = w_prev
+        return a
 
     def _m1(self, obs, now):
         raw, present = obs["m1"]["raw"], obs["m1"]["present"]
@@ -278,6 +378,11 @@ class OursRuntime:
     # ------------------------------------------------------------------ deliveries
     def _deliver(self, r, now):
         m = r["meta"]
+        if m["kind"] == "couple":
+            self.driver.on_delivery(r, now, self._t1())
+            self.blobs.update(self.driver.blobs)
+            self.driver.blobs.clear()
+            return
         if m["kind"] == "astra":
             return self._deliver_hb(r, now)
         if m["kind"] == "chunk":
@@ -333,7 +438,7 @@ class OursRuntime:
         if cr["alarm"]:  # M7 FAIL stand-in (M9 recovery not built): log + Astra heartbeat now (T_fail rule)
             self.measure_stats["critic_alarms"] += 1
             self.events.append({"t": round(now, 4), "event": "m7_critic_alarm", **cr})
-            self.hb.advance(now)
+            self._event(now, "m7_critic_alarm")
         keep = []
         meas = measure(None, logits, self.vcal, self.rules)
         for p in self.pending_t2:
@@ -385,7 +490,7 @@ class OursRuntime:
             if self.j5_streak[q] >= self.cfg.j5_escalate_after:
                 self.j5_streak[q] = 0
                 self.j5_stats["escalated"] += 1
-                self.hb.advance(now)
+                self._event(now, "j5_escalate")
                 self.events.append({"t": round(now, 4), "event": "j5_escalate", "question": q, "set": sorted(S)})
                 out[q] = "escalate"
             else:
@@ -436,6 +541,7 @@ class OursRuntime:
         for name, img in (obs.get("images") or {}).items():
             self.frames[name], self.frame_t[name] = img, now
         kin, tz = obs["kin"], obs["table_z"]
+        self._kin_last = kin  # _chunk_vec (decision-step boundary) reads its fk_pos
         tcp_p, tcp_q = kin.tcp_pose()
         self._m1_last = (raw, present, pred, support)
         if self.cur_k is None and self.skill.__dict__.get("cmd_pos") is None:
@@ -472,7 +578,7 @@ class OursRuntime:
             self.events.append({"t": round(now, 4), "event": "t_sub", "stage": self.skill.stage,
                                 "done": self.skill.phase == "done"})
         self._stage_seen = st
-        kind = self.hb.next_kind(now) if self.astra is not None else None
+        kind = self.hb.next_kind(now) if self.astra is not None and self.driver is None else None
         if kind is not None:
             self._submit_hb(now, pred_exec, kind)
         # deliveries (clock) -> M4 (near/contact zone now, canon §7: ordinal tau 0 near contact, E §4.12 C5)
@@ -507,6 +613,12 @@ class OursRuntime:
             dec = {q: c for q in DECISION_QUESTIONS if (c := self.ledger.decision(q, self.cur_k, now)[0]) is not None}
             if dec != self.skill.dec:
                 self.skill.redecide(dec)
+        if self.driver is not None:
+            from ..couple.driver import TickView
+            self.couple_out = self.driver.tick(TickView(
+                now=now, dt=self.dt, tcp_p=np.asarray(tcp_p, float), phase=self.skill.phase, stage=self.skill.stage,
+                near=self.near_now, committed={q: c for q, c in self.skill.dec.items() if c is not None},
+                frames=self.frames, cams=obs.get("cams"), t1=self._t1(), motion=None))
         if self.cfg.backend == "fused":
             self._maybe_request_chunk(now, obs)
         # executor (its expected_after checks read the measured predicates, not the privileged state)
@@ -553,11 +665,11 @@ class OursRuntime:
             if hev is not None:  # M7 hard channel (T1 only): FAIL stand-in -> Astra now (M9 recovery not built)
                 self.measure_stats["hard_events"] += 1
                 self.events.append({"t": round(now, 4), "event": "m7_hard_t1", **hev})
-                self.hb.advance(now)
+                self._event(now, "m7_hard_t1")
             sig = self.ledger.on_step_executed(prev, out, now)
             self.b_last = {"ds": prev, "outcome": out}
             if out == "CONTRADICT":  # an existing event call (canon §45): pulls the next Astra call forward
-                self.hb.advance(now)
+                self._event(now, "b_contradict")
             entry.update(prev_outcome=out, prev_residual_mm=round(resid * 1e3, 1), signals=sig)
             self.hold_step = sig["hold"]
             if out in ("DEVIATE", "CONTRADICT") and self.cfg.backend != "fused":
@@ -569,6 +681,8 @@ class OursRuntime:
         decs = self.ledger.mark_executed(k, now)
         dec = {} if self.hold_step else {q: c for q, (c, st) in decs.items() if c is not None}
         self.skill.begin_slot(k, dec)
+        if self.driver is not None:
+            self.driver.on_step(dec, entry.get("prev_outcome", "OK"), now, chunk_vec=self._chunk_vec(k, dec))
         self.step_phase[k] = self.skill.phase
         entry.update(decisions={q: list(v) for q, v in decs.items()}, hold=self.hold_step,
                      phase=self.skill.phase, stage=self.skill.stage)
@@ -593,7 +707,11 @@ class OursRuntime:
             self.n_stop_ticks = getattr(self, "n_stop_ticks", 0) + 1  # C0: the arm waits for the answer
             a = self.last_a if self.last_a is not None else np.concatenate([q_meas[:7], [q_meas[7]]])
             return np.clip(a, obs["low"], obs["high"])
+        if self.couple_out is not None:
+            self.skill.speed_scale = self.couple_out.speed_scale
         cmd = self.skill.tick(now, raw, pred, tcp_p, tz)
+        if self.couple_out is not None and self.cfg.backend != "fused" and np.any(self.couple_out.step6):
+            cmd.pos_w, cmd.quat_w = self.skill.nudge(self.couple_out.step6, tz)
         gripped = any("gripper" in c and "o3" in c for c in raw.get("contacts", []))
         self._trace.append((round(now, 3), self.skill.phase, round(float(raw["grip"]["w"]), 4),
                             round(float(raw["grip"].get("effort", 0.0)), 3), bool(gripped),
@@ -602,11 +720,13 @@ class OursRuntime:
             if e.get("event") in ("object_lost", "grasp_miss"):  # diagnostics: the last 0.4 s of grip signals
                 e["trace"] = [list(x) for x in self._trace]
                 e["trace_cols"] = ["t", "phase", "w", "effort", "gripped", "holding", "gripper_open"]
-                self.hb.advance(now)  # T_fail stand-in (M9 recovery = the skill retry): Astra at the next free slot
+                self._event(now, e["event"])  # T_fail stand-in (M9 recovery = the skill retry): Astra next free slot
             self.events.append(e)
         self.prev_cmd = self.skill.cmd_pos.copy()
         if self.cfg.backend == "fused":
             a = self._play_chunk(now, q_meas)
+            if self.driver is not None:
+                a = self._couple_fused(a, now, kin, tcp_p)
         else:
             q7 = kin.ik(cmd.pos_w, cmd.quat_w, self.cfg.ik_max_dq)
             tgt = {"approach": "o3", "descend": "o3", "close": "o3", "lift": "o3"}.get(self.skill.phase, "o5")
@@ -667,11 +787,15 @@ class OursRuntime:
         """Play the chunk of the current step only if it was conditioned on the decisions being executed; else hold
         the last action (never a stop)."""
         from .fused_action import chunk_value
+        self._chunk_played = False
         c = self.chunks.get(self.cur_k)
         dec = {q: v for q, v in self.skill.dec.items() if v is not None}
         if c is not None and c["dec"] == dec and dec:
             self.chunk_stats["played"] += 1
-            return chunk_value(c["chunk"], c["dt"], c["t_state"], now)
+            self._chunk_played = True
+            scale = self.couple_out.speed_scale if self.couple_out is not None else 1.0
+            t_play = now if scale == 1.0 else c["t_state"] + (now - c["t_state"]) * scale  # off: exactly as before
+            return chunk_value(c["chunk"], c["dt"], c["t_state"], t_play)
         if c is not None:
             self.chunk_stats["stale_dec"] += 1
         self.chunk_stats["held"] += 1
@@ -716,4 +840,5 @@ class OursRuntime:
                 "j5": dict(self.j5_stats) if self.cal is not None else None,
                 "measure": {**self.measure_stats, "verify_calibrated": self.vcal.calibrated,
                             "verify_cal": self.cfg.verify_cal or "default (uncalibrated)",
-                            "critic_thr": self.vcal.critic_thr}}
+                            "critic_thr": self.vcal.critic_thr},
+                "couple": self.driver.summary() if self.driver is not None else None}

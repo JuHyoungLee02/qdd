@@ -15,6 +15,9 @@ class Kin:
     def ik(self, pos, quat, max_dq):
         return np.r_[pos, 0, 0, 0, 0]  # first three "joints" encode the TCP target (perfect tracking)
 
+    def fk_pos(self, q):
+        return np.asarray(q, float)[:3].copy()  # the inverse of ik above (TCP position of a joint vector)
+
 
 class FakeWorld:
     """TCP follows the command exactly; the mug is grasped when the closed pads are at the grasp height."""
