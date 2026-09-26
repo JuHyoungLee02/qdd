@@ -41,7 +41,7 @@ def test_counts_and_same_states(built):
 def test_truth_answers_score_zero(built):
     root, _ = built
     for arm in DS.ARMS:
-        sc = [M.score(r, r["answer"], arm) for r in _rows(root, arm) if r["kind"] == "control"]
+        sc = [M.score(r, r["answer"], arm) for r in _rows(root, arm) if r["kind"] == "control" and not r["label_missing"]]
         assert all(s["valid"] and s["action_ok"] for s in sc), arm
         xy = [s["approach_xy_mm"] for s in sc if s["approach_xy_mm"] is not None]
         assert xy and max(xy) < 12, (arm, xy)

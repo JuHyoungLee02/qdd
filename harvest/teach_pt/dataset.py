@@ -69,13 +69,18 @@ def load_rows(ep_dir: str, split: str) -> list:
     return rows
 
 
-def arm_row(r: dict, arm: str):
+def arm_row(r: dict, arm: str, keep_unlabelled: bool = False):
+    """keep_unlabelled (evaluation sets only): a state without this arm's label keeps the xyz label as its answer
+    (flag label_missing) so every arm is scored on ALL states (approach / carry errors use the simulator objects)."""
     ans = r.get(ANSWER_KEY[arm])
-    if ans is None:
-        return None
+    missing = ans is None
+    if missing:
+        if not keep_unlabelled:
+            return None
+        ans = r["answer"]
     c = r["call_dir"]
     return dict(r, kind="control", arm=arm, prompt_path=os.path.join(c, PROMPT_FILE[arm]),
-                images=[os.path.join(c, HEAD_FILE[arm]), os.path.join(c, IMAGE_FILES[1])], answer=ans,
+                images=[os.path.join(c, HEAD_FILE[arm]), os.path.join(c, IMAGE_FILES[1])], answer=ans, label_missing=missing,
                 xyz_answer=r["answer"])
 
 
@@ -135,7 +140,7 @@ def build(root: str, out_dir: str, split: str, arms=ARMS, seed: int = 0, repeats
     counts = {"episodes": len(episode_dirs(root)), "rows_labelled": len(base), "arms": {}}
     for arm in arms:
         rng = np.random.default_rng([seed, ARMS.index(arm)])
-        ctrl = [x for x in (arm_row(r, arm) for r in base) if x is not None]
+        ctrl = [x for x in (arm_row(r, arm, keep_unlabelled=split != "train") for r in base) if x is not None]
         rows = []
         for r in ctrl:
             rows += [r] * (repeat_of(r) if repeats else 1)
@@ -144,6 +149,7 @@ def build(root: str, out_dir: str, split: str, arms=ARMS, seed: int = 0, repeats
             for r in rows + auxr:
                 f.write(json.dumps(r) + "\n")
         counts["arms"][arm] = {"control_unique": len(ctrl), "dropped": len(base) - len(ctrl),
+                               "label_missing": sum(bool(r["label_missing"]) for r in ctrl),
                                "control_rows": len(rows), "aux_rows": len(auxr), "total": len(rows) + len(auxr),
                                "by_step": dict(Counter(r["step"] for r in ctrl)),
                                "by_aux_kind": dict(Counter(r["aux_kind"] for r in auxr)),
