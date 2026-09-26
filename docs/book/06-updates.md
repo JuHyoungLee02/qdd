@@ -118,3 +118,4 @@
 | 2026-09-26 15:44 | — | 단계 B 재개 시험이 segment_dropout 을 명시적으로 선언(Task 12 수정 bce0bd8 이 넣은 --segment-dropout 기본값 0.3·SAVED_BEFORE 0.0 뒤, 저장 인자에 키가 없던 최소 픽스처가 무조건 거부돼 원래 검증을 가림 — 파드 전용 실패): test_resume_refuses_a_changed_training_setting 의 base 에 segment_dropout=0.3 명시, 옛 체크포인트(키 없음)가 0.3 재개는 거부·0.0 재개는 통과하는 시험 추가; stageb_train.py 재개 로직 무수정 | plan 2026-09-26 최종 검토, 이 줄과 같은 커밋 |
 | 2026-09-26 15:5x | 03·04 | 좌표계 없는 공개 데이터 채택 추천안(ul 124): 03 §97 보충 3 행, 04 저장소 표에 조사 문서 행 | [research/no_frame_data_methods](../research/no_frame_data_methods_2026-09-27.md), 이 줄과 같은 커밋 |
 | 2026-09-27 16:2x | 03 | 최종 상위 35B 확정(8B는 임시 대리) + 상위↔VLA 의도 공유 프로토콜 필수(ul 125, 정본 §96 보충 2): 03 §96 보충 2 행 추가 | 이 줄과 같은 커밋 |
+| 2026-09-26 16:4x | 01·03·04 | 결합 학습 계획(ul 127·128): 01 `[예정]` 행 VLA-R3·E-VLA-E2E·E-TEACH-L8C·E-COUPLE-8B·E-TEACH-35C, 03 §96 보충 3·4 행, 04 계획 문서 행 | [research/coupled_training_plan](../research/coupled_training_plan_2026-09-27.md), 이 줄과 같은 커밋 |
