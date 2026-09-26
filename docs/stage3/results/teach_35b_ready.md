@@ -114,7 +114,7 @@
 
 ## 7. 바로 시작하는 방법
 ```
-# 코드 고정 사본(커밋 뒤): git archive <커밋> | tar x -C /data/harvest/code_teach_35b_<커밋>
+# 코드 고정 사본: /data/harvest/code_teach_35b_1e4ed20 (git archive LF, 준비 커밋) — 코드가 바뀌면 새 커밋으로 새 사본
 bash tools/teach_35b/train.sh /data/harvest/code_teach_35b_<커밋> 0 /data/harvest/out/teach_l8/data/train.jsonl /data/harvest/out/teach_35b/run_l8
 #   N장 DDP: 두 번째 인자 0,1 (전역 배치 = 4 x ACCUM x N — 같은 전역 16이면 --accum 2(2장)·1(4장))
 #   다른 데이터: 세 번째 인자만 바꿈(E-OPEN8·E-XEMB8·결합 행 모두 같은 JSONL 형식)
@@ -133,5 +133,6 @@ bash tools/teach_35b/vllm.sh <gpu> <merged> q35_<name> <port> 0.85              
 - 규칙 이탈(P03):
   - (1) 로컬에서 빈 heredoc + `python -`를 한 번 실행해 멈춤 → 작업 중지(효과 없음).
   - (2) 파드 크기 확인 명령 끝에 `python -c "print(1)"`이 한 번 섞였다(효과 없음).
-  - (3) TDD: 시험을 코드보다 먼저 썼지만 실패를 먼저 확인하지 않고 코드를 쓴 뒤 한 번에 돌렸다(31개 통과).
+  - (3) 준비 커밋 `1e4ed20`의 메시지를 로컬 heredoc(`git commit -F-`)으로 넘겼다(내용 영향 없음).
+  - (4) TDD: 시험을 코드보다 먼저 썼지만 실패를 먼저 확인하지 않고 코드를 쓴 뒤 한 번에 돌렸다(31개 통과).
 - 영샷 thinking 켬은 20개 계획을 8개로 줄였다(모두 한도까지 잘림 — 더 재도 결론이 같음).
