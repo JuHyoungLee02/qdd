@@ -19,9 +19,9 @@
 | 병합(N94 주의 반영) | 생성 끝난 뒤 `gen check`로 18폴더 전부 다시 병합(21:57:32–22:32:29Z; 폴더별 합본 파일 22:01–22:32Z). **18/18 폴더에서 병합 행 수 = 유효 편 n_rows 합, 행·라벨 시드 집합 = 유효 시드 집합, 계획 항목 누락 0**(§5) |
 | 결정성(새 빌드) | 파일럿 편 3개를 새 프로세스·다른 편을 먼저 돈 프로세스에서 다시 녹화 → **3/3 항목, 비교 6쌍 모두 [→ 정정 2026-09-25 23:58 UTC, R7 35회차 N175: 8 → 6] 틱별 물리 배열 비트 동일**(§3.3) |
 | 단계 B 로더(`stageb_train train --data r2 --reload-check`) | 18폴더 전부 적재 → **표본 1,495,348(= 병합 행) · train 1,423,354 / val 71,994**, hz 30 · H 15, 3스텝 학습 뒤 저장→재적재 **행동 차 0.0, 평가 동일**(§7) |
-| LeRobot v2.1 | (variant, task)별 6개 데이터셋 — `[결과 전]`(확인 2026-09-25 23:27 UTC, 내보내기 실행 중; §6) |
+| LeRobot v2.1 | (variant, task)별 6개 데이터셋, **5,126편·1,500,474프레임(= 유효 원본), verify 6/6 통과**(오류 0, PSNR 최소 32.92 dB, lerobot 0.3.3 `LeRobotDataset` 적재), 2026-09-26 00:49:55Z 끝(§6) |
 | 벽시계 | 11:16:17Z(파일럿 시작) → 21:56:28Z(마지막 편) = **10 h 40 min**, Isaac 프로세스 누적 52.8 h |
-| 용량 | 원본 **107.9 GB**(`du -sb`), LeRobot `[결과 전]`(§6) |
+| 용량 | 원본 **107.9 GB**, LeRobot **22.13 GB**(둘 다 `du -sb`; §6) |
 
 ## 2. 경과
 
@@ -142,7 +142,21 @@
 
 ## 6. LeRobot v2.1 내보내기
 
-`[결과 전]` (확인 2026-09-25 23:27 UTC): `export_all.sh`가 22:36Z부터 (variant, task)별 6개를 병렬로 내보내는 중 — 데이터셋마다 유효 편만(`valid_for_training`), 기대 편 수 standard/dr × mug_tray 991·mug_marker 987·bottle_tray 591/579. 23:27Z에 381–453편씩 끝(약 9편/분/데이터셋, 원본 DEV 판 4.1 s/편보다 느림 — 6개 동시 + 로더 확인 적재와 CPU 공유). 각 내보내기 뒤 `lerobot_export verify`(행 수·timestamp·영상 프레임 수·PSNR·npz 행동 일치 + lerobot 0.3.3 `LeRobotDataset` 적재)가 이어서 돈다. 편 수·프레임·용량·verify 결과는 끝난 뒤 이 절에 적는다. 그 전에는 LeRobot 판을 쓰지 않는다(단계 B 로더는 원본 폴더를 읽으므로 학습 준비와는 무관).
+`export_all.sh`가 (variant, task)별 6개를 병렬로 내보내고 각각 `lerobot_export verify`(행 수·timestamp = k/30·영상 프레임 수와 pts·크기, 편마다 3프레임 × 2카메라 원본 JPEG 대비 PSNR, npz `action`과 비트 일치, 그리고 lerobot 0.3.3 `LeRobotDataset(root=…, video_backend="pyav")` 실제 적재)를 이어서 돌렸다. 유효 편만(`valid_for_training`) 내보낸다. 수치 출처: 파드 `/data/harvest/r2train/logs/export/<name>.{export,verify}.log`의 `EXPORT`·`VERIFY` 줄, `times.log`, `final/lerobot_du.txt`(2026-09-26 00:51 UTC 확인).
+
+| 데이터셋 (`/data/harvest/r2/train_lerobot/…`) | 편 | 프레임 | 용량(`du -sb`) | 내보내기 s | verify s | verify | PSNR 최소 |
+|---|---|---|---|---|---|---|---|
+| `standard_mug_tray` | 991 | 288,003 | 3.17 GB | 6,550 | 219 | pass, 오류 0 | 38.38 dB |
+| `standard_mug_marker` | 987 | 288,565 | 3.26 GB | 6,579 | 232 | pass, 오류 0 | 37.86 dB |
+| `standard_bottle_tray` | 591 | 175,471 | 1.95 GB | 4,129 | 159 | pass, 오류 0 | 39.06 dB |
+| `dr_mug_tray` | 991 | 288,001 | 5.28 GB | 7,648 | 330 | pass, 오류 0 | 33.33 dB |
+| `dr_mug_marker` | 987 | 288,656 | 5.37 GB | 7,660 | 327 | pass, 오류 0 | 32.92 dB |
+| `dr_bottle_tray` | 579 | 171,778 | 3.11 GB | 4,551 | 197 | pass, 오류 0 | 33.24 dB |
+| **합** | **5,126** | **1,500,474** | **22.13 GB** | | | **6/6** | **32.92 dB** |
+
+- 편·프레임 합이 원본 유효 편(5,126편, 1,500,474프레임, §4.2)과 정확히 같다. 데이터셋마다 과제 1개(지시문), `LeRobotDataset`이 편 수·프레임 수·fps 30을 그대로 읽고, 머리 영상 3×376×672·손목 3×240×424, 첫 표본 `action`이 parquet와 같다(`action0_equal` 참).
+- 시각: 6개 동시 시작 2026-09-25 22:36:48Z(첫 끝난 `standard_bottle_tray`의 내보내기 끝 23:45:37Z − 4,129 s), 마지막 verify 끝 **2026-09-26 00:49:55Z**(`times.log` ALL DONE) = 2 h 13 min. 편당 6.6–7.9 s(6개 동시 + 로더 확인 적재와 CPU 공유; DEV 단독 4.1 s/편).
+- 용량: dr는 무작위 재질로 영상이 커서 편당 약 5.4 MB, standard는 약 3.3 MB(DEV 판 4.4 MB/편과 같은 범위).
 
 - 방식: 내보내기 도구는 `<src>/*/*/*/ep*.meta.json`을 훑으므로, 데이터셋마다 보기 루트 `/data/harvest/r2/train_views/<variant>_<task>/<variant>/<task>`(원본 과제 폴더로의 심볼릭 링크)를 만들어 `--src`로 준다 — 코드 변경 없음. 결과 `/data/harvest/r2/train_lerobot/<variant>_<task>/`(meta/info.json v2.1·fps 30·`r2_episodes.jsonl`로 원본 추적), 로그 `/data/harvest/r2train/logs/export/`.
 

@@ -8,7 +8,6 @@
 
 ## 0. 진행 중 작업 (이 절만 진행 상태를 적는다 — 책 P69; 각 줄에 확인 시각 UTC)
 
-- **R2_TRAIN LeRobot 내보내기** (확인 2026-09-25 23:27 UTC, 파드 `ls /data/harvest/r2/train_lerobot/*/data/chunk-000`): `export_all.sh` 6개 병렬 실행 중(22:36Z 시작, 데이터셋마다 381–453편 끝 / 기대 579–991편, 이어서 verify) — 끝나고 verify하기 전에는 LeRobot 판을 쓰지 않는다. 원본 R2_TRAIN(단계 B `--pool` 폴더)은 끝(`docs/stage3/results/r2_train_gen.md`).
 - **R7** (확인 2026-09-26 00:46 UTC): **E2E 준비 기준점 도달** — 36·37회차 연속 무결(대상 ffe335c·3d4738a), 태그 `stage3-e2e-ready` = 3d4738a. 이후 코드 변경은 새 회차로 검토한다(기준점은 태그로 고정). 태그 뒤 할 일: 검증기 약점 묶음 TDD(N131·N132·N142·N143·N154·N165·N190·N193·N210), 결합 설계 구현 계획 실행(subagent-driven), 논문 N192.
 - **E-MA2** (확인 2026-09-25 23:46 UTC, E-MA2 에이전트): 사전 등록 `fde4f6a`(`docs/stage3/prereg_ma2.md`), 본 실행 23:33:49Z 시작 — 파드 GPU 2 c0 학습(다음 c2 학습 → c2 평가 → 지연)·GPU 3 c1 학습(다음 c0·c1 평가), 드라이버 `/data/harvest/logs/ma2/run_ma2.sh`. 관문: 데이터 수 151,870 = 학습 144,562 + 검증 7,308, 명령 준 표본 75,895(50.0 %)·빠짐 0, step 500 NaN 없음·검증 dec 5.37→0.41(c0)·5.09→0.34(c1), 1.17 s/스텝(예상 안). 결과 전에는 `/data/harvest/ckpt/ma2`를 쓰지 않는다.
 
