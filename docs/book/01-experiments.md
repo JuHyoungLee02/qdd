@@ -104,3 +104,11 @@
 | ID | 질문 | 등록 | 데이터·산출 | 결과 (실측) | 판정 → 바뀐 결정 | 상태 |
 |---|---|---|---|---|---|---|
 | E-VLA-solo | E-SR1c C1 VLA 단독이 폐루프에서 의미가 있나, 느린 재생(0.75·0.5배)이 지나침·맴돌기를 줄이고 성공을 늘리나(ul 107) | [P/prereg_vla_solo](../stage3/prereg_vla_solo.md) 2026-09-26T09:44:01Z(`d752509`), 변경 없음 | 메인 GPU 3, DEV 0–5 × standard·dr × 7팔 84편, `H/out/vla_solo/`, 진단 [R/vla_alone_diag](../stage3/results/vla_alone_diag.md) | VLA 5팔 모두 0/12(계획기 규칙 12/12, 제자리 0/12); C5 영구 hold 8/12 대 C3 0/12, C3 들기 이상 10–11/12; 지나침 87.7 → 52.9 → 17.9 mm(1.0·0.75·0.5배) ([R/vla_solo](../stage3/results/vla_solo.md)) | Q1 NOT_MEANINGFUL·Q2 NOT_ADOPTED·Q3 CONFIRMED → 1.0배 유지, 유료 E-Couple 금지 유지, 런타임 교착 수정 필수 | 끝 |
+
+## 추가: 다양한 데이터 필수(ul 116) (파일 끝에 이어붙임 — 원래 위치는 §D 표)
+
+| ID | 질문 | 등록 | 결과 | 상태 |
+|---|---|---|---|---|
+| E-XEMB8 (개정) | 같은 계산량에서 다양한 데이터를 섞으면 DEV를 해치지 않고(≤ A × 1.1, 누수 0) OOD-H·O·D 접근 xy 오차가 줄어드나(≤ A × 0.8); 팔 A 자체만(L8)·B + 공개 인식 QA·D + 공개 C′·E 다양화 자체 + B + D·(선택) E′ 다양화 자체만, 같은 스텝·표본 수(에폭당 6,521), Qwen3-VL-8B LoRA | 설계 [docs/research/diversity_plan_2026-09-26.md](../research/diversity_plan_2026-09-26.md) 4절(초안 [cross_embodiment](../research/cross_embodiment_data_use_2026-09-26.md) 5절을 대체, 등록 전 — `P/prereg_xemb8.md` 예정) | — (L8 1단계 결과 뒤; 정본 §97 보충 1) | `[예정]` |
+| 시뮬 다양화 생성기 | 탁자 높이(목표 ±10–15 cm, 관문 G-H: 시야 ∩ 도달 x 폭 ≥ 8 cm·깨끗한 참값 ≥ 0.8)·크기·색, MolmoSpaces 물체(참값 3회 중 2회 선별), 방해물 0–6·혼동체, 받침 `support_z`, 조명·질감 확장, 카메라 장착 흔들림(머리 각도 고정), 새 과제 4; 기본 경로 바이트 동일 | 같은 문서 1절 | — (개발 약 6–8일 + 렌더 약 10–12 프로세스-h) | `[예정]` |
+| OOD 평가 세트 | OOD-H(높이)·OOD-O(물체 범주 20 % 보류)·OOD-D(test 풀 방해물·4–6개·혼동체)·OOD-X(공개 기체·집·과제 보류, C′는 기체 통째로) — 보호 분할 `ood` 70000–70999, 학습 금지, 자산 목록 선커밋 | 같은 문서 3절 | — | `[예정]` |
