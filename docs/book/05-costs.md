@@ -54,3 +54,4 @@
 | MAR-real 준비(Molmo2-ER 포인팅 10,834회, 추론만) + MAR2D 시뮬 파일럿(중단) | 메인 0(포인팅·Isaac) + x2 1(Isaac 렌더 시험) | ≈ 0.56 GPU-h(포인팅 0.37: 일괄 시험 05:38–05:46 + 본 05:46–06:01; Isaac 약 0.19: 메인 0 05:22–05:30·x2 1 05:22–05:27) | [molmoact_real_readiness](../stage3/molmoact_real_readiness.md) 7절 |
 | R2_TRAIN 생성 | 0·1(렌더) + 2(로더 확인) | ≈ 21.3 GPU-h(21.34; GPU 0·1 각 11:16–21:56 ≈ 10.7 h 점유, 동시 Isaac 최대 5 = 누적 52.8 프로세스-시간, 사용률 20–50 % `[미검증]` — 저장된 로그에 없음) [→ 정정 2026-09-25 23:58 UTC, R7 35회차 N178·N179] + GPU 2 약 0.2 h(로더 확인 2회); 첫 파일럿(6b013ac, 폐기) GPU 1 약 0.7 h 별도 | [R/r2_train_gen](../stage3/results/r2_train_gen.md) 8절 |
 | R7 순회 | 1(Isaac 한 프로세스) | 회차당 폐루프 한 판 | `R/r7_cycle*.md` |
+| E-MAR-real 요인 A(궤적 보조 학습·평가) | 메인 0 + x2 0·1 | ≈ 3.6 GPU-h(메인 GPU 0 1.55 h + x2 GPU 0·1 2.05 h) | [R/marr](../stage3/results/marr.md) |

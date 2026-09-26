@@ -87,3 +87,9 @@
 | 풀 재라벨 | 29편 886행 | — | `hard_reset=False`로 재라벨 또는 풀·라벨 재생성(R2_TRAIN 뒤 결정) | `[예정]` |
 
 설계 문서: [결합 설계](../superpowers/specs/2026-09-26-astra-vla-coupling-design.md) · [구현 계획](../superpowers/plans/2026-09-26-astra-vla-coupling.md) · 연구 [molmoact](../research/molmoact_deepdive_2026-09-26.md) · [astra_role](../research/astra_role_2026-09-25.md) · [hypothesis_short_window](../research/hypothesis_short_window_2026-09-25.md) · [temporal_context](../research/temporal_context_2026-09-25.md) · [steering_representation](../research/steering_representation_2026-09-25.md).
+
+## 추가: E-MAR-real (파일 끝에 이어붙임 — 원래 위치는 §D 표, 다른 에이전트의 미커밋 편집으로 그 자리에 못 넣음)
+
+| ID | 질문 | 등록 | 결과 | 상태 |
+|---|---|---|---|---|
+| E-MAR-real 요인 A | R2 궤적 보조를 실데이터(S-E2E RB2) `trace5-point@v1`로: Molmo2-ER 포인팅 + 거르개 v2 라벨로 학습한 MolmoAct 2D 궤적 보조가 결정 정확도를 올리는가 | [P/prereg_marr](../stage3/prereg_marr.md) `7245787` + 변경 1 `3e2f5f6` | 검증 1,799: 합동 **+0.0047 [−0.0006, +0.0103]**(문턱 +0.02 미달, 하한 ≤ 0), 전이 +0.0026, RB2 라벨 행 −0.003 [−0.017, +0.011]; aux 궤적 오차 62 px(평균-궤적 기준선 145 px) — 궤적 자체는 배웠으나 결정 정확도로 전이 안 됨; 준수 불변(A_xy 0.341 대 C0 0.340) → **불채택**: 단계 B 레시피에 안 넣음; 실데이터 MolmoAct 이식은 대체 경로 시연 수집 뒤 E-MAR-S로만 재등록, O(이력 덧그림)는 보류(§84 보충 1: 일반화 근거 아님); ≈ 3.6 GPU-h(메인 GPU 0 1.55 h + x2 GPU 0·1 2.05 h), 유료 0 ([R/marr](../stage3/results/marr.md)) | 끝 |

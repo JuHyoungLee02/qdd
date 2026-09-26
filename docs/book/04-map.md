@@ -109,3 +109,8 @@
 - 사전 등록 해시 확인: `python tools/prereg_hash.py --check`.
 - 빨간 줄 검사: `python tools/intent_check.py`(논문 커밋 전 0).
 - S-E2E 재변환: `python tools/se2e_convert.py reconvert --hist …`(다른 필드가 바뀌면 거부).
+
+## 파드 경로 추가 (파일 끝에 이어붙임 — 원래 위치는 '파드 경로' 절, 다른 에이전트의 미커밋 편집으로 그 자리에 못 넣음)
+| 경로 | 무엇 |
+|---|---|
+| `data/marr_real/`, `logs/marr_real/`, `ckpt/marr_real/`, `tools/marr_real/` | E-MAR-real 요인 A: 궤적 보조(`trace5-point@v1`) 학습 데이터·로그·체크포인트, 도구 사본 |
