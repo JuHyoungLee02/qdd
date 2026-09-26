@@ -54,12 +54,12 @@ def test_old_prompts_untouched():
 def test_step_infos_and_offsets():
     info1 = _info("clear_to_bin", 1)
     assert info1["tgt"] == "o8" and info1["place"] == "o15" and info1["step_idx"] == 1
-    assert info1["place_xy_offset"] == [0.0, -0.035]
+    assert info1["place_xy_offset"] == [0.0, -0.04]
     assert "place_xy_offset" not in _info("mug_tray_bottle_marker", 1)
     st = {"tcp": np.array([0.45, -0.20, TZ + 0.40]), "grip_w": 0.06, "pred": {"holding(o8)": True},
           "obj": {"o8": np.array([0.45, -0.20, TZ + 0.40 - 0.082 + 0.05]), "o15": np.array([0.44, -0.30, TZ + 0.025])}}
     step, cmd = X.plan(st, dict(info1, sup_tgt=TZ, sup_place=TZ, place_top=TZ + 0.008), TZ, 0.107)
-    assert step == "carry_over" and cmd["position_m"][:2] == [0.44, round(-0.30 - 0.035, 3)]
+    assert step == "carry_over" and cmd["position_m"][:2] == [0.44, round(-0.30 - 0.04, 3)]
 
 
 @pytest.mark.parametrize("task", sorted(T.X_STEPS))

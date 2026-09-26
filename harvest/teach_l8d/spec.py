@@ -33,7 +33,8 @@ X_TRAIN_TASKS = ("mug_stand", "stand_mug_tray", "mug_bin", "bottle_bin", "bluemu
                  "mug_right_of_bottle")
 OOD_O_TASKS = ("smallcup_tray",)  # unseen object: the small red cup o14 never appears in training
 OOD_T_TASKS = ("bluemug_bin", "bottle_stand")  # unseen compositions of trained objects / places
-X_MULTI_TASKS = ("mug_tray_bottle_marker", "clear_to_bin")  # multi-step (prompt +m version, change 3)
+X_MULTI_TASKS = ("mug_tray_bluemug_marker", "clear_to_bin")  # multi-step (prompt +m version, change 3)
+X_REJECTED_TASKS = ("mug_tray_bottle_marker",)  # truth gate 1/3 (the bottle tipped on the marker): not generated
 X_TRAIN_START = 31200  # TRAIN seeds of the L8-X task episodes (phase 1 = 30000-31199)
 STANDARD_SHARE = 1 / 3
 CLEAN_SHARE = 0.25  # = L8

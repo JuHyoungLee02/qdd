@@ -91,10 +91,17 @@ X_TASKS = {
                                     "S2": "place mug o3 on tray o5, then bottle o8 on marker o11"}),
     "clear_to_bin": Task("clear_to_bin", "o3", "o15", "Put the red mug and then the green bottle in the grey bin.",
                          {"S1": "pick up mug o3, then bottle o8", "S2": "place mug o3, then bottle o8, in bin o15"}),
+    # replaces mug_tray_bottle_marker (truth gate 1/3: the bottle tipped on the marker twice); appended so the
+    # layout stream ids of the tasks above do not move
+    "mug_tray_bluemug_marker": Task("mug_tray_bluemug_marker", "o3", "o5",
+                                    "Put the red mug on the blue tray, then put the blue mug on the magenta marker.",
+                                    {"S1": "pick up mug o3, then mug o13",
+                                     "S2": "place mug o3 on tray o5, then mug o13 on marker o11"}),
 }
 # steps (target, place, place xy offset | None); a shared place gets side-by-side offsets
 X_STEPS = {"mug_tray_bottle_marker": (("o3", "o5", None), ("o8", "o11", None)),
-           "clear_to_bin": (("o3", "o15", (0.0, 0.035)), ("o8", "o15", (0.0, -0.035)))}
+           "clear_to_bin": (("o3", "o15", (0.0, 0.04)), ("o8", "o15", (0.0, -0.04))),
+           "mug_tray_bluemug_marker": (("o3", "o5", None), ("o13", "o11", None))}
 X_TASK_IDS = tuple(X_TASKS)
 X_TASK_CODE = {t: 100 + i for i, t in enumerate(X_TASK_IDS)}  # layout RNG stream ids (fixed; append new ones)
 X_SUPPORT = {"stand_mug_tray": ("o12", "o3")}  # (support object, object standing on it)
@@ -174,8 +181,13 @@ def x_task_layout(seed: int, task: str, ws=None) -> dict:
         places = {st[1] for st in X_STEPS[task]}
         order = sorted(ids, key=lambda k: -_fr(k))  # sequential placement, largest first
 
+        targets = {st[0] for st in X_STEPS[task]}
+
         def need(a, b):
-            return max(0.16, _fr(a) + _fr(b) + 0.03) if frozenset((a, b)) in pairs else _fr(a) + _fr(b) + 0.02
+            if frozenset((a, b)) in pairs:
+                return max(0.16, _fr(a) + _fr(b) + 0.03)
+            # the open fingers (10.7 cm along x) sweep around a target: keep 10 cm like task_layout's extras rule
+            return max(_fr(a) + _fr(b) + 0.02, 0.10 if (a in targets or b in targets) else 0.0)
 
         for _ in range(20000):
             pos: dict = {}

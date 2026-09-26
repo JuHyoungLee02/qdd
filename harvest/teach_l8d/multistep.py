@@ -144,6 +144,6 @@ class XEpisode(PtEpisode):
             res["steps"] = [list(s[:2]) for s in self.steps]
             res["steps_done"] = self.k + int(bool(res.get("success")))
             res["step_done_t"] = self.step_done_t
-            res["prompt_version"] = str(res.get("prompt_version")) + VERSION_SUFFIX
+            res["prompt_version_m"] = str(self.version) + VERSION_SUFFIX  # PtEpisode._save sets prompt_version
             res["prompt_id_m"] = PROMPT_ID_M
         super()._save(res)

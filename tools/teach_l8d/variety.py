@@ -13,7 +13,7 @@ TASK_TYPE = {"mug_tray": "place_on", "bottle_tray": "place_on", "mug_marker": "p
              "mug_stand": "place_on_raised", "stand_mug_tray": "pick_from_raised", "mug_bin": "place_in",
              "bottle_bin": "place_in", "bluemug_tray": "attribute_colour", "smallcup_tray": "attribute_size",
              "mug_left_of_bottle": "relational", "mug_right_of_bottle": "relational", "bluemug_bin": "place_in",
-             "bottle_stand": "place_on_raised", "mug_tray_bottle_marker": "multi_step", "clear_to_bin": "multi_step"}
+             "bottle_stand": "place_on_raised", "mug_tray_bottle_marker": "multi_step", "clear_to_bin": "multi_step", "mug_tray_bluemug_marker": "multi_step"}
 
 
 def l8(root):
