@@ -22,7 +22,8 @@ def main(argv=None):
     m.save_pretrained(a.out, safe_serialization=True)
     AutoProcessor.from_pretrained(a.model).save_pretrained(a.out)
     for fn in os.listdir(a.model):  # tokenizer / template / generation files the processor may not write
-        if fn.endswith((".json", ".jinja", ".txt")) and not os.path.exists(os.path.join(a.out, fn)):
+        if fn.endswith((".json", ".jinja", ".txt")) and "safetensors" not in fn \
+                and not os.path.exists(os.path.join(a.out, fn)):  # never the base's shard index (stale shards)
             shutil.copy(os.path.join(a.model, fn), a.out)
     print("MERGED " + json.dumps({"adapter": a.adapter, "out": a.out}), flush=True)
 
