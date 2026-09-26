@@ -44,6 +44,7 @@
 | E-SR1c(분기 생성 CPU + Isaac G-br + 학습 2판·평가 4판) | 메인 1(학습·평가) + 0(Isaac CPU PhysX, 렌더 없음) | ≈ 2.5 GPU-h(GPU 1 ≈ 2.2: 사전 실행 02:50–02:57, 본 03:09–05:23; GPU 0 ≈ 0.3) | [R/sr1c](../stage3/results/sr1c.md) 7절 |
 | E-SR1d(층·분기 CPU + 학습 2판·평가 4판, 시뮬 없음) | x2 0·1 | ≈ 2.2 GPU-h(사전 실행 GPU 0 ≈ 0.1: 05:52–05:57; 본 두 레인 06:00–07:02; 학습 루프 47.5·47.8분) | [R/sr1d](../stage3/results/sr1d.md) 6절 |
 | E-NOV0(학습 없음, 특징 추출 27,107스냅샷 + 지연·재집계) | 2 | ≈ 1.0 GPU-h(사전 실행 05:15–05:35 ≈ 0.33 h; 본 05:37–06:15 ≈ 0.62 h; 재집계 06:17 ≈ 0.02 h; 판정은 CPU) | [R/nov0](../stage3/results/nov0.md) 7절 |
+| E-CONF(학습 없음, 확신도 추출 34,630스냅샷 + S-E2E 묶음 1 재추출 3,598) | 2 | ≈ 1.5 GPU-h(사전 실행 06:55–07:17 ≈ 0.23 h; 본 07:19–08:21 ≈ 1.03 h; 재추출 09:41–09:56 ≈ 0.24 h; 판정·재집계 CPU) | [R/conf](../stage3/results/conf.md) 8절 |
 | 프롬프트 검진(vLLM Qwen3-VL 8B·4B, 추론만) | 3 | ≈ 0.8 GPU-h(05:24–06:10, 두 서버 한 GPU) | [R/prompt_health](../stage3/results/prompt_health.md) 10절 |
 | E-Astra-solo(Isaac + Qwen vLLM 사전 실행, 유료 폐루프) | 3 | ≈ 1.5 GPU-h(프로세스 합: vLLM 06:37–07:07 ≈ 0.48 h + Isaac 약 1.06 h, 06:34–07:31 한 장 공유) | [R/astra_solo_pilot](../stage3/results/astra_solo_pilot.md) 8절 |
 | E-Couple 무료 사전 실행(Isaac + 융합 VLA + Qwen3-VL-8B vLLM, 한 GPU) | 메인 1 | ≈ 1.3 GPU-h(Qwen 서버 06:07–07:23; 스모크 06:08–06:12, 본 06:14–07:22), 유료 0원 | [R/couple_dry](../stage3/results/couple_dry.md) 5절 |
