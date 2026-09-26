@@ -3,7 +3,7 @@ training files so T1+T4 and C' are compared under the same conditions (same base
 
   h2h_base.jsonl   T base rows (L8-X only; the reference arm)
   h2h_t1t4.jsonl   T - N base rows + N T1+T4 rows (our robot family: RB2 T4-camera projected EE points (0-1000),
-                   RB2 camera-info C', RB2 tracked points / traces; RB3 T4 rows when present)
+                   RB2 camera-info C', RB2 tracked points / traces, RB3 per-frame-verified T4 points and C')
   h2h_cp.jsonl     T - N base rows + N C' rows (MolmoBot Franka top-down C', DROID real Franka C', RoboTwin C',
                    RB2 camera-unknown C')
   h2h_ob.jsonl     prereg_open8 O-B on the new base: T - 3,250 base rows + 3,250 E-OPEN8 rows
@@ -45,8 +45,9 @@ def strat_take(rows, n, key="step", seed=0):
 
 
 def pack_t1t4(n, rng, x=X):
-    s = [("rb2t4/records_P.jsonl", ["ee_point"], 0.45, True), ("rb2t4/records_C.jsonl", None, 0.35, False),
-         ("rb2t4/records_P.jsonl", ["ee_point_detected", "ee_trace"], 0.20, True)]
+    s = [("rb2t4/records_P.jsonl", ["ee_point"], 0.35, True), ("rb2t4/records_C.jsonl", None, 0.25, False),
+         ("rb2t4/records_P.jsonl", ["ee_point_detected", "ee_trace"], 0.15, True),
+         ("rb3t4v/records_P.jsonl", ["ee_point"], 0.15, True), ("rb3t4v/records_C.jsonl", None, 0.10, False)]
     return _mix(s, n, rng, x, lambda r: "camera: unknown" not in r["prompt"])
 
 
@@ -73,7 +74,7 @@ def alloc(sizes, fracs, n):
 
 def _mix(spec, n, rng, x, keep):
     pools = [[r for r in _rows(os.path.join(x, path), kinds) if keep(r) and not generic_name(r)]
-             for path, kinds, _, _ in spec]
+             if os.path.exists(os.path.join(x, path)) else [] for path, kinds, _, _ in spec]  # missing stream: 0 rows
     q = alloc([len(p) for p in pools], [s[2] for s in spec], n)
     out = []
     for (_, _, _, px), pool, k in zip(spec, pools, q):
