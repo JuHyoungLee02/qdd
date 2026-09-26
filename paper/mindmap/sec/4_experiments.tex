@@ -192,4 +192,8 @@
   \item \intent{댑스를 쓴다는걸 가정을 해야겠다}
   \item \chg{(정본 §97) 자동 맥락: 로봇 자기 정보는 URDF·관절·camera\_info·자기 시험에서 코드로 자동 생성, 장면은 깊이(시뮬 렌더, 실물 ZED Mini 스테레오 계산·D405) + VLM 점 + 코드, 요령은 학습, 시각 자기 인식은 상위 VLM 점 출력(시뮬 FK 라벨). 모델 목표 2개(상위 VLM + VLA). 순서 A0·A1 무료 $\rightarrow$ A2 유료 소액 $\rightarrow$ E-TEACH-L 합류}
   \item \dirn{이번 판(09-26 21시 KST 무렵, 4시간 주기): E-CONF NONE(기록만), E-ACC v2 채택·알아채기 0/13, Astra 단독 7/7·단계형, E-MAR-real 불채택, RB3·ROBOTIS 2차, 영샷 대체 0/5·0/4, E-TEACH(§96)·자동 맥락(§97) 새 절, 결합 v2·도착 시 대조 구현, 전제 표 갱신, user-log 108--110 의도}
+  \item \idea{(E-VLA-solo) VLA 단독 모든 조건 \tentative{0/12}, 규칙 기준선 \tentative{12/12}; 느린 재생은 지나침만 줄이고 성공 +0 $\rightarrow$ 1.0배 유지; 멈춤 고리 C5 \tentative{8/12} 확인 $\rightarrow$ 유료 E-Couple 전 런타임 수정}
+  \item \intent{사실 실시간으로 아스트라를 키기에는 문제가 좀 있다는 생각이 있어 아스트라가 주역인데 아스트라가 실시간적으로 참여하기에는 너무 길다 감독을 하기에는 시간이 너무 길다는 문제가 있음 따라서 상위 llm이 아스트라보다는 성능이 낮지만 이 엔드포인트와 로봇의 상관관계 이동의 상관관계만을 학습한 것이 더 빠르고 성ㅇ능은 비슷 오히려 더 좋을 것이다가 가정이야}
+  \item \chg{(정본 §96 보충 1, 전제 P13, \tentative{미확정 가설}) H-L: Astra는 호출당 5--9\,s라 실시간 참여·감독에 느림 $\rightarrow$ 말단$\leftrightarrow$로봇·장면 관계와 이동 상관에 특화 학습한 상위 LLM이 더 빠르고 비슷하거나 더 좋다. 기준 초안: 빠름 p50 $\le$ \tentative{2\,s}·Astra의 1/3 이하, 비슷함 DEV 짝 \tentative{3/40} 안, 더 좋음 접근 목표 오차 $\le$ Astra(중앙 약 \tentative{14\,mm})·7--10\,cm 어긋남 알아채기 $>$ \tentative{0/13}. 근거: Astra 0/13은 정밀 위치 인식 한계, 영샷 실패(0/4, 0/5)는 모두 위치 읽기. 위험: 드문 상태 복구 추론 상실 $\rightarrow$ DAgger 복구 데이터 필수. 순서 E-TEACH-L8(8B 경향, 등록 72efee3) $\rightarrow$ 서빙 지연 실측 $\rightarrow$ 35B-A3B(지연 1--2\,s는 \tentative{추정})}
+  \item \dirn{수시 갱신(09-26 21시 50분 KST 무렵, 사용자 요청): 미확정 가설도 논문에 바로 주황으로 — H-L을 방법·계획(§96 절, 전제 P13)·서론·초록에, E-VLA-solo 결과}
 \end{itemize}
