@@ -106,6 +106,71 @@ def task_layout(seed: int, task: str) -> dict:
     return out
 
 
+# ---------------------------------------------------------------- two-target pair layout (MolmoAct M4, explicit option)
+PAIR_TASKS = ("mug_tray", "bottle_tray")  # same layout, the instruction chooses the target (MolmoAct D.7: two bowls)
+PAIR_PATHS = (("o3", "o5"), ("o8", "o5"))  # DR keep-out covers both planner paths -> the two episodes share one scene
+PAIR_MIN_SEP_M = 0.13  # mug-bottle centre distance: the open fingers (107 mm along world x) clear the other target
+PAIR_MIN_PX = 60.0  # the two targets' centres >= 60 px apart in the head image (readiness M4 gate)
+LAYOUTS = ("task", "pair")
+
+
+def pair_image_sep_px(layout: dict) -> float:
+    """Head-image distance (px) between the half-height centres of the mug o3 and the bottle o8 (fixed R2 head
+    camera, harvest.train.r2_ma2 constants; perception.geom.project convention)."""
+    from ..train.r2_ma2 import HEAD_K, HEAD_POS, HEAD_R, TABLE_TOP_Z
+    P = np.array([[*layout[k][:2], TABLE_TOP_Z + OBJ_GEOM[k]["height"] / 2] for k in ("o3", "o8")])
+    Pc = (P - HEAD_POS) @ HEAD_R
+    uv = np.stack([HEAD_K["cx"] - HEAD_K["fx"] * Pc[:, 1] / Pc[:, 0],
+                   HEAD_K["cy"] - HEAD_K["fy"] * Pc[:, 2] / Pc[:, 0]], 1)
+    return float(np.linalg.norm(uv[0] - uv[1]))
+
+
+def pair_layout(seed: int) -> dict:
+    """{obj_id: (x, y, yaw)}: tray o5, mug o3 and bottle o8 all inside the right-arm top-down workspace (the task_layout
+    rules for target / place, applied to both targets), mug-bottle >= PAIR_MIN_SEP_M and >= PAIR_MIN_PX apart in the
+    head image; the yellow box o9 appears in the distractor band with p = 1/2. Own RNG stream (code 2000)."""
+    rng = np.random.default_rng([int(seed), 11, 2000])
+    for _ in range(100000):
+        p = (rng.uniform(WS_X[0] + 0.02, WS_X[1]), rng.uniform(WS_Y[0] + 0.03, WS_Y[1] - 0.03))
+        m = (rng.uniform(*WS_X), rng.uniform(*WS_Y))
+        b = (rng.uniform(*WS_X), rng.uniform(*WS_Y))
+        out = {"o3": (float(m[0]), float(m[1]), 0.0), "o8": (float(b[0]), float(b[1]), 0.0),
+               "o5": (float(p[0]), float(p[1]), 0.0)}
+        if (math.dist(p, m) >= max(0.16, _fr("o3") + _fr("o5") + 0.03)
+                and math.dist(p, b) >= max(0.16, _fr("o8") + _fr("o5") + 0.03)
+                and math.dist(m, b) >= PAIR_MIN_SEP_M and pair_image_sep_px(out) >= PAIR_MIN_PX):
+            break
+    else:  # pragma: no cover
+        raise RuntimeError("pair layout")
+    if rng.random() < 0.5:
+        for _ in range(10000):
+            q = (float(rng.uniform(*DISTRACTOR_X)), float(rng.uniform(*DISTRACTOR_Y)),
+                 float(rng.uniform(-math.pi, math.pi)))
+            if all(math.dist(q[:2], v[:2]) >= _fr("o9") + _fr(j) + 0.02 for j, v in out.items()) and \
+                    math.dist(q[:2], m) >= 0.10 and math.dist(q[:2], b) >= 0.10:
+                out["o9"] = q
+                break
+    return out
+
+
+def layout_for(seed: int, task: str, layout: str = "task") -> dict:
+    """The layout of (seed, task) under a layout mode: 'task' = task_layout (default), 'pair' = pair_layout (only
+    for PAIR_TASKS)."""
+    check_task(task)
+    if layout == "task":
+        return task_layout(seed, task)
+    if layout == "pair":
+        if task not in PAIR_TASKS:
+            raise ValueError(f"layout 'pair' is for {PAIR_TASKS}, not {task!r}")
+        return pair_layout(seed)
+    raise ValueError(f"layout {layout!r}: one of {LAYOUTS}")
+
+
+def layout_paths(task: str, layout: str = "task"):
+    """DR keep-out path(s): the task's (target, place) for 'task', both pair paths for 'pair'."""
+    return PAIR_PATHS if layout == "pair" else (TASKS[task].target, TASKS[task].place)
+
+
 def grasp_yaw(obj: str, obj_yaw: float) -> float:
     """Gripper yaw for a top-down grasp. Cylinders: TOP_DOWN_YAW. Cuboids: the yaw nearest TOP_DOWN_YAW whose
     closing axis (yaw - pi/2) is parallel to a face normal (obj_yaw + k pi/2)."""

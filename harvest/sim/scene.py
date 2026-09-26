@@ -471,15 +471,18 @@ class Env:
         from .tasks import TASKS
         return TASKS[self.task].target, TASKS[self.task].place
 
-    def set_seed(self, seed: int, task: str = "mug_tray"):
+    def set_seed(self, seed: int, task: str = "mug_tray", layout: str = "task"):
         """Reuse this env for another seed (and task, R2): new layout, applied by the next reset() (one write at
-        reset). Callers that do not name a task get the original mug -> tray task (pool / labeler / prefix)."""
+        reset). Callers that do not name a task get the original mug -> tray task (pool / labeler / prefix).
+        layout 'pair' (MolmoAct M4, explicit option): tasks.pair_layout, one scene for both tasks.PAIR_TASKS."""
         from .randomize import sample_randomization
-        from .tasks import check_task, task_layout
+        from .tasks import check_task, layout_for, layout_paths
         self.seed, self.task = int(seed), check_task(task)
-        self.layout = task_layout(seed, self.task)
+        self.layout = layout_for(seed, self.task, layout)
+        self.layout_mode = layout
         _LAYOUT["layout"] = self.layout
-        self.randomization = sample_randomization(seed, self.variant, self.layout, path=self.task_path())
+        self.randomization = sample_randomization(seed, self.variant, self.layout,
+                                                  path=layout_paths(self.task, layout))
         _LAYOUT["rand"] = self.randomization
 
     def _place_marker(self):

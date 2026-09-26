@@ -116,8 +116,9 @@ def placement_ok(xy, r: float, layout: dict, placed: list, common: dict, path=("
     if not (common["place_x"][0] <= x <= common["place_x"][1] and common["place_y"][0] <= y <= common["place_y"][1]):
         return False
     band = P2_LATERAL_M[1] + OBJ_GEOM["o10"]["footprint_r"] + r + common["keepout_margin_m"]
-    if _seg_dist(xy, layout[path[0]][:2], layout[path[1]][:2]) < band:
-        return False
+    for a, b in (path if isinstance(path[0], (tuple, list)) else (path,)):  # several paths: tasks.PAIR_PATHS
+        if _seg_dist(xy, layout[a][:2], layout[b][:2]) < band:
+            return False
     for k, p in layout.items():
         if math.dist(xy, p[:2]) < OBJ_GEOM[k]["footprint_r"] + r + common["object_clearance_m"]:
             return False
