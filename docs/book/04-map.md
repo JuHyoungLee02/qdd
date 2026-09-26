@@ -6,7 +6,7 @@
 | 경로 | 무엇 |
 |---|---|
 | `harvest/runtime/` | 런타임: `core`(실행기), `m4`(확정·교체), `conditions`(C0–C6), `skills`(스킬 S·쥠 디바운스), `calibration`(J5), `measure`(V1h·T1), `fused_model`(단계 B 서버), `fused_action`, `astra_hb`(K0–K4), `aiworker`·`ir_policy`(Inspect Robots; `aiworker.camera_models`: 결합용 실시간 카메라 모델 어댑터, 탐침 `camera_pose` 재사용, Task 8), `clock`·`latency_ctrl`·`reqhash`; 결합 배선(Task 10, `couple` off|serial): `core`의 `CoupleDriver` 틱·배달(`couple`)·사건 호출 `_event`·편향(모듈형 `skills.nudge` 명령 기준점, 융합 `_couple_fused` IK 관절 편향)·T1 두 층 관문·청크 수준 준수 `_chunk_vec`(통제자 판정 C3)·청크 재생 시계 `_advance_play_clock`(리뷰 T10), `skills`의 `speed_scale`·`irrev_gate`·`nudge`, `ir_policy`의 `couple` 행, `aiworker`의 `Kinematics.fk_pos`(TCP 자코비안 1차 FK) |
-| `harvest/eval/` | `e05`(E0.5 재생)·`rd`·`calib`·`closed`(폐루프 묶음)·`canary`·`splits`(분할 보호)·`common` |
+| `harvest/eval/` | `e05`(E0.5 재생)·`rd`·`calib`·`closed`(폐루프 묶음; `--couple` 팔 배선 — `run_worker`가 팔마다 반복, 팔 off일 때(다중 팔 스윕) Astra 없음, `aggregate`가 예산 초과 에피소드 제외·짝지은 팔 차이·칸별 `couple` 집계)·`canary`·`splits`(분할 보호)·`common`·`couple`(결합 팔 off/serial/serial_pause·유료 실행 가드(자기 점검 참조, user-log 87)·예산 초과 제외·짝지은 팔 성공 차이·청크 수준 준수 칸 집계(canon §84 보충 4·5)·예산 추정 CLI, Task 14) |
 | `harvest/analysis/` | `stats`(`N_BOOT` 10,000, `CMP_EPS` 절대 1e-12)·`replay`·`latency` |
 | `harvest/sim/` | `scene`(하드 리셋 `Env.reset`)·`planner`(오라클)·`labeler`·`randomize`(random/dr)·`determinism`·`perturb`·`snapshot`·`run_dev` |
 | `harvest/datagen/` | R2 생성기(`gen`·`episode`·`rows`·`timing`·`validate`·`lerobot_export`·`queue`) |
@@ -25,6 +25,7 @@
 | `tools/mar2/` | MolmoAct R2 준비 관문(CPU, 기존 녹화 위): `mar2_lib`(MolmoAct 궤적 부분표집·0–255 좌표·볼록 윤곽 투영·HSV 규칙 v1/v2·URDF FK 자세·부트스트랩), `mar2_gates`(`cam`·`camdiag`·`fk`·`trace`·`traceend`·`p1crops`·`cond`·`resprep`·`res`), `run_mar2.sh`; 시험 `tests/test_mar2_lib.py` |
 | `tools/` 기타 | `se2e_convert.py`(`reconvert --hist`), `labels_v2_eval.py`, `prereg_hash.py --check`, `intent_check.py`·`user_line_check.py`(빨간 줄·[사용자] 줄), `stagea_merge.py`, `r5/`·`r6/`(파드 동기화), `pod_sync.sh` |
 | `tests/` | 전체 시험(로컬은 Git Bash에서 `pytest`; PowerShell에서는 2개 실패 — P33) |
+| `tests/eval/` | `harvest/eval/` 시험; 결합: `test_couple_eval.py`(Task 14 — 팔 파싱·설정·라벨, 유료 가드, 모의 스트림 클라이언트, 예산 추정, `aggregate`의 예산 초과 제외·짝지은 팔 차이·칸별 청크 수준 준수 집계) |
 | `tests/couple/` | `harvest/couple/` 시험(`test_schema.py`, Task 1; `test_gate.py`, Task 2; `test_cost.py`, Task 3; `test_stream.py`, Task 4; `test_layer.py`, Task 5; `test_offset.py`, Task 6; `test_twolayer.py`, Task 7; `test_overlay.py`, Task 8; `test_overlay_colours.py`, Task 8 통제자 판정 O2; `test_overlay_patterns.py`, Task 8 통제자 판정 O2b(모양으로 구분: 채움/속이 빈 화살촉·실선/점선·화살촉 없는 축선); `test_driver.py`, Task 9 — 직렬 흐름·편향·게이트·청크 수준 준수 로그; `test_geom.py`, Task 10; `test_local_vlm.py`, Task 13) |
 | `tests/runtime/` | `harvest/runtime/` 시험; 결합: `test_couple_runtime.py`(Task 10 — 직렬 흐름·편향·두 층 관문·리셋 때 비행 중 요청 청구·유료 모드 조건·청크 수준 준수 C3), `fakeworld.py`의 `Kin.fk_pos` |
 | `docs/design/00-interfaces.md` | **정본**(마지막 절까지가 현재 판) |

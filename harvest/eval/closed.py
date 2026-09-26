@@ -58,6 +58,9 @@ BOOT_UNIT = "layout seed (all epochs of a seed resampled together; variants / co
 
 def aggregate(trials, n_boot: int = N_BOOT) -> dict:
     """trials: [{variant, condition, seed, epoch, success, sim_time, termination, summary}]."""
+    from .couple import couple_cell, couple_diff, is_budget_excluded
+    n_excl = sum(1 for t in trials if is_budget_excluded(t))
+    trials = [t for t in trials if not is_budget_excluded(t)]
     cells = defaultdict(list)
     for t in trials:
         cells[(t["condition"], t["variant"])].append(t)
@@ -83,7 +86,7 @@ def aggregate(trials, n_boot: int = N_BOOT) -> dict:
             "epochs_m4": _med([(s.get("m4") or {}).get("epoch") for s in S]),
             "astra_calls": sum(s.get("astra_calls", 0) for s in S),
             "stop_ticks": sum(s.get("stop_ticks", 0) or 0 for s in S),
-            "j5": [s.get("j5") for s in S if s.get("j5")] or None}
+            "j5": [s.get("j5") for s in S if s.get("j5")] or None, "couple": couple_cell(S)}
     succ = {(t["condition"], t["variant"], t["seed"], t["epoch"]): int(bool(t["success"])) for t in trials}
     conds = sorted({t["condition"] for t in trials})
     variants = sorted({t["variant"] for t in trials})
@@ -131,6 +134,8 @@ def aggregate(trials, n_boot: int = N_BOOT) -> dict:
                     "rd_ci": [round(float(np.quantile(boots, 0.025)), 4), round(float(np.quantile(boots, 0.975)), 4)]
                     if boots else [None, None],
                     "sr_diff": _mci(by, n_boot), "n_pairs": len(pairs), "n_seeds": len(ps)}
+    out["couple_diff"] = couple_diff(trials, n_boot)
+    out["couple_budget_excluded"] = n_excl
     return out
 
 
@@ -203,8 +208,12 @@ def run_worker(spec_path: str) -> None:
     """Inside Isaac: one embodiment (variant), one eval() per condition over all seeds x epochs."""
     spec = json.load(open(spec_path, encoding="utf-8"))
     os.environ.setdefault("HARVEST_QID_REGISTRY", os.path.join(spec["out"], "qid_registry.json"))
+    from . import couple as CP
     from ..runtime.aiworker import AIWorkerEmbodiment
-    emb = AIWorkerEmbodiment(variant=spec["variant"])
+    arms = spec.get("couple", ["off"])
+    from ..sim.scene import KNOWN_CAMERAS
+    emb = AIWorkerEmbodiment(variant=spec["variant"],
+                             cameras=KNOWN_CAMERAS if any(x != "off" for x in arms) else ("cam_head", "cam_wrist_right"))
     from inspect_robots import Scene, Task, eval as ir_eval
     from inspect_robots.controller import DefaultController
     from inspect_robots.scorer import episode_length, success_at_end
@@ -218,77 +227,89 @@ def run_worker(spec_path: str) -> None:
     from ..sim.scene import SCENE_SPEC
     rows, t0 = [], time.monotonic()
     for lab in run_labels(spec["conditions"], spec.get("hb_n", [5.0]), tuple(spec.get("hb_mode", ["K2"]))):
-        cond, hb_n, label = lab[:3]
+        cond, hb_n, lab_label = lab[:3]
         hb_mode = lab[3] if len(lab) > 3 else "K2"
-        if spec["selector"] == "jevl":
-            model = JevLSelector(spec["url"], spec["name"], layout=spec["layout"], mode=spec["mode"])
-        elif spec["selector"] == "stageb":
-            from ..runtime.fused_model import FusedClient
-            model = FusedClient(spec["url"])
-        elif spec["selector"] == "mock_fused":
-            model = MockFusedModel(latency_s=spec["mock_latency"])
-        else:
-            model = MockSelector(latency_s=spec["mock_latency"])
-        astra, amode = None, "none"
-        tok = "/data/.openai_token"
-        if spec["astra"] in ("auto", "api") and os.path.exists(tok):
-            from ..clients.astra import AstraClient
-            from ..runtime.astra_hb import MODEL as ASTRA_MODEL
-            astra, amode = AstraClient(open(tok).read().strip(), ASTRA_MODEL, timeout_s=30.0), "api"
-        elif spec["astra"] == "api":
-            raise SystemExit("--astra api but no /data/.openai_token")
-        elif spec["astra"] in ("auto", "mock"):
-            astra, amode = MockAstra(3.0), "mock"
-        elif spec["astra"] == "scripted":  # K3 pipeline check without a key: text-summary success detector
-            from ..runtime.astra_hb import ScriptedAstra
-            astra, amode = ScriptedAstra(1.0), "scripted"
-        _, rto = condition(cond)
-        cfg = RuntimeConfig(backend=spec["backend"], selector=spec["selector"],
-                            model_id=getattr(model, "model_id", spec["name"]), model_path=spec["model_path"] or "",
-                            layout=spec["layout"] if spec["selector"] == "jevl" else "",
-                            call_mode=spec["mode"] if spec["selector"] == "jevl" else "", clock=spec["clock"],
-                            question_ids=question_ids(spec["layout"] or "H",
-                                                      "IMG" if spec["selector"] == "stageb" else "S1-1mm"),
-                            astra_mode=amode, condition=cond,
-                            m4=m4_config(cond, spec.get("m4_H", 3), spec.get("m4_lead_max")),
-                            calibration=spec["calibration"] or "",
-                            j5_alpha=spec["j5_alpha"], model_fingerprint=spec["fingerprint"], hb_N_s=hb_n,
-                            verify_cal=spec.get("verify_cal") or "", hb_mode=hb_mode,
-                            hb_budget=spec.get("hb_budget") if hb_mode == "K4" else None,
-                            canary_id=spec.get("canary_id") or "none", **rto)
-        if spec["backend"] == "fused":
-            cfg.state_repr = "fused: images (head + active wrist) + task + contract summary + proprio (canon §58)"
-        rt = OursRuntime(cfg, model, astra=astra)
-        tag = label.replace("|", "_").replace("'", "p")  # C5' -> C5p in folder / task names
-        pol = OursPolicy(rt, name=f"ours-{spec['backend']}-{spec['selector']}-{tag}",
-                         checkpoint=spec["model_path"] or None)
-        scenes = [Scene(id=f"{spec['split']}{s}-P0-{spec['variant']}", instruction=SCENE_SPEC["instruction"],
-                        init_seed=s, metadata={"layout_seed": s, "kind": "P0", "variant": spec["variant"],
-                                               "split": spec["split"].upper()}) for s in spec["seeds"]]
-        task = Task(name=f"r6-{tag}-{spec['variant']}", scenes=scenes, scorer=[success_at_end(), episode_length()],
-                    max_seconds=spec["max_seconds"], epochs=spec["epochs"])
-        log_dir = os.path.join(spec["out"], spec["variant"], tag)
-        tc = time.monotonic()
-        logs = ir_eval(task, pol, emb, log_dir=log_dir, seed=0, controller=DefaultController(1),
-                       environment_id=emb.info.environment_id, environment_revision=emb.info.environment_revision,
-                       policy_checkpoint=spec["model_path"] or getattr(model, "model_id", None))
-        log = logs[0]
-        for smp in log.samples or []:
-            seed = int((getattr(smp, "scene_metadata", None) or {}).get("layout_seed",
-                                                                           str(smp.scene_id).split("-")[0][
-                                                                               len(spec["split"]):]))
-            tms = getattr(smp, "trial_metadata", None) or []
-            terms = getattr(smp, "termination_reasons", None) or []
-            for e, tm in enumerate(tms):
-                sm = tm.get("ours_summary") or {}
-                rows.append({"variant": spec["variant"], "condition": label, "hb_n": hb_n, "hb_mode": hb_mode,
-                             "seed": seed, "epoch": e,
-                             "success": bool(sm.get("env_success")), "sim_time": sm.get("sim_time_end"),
-                             "termination": terms[e] if e < len(terms) else None, "summary": sm,
-                             "sidecar": tm.get("ours_sidecar"), "frames": tm.get("ours_frames")})
-        rows.append({"_cond_done": label, "wall_s": round(time.monotonic() - tc, 1), "status": log.status,
-                     "error": getattr(log, "error", None) and str(log.error)[:2000], "log_dir": log_dir})
-        rt.close()
+        for arm in arms:
+            label = CP.couple_label(lab_label, arm, arms)
+            if spec["selector"] == "jevl":
+                model = JevLSelector(spec["url"], spec["name"], layout=spec["layout"], mode=spec["mode"])
+            elif spec["selector"] == "stageb":
+                from ..runtime.fused_model import FusedClient
+                model = FusedClient(spec["url"])
+            elif spec["selector"] == "mock_fused":
+                model = MockFusedModel(latency_s=spec["mock_latency"])
+            else:
+                model = MockSelector(latency_s=spec["mock_latency"])
+            astra, amode = None, "none"
+            tok = "/data/.openai_token"
+            if spec["astra"] in ("auto", "api") and os.path.exists(tok):
+                from ..clients.astra import AstraClient
+                from ..runtime.astra_hb import MODEL as ASTRA_MODEL
+                astra, amode = AstraClient(open(tok).read().strip(), ASTRA_MODEL, timeout_s=30.0), "api"
+            elif spec["astra"] == "api":
+                raise SystemExit("--astra api but no /data/.openai_token")
+            elif spec["astra"] in ("auto", "mock"):
+                astra, amode = MockAstra(3.0), "mock"
+            elif spec["astra"] == "scripted":  # K3 pipeline check without a key: text-summary success detector
+                from ..runtime.astra_hb import ScriptedAstra
+                astra, amode = ScriptedAstra(1.0), "scripted"
+            if arm != "off":
+                astra, amode = CP.stream_client(spec)
+            elif len(arms) > 1:
+                astra, amode = None, "none"  # E-Couple A0 = VLA alone: no Astra at all
+            _, rto = condition(cond)
+            cfg = RuntimeConfig(backend=spec["backend"], selector=spec["selector"],
+                                model_id=getattr(model, "model_id", spec["name"]), model_path=spec["model_path"] or "",
+                                layout=spec["layout"] if spec["selector"] == "jevl" else "",
+                                call_mode=spec["mode"] if spec["selector"] == "jevl" else "", clock=spec["clock"],
+                                question_ids=question_ids(spec["layout"] or "H",
+                                                          "IMG" if spec["selector"] == "stageb" else "S1-1mm"),
+                                astra_mode=amode, condition=cond,
+                                m4=m4_config(cond, spec.get("m4_H", 3), spec.get("m4_lead_max")),
+                                calibration=spec["calibration"] or "",
+                                j5_alpha=spec["j5_alpha"], model_fingerprint=spec["fingerprint"], hb_N_s=hb_n,
+                                verify_cal=spec.get("verify_cal") or "", hb_mode=hb_mode,
+                                hb_budget=spec.get("hb_budget") if hb_mode == "K4" else None,
+                                canary_id=spec.get("canary_id") or "none",
+                                **CP.arm_config(arm, spec.get("couple_phase_pause", 3.0),
+                                               spec.get("couple_min_interval", 0.0)),
+                                couple_budget_krw=spec.get("couple_budget_krw", 0.0),
+                                couple_ledger=spec.get("couple_ledger", ""),
+                                couple_prices=spec.get("couple_prices", ""),
+                                couple_run_id=f"{os.path.basename(spec['out'])}/{spec['variant']}/{label}", **rto)
+            if spec["backend"] == "fused":
+                cfg.state_repr = "fused: images (head + active wrist) + task + contract summary + proprio (canon §58)"
+            rt = OursRuntime(cfg, model, astra=astra)
+            tag = label.replace("|", "_").replace("'", "p")  # C5' -> C5p in folder / task names
+            pol = OursPolicy(rt, name=f"ours-{spec['backend']}-{spec['selector']}-{tag}",
+                             checkpoint=spec["model_path"] or None)
+            scenes = [Scene(id=f"{spec['split']}{s}-P0-{spec['variant']}", instruction=SCENE_SPEC["instruction"],
+                            init_seed=s, metadata={"layout_seed": s, "kind": "P0", "variant": spec["variant"],
+                                                   "split": spec["split"].upper()}) for s in spec["seeds"]]
+            task = Task(name=f"r6-{tag}-{spec['variant']}", scenes=scenes, scorer=[success_at_end(), episode_length()],
+                        max_seconds=spec["max_seconds"], epochs=spec["epochs"])
+            log_dir = os.path.join(spec["out"], spec["variant"], tag)
+            tc = time.monotonic()
+            logs = ir_eval(task, pol, emb, log_dir=log_dir, seed=0, controller=DefaultController(1),
+                           environment_id=emb.info.environment_id, environment_revision=emb.info.environment_revision,
+                           policy_checkpoint=spec["model_path"] or getattr(model, "model_id", None))
+            log = logs[0]
+            for smp in log.samples or []:
+                seed = int((getattr(smp, "scene_metadata", None) or {}).get("layout_seed",
+                                                                               str(smp.scene_id).split("-")[0][
+                                                                                   len(spec["split"]):]))
+                tms = getattr(smp, "trial_metadata", None) or []
+                terms = getattr(smp, "termination_reasons", None) or []
+                for e, tm in enumerate(tms):
+                    sm = tm.get("ours_summary") or {}
+                    rows.append({"variant": spec["variant"], "condition": label, "hb_n": hb_n, "hb_mode": hb_mode,
+                                 "seed": seed, "epoch": e,
+                                 "success": bool(sm.get("env_success")), "sim_time": sm.get("sim_time_end"),
+                                 "termination": terms[e] if e < len(terms) else None, "summary": sm,
+                                 "sidecar": tm.get("ours_sidecar"), "frames": tm.get("ours_frames")})
+            rows.append({"_cond_done": label, "wall_s": round(time.monotonic() - tc, 1), "status": log.status,
+                         "error": getattr(log, "error", None) and str(log.error)[:2000], "log_dir": log_dir})
+            rt.close()
     with open(os.path.join(spec["out"], f"worker_{spec['variant']}.json"), "w", encoding="utf-8") as f:
         json.dump({"rows": rows, "wall_s": round(time.monotonic() - t0, 1)}, f, indent=1, default=str)
     print("R6_WORKER_DONE", spec["variant"], flush=True)
@@ -332,6 +353,19 @@ def _args(argv):
     ap.add_argument("--parallel", action="store_true", help="run the variant workers at the same time (<= 3)")
     ap.add_argument("--inst-prefix", default="r6", help="Isaac kit instance prefix; give concurrent runs different ones")
     ap.add_argument("--n-boot", type=int, default=N_BOOT, help="bootstrap draws (E §1.7 / EVAL §4.2: 10,000)")
+    ap.add_argument("--couple", default="off", help="coupling arms: comma list of off | serial | serial_pause "
+                                                     "(spec 2026-09-26 §16, E-Couple)")
+    ap.add_argument("--couple-phase-pause", type=float, default=3.0)
+    ap.add_argument("--couple-upper", default="astra", choices=["astra", "local"],
+                    help="stream model: Astra (--astra api|mock) or a local VLM (E-Astra-necessity U-Q*)")
+    ap.add_argument("--couple-local-url", default="")
+    ap.add_argument("--couple-local-model", default="")
+    ap.add_argument("--couple-min-interval", type=float, default=0.0,
+                    help="pace a local model to Astra's measured latency p50 (E-Astra-necessity)")
+    ap.add_argument("--couple-prices", default="", help="the run day's price table JSON (paid runs)")
+    ap.add_argument("--couple-budget-krw", type=float, default=0.0, help="the pre-registered experiment cap")
+    ap.add_argument("--couple-ledger", default="", help="experiment cost ledger JSONL under /data")
+    ap.add_argument("--approval", default="", help="self-check reference for paid calls: prereg self-check section (user-log 87), e.g. 'prereg_couple.md §0'")
     ap.add_argument("--worker", default="", help=argparse.SUPPRESS)
     return ap.parse_args(argv)
 
@@ -360,6 +394,11 @@ def _md(res, meta) -> str:
                   md_table(["condition/variant", "SR std", "SR var", "RD", "RD 95% CI", "SR std - SR var", "pairs"],
                            [[k, v["sr_std"], v["sr_var"], v["rd"], str(v["rd_ci"]), ci_str(v["sr_diff"]),
                              v["n_pairs"]] for k, v in res["rd"].items()])]
+    if res.get("couple_diff"):
+        lines += ["", f"## Coupling arms, paired success difference (budget-excluded episodes: "
+                      f"{res.get('couple_budget_excluded', 0)})", "",
+                  md_table(["pair", "diff [95% CI]", "n"], [[k.replace("|", "\\|"), ci_str(v), v["n_pairs"]]
+                                                            for k, v in res["couple_diff"].items()])]
     return "\n".join(lines)
 
 
@@ -380,6 +419,10 @@ def run(a) -> dict:
     check_split(a.split)
     seeds = check_seeds(sorted(parse_seeds(a.seeds)), a.split)
     conds = [c for c in a.conditions.split(",") if c]
+    from . import couple as CP
+    arms = CP.parse_arms(a.couple)
+    if any(x != "off" for x in arms) and a.astra == "api" and a.couple_upper == "astra":
+        CP.check_paid(a)
     from ..runtime.astra_hb import CADENCES
     modes = [m for m in a.hb_mode.split(",") if m]
     if not modes or any(m not in CADENCES for m in modes):
@@ -412,7 +455,7 @@ def run(a) -> dict:
         print(j5_gate, flush=True)
     variants = [v for v in a.variants.split(",") if v]
     per_ep = a.max_seconds / 0.3 + 60  # RTF >= 0.3 assumed + reset
-    timeout = a.timeout or int(240 + len(conds) * len(seeds) * a.epochs * per_ep)
+    timeout = a.timeout or int(240 + len(conds) * len(arms) * len(seeds) * a.epochs * per_ep)
     code = C.REPO
     wall = {}
     with C.Server(info, a.gpu, a.out, a.url, a.served_name, a.gpu_util) as srv:
@@ -427,7 +470,13 @@ def run(a) -> dict:
                     "hb_n": [float(x) for x in a.hb_n.split(",") if x],
                     "hb_mode": [m for m in a.hb_mode.split(",") if m], "hb_budget": a.hb_budget,
                     "canary_id": canary_id, "m4_H": a.m4_h, "m4_lead_max": a.m4_lead_max,
-                    "j5_canary_gate": j5_gate}
+                    "j5_canary_gate": j5_gate,
+                    "couple": arms, "couple_phase_pause": a.couple_phase_pause, "couple_upper": a.couple_upper,
+                    "couple_local_url": a.couple_local_url, "couple_local_model": a.couple_local_model,
+                    "couple_min_interval": a.couple_min_interval, "couple_prices": a.couple_prices,
+                    "couple_budget_krw": a.couple_budget_krw,
+                    "couple_ledger": os.path.abspath(a.couple_ledger) if a.couple_ledger else "",
+                    "approval": a.approval}
             sp = os.path.join(a.out, f"spec_{v}.json")
             json.dump(spec, open(sp, "w", encoding="utf-8"), indent=1)
             cmd = worker_cmd(code, os.path.abspath(sp), a.isaac_gpu, f"{a.inst_prefix}_{v}", timeout)
@@ -464,6 +513,9 @@ def run(a) -> dict:
         "j5_canary_gate": j5_gate, "hb_n": a.hb_n,
         "not_in_runtime": "C2'/C2'-S/C2-match, C3', C3'', C5-A3, C-FIX (conditions.py doc)",
         "hb_mode": a.hb_mode, "hb_budget": a.hb_budget, "verify_cal": a.verify_cal or "default (uncalibrated)",
+        "couple": {"arms": arms, "upper": a.couple_upper, "budget_krw": a.couple_budget_krw,
+                   "prices": a.couple_prices, "ledger": a.couple_ledger, "approval": a.approval,
+                   "phase_pause_s": a.couple_phase_pause, "min_interval_s": a.couple_min_interval},
         "runtime_s": {"total": round(time.monotonic() - t0, 1), "workers": wall,
                       "vllm_ready": round(getattr(srv, "t_ready", 0.0), 1)}})
     C.write_outputs(a.out, "closed", {"meta": meta, "result": res}, _md(res, meta))
