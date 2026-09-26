@@ -6,7 +6,9 @@
       is never rewritten.
   python -m harvest.eval.canary --model M [--set dev_v1] [--repeats 2] [--gpu 3] [--layout auto] [--force]
       the set's snapshots x the 5 decision questions (question_id@vN recorded) on model M (zero-shot | merged |
-      adapter via vLLM, lead; a stage-B checkpoint via the fused server's /decide; mock = code rule), `repeats`
+      adapter via vLLM, lead; a stage-B checkpoint via the fused server's /decide with the fused runtime's DecCall =
+      the 5 + the gripper question, fused wording and qids; mock = code rule); every DecCall shows the unknown
+      segment line like the runtime without an Astra plan (ser-A-min-3 fix round 1), `repeats`
       times -> <root>/canary_<YYYYMMDD UTC>_<model fingerprint>.json with an id:
         answers {"<snapshot>|<question>": [option_key per repeat]}, probs (repeat 0), floor (test-retest mismatch
         of repeats 1.. vs repeat 0 = the day's floor), baseline = the earliest other canary of the same model
@@ -94,28 +96,34 @@ def load_set(name: str, root: str | None = None):
 
 # ------------------------------------------------------------------------------------------ askers
 class FusedAsker:
-    """A stage-B checkpoint behind runtime.fused_model serve: the runtime's IMG DecCall (/decide)."""
+    """A stage-B checkpoint behind runtime.fused_model serve: the fused runtime's IMG DecCall (/decide) -- the fused
+    question set and wording (FUSED_QUESTIONS: + the canon §87 gripper question, PH-A1 dir_xy / mag_coarse text) and
+    the runtime's context (models.fused_ctx_text: IMG state + segment line + motion line). A canary snapshot has no
+    Astra plan (the runtime's unknown segment) and the snapshot's motion line (unknown without a recorded one)."""
     layout, mode = "HW", "fused"
 
-    def __init__(self, url: str, timeout_s: float = 60.0):
+    def __init__(self, url: str, timeout_s: float = 60.0, transport=None):
         import httpx
-        self.url, self.c = url.rstrip("/"), httpx.Client(timeout=timeout_s)
+
+        from ..runtime.models import FUSED_QUESTIONS
+        self.url, self.c = url.rstrip("/"), httpx.Client(timeout=timeout_s, transport=transport)
+        self.questions = FUSED_QUESTIONS
 
     async def ask(self, line: dict, root: str, var: str = "A0", tries: int = 1) -> dict:
         import base64
 
         from ..runtime.fused_model import answers_from
-        from ..deccall_snap import last_step_of
-        from ..runtime.models import build_live_request
-        from ..serialize import canonicalize
-        from ..train.stageb_data import image_only_state
+        from ..deccall_snap import last_step_of, motion_of
+        from ..runtime.models import build_live_request, fused_ctx_text
         ds = int(str(line.get("ds_id", "ds0"))[2:] or 0)
         req, shown = build_live_request(ds, line["phase"], line["text_state"], line["state"]["present"],
-                                        line["state"]["obs"]["raw"], state="IMG", last_step=last_step_of(line))
+                                        line["state"]["obs"]["raw"], state="IMG", last_step=last_step_of(line),
+                                        motion=motion_of(line), questions=self.questions)
         ims = {cam: base64.b64encode(open(os.path.join(root, line["images"][cam]), "rb").read()).decode()
                for cam in ("cam_head", "cam_wrist_right")}
         r = self.c.post(self.url + "/decide", json={"t_state": line.get("t", 0.0),
-                                                    "ctx_text": canonicalize(image_only_state(line["text_state"])),
+                                                    "ctx_text": fused_ctx_text(line["text_state"],
+                                                                               motion=motion_of(line)),
                                                     "req": req, "images": ims})
         d = r.json()
         if r.status_code != 200:
@@ -202,7 +210,10 @@ def run_canary(a) -> dict:
     pc = C.training_prompt_config(info["path"]) if info["kind"] != "mock" else None
     layout = "HW" if info["kind"] == "stageb" else (C.default_layout(pc) if a.layout == "auto" else a.layout)
     state = "IMG" if info["kind"] == "stageb" else "S1-1mm"
-    qids = question_ids(layout if info["kind"] != "mock" else "H", state)
+    from ..runtime.models import FUSED_QUESTIONS
+    asked = FUSED_QUESTIONS if info["kind"] == "stageb" else QUESTIONS  # a stage-B model: the fused runtime DecCall
+    qids = question_ids(layout if info["kind"] != "mock" else "H", state,
+                        FUSED_QUESTIONS if info["kind"] == "stageb" else None)
     t0 = time.monotonic()
     with C.Server(info, a.gpu, os.path.join(root, "work", "server"), a.url, a.served_name, a.gpu_util) as srv:
         if info["kind"] == "mock":
@@ -216,7 +227,7 @@ def run_canary(a) -> dict:
     for rep in res:
         for ln, r in zip(lines, rep):
             errors += int(r.get("error") is not None)
-            for q in QUESTIONS:
+            for q in asked:
                 a_ = (r.get("answers") or {}).get(q)
                 key = f"{ln['canary_key']}|{q}"
                 answers.setdefault(key, []).append(a_["key"] if a_ else None)

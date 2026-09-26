@@ -13,9 +13,15 @@ SERIALIZER_VERSION = "ser-A-min-3"
 LAST_STEP_VALUES = ("none", "OK", "LAG", "DEVIATE", "CONTRADICT")
 MOTION_UNKNOWN = "motion: arm=unknown gripper=unknown"
 _MOTION_RE = re.compile(r"^motion: arm=(still|slow|fast|unknown) gripper=(closing|still|opening|unknown)$")
-# §90 vocabulary: segments = the R2 planner phases renamed 1:1 (harvest.intent.PHASE_SEGMENT), actions = the §87
-# gripper options (close / open) + none
+# §90 vocabulary. LINE_SEGMENTS = the VLA's segment-intent line (fix round 1, controller ruling F12): a segment
+# CONTAINS its gripper event, so its name does not change at the grasp / release (Astra names the segment and its
+# action, the VLA decides when): approach = open gripper going to the object and grasping it (do=close), carry =
+# holding it until it is released (do=open), retreat, done (harvest.intent.PHASE_SEGMENT). SEGMENTS = Astra's
+# segment-PLAN answer vocabulary (the R2 planner phases renamed 1:1; the pre-registered E-ACC v2 prompt reads it,
+# tools/eacc/prompt_v2.py) -- the coupling maps a plan name to its line segment with harvest.intent.PLAN_TO_LINE.
+# actions = the §87 gripper options (close / open) + none
 SEGMENTS = ("approach", "descend", "grasp", "lift", "carry", "place", "release", "retreat", "done")
+LINE_SEGMENTS = ("approach", "carry", "retreat", "done")
 SEGMENT_ACTIONS = ("close", "open", "none")
 SEGMENT_UNKNOWN = "segment: now=unknown do=unknown next=unknown"
 
@@ -41,8 +47,8 @@ def with_motion_last_step(state: str, motion: str, last_step: str) -> str:
 
 
 def segment_line(now: str, do: str, nxt: str) -> str:
-    """The §90 segment-intent line; ValueError on a name outside the vocabulary (+ "unknown")."""
-    for v, allowed in ((now, SEGMENTS), (do, SEGMENT_ACTIONS), (nxt, SEGMENTS)):
+    """The §90 segment-intent line; ValueError on a name outside the line vocabulary (+ "unknown")."""
+    for v, allowed in ((now, LINE_SEGMENTS), (do, SEGMENT_ACTIONS), (nxt, LINE_SEGMENTS)):
         if v not in allowed + ("unknown",):
             raise ValueError(f"segment value {v!r}: one of {allowed + ('unknown',)}")
     return f"segment: now={now} do={do} next={nxt}"

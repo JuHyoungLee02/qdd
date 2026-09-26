@@ -38,9 +38,12 @@ def _variant_seed(q: str) -> int:
 def build_request(line: dict, var: str = "A0", step_cm: float = STEP_CM):
     """DecCall of one snapshot exactly as the stage-A items / R5 runtime (S1 on a 1 mm grid, the 5 decision
     questions), with option-name variant `var` (A0 = the jevcall names). The pool `oracle` field never reaches the
-    prompt (a dummy oracle is passed, as stagea_data does)."""
+    prompt (a dummy oracle is passed, as stagea_data does). The segment-intent line is the runtime's: a recorded plan
+    (line["segment"]) or unknown -- never the training rule's segment from the phase (ser-A-min-3 fix round 1: the
+    modular runtime shows unknown until Astra's plan; training shows unknown with p intent.SEGMENT_DROPOUT)."""
     from .. import e3lite
-    ln = {**line, "oracle": defaultdict(lambda: None)}
+    from ..serialize import SEGMENT_UNKNOWN
+    ln = {**line, "oracle": defaultdict(lambda: None), "segment": line.get("segment") or SEGMENT_UNKNOWN}
     req, _, shown = build_snapshot_request(ln, text_state=e3lite.state_text(ln, "S1", step_cm=step_cm))
     qs, out = {}, {}
     for qid, (q, opts) in shown.items():

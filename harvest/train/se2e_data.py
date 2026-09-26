@@ -153,23 +153,43 @@ def decision_labels(delta) -> dict:
 
 def gripper_label(row: dict) -> str | None:
     """canon §87 gripper decision of a row from its recorded gripper JOINT COMMAND (action_exec dim 7) over the
-    decision-label window (label_steps, the direction labels' 1/3 s): openness (stageb_data.GRIP_CAL of the row's
-    dataset) at k and k + label_steps -> harvest.intent.from_openness. None (not derivable) for a row without the
-    label window fields (episode_rows always writes them)."""
+    decision-label window (label_window_s, the direction labels' 1/3 s): openness (stageb_data.GRIP_CAL of the row's
+    dataset) at k and one window later -> harvest.intent.from_openness. action_exec is the chunk resampled at the
+    row's hz, so the window is window_s * hz CHUNK steps (not the source-fps label_steps; fix round 1 item 9) and
+    must be a whole number of them. None (not derivable) for a row without the label window fields (episode_rows
+    always writes them)."""
     from ..intent import from_openness
     from .stageb_data import grip_open01, grip_source
     if "label_steps" not in row or "label_window_s" not in row:
         return None
-    n, a = int(row["label_steps"]), row["action_exec"]
+    a, w, hz = row["action_exec"], float(row["label_window_s"]), float(row["hz"])
+    n = int(round(w * hz))
+    if abs(n - w * hz) > 1e-6:
+        raise ValueError(f"label window {w} s is not a whole number of chunk steps at {hz:g} Hz")
     if not 0 < n < len(a):
-        raise ValueError(f"label_steps {n}: needs 0 < n < chunk length {len(a)}")
+        raise ValueError(f"label window {n} chunk steps: needs 0 < n < chunk length {len(a)}")
     src = grip_source(row)
-    return from_openness(grip_open01(a[0][7], src), grip_open01(a[n][7], src), float(row["label_window_s"]))
+    return from_openness(grip_open01(a[0][7], src), grip_open01(a[n][7], src), w)
+
+
+def _gap_event(r0: dict, r1: dict):
+    """The gripper event between two consecutive sampled rows whose label window does not reach the next row
+    (stride > label_steps: the converter's default stride 5 vs 3): the same rate rule on the commands at the two
+    rows over their time gap; None when the window covers the gap."""
+    from ..intent import from_openness
+    from .stageb_data import grip_open01, grip_source
+    gap = (r1["k"] - r0["k"]) / float(r0.get("fps_src", r0["hz"]))
+    if gap <= float(r0["label_window_s"]) + 1e-9:
+        return None
+    src = grip_source(r0)
+    return from_openness(grip_open01(r0["action_exec"][0][7], src), grip_open01(r1["action_exec"][0][7], src), gap)
 
 
 def segment_lines(rows: list) -> dict:
     """canon §90 segment-intent line of every row, per episode (kind, seed) in frame order, from the rows' gripper
-    labels (harvest.intent.segments_from_events). {row key: line}."""
+    labels (harvest.intent.segments_from_events). Rows sampled with a stride longer than the label window: a keep row
+    whose command changes before the next row by the same rate rule counts as that event for the segments only
+    (_gap_event; its own gripper item label is unchanged). {row key: line}."""
     from ..intent import segments_from_events
     by = {}
     for r in rows:
@@ -177,7 +197,12 @@ def segment_lines(rows: list) -> dict:
     out = {}
     for ep in by.values():
         ep = sorted(ep, key=lambda r: r["k"])
-        for r, s in zip(ep, segments_from_events([gripper_label(r) for r in ep])):
+        labs = [gripper_label(r) for r in ep]
+        for i in range(len(ep) - 1):
+            if labs[i] == "keep":
+                g = _gap_event(ep[i], ep[i + 1])
+                labs[i] = g if g in ("close", "open") else labs[i]
+        for r, s in zip(ep, segments_from_events(labs)):
             out[f"{r['kind']}_ep{r['seed']}_k{r['k']}"] = s
     return out
 

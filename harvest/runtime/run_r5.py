@@ -97,13 +97,18 @@ def main(argv=None):
     elif a.astra == "scripted":
         from .astra_hb import ScriptedAstra
         astra, astra_mode = ScriptedAstra(1.0), "scripted"
+    mb, mw = None, 0.1  # canon §83 motion line: the served checkpoint's bins and data step (none -> unknown line)
+    if a.selector == "stageb":
+        from .motion import motion_config
+        mb, mw = motion_config(model.info.get("prompt_config"), model.info.get("hz"))  # raises if unusable
     cfg = RuntimeConfig(backend=a.backend, selector=a.selector, model_id=getattr(model, "model_id", a.model),
                         model_path=a.model_path, layout=a.layout if a.selector == "jevl" else "",
                         call_mode=a.mode if a.selector == "jevl" else "", clock=a.clock,
                         question_ids=question_ids(a.layout, "IMG" if a.selector == "stageb" else "S1-1mm",
                                                   decision_questions(a.backend)),
                         astra_mode=astra_mode, hb_mode=a.hb_mode, hb_budget=a.hb_budget, verify_cal=a.verify_cal,
-                        canary_id=canary_id_for(a.model_path, mock=a.selector in ("mock", "mock_fused")))
+                        canary_id=canary_id_for(a.model_path, mock=a.selector in ("mock", "mock_fused")),
+                        motion_bins=mb, motion_window_s=mw)
     if a.backend == "fused":
         cfg.state_repr = "fused: images (head + active wrist) + task + contract summary + proprio (canon §58)"
     rt = OursRuntime(cfg, model, astra=astra)

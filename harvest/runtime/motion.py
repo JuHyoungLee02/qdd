@@ -15,6 +15,23 @@ from ..train.stageb_data import grip_rate01
 MOTION_VER = "se2e-motion@v1"
 
 
+def motion_config(pc: dict | None, hz) -> tuple:
+    """(RuntimeConfig.motion_bins, motion_window_s) from a stage-B checkpoint's prompt_config and data rate (stageb.json
+    "hz", or the fused server's /info). A checkpoint trained without the line -> (None, 0.1): the unknown line. A
+    checkpoint trained WITH it (prompt_config["motion"]) must never run with bins None: a malformed record or a missing
+    rate raises (ser-A-min-3 fix round 1 item 6)."""
+    bins = (pc or {}).get("motion")
+    if not bins:
+        return None, 0.1
+    if not (isinstance(bins, dict) and bins.get("version") == MOTION_VER and "arm_speed" in bins
+            and "grip_rate" in bins):
+        raise ValueError(f"checkpoint prompt_config motion record {bins!r}: not {MOTION_VER} bins -- a motion-trained "
+                         f"checkpoint must run with its bins (canon §83)")
+    if not hz:
+        raise ValueError("motion-trained checkpoint without a data rate (stageb.json 'hz'): the motion window is 1/hz")
+    return bins, 1.0 / float(hz)
+
+
 def bin_line(arm_speed: float, grip_rate: float, bins: dict) -> str:
     lo, hi = bins["arm_speed"]
     arm = "still" if arm_speed < lo else "slow" if arm_speed < hi else "fast"

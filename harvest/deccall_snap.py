@@ -75,7 +75,7 @@ def fused_texts(ds: str, sid: str) -> dict:
                           f"sub-goal of stage {sid}?"}
 
 
-_T1 =("gripper_open", "holding_t", "lifted_holding")  # = runtime.measure.T1 (robot side, hard channel)
+_T1 = ("gripper_open", "holding_t", "lifted_holding")  # = runtime.measure.T1 (robot side, hard channel)
 
 
 def category_of_check(phase_prev: str, phase_now: str, violations) -> str:

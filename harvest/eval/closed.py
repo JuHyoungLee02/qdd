@@ -261,7 +261,8 @@ def run_worker(spec_path: str) -> None:
             mb, mw = None, 0.1  # canon §83 motion line: the checkpoint's bins and data step (none -> unknown line)
             if spec["selector"] == "stageb" and spec.get("model_path"):
                 sb = json.load(open(os.path.join(spec["model_path"], "stageb.json"), encoding="utf-8"))
-                mb, mw = (sb.get("prompt_config") or {}).get("motion"), 1.0 / float(sb.get("hz", 30))
+                from ..runtime.motion import motion_config  # raises for an unusable motion record (fix round 1)
+                mb, mw = motion_config(sb.get("prompt_config"), sb.get("hz", 30))
             cfg = RuntimeConfig(backend=spec["backend"], selector=spec["selector"],
                                 model_id=getattr(model, "model_id", spec["name"]), model_path=spec["model_path"] or "",
                                 layout=spec["layout"] if spec["selector"] == "jevl" else "",

@@ -94,12 +94,35 @@ def test_segment_intent_line_is_unknown_until_set_and_reaches_request_and_contex
     assert ctx["req"]["state"].split("\n")[-3:-1] == [SEGMENT_UNKNOWN, MOTION_UNKNOWN]  # no plan, no bins
     assert ctx["ctx_text"].split("\n")[-2:] == [SEGMENT_UNKNOWN, MOTION_UNKNOWN]
     assert ctx["privileged_s1"].split("\n")[-3] == SEGMENT_UNKNOWN  # never the skill's own phase
-    plan = "segment: now=approach do=none next=grasp"
+    plan = "segment: now=approach do=close next=carry"
     rt.segment_intent = plan  # what the coupling will set from Astra's agreed plan (later task)
     ctx = rt._decision_ctx(rt.t_last, *rt._m1_last[:4], w.obs())
     assert ctx["req"]["state"].split("\n")[-3] == plan and ctx["ctx_text"].split("\n")[-2] == plan
     rt.reset()
     assert rt.segment_intent == SEGMENT_UNKNOWN
+    rt.close()
+
+
+def test_offline_fused_context_helper_is_the_runtime_context():
+    """Fix round 1 item 4: the fused canary / bench build ctx_text with models.fused_ctx_text -- byte-identical to the
+    runtime's context (IMG state + segment line + motion line)."""
+    from harvest.runtime.models import fused_ctx_text
+    from harvest.serialize import MOTION_UNKNOWN, SEGMENT_UNKNOWN
+    rt = OursRuntime(RuntimeConfig(backend="fused", clock="simlat"), MockFusedModel(latency_s=0.3))
+    rt.reset()
+    w = FakeWorld()
+    for _ in range(40):
+        a, _ = rt.act(w.obs())
+        w.step(a)
+    ctx = rt._decision_ctx(rt.t_last, *rt._m1_last[:4], w.obs())
+    raw, present, pred, support = rt._m1_last[:4]
+    s0 = rt._s0(rt.t_last, pred, present, support)
+    assert ctx["ctx_text"] == fused_ctx_text(s0)  # no plan, no bins: unknown segment + motion
+    assert ctx["ctx_text"].split("\n")[-2:] == [SEGMENT_UNKNOWN, MOTION_UNKNOWN]
+    plan = "segment: now=carry do=open next=retreat"
+    rt.segment_intent = plan
+    ctx = rt._decision_ctx(rt.t_last, *rt._m1_last[:4], w.obs())
+    assert ctx["ctx_text"] == fused_ctx_text(s0, segment=plan, motion=MOTION_UNKNOWN)
     rt.close()
 
 

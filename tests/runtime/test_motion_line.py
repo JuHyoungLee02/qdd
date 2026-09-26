@@ -52,3 +52,18 @@ def test_fused_request_state_and_context_carry_the_motion_line():
     assert lines[-1].startswith("last_step: ") and lines[-2].startswith("motion: arm=")
     assert ctx["ctx_text"].split("\n")[-1] == lines[-2]
     rt.close()
+
+
+def test_motion_config_from_the_checkpoint_and_the_guard():
+    """Fix round 1 item 6: run_r5 / closed read the bins and the data step from the checkpoint (motion_config); a
+    motion-trained checkpoint never runs with bins None -- a malformed "motion" record or a missing rate raises."""
+    from harvest.runtime.motion import motion_config
+    assert motion_config({"motion": BINS}, 10) == (BINS, 0.1)
+    assert motion_config({"motion": BINS}, 30)[1] == pytest.approx(1 / 30)
+    assert motion_config({}, 10) == (None, 0.1) and motion_config(None, None) == (None, 0.1)  # trained without it
+    for bad in ({"motion": True}, {"motion": {"version": "other", "arm_speed": [0, 1], "grip_rate": 1}},
+                {"motion": {"version": MOTION_VER}}):
+        with pytest.raises(ValueError, match="motion"):
+            motion_config(bad, 10)
+    with pytest.raises(ValueError, match="rate"):
+        motion_config({"motion": BINS}, None)

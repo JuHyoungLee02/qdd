@@ -88,6 +88,16 @@ def build_live_request(ds: int, phase: str, text_s0: str, present, raw: dict, st
     return req, {k: v for k, v in shown.items() if k in keep}
 
 
+def fused_ctx_text(text_s0: str, segment: str | None = None, motion: str | None = None) -> str:
+    """The fused model's context prompt (stage-B ctx_text) as the runtime sends it (core._decision_ctx /
+    _maybe_request_chunk): the IMG state of the S0 text + the segment-intent line (None = unknown) + the motion line
+    (None = unknown). Offline callers (the fused canary, the fused bench) use this, so they match the runtime."""
+    from ..serialize import MOTION_UNKNOWN, SEGMENT_UNKNOWN, canonicalize
+    from ..train.stageb_data import image_only_state
+    return canonicalize(image_only_state(text_s0) + "\n" + (segment or SEGMENT_UNKNOWN) + "\n"
+                        + (motion or MOTION_UNKNOWN))
+
+
 def fused_state_text(instruction: str, stage: str, phase: str, joint_pos) -> str:
     """Fused-model text input (canon §58): task sentence + contract summary + proprioception, no coordinates."""
     from ..sim.snapshot import STAGES

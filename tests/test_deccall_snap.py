@@ -12,8 +12,9 @@ def test_request_has_six_questions_in_deccall_format_ne_last():
     req, oracle, shown = build_snapshot_request(_line())
     assert list(req["questions"]) == ["ds21.dir_xy", "ds21.dir_z", "ds21.mag_coarse", "ds21.target", "ds21.phase",
                                       "mon.progress"]
-    # ser-A-min-3 tail: segment line (canon §90, rule label of phase carry), motion line (canon §83), (b) line (§77)
-    assert req["state"] == ("t_state: f1\nrobot: x\nsegment: now=carry do=none next=place\n"
+    # ser-A-min-3 tail: segment line (canon §90, rule label of phase carry: the segment that holds the release, fix
+    # round 1), motion line (canon §83), (b) line (§77)
+    assert req["state"] == ("t_state: f1\nrobot: x\nsegment: now=carry do=open next=retreat\n"
                             "motion: arm=unknown gripper=unknown\nlast_step: none")
     for qid, q in req["questions"].items():
         assert q["type"] == "choice"

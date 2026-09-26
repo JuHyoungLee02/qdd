@@ -85,6 +85,7 @@
 | §83·§87·§90 구현기록(Task 12) | 06:06(09-26) | 직렬화 `ser-A-min-3`: 결정 상태 끝 = 구간 의도 줄 → 움직임 줄 → `last_step`; 융합 VLA에만 그리퍼 질문(close·open·keep, `phase` 뒤, expert 결정 칸 5), 라벨 규칙은 `harvest/intent.py` 한 곳(R2 = 기록 단계, S-E2E = 그리퍼 명령 속도 0.176 /s); 확정 그리퍼는 의도, 관문은 두 층 + T1 그대로; 기존 체크포인트 모두 거부·qid 새 판 (Claude 결정, 통제 판정 G1·P4·S1) | 유효 |
 | §83 구현기록 2(Task 12) | 06:29(09-26) | 같은 판 `ser-A-min-3`: 모든 체크포인트 `prompt_config`가 직렬화기 판 + `last_step` 범주 목록을 기록, `check_prompt`가 `last_step_ok`까지 검사; `mag_coarse`·`dir_xy` 문구↔라벨 통일(PH-A 1)은 미결 — 정해질 때까지 ser-A-min-3 재학습 안 함 (Claude 결정, 통제 판정 PH-A) | 유효(미결 항목은 구현기록 3이 해소) |
 | §83 구현기록 3(Task 12) | 06:49(09-26) | PH-A1: 라벨은 그대로, 융합 VLA DecCall의 `dir_xy`(남은 수평 변위의 축별 부호, 1 cm 죽은 띠)·`mag_coarse`(남은 3D 거리, 0.71·1.41·2.83·5.66 cm 경계) 문구를 라벨 정의로; 모듈형·단계 A·E0.5/E1·카나리 문구 불변, 청크 FK 되짚기는 사전 등록 실험으로만 (통제 판정 PH-A1, 근거 prompt_health 0.375·0.626) | 유효 |
+| §90 구현기록 2·§83 구현기록 4(Task 12 수정 1회) | 09:40(09-26) | 같은 판 `ser-A-min-3`: 구간이 그리퍼 사건을 품음(줄 어휘 approach·carry·retreat·done — 구간 줄이 그리퍼 답을 알려 주지 않음), 학습 때만 unknown 구간 몫 p 0.3(단계 A·B `--segment-dropout`, 재학습 필수), 오프라인 평가 요청도 unknown 구간, 프롬프트 원천 해시 보강(labels_v2·MAG_BINS·PHASE_ORDER·se2e_data), run_r5 움직임 구간, S-E2E 그리퍼 라벨 청크 색인 단위; Astra 계획 어휘는 그대로 + `PLAN_TO_LINE` (통제 판정 F12) | 유효 |
 | ul 89 | 18:34 | 결과·실수를 책처럼 기록 → `docs/book/` | 유효(이 책) |
 | §59 보충 | 06:34(09-26) | 프롬프트 검진 F(로컬 VLM 이미지 상한): vLLM `--limit-mm-per-prompt` 이미지 2 → 3(결합 흐름이 머리+양쪽 손목 3장을 보내 2에서 HTTP 400) — `tools/r5/serve.sh`·`harvest/eval/common.py` `vllm_cmd` (Claude, plan 2026-09-26 Task 20) | 유효 |
 

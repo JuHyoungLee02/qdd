@@ -9,27 +9,38 @@ Gripper decision question (canon §87, user-log 93-94): options close / open / k
     else keep (from_openness). RATE_THR = the se2e-motion@v1 gripper bin 0.176 /s (canon §83), strict comparison
     like the motion line (a rate exactly at the threshold is keep).
 Segment-intent line (canon §90, user-log 100): `segment: now=<segment> do=<action> next=<segment>` (vocabulary in
-  serialize.SEGMENTS / SEGMENT_ACTIONS).
-  R2 / pool lines: from the planner phase (segment_from_phase): now = PHASE_SEGMENT[phase] (1:1 rename), do = the
-    gripper action inside that segment (grasp -> close, release -> open, else none), next = the planned successor
-    phase (sim.snapshot.PHASE_ORDER; done -> done). An unknown phase -> the unknown line.
-  S-E2E episodes: from the per-row gripper labels above in frame order (segments_from_events): a closing row =
-    grasp / close / carry; an opening row = release / open / (approach if a later close exists, else retreat); a keep
-    row takes the next event ahead: close ahead -> approach / none / grasp, open ahead -> carry / none / release; no
-    event ahead: after a release -> retreat / none / unknown, after a grasp -> carry / none / unknown, no event at all
-    -> the unknown line; a row whose gripper label is not derivable (None) -> the unknown line. S-E2E cannot separate approach from descend or lift / carry / place (no phases): approach =
-    open before a grasp, carry = closed before a release.
-The runtime segment line comes from Astra's agreed segment plan (coupling, a later task); until set it is unknown.
+  serialize.SEGMENTS / SEGMENT_ACTIONS). Fix round 1 (controller ruling F12): a segment CONTAINS its gripper event --
+  §90: Astra names the segment and the action to do in it, the VLA decides WHEN within the segment -- so the segment
+  line is the same before and during the event, both keep and the event label occur inside one segment, and the
+  line never tells the gripper answer (tests/test_intent.py).
+  R2 / pool lines: from the planner phase (segment_from_phase): approach / descend / close -> approach (do=close,
+    next=carry); lift / carry / place_descend / open -> carry (do=open, next=retreat); retreat -> retreat (do=none,
+    next=done); done -> done (none, done). An unknown phase -> the unknown line.
+  S-E2E episodes: from the per-row gripper labels above in frame order (segments_from_events): a row takes the first
+    event at or after it (its own label included): close -> approach / close / carry; open -> carry / open /
+    (approach if a close follows that release, else retreat); no event at or after it: after a release -> retreat /
+    none / done, after a grasp -> carry / none / unknown (holding at the end, no release recorded), no event at all
+    -> the unknown line; a row whose gripper label is not derivable (None) -> the unknown line and no event.
+The runtime segment line comes from Astra's agreed segment plan (coupling, a later task); until set it is unknown --
+training shows unknown too with p SEGMENT_DROPOUT (segment_dropout, training only, like the motion line's §83 p 0.3).
 """
 from __future__ import annotations
+
+import hashlib
+import re
 
 from .serialize import SEGMENT_UNKNOWN, segment_line
 
 KEYS = ("close", "open", "keep")
 RATE_THR = 0.176  # openness / s (canon §83 se2e-motion@v1 gripper bin)
-PHASE_SEGMENT = {"approach": "approach", "descend": "descend", "close": "grasp", "lift": "lift", "carry": "carry",
-                 "place_descend": "place", "open": "release", "retreat": "retreat", "done": "done"}
-SEGMENT_DO = {"grasp": "close", "release": "open"}
+PHASE_SEGMENT = {"approach": "approach", "descend": "approach", "close": "approach", "lift": "carry", "carry": "carry",
+                 "place_descend": "carry", "open": "carry", "retreat": "retreat", "done": "done"}
+SEGMENT_PLAN = {"approach": ("close", "carry"), "carry": ("open", "retreat"), "retreat": ("none", "done"),
+                "done": ("none", "done")}  # segment -> (do, next) of the planned R2 order
+# Astra's segment-plan names (serialize.SEGMENTS, the E-ACC v2 answer) -> the line segment that contains them
+PLAN_TO_LINE = {"approach": "approach", "descend": "approach", "grasp": "approach", "lift": "carry", "carry": "carry",
+                "place": "carry", "release": "carry", "retreat": "retreat", "done": "done"}
+SEGMENT_DROPOUT = 0.3  # = se2e_temporal.MOTION_DROPOUT (canon §83 line dropout, training only)
 
 
 def from_phase(phase) -> str:
@@ -47,39 +58,77 @@ def from_openness(open_now: float, open_then: float, window_s: float, thr: float
 
 def segment_from_phase(phase) -> str:
     """Segment-intent line of a sim snapshot from its recorded planner phase."""
-    from .sim.snapshot import PHASE_ORDER
     now = PHASE_SEGMENT.get(phase)
     if now is None:
         return SEGMENT_UNKNOWN
-    i = PHASE_ORDER.index(phase)
-    nxt = PHASE_SEGMENT[PHASE_ORDER[i + 1]] if i + 1 < len(PHASE_ORDER) else "done"
-    return segment_line(now, SEGMENT_DO.get(now, "none"), nxt)
+    return segment_line(now, *SEGMENT_PLAN[now])
 
 
 def segments_from_events(labels) -> list:
     """Segment-intent lines of one S-E2E episode from its per-row gripper labels (close / open / keep, frame order;
     None = not derivable for that row -> the unknown line, and it is no event for the other rows)."""
     labels = list(labels)
+    ev = [(j, g) for j, g in enumerate(labels) if g in ("close", "open")]
     out = []
     for i, g in enumerate(labels):
-        later = labels[i + 1:]
         if g is None:
             out.append(SEGMENT_UNKNOWN)
-        elif g == "close":
-            out.append(segment_line("grasp", "close", "carry"))
-        elif g == "open":
-            out.append(segment_line("release", "open", "approach" if "close" in later else "retreat"))
+            continue
+        ahead = next(((j, x) for j, x in ev if j >= i), None)
+        if ahead is not None and ahead[1] == "close":
+            out.append(segment_line("approach", "close", "carry"))
+        elif ahead is not None:  # a release at or after this row
+            later_close = any(x == "close" for j, x in ev if j > ahead[0])
+            out.append(segment_line("carry", "open", "approach" if later_close else "retreat"))
         else:
-            ahead = next((x for x in later if x in ("close", "open")), None)
-            before = next((x for x in reversed(labels[:i]) if x in ("close", "open")), None)
-            if ahead == "close":
-                out.append(segment_line("approach", "none", "grasp"))
-            elif ahead == "open":
-                out.append(segment_line("carry", "none", "release"))
-            elif before == "open":
-                out.append(segment_line("retreat", "none", "unknown"))
-            elif before == "close":
-                out.append(segment_line("carry", "none", "unknown"))
-            else:
-                out.append(SEGMENT_UNKNOWN)
+            before = next((x for j, x in reversed(ev) if j < i), None)
+            out.append(segment_line("retreat", "none", "done") if before == "open" else
+                       segment_line("carry", "none", "unknown") if before == "close" else SEGMENT_UNKNOWN)
     return out
+
+
+# ------------------------------------------------------------------------------------------ unknown-segment share
+_SEG_LINE = re.compile(r"(?m)^segment: now=\S+ do=\S+ next=\S+$")
+
+
+def drop_segment(text: str) -> str:
+    """The text with its segment-intent line replaced by the unknown line (the runtime's value until Astra's plan)."""
+    return _SEG_LINE.sub(SEGMENT_UNKNOWN, text)
+
+
+def segment_dropped(key: str, step: int, seed: int, p: float = SEGMENT_DROPOUT) -> bool:
+    """Whether a training sample shows the unknown segment line at this optimizer step: a hash of (seed, step, key),
+    so every item of one snapshot drops together (prefix sharing) and no training RNG is touched."""
+    if p <= 0:
+        return False
+    h = hashlib.sha256(f"segdrop|{int(seed)}|{int(step)}|{key}".encode()).digest()
+    return int.from_bytes(h[:8], "big") / 2 ** 64 < p
+
+
+def segment_dropout(batch, step: int, seed: int, p: float = SEGMENT_DROPOUT) -> list:
+    """Stage-B training batch (samples with context.text + items[].text) with each sample's segment line replaced by
+    the unknown line with probability p (segment_dropped on the sample key). Shallow copies; evaluation never drops."""
+    out = []
+    for s in batch:
+        if segment_dropped(s["key"], step, seed, p):
+            s = {**s, "context": {**s["context"], "text": drop_segment(s["context"]["text"])},
+                 "items": [{**it, "text": drop_segment(it["text"])} for it in s["items"]]}
+        out.append(s)
+    return out
+
+
+def with_segment_dropout(batch_fn, p: float, seed: int):
+    """A stage-B training batch transform (stageb_train.train_loop batch_fn): the given one (e.g. the motion-line
+    dropout, or None) followed by segment_dropout; p <= 0 -> batch_fn unchanged."""
+    if p <= 0:
+        return batch_fn
+
+    def f(batch, step):
+        return segment_dropout(batch_fn(batch, step) if batch_fn is not None else batch, step, seed, p)
+    return f
+
+
+def segment_dropout_items(items, step: int, seed: int, p: float = SEGMENT_DROPOUT) -> list:
+    """Stage-A training items (one per question, text) -- the same rule on the item's snapshot key."""
+    return [{**it, "text": drop_segment(it["text"])} if segment_dropped(it["key"], step, seed, p) else it
+            for it in items]

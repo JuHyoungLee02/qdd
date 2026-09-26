@@ -460,9 +460,7 @@ def bench(a):
     import glob
 
     from ..train.stagea_loss import item_logprobs
-    from ..train.stageb_data import image_only_state
-    from ..serialize import canonicalize
-    from .models import build_live_request
+    from .models import FUSED_QUESTIONS, build_live_request, fused_ctx_text
     eng = StageBFused(a.ckpt, device=a.device, dtype=a.dtype)
     torch = eng.torch
     lines = []
@@ -472,10 +470,11 @@ def bench(a):
     rec = {"decide": [], "verify": [], "chunk_graph": [], "chunk_eager": [], "graph_vs_eager": [], "lp_diff": []}
     for i, ln in enumerate(lines):
         raw, present = ln["state"]["obs"]["raw"], ln["state"]["present"]
-        from ..deccall_snap import last_step_of
+        from ..deccall_snap import last_step_of, motion_of
+        # the fused runtime's DecCall and context (fix round 1: fused questions / wording, unknown segment line)
         req, shown = build_live_request(i, ln["phase"], ln["text_state"], present, raw, state="IMG",
-                                        last_step=last_step_of(ln))
-        ctx_text = canonicalize(image_only_state(ln["text_state"]))
+                                        last_step=last_step_of(ln), motion=motion_of(ln), questions=FUSED_QUESTIONS)
+        ctx_text = fused_ctx_text(ln["text_state"], motion=motion_of(ln))
         jp = {cam: open(os.path.join(a.pool, ln["images"][cam]), "rb").read() for cam, _ in CAMS}
         r = eng.decide_raw(ln["t"], ctx_text, req, jp)
         rec["decide"].append(r["meta"]["t_decide_s"])

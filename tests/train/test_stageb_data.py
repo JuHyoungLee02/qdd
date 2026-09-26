@@ -264,7 +264,7 @@ def test_load_stageb_joins_pool_labels_and_rows_without_oracle(tmp_path):
                                                                         "right wrist camera (active arm):"]
     assert all(it["images"] == ims for it in s["items"])
     from harvest.jevcall import canonicalize
-    tail = "\nsegment: now=carry do=none next=place\nmotion: arm=unknown gripper=unknown"  # ser-A-min-3 (§90, §83)
+    tail = "\nsegment: now=carry do=open next=retreat\nmotion: arm=unknown gripper=unknown"  # ser-A-min-3 §90 fix 1
     assert s["context"]["text"] == canonicalize(D.image_only_state(TS) + tail)
     # the DecCall items end their state with the (b) line (canon §77); the expert context has no (b) line
     assert all(it["text"].startswith(s["context"]["text"] + "\nlast_step: none\n\nQuestion") for it in s["items"])

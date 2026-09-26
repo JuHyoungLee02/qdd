@@ -43,6 +43,7 @@ os.environ.setdefault("TORCH_DISABLE_NATIVE_JIT", "1")
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
+from ..intent import SEGMENT_DROPOUT, with_segment_dropout
 from . import stageb_data as D
 from .stageb_expert import fm_loss, n_params, sample_actions, sample_time
 from .stageb_model import HFEncoder, load_heads, new_model
@@ -55,7 +56,8 @@ def _utc():
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
-PROMPT_FILES_B = ("harvest/train/stageb_data.py", "harvest/train/stageb_model.py")
+PROMPT_FILES_B = ("harvest/train/stageb_data.py", "harvest/train/stageb_model.py",
+                  "harvest/train/se2e_data.py")  # S-E2E items: gripper labels, segment lines, _QTEXT (fix round 1)
 
 
 def prompt_config(samples, state):
@@ -305,7 +307,11 @@ RESUME_KEYS = ("data", "pool", "rows", "se2e_root", "se2e_kinds", "no_labels", "
                "epochs", "max_steps", "max_train", "max_val", "val_per_kind", "val_seed", "no_share", "init_adapter",
                "lr_schedule", "warmup_steps", "train_subset", "train_subset_seed", "train_fraction",
                "eval_train_subset", "eval_train_per_kind",
-               "camera_layout", "motion_line", "motion_bins", "motion_dropout", "se2e_t_root", "aux_extra", "a3d_root")
+               "camera_layout", "motion_line", "motion_bins", "motion_dropout", "se2e_t_root", "aux_extra", "a3d_root",
+               "segment_dropout")
+# an option whose default does NOT keep the earlier behaviour: its value for a checkpoint saved before it existed
+# (ser-A-min-3 fix round 1: runs before --segment-dropout never dropped the segment line)
+SAVED_BEFORE = {"segment_dropout": 0.0}
 # every other option of `train` (bookkeeping: names, output, cadence, memory). eval_every: evaluate() uses its own
 # generator, so the trajectory does not depend on it; init_weights: refused together with --resume (the weights come
 # from the checkpoint); grad_ckpt: recomputation only. A new option must be added to one of the two (test).
@@ -323,9 +329,11 @@ def val_subset(va, max_val: int, val_per_kind: int, val_seed: int):
 def check_resume_args(saved: dict, now: dict):
     """Refuse a resume whose RESUME_KEYS differ from the checkpoint's. A key missing from the saved args (a checkpoint
     written before the option existed) counts as the option's default: every option was added with a default that
-    keeps the earlier behaviour (prereg_se2e_diag section 1, prereg_se2e_temporal)."""
+    keeps the earlier behaviour (prereg_se2e_diag section 1, prereg_se2e_temporal) -- except SAVED_BEFORE, whose
+    earlier behaviour is the value given there."""
     d = vars(build_parser().parse_args(["train", "--run", "_"]))
-    bad = {k: (saved.get(k, d[k]), now.get(k, d[k])) for k in RESUME_KEYS if saved.get(k, d[k]) != now.get(k, d[k])}
+    s = {k: saved.get(k, SAVED_BEFORE.get(k, d[k])) for k in RESUME_KEYS}
+    bad = {k: (s[k], now.get(k, d[k])) for k in RESUME_KEYS if s[k] != now.get(k, d[k])}
     if bad:
         raise SystemExit(f"--resume: settings differ from the checkpoint's run (saved, now): {bad}")
 
@@ -639,6 +647,9 @@ def cmd_train(a):
     if bins is not None and a.motion_dropout > 0:
         from .se2e_temporal import motion_dropout
         batch_fn = lambda b, step: motion_dropout(b, step, a.seed, a.motion_dropout)  # noqa: E731
+    if not 0.0 <= a.segment_dropout < 1.0:
+        raise SystemExit("--segment-dropout: 0 <= p < 1")
+    batch_fn = with_segment_dropout(batch_fn, a.segment_dropout, a.seed)  # canon §90 unknown-segment share
     arms = {arm: sum(s.get("arm", "right") == arm for s in tr) for arm in ("left", "right")}
     total = a.max_steps or math.ceil(len(tr) / a.batch) * a.epochs
     val = val_subset(va, a.max_val, a.val_per_kind, a.val_seed)
@@ -797,6 +808,9 @@ def build_parser():
                    help="--eval-train-subset: stratified N per source of the train (sub)set (0 = all of it)")
     t.add_argument("--motion-dropout", type=float, default=0.3,
                    help="--motion-line: training-only probability of the 'unknown' line (prereg_se2e_temporal)")
+    t.add_argument("--segment-dropout", type=float, default=SEGMENT_DROPOUT,
+                   help="training-only probability of the 'unknown' segment-intent line (canon §90: the runtime shows "
+                        "unknown until Astra's plan; ser-A-min-3 retrains use the default)")
     e = sub.add_parser("evalck", help="reload a checkpoint, fixed-noise validation, compare with the run's log")
     _common(e)
     _data(e)

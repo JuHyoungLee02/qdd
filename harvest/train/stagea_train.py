@@ -47,16 +47,31 @@ def _utc():
 
 
 def file_sha(paths):
+    """{path: sha256[:12]} of repo files; an entry "path.py:NAME" hashes the repr of that module constant instead
+    (a prompt-shaping constant of a large module, so an unrelated edit of the module does not change the hash)."""
+    import importlib
     here = os.path.dirname(os.path.abspath(__file__))
     root = os.path.dirname(os.path.dirname(here))
-    return {p: hashlib.sha256(open(os.path.join(root, p), "rb").read()).hexdigest()[:12] for p in paths}
+    out = {}
+    for p in paths:
+        if ":" in p:
+            path, name = p.split(":")
+            val = getattr(importlib.import_module(path[:-len(".py")].replace("/", ".")), name)
+            out[p] = hashlib.sha256(repr(val).encode()).hexdigest()[:12]
+        else:
+            out[p] = hashlib.sha256(open(os.path.join(root, p), "rb").read()).hexdigest()[:12]
+    return out
 
 
 PROMPT_FILES = ("harvest/clients/jevl.py", "harvest/deccall_snap.py", "harvest/jevcall.py", "harvest/options.py",
                 "harvest/e3lite.py",
                 "harvest/serialize.py", "harvest/train/stagea_data.py", "harvest/train/stagea_loss.py",
                 "harvest/train/prefix_share.py",
-                "harvest/intent.py")  # ser-A-min-3: the §90 segment line of training prompts comes from its rule
+                "harvest/intent.py",  # ser-A-min-3: the §90 segment line of training prompts comes from its rule
+                # ser-A-min-3 fix round 1: the fused dir_xy / mag_coarse wording (labels_v2 constants, the MAG bins),
+                # the segment rule's phase order, the stage (S1 / S2) and object names in the question text
+                "harvest/labels_v2.py", "harvest/sim/planner.py:MAG_BINS", "harvest/sim/snapshot.py:PHASE_ORDER",
+                "harvest/sim/snapshot.py:_S1", "harvest/sim/snapshot.py:SPEC_NAMES")
 
 
 def Scorer(processor, image_root):
@@ -109,7 +124,7 @@ def serializer_of(pc: dict) -> str:
     fs = pc.get("files_sha") or {}
     try:
         same = bool(fs) and isinstance(fs, dict) and file_sha(tuple(fs)) == fs
-    except OSError:
+    except (OSError, AttributeError, ImportError):  # a recorded file / constant this code no longer has
         same = False
     return SERIALIZER_VERSION if same else f"older than {SERIALIZER_VERSION} (prompt-building files changed)"
 
@@ -244,7 +259,10 @@ def cmd_train(a):
     import torch
     from transformers import get_cosine_schedule_with_warmup
 
+    from ..intent import segment_dropout_items
     from .stagea_loss import set_nll
+    if not 0.0 <= a.segment_dropout < 1.0:
+        raise SystemExit("--segment-dropout: 0 <= p < 1")
     out = os.path.join(a.out_root, a.run)
     if os.path.exists(os.path.join(out, "config.json")) and not a.overwrite:
         raise SystemExit(f"{out} exists (use --overwrite)")
@@ -314,7 +332,8 @@ def cmd_train(a):
             order = list(range(len(tr)))
             rng.shuffle(order)
         for j in range(0, len(order), a.accum):
-            chunk = [tr[i] for i in order[j:j + a.accum]]
+            # canon §90 unknown-segment share (the modular runtime shows unknown until Astra's plan); per snapshot
+            chunk = segment_dropout_items([tr[i] for i in order[j:j + a.accum]], step, a.seed, a.segment_dropout)
             for mb in item_batches(chunk, a.micro) if share else [[it] for it in chunk]:
                 lps = batch_logprobs(model, scorer, mb, device, share, a.micro)
                 losses = [set_nll(lp, it["target"]) for lp, it in zip(lps, mb)]
@@ -420,6 +439,7 @@ def cmd_load(a):
 
 
 def main(argv=None):
+    from ..intent import SEGMENT_DROPOUT
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
     t = sub.add_parser("train")
@@ -434,6 +454,8 @@ def main(argv=None):
     t.add_argument("--lora-r", type=int, default=32)
     t.add_argument("--lora-alpha", type=int, default=64)
     t.add_argument("--lora-dropout", type=float, default=0.05)
+    t.add_argument("--segment-dropout", type=float, default=SEGMENT_DROPOUT,
+                   help="training-only probability of the 'unknown' segment-intent line (canon §90)")
     t.add_argument("--eval-every", type=int, default=100)
     t.add_argument("--patience", type=int, default=3)
     t.add_argument("--log-every", type=int, default=1)

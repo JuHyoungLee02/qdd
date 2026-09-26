@@ -29,57 +29,90 @@ def test_rule_from_openness_strict_threshold_boundaries():
 
 
 def test_segment_line_vocabulary_and_check():
-    from harvest.serialize import SEGMENT_UNKNOWN, check_segment, segment_line
-    assert segment_line("approach", "none", "grasp") == "segment: now=approach do=none next=grasp"
+    from harvest.serialize import (LINE_SEGMENTS, SEGMENT_ACTIONS, SEGMENT_UNKNOWN, SEGMENTS, check_segment,
+                                   segment_line)
+    # fix round 1 (controller ruling F12): a segment CONTAINS its gripper event (no grasp / release segment names)
+    assert LINE_SEGMENTS == ("approach", "carry", "retreat", "done") and SEGMENT_ACTIONS == ("close", "open", "none")
+    # Astra's plan names (E-ACC v2 answer vocabulary) map onto the line segment that contains them
+    assert set(G.PLAN_TO_LINE) == set(SEGMENTS) and set(G.PLAN_TO_LINE.values()) == set(LINE_SEGMENTS)
+    assert {G.PLAN_TO_LINE[s] for s in ("descend", "grasp")} == {"approach"}
+    assert {G.PLAN_TO_LINE[s] for s in ("lift", "place", "release")} == {"carry"}
+    assert segment_line("approach", "close", "carry") == "segment: now=approach do=close next=carry"
     assert check_segment(SEGMENT_UNKNOWN) == SEGMENT_UNKNOWN
-    for bad in (("reach", "none", "grasp"), ("approach", "keep", "grasp"), ("approach", "none", "o3")):
+    for bad in (("reach", "none", "carry"), ("approach", "keep", "carry"), ("approach", "none", "o3"),
+                ("grasp", "close", "carry"), ("approach", "close", "lift")):
         with pytest.raises(ValueError, match="segment value"):
             segment_line(*bad)
-    for bad in ("segment: now=approach do=none", "segment now=approach do=none next=grasp",
-                "segment: now=approach do=none next=grasp x=1"):
+    for bad in ("segment: now=approach do=none", "segment now=approach do=none next=carry",
+                "segment: now=approach do=none next=carry x=1"):
         with pytest.raises(ValueError, match="segment"):
             check_segment(bad)
 
 
 def test_segment_rule_from_the_r2_phase_sequence():
-    want = {"approach": "now=approach do=none next=descend", "descend": "now=descend do=none next=grasp",
-            "close": "now=grasp do=close next=lift", "lift": "now=lift do=none next=carry",
-            "carry": "now=carry do=none next=place", "place_descend": "now=place do=none next=release",
-            "open": "now=release do=open next=retreat", "retreat": "now=retreat do=none next=done",
-            "done": "now=done do=none next=done"}
+    # the pick segment holds approach + descend + close (do=close), the place segment lift .. open (do=open)
+    pick, carry = "now=approach do=close next=carry", "now=carry do=open next=retreat"
+    want = {"approach": pick, "descend": pick, "close": pick, "lift": carry, "carry": carry, "place_descend": carry,
+            "open": carry, "retreat": "now=retreat do=none next=done", "done": "now=done do=none next=done"}
     from harvest.sim.snapshot import PHASE_ORDER
-    assert set(want) == set(PHASE_ORDER) == set(G.PHASE_SEGMENT)  # every planner phase maps 1:1
+    assert set(want) == set(PHASE_ORDER) == set(G.PHASE_SEGMENT)  # every planner phase has a segment
     for ph, s in want.items():
         assert G.segment_from_phase(ph) == "segment: " + s
     assert G.segment_from_phase("na") == G.segment_from_phase(None) == "segment: now=unknown do=unknown next=unknown"
 
 
 def test_segment_rule_from_s_e2e_gripper_events():
-    labs = ["keep", "keep", "close", "keep", "keep", "open", "keep", "close", "keep", "open", "keep"]
+    labs = ["keep", "keep", "close", "close", "keep", "keep", "open", "keep", "close", "keep", "open", "keep"]
     got = [s[len("segment: "):] for s in G.segments_from_events(labs)]
-    assert got == ["now=approach do=none next=grasp", "now=approach do=none next=grasp",
-                   "now=grasp do=close next=carry", "now=carry do=none next=release",
-                   "now=carry do=none next=release", "now=release do=open next=approach",
-                   "now=approach do=none next=grasp", "now=grasp do=close next=carry",
-                   "now=carry do=none next=release", "now=release do=open next=retreat",
-                   "now=retreat do=none next=unknown"]
+    A2, C2 = "now=approach do=close next=carry", "now=carry do=open next=approach"
+    C3, R = "now=carry do=open next=retreat", "now=retreat do=none next=done"
+    assert got == [A2, A2, A2, A2, C2, C2, C2, A2, A2, C3, C3, R]
     assert G.segments_from_events(["keep", "keep"]) == ["segment: now=unknown do=unknown next=unknown"] * 2
-    assert G.segments_from_events(["close", "keep"])[1] == "segment: now=carry do=none next=unknown"  # no release
+    # holding at the end without a release ahead: carry, nothing planned
+    assert G.segments_from_events(["close", "keep"])[1] == "segment: now=carry do=none next=unknown"
+    # starting while holding: the first event is a release
+    assert G.segments_from_events(["keep", "open", "keep"]) == ["segment: " + C3, "segment: " + C3, "segment: " + R]
     assert G.segments_from_events([]) == []
     got = G.segments_from_events(["keep", None, "close"])  # None = not derivable: unknown, and no event
-    assert got[0].endswith("now=approach do=none next=grasp") and got[1] == G.SEGMENT_UNKNOWN
-    assert got[2].endswith("now=grasp do=close next=carry")
+    assert got[0] == "segment: " + A2 and got[1] == G.SEGMENT_UNKNOWN and got[2] == "segment: " + A2
+
+
+def _r2_phase_sequence():
+    # a planned R2 episode sampled several times per phase (the snapshot rows of one episode)
+    return [ph for ph, n in (("approach", 4), ("descend", 3), ("close", 2), ("lift", 2), ("carry", 3),
+                             ("place_descend", 3), ("open", 2), ("retreat", 2), ("done", 1)) for _ in range(n)]
+
+
+def test_the_segment_line_does_not_give_away_the_gripper_label():
+    """canon §90: Astra names the segment and its action, the VLA decides WHEN -- so the gripper label must not be a
+    function of the segment line: every segment whose action is close / open also holds keep rows (the event inside
+    is that action), and the segment line never changes where a gripper event starts."""
+    ph = _r2_phase_sequence()
+    r2 = ([G.segment_from_phase(p) for p in ph], [G.from_phase(p) for p in ph])
+    ev = ["keep", "keep", "keep", "close", "close", "keep", "keep", "keep", "open", "open", "keep", "keep"]
+    for segs, labels in (r2, (G.segments_from_events(ev), ev)):
+        by = {}
+        for s, g in zip(segs, labels):
+            by.setdefault(s, set()).add(g)
+        assert any(len(v) > 1 for v in by.values())  # the label is not a function of the segment line
+        for s, v in by.items():
+            if v & {"close", "open"}:
+                assert "keep" in v, (s, v)
+                assert v - {"keep"} == {s.split(" do=")[1].split(" ")[0]}, (s, v)
+        for i in range(1, len(labels)):
+            if labels[i] in ("close", "open") and labels[i - 1] == "keep":
+                assert segs[i] == segs[i - 1]
 
 
 def test_deccall_state_tail_order_segment_motion_last_step():
     req, _, _ = build_snapshot_request(_line("close"))
-    assert req["state"].split("\n")[-3:] == ["segment: now=grasp do=close next=lift",
+    assert req["state"].split("\n")[-3:] == ["segment: now=approach do=close next=carry",
                                              "motion: arm=unknown gripper=unknown", "last_step: none"]
-    seg = "segment: now=approach do=none next=grasp"  # an explicit line (runtime: Astra's plan) wins over the rule
+    seg = "segment: now=carry do=open next=retreat"  # an explicit line (runtime: Astra's plan) wins over the rule
     req, _, _ = build_snapshot_request({**_line("close"), "segment": seg})
     assert req["state"].split("\n")[-3] == seg
     with pytest.raises(ValueError, match="segment"):
-        build_snapshot_request({**_line("close"), "segment": "segment: now=reach do=none next=grasp"})
+        build_snapshot_request({**_line("close"), "segment": "segment: now=grasp do=close next=carry"})
 
 
 def _line(phase="carry"):
@@ -239,7 +272,7 @@ def test_se2e_gripper_label_from_the_recorded_command():
     # RB1: joint value 0 = open, 1.10 = closed (stageb_data.GRIP_CAL); label window = label_steps (3) at 10 Hz
     def row(g0, g3):
         a = [[0.0] * 7 + [g0]] + [[0.0] * 7 + [g0]] * 2 + [[0.0] * 7 + [g3]] + [[0.0] * 7 + [g3]]
-        return {"kind": "RB1", "fps_src": 10, "action_exec": a, "label_steps": 3, "label_window_s": 0.3}
+        return {"kind": "RB1", "fps_src": 10, "hz": 10, "action_exec": a, "label_steps": 3, "label_window_s": 0.3}
     assert S.gripper_label(row(0.0, 1.10)) == "close"  # command closes fully within 0.3 s
     assert S.gripper_label(row(1.10, 0.0)) == "open"
     assert S.gripper_label(row(0.5, 0.5)) == "keep"
@@ -247,6 +280,76 @@ def test_se2e_gripper_label_from_the_recorded_command():
     d = 0.176 * 0.3 * 1.10
     assert S.gripper_label(row(0.2, 0.2 + d * 0.999)) == "keep"
     assert S.gripper_label(row(0.2, 0.2 + d * 1.001)) == "close"
-    with pytest.raises(ValueError, match="label_steps"):
-        S.gripper_label({**row(0.0, 1.1), "label_steps": 5})
     assert S.gripper_label({k: v for k, v in row(0.0, 1.1).items() if k != "label_steps"}) is None  # not derivable
+
+
+def test_se2e_gripper_label_indexes_the_chunk_in_its_own_rate():
+    """Fix round 1 item 9: action_exec is resampled at the row's hz, the label window is in seconds -- the chunk index
+    is window * hz (not the source-fps label_steps); a window that is no whole number of chunk steps is refused."""
+    from harvest.train import se2e_data as S
+    g = [0.0, 0.0, 0.0, 0.0, 1.1, 1.1]  # the command closes between chunk steps 3 and 4 (hz 10)
+    a = [[0.0] * 7 + [x] for x in g]
+    # source 20 fps -> label_steps 6 source frames = 0.3 s = 3 chunk steps at hz 10: the command has not closed yet
+    r = {"kind": "RB1", "fps_src": 20, "hz": 10, "action_exec": a, "label_steps": 6, "label_window_s": 0.3}
+    assert S.gripper_label(r) == "keep"  # indexing a[6] (source steps) would have raised / read the wrong time
+    assert S.gripper_label({**r, "label_window_s": 0.4}) == "close"
+    with pytest.raises(ValueError, match="whole number"):
+        S.gripper_label({**r, "label_window_s": 1.0 / 3.0, "label_steps": 10, "fps_src": 30})
+    with pytest.raises(ValueError, match="chunk"):
+        S.gripper_label({**r, "label_window_s": 0.6})
+
+
+def test_se2e_segment_lines_see_an_event_between_stride_sampled_rows():
+    """Fix round 1 item 9: rows sampled every 5 frames with a 3-frame label window -- a grasp between two rows is in
+    no row's window; segment_lines finds it from the commands of consecutive rows (same rate rule) so the segments
+    around it are approach / carry, while the rows' own gripper labels stay keep."""
+    from harvest.train import se2e_data as S
+
+    def row(k, g0):
+        a = [[0.0] * 7 + [g0]] * 5
+        return {"kind": "RB1", "seed": 7, "k": k, "fps_src": 10, "hz": 10, "action_exec": a, "label_steps": 3,
+                "label_window_s": 0.3}
+    rows = [row(0, 0.0), row(5, 0.0), row(10, 1.1), row(15, 1.1)]  # closed between frame 8 and 10
+    assert [S.gripper_label(r) for r in rows] == ["keep"] * 4
+    segs = S.segment_lines(rows)
+    assert [segs[f"RB1_ep7_k{k}"] for k in (0, 5, 10, 15)] == [
+        "segment: now=approach do=close next=carry"] * 2 + ["segment: now=carry do=none next=unknown"] * 2
+
+
+def test_segment_dropout_training_share():
+    """Fix round 1 item 2: the runtime shows the unknown segment line (until Astra's plan, VLA-alone arms, the
+    modular stack) -- training replaces the line by unknown with p = SEGMENT_DROPOUT (= the §83 motion line's 0.3),
+    per snapshot key and step, all items of a snapshot together, and composes with the motion-line dropout."""
+    from harvest.serialize import MOTION_UNKNOWN, SEGMENT_UNKNOWN
+    assert G.SEGMENT_DROPOUT == 0.3
+    seg = "segment: now=approach do=close next=carry"
+    ctx = f"task: x\n{seg}\nmotion: arm=slow gripper=still"
+    assert G.drop_segment(ctx) == f"task: x\n{SEGMENT_UNKNOWN}\nmotion: arm=slow gripper=still"
+    assert G.drop_segment("no line") == "no line"
+    n = 20000
+    share = sum(G.segment_dropped(f"k{i}", 3, 0) for i in range(n)) / n
+    assert abs(share - 0.3) < 0.015
+    assert not any(G.segment_dropped(f"k{i}", 3, 0, p=0.0) for i in range(100))
+    assert [G.segment_dropped("k1", s, 0) for s in range(50)] == [G.segment_dropped("k1", s, 0) for s in range(50)]
+    assert len({tuple(G.segment_dropped(f"k{i}", s, 0) for i in range(40)) for s in range(5)}) > 1  # varies by step
+    sample = {"key": "k1", "context": {"text": ctx}, "items": [{"text": ctx + "\nlast_step: none\n\nQuestion a"},
+                                                               {"text": ctx + "\nlast_step: none\n\nQuestion b"}]}
+    batch = [dict(sample, key=f"k{i}") for i in range(200)]
+    out = G.segment_dropout(batch, 5, 1)
+    dropped = [s for s in out if SEGMENT_UNKNOWN in s["context"]["text"]]
+    assert 30 < len(dropped) < 90
+    for s in dropped:
+        assert all(SEGMENT_UNKNOWN in it["text"] and seg not in it["text"] for it in s["items"])
+        assert G.segment_dropped(s["key"], 5, 1)
+    assert batch[0]["context"]["text"] == ctx  # inputs not modified
+    items = [{"key": "a", "text": ctx + "\nQ1"}, {"key": "a", "text": ctx + "\nQ2"}, {"key": "b", "text": ctx}]
+    for step in range(20):  # stage A: the items of one snapshot drop together (shared prefix)
+        got = G.segment_dropout_items(items, step, 0)
+        assert (SEGMENT_UNKNOWN in got[0]["text"]) == (SEGMENT_UNKNOWN in got[1]["text"])
+    # composes with the motion-line dropout (both lines unknown when both fire)
+    mot = lambda b, step: [{**s, "context": {"text": s["context"]["text"].replace(  # noqa: E731
+        "motion: arm=slow gripper=still", MOTION_UNKNOWN)}, "items": s["items"]} for s in b]
+    f = G.with_segment_dropout(mot, 0.3, 1)
+    both = [s for s in f(batch, 5) if SEGMENT_UNKNOWN in s["context"]["text"]]
+    assert both and all(MOTION_UNKNOWN in s["context"]["text"] for s in both)
+    assert G.with_segment_dropout(None, 0.0, 1) is None and G.with_segment_dropout(mot, 0.0, 1) is mot
