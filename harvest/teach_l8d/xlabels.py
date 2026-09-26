@@ -32,6 +32,8 @@ def plan(st: dict, info: dict, table_z: float, w_open: float):
     pred = st["pred"]
     tcp = np.asarray(st["tcp"], float)
     c, p = np.asarray(st["obj"][tg], float), np.asarray(st["obj"][pl], float)
+    if info.get("place_xy_offset"):  # multi-step: a shared place (bin) gets side-by-side spots
+        p = p + np.array([*info["place_xy_offset"], 0.0], float)
     h = obj_height(tg)
     hold = pred.get(f"holding({tg})") is True
     zc = H["carry_base"] + L.CARRY_DZ

@@ -74,7 +74,7 @@ def test_x_plan_and_held_out_tasks():
     assert p[0]["seed"] == S.X_TRAIN_START and p[-1]["seed"] < S.TRAIN_SEEDS.stop
     held = set(S.OOD_O_TASKS + S.OOD_T_TASKS)
     assert not held & set(S.X_TRAIN_TASKS) and held <= set(X_TASKS)
-    assert set(S.X_TRAIN_TASKS) | held == set(X_TASKS)
+    assert set(S.X_TRAIN_TASKS) | held | set(S.X_MULTI_TASKS) == set(X_TASKS)
     # the unseen object o14 is not in any trained task (target, place or extras)
     for t in S.X_TRAIN_TASKS + S.PHASE1_TASKS:
         s = X_TASKS.get(t)

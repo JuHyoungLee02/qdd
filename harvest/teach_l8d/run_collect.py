@@ -40,7 +40,16 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None):
             IsaacWorld.reset(self, seed, task)
 
         def task_info(self):
+            from ..sim.tasks import X_STEPS
+            if self.env.task in X_STEPS:
+                return self.step_info(0)
             return x_info(self.env, IsaacWorld.task_info(self))
+
+        def step_info(self, k: int):
+            """Multi-step task: step k's info (target / place / offset + support heights)."""
+            from ..sim.tasks import X_STEPS
+            from .multistep import step_info
+            return x_info(self.env, step_info(IsaacWorld.task_info(self), X_STEPS[self.env.task], k))
 
     return L8DWorld()
 

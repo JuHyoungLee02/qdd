@@ -84,7 +84,17 @@ X_TASKS = {
                         {"S1": "pick up mug o13", "S2": "place mug o13 in bin o15"}, extras=("o8",)),
     "bottle_stand": Task("bottle_stand", "o8", "o12", "Put the green bottle on the white stand.",
                          {"S1": "pick up bottle o8", "S2": "place bottle o8 on stand o12"}, extras=("o9",)),
+    # multi-step (teach_l8d.multistep; the registry target / place = step 1)
+    "mug_tray_bottle_marker": Task("mug_tray_bottle_marker", "o3", "o5",
+                                   "Put the red mug on the blue tray, then put the green bottle on the magenta marker.",
+                                   {"S1": "pick up mug o3, then bottle o8",
+                                    "S2": "place mug o3 on tray o5, then bottle o8 on marker o11"}),
+    "clear_to_bin": Task("clear_to_bin", "o3", "o15", "Put the red mug and then the green bottle in the grey bin.",
+                         {"S1": "pick up mug o3, then bottle o8", "S2": "place mug o3, then bottle o8, in bin o15"}),
 }
+# steps (target, place, place xy offset | None); a shared place gets side-by-side offsets
+X_STEPS = {"mug_tray_bottle_marker": (("o3", "o5", None), ("o8", "o11", None)),
+           "clear_to_bin": (("o3", "o15", (0.0, 0.035)), ("o8", "o15", (0.0, -0.035)))}
 X_TASK_IDS = tuple(X_TASKS)
 X_TASK_CODE = {t: 100 + i for i, t in enumerate(X_TASK_IDS)}  # layout RNG stream ids (fixed; append new ones)
 X_SUPPORT = {"stand_mug_tray": ("o12", "o3")}  # (support object, object standing on it)
@@ -156,6 +166,33 @@ def x_task_layout(seed: int, task: str, ws=None) -> dict:
     s = TASKS[task]
     rng = np.random.default_rng([int(seed), 11, X_TASK_CODE[task]])
     out: dict = {}
+    if task in X_STEPS:  # every step's target and place inside the box, pairwise clear
+        ids = []
+        for st in X_STEPS[task]:
+            ids += [k for k in st[:2] if k not in ids]
+        pairs = {frozenset(st[:2]) for st in X_STEPS[task]}
+        places = {st[1] for st in X_STEPS[task]}
+        order = sorted(ids, key=lambda k: -_fr(k))  # sequential placement, largest first
+
+        def need(a, b):
+            return max(0.16, _fr(a) + _fr(b) + 0.03) if frozenset((a, b)) in pairs else _fr(a) + _fr(b) + 0.02
+
+        for _ in range(20000):
+            pos: dict = {}
+            for k in order:
+                for _ in range(300):
+                    q = ((rng.uniform(wx[0] + 0.02, wx[1]), rng.uniform(wy[0] + 0.03, wy[1] - 0.03)) if k in places
+                         else (rng.uniform(*wx), rng.uniform(*wy)))
+                    if all(math.dist(q, v) >= need(k, j) for j, v in pos.items()):
+                        pos[k] = q
+                        break
+                else:
+                    break
+            if len(pos) == len(order):
+                break
+        else:  # pragma: no cover
+            raise RuntimeError("layout")
+        return {k: (float(pos[k][0]), float(pos[k][1]), 0.0) for k in ids}
     if task in X_REL:
         ref, spot, dy = X_REL[task]
         for _ in range(100000):

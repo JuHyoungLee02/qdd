@@ -1,0 +1,1707 @@
+{
+"schema": "qdd.l8d.ood_sets/v1",
+"note": "Protected OOD seeds 70000-70999, never trained (prereg_l8d.md \u00a74 and change 2). ood_h = E-PT / E-STRIP8 heights 0.78 0.82 0.88 0.92 + outer gate heights 0.74 0.98; ood_d = TEST_X appearance (variant randx); ood_o = unseen object (small cup o14); ood_t = unseen compositions. ood_s (furniture) is added when the furniture scenes arrive.",
+"counts": {
+"ood_h": 96,
+"ood_d": 40,
+"ood_o": 40,
+"ood_t": 40
+},
+"by_task_variant_height": {
+"ood_h": {
+"bottle_tray|drx|0.740": 2,
+"bottle_tray|drx|0.780": 4,
+"bottle_tray|drx|0.820": 3,
+"bottle_tray|drx|0.880": 2,
+"bottle_tray|drx|0.920": 3,
+"bottle_tray|drx|0.980": 2,
+"bottle_tray|standard|0.740": 2,
+"bottle_tray|standard|0.780": 2,
+"bottle_tray|standard|0.820": 1,
+"bottle_tray|standard|0.880": 4,
+"bottle_tray|standard|0.920": 2,
+"bottle_tray|standard|0.980": 4,
+"mug_marker|drx|0.740": 1,
+"mug_marker|drx|0.780": 2,
+"mug_marker|drx|0.820": 4,
+"mug_marker|drx|0.880": 3,
+"mug_marker|drx|0.920": 1,
+"mug_marker|drx|0.980": 2,
+"mug_marker|standard|0.740": 3,
+"mug_marker|standard|0.780": 5,
+"mug_marker|standard|0.820": 2,
+"mug_marker|standard|0.880": 1,
+"mug_marker|standard|0.920": 2,
+"mug_marker|standard|0.980": 3,
+"mug_tray|drx|0.740": 5,
+"mug_tray|drx|0.780": 2,
+"mug_tray|drx|0.820": 1,
+"mug_tray|drx|0.880": 3,
+"mug_tray|drx|0.920": 4,
+"mug_tray|drx|0.980": 4,
+"mug_tray|standard|0.740": 3,
+"mug_tray|standard|0.780": 1,
+"mug_tray|standard|0.820": 5,
+"mug_tray|standard|0.880": 3,
+"mug_tray|standard|0.920": 4,
+"mug_tray|standard|0.980": 1
+},
+"ood_d": {
+"bottle_tray|randx|0.850": 12,
+"mug_marker|randx|0.850": 11,
+"mug_tray|randx|0.850": 17
+},
+"ood_o": {
+"smallcup_tray|drx|0.760": 2,
+"smallcup_tray|drx|0.800": 3,
+"smallcup_tray|drx|0.840": 2,
+"smallcup_tray|drx|0.850": 3,
+"smallcup_tray|drx|0.860": 2,
+"smallcup_tray|drx|0.900": 2,
+"smallcup_tray|drx|0.940": 2,
+"smallcup_tray|drx|0.950": 2,
+"smallcup_tray|drx|0.960": 2,
+"smallcup_tray|standard|0.760": 3,
+"smallcup_tray|standard|0.800": 2,
+"smallcup_tray|standard|0.840": 3,
+"smallcup_tray|standard|0.850": 2,
+"smallcup_tray|standard|0.860": 2,
+"smallcup_tray|standard|0.900": 2,
+"smallcup_tray|standard|0.940": 2,
+"smallcup_tray|standard|0.950": 2,
+"smallcup_tray|standard|0.960": 2
+},
+"ood_t": {
+"bluemug_bin|drx|0.760": 1,
+"bluemug_bin|drx|0.800": 2,
+"bluemug_bin|drx|0.840": 1,
+"bluemug_bin|drx|0.850": 1,
+"bluemug_bin|drx|0.860": 1,
+"bluemug_bin|drx|0.900": 1,
+"bluemug_bin|drx|0.940": 1,
+"bluemug_bin|drx|0.950": 1,
+"bluemug_bin|drx|0.960": 1,
+"bluemug_bin|standard|0.760": 2,
+"bluemug_bin|standard|0.800": 1,
+"bluemug_bin|standard|0.840": 1,
+"bluemug_bin|standard|0.850": 1,
+"bluemug_bin|standard|0.860": 1,
+"bluemug_bin|standard|0.900": 1,
+"bluemug_bin|standard|0.940": 1,
+"bluemug_bin|standard|0.950": 1,
+"bluemug_bin|standard|0.960": 1,
+"bottle_stand|drx|0.760": 1,
+"bottle_stand|drx|0.800": 2,
+"bottle_stand|drx|0.840": 1,
+"bottle_stand|drx|0.850": 1,
+"bottle_stand|drx|0.860": 1,
+"bottle_stand|drx|0.900": 1,
+"bottle_stand|drx|0.940": 1,
+"bottle_stand|drx|0.950": 1,
+"bottle_stand|drx|0.960": 1,
+"bottle_stand|standard|0.760": 2,
+"bottle_stand|standard|0.800": 1,
+"bottle_stand|standard|0.840": 1,
+"bottle_stand|standard|0.850": 1,
+"bottle_stand|standard|0.860": 1,
+"bottle_stand|standard|0.900": 1,
+"bottle_stand|standard|0.940": 1,
+"bottle_stand|standard|0.950": 1,
+"bottle_stand|standard|0.960": 1
+}
+},
+"episodes": [
+{
+"seed": 70000,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.78
+},
+{
+"seed": 70001,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.78
+},
+{
+"seed": 70002,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.78
+},
+{
+"seed": 70003,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.78
+},
+{
+"seed": 70004,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.78
+},
+{
+"seed": 70005,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.78
+},
+{
+"seed": 70006,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.78
+},
+{
+"seed": 70007,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.78
+},
+{
+"seed": 70008,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.78
+},
+{
+"seed": 70009,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "drx",
+"table_z": 0.78
+},
+{
+"seed": 70010,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "drx",
+"table_z": 0.78
+},
+{
+"seed": 70011,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "drx",
+"table_z": 0.78
+},
+{
+"seed": 70012,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "drx",
+"table_z": 0.78
+},
+{
+"seed": 70013,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.78
+},
+{
+"seed": 70014,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "drx",
+"table_z": 0.78
+},
+{
+"seed": 70015,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "drx",
+"table_z": 0.78
+},
+{
+"seed": 70016,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.82
+},
+{
+"seed": 70017,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.82
+},
+{
+"seed": 70018,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.82
+},
+{
+"seed": 70019,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.82
+},
+{
+"seed": 70020,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.82
+},
+{
+"seed": 70021,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.82
+},
+{
+"seed": 70022,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.82
+},
+{
+"seed": 70023,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.82
+},
+{
+"seed": 70024,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "drx",
+"table_z": 0.82
+},
+{
+"seed": 70025,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "drx",
+"table_z": 0.82
+},
+{
+"seed": 70026,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "drx",
+"table_z": 0.82
+},
+{
+"seed": 70027,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.82
+},
+{
+"seed": 70028,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "drx",
+"table_z": 0.82
+},
+{
+"seed": 70029,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "drx",
+"table_z": 0.82
+},
+{
+"seed": 70030,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "drx",
+"table_z": 0.82
+},
+{
+"seed": 70031,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "drx",
+"table_z": 0.82
+},
+{
+"seed": 70032,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.88
+},
+{
+"seed": 70033,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.88
+},
+{
+"seed": 70034,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.88
+},
+{
+"seed": 70035,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.88
+},
+{
+"seed": 70036,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.88
+},
+{
+"seed": 70037,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.88
+},
+{
+"seed": 70038,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.88
+},
+{
+"seed": 70039,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.88
+},
+{
+"seed": 70040,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "drx",
+"table_z": 0.88
+},
+{
+"seed": 70041,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "drx",
+"table_z": 0.88
+},
+{
+"seed": 70042,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "drx",
+"table_z": 0.88
+},
+{
+"seed": 70043,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "drx",
+"table_z": 0.88
+},
+{
+"seed": 70044,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.88
+},
+{
+"seed": 70045,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.88
+},
+{
+"seed": 70046,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "drx",
+"table_z": 0.88
+},
+{
+"seed": 70047,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.88
+},
+{
+"seed": 70048,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.92
+},
+{
+"seed": 70049,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.92
+},
+{
+"seed": 70050,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.92
+},
+{
+"seed": 70051,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.92
+},
+{
+"seed": 70052,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.92
+},
+{
+"seed": 70053,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.92
+},
+{
+"seed": 70054,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.92
+},
+{
+"seed": 70055,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.92
+},
+{
+"seed": 70056,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "drx",
+"table_z": 0.92
+},
+{
+"seed": 70057,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.92
+},
+{
+"seed": 70058,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.92
+},
+{
+"seed": 70059,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "drx",
+"table_z": 0.92
+},
+{
+"seed": 70060,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "drx",
+"table_z": 0.92
+},
+{
+"seed": 70061,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.92
+},
+{
+"seed": 70062,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "drx",
+"table_z": 0.92
+},
+{
+"seed": 70063,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.92
+},
+{
+"seed": 70064,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.74
+},
+{
+"seed": 70065,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.74
+},
+{
+"seed": 70066,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.74
+},
+{
+"seed": 70067,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.74
+},
+{
+"seed": 70068,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.74
+},
+{
+"seed": 70069,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.74
+},
+{
+"seed": 70070,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.74
+},
+{
+"seed": 70071,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.74
+},
+{
+"seed": 70072,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.74
+},
+{
+"seed": 70073,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.74
+},
+{
+"seed": 70074,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "drx",
+"table_z": 0.74
+},
+{
+"seed": 70075,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.74
+},
+{
+"seed": 70076,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "drx",
+"table_z": 0.74
+},
+{
+"seed": 70077,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.74
+},
+{
+"seed": 70078,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.74
+},
+{
+"seed": 70079,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "drx",
+"table_z": 0.74
+},
+{
+"seed": 70080,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.98
+},
+{
+"seed": 70081,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.98
+},
+{
+"seed": 70082,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.98
+},
+{
+"seed": 70083,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.98
+},
+{
+"seed": 70084,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.98
+},
+{
+"seed": 70085,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.98
+},
+{
+"seed": 70086,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.98
+},
+{
+"seed": 70087,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.98
+},
+{
+"seed": 70088,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.98
+},
+{
+"seed": 70089,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.98
+},
+{
+"seed": 70090,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.98
+},
+{
+"seed": 70091,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "drx",
+"table_z": 0.98
+},
+{
+"seed": 70092,
+"split": "ood_h",
+"task": "bottle_tray",
+"variant": "drx",
+"table_z": 0.98
+},
+{
+"seed": 70093,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "drx",
+"table_z": 0.98
+},
+{
+"seed": 70094,
+"split": "ood_h",
+"task": "mug_tray",
+"variant": "drx",
+"table_z": 0.98
+},
+{
+"seed": 70095,
+"split": "ood_h",
+"task": "mug_marker",
+"variant": "drx",
+"table_z": 0.98
+},
+{
+"seed": 70300,
+"split": "ood_d",
+"task": "mug_marker",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70301,
+"split": "ood_d",
+"task": "mug_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70302,
+"split": "ood_d",
+"task": "mug_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70303,
+"split": "ood_d",
+"task": "mug_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70304,
+"split": "ood_d",
+"task": "mug_marker",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70305,
+"split": "ood_d",
+"task": "mug_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70306,
+"split": "ood_d",
+"task": "bottle_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70307,
+"split": "ood_d",
+"task": "mug_marker",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70308,
+"split": "ood_d",
+"task": "mug_marker",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70309,
+"split": "ood_d",
+"task": "mug_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70310,
+"split": "ood_d",
+"task": "bottle_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70311,
+"split": "ood_d",
+"task": "mug_marker",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70312,
+"split": "ood_d",
+"task": "mug_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70313,
+"split": "ood_d",
+"task": "mug_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70314,
+"split": "ood_d",
+"task": "bottle_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70315,
+"split": "ood_d",
+"task": "mug_marker",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70316,
+"split": "ood_d",
+"task": "mug_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70317,
+"split": "ood_d",
+"task": "bottle_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70318,
+"split": "ood_d",
+"task": "bottle_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70319,
+"split": "ood_d",
+"task": "mug_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70320,
+"split": "ood_d",
+"task": "bottle_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70321,
+"split": "ood_d",
+"task": "mug_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70322,
+"split": "ood_d",
+"task": "bottle_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70323,
+"split": "ood_d",
+"task": "mug_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70324,
+"split": "ood_d",
+"task": "mug_marker",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70325,
+"split": "ood_d",
+"task": "mug_marker",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70326,
+"split": "ood_d",
+"task": "mug_marker",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70327,
+"split": "ood_d",
+"task": "bottle_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70328,
+"split": "ood_d",
+"task": "mug_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70329,
+"split": "ood_d",
+"task": "bottle_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70330,
+"split": "ood_d",
+"task": "bottle_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70331,
+"split": "ood_d",
+"task": "bottle_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70332,
+"split": "ood_d",
+"task": "mug_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70333,
+"split": "ood_d",
+"task": "mug_marker",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70334,
+"split": "ood_d",
+"task": "mug_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70335,
+"split": "ood_d",
+"task": "bottle_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70336,
+"split": "ood_d",
+"task": "mug_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70337,
+"split": "ood_d",
+"task": "mug_marker",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70338,
+"split": "ood_d",
+"task": "mug_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70339,
+"split": "ood_d",
+"task": "mug_tray",
+"variant": "randx",
+"table_z": 0.85
+},
+{
+"seed": 70100,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.76,
+"objset": "x"
+},
+{
+"seed": 70101,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.8,
+"objset": "x"
+},
+{
+"seed": 70102,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.84,
+"objset": "x"
+},
+{
+"seed": 70103,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70104,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.86,
+"objset": "x"
+},
+{
+"seed": 70105,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.9,
+"objset": "x"
+},
+{
+"seed": 70106,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.94,
+"objset": "x"
+},
+{
+"seed": 70107,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.95,
+"objset": "x"
+},
+{
+"seed": 70108,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.96,
+"objset": "x"
+},
+{
+"seed": 70109,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.76,
+"objset": "x"
+},
+{
+"seed": 70110,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.8,
+"objset": "x"
+},
+{
+"seed": 70111,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.84,
+"objset": "x"
+},
+{
+"seed": 70112,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70113,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.86,
+"objset": "x"
+},
+{
+"seed": 70114,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.9,
+"objset": "x"
+},
+{
+"seed": 70115,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.94,
+"objset": "x"
+},
+{
+"seed": 70116,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.95,
+"objset": "x"
+},
+{
+"seed": 70117,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.96,
+"objset": "x"
+},
+{
+"seed": 70118,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.76,
+"objset": "x"
+},
+{
+"seed": 70119,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.8,
+"objset": "x"
+},
+{
+"seed": 70120,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.84,
+"objset": "x"
+},
+{
+"seed": 70121,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70122,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.86,
+"objset": "x"
+},
+{
+"seed": 70123,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.9,
+"objset": "x"
+},
+{
+"seed": 70124,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.94,
+"objset": "x"
+},
+{
+"seed": 70125,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.95,
+"objset": "x"
+},
+{
+"seed": 70126,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.96,
+"objset": "x"
+},
+{
+"seed": 70127,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.76,
+"objset": "x"
+},
+{
+"seed": 70128,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.8,
+"objset": "x"
+},
+{
+"seed": 70129,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.84,
+"objset": "x"
+},
+{
+"seed": 70130,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70131,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.86,
+"objset": "x"
+},
+{
+"seed": 70132,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.9,
+"objset": "x"
+},
+{
+"seed": 70133,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.94,
+"objset": "x"
+},
+{
+"seed": 70134,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.95,
+"objset": "x"
+},
+{
+"seed": 70135,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.96,
+"objset": "x"
+},
+{
+"seed": 70136,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.76,
+"objset": "x"
+},
+{
+"seed": 70137,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.8,
+"objset": "x"
+},
+{
+"seed": 70138,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "standard",
+"table_z": 0.84,
+"objset": "x"
+},
+{
+"seed": 70139,
+"split": "ood_o",
+"task": "smallcup_tray",
+"variant": "drx",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70700,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "standard",
+"table_z": 0.76,
+"objset": "x"
+},
+{
+"seed": 70701,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "drx",
+"table_z": 0.8,
+"objset": "x"
+},
+{
+"seed": 70702,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "standard",
+"table_z": 0.84,
+"objset": "x"
+},
+{
+"seed": 70703,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "drx",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70704,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "standard",
+"table_z": 0.86,
+"objset": "x"
+},
+{
+"seed": 70705,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "drx",
+"table_z": 0.9,
+"objset": "x"
+},
+{
+"seed": 70706,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "standard",
+"table_z": 0.94,
+"objset": "x"
+},
+{
+"seed": 70707,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "drx",
+"table_z": 0.95,
+"objset": "x"
+},
+{
+"seed": 70708,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "standard",
+"table_z": 0.96,
+"objset": "x"
+},
+{
+"seed": 70709,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "drx",
+"table_z": 0.76,
+"objset": "x"
+},
+{
+"seed": 70710,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "standard",
+"table_z": 0.8,
+"objset": "x"
+},
+{
+"seed": 70711,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "drx",
+"table_z": 0.84,
+"objset": "x"
+},
+{
+"seed": 70712,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70713,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "drx",
+"table_z": 0.86,
+"objset": "x"
+},
+{
+"seed": 70714,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "standard",
+"table_z": 0.9,
+"objset": "x"
+},
+{
+"seed": 70715,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "drx",
+"table_z": 0.94,
+"objset": "x"
+},
+{
+"seed": 70716,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "standard",
+"table_z": 0.95,
+"objset": "x"
+},
+{
+"seed": 70717,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "drx",
+"table_z": 0.96,
+"objset": "x"
+},
+{
+"seed": 70718,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "standard",
+"table_z": 0.76,
+"objset": "x"
+},
+{
+"seed": 70719,
+"split": "ood_t",
+"task": "bluemug_bin",
+"variant": "drx",
+"table_z": 0.8,
+"objset": "x"
+},
+{
+"seed": 70720,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "standard",
+"table_z": 0.76,
+"objset": "x"
+},
+{
+"seed": 70721,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "drx",
+"table_z": 0.8,
+"objset": "x"
+},
+{
+"seed": 70722,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "standard",
+"table_z": 0.84,
+"objset": "x"
+},
+{
+"seed": 70723,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "drx",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70724,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "standard",
+"table_z": 0.86,
+"objset": "x"
+},
+{
+"seed": 70725,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "drx",
+"table_z": 0.9,
+"objset": "x"
+},
+{
+"seed": 70726,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "standard",
+"table_z": 0.94,
+"objset": "x"
+},
+{
+"seed": 70727,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "drx",
+"table_z": 0.95,
+"objset": "x"
+},
+{
+"seed": 70728,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "standard",
+"table_z": 0.96,
+"objset": "x"
+},
+{
+"seed": 70729,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "drx",
+"table_z": 0.76,
+"objset": "x"
+},
+{
+"seed": 70730,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "standard",
+"table_z": 0.8,
+"objset": "x"
+},
+{
+"seed": 70731,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "drx",
+"table_z": 0.84,
+"objset": "x"
+},
+{
+"seed": 70732,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70733,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "drx",
+"table_z": 0.86,
+"objset": "x"
+},
+{
+"seed": 70734,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "standard",
+"table_z": 0.9,
+"objset": "x"
+},
+{
+"seed": 70735,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "drx",
+"table_z": 0.94,
+"objset": "x"
+},
+{
+"seed": 70736,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "standard",
+"table_z": 0.95,
+"objset": "x"
+},
+{
+"seed": 70737,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "drx",
+"table_z": 0.96,
+"objset": "x"
+},
+{
+"seed": 70738,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "standard",
+"table_z": 0.76,
+"objset": "x"
+},
+{
+"seed": 70739,
+"split": "ood_t",
+"task": "bottle_stand",
+"variant": "drx",
+"table_z": 0.8,
+"objset": "x"
+}
+]
+}

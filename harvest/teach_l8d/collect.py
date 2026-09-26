@@ -96,7 +96,12 @@ def scene_record(world, seed: int, task: str, variant: str, split: str, style: s
                 "table_z": float(getattr(env, "table_top_z", world.table_z)),
                 "lift": getattr(env, "lift", None), "ws": getattr(env, "ws", None), "layout": layout,
                 "randomization": rand, "rand_settle": getattr(env, "rand_settle", None),
-                "distractors": distractor_count(layout, info, rand)})
+                "steps": _steps(task), "distractors": distractor_count(layout, info, rand)})
+
+
+def _steps(task: str):
+    from ..sim.tasks import X_STEPS
+    return [list(s[:2]) for s in X_STEPS[task]] if task in X_STEPS else None
 
 
 def collect_episode(world, seed: int, task: str, variant: str, split: str, out_dir: str, p: float,
@@ -105,9 +110,17 @@ def collect_episode(world, seed: int, task: str, variant: str, split: str, out_d
     """= teach_pt.collect.collect_episode (same rng stream, collector, limits) + scene.json and an optional sparse
     video (Episode video=True: head | right wrist jpgs every 5 control ticks)."""
     rng = np.random.default_rng([int(seed), 8, LC.VARIANT_CODE.get(variant, 9)])
+    from ..sim.tasks import X_STEPS
+    from .multistep import XEpisode
     coll = XCollector(world, rng, p, max_perturb)
-    ep = PtEpisode(world, coll, seed, task, out_dir, variant=variant, stop_calls=stop_calls,
-                   stop_motion_s=stop_motion_s, allow_eef=True, save_v2=True, save_nd=True, video=video)
+    kw = dict(variant=variant, stop_calls=stop_calls, stop_motion_s=stop_motion_s, allow_eef=True, save_v2=True,
+              save_nd=True, video=video)
+    if task in X_STEPS:  # multi-step: twice the call / motion budget of the runner (the prompt limits unchanged)
+        kw.update(stop_calls=None if stop_calls is None else 2 * stop_calls,
+                  stop_motion_s=None if stop_motion_s is None else 2 * stop_motion_s)
+        ep = XEpisode(world, coll, seed, task, out_dir, steps=X_STEPS[task], **kw)
+    else:
+        ep = PtEpisode(world, coll, seed, task, out_dir, **kw)
     coll.ep = ep
     res = ep.run()
     os.makedirs(out_dir, exist_ok=True)
