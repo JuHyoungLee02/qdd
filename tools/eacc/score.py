@@ -150,20 +150,24 @@ def decide(srows: list, tab: dict) -> dict:
         out["R1_v2_vs_v1"] = {"M1": m1, "M3": m3, "invalid_v2": inv, "adopt_v2": bool(ok),
                               "superior_M1": m1["diff"] >= 0.10 and m1["ci95"][0] > 0,
                               "superior_M3": m3["diff"] >= 0.10 and m3["ci95"][0] > 0}
-    if {"v2", "v2cp"} <= have:
-        m1 = paired(srows, "v2", "v2cp", "dir_ok", OFF)
-        m3 = paired(srows, "v2", "v2cp", "cmd_ok")
-        m2 = paired(srows, "v2", "v2cp", "seg_ok")
-        inv = tab["v2cp"]["invalid"]["rate"]
-        if m1["diff"] >= 0.10 and m1["ci95"][0] > 0 and m3["diff"] >= -0.05 and inv <= 0.10:
-            verdict = "adopt"
-        elif m1["diff"] <= -0.10:
-            verdict = "reject"
-        else:
-            verdict = "undecided"
-        out["R2_campose"] = {"M1": m1, "M2": m2, "M3": m3, "invalid_v2cp": inv, "verdict": verdict,
-                             "best_arm": "v2cp" if verdict == "adopt" else "v2"}
-    best = out.get("R2_campose", {}).get("best_arm")
+    for arm, key in (("v2cp", "R2_campose"), ("v2_ax", "R2p_axisguide")):  # R2 / R2' (prereg change 4)
+        if {"v2", arm} <= have:
+            m1 = paired(srows, "v2", arm, "dir_ok", OFF)
+            m3 = paired(srows, "v2", arm, "cmd_ok", OFF if key == "R2p_axisguide" else None)
+            m2 = paired(srows, "v2", arm, "seg_ok")
+            inv = tab[arm]["invalid"]["rate"]
+            if m1.get("n", 0) == 0:
+                out[key] = {"verdict": "not_run_on_off", "M2": m2, "M3": m3}
+                continue
+            if m1["diff"] >= 0.10 and m1["ci95"][0] > 0 and m3["diff"] >= -0.05 and inv <= 0.10:
+                verdict = "adopt"
+            elif m1["diff"] <= -0.10:
+                verdict = "reject"
+            else:
+                verdict = "undecided"
+            out[key] = {"M1": m1, "M2": m2, "M3": m3, "invalid": inv, "verdict": verdict,
+                        "best_arm": arm if verdict == "adopt" else "v2"}
+    best = next((out[k]["best_arm"] for k in ("R2p_axisguide", "R2_campose") if out.get(k, {}).get("best_arm")), None)
     if best:
         sub = {r["snap"] for r in srows if r["arm"] in (best + "_med", best + "_r1", best + "_2cam")}
         if best + "_med" in have:
