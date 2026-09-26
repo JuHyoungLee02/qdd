@@ -97,7 +97,11 @@ X_TASKS = {
                                     "Put the red mug on the blue tray, then put the blue mug on the magenta marker.",
                                     {"S1": "pick up mug o3, then mug o13",
                                      "S2": "place mug o3 on tray o5, then mug o13 on marker o11"}),
+    # furniture cross-surface task (runner --furniture): the mug on the lower surface -> the higher surface o19
+    "mug_to_upper": Task("mug_to_upper", "o3", "o19", "Put the red mug on the higher surface.",
+                         {"S1": "pick up mug o3", "S2": "place mug o3 on surface o19"}, extras=("o8",)),
 }
+X_FURNITURE_TASKS = ("mug_to_upper",)  # need a furniture scene with two usable surfaces (teach_l8d.fx)
 # steps (target, place, place xy offset | None); a shared place gets side-by-side offsets
 X_STEPS = {"mug_tray_bottle_marker": (("o3", "o5", None), ("o8", "o11", None)),
            "clear_to_bin": (("o3", "o15", (0.0, 0.04)), ("o8", "o15", (0.0, -0.04))),
@@ -360,6 +364,22 @@ def lowest_z(obj: str, pos, quat_wxyz) -> float:
     else:
         down = sum(abs(r2[i]) * he[i] for i in range(3))
     return float(pos[2]) - down
+
+
+def surface_contacts(pos: dict, bottom: dict, sid: str, half_xy, z_tol: float = TABLE_TOL_M) -> set:
+    """Virtual contacts of a furniture surface place object sid (L8-X o19; table frame): {a, sid} when a's lowest
+    point is within z_tol of the surface top (pos[sid] z + 1 mm) and its centre is inside the surface box."""
+    if sid not in pos:
+        return set()
+    c = np.asarray(pos[sid], float)
+    top = c[2] + 0.001
+    out = set()
+    for a, pa in pos.items():
+        if a == sid:
+            continue
+        if abs(bottom[a] - top) <= z_tol and abs(pa[0] - c[0]) <= half_xy[0] and abs(pa[1] - c[1]) <= half_xy[1]:
+            out.add(frozenset({a, sid}))
+    return out
 
 
 def marker_contacts(pos: dict, bottom: dict, marker: str, on_r: float = MARKER_ON_R,

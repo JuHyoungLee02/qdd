@@ -25,6 +25,23 @@ def test_choose_the_largest_usable_region():
         fx.ws_from_region([[0.40, 0.45], [-0.40, -0.06]])  # narrower than 8 cm
 
 
+def test_two_surfaces_and_virtual_surface_contacts():
+    from harvest.sim import tasks as T
+    sc = _scene([{"surface": "s0", "region": [[0.40, 0.52], [-0.40, -0.06]]},
+                 {"surface": "s1", "region": [[0.42, 0.50], [-0.28, -0.20]]}])
+    a, ra, b, rb = fx.choose_two_surfaces(sc)
+    assert a["id"] == "s0" and b["id"] == "s1" and b["top_z"] > a["top_z"]
+    with pytest.raises(fx.SkipScene):
+        fx.choose_two_surfaces(_scene([{"surface": "s0", "region": [[0.40, 0.52], [-0.40, -0.06]]}]))
+    # table frame: surface o19 top 0.08 above the table, box 8 x 8 cm around (0.46, -0.24)
+    pos = {"o19": [0.46, -0.24, 0.079], "o3": [0.47, -0.25, 0.08 + 0.0475], "o8": [0.40, -0.10, 0.05]}
+    bottom = {"o19": 0.078, "o3": 0.0801, "o8": 0.0}
+    c = T.surface_contacts(pos, bottom, "o19", (0.04, 0.04))
+    assert c == {frozenset({"o3", "o19"})}
+    bottom["o3"] = 0.09
+    assert not T.surface_contacts(pos, bottom, "o19", (0.04, 0.04))
+
+
 def test_filter_layout_drops_off_surface_extras_and_keeps_task_objects():
     lay = {"o3": (0.45, -0.2, 0.0), "o5": (0.50, -0.35, 0.0), "o8": (0.72, -0.1, 0.0), "o9": (0.5, 0.0, 0.3)}
     out, dropped = fx.filter_layout(lay, SURF, keep={"o3", "o5"})

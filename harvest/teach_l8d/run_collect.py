@@ -61,8 +61,14 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             env = self.env
             if not hasattr(self, "_rm"):
                 self._rm = ReachModel.load(reach_path)
+            from ..sim.tasks import X_FURNITURE_TASKS
             sc = FU.sample_scene(furniture, seed, reach=self._rm)
-            surf, region = fx.choose_surface(sc)
+            upper = None
+            if task in X_FURNITURE_TASKS:  # cross-surface: the task on the lower surface, o19 = the higher one
+                surf, region, upper, uregion = fx.choose_two_surfaces(sc)
+                env.set_virtual_surface("o19", float(upper["top_z"]), uregion)
+            else:
+                surf, region = fx.choose_surface(sc)
             env.ws = fx.ws_from_region(region)
             tz = float(surf["top_z"])
             env.table_top_z, self.table_z = tz, tz
@@ -71,14 +77,25 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             rob = env.robot
             li = rob.joint_names.index("lift_joint")
             rob.data.default_joint_pos[0, li] = env.lift
+            # the hard reset re-initialises the articulation from cfg.init_state (default_joint_pos alone was reset
+            # to the INIT_JOINTS lift: measured -0.125 in every scene, L8X-assets finding): set it there too
+            rob.cfg.init_state.joint_pos["lift_joint"] = env.lift
             FX.author_scene(env, sc)
             env.set_seed(seed, task)
             keep = {TASKS[task].target, TASKS[task].place} | {o for st in X_STEPS.get(task, ()) for o in st[:2]}
             lay, dropped = fx.filter_layout(env.layout, surf, keep)
+            if upper is not None:  # the place surface centre (its region, not the layout box)
+                lay["o19"] = ((uregion[0][0] + uregion[0][1]) / 2, (uregion[1][0] + uregion[1][1]) / 2, 0.0)
             env.layout = lay
             SC._LAYOUT["layout"] = lay
             self.furniture_scene = fx.summary(sc, surf, region, dropped)
+            if upper is not None:
+                self.furniture_scene["place_surface"] = {"id": upper["id"], "kind": upper.get("kind"),
+                                                         "top_z": upper["top_z"], "region": uregion}
             env.reset()
+            q = float(rob.data.joint_pos[0, li])
+            if abs(q - env.lift) > 0.04:  # the lift joint sags ~2.6 cm under load; more = the lift was not applied
+                raise RuntimeError(f"lift not applied: set {env.lift:+.4f}, measured {q:+.4f}")
             perturb(env, "P0", seed)
             for _ in range(PRE_RENDER):
                 env.env.sim.render()

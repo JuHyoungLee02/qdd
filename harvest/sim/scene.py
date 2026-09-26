@@ -66,9 +66,12 @@ X_OBJ_GEOM = {
     # invisible relational spots (no prim, no collider): 10 cm left / right (+y / -y) of the bottle o8
     "o17": dict(shape="marker", radius=0.04, height=0.002, invisible=True),
     "o18": dict(shape="marker", radius=0.04, height=0.002, invisible=True),
+    # a furniture surface as a place target (static collider, no sensor): its box / top are set per episode
+    # (Env.set_virtual_surface); contact = the object's bottom on its top inside its box (tasks.surface_contacts)
+    "o19": dict(shape="surface", size=(0.10, 0.10, 0.002), invisible=True),
 }
 X_RIGID = ("o12", "o13", "o14", "o15")
-X_VISUAL_ONLY = ("o17", "o18")
+X_VISUAL_ONLY = ("o17", "o18", "o19")
 SUPPORT_TOP = {"o15": 0.008}  # place surface above the object's bottom when it is not its top (bin floor)
 OBJ_GEOM.update(X_OBJ_GEOM)
 VISUAL_ONLY = ("o11",)
@@ -80,7 +83,7 @@ for _g in OBJ_GEOM.values():
     else:
         _g["half_extents"] = tuple(s / 2 for s in _g["size"])
     _g["footprint_r"] = float(math.hypot(_g["half_extents"][0], _g["half_extents"][1])) \
-        if _g["shape"] in ("cuboid", "openbox") else _g["radius"]
+        if _g["shape"] in ("cuboid", "openbox", "surface") else _g["radius"]
 
 # right-arm top-down workspace (world xy), measured reach margin from the shoulder at (-0.02, -0.23, 1.33)
 WS_X = (0.36, 0.48)
@@ -570,10 +573,24 @@ class Env:
 
     def _marker_pos(self, k: str = "o11") -> np.ndarray:
         g = OBJ_GEOM[k]
+        h = g.get("height", 2 * g["half_extents"][2])
         if k in self.layout:
             x, y = self.layout[k][:2]
-            return np.array([x, y, self.table_top_z + g["height"] / 2])
-        return np.array([*PARK_XY.get(k, (-3.0, -3.3)), g["height"] / 2])
+            top = getattr(self, "virtual_top", {}).get(k, self.table_top_z)  # o19: the furniture surface top
+            return np.array([x, y, top + h / 2 if k != "o19" else top - h / 2])
+        return np.array([*PARK_XY.get(k, (-3.0, -3.3)), h / 2])
+
+    def set_virtual_surface(self, k: str, top_z: float, xy_box) -> None:
+        """L8-X: a furniture surface (static collider) as the place object k ('o19'): its top and box for this
+        episode (OBJ_GEOM half extents follow the box; the layout entry is its centre)."""
+        (x0, x1), (y0, y1) = xy_box
+        g = OBJ_GEOM[k]
+        g["size"] = (float(x1 - x0), float(y1 - y0), 0.002)
+        g["half_extents"] = (g["size"][0] / 2, g["size"][1] / 2, 0.001)
+        g["footprint_r"] = float(math.hypot(g["half_extents"][0], g["half_extents"][1]))
+        if not hasattr(self, "virtual_top"):
+            self.virtual_top = {}
+        self.virtual_top[k] = float(top_z)
 
     def _recreate_physx_scene(self):
         """Timeline stop/play (SimulationContext.reset(soft=False)): a new PhysX scene, so no episode starts from

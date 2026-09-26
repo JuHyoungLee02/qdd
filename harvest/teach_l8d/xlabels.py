@@ -90,6 +90,9 @@ def x_info(env, info: dict) -> dict:
         return info
     tz, lay = float(env.table_top_z), env.layout
     tg, pl = info["tgt"], info["place"]
+    if pl in getattr(env, "virtual_top", {}):  # furniture surface place object (o19): its own top
+        top = float(env.virtual_top[pl])
+        return dict(info, sup_tgt=base_z(tg, lay, tz), sup_place=top, place_top=top)
     sp = base_z(pl, lay, tz)
     if pl in X_VISUAL_ONLY:
         top = sp

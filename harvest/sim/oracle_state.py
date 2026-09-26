@@ -38,7 +38,7 @@ def oracle_objects(env):
     """
     from ..predicates import Gripper, Obj
     from .scene import FINGER_BODIES, OBJ_GEOM, VISUAL_ONLY, X_VISUAL_ONLY
-    from .tasks import lowest_z, marker_contacts
+    from .tasks import lowest_z, marker_contacts, surface_contacts
 
     z0 = env.table_top_z
     objs, half_z = {}, {}
@@ -52,8 +52,12 @@ def oracle_objects(env):
     contacts = set()
     for k in env.present:
         if k in VISUAL_ONLY or k in X_VISUAL_ONLY:  # marker / L8-X spots: no sensor; virtual contacts
-            contacts |= marker_contacts({j: o.pos for j, o in objs.items()},
-                                        {j: lowest_z(j, o.pos, o.quat_wxyz) for j, o in objs.items()}, k)
+            pos = {j: o.pos for j, o in objs.items()}
+            bottom = {j: lowest_z(j, o.pos, o.quat_wxyz) for j, o in objs.items()}
+            if OBJ_GEOM[k]["shape"] == "surface":  # L8-X furniture surface as the place object
+                contacts |= surface_contacts(pos, bottom, k, OBJ_GEOM[k]["half_extents"][:2])
+            else:
+                contacts |= marker_contacts(pos, bottom, k)
             continue
         fm = env.contact[k].data.force_matrix_w  # (1, 1, n_filters, 3); filters = fingers + other objects
         mag = fm[0, 0].norm(dim=-1).cpu().numpy()

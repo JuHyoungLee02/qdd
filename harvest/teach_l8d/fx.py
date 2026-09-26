@@ -30,6 +30,30 @@ def choose_surface(scene: dict) -> tuple:
     return best[1], best[2]
 
 
+def choose_two_surfaces(scene: dict, min_rise: float = 0.02) -> tuple:
+    """Cross-surface task: -> (lower surface A, its region, higher surface B, its region); A = the usable surface
+    with the largest region among those that have a usable surface at least min_rise higher; B = the largest such
+    higher one. SkipScene when the scene has no such pair."""
+    by_id = {s["id"]: s for s in scene["surfaces"]}
+    regs = []
+    for p in scene.get("placement_regions") or []:
+        r = p.get("region")
+        if r is not None and p["surface"] in by_id:
+            regs.append((by_id[p["surface"]], [list(r[0]), list(r[1])],
+                         (r[0][1] - r[0][0]) * (r[1][1] - r[1][0])))
+    best = None
+    for a, ra, area_a in regs:
+        ups = [(b, rb, ab) for b, rb, ab in regs if b["top_z"] >= a["top_z"] + min_rise]
+        if not ups:
+            continue
+        b, rb, ab = max(ups, key=lambda t: t[2])
+        if best is None or area_a > best[0]:
+            best = (area_a, a, ra, b, rb)
+    if best is None:
+        raise SkipScene(f"{scene['kind']} seed {scene['seed']}: no pair of usable surfaces {min_rise} m apart")
+    return best[1:]
+
+
 def ws_from_region(region) -> tuple:
     from ..sim.scene import check_ws
     try:
@@ -50,6 +74,9 @@ def filter_layout(layout: dict, surface: dict, keep=()) -> tuple:
     from ..sim.scene import OBJ_GEOM, X_VISUAL_ONLY
     out, dropped = {}, []
     for k, v in layout.items():
+        if k == "o19":  # the place surface itself (a different surface, set by the runner)
+            out[k] = v
+            continue
         fr = 0.0 if k in X_VISUAL_ONLY else OBJ_GEOM[k]["footprint_r"]
         if on_surface(v[:2], min(fr, 0.06), surface):
             out[k] = v
