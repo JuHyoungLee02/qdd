@@ -49,7 +49,10 @@ XY_TAIL = '\nReturn JSON only: {"xy": [x, y]} in metres.'
 def _check(seed: int, split: str):
     from ..teach_l8.collect import DEV_SEEDS, TRAIN_SEEDS
     from .collect import OOD_D_SEEDS
-    ok = {"train": TRAIN_SEEDS, "dev": DEV_SEEDS, "ood_d": OOD_D_SEEDS, "ood_h": DEV_SEEDS}[split]
+    if split.startswith("x_"):  # L8-X evaluation sets (L8D): dev_x 34800-34999, protected OOD 70000-70999
+        ok = range(34800, 35000) if split == "x_dev" else range(70000, 71000)
+    else:
+        ok = {"train": TRAIN_SEEDS, "dev": DEV_SEEDS, "ood_d": OOD_D_SEEDS, "ood_h": DEV_SEEDS}[split]
     if seed not in ok:
         raise ValueError(f"seed {seed} is not a {split} seed")
 
