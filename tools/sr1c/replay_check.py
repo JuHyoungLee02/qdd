@@ -181,7 +181,9 @@ def main(argv=None):
             P, _ = B.fk_pose(chain, np.asarray(br["action_exec"], float)[:, :7])
             f = br["committed"]
             stage_obj = spec.target if br["phase_id"] in ("approach", "descend", "close", "lift") else spec.place
-            end_dist = float(np.linalg.norm(to_table_frame(poses[stage_obj], env.table_top_z) - end))
+            # the place object can be the visual-only marker o11 (mug_marker): not in obj_ids, pose from the env
+            stage_pos = poses[stage_obj] if stage_obj in poses else np.asarray(env.object_pose(stage_obj)[0], float)
+            end_dist = float(np.linalg.norm(to_table_frame(stage_pos, env.table_top_z) - end))
             m = branch_metrics(P[-1] - P[0], B.direction(f["dir_xy"], f["dir_z"]), hold_end, end, path, nonheld,
                                move, end_dist)
             rec = {"id": f"{v}/{task}/{kind}/ep{seed}/k{k}", "phase": br["phase_id"], "forced": f, "held": held,
