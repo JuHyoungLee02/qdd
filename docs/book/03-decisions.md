@@ -89,6 +89,7 @@
 | §90 구현기록 2·§83 구현기록 4(Task 12 수정 1회) | 09:40(09-26) | 같은 판 `ser-A-min-3`: 구간이 그리퍼 사건을 품음(줄 어휘 approach·carry·retreat·done — 구간 줄이 그리퍼 답을 알려 주지 않음), 학습 때만 unknown 구간 몫 p 0.3(단계 A·B `--segment-dropout`, 재학습 필수), 오프라인 평가 요청도 unknown 구간, 프롬프트 원천 해시 보강(labels_v2·MAG_BINS·PHASE_ORDER·se2e_data), run_r5 움직임 구간, S-E2E 그리퍼 라벨 청크 색인 단위; Astra 계획 어휘는 그대로 + `PLAN_TO_LINE` (통제 판정 F12) | 유효 |
 | ul 89 | 18:34 | 결과·실수를 책처럼 기록 → `docs/book/` | 유효(이 책) |
 | §59 보충 | 06:34(09-26) | 프롬프트 검진 F(로컬 VLM 이미지 상한): vLLM `--limit-mm-per-prompt` 이미지 2 → 3(결합 흐름이 머리+양쪽 손목 3장을 보내 2에서 HTTP 400) — `tools/r5/serve.sh`·`harvest/eval/common.py` `vllm_cmd` (Claude, plan 2026-09-26 Task 20) | 유효 |
+| §95 보충 1 | 10:07(09-26) | E-CONF NONE: 확신도 R2-새 0.806 통과·S-E2E 0.748 실패, 개선 후보 채택 없음(`temp_joint` +0.041/+0.024) → §95 흐름 우선·보수 모드 트리거로 안 쓰고 선택 이유 기록만; 다음 판 `temp_joint`·SAFE·FIPER·TD 보정 (Claude, 사전 등록 규칙) | 유효 |
 
 ## 저장소 규칙이 된 사용자 지시 (CLAUDE.md)
 main 금지·dev만 푸시 · MD 기록 · Overleaf 한국어 마인드맵 · 1.5년·신뢰도 규칙 · 논문 4시간 갱신(ul 73) · 성능 낮으면 최근 논문 적용(ul 70) · 보고는 KST(ul 72) · 예산 10만 원(ul 76) · 실험 자체 검사(ul 87) · 논문 완성판 형식(ul 88) · 기록책(ul 89).
