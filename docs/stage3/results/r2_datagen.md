@@ -52,7 +52,7 @@
 
 ### 2.5 병렬 생성기·재개·검증 (`queue.py`·`validate.py`)
 - 항목 = (variant, task, kind, seed). 여러 프로세스가 같은 목록을 돌며 `<out>/_queue/<item>.lock`을 `O_CREAT|O_EXCL`로 만든 쪽만 실행(Lustre 원자적). 완료 = `ep<seed>.meta.json` 존재 → 재시작 시 건너뜀(재개). `--stale-s`(기본 1,800 s)보다 오래된 미완료 잠금은 인수(죽은 워커). 시드 우선 순서라 중단해도 과제·변형이 고르게 남는다.
-- 편마다 검사(`validate_episode`): 프레임 번호 연속·30 Hz 격자(±1 µs), 두 카메라 JPEG 전 프레임 존재·원본 크기(SOF 헤더), 행 = 비종료 프레임마다 1개·전부 `check_row(hz=30)`, labels_v2 = 결정 프레임과 정확히 일치, 확인 목표 존재, npz 길이·유한, 유지 서브스텝 합 = 에피소드 길이, (경고) 첫 프레임 렌더 과도. `valid_for_training = 구조 통과 ∧ 성공` — 실패 편은 지우지 않고 표시만(합본·LeRobot에서 제외, 실패 데이터로 재사용 가능).
+- 편마다 검사(`validate_episode`): 프레임 번호 연속·30 Hz 격자(±1 µs), 두 카메라 JPEG 전 프레임 존재·원본 크기(SOF 헤더), 행 = 비종료 프레임마다 1개·전부 `check_row(hz=30)`, labels_v2 = 결정 프레임과 정확히 일치, 확인 목표 존재, npz 길이·유한, 유지 서브스텝 합 = 에피소드 길이, (경고) 첫 프레임 렌더 과도 [→ 2026-09-26 01:08 UTC, 검증기 약점 묶음: 프레임 시각 유한한 수, 결정 표지 = `is_decision(k)`, 행·라벨 seed·kind·task = 편, 행 phase_id = 프레임 phase·skill_id = 그 기술, 행 고유감각 유한, aux 값(reg 유한·cls 0/1, null 허용), 행 행동 = npz action 청크 추가; 깨진 필드·배열은 예외 대신 오류 — [validator_gaps](validator_gaps.md)]. `valid_for_training = 구조 통과 ∧ 성공` — 실패 편은 지우지 않고 표시만(합본·LeRobot에서 제외, 실패 데이터로 재사용 가능).
 - 워커 체인 로그 `<out>/_workers/<variant>_<host>_<pid>_<utc>.jsonl`: 그 프로세스가 만든 편의 순서(체인 재생용, §4.3).
 
 ### 2.6 LeRobot v2.1 변환기 (`lerobot_export.py`, 파드 `venv_e3st`: pyarrow + PyAV)

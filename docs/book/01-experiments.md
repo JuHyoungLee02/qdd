@@ -36,6 +36,7 @@
 | 풀 재실행 불일치 | 같은 시드가 왜 다르게 재생되나 | "시드 + 직전 실행 이력"마다 결정적; 1 mm 초과 410행 모두 close 이후; 비트 동일 아닌 29편 886행 | §78: 라벨은 `replay_maxabs == 0`만 신뢰(§80) | [R/pool_replay_debug](../stage3/results/pool_replay_debug.md) |
 | PhysX 하드 리셋 | 에피소드마다 장면 재생성 | 24/24 비트 동일, 리셋당 +0.28 s; **옛 풀은 새 물리로 재현 안 됨** | §78 기본 `hard_reset=True` | [R/physx_hard_reset](../stage3/results/physx_hard_reset.md) |
 | R7 객관 검증(회차 범위는 handoff §2.8) | 사전 등록·정본 대비 코드·문서 | 회차별 PASS·FAIL은 handoff §2.8(회차가 늘 때마다 낡지 않게 목록을 두지 않음 — 2026-09-25 22:36 UTC, R7 32회차 D-2; 예: 8회차 DEFECT 5) [→ 정정 2026-09-25 20:01 UTC, R7 26회차 D-1: 6회차 PASS 누락; 표시 위치·제목 회차 2026-09-25 20:37 UTC, R7 27회차 N66·N67] — 회차별 줄은 `docs/handoff.md` §2.8 | 2회 연속 무결 = E2E 준비 기준점 — **도달**(36·37회차, 태그 `stage3-e2e-ready` = 3d4738a, 2026-09-26 00:46 UTC) | `R/r7_cycle*.md`, `R/r7c*_fixes.md` |
+| 검증기 약점 묶음(태그 뒤 TDD) | R7 31–37회차 NOTE N131·N132·N142·N143·N154·N165·N190·N193·N210을 예외·조용한 통과 대신 오류로 | 새 시험 37개(약점 32개 RED 32 failed → GREEN, 경계 보존 5개); 실데이터 R2 DEV 36/36·R2_TRAIN 306편 오류 0(도장 메타 불일치 0), 실제 편 사본 음성 대조 15/15 검출; 로컬 1,203 passed·파드 CPU 1,352 passed | `validate.py`만 변경(`stageb_data.py`는 PROMPT_FILES_B라 무변경): 행 고유감각 유한, 행·라벨 seed·kind·task = 편, phase_id = 프레임 phase·skill_id = `skill_of`, aux 값, 행동 = npz 청크(atol 1e-5, 실측 5.0e-7) | [R/validator_gaps](../stage3/results/validator_gaps.md) |
 
 ## C. S-E2E (ROBOTIS 공개 실물 데이터, 소규모)
 

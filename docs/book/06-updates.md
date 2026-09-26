@@ -30,3 +30,4 @@
 | 2026-09-26 00:46 | 01 | R7 행 판정: E2E 준비 기준점 도달(36·37회차 연속 무결, 태그 `stage3-e2e-ready` = 3d4738a) | `R/r7_cycle37.md`, 이 줄과 같은 커밋 |
 | 2026-09-26 00:52 | 01 | R2_TRAIN LeRobot 결과 반영: 01 'R2_TRAIN 대량 생성' 결과 칸에 LeRobot v2.1 6개(5,126편·1,500,474프레임·22.13 GB, verify 6/6, PSNR 최소 32.92 dB) | [R/r2_train_gen](../stage3/results/r2_train_gen.md) §6, 이 줄과 같은 커밋 |
 | 2026-09-26 00:54 | 03·04 | 결합 구현 계획 Task 1 기록: 03 §86 보충 2 행(`CoupleParams` 탐침 값), 04 `harvest/couple/`·`tests/couple/` 행 추가 | 정본 §86 보충 2, 이 줄과 같은 커밋 |
+| 2026-09-26 01:08 | 01·02 | 검증기 약점 묶음 TDD: 01 B절 행 추가(새 시험 37개, 실데이터 DEV 36·R2_TRAIN 306편 오류 0), 02 P73(파드 사본 `CODE_VERSION`은 JSON)·P74(벽시계 시험 실패는 이름 보고·단독 확인·전체 재실행) | [R/validator_gaps](../stage3/results/validator_gaps.md), 이 줄과 같은 커밋 |

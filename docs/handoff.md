@@ -8,7 +8,7 @@
 
 ## 0. 진행 중 작업 (이 절만 진행 상태를 적는다 — 책 P69; 각 줄에 확인 시각 UTC)
 
-- **R7** (확인 2026-09-26 00:46 UTC): **E2E 준비 기준점 도달** — 36·37회차 연속 무결(대상 ffe335c·3d4738a), 태그 `stage3-e2e-ready` = 3d4738a. 이후 코드 변경은 새 회차로 검토한다(기준점은 태그로 고정). 태그 뒤 할 일: 검증기 약점 묶음 TDD(N131·N132·N142·N143·N154·N165·N190·N193·N210), 결합 설계 구현 계획 실행(subagent-driven), 논문 N192.
+- **R7** (확인 2026-09-26 00:46 UTC): **E2E 준비 기준점 도달** — 36·37회차 연속 무결(대상 ffe335c·3d4738a), 태그 `stage3-e2e-ready` = 3d4738a. 이후 코드 변경은 새 회차로 검토한다(기준점은 태그로 고정). 태그 뒤 할 일: 결합 설계 구현 계획 실행(subagent-driven), 논문 N192.
 - **E-MA2** (확인 2026-09-25 23:46 UTC, E-MA2 에이전트): 사전 등록 `fde4f6a`(`docs/stage3/prereg_ma2.md`), 본 실행 23:33:49Z 시작 — 파드 GPU 2 c0 학습(다음 c2 학습 → c2 평가 → 지연)·GPU 3 c1 학습(다음 c0·c1 평가), 드라이버 `/data/harvest/logs/ma2/run_ma2.sh`. 관문: 데이터 수 151,870 = 학습 144,562 + 검증 7,308, 명령 준 표본 75,895(50.0 %)·빠짐 0, step 500 NaN 없음·검증 dec 5.37→0.41(c0)·5.09→0.34(c1), 1.17 s/스텝(예상 안). 결과 전에는 `/data/harvest/ckpt/ma2`를 쓰지 않는다.
 - **결합 구현(계획 2026-09-26, subagent-driven)** (확인 2026-09-26 00:54 UTC): Task 1(`harvest/couple/` — params·schema·prompt astra-couple@v1·mock) 끝, 상수는 정본 §86 보충 2대로. Task 12는 E-MA2 결과(`docs/stage3/results/ma2.md`)가 커밋될 때까지 보류.
 
@@ -141,3 +141,4 @@
 - **R7 35회차(대상 b2b0b3e, 보고서 작성 2026-09-25 23:5x UTC 무렵 — 보고서 머리의 '09-26 00:0x'는 틀려 정정 표시함) 기준선 FAIL**: DEFECT 0, DOC 2(D-1 R2_TRAIN 병 놓기 실패 798 → 794, D-2 본 생성 시작 12:15 → 실제 12:00·파일럿 검사는 관문이 아니었음), SCOPED 20, NOTE 143. 실험 절: 검토할 것 없음. R2_TRAIN의 나머지 수치는 검증자 자체 스크립트로 모두 일치. 정정(2026-09-25 23:58 UTC). 연속 무결 0 → 36회차.
 - **R7 36회차(대상 ffe335c, 보고서 머리 2026-09-26 00:20:35 UTC) 기준선 PASS**: DEFECT 0, DOC 0, SCOPED 20, NOTE 152. 실험 절(E-MA2 사전 등록·코드) PASS. **연속 무결 1회**. 태그 뒤 처리: 검증기 N193(행에 `k`가 없으면 `validate.py:65`에서 KeyError, N132 계열); 다음 논문 갱신 때 N192(논문의 E-MA2 '사전 등록 중' → 등록·학습 중).
 - **R7 37회차(대상 3d4738a, 보고서 머리 2026-09-26 00:42:18 UTC) 기준선 PASS**: DEFECT 0, DOC 0, SCOPED 20, NOTE 164. 실험 절: 새 코드 없음. **연속 무결 2회 → E2E 준비 기준점 도달**, 태그 `stage3-e2e-ready`(3d4738a).
+- **검증기 약점 묶음 TDD(태그 뒤, 기록 2026-09-26 01:07 UTC) 끝**: N131·N132·N142·N143·N154·N165·N190·N193·N210이 모두 예외·조용한 통과 대신 구조 오류로 기록된다 — `harvest/datagen/validate.py`만 변경(`stageb_data.py`는 PROMPT_FILES_B라 무변경; 행 고유감각 유한성·행동 = npz 청크 대조는 validate.py에서). 새 시험 37개(약점 32개 RED 32 failed → GREEN, 경계 보존 5개), 실데이터 R2 DEV 36/36·R2_TRAIN 306편 오류 0(도장 메타 불일치 0), 로컬 1,203 passed·파드 CPU 1,352 passed. 태그 뒤 코드 변경이라 다음 R7 회차 검토 대상. [`results/validator_gaps.md`](stage3/results/validator_gaps.md)
