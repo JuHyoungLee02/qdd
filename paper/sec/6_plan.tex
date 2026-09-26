@@ -1,47 +1,53 @@
 \section{Planned Validation}
 \label{sec:plan}
 
-이 절의 결과 칸은 모두 비워 둔 예정 칸(\todoexp)이며, 판정 기준은 실행 전에 고정한다. 각 표의 캡션에 기대하는 결과와 그 결과가 지지하거나 반박하는 주장을 적는다. 기대와 다른 결과가 나와도 같은 표에 그대로 보고한다. 과금되는 실험은 사용자의 명시적 허락 뒤에만 돈다.
+이 절의 결과 칸은 모두 비워 둔 예정 칸(\todoexp)이며, 판정 기준은 실행 전에 고정한다. 각 표의 캡션에 기대하는 결과와 그 결과가 지지하거나 반박하는 주장을 적는다. 기대와 다른 결과가 나와도 같은 표에 그대로 보고한다. 과금되는 실험은 사용자의 명시적 허락 뒤에만 돈다. 순서는 ``먼저 빼고, 필요하면 넣는다''를 따른다. 상위 계획기 단독을 먼저 다듬고 한계를 잰 뒤, 한계가 트리거 기준을 넘을 때만 VLA 층을 넣는다.
 
 \subsection{검증 사다리}
 \label{sec:ladder}
-결합 계층의 폐루프 비교까지 무료 관문을 차례로 넘는다(\cref{tab:ladder}). 규약의 런타임 배선(구간 의도, 도착 시 대조, 거리 권한, 확정 규칙, 유료 가드)은 이미 결합 코드에 들어 있다. 모자란 것은 학습된 모델이다. 구간 의도 줄과 그리퍼 질문을 넣은 VLA, 그리고 결합 형식으로 학습한 상위 학생이다. 곁가지 실험은 학생 상위 모델의 출력 형식, 입력 정보, 데이터 구성을 정한다.
-
+단계와 넘는 기준은 \cref{tab:ladder}에 있다. 1단계의 U0--U6을 먼저 넘고, 2단계의 V0--V4는 \cref{sec:plan_limits}의 트리거가 걸릴 때만 연다.
 \begin{table*}[t]
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}p{0.13\linewidth}p{0.36\linewidth}p{0.30\linewidth}p{0.15\linewidth}@{}}
+\begin{tabular}{@{}p{0.12\linewidth}p{0.38\linewidth}p{0.30\linewidth}p{0.14\linewidth}@{}}
 \toprule
 단계 & 무엇을 하나 & 넘는 기준(초안) & 상태 \\
 \midrule
-V0 & VLA 재학습(구간 의도 줄, 그리퍼 질문, 먼 구간 분기) & 재학습 관문(결정 정확도 비열등, 재적재 일치) & \tentative{예정} \\
-V1 & VLA 단독 폐루프, DEV 12편(런타임 멈춤 고리 수정 뒤) & 성공 $\ge$ \tentative{4/12} & \tentative{예정} \\
-V2 & 결합 무료 사전 실행 재실행(로컬 VLM 대역) & 대조 판정·권한 궤적이 설계대로, 충돌 0 & \tentative{예정} \\
-V3 & 결합 형식 8B 학생(E-TEACH-L8C) 오프라인 & 구간 의도·명령 정답률이 영샷보다 높음 & \tentative{예정} \\
-V4 & 결합 폐루프: 8B 학생 + VLA 대 8B 단독 동기 대 VLA 단독, DEV 40 짝 & \cref{tab:couple}의 판정 & \tentative{예정} \\
-V5 & 35B 학생(Qwen3.5-35B-A3B) & H-L 기준(\cref{sec:hl}) & \tentative{예정} \\
-V6 & 유료 결합(Astra 상위) & 사용자 허락 뒤, \cref{tab:couple} & \tentative{예정} \\
+\multicolumn{4}{@{}l}{\textbf{1단계: 상위 계획기 단독(실행기와 함께) 다듬기}} \\
+U0 & 8B 경향: 시뮬 참값 LoRA, 동기 단독 형식 & 오프라인 접근 오차 $\le$ 영샷의 절반, 폐루프 성공 $\ge1$ & 끝(\tentative{4/4}) \\
+U1 & 출력 형식(E-PT / ND): 깊이 없는 두 방법(주) 대 깊이 기반 점 대 격자 xyz & DEV와 OOD-H(탁자 0.82·0.88\,m)의 접근 오차 & \tentative{진행 중} \\
+U2 & 손으로 준 정보 제거(E-STRIP8): 최소 요청 대 전체 요청 & DEV·OOD-H 비열등, 틀린 높이에 흔들리지 않음 & \tentative{진행 중} \\
+U3 & 데이터 형태와 비율(E-XEMB8): 다양화 시뮬, 공개 인식 질의응답, 공개 조종 명령 & 관문: 유효 $\ge0.95$, 누수 0; 향상: OOD 기하 평균 $\le$ 자체만 $\times$\tentative{0.8} & \tentative{등록 전} \\
+U4 & 35B-A3B 학습(같은 데이터와 걸음 수, 동기 단독 형식) & 8B 대비 크기 효과; H-L 기준(\cref{sec:hl}) & 준비 끝, \tentative{예정} \\
+U5 & 한계 지도(\cref{sec:plan_limits}): 분포 밖, 교란, 접촉 정밀도, 기다림 포함 벽시계·호출 수 & 기술 지표(판정 밖), 트리거 판단의 근거 & \tentative{예정} \\
+U6 & 자동 맥락: 사람이 쓴 맥락을 자동 값으로 하나씩 교체 & 참값 대비 오차, 폐루프 비열등 & \tentative{예정} \\
 \midrule
-E-SR1e & 실데이터 먼 구간 분기: 더 긴 학습, 더 높은 분기 비율, 학습 없는 대조 안내 & 먼 구간 준수 $\ge$ \tentative{0.8}, 근접 비열등 & \tentative{진행 중} \\
-E-PT / ND & 상위 출력 형식: 깊이 없는 두 방법(주) 대 깊이 기반 점 대 격자 xyz & DEV와 OOD-H(탁자 0.82·0.88\,m)의 접근 오차 & \tentative{진행 중} \\
-E-STRIP8 & 손으로 적은 장면·요령 정보가 추론 때도 필요한가 & 최소 요청 대 전체 요청, OOD-H의 틀린 높이 & \tentative{진행 중} \\
-E-XEMB8 & 다양화 시뮬·공개 변환 데이터의 형태와 비율 & 관문: 유효 $\ge0.95$, 누수 0; 향상: OOD 기하 평균 $\le$ 자체만 $\times$\tentative{0.8} & \tentative{등록 전} \\
-E-VLA-E2E & VLA 끝-끝 학습 대 단계식 & 결정–청크 일치, 반사실 준수, 쥐기 시점, 폐루프 & \tentative{등록 전} \\
-자동 맥락 A0--A2 & 사람이 쓴 맥락을 자동 값으로 하나씩 교체 & 참값 대비 오차, 폐루프 비열등 & \tentative{예정} \\
+\multicolumn{4}{@{}l}{\textbf{2단계: 한계가 트리거를 넘을 때만 --- 의도 공유 VLA 층}} \\
+V0 & VLA 재학습(구간 의도 줄, 그리퍼 질문, 먼 구간 분기) & 재학습 관문(결정 정확도 비열등, 재적재 일치) & 보류 \\
+V1 & VLA 단독 폐루프, DEV 12편(런타임 멈춤 고리 수정 뒤) & 성공 $\ge$ \tentative{4/12} & 보류 \\
+V2 & 결합 형식 상위 학생과 결합 사전 실행 & 대조 판정·권한 궤적이 설계대로, 충돌 0 & 보류 \\
+V3 & 결합 폐루프: 상위 + VLA 대 상위 단독 대 VLA 단독, DEV 40 짝 & \cref{tab:couple}의 판정 & 보류 \\
+V4 & 유료 결합(Astra 상위) & 사용자 허락 뒤 & 보류 \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{검증 사다리.} V0--V6은 결합 폐루프까지의 순서이고, 아래 줄은 학생 상위 모델과 VLA의 형식·데이터를 정하는 곁가지다. 유료는 V6과 제안된 상위 비교뿐이며 모두 사용자 허락 뒤에 돈다.}
+\caption{\textbf{검증 사다리.} 1단계(U0--U6)를 먼저 넘고, 2단계(V0--V4)는 \cref{sec:plan_limits}의 트리거가 걸릴 때만 연다. 2단계의 코드와 계획은 보존한다. 실데이터 먼 구간 분기(E-SR1e)는 진행 중인 팔만 마무리한다. 유료는 사용자 허락 뒤에만 돈다.}
 \label{tab:ladder}
 \end{table*}
 
 \subsection{가설 H-L: 특화 학습한 상위 모델}
 \label{sec:hl}
-\tentative{Astra는 한 호출에 5--9\,s라 실시간 참여와 감독에 너무 느리다. 일반 능력은 낮아도 말단과 로봇·장면의 관계와 이동의 상관에 특화해 학습한 상위 모델은 더 빠르고, 우리 과제에서는 비슷하거나 더 나을 것이다.} 판정 기준 초안은 셋이다. \emph{빠르다}: 지연 p50 $\le$ \tentative{2\,s}이자 Astra의 1/3 이하. \emph{비슷하다}: DEV 짝 시드에서 Astra 단독과의 성공 차가 \tentative{3/40} 안. \emph{더 좋다}: 접근 목표 오차가 Astra(중앙 약 \tentative{14\,mm}) 이하이고, 7--10\,cm 목표 어긋남 알아채기가 Astra의 \tentative{0/13}보다 높다. 8B 경향 시험은 분포 안에서 첫 근거를 주었지만 지연 기준에는 못 미쳤다(\cref{sec:evidence}). 35B-A3B의 지연(생각 끔)은 \tentative{1--2\,s}로 \emph{추정}하며 아직 재지 않았다. 위험은 드문 상태의 복구 추론을 잃는 것이다. 그래서 학생이 간 틀어진 상태의 복구 라벨을 반드시 넣고, 일반성은 학습에 쓰지 않은 OOD 세트로 잰다.
+\tentative{Astra는 한 호출에 수 초라 실시간 참여와 감독에 너무 느리다. 일반 능력은 낮아도 말단과 로봇·장면의 관계와 이동의 상관에 특화해 학습한 상위 모델은 더 빠르고, 우리 과제에서는 비슷하거나 더 나을 것이다.} 판정 기준 초안은 셋이다. \emph{빠르다}: 지연 p50 $\le$ \tentative{2\,s}이자 Astra의 1/3 이하. \emph{비슷하다}: DEV 짝 시드에서 Astra 단독과의 성공 차가 \tentative{3/40} 안. \emph{더 좋다}: 접근 목표 오차가 Astra(중앙 약 \tentative{14\,mm}) 이하이고, 7--10\,cm 목표 어긋남 알아채기가 Astra의 \tentative{0/13}보다 높다. 8B 경향 시험은 분포 안에서 첫 근거를 주었지만 지연 기준에는 못 미쳤다. 35B-A3B는 준비 측정에서 동기 단독 요청 p50 \tentative{1.11\,s}로 응답해, 영샷 기준으로는 지연 기준 안에 있다. 다만 학습 뒤 답 길이에 따라 달라지고, 과제 성능은 아직 모른다(\cref{sec:evidence}). 위험은 드문 상태의 복구 추론을 잃는 것이다. 그래서 학생이 간 틀어진 상태의 복구 라벨을 반드시 넣고, 일반성은 학습에 쓰지 않은 OOD 세트로 잰다.
 
-\subsection{결합 폐루프}
+\subsection{1단계의 한계 지도와 2단계 트리거}
+\label{sec:plan_limits}
+상위 단독 폐루프의 모든 판에서 네 가지를 기술 지표로 기록한다. (i) \emph{분포 밖}: OOD-H(본 적 없는 탁자 높이), OOD-O(보류한 물체 범주), OOD-D(보류 풀의 방해물·재질·조명)의 성공과 접근 오차. (ii) \emph{실행 중 교란}: 편 도중 대상이 3--8\,cm 순간 이동했을 때 다음 몇 호출 안에 목표를 고치는지, 나르는 중 그리퍼가 열려 물체를 놓쳤을 때 알아채고 다시 잡는지. (iii) \emph{접촉 정밀도}: 첫 닫기 때 손끝과 대상 중심의 xy 차, 닫기 높이 오차, 빈손 닫힘 수, 놓은 위치의 오차와 똑바름. (iv) \emph{시간}: 편당 벽시계(상위 지연 합 + 실행기 움직임 + 대기)와 호출 수. 움직임 시간과 대기 시간을 나눠 적는다. 교란 주입은 동기 단독 러너에 아직 없어 구현과 시험 뒤에 등록한다.
+
+2단계는 한계가 아래 트리거 가운데 하나를 넘을 때만 연다. 문턱은 초안이며 1단계 결과 전에 사전 등록으로 고정한다. \textbf{T-lat}: 실패한 편 가운데 원인이 기다림(상위가 답하는 동안 상황이 바뀜)으로 분류된 비율이 \tentative{초안 문턱} 이상. \textbf{T-wall}: 편당 벽시계가 같은 장면의 스크립트 규칙 기준선 대비 \tentative{초안 배수} 이상이고, 그 대부분이 대기 시간. \textbf{T-contact}: 교란이나 접촉 정밀도의 실패가 상위의 답 간격보다 짧은 시간 척도에서 일어남(예: 미끄러짐을 다음 호출 전에 되잡아야 하는 경우). 트리거가 걸리지 않으면 VLA 층은 넣지 않고, 그 결과를 그대로 보고한다. 트리거가 걸리면 VLA 층 대신 다른 방법(예: 더 빠른 상위 모델, 실행기 개선)이 더 싼지도 함께 비교한다.
+
+\subsection{2단계(조건부): 결합 폐루프}
 \label{sec:plan_couple}
-기여 1의 시험이다. 같은 VLA 체크포인트 위에서 VLA 단독, 상위 단독(동기, 그 상위에 맞춘 인터페이스), 결합 계층을 짝지은 시드로 비교한다. 층은 standard와 DR이고, 표본은 DEV 레이아웃 시드 20개 $\times$ 층 2 = 조건당 40편이다. 주 지표는 성공률의 짝 차(레이아웃 시드 군집 부트스트랩 10,000회)이다. 판정 밖으로 로봇이 멈춘 시간, 편당 호출 수·비용, 답 나이, 대조 판정의 분포, 편향의 최대 속도·가속, 신선한 상위 답이 반대했는데도 진행된 되돌릴 수 없는 동작 수를 보고한다. 판정 초안은 결합 대 VLA 단독의 두 층 합산 짝 차가 $\ge+10$\%p이고 하한 $>0$이면 채택이다. 결합이 상위 단독보다 성공률에서 앞서지 못해도 정지 시간과 비용에서 앞서면 그 교환을 그대로 보고한다.
+트리거가 걸리면 같은 장면에서 VLA 단독, 상위 단독(동기), 결합 계층을 짝지은 시드로 비교한다. 층은 standard와 DR, 표본은 DEV 레이아웃 시드 20개 $\times$ 층 2 = 조건당 40편이다. 주 지표는 성공률의 짝 차(레이아웃 시드 군집 부트스트랩 10,000회)이다. 판정 밖으로 로봇이 멈춘 시간, 편당 호출 수·비용, 답 나이, 대조 판정의 분포, 신선한 상위 답이 반대했는데도 진행된 되돌릴 수 없는 동작 수를 보고한다. 판정 초안은 결합이 트리거를 건 한계를 줄이면서(예: 벽시계, 기다림 실패) 상위 단독과 성공률이 비열등할 때 채택이다.
 
 \begin{table}[t]
 \centering
@@ -49,17 +55,16 @@ E-VLA-E2E & VLA 끝-끝 학습 대 단계식 & 결정–청크 일치, 반사실
 \setlength{\tabcolsep}{2.2pt}
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
-조건 & standard & DR & 짝 차 & \makecell{정지\\(s/판)} & \makecell{호출\\/판} & \makecell{비용\\(원/판)} \\
+조건 & standard & DR & 짝 차 & \makecell{벽시계\\(s/판)} & \makecell{호출\\/판} & \makecell{비용\\(원/판)} \\
 \midrule
-VLA 단독 & \todoexp & \todoexp & --- & \todoexp & 0 & 0 \\
-상위 단독 (8B 학생, 동기) & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp & 0 \\
-\textbf{PaceNotes (8B 학생 + VLA)} & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp & 0 \\
-PaceNotes (35B 학생 + VLA) & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp & 0 \\
+\textbf{상위 단독 (학생, 동기)} & \todoexp & \todoexp & --- & \todoexp & \todoexp & 0 \\
 상위 단독 (Astra, 동기) & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
-PaceNotes (Astra + VLA) & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
+VLA 단독 & \todoexp & \todoexp & \todoexp & \todoexp & 0 & 0 \\
+결합 (학생 + VLA) & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp & 0 \\
+결합 (Astra + VLA) & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{결합 폐루프 (계획).} 기대: 결합 계층이 VLA 단독보다 성공률이 높고, 상위 단독보다 정지 시간이 0에 가깝다. 학생 상위 모델의 결합이 Astra 결합과 비슷하면 가설 H-L과 기여 1을 함께 지지한다. 결합이 VLA 단독과 같으면 흐름의 가치를 주장하지 않는다. Astra 줄은 사용자 허락 뒤에만 돈다.}
+\caption{\textbf{상위 단독과 조건부 결합 (계획).} 첫 두 줄은 1단계에서 반드시 잰다. 아래 세 줄은 트리거가 걸릴 때만 돈다. 기대: 학생 상위 단독이 Astra 단독과 비열등하면서 더 빠르다(H-L). 결합은 트리거가 가리킨 한계(벽시계, 기다림 실패)를 줄일 때만 가치가 있다. 결합이 상위 단독과 같으면 VLA 층을 넣지 않는다. Astra 줄은 사용자 허락 뒤에만 돈다.}
 \label{tab:couple}
 \end{table}
 
@@ -70,7 +75,7 @@ PaceNotes (Astra + VLA) & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp &
 \begin{equation}
   \mathrm{RD} = 1-\frac{\mathrm{Succ}_{\text{random}}}{\mathrm{Succ}_{\text{standard}}}.
 \end{equation}
-절대 성공률의 우위는 주장하지 않는다(\cref{fig:eval}). \textbf{H1(시스템)}: PaceNotes의 RD가 $\pi_{0.5}$ 미세조정보다 작다(차의 95\% 상한 $<0$). \textbf{H2(위층)}: 상위 계획기를 첫 계획 뒤 끈 조건의 RD가 켠 조건보다 크다(하한 $>0$). \textbf{H3(상위 학습)}: 학생 상위 모델의 RD가 Astra 상위와 비열등하다. 모두 지연 충실 트랙에서 판정한다.
+절대 성공률의 우위는 주장하지 않는다(\cref{fig:eval}). \textbf{H1(시스템)}: PaceNotes의 RD가 $\pi_{0.5}$ 미세조정보다 작다(차의 95\% 상한 $<0$). \textbf{H2(상위 학습)}: 학생 상위 모델의 RD가 Astra 상위와 비열등하다. \textbf{H3(조건부 층)}: VLA 층을 넣었다면, 넣은 판의 RD가 상위 단독보다 크지 않다. 모두 지연 충실 트랙에서 판정한다.
 
 \begin{table*}[t]
 \centering
@@ -78,28 +83,28 @@ PaceNotes (Astra + VLA) & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp &
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lllccccc@{}}
 \toprule
-범주 & 시스템 & 상위 계획기 & standard 성공(\%) & random 성공(\%) & RD $\downarrow$ & 정지 시간(s/판) & 상위 호출/판 \\
+범주 & 시스템 & 상위 계획기 & standard 성공(\%) & random 성공(\%) & RD $\downarrow$ & 벽시계(s/판) & 상위 호출/판 \\
 \midrule
-\multirow{4}{*}{기준선}
- & 상위 단독(동기) & Astra & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
+\multirow{3}{*}{기준선}
  & 코드 정책 (CaP-X식)~\cite{fu2026capx} & Astra & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
  & $\pi_{0.5}$ 미세조정~\cite{pi05_2025} & 없음 & \todoexp & \todoexp & \todoexp & \todoexp & --- \\
  & 규칙 + 스크립트 스킬 & 없음 & \todoexp & \todoexp & \todoexp & \todoexp & --- \\
 \midrule
-\multirow{4}{*}{PaceNotes}
- & VLA만(상위는 첫 계획 뒤 끔) & Astra & \todoexp & \todoexp & \todoexp & \todoexp & 1 \\
- & \textbf{상위 + VLA} & Astra & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
- & \textbf{상위 + VLA} & 8B 학생 & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
- & \textbf{상위 + VLA} & 35B 학생 & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
+\multirow{3}{*}{PaceNotes 1단계}
+ & 상위 + 실행기 & Astra & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
+ & \textbf{상위 + 실행기} & 8B 학생 & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
+ & \textbf{상위 + 실행기} & 35B 학생 & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
+\midrule
+PaceNotes 2단계 & 상위 + VLA (트리거 시) & 35B 학생 & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{주 결과 (계획, 지연 충실 트랙; 동기 공정 트랙은 같은 형식으로 병기).} 기대: 학습 VLA는 standard 성공률이 높지만 RD가 크고, PaceNotes는 $\pi_{0.5}$ 미세조정보다 RD가 작다(H1). 상위를 끄면 RD가 커진다(H2). 학생 상위 모델은 Astra와 비열등하다(H3). 정지 시간은 첫 계획과 안전 대기 밖에서 0이어야 하며, 아니면 구현 결함으로 재실행한다.}
+\caption{\textbf{주 결과 (계획, 지연 충실 트랙; 동기 공정 트랙은 같은 형식으로 병기).} 기대: $\pi_{0.5}$ 미세조정은 standard 성공률이 높지만 RD가 크고, PaceNotes 1단계는 RD가 작다(H1). 학생 상위 모델은 Astra와 비열등하다(H2). 2단계 줄은 트리거가 걸렸을 때만 채운다(H3).}
 \label{tab:main}
 \end{table*}
 
 \subsection{열린 전제}
 \label{sec:premises}
-파이프라인 배치는 확정했지만 아래 전제가 서기 전까지 잠정이다(\cref{tab:premises}). 전제가 틀리면 그 칸만 바꾸고 나머지 배치는 유지한다. 결합이 VLA 단독보다 낫다는 전제(P3)가 틀리면 구조 자체를 다시 연다.
+아래 전제가 서기 전까지 설계는 잠정이다(\cref{tab:premises}). 전제가 틀리면 그 칸만 바꾸고 나머지는 유지한다. 1단계 전제(Q1--Q5)를 먼저 검증하고, 2단계 전제(P1--P9)는 층을 다시 넣을 때 검증한다.
 
 \begin{table}[t]
 \centering
@@ -109,21 +114,21 @@ PaceNotes (Astra + VLA) & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp &
 \toprule
 \# & 아직 확실하지 않은 전제 & 가르는 실험과 지금 상태 \\
 \midrule
-P1 & 먼 구간 분기가 실데이터에서도 준수 $\ge0.8$ & \tentative{0.536}(과소적합); E-SR1e \\
-P2 & 실데이터에서 거리 권한을 믿을 만하게 추정 & 그리퍼 사건 대용까지만 \\
-P3 & 결합이 폐루프에서 VLA 단독보다 낫다 & V4, V6; VLA 단독 \tentative{0/12} 먼저 해결 \\
-P4 & 상위 한 호출의 명령이 충분히 정확 & 방향 \tentative{13/13}, 알아채기 \tentative{0/13} \\
-P5 & 상위의 구간 계획이 맞고 VLA가 시점을 맞게 정함 & 구간 정답 \tentative{8/10}(계획대로 상태); 시점 시험 예정 \\
-P6 & 그리퍼 선택지가 학습되고 쥐기·놓기 시점이 맞음 & V0 뒤 \\
-P7 & 도착 시 대조가 맞게 갈리고 도움이 됨 & 구현; 폐루프 효과 미측정 \\
-P8 & 먼 구간 정밀도 대가가 성공을 해치지 않음 & V4 \\
-P9 & 접촉 근처의 외부 명령 차단을 거리 권한이 책임짐 & $a=0$ 효과 0 시험 통과; 폐루프 미측정 \\
-P10 & 이 자리에 프런티어 모델이 영샷 오픈급보다 필요 & 영샷으로는 필요(\tentative{0/5}, \tentative{0/4} 대 \tentative{7/7}) \\
-P11 & 선생 증류가 학생을 낫게 함 & 8B 참값 라벨 \tentative{4/4}(분포 안) \\
-P12 & 지연·비용이 실물 조건에서도 유지 & 실물 단계 \\
-P13 & 가설 H-L(\cref{sec:hl}) & 초기 근거(8B, DEV \tentative{4/4}); 다양화·OOD, 35B \\
+\multicolumn{3}{@{}l}{\textbf{1단계}} \\
+Q1 & 가설 H-L(\cref{sec:hl}) & 초기 근거(8B, DEV \tentative{4/4}); 35B 준비 p50 \tentative{1.11\,s} \\
+Q2 & 상위 단독이 분포 밖에서도 버틴다 & U3--U5 \\
+Q3 & 깊이 없이, 손으로 준 정보 없이도 된다 & U1, U2 \\
+Q4 & 상위 한 호출의 명령이 충분히 정확 & 방향 \tentative{13/13}, 알아채기 \tentative{0/13} \\
+Q5 & 지연·비용이 실물 조건에서도 유지 & 실물 단계 \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{2단계(조건부)}} \\
+P1 & 먼 구간 분기가 실데이터에서도 준수 $\ge0.8$ & \tentative{0.536}(과소적합) \\
+P3 & 결합이 트리거한 한계를 줄인다 & 트리거 뒤 V3 \\
+P5 & 구간 계획이 맞고 VLA가 시점을 맞게 정함 & 구간 정답 \tentative{8/10}(계획대로 상태) \\
+P7 & 도착 시 대조가 맞게 갈리고 도움이 됨 & 구현; 폐루프 미측정 \\
+P9 & 접촉 근처 외부 명령 차단을 거리 권한이 책임짐 & $a=0$ 효과 0 시험 통과 \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{열린 전제.} 모두 검증 전이며 상태 칸의 값은 초기값이다.}
+\caption{\textbf{열린 전제.} 모두 검증 전이며 상태 칸의 값은 초기값이다. 2단계 전제의 나머지(권한 추정, 그리퍼 선택지, 정밀도 대가)는 층을 다시 넣을 때 함께 연다.}
 \label{tab:premises}
 \end{table}

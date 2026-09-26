@@ -1,8 +1,8 @@
 \begin{strip}
 \centering
-\includegraphics[width=\linewidth]{figures/overview.pdf}
+\includegraphics[width=0.93\linewidth]{figures/overview.pdf}
 \captionsetup{hypcap=false}
-\captionof{figure}{\textbf{PaceNotes: 의도 공유 계층.} (a) \textbf{상위 계획기}(코드라이버; 지금은 Astra, 목표는 학습한 8B·35B 오픈 VLM)는 행동마다 다음 \textbf{구간 의도}(지금 구간·할 일·다음 구간)를 먼저 선언한다. 그리고 VLA가 실제로 한 결과를 \textbf{검증}해(근거는 고유 감각 T1과 확인 헤드 V1h) 다음 노트를 부른다. \textbf{VLA}(드라이버)는 0.33\,s마다 방향·크기·대상·단계·그리퍼를 닫힌 보기로 고르고, 쥐기·놓기 시점을 스스로 정하며, \textbf{행동 전문가}가 고른 보기를 0.5\,s 관절 청크로 채운다. 느린 상위의 답은 도착할 때 그사이 VLA가 한 일과 대조한다(이미 됨·아직 유효·상황 바뀜·충돌). (b) 한 편의 예시 시간 축. 상위 요청은 한 번에 하나이고 답은 수 초마다 온다(탐침 p50 \tentative{약 9--10\,s}). 답이 올 때마다 대조가 일어난다. VLA 눈금은 보기 쉽게 두 결정에 하나만 그렸다. 쥐는 시점은 VLA가 정하고, 잡음 검증은 다음 상위 답에 실린다. 거리 권한 $a$는 먼 구간에서 1(상위의 말단 수정을 반영), 접촉 근처에서 0(VLA만)이다. (c) 학습의 세 갈래: 프런티어 선생(Astra, 시뮬 참값)을 학습 가능한 상위 모델로 증류(8B 대리 $\rightarrow$ 35B, \tentative{계획}), 조이스틱 역할에 맞춘 VLA 끝-끝 학습, 다양화 시뮬과 좌표계 없는 공개 데이터(점 추적이 픽셀 경로와 자기 보정의 공통 앞단).}
+\captionof{figure}{\textbf{PaceNotes: 코드라이버 먼저, 드라이버는 필요할 때.} (a) \textbf{1단계}(실선): \textbf{상위 계획기}(코드라이버; Astra $\rightarrow$ 학습한 8B·35B)가 \textbf{구간 의도}를 선언하고 움직임까지 지시하며, \textbf{결정적 실행기}가 수행하고, 상위가 결과를 \textbf{검증}한다(근거 T1). \textbf{2단계}(점선, 조건부): 기다림 실패·긴 벽시계 같은 한계가 측정될 때만 실행기 자리에 \textbf{VLA}(드라이버)를 태운다. VLA는 0.33\,s마다 닫힌 보기와 쥐기 시점을 정하고, \textbf{행동 전문가}가 청크를 낸다. (b) 예시 시간 축(길이는 설명용): 1단계는 상위가 생각하는 동안 대기, 2단계는 답마다 도착 시 대조와 거리 권한 $a$(먼 구간 1, 접촉 근처 0). (c) 학습: 상위 계획기 증류(주 기여), 다양화·좌표계 없는 데이터, 조건부 VLA 학습.}
 \captionsetup{hypcap=true}
 \label{fig:teaser}
 \end{strip}

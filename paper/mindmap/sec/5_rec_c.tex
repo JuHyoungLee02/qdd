@@ -99,3 +99,13 @@
   \item \textbf{그래서(결정):} 정본 §96 보충 3·4: 무료 사다리 V0 VLA 재학습 관문 $\rightarrow$ V1 VLA 단독 $\geq$ 4/12(영구 hold $\leq$ 1/12) $\rightarrow$ V2 결합 사전 실행 r2 $\rightarrow$ V3 E-TEACH-L8C 오프라인(\texttt{upper-\allowbreak{}couple@v1} = v2 + verify) $\rightarrow$ V4 결합 폐루프(학생 8B + VLA 대 8B 단독 동기 대 VLA 단독, DEV 40 짝) $\rightarrow$ V5 35B; V6 유료 E-Couple은 사용자 승인 뒤만. 자리 규칙 §88·§89 그대로. VLA 쪽 E2E는 D12.
   \item \textbf{진행 중·대기:} \tentative{사용자 결정 3개(추천): D1 학생 형식에 \texttt{verify} 필드 추가(예), D2 GPU 순서 --- ser-A-min-3 VLA-sim 재학습을 가장 먼저(예), D3 VLA 구간 줄은 지금 4단계 유지하고 V4 쥐기 시점 오차로 다시 판단. book 01의 VLA-R3·E-VLA-E2E·E-TEACH-L8C·E-COUPLE-8B·E-TEACH-35C는 모두 [예정].}
 \end{itemize}
+
+\paragraph{C11. 먼저 제거, 필요하면 넣기 --- VLA 층 보류, 상위 단독 먼저}
+{\small 09-27 02:4x KST}
+\begin{itemize}
+  \item \textbf{사용자} (ul 134, 02:4x KST): \intent{그냥 일단 일론의 아이디어를 난 좋아해 일단 제거하라 그리고 필요하면 넣어라. 이게 맞는듯 생각해보니까 일단 VLA 라는 구간 자체가 지금당장 필요할까? 일단 상위 만으로도 충분히 잘되는 지 확인을 하는게 먼저가 아닐까? 그게 맞는 것 같아 만약 그때 가서 딜레이 문제가 너무 크다하면 vla를 하위로 두든 아니면 또다른 방버론을 두든 하면 되니까.}
+  \item \textbf{사용자} (ul 134, 02:4x KST): \intent{일단은 상위를 먼저 잘 다듬을 수 있는 지 그리고 한계가 있다면 한계파악하기 순이 되어야할듯 기억해봐봐}
+  \item \textbf{그래서(결정):} 정본 §98(9f7c2c7): 층·부품을 미리 쌓지 않는다. 상위 계획기 단독(8B 대리 $\rightarrow$ 35B-A3B, \texttt{astra-\allowbreak{}solo} 계열 형식 + 코드 실행기)을 먼저 다듬고(E-TEACH-L8, E-PT/ND, E-STRIP8, E-OPEN8, 35B), 한계를 잰다(OOD 탁자 높이·물체·방해물, 실행 중 교란, 접촉 정밀, 기다림 포함 벽시계·호출 수). 지연 때문에 실패하거나 너무 느린 한계가 실제로 확인되면 그때 VLA 하위 층(§96 보충 2--4)이나 다른 방법을 넣는다.
+  \item \textbf{그래서(결정):} 보류(보존): VLA ser-A-min-3 재학습, VLA 단독 재측정, 결합 사전 실행 r2, 결합 형식 상위 학습(E-TEACH-L8C), VLA 끝-끝 학습, PaceNotes 프로토콜 v1 초안. §96 보충 2의 `필수'는 VLA 층을 다시 넣을 때의 규약으로 유지. E-SR1e는 진행 중 팔만 마무리.
+  \item \textbf{결과:} 논문 본문 반영(09-27): `코드라이버 먼저' --- 1단계 상위 + 결정적 실행기, 2단계 VLA 층은 트리거(T-lat·T-wall·T-contact)가 걸릴 때만; 검증 사다리 U0--U6 먼저, V0--V4는 조건부; Fig. 1에서 VLA 부분을 점선(조건부)으로.
+\end{itemize}

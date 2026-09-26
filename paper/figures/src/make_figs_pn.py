@@ -31,106 +31,132 @@ def check(ax, x, y, s=0.05, c="#2E7D32"):
     ax.plot([x - s, x - s * 0.3, x + s], [y, y - s * 0.7, y + s * 0.9], color=c, lw=1.6, solid_capstyle="round")
 
 
-# ================================================================ Fig. 1 PaceNotes overview
+# ================================================================ Fig. 1 PaceNotes overview (staged: co-driver first)
+def dbox(ax, x, y, w, h, fc, ec, lw=1.2):
+    """dashed rounded box = planned / conditional part"""
+    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=0.06", fc=fc, ec=ec, lw=lw,
+                                ls=(0, (4, 2.5))))
+
+
 def fig_overview():
     W = FULL_W
-    H = 4.55
+    H = 5.0
     fig, ax = canvas(W, H)
 
     # ---------------- (a) roles
-    top = H - 0.05
-    ax.text(0.04, top, "(a) 역할: 코드라이버와 드라이버", fontsize=8, va="top", color=TXT, fontweight="bold")
-    # upper planner panel
-    px, py, pw, ph = 0.05, 2.30, 2.55, 1.95
+    ax.text(0.04, H - 0.05, "(a) 코드라이버 먼저: 1단계는 상위 + 실행기, VLA는 한계가 확인될 때만", fontsize=8, va="top",
+            color=TXT, fontweight="bold")
+    py, ph = 2.75, 1.95
+    # upper planner panel (stage 1, solid)
+    px, pw = 0.05, 2.40
     ax.add_patch(FancyBboxPatch((px, py), pw, ph, boxstyle="round,pad=0,rounding_size=0.06", fc=UP[0], ec=UP[1], lw=1.3))
-    ax.text(px + 0.10, py + ph - 0.10, "상위 계획기 = 코드라이버", fontsize=8.2, va="top", color=TXT, fontweight="bold")
-    ax.text(px + 0.10, py + ph - 0.33, "Astra (지금) → 학습한 8B·35B (목표)", fontsize=6.0, va="top", color="#6A4A2A")
-    ax.text(px + 0.10, py + ph - 0.55, "구간 의도를 먼저 선언", fontsize=6.4, va="top", color="#333")
+    ax.text(px + 0.10, py + ph - 0.10, "상위 계획기 = 코드라이버", fontsize=8.0, va="top", color=TXT, fontweight="bold")
+    ax.text(px + 0.10, py + ph - 0.33, "Astra (지금) → 학습한 8B·35B (목표)", fontsize=5.9, va="top", color="#6A4A2A")
+    ax.text(px + 0.10, py + ph - 0.55, "구간 의도를 선언하고 움직임까지 지시", fontsize=6.2, va="top", color="#333")
     ny = py + 0.80
     notes = ["지금: 접근\n머그로", "지금: 잡기\n할 일: 쥐기", "지금: 나르기\n다음: 놓기"]
-    nx = px + 0.12
+    nx = px + 0.10
     for i, t in enumerate(notes):
-        note(ax, nx + i * 0.80, ny, 0.70, 0.40, t, fs=5.9)
+        note(ax, nx + i * 0.76, ny, 0.66, 0.40, t, fs=5.7)
         if i < 2:
-            arr(ax, [(nx + i * 0.80 + 0.70, ny + 0.20), (nx + (i + 1) * 0.80, ny + 0.20)], lw=0.8)
-    # verify badge
-    ax.add_patch(FancyBboxPatch((px + 0.12, py + 0.15), pw - 0.24, 0.55, boxstyle="round,pad=0,rounding_size=0.04",
+            arr(ax, [(nx + i * 0.76 + 0.66, ny + 0.20), (nx + (i + 1) * 0.76, ny + 0.20)], lw=0.8)
+    ax.add_patch(FancyBboxPatch((px + 0.10, py + 0.15), pw - 0.20, 0.55, boxstyle="round,pad=0,rounding_size=0.04",
                                 fc=VER[0], ec=VER[1], lw=1.0))
-    ax.text(px + 0.22, py + 0.52, "결과를 검증하고 다음 노트", fontsize=6.4, va="center", color=TXT, fontweight="bold")
-    ax.text(px + 0.22, py + 0.30, "잡음 확인 (근거: T1 고유 감각 · V1h 확인 헤드)", fontsize=5.8, va="center", color="#444")
-    check(ax, px + pw - 0.30, py + 0.42)
+    ax.text(px + 0.20, py + 0.52, "결과를 검증하고 다음 노트", fontsize=6.3, va="center", color=TXT, fontweight="bold")
+    ax.text(px + 0.20, py + 0.30, "잡음 확인 (근거: T1 고유 감각)", fontsize=5.8, va="center", color="#444")
+    check(ax, px + pw - 0.28, py + 0.42)
 
-    # VLA panel
-    vx, vy, vw, vh = 4.25, 2.30, 2.58, 1.95
-    ax.add_patch(FancyBboxPatch((vx, vy), vw, vh, boxstyle="round,pad=0,rounding_size=0.06", fc=VL[0], ec=VL[1], lw=1.3))
-    ax.text(vx + 0.10, vy + vh - 0.10, "VLA = 드라이버", fontsize=8.2, va="top", color=TXT, fontweight="bold")
-    ax.text(vx + 0.10, vy + vh - 0.33, "조이스틱 VLA (Qwen3-VL-4B)", fontsize=6.0, va="top", color="#2F4F7A")
-    note(ax, vx + 0.12, vy + 1.03, vw - 0.24, 0.40,
-         "0.33 s마다 닫힌 보기 선택\n방향 · 크기 · 대상 · 단계 · 그리퍼", fs=6.0, ec=VL[1])
-    note(ax, vx + 0.12, vy + 0.58, vw - 0.24, 0.34, "쥐기·놓기 시점은 VLA가 정함 (T1 관문 허가)", fs=6.0, ec=VL[1])
-    rbox(ax, vx + 0.12, vy + 0.12, 1.55, 0.36, "skill", "행동 전문가 → 0.5 s 관절 청크", fs=6.0)
-    icon_robot(ax, vx + 2.20, vy + 0.10, s=0.62)
+    # executor (stage 1, solid green)
+    ex0, ew = 2.62, 1.40
+    ax.add_patch(FancyBboxPatch((ex0, py + 0.55), ew, 1.10, boxstyle="round,pad=0,rounding_size=0.05",
+                                fc=EX[0], ec=EX[1], lw=1.2))
+    ax.text(ex0 + ew / 2, py + 1.50, "결정적 실행기", ha="center", va="center", fontsize=7.0, color=TXT, fontweight="bold")
+    ax.text(ex0 + ew / 2, py + 1.10, "명령을 최소 저크\n직선 운동으로 수행\n끝나면 새 영상으로\n다시 묻는다",
+            ha="center", va="center", fontsize=5.6, color="#333", linespacing=1.2)
+    icon_robot(ax, ex0 + ew / 2 - 0.08, py + 0.05, s=0.55)
+    arr(ax, [(px + pw, py + 1.45), (ex0, py + 1.45)], color=UP[1], lw=1.0)
+    ax.text((px + pw + ex0) / 2, py + 1.50, "명령", ha="center", va="bottom", fontsize=5.4, color=UP[1])
+    arr(ax, [(ex0, py + 0.75), (px + pw, py + 0.75)], color=VER[1], lw=1.0)
+    ax.text((px + pw + ex0) / 2, py + 0.70, "측정", ha="center", va="top", fontsize=5.4, color=VER[1])
 
-    # middle: messages + reconciliation
-    mx0, mx1 = px + pw + 0.05, vx - 0.05
-    arr(ax, [(mx0, 3.85), (mx1, 3.85)], color=UP[1], lw=1.1)
-    ax.text((mx0 + mx1) / 2, 3.90, "구간 의도 (now · do · next)\n+ 말단 수정", ha="center", va="bottom", fontsize=6.0, color=UP[1])
-    arr(ax, [(mx1, 2.62), (mx0, 2.62)], color=VER[1], lw=1.1)
-    ax.text((mx0 + mx1) / 2, 2.57, "실제 움직임 · 결과", ha="center", va="top", fontsize=6.0, color=VER[1])
-    ax.add_patch(FancyBboxPatch((mx0 + 0.08, 2.95), mx1 - mx0 - 0.16, 0.66, boxstyle="round,pad=0,rounding_size=0.04",
-                                fc="white", ec="#6F6F6F", lw=0.9))
-    ax.text((mx0 + mx1) / 2, 3.46, "도착 시 대조", ha="center", va="center", fontsize=6.5, color=TXT, fontweight="bold")
-    ax.text((mx0 + mx1) / 2, 3.16, "이미 됨 · 아직 유효\n상황 바뀜 · 충돌", ha="center", va="center", fontsize=5.7,
-            color="#444", linespacing=1.15)
+    # VLA panel (stage 2, dashed = conditional)
+    vx, vw = 4.18, 2.65
+    dbox(ax, vx, py, vw, ph, "#EEF4FB", VL[1])
+    ax.text(vx + 0.10, py + ph - 0.10, "2단계(조건부): VLA = 드라이버", fontsize=7.6, va="top", color="#2F4F7A",
+            fontweight="bold")
+    ax.text(vx + 0.10, py + ph - 0.33, "기다림 실패·벽시계 등 한계가 측정될 때만", fontsize=5.8, va="top", color="#2F4F7A")
+    note(ax, vx + 0.10, py + 1.06, vw - 0.20, 0.36, "0.33 s마다 닫힌 보기 선택 (방향·크기·대상·단계·그리퍼)",
+         fs=5.6, ec=VL[1])
+    note(ax, vx + 0.10, py + 0.62, vw - 0.20, 0.36, "쥐기·놓기 시점은 VLA · 도착 시 대조 · 거리 권한 a", fs=5.6,
+         ec=VL[1])
+    note(ax, vx + 0.10, py + 0.16, vw - 0.20, 0.36, "행동 전문가 → 0.5 s 관절 청크", fs=5.8, ec=EX[1], fc=EX[0])
+    arr(ax, [(ex0 + ew, py + 1.30), (vx, py + 1.30)], color="#7A96C0", lw=0.9, ls=(0, (3, 2)))
+    ax.text((ex0 + ew + vx) / 2, py + 1.35, "대체", ha="center", va="bottom", fontsize=5.2, color="#7A96C0")
 
     # ---------------- (b) timeline
-    ty0 = 1.05
-    ax.text(0.04, 2.18, "(b) 한 편의 시간 축 (예시)", fontsize=8, va="top", color=TXT, fontweight="bold")
-    x0, x1, T = 1.30, 6.80, 24.0
+    ax.text(0.04, 2.66, "(b) 한 편의 시간 축 (예시)", fontsize=8, va="top", color=TXT, fontweight="bold")
+    x0, x1, T = 1.40, 6.80, 24.0
     X = lambda t: x0 + t * (x1 - x0) / T
-    lanes = [("상위 계획기", 1.78), ("VLA (0.33 s)", 1.50), ("거리 권한 a", 1.22)]
+    sx = (x1 - x0) / T
+    # stage 1 lane: think (robot waits) / executor motion
+    y1 = 2.28
+    ax.text(x0 - 0.08, y1, "1단계: 상위 + 실행기", ha="right", va="center", fontsize=6.0, color="#333")
+    cyc = [(0.0, 1.2, "t"), (1.2, 4.6, "m"), (4.6, 5.8, "t"), (5.8, 8.4, "m"), (8.4, 9.6, "t"), (9.6, 11.4, "m"),
+           (11.4, 12.6, "t"), (12.6, 15.8, "m"), (15.8, 17.0, "t"), (17.0, 20.6, "m"), (20.6, 21.8, "t"),
+           (21.8, 24.0, "m")]
+    for a, b, k in cyc:
+        if k == "t":
+            ax.add_patch(Rectangle((X(a), y1 - 0.06), (b - a) * sx, 0.12, fc="#F2F2F2", ec="#9A9A9A", lw=0.5,
+                                   hatch="////"))
+        else:
+            ax.add_patch(Rectangle((X(a), y1 - 0.06), (b - a) * sx, 0.12, fc=EX[0], ec=EX[1], lw=0.6))
+    ax.text(X(12.0), y1 - 0.10, "빗금 = 상위가 생각하는 동안 로봇 대기   초록 = 실행기 운동   (대기가 한계 후보)",
+            ha="center", va="top", fontsize=5.2, color="#555")
+    # stage 2 lanes (dashed group)
+    dy = 0.14
+    dbox(ax, 0.05, 1.02, 6.78, 1.05, "none", "#7A96C0", lw=0.9)
+    ax.text(0.12, 2.03, "2단계(조건부)", fontsize=5.8, va="top", color="#2F4F7A", fontweight="bold")
+    lanes = [("상위 계획기", 1.78 + dy - 0.06), ("VLA (0.33 s)", 1.50 + dy - 0.06), ("거리 권한 a", 1.22 + dy - 0.06)]
     for name, yy in lanes:
-        ax.text(x0 - 0.08, yy, name, ha="right", va="center", fontsize=6.2, color="#333")
+        ax.text(x0 - 0.08, yy, name, ha="right", va="center", fontsize=6.0, color="#333")
         ax.plot([x0, x1], [yy, yy], color="#E6E6E6", lw=0.8, zorder=0)
-    # upper calls (L ~ 9 s): answers carry the next intent
+    yu, yv, ya = lanes[0][1], lanes[1][1], lanes[2][1]
     calls = [(0.0, 3.0, "첫 계획: 접근"), (3.0, 12.0, "요청 1 → \"이번엔 잡기\""), (12.0, 21.0, "요청 2 → 검증 + \"나르기\"")]
     for a, b, t in calls:
-        pill(ax, X(a), 1.71, (b - a) * (x1 - x0) / T - 0.02, 0.14, "astra", t, fs=5.6)
-    # arrivals: reconciliation marker
+        pill(ax, X(a), yu - 0.07, (b - a) * sx - 0.02, 0.14, "astra", t, fs=5.4)
     for tt in [12.0, 21.0]:
-        ax.plot([X(tt), X(tt)], [1.30, 1.70], color="#6F6F6F", lw=0.7, ls=(0, (2, 1.5)))
-        ax.text(X(tt) + 0.03, 1.66, "대조", fontsize=5.2, color="#555", va="top")
-    # VLA ticks
+        ax.plot([X(tt), X(tt)], [ya + 0.08, yu - 0.08], color="#6F6F6F", lw=0.7, ls=(0, (2, 1.5)))
+        ax.text(X(tt) + 0.03, yu - 0.12, "대조", fontsize=5.0, color="#555", va="top")
     t = 3.0
     while t < T - 0.1:
-        ax.plot([X(t), X(t)], [1.45, 1.55], color=VL[1], lw=0.5)
+        ax.plot([X(t), X(t)], [yv - 0.05, yv + 0.05], color=VL[1], lw=0.5)
         t += 0.66
-    # grasp timing chosen by VLA
-    ax.add_patch(Circle((X(14.5), 1.50), 0.055, fc=VL[1], ec="white", lw=0.6, zorder=5))
-    ax.text(X(14.5), 1.38, "VLA가 쥐는 시점", ha="center", va="top", fontsize=5.4, color=VL[1])
-    # verification on the next answer
-    check(ax, X(21.0) + 0.14, 1.89, s=0.035)
-    ax.text(X(21.0) + 0.22, 1.90, "잡음 검증", fontsize=5.4, color=VER[1], va="center")
-    # authority a(t): far = 1, near the mug = 0, after lift = 1
+    ax.add_patch(Circle((X(14.5), yv), 0.05, fc=VL[1], ec="white", lw=0.6, zorder=5))
+    ax.text(X(14.5), yv - 0.09, "VLA가 쥐는 시점", ha="center", va="top", fontsize=5.2, color=VL[1])
+    check(ax, X(21.0) + 0.14, yu + 0.11, s=0.03)
+    ax.text(X(21.0) + 0.21, yu + 0.12, "잡음 검증", fontsize=5.2, color=VER[1], va="center")
     segs = [(0.0, 11.0, 1.0), (11.0, 11.8, 0.5), (11.8, 16.5, 0.0), (16.5, 17.2, 0.5), (17.2, 24.0, 1.0)]
     for a, b, v in segs:
-        ax.add_patch(Rectangle((X(a), 1.15), (b - a) * (x1 - x0) / T, 0.14 * v + 0.004,
+        ax.add_patch(Rectangle((X(a), ya - 0.07), (b - a) * sx, 0.12 * v + 0.004,
                                fc=UP[0] if v > 0 else "white", ec=UP[1] if v > 0 else "none", lw=0.5))
-    ax.text(X(5.5), 1.12, "a = 1 먼 구간: 상위 수정 반영", ha="center", va="top", fontsize=5.4, color=UP[1])
-    ax.text(X(14.2), 1.12, "a = 0 접촉 근처: VLA만", ha="center", va="top", fontsize=5.4, color=VL[1])
+    ax.text(X(5.5), ya - 0.10, "a = 1 먼 구간: 상위 수정 반영", ha="center", va="top", fontsize=5.2, color=UP[1])
+    ax.text(X(14.2), ya - 0.10, "a = 0 접촉 근처: VLA만", ha="center", va="top", fontsize=5.2, color=VL[1])
     for tk in [0, 6, 12, 18, 24]:
-        ax.text(X(tk), 0.93, f"{tk} s", ha="center", va="center", fontsize=5.4, color="#777")
+        ax.text(X(tk), 0.93, f"{tk} s", ha="center", va="center", fontsize=5.2, color="#777")
 
     # ---------------- (c) training band
     ax.text(0.04, 0.84, "(c) 학습", fontsize=8, va="top", color=TXT, fontweight="bold")
     bw, bh, by = 2.16, 0.60, 0.05
     bx = [0.05, 2.36, 4.67]
-    rbox(ax, bx[0], by, bw, bh, "astra", "상위 계획기 증류", fs=6.6, bold=True,
-         sub="Astra·시뮬 참값 선생 → 학생이 간 상태에 라벨\n8B 대리 → 35B (DAgger식, LoRA)", sfs=5.5)
-    rbox(ax, bx[1], by, bw, bh, "jev", "VLA 끝-끝 학습", fs=6.6, bold=True,
-         sub="조이스틱 역할: 결정 + 행동 전문가(KI)\n먼 구간 반사실 분기, 의도 교란", sfs=5.5)
-    rbox(ax, bx[2], by, bw, bh, "mem", "다양화 데이터", fs=6.6, bold=True,
-         sub="다양화 시뮬 + 좌표계 없는 공개 데이터\n점 추적 → 픽셀 경로 · 자기 보정", sfs=5.5)
+    rbox(ax, bx[0], by, bw, bh, "astra", "상위 계획기 증류 (주 기여)", fs=6.4, bold=True,
+         sub="Astra·시뮬 참값 선생 → 학생이 간 상태에 라벨\n8B 대리 → 35B, m 좌표 없는 출력, 손으로 준 정보 제거", sfs=5.2)
+    rbox(ax, bx[1], by, bw, bh, "mem", "다양화 데이터", fs=6.4, bold=True,
+         sub="다양화 시뮬 + 좌표계 없는 공개 데이터\n점 추적 → 픽셀 경로 · 자기 보정", sfs=5.4)
+    dbox(ax, bx[2], by, bw, bh, "#EEF4FB", VL[1])
+    ax.text(bx[2] + bw / 2, by + bh * 0.66, "VLA 끝-끝 학습 (조건부)", ha="center", va="center", fontsize=6.4,
+            color=TXT, fontweight="bold")
+    ax.text(bx[2] + bw / 2, by + bh * 0.28, "결정 + 행동 전문가(KI)\n먼 구간 반사실 분기, 의도 교란", ha="center",
+            va="center", fontsize=5.4, color="#555", linespacing=1.25)
     save(fig, "overview")
 
 

@@ -91,10 +91,19 @@
   \item \textbf{진행 중·대기:} \tentative{학습·평가 전 --- 결과 없음.}
 \end{itemize}
 
-\paragraph{B10. 35B 준비 (작업 중, 미커밋 초안)}
-{\small 09-27 KST}
+\paragraph{B10. 35B-A3B 바로 할 수 있게 준비만 --- 지연 약 1 s (준비 측정, 과제 성능 아님)}
+{\small 09-27 01:0x -- 02:4x KST}
 \begin{itemize}
-  \item \textbf{진행 중·대기:} \tentative{사전 등록 초안 \texttt{docs/\allowbreak{}stage3/\allowbreak{}prereg\_\allowbreak{}teach\_\allowbreak{}35b.\allowbreak{}md}는 작업 트리에만 있고 커밋되지 않았다(초안 스스로 `등록 아님, 실행 안 함'). 초안이 가리키는 준비 기록 \texttt{results/\allowbreak{}teach\_\allowbreak{}35b\_\allowbreak{}ready.\allowbreak{}md}는 아직 저장소에 없다.}
-  \item \textbf{참고:} 초안 내용(확정 아님): 팔 35-L8(L8 데이터 그대로·816걸음)·8-L8(기존 L8 어댑터 재사용)·35-C(결합 의도 형식 \texttt{astra-\allowbreak{}couple@v2}, 목표 팔); 주 판정은 OOD-H(BIGGER\_HELPS / SAME / WORSE), H-L (a)(b)(c) 확인; 선행 조건 미충족 --- E-PT OOD-H 파일, E-STRIP8 결과, 결합 형식 학습 데이터 수집기(없음), 빈 GPU.
-  \item \textbf{참고:} L8 결과 5절의 추정(재지 않음): 같은 데이터 2 에폭이면 35B-A3B 약 1.5--4 GPU-h, 밀집 27B 약 5 GPU-h --- 먼저 50걸음 스모크로 토큰/s를 잰다.
+  \item \textbf{사용자} (ul 135, 01:0x KST): \intent{35B-A3B는 일단 바로 할 수 있게 준비만 다 해둬보자}
+  \item \textbf{해 봄:} 준비만(본 학습 안 함, 1e4ed20): \texttt{Qwen/\allowbreak{}Qwen3.\allowbreak{}5-\allowbreak{}35B-\allowbreak{}A3B}·FP8판 내려받기, 서빙 지연 실측, 학습 스모크 50걸음, 병합-서빙 왕복, 실행 스크립트 \texttt{tools/\allowbreak{}teach\_\allowbreak{}35b/\allowbreak{}train.\allowbreak{}sh}, 사전 등록 초안 \texttt{docs/\allowbreak{}stage3/\allowbreak{}prereg\_\allowbreak{}teach\_\allowbreak{}35b.\allowbreak{}md}(한계 찾기 지표 3.1 포함).
+  \item \textbf{결과:} \texttt{results/\allowbreak{}teach\_\allowbreak{}35b\_\allowbreak{}ready.\allowbreak{}md}: FP8·H200 한 장·한 요청씩·생각 끔 영샷 --- solo p50 1.11 s·p95 1.26 s(유효 59/60), couple@v2 p50 1.50 s; 생각 켬은 6,000토큰까지 잘려 쓸 수 없음. 학습 스모크(fla 커널) 6.07 s/걸음 $\rightarrow$ L8 2 에폭 약 1.4 GPU-h(8B와 같음). 병합 $\rightarrow$ vLLM 왕복 DEV 20요청 모두 유효. 유료 0원.
+  \item \textbf{그래서(결정):} 학습·평가 기본 경로는 solo 형식(ul 134·§98, C11) --- 결합 형식 지원은 코드에 남긴다.
+\end{itemize}
+
+\paragraph{B11. 명령어 범위 --- 집고 놓기 먼저, 한계 확인 뒤 확장}
+{\small 09-27 02:5x KST}
+\begin{itemize}
+  \item \textbf{사용자} (ul 136, 02:5x KST): \intent{오픈데이터의 경우엔 엄청 다양한 테스크도 있는거지?}
+  \item \textbf{사용자} (ul 136, 02:5x KST): \intent{이게 맞지}
+  \item \textbf{그래서(결정):} 상위 명령어는 당분간 지금 형식(손끝 목표·edit·그리퍼·stop, 위에서 잡기)으로 두고, 공개 데이터의 다양한 과제(RobotisSW 322종, BEHAVIOR 50과제, RoboTwin 50종, Robo2VLM 3,396과제 등)는 인식·판단 학습에만 쓴다. 상위 단독의 한계가 확인되면(§98) 손목 회전·접근 방향·밀기·당기기로 명령어를 넓힌다. 논문 3.2절에 한 문장으로 반영.
 \end{itemize}
