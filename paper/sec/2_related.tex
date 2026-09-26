@@ -23,7 +23,7 @@ RoboDojo Astra 평가~\cite{robodojo2026} & Astra 단독 & --- & --- & --- & 없
 GPT 6 Astra as Policy~\cite{su2026astra} & Astra + $\pi_{0.5}$ 후보 검토 & 연속 행동(교정은 Astra) & 청크 경계마다(동기 게이트) & 없음(동기) & 실패·불일치일 때만 교정 & 없음 \\
 MolmoAct~\cite{molmoact2026} & 한 모델(깊이 $\rightarrow$ 궤적 $\rightarrow$ 행동) & 행동 토큰 & --- & --- & 없음 & 없음 \\
 \midrule
-\textbf{Harvest (ours)} & Astra + 융합 VLA & 조이스틱형 결정 토큰 + 연속 행동 & 직렬 흐름(요청 1개) + 과제 컴파일·실패·저빈도 감사 & 있음 & \textbf{M4: 시간차 합의 + 실행 뒤 측정; Astra 편향은 두 답 합의·손목 근거} & \textbf{있음(위층·학습량 축, 계획)} \\
+\textbf{PaceNotes (ours)} & Astra + 융합 VLA & 조이스틱형 결정 토큰 + 연속 행동 & 직렬 흐름(요청 1개) + 과제 컴파일·실패·저빈도 감사 & 있음 & \textbf{M4: 시간차 합의 + 실행 뒤 측정; Astra 편향은 두 답 합의·손목 근거} & \textbf{있음(위층·학습량 축, 계획)} \\
 \bottomrule
 \end{tabular}
 \caption{\textbf{가장 가까운 선행과의 비교.} ``---''는 해당 없음 또는 원문에서 확인하지 못함을 뜻한다. 계층 구조, 비정지 실행, 하트비트는 이미 있으므로 우리는 이것을 새로움으로 주장하지 않는다. 우리 행이 다른 곳은 확정 규칙과 평가 두 열, 그리고 느린 상위 모델의 교정을 멈추지 않는 실행 위에 합의와 근거를 거쳐 얹는 방식이다. RoboDawn과 RoboDojo Astra 평가는 같은 방향의 비교를 했지만, 깨끗한 장면 점수가 없거나 두 조건의 인식이 같지 않다.}
@@ -34,7 +34,7 @@ MolmoAct~\cite{molmoact2026} & 한 모델(깊이 $\rightarrow$ 궤적 $\rightarr
 AGP~\cite{agp2026}와 RoboDojo Astra 평가~\cite{robodojo2026}는 Astra로 로봇을 제어한다(둘 다 심사 전). RoboDawn~\cite{robodawn2026}은 Astra 같은 VLM이 cm 단위 숫자로 로봇을 조종하는 하네스이며, RoboTwin 2.0 C2R(깨끗한 장면 학습 $\rightarrow$ 무작위 장면 평가)에서 Astra 0-shot 53.2\%, $\pi_{0.5}$ 46.0\%를 보고했다. 깨끗한 장면 점수가 없어 하락 폭은 계산할 수 없다. Harness VLA~\cite{harnessvla2026}는 계획기가 동결 VLA 프리미티브를 부르고 결과 파일을 기다리는 동기 방식이며, CaP-X~\cite{fu2026capx}는 코딩 에이전트가 인식 도구와 스킬 함수를 불러 로봇을 제어하는 틀이다. Inspect Robots~\cite{inspectrobots2026}는 LLM 정책, 코드 정책, VLA를 같은 로그로 돌리는 오픈소스 평가 하네스이고, 루프는 동기식이다. 우리는 이 하네스를 1차 평가에 쓰되 시계를 바꿔 지연을 실제대로 반영한다(\cref{sec:setup}).
 
 \paragraph{프런티어 모델의 일반 조종과 교정.}
-GPT 6 Astra as Policy~\cite{su2026astra}(기술 보고서)는 Astra에 이미지와 도구를 주고 로봇을 직접 조종하게 한 판(Direct)과, $\pi_{0.5}$가 낸 후보 행동을 Astra가 검토해 실행이 실패했거나 의도와 어긋날 때만 말단 이동·회전·그리퍼를 고치는 하이브리드를 RoboDojo 10과제에서 비교했다. 하이브리드는 성공률 48\%로 Direct 26\%보다 높았고, 교정은 실행 스텝의 14.4\%였다. 불확실함만으로는 가로채지 않는다는 원칙도 이 게이트에서 왔다. 다만 그 하이브리드는 청크 경계에서 Astra의 답을 기다리는 동기 게이트라 느린 답이 곧 로봇의 정지다. Harvest는 같은 일반 조종 명령 공간(계속, 말단 수정, 멈춤과 진행 평가)을 쓰되, 로봇을 세우지 않고 직렬 흐름의 답을 도착 시점 예상 상태 기준으로, 합의와 근거를 거쳐 서서히 얹는다(\cref{sec:stream}).
+GPT 6 Astra as Policy~\cite{su2026astra}(기술 보고서)는 Astra에 이미지와 도구를 주고 로봇을 직접 조종하게 한 판(Direct)과, $\pi_{0.5}$가 낸 후보 행동을 Astra가 검토해 실행이 실패했거나 의도와 어긋날 때만 말단 이동·회전·그리퍼를 고치는 하이브리드를 RoboDojo 10과제에서 비교했다. 하이브리드는 성공률 48\%로 Direct 26\%보다 높았고, 교정은 실행 스텝의 14.4\%였다. 불확실함만으로는 가로채지 않는다는 원칙도 이 게이트에서 왔다. 다만 그 하이브리드는 청크 경계에서 Astra의 답을 기다리는 동기 게이트라 느린 답이 곧 로봇의 정지다. PaceNotes는 같은 일반 조종 명령 공간(계속, 말단 수정, 멈춤과 진행 평가)을 쓰되, 로봇을 세우지 않고 직렬 흐름의 답을 도착 시점 예상 상태 기준으로, 합의와 근거를 거쳐 서서히 얹는다(\cref{sec:stream}).
 
 \paragraph{계층형 VLA와 상위 호출 주기.}
 Gemini Robotics 1.5~\cite{geminirobotics15_2025}의 오케스트레이터는 하위 과제 성공 감지로 다음 단계로 넘어갈 때를 정한다. Gemini Robotics-ER 개발자 문서~\cite{geminier_docs2026}는 최신 카메라 프레임과 짧은 질문을 주기적으로 보내 모델이 명시적으로 결정하게 하는 하트비트를 두고, 한 턴이 끝나기를 기다리면서 약 1\,Hz를 목표로 보내며, 타이머만 믿고 보내면 취소가 반복되는 고리에 빠질 수 있다고 경고한다. $\pi_{0.5}$~\cite{pi05_2025}는 추론 스텝마다 하위 과제를 다시 예측하고, Hi Robot~\cite{hirobot2025}(기간 밖, 기초 문헌)은 1초마다 또는 사용자 개입 때 상위 추론을 다시 돌린다. $\pi_{0.5}$에서는 학습한 상위 단 대신 영점 GPT-4를 쓰면 가장 나빴다. 즉 분포 안에서는 학습한 결정이 강하다. 우리의 주장은 절대 성능이 아니라 분포가 바뀐 뒤의 하락 폭에 관한 것이며, 이를 같은 장면 짝으로 잰다. CheckVLA~\cite{checkvla2026}와 Event-triggered~\cite{eventtrig2026}는 주기 호출과 사건 호출을 비교했다.

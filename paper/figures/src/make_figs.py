@@ -246,7 +246,7 @@ def fig_overview():
     axs.set_xlim(0, W); axs.set_ylim(0, Hs); axs.axis("off")
     overview_strip(axs, W, Hs)
     ax.text(0.04, Hm - 0.02, "(a) 구성", fontsize=8, va="top", color=TXT, fontweight="bold")
-    container(ax, 1.10, 0.06, 5.72, 2.98, "Harvest")
+    container(ax, 1.10, 0.06, 5.72, 2.98, "PaceNotes")
 
     # inputs
     rbox(ax, 0.02, 2.30, 0.95, 0.45, "gray", "“{과제}”", fs=9)

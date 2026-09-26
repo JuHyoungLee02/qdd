@@ -34,6 +34,9 @@ E-TEACH & 학습 가능한 크기 LLM으로 Astra 대체(§96) & L8(8B, 참값 �
 자동 맥락 A0--A2 & 로봇 자기 정보 자동 생성·장면 인식 자동화(§97) & 설계 끝, \tentative{예정} \\
 E-PT / ND & 상위 출력 형식: 점 찍고 행동, 깊이 없이 모델이 거리를 앎(§97 보충 2) & 사전 등록(무료), 주 팔 ND-1·ND-2, \tentative{진행 중} \\
 E-XEMB8 & 다양화 자체 시뮬·공개 변환 데이터의 형태와 비율, OOD 일반화(§97 보충 1) & 설계·변환 시제품, \tentative{등록 전} \\
+E-STRIP8 & 손으로 쓴 장면·요령 정보가 추론 때도 필요한가 & 사전 등록(무료), \tentative{진행 중} \\
+결합 학습 V0--V6 & 의도 공유 규약 형식으로 상위·VLA를 함께 학습(§96 보충 2--4) & 계획, \tentative{예정} \\
+E-VLA-E2E & VLA 끝-끝 학습 대 단계식(§96 보충 4) & \tentative{등록 전} \\
 E-AT & Astra 교사 추가 학습(§88, 실데이터) & 설계 끝, \tentative{예정} \\
 E0, E0.5, E1 & 지연, 시간차 불일치의 정보, 보정 & \tentative{예정}(R7 뒤) \\
 E-M4 & 확정 규칙의 기여 & \tentative{예정} \\
@@ -115,7 +118,7 @@ C6 C5에서 겹침 끔 & \todoexp & \todoexp & \todoexp & \todoexp \\
 \begin{equation}
   \mathrm{RD} = 1-\frac{\mathrm{Succ}_{\text{random}}}{\mathrm{Succ}_{\text{standard}}}
 \end{equation}
-이다(\cref{fig:eval}). 절대 성공률의 우위는 주장하지 않는다. 가설은 셋이며 모두 지연 충실 트랙에서 판정한다. \textbf{H1(시스템 수준)}: $\Delta\mathrm{RD}$(Harvest-B $-$ $\pi_{0.5}$ 미세조정)의 95\% 상한이 0보다 작다. \textbf{H2(학습량)}: 같은 백본의 C, A, A+RL, B의 RD를 비교한다. RD가 학습량과 함께 커지면 ``학습할수록 분포 밖 하락이 커진다''를, 커지지 않으면 그 반대를 보고한다. 어느 쪽이든 결과로 싣는다. \textbf{H3(위층)}: Astra를 첫 계획 뒤 끈 조건의 RD가 켠 조건보다 크다(하한 $>0$). 모듈형 스택에서는 standard에서 random으로 갈 때 인식 술어 정확도가 얼마나 떨어지는지 먼저 재어, 하락이 인식 몫인지를 가른다.
+이다(\cref{fig:eval}). 절대 성공률의 우위는 주장하지 않는다. 가설은 셋이며 모두 지연 충실 트랙에서 판정한다. \textbf{H1(시스템 수준)}: $\Delta\mathrm{RD}$(PaceNotes-B $-$ $\pi_{0.5}$ 미세조정)의 95\% 상한이 0보다 작다. \textbf{H2(학습량)}: 같은 백본의 C, A, A+RL, B의 RD를 비교한다. RD가 학습량과 함께 커지면 ``학습할수록 분포 밖 하락이 커진다''를, 커지지 않으면 그 반대를 보고한다. 어느 쪽이든 결과로 싣는다. \textbf{H3(위층)}: Astra를 첫 계획 뒤 끈 조건의 RD가 켠 조건보다 크다(하한 $>0$). 모듈형 스택에서는 standard에서 random으로 갈 때 인식 술어 정확도가 얼마나 떨어지는지 먼저 재어, 하락이 인식 몫인지를 가른다.
 
 \begin{table*}[t]
 \centering
@@ -132,7 +135,7 @@ C6 C5에서 겹침 끔 & \todoexp & \todoexp & \todoexp & \todoexp \\
  & 룰베이스(같은 상태 위 규칙 + 스크립트 스킬) & 없음 & \todoexp & \todoexp & \todoexp & \todoexp & --- \\
  & 모듈형 스택(명시적 인식 + 결정 A + $S$) & 결정층 & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
 \midrule
-\multirow{5}{*}{Harvest}
+\multirow{5}{*}{PaceNotes}
  & C: 영점 결정 토큰 + $S$ & 없음 & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
  & A: 결정층 SFT + $S$ & 결정층 & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
  & A+RL + $S$ & 결정층 & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp \\
@@ -140,7 +143,7 @@ C6 C5에서 겹침 끔 & \todoexp & \todoexp & \todoexp & \todoexp \\
  & B, Astra 첫 계획 뒤 끔 & 결정 + 행동 & \todoexp & \todoexp & \todoexp & \todoexp & 1 \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{주 결과 (계획, 지연 충실 트랙; 동기 공정 트랙은 같은 형식으로 병기).} 기대: 학습 VLA와 결정층을 많이 학습한 조건은 standard 성공률이 높지만 RD가 크고, Harvest-B는 $\pi_{0.5}$ 미세조정보다 RD가 작다(H1). Astra를 끄면 RD가 커진다(H3). 학습량 축(C, A, A+RL, B)의 RD 순서는 학습이 분포 밖 하락을 키우는지(H2)를 보여 준다. 정지 시간은 첫 계획과 안전 대기 밖에서 0이어야 하며, 아니면 구현 결함으로 재실행한다.}
+\caption{\textbf{주 결과 (계획, 지연 충실 트랙; 동기 공정 트랙은 같은 형식으로 병기).} 기대: 학습 VLA와 결정층을 많이 학습한 조건은 standard 성공률이 높지만 RD가 크고, PaceNotes-B는 $\pi_{0.5}$ 미세조정보다 RD가 작다(H1). Astra를 끄면 RD가 커진다(H3). 학습량 축(C, A, A+RL, B)의 RD 순서는 학습이 분포 밖 하락을 키우는지(H2)를 보여 준다. 정지 시간은 첫 계획과 안전 대기 밖에서 0이어야 하며, 아니면 구현 결함으로 재실행한다.}
 \label{tab:main}
 \end{table*}
 
@@ -430,6 +433,10 @@ K2 하트비트 (참고) & \todoexp & \todoexp & \todoexp & \todoexp & \todoexp 
 \paragraph{E-TEACH-L8: H-L의 첫 근거 (\tentative{초기}).} 35B는 학습 시간이 길어 8B로 경향만 먼저 봤다(무료, 사전 등록). Qwen3-VL-8B를 \texttt{astra-solo@v2} 형식의 시뮬 참값 라벨로 LoRA 학습했다. TRAIN 300편에서 조종 행 \tentative{2,496}개(반복 가중 뒤 \tentative{4,025})와 인식 보조 질의응답 \tentative{2,496}개로 에폭당 \tentative{6,521} 표본, 2 에폭, H200 한 장에서 \tentative{1.39} GPU-h(약 \tentative{4.4k} 토큰/s)였다. 오프라인 DEV에서 접근 목표 xy 오차 중앙은 영샷 \tentative{125.5\,mm}에서 \tentative{2.6\,mm}로(대상 위 단계 \tentative{158.8$\rightarrow$7.2\,mm}), 그리퍼 행동 정확도는 \tentative{0.32}에서 \tentative{0.95}로 올라 등록 판정 TREND(기술 등급 STRONG)였다. 폐루프 DEV 4편에서 미세조정 8B는 \tentative{4/4}(편당 6호출), 같은 한도의 영샷 8B는 \tentative{0/4}였다. 미세조정 8B의 지연은 p50 \tentative{3.5\,s}(Astra 동기 \tentative{6.8\,s})이고 API 비용은 0원이다. 영샷 실패의 원인이던 위치 읽기가 무료 시뮬 참값의 촘촘한 감독으로 메워진다는 점에서 H-L의 첫 근거로 본다. 한계도 분명하다. $n=4$이고, DEV는 학습과 같은 분포이며, 라벨은 Astra가 아니라 시뮬 참값이다. 지연은 Astra의 약 절반이지만 ``빠르다'' 기준(p50 $\le$2\,s, 1/3 이하)에는 아직 못 미친다. 35B 크기 효과와 일반성에 대해서는 아무것도 말하지 않는다. 지금 시뮬은 탁자 높이·탁자·물체·방해물이 모두 같으므로, 다음 단계는 다양한 데이터(자체 시뮬 생성기 다양화와 공개 데이터 변환)를 필수로 넣고, 학습에 쓰지 않는 OOD 세트(높이, 물체 범주, 방해물 배치, 공개 기체)에서 같은 지표로 재는 것이다(정본 §97 보충 1). 맞지 않는 로봇의 공개 데이터는 행동 라벨이 아니라 기체와 무관한 영상 공간 표현(점, 궤적)과 질의응답으로 바꿔 쓰고 출처와 좌표계를 글로 밝힌다. 이 원칙은 교차 기체 데이터 조사의 결론이다(\tentative{계획}).
 
 \textbf{자동 맥락}(정본 §97). 지금 Astra 단독 프롬프트에는 사람이 적은 로봇 정보가 많다. 로봇 자기 정보(좌표계, TCP, 그리퍼 형상·열림 폭, 작업 범위, 카메라 자세·내부값, 측정 이력)는 계속 주되 URDF·관절 상태·camera\_info·시작 자기 시험에서 코드로 자동 생성한다. 장면 정보(탁자 높이, 물체 위치·크기, 놓을 면)는 깊이를 가정해 깊이 평면 맞춤·VLM 점·역투영·군집 코드로 자동화하고, 잡기·놓기 요령은 학생이 선생 데이터로 배운다. 깊이는 시뮬에서는 렌더 깊이, 실물에서는 머리 스테레오(ZED Mini)로 계산한 깊이와 손목 D405 깊이다. 영상만으로 말단과 접근 축을 찾는 시각 자기 인식은 상위 VLM의 점 출력으로 학습하고(시뮬 FK 투영이 무료 라벨) FK와 대조한다. 모델 수 목표는 2개(상위 학습형 VLM + VLA)이며, 세 번째 모델은 코드 대안이 관문에서 실패하고 짝 비교 이득이 있으며 상위 VLM에 접을 계획이 있을 때만 둔다. 순서는 무료 절제 A0(깊이로 만든 자동 값 대 참값), A1(참값 모델 입력을 자동 값으로 하나씩 바꾼 폐루프), 유료 절제 A2(저장된 Astra 요청에서 한 항목씩 빼고 재질문, 단계마다 $\le$ \tentative{8,000원}) 뒤 학생 프롬프트로 E-TEACH-L에 합류한다(\tentative{예정}).
+
+\subsection{결합 학습 계획: 의도 공유 규약 형식으로 (\tentative{계획})}
+\label{sec:plan_coupled}
+최종 상위 모델은 Qwen3.5-35B-A3B이고 8B는 경향만 먼저 보는 임시 대리다(정본 §96 보충 2). 상위는 반드시 의도 공유 규약의 형식(구간 의도와 검증 판정을 담은 결합 형식)으로 학습해야 한다. 규약의 메시지(상위 답, VLA 입력, VLA가 소유한 결정, 상위 검증 입력, 시간)를 기존 결합 코드와 정본에 대응시켜 보니 런타임 배선은 이미 끝나 있었다(정본 §96 보충 3). 모자란 것은 셋이다. 그리퍼 질문과 구간 줄을 넣은 판본의 VLA 재학습, 결합 형식의 상위 학습(시뮬 참값 라벨러와 결합 시스템이 간 상태의 DAgger, 8B 판 E-TEACH-L8C 뒤 35B), 명시적 검증 필드(사용자 결정 필요)다. 검증은 무료 사다리로 한다. V0 재학습 관문, V1 VLA 단독 DEV $\ge$ \tentative{4/12}, V2 결합 사전 실행 재실행, V3 L8C 오프라인, V4 결합 폐루프(학생 8B + VLA 대 8B 단독 동기 대 VLA 단독, DEV 40 짝), V5 35B 순이다. 유료 E-Couple(V6)은 사용자 허락 뒤에만 한다. 시뮬 선생 데이터는 본 학습 자리에만 쓰는 규칙(정본 §88·§89)은 그대로다. VLA 쪽은 끝-끝 학습(E-VLA-E2E)을 새로 등록해, 이산 행동 토큰 예측·예측 결정 조건 교과·의도 교란을 지금의 단계식과 비교한다. 비교 지표는 결정과 청크의 일치, 반사실 준수, 쥐기 시점(오프라인)과 VLA 단독·결합 고리의 폐루프 성공이다. 이와 별도로 \textbf{E-STRIP8}(무료)은 L8 프롬프트에 손으로 적은 장면·요령 정보(탁자 높이, 물체 크기, 잡기·놓기 요령, 탁자 높이에 그린 격자)가 추론 때도 필요한지를 잰다. 팔은 넷이다. 그대로(S-full), 학습·추론 모두 최소 요청(S-min), 학습 때만 특권 정보를 떨어뜨리기(S-drop), L8 어댑터에 최소 요청(S-full$\rightarrow$min)이다. 여기에 OOD-H에서 손으로 적은 높이가 틀린 팔(S-stale)을 더한다(\tentative{진행 중}).
 
 \subsection{상위 모델의 출력 형식: m 좌표 대신 점, 그리고 깊이 없이 거리 알기 (E-PT, ND)}
 \label{sec:plan_pt}
