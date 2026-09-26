@@ -61,3 +61,4 @@
 | 2026-09-26 05:28 | 01·02·03·04·05 | E-SR1c 결과(ADOPT_C1, FULL): 01 행 추가, 02 함정 P86(병행 Isaac이 지연 측정 교란)·P87(시각 전용 표지 o11), 03 §84 보충 8 행 + 보충 5·7 상태 칸(먼 구간은 보충 8이 대체), 04 `tools/sr1c`·로그 행, 05 GPU 행 | [R/sr1c](../stage3/results/sr1c.md), 이 줄과 같은 커밋 |
 | 2026-09-26 06:06 | 03·04 | 결합 Task 12 직렬화 `ser-A-min-3`(움직임 줄 §83 + 융합 그리퍼 질문 §87 + 구간 의도 줄 §90): 03 §83·§87·§90 구현기록 행, 04 `harvest/runtime/`(`motion`·`segment_intent`·질문 집합)·`serialize`/`intent` 행·`docs/stage3/qid_registry.json` 행·`tests/test_intent.py` 행·`tests/runtime/` 행 | plan Task 12, 이 줄과 같은 커밋 |
 | 2026-09-26 06:15 | 01·02·04·05 | 프롬프트 검진 결과: 01 프롬프트 검진 행(`끝`)·E-ACC 행(`[예정]`), 02 절 '파' P88–P92, 04 `tools/prompt_health/`·`logs/prompt_health/` 행, 05 유료 2,093.9원 행·누적 9,027.3원·GPU ≈ 0.8 GPU-h | [R/prompt_health](../stage3/results/prompt_health.md), 이 줄과 같은 커밋 |
+| 2026-09-26 06:19 | 02 | 함정 추가: 비교 기준선(Astra 단독)을 불리한 조건으로 잼 — 각 팔은 최적 조건으로 | user-log 103, 이 줄과 같은 커밋 |
