@@ -14,16 +14,17 @@
 | `harvest/perception/`, `harvest/stereo/`, `harvest/m4b/` | R1 인식(기준선·진단), E3-ST, 확인 헤드 V1h |
 | `harvest/clients/` | `astra`·`jevl`·`jev` 클라이언트 |
 | `harvest/astra_motion/` | E-Astra-motion 탐침 코드(3500f54) [→ 2026-09-25 21:07 UTC, R7 28회차 D-2] |
-| `harvest/couple/` | 결합 패키지: `params`(`CoupleParams`)·`schema`(astra-couple@v1)·`prompt`·`mock`(Task 1)·`gate`(의미 게이트: 나이·불확실·개입 자격·손목 근거, Task 2)·`cost`(가격표·비용 장부, Task 3)·`stream`(`SerialStream`, 직렬 흐름: 동시 1개)·`mock`의 `ScriptedCoupleAstra`(모의 Astra 클라이언트, Task 4)·`layer`(`AstraLayer`: Astra 층 두 답 합의 히스테리시스·`same_edit`/`flipped`·flip·F1 keep·stop claim, Task 5)·`offset`(`OffsetApplier`: 부드러운 편향 적용기 — 속도·가속 상한 램프·창 종료 뒤 감쇠·reset·scale_remaining, Task 6)·`twolayer`(`TwoLayerGate`: 두 층 비가역 관문(근거 T1 전제만, 손목 주장은 참고)·`VlaFastCheck`: VLA 빠른 검증(청크 준수 `adherence_cos`/`follows`)·`NoProgress`: 진전 없음 검출, Task 7); 뒤 과제가 모듈을 더한다 |
+| `harvest/couple/` | 결합 패키지: `params`(`CoupleParams`)·`schema`(astra-couple@v1)·`prompt`·`mock`(Task 1)·`gate`(의미 게이트: 나이·불확실·개입 자격·손목 근거, Task 2)·`cost`(가격표·비용 장부, Task 3)·`stream`(`SerialStream`, 직렬 흐름: 동시 1개)·`mock`의 `ScriptedCoupleAstra`(모의 Astra 클라이언트, Task 4)·`layer`(`AstraLayer`: Astra 층 두 답 합의 히스테리시스·`same_edit`/`flipped`·flip·F1 keep·stop claim, Task 5)·`offset`(`OffsetApplier`: 부드러운 편향 적용기 — 속도·가속 상한 램프·창 종료 뒤 감쇠·reset·scale_remaining, Task 6)·`twolayer`(`TwoLayerGate`: 두 층 비가역 관문(근거 T1 전제만, 손목 주장은 참고)·`VlaFastCheck`: VLA 빠른 검증(청크 준수 `adherence_cos`/`follows`)·`NoProgress`: 진전 없음 검출, Task 7)·`overlay`(Astra 영상 덧그림·카메라 모델: `CamModel`·`project`/`uv255`·`EETrace`·`draw_overlay`·`polylines`(MolmoAct 자취), Task 8); 뒤 과제가 모듈을 더한다 |
 | `harvest/serialize.py`, `deccall_snap.py`, `labels_v2.py`, `qid.py` | 직렬화(ser-A-min-2)·결정 호출·정답·질문 id |
 | `tools/se2e/` | `se2e_verdict`·`temporal_verdict`·`temporal_latency`·`motion_confirm_verdict`(등록 때 고정) |
 | `tools/ma1/` | `g0`·`g0_point`·`ma1_verdict`·`build_a3d`·`ma1b_verdict` |
 | `tools/cam3/`, `tools/ma3/`, `tools/se2e/paired_verdict.py` | E-CAM3 `build_cam3`·`cam3_latency`·`cam3_verdict`; E-MA3 `chunk_eval`·`ma3_latency`·`ma3_verdict`; 공통 짝 비교(등록 때 고정) |
 | `tools/ma2/`, `harvest/train/r2_ma2.py` | E-MA2(명령 입력, R2): 옵션 파일 CLI 포장 `r2_ma2`(`--ma2 c0/c1/c2`, `ma2eval` 돌린 명령 평가) + `build_ma2`(결정 스냅샷 뷰·되짚기 명령·평가 집합·화살표)·`ma2_latency`·`ma2_verdict`(등록 때 고정) |
 | `tools/sr0/` | E-SR0(조이스틱 준수, 학습 없음): `sr0_eval`(decide → chunk 경로에서 결정만 반사실로, 조건 20·22개), `sr0_gate`(기존 평가 재현 관문), `sr0_verdict`(A_xy·우연·A_z·ρ·그리퍼, 등록 때 고정 + 변경 1), `run_sr0.sh` |
+| `tools/mar2/` | MolmoAct R2 준비 관문(CPU, 기존 녹화 위): `mar2_lib`(MolmoAct 궤적 부분표집·0–255 좌표·볼록 윤곽 투영·HSV 규칙 v1/v2·URDF FK 자세·부트스트랩), `mar2_gates`(`cam`·`camdiag`·`fk`·`trace`·`traceend`·`p1crops`·`cond`·`resprep`·`res`), `run_mar2.sh`; 시험 `tests/test_mar2_lib.py` |
 | `tools/` 기타 | `se2e_convert.py`(`reconvert --hist`), `labels_v2_eval.py`, `prereg_hash.py --check`, `intent_check.py`·`user_line_check.py`(빨간 줄·[사용자] 줄), `stagea_merge.py`, `r5/`·`r6/`(파드 동기화), `pod_sync.sh` |
 | `tests/` | 전체 시험(로컬은 Git Bash에서 `pytest`; PowerShell에서는 2개 실패 — P33) |
-| `tests/couple/` | `harvest/couple/` 시험(`test_schema.py`, Task 1; `test_gate.py`, Task 2; `test_cost.py`, Task 3; `test_stream.py`, Task 4; `test_layer.py`, Task 5; `test_offset.py`, Task 6; `test_twolayer.py`, Task 7) |
+| `tests/couple/` | `harvest/couple/` 시험(`test_schema.py`, Task 1; `test_gate.py`, Task 2; `test_cost.py`, Task 3; `test_stream.py`, Task 4; `test_layer.py`, Task 5; `test_offset.py`, Task 6; `test_twolayer.py`, Task 7; `test_overlay.py`, Task 8) |
 | `docs/design/00-interfaces.md` | **정본**(마지막 절까지가 현재 판) |
 | `docs/stage3/` | 사전 등록 `prereg_*.md`·`prereg.json`, 결과 `results/`, `direction-log.md` |
 | `docs/superpowers/specs/`·`plans/` | 결합 설계(승인)·구현 계획(16과제) |
@@ -60,6 +61,7 @@
 | `ckpt/cam3/`, `ckpt/ma3/`, `data/cam3/` | E-CAM3 `cam3_s{1,2}`·E-MA3 `kv_s{1,2}`(둘 다 불채택, `results/cam3.md`·`ma3.md`), 반대 손목 프레임 `data/cam3/img_cam3/`(36,177장) |
 | `ckpt/ma2/`, `data/ma2/`, `logs/ma2/` | E-MA2 `c0`·`c1`·`c2`(판정 NONE, `results/ma2.md`), 결정 스냅샷 뷰 `data/ma2/view/`(img는 R2_TRAIN 원본 링크)·명령 표 `cmd/`·`eval_set.json`(1,200)·화살표 `arrow/`(79,495장) |
 | `logs/sr0/`, `code_sr0`·`code_sr0_v` | E-SR0 평가 출력 `sr0_motion_s{1,2}.jsonl`·`sr0_c0.jsonl`, `verdict.json`(WEAK, `results/sr0.md`), 재집계 `recount.json`·진단 `diag.json` |
+| `logs/mar2/`, `code_mar2` | MolmoAct R2 준비 관문 출력(`gcam*.json`·`gfk.json`·`gtrace*.json`·`gres.json`·`gcond_b.json`·시트 JPEG, 도구 사본 `tools/`), 코드 사본 = ad85725 일부; 합본은 저장소 `docs/stage3/results/mar2_gates.json` |
 | `ckpt/stageA/sftA_pool_v1` | 단계 A SFT(병합 `merged/`) |
 | `logs/<실험>/` | 예측·판정 JSON(`se2e_confirm/verdict_full.json` 등), 탐침 비용 장부 `logs/astra_motion/cost.jsonl` |
 | `out/<작업>/` | 폐루프·장면·E3-ST 산출물 |

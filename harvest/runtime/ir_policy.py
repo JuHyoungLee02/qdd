@@ -37,7 +37,8 @@ class OursPolicy:
         from inspect_robots import Action, ActionChunk
         x = observation.extra
         obs = {"sim_time": x["sim_time"], "joint_pos": observation.state["joint_pos"], "images": observation.images,
-               "m1": x["m1"], "kin": x["kin"], "table_z": x["table_z"], "low": self.low, "high": self.high}
+               "m1": x["m1"], "kin": x["kin"], "table_z": x["table_z"], "low": self.low, "high": self.high,
+               "cams": x.get("cams")}
         a, meta = self.rt.act(obs)
         return ActionChunk(actions=[Action(data=np.asarray(a, float), meta=meta)], control_hz=100.0)
 
