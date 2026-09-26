@@ -4,7 +4,9 @@ request is out do not cancel it: they are attached to the next request (flag). O
 necessity pacing of a fast local model), phase_pause_s (cost fallback: outside contact windows and more than
 event_window_s after an event, wait until last send + phase_pause_s). A timed-out request frees the slot; if its
 answer still arrives it is 'late' (never applied, still charged). fail_slow_after failed calls in a row (timeout,
-API error, schema error) slow the robot down (spec §7) until a valid answer."""
+API error, schema error) slow the robot down (spec §7) until a valid answer. max_inflight = the true maximum of
+concurrent requests (sends minus deliveries and timeout drops; 1 in a correct serial run); max_outstanding also
+counts dropped requests whose late answer has not come back."""
 from __future__ import annotations
 
 import math
@@ -18,6 +20,7 @@ class SerialStream:
         self.inflight = None  # (request no, t_send)
         self.n_sent, self.fail_streak = 0, 0
         self.dropped, self.outstanding = set(), set()
+        self.live = set()  # requests really in flight: + on send, - on delivery or timeout drop (Task 17 B2)
         self.last_send = None
         self.pending_events = []
         self.last_event_t = -math.inf
@@ -49,7 +52,8 @@ class SerialStream:
         no = self.n_sent
         self.inflight, self.last_send = (no, now), now
         self.outstanding.add(no)
-        self.max_inflight = max(self.max_inflight, 1)
+        self.live.add(no)
+        self.max_inflight = max(self.max_inflight, len(self.live))
         self.max_outstanding = max(self.max_outstanding, len(self.outstanding))
         self.counts["sent"] += 1
         ev, self.pending_events = self.pending_events, []
@@ -60,6 +64,7 @@ class SerialStream:
             return None
         no = self.inflight[0]
         self.inflight = None
+        self.live.discard(no)  # a late answer of a dropped request no longer counts as in flight
         self.dropped.add(no)
         self.fail_streak += 1
         self.counts["timeouts"] += 1
@@ -74,6 +79,7 @@ class SerialStream:
 
     def delivered(self, no: int, now: float, ok: bool, latency: float) -> None:
         self.outstanding.discard(no)
+        self.live.discard(no)
         if self.inflight is not None and self.inflight[0] == no:
             self.inflight = None
         if ok:

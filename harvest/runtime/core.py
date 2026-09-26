@@ -57,6 +57,19 @@ def near_contact(raw: dict, phase: str) -> bool:
     return frozenset({"gripper", tgt}) in pairs or (tgt != "o3" and frozenset({"o3", tgt}) in pairs)
 
 
+def stage_distance_m1(raw: dict, phase: str):
+    """E-SR1c stage distance (sr1c_authority.stage_distance semantics) from the M1 observation: pick phases = gripper
+    finger midpoint -> o3 (contact flag False); later phases = gripper -> o5 (the place), contact = o3 on o5 contact.
+    (None, False) when the object is missing (Hysteresis -> a = 0)."""
+    from ..train.sr1c_authority import PICK_PHASES
+    tgt = "o3" if phase in PICK_PHASES else "o5"
+    if tgt not in raw["objs"]:
+        return None, False
+    d = float(np.linalg.norm(np.asarray(raw["objs"][tgt]["pos"], float) - np.asarray(raw["grip"]["pos"], float)))
+    pairs = {frozenset(c) for c in raw.get("contacts", [])}
+    return d, tgt == "o5" and frozenset({"o3", "o5"}) in pairs
+
+
 @dataclass
 class RuntimeConfig:
     """Logged as EvalSpec.policy_config (canon §42 logging). The first three fields are inspect_robots
@@ -221,6 +234,10 @@ class OursRuntime:
             self.driver.close()  # the last episode's request in flight: charged as unanswered, never applied
         self.driver, self.couple_out, self._off_hist = None, None, []
         self._bias_q, self._chunk_played = np.zeros(7), False
+        self._grip_lim = None  # B1: per-tick gripper limit while catching up from a gate-held value (None = off)
+        # canon §84 supplement 8 authority a: newest aux-head output {"t_state", "reg", "cls"} and the hysteresis
+        from ..train.sr1c_authority import Hysteresis
+        self._aux_last, self._auth_h, self._auth_t = None, Hysteresis(dt=self.dt), None
         # chunk play clock (review T10 I1): lag accrues only while slowed; stays exactly 0.0 when the scale is 1
         self._play_lag, self._play_prev_t, self._played_t_state, self._chunk_vec_err = 0.0, None, None, False
         self.episode += 1
@@ -308,11 +325,31 @@ class OursRuntime:
             self._play_lag += (1.0 - scale) * (now - self._play_prev_t)
         self._play_prev_t = now
 
+    def _authority(self, now: float, raw: dict, phase: str):
+        """E-SR1c authority a on the coupling offset (canon §84 supplement 8, ADOPT_C1): (a, source). Source "aux" =
+        sr1c_authority.estimated_distance from the newest aux-head output a decision response carried (ModelResult.
+        raw["aux"] = {"reg": AUX_REG / AUX_REG_SCALE, "cls": AUX_CLS logits}; used while it is at most
+        t2_check_max_age_s old). No back-end returns it yet (fused_model.decide_raw returns probs / verify / meta
+        only; MockFusedModel neither), so the runtime falls back to "rule" = the stage distance from the M1
+        observation (stage_distance_m1, the one near_contact reads). Always through sr1c_authority.Hysteresis
+        (enter 5 cm / leave 6 cm, contact phase -> 0, decreases immediate, increases +0.5 per 0.33 s), stepped with
+        the elapsed tick time. The §6 decision projection is not implemented (no task in this plan)."""
+        from ..train.sr1c_authority import estimated_distance
+        x = self._aux_last
+        if x is not None and now - x["t_state"] <= self.cfg.t2_check_max_age_s + 1e-9:
+            (d, c), src = estimated_distance(x["reg"], x["cls"], phase), "aux"
+        else:
+            (d, c), src = stage_distance_m1(raw, phase), "rule"
+        self._auth_h.dt = self.dt if self._auth_t is None else max(now - self._auth_t, 0.0)
+        self._auth_t = now
+        return self._auth_h.step(d, phase, bool(c)), src
+
     def _couple_fused(self, a, now, kin, tcp_p):
         """Fused path: the offset moved since the current chunk's observation is added as a joint bias (IK difference
         at the measured tip; the chunk already contains earlier shifts, plan ruling 5). A held action (no chunk played
         this tick = last_a) already carries last tick's bias, so that bias is taken out first (no double count). A
-        gripper transition in the chunk is held unless the two layers agree (spec §5)."""
+        gripper transition in the chunk is held unless the two layers agree (spec §5); after the release the gripper
+        target is rate-limited from the held value (_grip_catch_rate, dry-run B1)."""
         from ..couple.geom import quat_from_rotvec, quat_mul
         a = np.asarray(a, float).copy()
         if not self._chunk_played:
@@ -338,7 +375,30 @@ class OursRuntime:
                 "release" if a[7] > w_prev + 0.005 and t1.get("holding_t") else None)
         if kind is not None and not self.driver.irrev_allowed(kind, now, t1, self.near_now):
             a[7] = w_prev
+            self._grip_lim = -1.0  # held: catch up after the release
+        elif self._grip_lim is not None and self._chunk_played:  # a held tick (a = last_a) keeps the limit pending
+            gap = float(a[7] - w_prev)
+            if self._grip_lim < 0:
+                self._grip_lim = self._grip_catch_rate(abs(gap))
+            if abs(gap) <= self._grip_lim:
+                self._grip_lim = None
+            else:
+                a[7] = w_prev + math.copysign(self._grip_lim, gap)
         return a
+
+    def _grip_catch_rate(self, gap: float) -> float:
+        """Dry-run B1 (E-Couple, 0.10475 -> 0.0908 in one tick): after the gate releases a held gripper transition,
+        the target moves from the held value at most (the played chunk's own max per-tick gripper rate + the gap at
+        the release spread over one chunk horizon) per tick -- it keeps up with a still-moving chunk and closes the
+        gap within one chunk horizon (15 rows at 30 Hz = 0.5 s for the stage-B expert). No gripper speed constant
+        exists in the code base (skills.py commands the width as a step), hence the chunk-derived rate. Called only on
+        a tick that played a chunk (a held tick, a = last_a, leaves the pending / running limit untouched)."""
+        c = self.chunks.get(self.cur_k)
+        if c is None or len(c["chunk"]) < 2 or not c.get("dt"):
+            return gap  # a one-row chunk carries no rate: nothing to derive one from
+        w = np.asarray(c["chunk"], float)[:, 7]
+        horizon = len(w) * float(c["dt"])
+        return float(np.max(np.abs(np.diff(w)))) * self.dt / float(c["dt"]) + gap * self.dt / horizon
 
     def _m1(self, obs, now):
         raw, present = obs["m1"]["raw"], obs["m1"]["present"]
@@ -467,6 +527,10 @@ class OursRuntime:
         rec["response_blob"] = hb
         if res.error is None:
             self.ledger.record_latency(res.latency_s)
+            aux = (res.raw or {}).get("aux") if isinstance(res.raw, dict) else None
+            if aux and aux.get("reg") is not None and aux.get("cls") is not None and (
+                    self._aux_last is None or m["t_state"] >= self._aux_last["t_state"]):
+                self._aux_last = {"t_state": m["t_state"], "reg": aux["reg"], "cls": aux["cls"]}
             gate = self._j5(res, now) if self.cal is not None else {}
             irr = self.skill.irreversible
             for q, a in res.answers.items():
@@ -681,10 +745,12 @@ class OursRuntime:
                 self.skill.redecide(dec)
         if self.driver is not None:
             from ..couple.driver import TickView
+            auth, auth_src = self._authority(now, raw, self.skill.phase)
             self.couple_out = self.driver.tick(TickView(
                 now=now, dt=self.dt, tcp_p=np.asarray(tcp_p, float), phase=self.skill.phase, stage=self.skill.stage,
                 near=self.near_now, committed={q: c for q, c in self.skill.dec.items() if c is not None},
-                frames=self.frames, cams=obs.get("cams"), t1=self._t1(), motion=self.motion.line()))
+                frames=self.frames, cams=obs.get("cams"), t1=self._t1(), motion=self.motion.line(),
+                authority=auth, authority_src=auth_src))
             self._advance_play_clock(now)  # before a chunk request of this tick records the lag at its observation
         if self.cfg.backend == "fused":
             self._maybe_request_chunk(now, obs)

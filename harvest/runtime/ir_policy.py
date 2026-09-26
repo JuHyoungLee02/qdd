@@ -80,14 +80,19 @@ class OursPolicy:
 
 
 def _couple_rows(rt) -> list:
-    """The coupling driver's log (spec 2026-09-26 §16) and its event flags (couple_kind "event"). Log rows carry their
-    own "type" (send / answer / timeout / adherence / ...), which would overwrite the sidecar type "couple": it is
+    """The coupling driver's log (spec 2026-09-26 §16), its event flags (couple_kind "event"), the offset applier's
+    log (couple_kind "offset": event command / reset / scale / drop) and the two-layer gate's allow / deny changes
+    (couple_kind "irrev_gate": t, kind, ok, why, wrist_claim) -- E-Couple dry-run B3. Log rows carry their own "type"
+    (send / answer / timeout / adherence / authority / ...), which would overwrite the sidecar type "couple": it is
     kept as "couple_kind"."""
     drv = getattr(rt, "driver", None)
     if drv is None:
         return []
+
+    def rows(src, kind):
+        return [{"couple_kind": kind, **{k: v for k, v in r.items() if k != "type"}} for r in src]
     return ([{"couple_kind": r.get("type"), **{k: v for k, v in r.items() if k != "type"}} for r in drv.log]
-            + [{"couple_kind": "event", **{k: v for k, v in e.items() if k != "type"}} for e in drv.events])
+            + rows(drv.events, "event") + rows(drv.offset.log, "offset") + rows(drv.gate.log, "irrev_gate"))
 
 
 def write_blobs(d: str, blobs: dict) -> int:

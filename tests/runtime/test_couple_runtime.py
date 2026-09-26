@@ -16,8 +16,9 @@ FRAME = np.full((12, 16, 3), 60, np.uint8)
 NO_FAST = {"contra_steps": 10 ** 6}  # the VLA fast check is Task 7's test; here the offset must run in full
 
 
-def _run(backend, astra, seconds, params=None, model=None, **cfg_kw):
-    """F0 answers (the scripted answers carry no diff); params = extra CoupleParams overrides."""
+def _run(backend, astra, seconds, params=None, model=None, acts=None, **cfg_kw):
+    """F0 answers (the scripted answers carry no diff); params = extra CoupleParams overrides; acts (a list) collects
+    the 8-D joint targets sent to the world."""
     if model is None:
         model = MockFusedModel(latency_s=0.30) if backend == "fused" else MockSelector(latency_s=0.30)
     cfg = RuntimeConfig(backend=backend, clock="simlat", astra_mode="mock", couple="serial",
@@ -33,6 +34,8 @@ def _run(backend, astra, seconds, params=None, model=None, **cfg_kw):
         a, meta = rt.act(o)
         w.step(a)
         hist.append((w.t, meta["phase"], w.tcp.copy()))
+        if acts is not None:
+            acts.append(np.asarray(a, float).copy())
     return rt, w, hist
 
 
@@ -50,7 +53,10 @@ def _bad_outcomes(rt):
     return sum(1 for e in rt.slots_log if e.get("prev_outcome") in ("DEVIATE", "CONTRADICT"))
 
 
-def test_offset_does_not_create_false_b_deviations():
+def test_offset_does_not_create_false_b_deviations(monkeypatch):
+    # Task 17: the edit arrives while the arm is at the mug (natural authority a = 0 -> no offset); this test is about
+    # the shifted reference vs (b), so the authority is pinned to 1 (the offset is applied as before)
+    _force_a(monkeypatch, 1.0)
     base, _, _ = _run("modular", ScriptedCoupleAstra([answer("continue")], latency_s=3.0), 12.0,
                       params=NO_FAST)
     ed = answer("edit", execution="failed", intent="misaligned", dp=(0.0, 0.0, 0.03))
@@ -199,6 +205,22 @@ def test_sidecar_couple_rows_include_driver_events():
     rt.close()
 
 
+def test_sidecar_couple_rows_include_offset_and_gate_logs():
+    """Dry-run B3: OffsetApplier.log (command / reset / scale / drop) and TwoLayerGate.log (allow / deny changes)."""
+    from harvest.runtime.ir_policy import _couple_rows
+    ed = answer("edit", execution="failed", dp=(0.0, 0.0, 0.03))
+    rt, _, _ = _run("modular", ScriptedCoupleAstra([ed, ed, answer("continue")], latency_s=3.0), 12.0)
+    rows = _couple_rows(rt)
+    off = [r for r in rows if r["couple_kind"] == "offset"]
+    gate = [r for r in rows if r["couple_kind"] == "irrev_gate"]
+    assert [r["event"] for r in off[:2]] == ["command", "command"] and len(off) == len(rt.driver.offset.log)
+    assert gate and len(gate) == len(rt.driver.gate.log)
+    assert all({"t", "kind", "ok", "why", "wrist_claim"} <= set(r) for r in gate)
+    assert any(not r["ok"] and r["why"] == "astra_failed" for r in gate)
+    assert all("type" not in r for r in rows)
+    rt.close()
+
+
 def test_reset_with_request_in_flight_charges_and_forgets_it(tmp_path):
     f = tmp_path / "prices.json"
     f.write_text('{"model": "test", "date": "2026-09-26", "usd_per_mtok_input": 2.0, "usd_per_mtok_cached_input": 0.5,'
@@ -263,3 +285,110 @@ def test_adherence_uses_the_executed_chunk_on_fused_and_the_decision_on_modular(
     assert adh2 and {r["src"] for r in adh2} == {"decision"}
     assert rt2.driver.summary()["adherence"]["chunk_vs_decision"]["n"] == 0
     rt2.close()
+
+
+# ---------------------------------------------------------------------------------------------------------
+# Task 17 (canon §84 supplement 8, E-SR1c ADOPT_C1): authority a on the offset; dry-run fixes B1 / B3
+
+
+def _force_a(monkeypatch, a):
+    """The runtime's authority passes through sr1c_authority.Hysteresis every tick: pin its output."""
+    monkeypatch.setattr("harvest.train.sr1c_authority.Hysteresis.step", lambda self, d, phase, contact=False: a)
+
+
+@pytest.mark.parametrize("backend,dp,ax,n_expect,moved", [("fused", (0.0, 0.02, 0.0), 1, 0.02, 0.01),
+                                                          ("modular", (0.0, 0.0, 0.03), 2, 0.03, 1e-6)])
+def test_astra_edit_has_zero_effect_at_authority_zero(monkeypatch, backend, dp, ax, n_expect, moved):
+    """Same assessment (execution failed -> the same irreversible-gate veto) with and without the edit: at a = 0 for
+    the whole run the joint targets are identical; at a = 1 the offset is applied as before (modular: the skill
+    goes on from the shifted reference toward its absolute targets, so the targets differ only slightly)."""
+    ed = answer("edit", execution="failed", dp=dp)
+    no = answer("continue", execution="failed")
+    out = {}
+    for a in (0.0, 1.0):
+        _force_a(monkeypatch, a)
+        for name, script in (("edit", [ed, ed, answer("continue")]), ("none", [no, no, answer("continue")])):
+            acts = []
+            rt, _, _ = _run(backend, ScriptedCoupleAstra(script, latency_s=3.0), 12.0, params=NO_FAST, acts=acts)
+            out[a, name] = (np.array(acts), rt.summary()["couple"])
+            rt.close()
+    e0, n0 = out[0.0, "edit"], out[0.0, "none"]
+    assert e0[1]["layer"].get("confirm") == 1  # the edit was accepted by the layer ...
+    assert float(np.max(np.abs(e0[0] - n0[0]))) <= 1e-9  # ... and had zero effect
+    assert e0[1]["offset"]["applied_abs_m"] == [0.0, 0.0, 0.0] and e0[1]["authority"]["share"]["a0"] == 1.0
+    e1, n1 = out[1.0, "edit"], out[1.0, "none"]
+    assert e1[1]["offset"]["applied_m"][ax] == pytest.approx(n_expect, abs=2e-3)
+    assert float(np.max(np.abs(e1[0] - n1[0]))) > moved
+
+
+def test_runtime_authority_from_the_m1_rule_is_zero_in_contact_phases():
+    rt, _, hist = _run("modular", ScriptedCoupleAstra([answer("continue")], latency_s=3.0), 25.0)
+    s = rt.summary()["couple"]["authority"]
+    assert s["share"]["a0"] > 0.5 and s["share"]["a1"] > 0.02 and s["share"]["band"] > 0.0
+    assert s["seconds"] == pytest.approx(25.0, abs=0.02)
+    rows = [r for r in rt.driver.log if r["type"] == "authority"]
+    assert rows[0]["t"] == 0.0 and 0.0 < rows[0]["a"] <= 0.5 / 0.33 * 0.01 + 1e-4  # from 0, rate-limited increase
+    assert rows[1]["a"] == 1.0 and rows[1]["t"] == pytest.approx(0.66, abs=0.011)  # far: 1 after 0.66 s
+    assert {r["src"] for r in rows} == {"rule"}  # MockSelector exposes no aux-head outputs
+    t_close = [t for t, p, _ in hist if p == "close"]
+    a_at = [r for r in rows if r["t"] <= t_close[0]][-1]
+    assert a_at["a"] == 0.0  # contact phase -> a = 0
+    rt.close()
+
+
+class _AuxFused(MockFusedModel):
+    """A fused mock whose decide response carries aux-head outputs (raw["aux"] = {"reg": AUX_REG / AUX_REG_SCALE,
+    "cls": AUX_CLS logits}): every stage distance 2 cm (near) although the M1 distance is ~22 cm (far)."""
+
+    def decide(self, ctx):
+        r = super().decide(ctx)
+        r.raw = {**r.raw, "aux": {"reg": [0.4] * 11, "cls": [0.0] * 7}}
+        return r
+
+
+def test_runtime_authority_uses_the_fused_aux_head_when_exposed():
+    ed = answer("edit", execution="failed", dp=(0.0, 0.02, 0.0))
+    rt, w, hist = _run("fused", ScriptedCoupleAstra([ed, ed, answer("continue")], latency_s=3.0), 8.0,
+                       params=NO_FAST, model=_AuxFused())
+    rows = [r for r in rt.driver.log if r["type"] == "authority"]
+    assert rows[0]["src"] == "rule" and rows[-1]["src"] == "aux" and rows[-1]["a"] == 0.0
+    assert rt.summary()["couple"]["offset"]["applied_abs_m"][1] < 1e-3  # near by the aux head: no Astra motion
+    rt.close()
+
+
+@pytest.mark.parametrize("held", [(), tuple(range(40, 45)), (50, 51)])
+def test_gate_release_of_a_held_gripper_close_is_rate_limited(held):
+    """Dry-run B1: a new chunk's gripper value 10 mm below the executing one is held by the two-layer gate (no T1
+    evidence while not near); when the gate releases, the target moves from the held value at the chunk's own
+    per-tick rate (or the gap over one chunk horizon), never in one tick. held = ticks without a played chunk (the
+    runtime holds last_a: cur_k points to a step whose chunk has not arrived) right before the release or during the
+    catch-up: they must not clear the pending / running rate limit."""
+    from harvest.couple.driver import TickOut
+    rt = OursRuntime(RuntimeConfig(backend="fused", couple="serial", couple_params={"request_mode": "F0"}),
+                     MockFusedModel(), astra=ScriptedCoupleAstra([answer("continue")]))
+    rt.reset()
+    rt._t1 = lambda: {"gripper_open": True}
+    w = FakeWorld()
+    kin = w.obs()["kin"]
+    dec = {"phase": "continue", "dir_xy": "plus_y"}
+    rt.skill.dec, rt.cur_k = dict(dec), 0
+    c0 = np.tile(np.r_[w.a[:7], 0.10475], (15, 1))
+    c1 = np.tile(np.r_[w.a[:7], 0.0], (15, 1))
+    c1[:, 7] = 0.0948 - np.arange(15) * 0.001  # closing 1 mm per 1/30 s row = 0.3 mm per 10 ms tick
+    rt.chunks[0] = {"t_state": 0.0, "chunk": c0, "dt": 1 / 30, "dec": dict(dec)}
+    rt.chunks[1] = {"t_state": 0.30, "chunk": c1, "dt": 1 / 30, "dec": dict(dec)}
+    g = []
+    for i in range(90):
+        now = round(i * 0.01, 6)
+        rt.cur_k = 2 if i in held else 0 if i < 30 else 1  # step 2: no chunk yet -> held action
+        rt.near_now = i >= 45  # T1 close evidence (gripper open + near) from 0.45 s on -> the gate releases
+        rt.couple_out = TickOut(np.zeros(6), 1.0)
+        a = rt._couple_fused(rt._play_chunk(now, w.a), now, kin, w.tcp.copy())
+        rt.last_a = a
+        g.append(float(a[7]))
+    assert g[44] == pytest.approx(0.10475)  # held while denied
+    gap = 0.10475 - (0.0948 - 4.5 * 0.001)  # 14.5 mm at the release tick (chunk 1 row 4.5 at 0.45 s)
+    lim = 0.001 * 0.01 * 30 + gap * 0.01 / (15 / 30)  # the chunk's per-tick rate + the gap over one chunk horizon
+    steps = [abs(b - a) for a, b in zip(g, g[1:])]
+    assert max(steps) <= lim + 1e-9 and max(steps) > 0.0003
+    assert g[-1] == pytest.approx(c1[-1, 7])  # it caught up with the closing chunk

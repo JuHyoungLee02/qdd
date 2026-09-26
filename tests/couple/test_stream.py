@@ -26,6 +26,25 @@ def test_one_request_in_flight_and_next_goes_on_answer():
     assert s.max_inflight == 1 and s.max_outstanding == 1
 
 
+def test_max_inflight_counts_real_concurrent_calls():
+    """Task 17 B2: sends minus deliveries / timeout drops (a dropped request's late answer no longer counts)."""
+    s = _s(timeout_s=15.0)
+    s.sent(0.0)
+    s.timed_out(15.02)  # dropped: out of flight
+    s.sent(15.02)
+    assert s.is_late(1)
+    s.delivered(2, 16.0, True, 1.0)
+    assert s.max_inflight == 1 and s.max_outstanding == 2
+    broken = _s()  # a caller that ignores next_send() and sends while one is in flight
+    broken.sent(0.0)
+    broken.sent(0.5)
+    assert broken.max_inflight == 2
+    broken.delivered(1, 1.0, True, 1.0)
+    broken.delivered(2, 1.5, True, 1.0)
+    broken.sent(2.0)
+    assert broken.max_inflight == 2
+
+
 def test_events_ride_on_the_next_request_only_once():
     s = _s()
     s.sent(0.0)

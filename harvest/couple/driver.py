@@ -1,5 +1,7 @@
 """CoupleDriver: the Astra–VLA coupling inside OursRuntime (spec 2026-09-26 §11-§16, canon §84 supplement 2).
-Per tick (tick): trace -> timeout -> maybe send (one in flight, budget, optional pause) -> offset step -> no-progress.
+Per tick (tick): trace -> timeout -> maybe send (one in flight, budget, optional pause) -> offset step x authority a
+(TickView.authority, canon §84 supplement 8: the runtime's E-SR1c a, None = 1; OffsetApplier scales the commanded
+velocity before its limits; the stream / request / prompt carry no authority logic) -> no-progress.
 Deliveries (on_delivery, through the runtime DeliveryQueue, meta kind "couple"): charge -> late? -> parse -> gate ->
 layer -> offset. Per decision step (on_step): VLA fast check against the offset. The runtime asks irrev_allowed()
 before an irreversible transition and forwards its event calls with flag(). The request carries the flow state (F1),
@@ -55,6 +57,10 @@ class TickView:
     cams: object = None
     t1: dict = field(default_factory=dict)
     motion: str | None = None
+    # canon §84 supplement 8 (plan Task 17): authority a in [0, 1] on the offset (None = 1.0, backward compatible);
+    # authority_src names where the runtime took it from (aux / rule), logged only
+    authority: float | None = None
+    authority_src: str | None = None
 
 
 @dataclass
@@ -99,6 +105,7 @@ class CoupleDriver:
         self.log, self.events, self.blobs = [], [], {}
         self.est_text_tokens = p.est_text_tokens
         self.budget_hit, self.stop_confirmed_t, self._hold = False, None, None
+        self.auth_s, self._auth_last = {"a0": 0.0, "band": 0.0, "a1": 0.0}, None
 
     def key(self, no: int) -> str:
         return f"e{self.episode}:{no}"
@@ -123,10 +130,21 @@ class CoupleDriver:
         if why == "budget":
             self.budget_hit = True
         self._hold = None if ok else why
-        step = self.offset.step(v.now, v.dt)
+        a = 1.0 if v.authority is None else min(1.0, max(0.0, float(v.authority)))
+        self._authority(v, a)
+        step = self.offset.step(v.now, v.dt, authority=a)
         if self.stag.update(v.now, v.tcp_p, self.offset.applied[:3]):
             self.flag("no_progress", v.now)
         return TickOut(step, self.p.slow_factor if self.stream.slowed(v.now) else 1.0)
+
+    def _authority(self, v: TickView, a: float) -> None:
+        """Time share per stratum (a = 0 / 0 < a < 1 / a = 1) and a sparse log row when the stratum or the source
+        changes (the value inside the band ramps every tick; the summary share carries it)."""
+        st = "a0" if a <= 0.0 else "a1" if a >= 1.0 else "band"
+        self.auth_s[st] += v.dt
+        if (st, v.authority_src) != self._auth_last:
+            self._auth_last = (st, v.authority_src)
+            self.log.append({"type": "authority", "t": round(v.now, 3), "a": round(a, 4), "src": v.authority_src})
 
     def request(self, v: TickView, no: int, events: list, cams: list) -> dict:
         nxt = next_motion_vec(v.committed)
@@ -274,6 +292,9 @@ class CoupleDriver:
             xs = [r[field] for r in rows if r[field] is not None]
             return {"n": len(xs), "follow_rate": round(sum(xs) / len(xs), 4) if xs else None}
         adh = [r for r in self.log if r["type"] == "adherence"]
+        T = sum(self.auth_s.values())
+        auth = {"share": {k: round(v / T, 4) if T > 0 else None for k, v in self.auth_s.items()},
+                "seconds": round(T, 3)}
         return {"calls_sent": self.stream.n_sent, "answers": len(good),
                 "schema_errors": sum(1 for r in ans if "schema_error" in r),
                 "api_errors": sum(1 for r in ans if r.get("error")), "timeouts": self.stream.counts["timeouts"],
@@ -287,6 +308,7 @@ class CoupleDriver:
                 "stop_confirmed_t": self.stop_confirmed_t, "prompt_id": PROMPT_ID[self.p.request_mode],
                 "adherence": {"chunk_vs_offset": rate(adh, "follows_offset"),
                              "chunk_vs_decision": rate(adh, "follows_decision")},
+                "authority": auth,
                 "params": self.p.to_json(), "ledger": self.ledger.state()}
 
     def close(self) -> None:

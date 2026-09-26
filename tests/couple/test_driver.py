@@ -28,7 +28,8 @@ class MiniQueue:
         return [{**res, "meta": meta, "t_send": ts, "t_deliver": td} for td, res, meta, ts in out]
 
 
-def _run(astra, seconds, p=None, ledger=None, frames=FR, cams=CAMS, t1=None, flag_at=None):
+def _run(astra, seconds, p=None, ledger=None, frames=FR, cams=CAMS, t1=None, flag_at=None, auth=None):
+    """auth: None (TickView default, a = 1) or a callable(now) -> (a, source)."""
     p = p or CoupleParams(request_mode="F0")
     q = MiniQueue()
     ledger = ledger or CostLedger(None, 0.0, PriceTable.free())
@@ -40,9 +41,10 @@ def _run(astra, seconds, p=None, ledger=None, frames=FR, cams=CAMS, t1=None, fla
             drv.on_delivery(r, now, t1 or {})
         if flag_at is not None and abs(now - flag_at) < 1e-9:
             drv.flag("m7_critic_alarm", now)
+        a, src = auth(now) if auth is not None else (None, None)
         out = drv.tick(TickView(now=now, dt=0.01, tcp_p=np.array([1.0, 0.0, 0.0]), phase="approach", stage="S1",
                                 near=False, committed={"dir_xy": "plus_x", "dir_z": "none_z", "mag_coarse": "small"},
-                                frames=frames, cams=cams, t1=t1 or {}))
+                                frames=frames, cams=cams, t1=t1 or {}, authority=a, authority_src=src))
         steps.append(out.step6)
     return drv, np.array(steps), q
 
@@ -168,3 +170,28 @@ def test_modular_call_without_chunk_vec_logs_decision_src():
     assert row["src"] == "decision"
     assert row["cos_chunk_vs_decision"] is None and row["follows_decision"] is None
     assert row["cos_vs_offset"] == pytest.approx(1.0) and row["follows_offset"] is True
+
+
+# ---- Task 17 (canon §84 supplement 8): authority a on the offset
+ED2 = answer("edit", execution="failed", intent="misaligned", dp=(0.0, 0.0, 0.02))
+
+
+def test_authority_zero_makes_the_edit_have_no_effect_and_is_logged_sparsely():
+    drv, steps, _ = _run(ScriptedCoupleAstra([ED2, ED2, answer("continue")], latency_s=3.0), 13.0,
+                         auth=lambda now: (0.0, "rule"))
+    assert not np.any(steps) and [r["layer"] for r in drv.log if r["type"] == "answer"][:2] == ["apply", "confirm"]
+    rows = [r for r in drv.log if r["type"] == "authority"]
+    assert len(rows) == 1 and rows[0]["a"] == 0.0 and rows[0]["src"] == "rule"
+    s = drv.summary()["authority"]
+    assert s["share"] == {"a0": 1.0, "band": 0.0, "a1": 0.0} and s["seconds"] == pytest.approx(13.0)
+
+
+def test_authority_none_is_one_and_band_is_counted():
+    drv, steps, _ = _run(ScriptedCoupleAstra([ED2, ED2, answer("continue")], latency_s=3.0), 13.0)
+    assert steps[:, 2].sum() == pytest.approx(0.02, abs=2e-4)  # as before (TickView default: a = 1)
+    assert drv.summary()["authority"]["share"]["a1"] == 1.0
+    drv2, _, _ = _run(ScriptedCoupleAstra([answer("continue")], latency_s=3.0), 4.0,
+                      auth=lambda now: (1.0 if now < 1.0 else 0.5 if now < 3.0 else 0.0, "aux"))
+    s = drv2.summary()["authority"]
+    assert s["share"] == {"a0": 0.25, "band": 0.5, "a1": 0.25}
+    assert [(r["t"], r["a"]) for r in drv2.log if r["type"] == "authority"] == [(0.0, 1.0), (1.0, 0.5), (3.0, 0.0)]

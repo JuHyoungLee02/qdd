@@ -84,3 +84,56 @@ def test_scale_remaining_and_rotation():
     _run(ap, 0.0, 3.0)
     np.testing.assert_allclose(ap.applied, [0.01, 0, 0, 0, 0, 0.1], atol=5e-5)
     assert ap.stats()["scaled"] == 1 and ap.state_json()["weight"] == 1.0
+
+
+# ---- Task 17 (canon §84 supplement 8): authority a scales the commanded velocity BEFORE the rate/accel limits
+def _run_a(ap, t0, t1, a_of, trace=None):
+    t = t0
+    while t < t1 - 1e-9:
+        s = ap.step(t, DT, authority=a_of(t))
+        if trace is not None:
+            trace.append((t, s.copy(), ap.v.copy()))
+        t = round(t + DT, 6)
+    return t
+
+
+def test_authority_zero_for_the_whole_window_applies_nothing():
+    ap = OffsetApplier(CoupleParams())
+    ap.command(1, [0.02, 0.0, 0.01, 0.0, 0.0, 0.1], 1.0, 0.0, 2.0)
+    tr = []
+    _run_a(ap, 0.0, 4.0, lambda t: 0.0, tr)
+    assert all(not np.any(s) for _, s, _ in tr)  # exactly zero every tick
+    assert np.all(ap.applied == 0.0) and not ap.active and ap.dropped[0] == pytest.approx(0.02)
+
+
+def test_authority_drop_brakes_within_the_accel_limit_and_resumes_smoothly():
+    p = CoupleParams()
+    ap = OffsetApplier(p)
+    ap.command(1, [0.06, 0, 0, 0, 0, 0], 1.0, 0.0, 3.0)
+    tr = []
+    _run_a(ap, 0.0, 4.0, lambda t: 0.0 if 0.8 <= t < 1.4 else 1.0, tr)  # a drops immediately, comes back at once
+    v = [float(np.linalg.norm(x[:3])) for _, _, x in tr]
+    acc = [abs(b - a) / DT for a, b in zip(v, v[1:]) if b > 0.0]  # b = 0: the landing tick (lands on the rest)
+    assert max(acc) <= p.a_max + 1e-6 and ap.a_seen <= p.a_max + 1e-6 and ap.v_seen <= p.v_max + 1e-9
+    assert v[int(0.8 / DT)] < v[int(0.8 / DT) - 1]  # it brakes (no one-tick stop, no jump)
+    assert v[int(1.3 / DT)] == 0.0  # stopped inside the a = 0 span
+    np.testing.assert_allclose(ap.applied[:3], [0.06, 0, 0], atol=1e-4)  # the plan was kept, it resumed
+
+
+def test_authority_half_caps_the_speed_at_half():
+    p = CoupleParams()
+    ap = OffsetApplier(p)
+    ap.command(1, [0.2, 0, 0, 0, 0, 0], 1.0, 0.0, 3.0)
+    _run_a(ap, 0.0, 3.0, lambda t: 0.5)
+    assert ap.v_seen <= 0.5 * p.v_max + 1e-9 and ap.v_seen > 0.45 * p.v_max
+
+
+def test_stats_report_absolute_sums_next_to_the_signed_net():
+    ap = OffsetApplier(CoupleParams())
+    ap.command(1, [0.02, 0, 0, 0, 0, 0.1], 1.0, 0.0, 1.0)
+    _run(ap, 0.0, 2.0)
+    ap.command(2, [-0.02, 0, 0, 0, 0, -0.1], 1.0, 2.0, 1.0)
+    _run(ap, 2.0, 4.0)
+    s = ap.stats()
+    assert s["applied_m"][0] == pytest.approx(0.0, abs=1e-4) and s["applied_abs_m"][0] == pytest.approx(0.04, abs=1e-4)
+    assert s["applied_abs_rad"][2] == pytest.approx(0.2, abs=1e-3) and s["applied_abs_m"][1] == 0.0
