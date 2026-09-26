@@ -80,8 +80,28 @@ def _read(p: str) -> str:
         return f.read()
 
 
+def noisy_depth(r: dict, out_dir: str, preset: str) -> tuple:
+    """Write the stereo-like noisy copy of a call's head depth (depth_noise.stereo_noise, seed from the row id) ->
+    (path, info). The ring-only head PNG is the RGB for the low-texture rule (no grid lines drawn on it)."""
+    import hashlib
+
+    from PIL import Image
+
+    from .depth_noise import stereo_noise
+    p = os.path.join(out_dir, f"depth_{preset}", r["id"] + ".npz")
+    cams = json.load(open(r["cams_path"]))
+    rgb = np.asarray(Image.open(os.path.join(r["call_dir"], "img1_head_ring.png")).convert("RGB"))
+    seed = int(hashlib.sha256(r["id"].encode()).hexdigest()[:8], 16)
+    d, info = stereo_noise(np.load(r["depth_path"])["depth"], rgb, float(cams["head"]["fx"]), preset, seed=seed)
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    np.savez_compressed(p, depth=d)
+    return p, info
+
+
 def build(root: str, out_dir: str, split: str, fmt: str = "v2", tags: bool = False, seed: int = 0,
-          repeats: bool | None = None, aux: bool = True) -> dict:
+          repeats: bool | None = None, aux: bool = True, depth_noise: str | None = None) -> dict:
+    """depth_noise: None (perfect simulator depth) or a depth_noise.PRESETS name -> every row's depth_path points to
+    a noisy copy (track D against realistic depth; the images and answers are unchanged)."""
     if fmt not in FORMATS:
         raise ValueError(f"format {fmt!r}: one of {FORMATS}")
     from ..teach_strip8 import strip as ST
@@ -103,6 +123,8 @@ def build(root: str, out_dir: str, split: str, fmt: str = "v2", tags: bool = Fal
                                                                                                     "prompt_v2.txt"))))
         elif tags:
             x["prompt_path"] = _write(os.path.join(pdir, x["id"] + ".txt"), TAG_LINES + _read(x["prompt_path"]))
+        if depth_noise:
+            x["depth_path"], x["depth_noise"] = noisy_depth(x, out_dir, depth_noise)
         ctrl.append(x)
     rows = []
     for r in ctrl:
@@ -117,7 +139,7 @@ def build(root: str, out_dir: str, split: str, fmt: str = "v2", tags: bool = Fal
                      prompt=(TAG_LINES if tags else "") + a["prompt"])
             auxr.append(a)
     os.makedirs(out_dir, exist_ok=True)
-    name = f"{split}_{fmt}" + ("_tags" if tags else "")
+    name = f"{split}_{fmt}" + ("_tags" if tags else "") + (f"_{depth_noise}" if depth_noise else "")
     with open(os.path.join(out_dir, name + ".jsonl"), "w", encoding="utf-8", newline="\n") as f:
         for r in rows + auxr:
             f.write(json.dumps(r) + "\n")
@@ -125,7 +147,7 @@ def build(root: str, out_dir: str, split: str, fmt: str = "v2", tags: bool = Fal
     for d in dirs:
         m = json.load(open(os.path.join(d, "meta.json")))
         eps[d] = (m, scene_of(d))
-    counts = {"split": split, "format": fmt, "tags": bool(tags), "episodes": len(dirs),
+    counts = {"split": split, "format": fmt, "tags": bool(tags), "depth_noise": depth_noise, "episodes": len(dirs),
               "episodes_success": sum(bool(m["success"]) for m, _ in eps.values()),
               "rows_labelled": len(base), "control_unique": len(ctrl), "control_rows": len(rows),
               "aux_rows": len(auxr), "total": len(rows) + len(auxr),

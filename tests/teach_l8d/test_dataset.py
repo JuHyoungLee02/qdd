@@ -72,6 +72,20 @@ def test_tags_prefix_every_request(root):
         assert y["tags"] is True
 
 
+def test_noisy_depth_variant(root):
+    import numpy as np
+    out = root / "data_noise"
+    c = D.build(str(root / "collect" / "train"), str(out), "train", "pt", depth_noise="zed_mini")
+    assert c["depth_noise"] == "zed_mini"
+    rows = [r for r in _rows(out / "train_pt_zed_mini.jsonl") if r["kind"] == "control"]
+    assert rows
+    for r in rows[:5]:
+        assert "depth_zed_mini" in r["depth_path"] and r["depth_noise"]["preset"] == "zed_mini"
+        a = np.load(r["depth_path"])["depth"]
+        b = np.load(os.path.join(r["call_dir"], "head_depth.npz"))["depth"]
+        assert a.shape == b.shape and not np.array_equal(np.nan_to_num(a), b)
+
+
 def test_split_guards():
     with pytest.raises(ValueError):
         D.check_row({"seed": 70001, "variant": "standard"}, "train")
