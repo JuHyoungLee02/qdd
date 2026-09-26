@@ -1,0 +1,2639 @@
+{
+ "eye": {
+  "v1_on_sample1": {
+   "utc": "2026-09-26T06:05:13Z",
+   "n": 144,
+   "visible": 127,
+   "codes": {
+    "g": 93,
+    "o": 22,
+    "x": 5,
+    "n": 17,
+    "u": 7
+   },
+   "raw_error_rate": [
+    0.2677,
+    0.189,
+    0.3465
+   ],
+   "raw_error_rate_u_as_correct": [
+    0.2126,
+    0.1417,
+    0.2835
+   ],
+   "other_arm_rate": [
+    0.1732,
+    0.1102,
+    0.2441
+   ],
+   "kept": 18,
+   "kept_error_rate": [
+    0.0556,
+    0.0,
+    0.1667
+   ],
+   "kept_error_rate_u_as_correct": [
+    0.0556,
+    0.0,
+    0.1667
+   ],
+   "kept_codes": {
+    "g": 17,
+    "o": 1,
+    "x": 0,
+    "n": 2,
+    "u": 0
+   },
+   "correct_retained": [
+    0.1828,
+    0.1075,
+    0.2688
+   ],
+   "not_visible_kept": 2,
+   "by_src": {
+    "RB1": {
+     "visible": 57,
+     "raw_error_rate": [
+      0.386,
+      0.2632,
+      0.5088
+     ],
+     "kept_error_rate": [
+      0.3333,
+      0.0,
+      1.0
+     ]
+    },
+    "RB2": {
+     "visible": 70,
+     "raw_error_rate": [
+      0.1714,
+      0.0857,
+      0.2571
+     ],
+     "kept_error_rate": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   },
+   "errors_by_reason": {
+    "dlt": 3,
+    "dlt_arm": 2,
+    "dlt_episode": 11,
+    "jump": 8,
+    "ok": 1,
+    "side": 9
+   },
+   "correct_by_reason": {
+    "dlt": 6,
+    "dlt_arm": 8,
+    "dlt_episode": 29,
+    "jump": 16,
+    "ok": 17,
+    "side": 17
+   },
+   "G_filter_pass": false
+  },
+  "v2_on_sample1_dev": {
+   "utc": "2026-09-26T06:12:12Z",
+   "n": 144,
+   "visible": 127,
+   "codes": {
+    "g": 93,
+    "o": 22,
+    "x": 5,
+    "n": 17,
+    "u": 7
+   },
+   "raw_error_rate": [
+    0.2677,
+    0.189,
+    0.3465
+   ],
+   "raw_error_rate_u_as_correct": [
+    0.2126,
+    0.1417,
+    0.2835
+   ],
+   "other_arm_rate": [
+    0.1732,
+    0.1102,
+    0.2441
+   ],
+   "kept": 91,
+   "kept_error_rate": [
+    0.0659,
+    0.022,
+    0.1209
+   ],
+   "kept_error_rate_u_as_correct": [
+    0.033,
+    0.0,
+    0.0769
+   ],
+   "kept_codes": {
+    "g": 85,
+    "o": 1,
+    "x": 2,
+    "n": 3,
+    "u": 3
+   },
+   "correct_retained": [
+    0.914,
+    0.8495,
+    0.9677
+   ],
+   "not_visible_kept": 3,
+   "by_src": {
+    "RB1": {
+     "visible": 57,
+     "raw_error_rate": [
+      0.386,
+      0.2632,
+      0.5088
+     ],
+     "kept_error_rate": [
+      0.1389,
+      0.0278,
+      0.25
+     ]
+    },
+    "RB2": {
+     "visible": 70,
+     "raw_error_rate": [
+      0.1714,
+      0.0857,
+      0.2571
+     ],
+     "kept_error_rate": [
+      0.0182,
+      0.0,
+      0.0545
+     ]
+    }
+   },
+   "errors_by_reason": {
+    "gate": 3,
+    "ok": 6,
+    "side": 25
+   },
+   "correct_by_reason": {
+    "gate": 6,
+    "ok": 85,
+    "side": 2
+   },
+   "G_filter_pass": false
+  },
+  "v2_on_sample2_validation": {
+   "utc": "2026-09-26T06:12:11Z",
+   "n": 96,
+   "visible": 79,
+   "codes": {
+    "g": 55,
+    "o": 16,
+    "x": 1,
+    "n": 17,
+    "u": 7
+   },
+   "raw_error_rate": [
+    0.3038,
+    0.2025,
+    0.4051
+   ],
+   "raw_error_rate_u_as_correct": [
+    0.2152,
+    0.1266,
+    0.3038
+   ],
+   "other_arm_rate": [
+    0.2025,
+    0.1139,
+    0.2911
+   ],
+   "kept": 54,
+   "kept_error_rate": [
+    0.037,
+    0.0,
+    0.0926
+   ],
+   "kept_error_rate_u_as_correct": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "kept_codes": {
+    "g": 52,
+    "o": 0,
+    "x": 0,
+    "n": 2,
+    "u": 2
+   },
+   "correct_retained": [
+    0.9455,
+    0.8727,
+    1.0
+   ],
+   "not_visible_kept": 2,
+   "by_src": {
+    "RB1": {
+     "visible": 34,
+     "raw_error_rate": [
+      0.4118,
+      0.2647,
+      0.5882
+     ],
+     "kept_error_rate": [
+      0.0526,
+      0.0,
+      0.1579
+     ]
+    },
+    "RB2": {
+     "visible": 45,
+     "raw_error_rate": [
+      0.2222,
+      0.1111,
+      0.3556
+     ],
+     "kept_error_rate": [
+      0.0286,
+      0.0,
+      0.0857
+     ]
+    }
+   },
+   "errors_by_reason": {
+    "gate": 3,
+    "ok": 2,
+    "side": 19
+   },
+   "correct_by_reason": {
+    "gate": 2,
+    "ok": 52,
+    "side": 1
+   },
+   "G_filter_pass": true
+  },
+  "v1_on_sample2": {
+   "utc": "2026-09-26T06:12:11Z",
+   "n": 96,
+   "visible": 79,
+   "codes": {
+    "g": 55,
+    "o": 16,
+    "x": 1,
+    "n": 17,
+    "u": 7
+   },
+   "raw_error_rate": [
+    0.3038,
+    0.2025,
+    0.4051
+   ],
+   "raw_error_rate_u_as_correct": [
+    0.2152,
+    0.1266,
+    0.3038
+   ],
+   "other_arm_rate": [
+    0.2025,
+    0.1139,
+    0.2911
+   ],
+   "kept": 14,
+   "kept_error_rate": [
+    0.2143,
+    0.0,
+    0.4286
+   ],
+   "kept_error_rate_u_as_correct": [
+    0.0714,
+    0.0,
+    0.2143
+   ],
+   "kept_codes": {
+    "g": 11,
+    "o": 1,
+    "x": 0,
+    "n": 1,
+    "u": 2
+   },
+   "correct_retained": [
+    0.2,
+    0.1091,
+    0.3091
+   ],
+   "not_visible_kept": 1,
+   "by_src": {
+    "RB1": {
+     "visible": 34,
+     "raw_error_rate": [
+      0.4118,
+      0.2647,
+      0.5882
+     ],
+     "kept_error_rate": [
+      0.5,
+      0.0,
+      1.0
+     ]
+    },
+    "RB2": {
+     "visible": 45,
+     "raw_error_rate": [
+      0.2222,
+      0.1111,
+      0.3556
+     ],
+     "kept_error_rate": [
+      0.1,
+      0.0,
+      0.3
+     ]
+    }
+   },
+   "errors_by_reason": {
+    "dlt": 0,
+    "dlt_arm": 1,
+    "dlt_episode": 10,
+    "jump": 4,
+    "ok": 3,
+    "side": 6
+   },
+   "correct_by_reason": {
+    "dlt": 7,
+    "dlt_arm": 7,
+    "dlt_episode": 17,
+    "jump": 7,
+    "ok": 11,
+    "side": 6
+   },
+   "G_filter_pass": false
+  }
+ },
+ "stats_v1": {
+  "RB1": {
+   "episodes": 24,
+   "frames": 3001,
+   "points": 6002,
+   "reasons": {
+    "dlt": [
+     191,
+     0.0318
+    ],
+    "dlt_arm": [
+     218,
+     0.0363
+    ],
+    "dlt_episode": [
+     1898,
+     0.3162
+    ],
+    "fail": [
+     131,
+     0.0218
+    ],
+    "jump": [
+     887,
+     0.1478
+    ],
+    "ok": [
+     425,
+     0.0708
+    ],
+    "side": [
+     2252,
+     0.3752
+    ]
+   },
+   "kept_frac": 0.0708,
+   "active_arm_label_frac": 0.032,
+   "label_len_hist": {
+    "5": 90,
+    "4": 1,
+    "3": 1,
+    "2": 1,
+    "1": 3
+   },
+   "releases": 31,
+   "release_point_kept_frac": 0.0323,
+   "dlt_fit_episodes": 7
+  },
+  "RB2": {
+   "episodes": 24,
+   "frames": 2416,
+   "points": 4832,
+   "reasons": {
+    "dlt": [
+     363,
+     0.0751
+    ],
+    "dlt_arm": [
+     471,
+     0.0975
+    ],
+    "dlt_episode": [
+     1069,
+     0.2212
+    ],
+    "fail": [
+     81,
+     0.0168
+    ],
+    "jump": [
+     1001,
+     0.2072
+    ],
+    "ok": [
+     1081,
+     0.2237
+    ],
+    "side": [
+     766,
+     0.1585
+    ]
+   },
+   "kept_frac": 0.2237,
+   "active_arm_label_frac": 0.2053,
+   "label_len_hist": {
+    "5": 411,
+    "4": 27,
+    "3": 16,
+    "2": 5,
+    "1": 37
+   },
+   "releases": 18,
+   "release_point_kept_frac": 0.1111,
+   "dlt_fit_episodes": 13
+  },
+  "all": {
+   "episodes": 48,
+   "frames": 5417,
+   "points": 10834,
+   "reasons": {
+    "dlt": [
+     554,
+     0.0511
+    ],
+    "dlt_arm": [
+     689,
+     0.0636
+    ],
+    "dlt_episode": [
+     2967,
+     0.2739
+    ],
+    "fail": [
+     212,
+     0.0196
+    ],
+    "jump": [
+     1888,
+     0.1743
+    ],
+    "ok": [
+     1506,
+     0.139
+    ],
+    "side": [
+     3018,
+     0.2786
+    ]
+   },
+   "kept_frac": 0.139,
+   "active_arm_label_frac": 0.1093,
+   "label_len_hist": {
+    "5": 501,
+    "4": 28,
+    "3": 17,
+    "2": 6,
+    "1": 40
+   },
+   "releases": 49,
+   "release_point_kept_frac": 0.0612,
+   "dlt_fit_episodes": 20
+  }
+ },
+ "stats_v2": {
+  "RB1": {
+   "episodes": 24,
+   "frames": 3001,
+   "points": 6002,
+   "reasons": {
+    "fail": [
+     131,
+     0.0218
+    ],
+    "gate": [
+     693,
+     0.1155
+    ],
+    "ok": [
+     2881,
+     0.48
+    ],
+    "side": [
+     2297,
+     0.3827
+    ]
+   },
+   "kept_frac": 0.48,
+   "active_arm_label_frac": 0.4815,
+   "label_len_hist": {
+    "5": 1338,
+    "4": 17,
+    "3": 21,
+    "2": 42,
+    "1": 27
+   },
+   "releases": 18,
+   "release_point_kept_frac": 0.1667,
+   "fit_episodes": 24,
+   "offsets": [
+    [
+     -16.449366094788957,
+     -87.59859856245652
+    ],
+    [
+     -10.145749427534383,
+     -62.90150639099835
+    ],
+    [
+     9.144569539737006,
+     -91.40364585550165
+    ],
+    [
+     95.85359809426751,
+     -142.09402343729136
+    ],
+    [
+     91.3264835618862,
+     -135.12409873065607
+    ],
+    [
+     -0.6712375334942351,
+     -72.72364321612201
+    ],
+    [
+     -67.22543559530635,
+     -69.07662196588022
+    ],
+    [
+     -15.126955921936855,
+     -88.95346100105061
+    ],
+    [
+     6.320257368309058,
+     -89.41167234063482
+    ],
+    [
+     -16.0716026923332,
+     -154.91935637053624
+    ],
+    [
+     -69.68124586397738,
+     -398.897448950921
+    ],
+    [
+     8.458463600353724,
+     -109.2657127170441
+    ],
+    [
+     27.836434000079635,
+     -70.78523508415944
+    ],
+    [
+     36.221528152131384,
+     -78.95996172508512
+    ],
+    [
+     -15.758108894180694,
+     -98.60714597715253
+    ],
+    [
+     -5.8436579332121,
+     -131.70156137277303
+    ],
+    [
+     5.284493236930274,
+     -84.47526416694947
+    ],
+    [
+     -4.506881458095222,
+     -90.42785273617363
+    ],
+    [
+     -2.153199565776049,
+     -70.89345207714956
+    ],
+    [
+     1.7624162663498453,
+     -110.88868156849591
+    ],
+    [
+     -5.986729803428489,
+     -87.94228197707986
+    ],
+    [
+     68.79102669671623,
+     -524.7684485291899
+    ],
+    [
+     14.124823803773893,
+     -91.70951995565167
+    ],
+    [
+     40.286346043924084,
+     -69.28146018033965
+    ]
+   ]
+  },
+  "RB2": {
+   "episodes": 24,
+   "frames": 2416,
+   "points": 4832,
+   "reasons": {
+    "fail": [
+     81,
+     0.0168
+    ],
+    "gate": [
+     418,
+     0.0865
+    ],
+    "ok": [
+     3602,
+     0.7454
+    ],
+    "side": [
+     731,
+     0.1513
+    ]
+   },
+   "kept_frac": 0.7454,
+   "active_arm_label_frac": 0.5207,
+   "label_len_hist": {
+    "5": 1196,
+    "4": 17,
+    "3": 13,
+    "2": 14,
+    "1": 18
+   },
+   "releases": 14,
+   "release_point_kept_frac": 0.7857,
+   "fit_episodes": 24,
+   "offsets": [
+    [
+     -29.942522998009167,
+     24.52667763968114
+    ],
+    [
+     16.37295851657666,
+     30.73700124674815
+    ],
+    [
+     -31.490693594812512,
+     7.0749488299680365
+    ],
+    [
+     -37.98233320520026,
+     25.176388029110996
+    ],
+    [
+     -26.797516959931215,
+     -9.676878138665415
+    ],
+    [
+     24.512929963304373,
+     -6.4582737267369055
+    ],
+    [
+     29.941627888940502,
+     -9.412731429372002
+    ],
+    [
+     -5.625518818751573,
+     10.96446957258948
+    ],
+    [
+     -21.35676962726862,
+     24.905202807070168
+    ],
+    [
+     -60.95670776738734,
+     -0.6422752935354765
+    ],
+    [
+     -60.17690935783712,
+     -0.9214214038308626
+    ],
+    [
+     73.85659277119726,
+     -13.90280178736424
+    ],
+    [
+     -130.66836206361376,
+     -36.63021846294265
+    ],
+    [
+     -57.245782703538595,
+     -13.62214099304964
+    ],
+    [
+     -47.8658592003311,
+     10.727805061834317
+    ],
+    [
+     -99.18929873476725,
+     -39.003241745746095
+    ],
+    [
+     -35.67027839356872,
+     -2.314615255578417
+    ],
+    [
+     -93.75649636628202,
+     -14.592347348402626
+    ],
+    [
+     -14.78048489588636,
+     29.929690162933497
+    ],
+    [
+     -30.771874948920214,
+     21.854997633286303
+    ],
+    [
+     23.414547770133368,
+     10.810053622994644
+    ],
+    [
+     -37.4221937862516,
+     35.05988157574973
+    ],
+    [
+     33.52281695962972,
+     27.232613913523835
+    ],
+    [
+     8.015296631413946,
+     20.308053680575085
+    ]
+   ]
+  },
+  "all": {
+   "episodes": 48,
+   "frames": 5417,
+   "points": 10834,
+   "reasons": {
+    "fail": [
+     212,
+     0.0196
+    ],
+    "gate": [
+     1111,
+     0.1025
+    ],
+    "ok": [
+     6483,
+     0.5984
+    ],
+    "side": [
+     3028,
+     0.2795
+    ]
+   },
+   "kept_frac": 0.5984,
+   "active_arm_label_frac": 0.499,
+   "label_len_hist": {
+    "5": 2534,
+    "4": 34,
+    "3": 34,
+    "2": 56,
+    "1": 45
+   },
+   "releases": 32,
+   "release_point_kept_frac": 0.4375,
+   "fit_episodes": 48,
+   "offsets": [
+    [
+     -16.449366094788957,
+     -87.59859856245652
+    ],
+    [
+     -10.145749427534383,
+     -62.90150639099835
+    ],
+    [
+     9.144569539737006,
+     -91.40364585550165
+    ],
+    [
+     95.85359809426751,
+     -142.09402343729136
+    ],
+    [
+     91.3264835618862,
+     -135.12409873065607
+    ],
+    [
+     -0.6712375334942351,
+     -72.72364321612201
+    ],
+    [
+     -67.22543559530635,
+     -69.07662196588022
+    ],
+    [
+     -15.126955921936855,
+     -88.95346100105061
+    ],
+    [
+     6.320257368309058,
+     -89.41167234063482
+    ],
+    [
+     -16.0716026923332,
+     -154.91935637053624
+    ],
+    [
+     -69.68124586397738,
+     -398.897448950921
+    ],
+    [
+     8.458463600353724,
+     -109.2657127170441
+    ],
+    [
+     27.836434000079635,
+     -70.78523508415944
+    ],
+    [
+     36.221528152131384,
+     -78.95996172508512
+    ],
+    [
+     -15.758108894180694,
+     -98.60714597715253
+    ],
+    [
+     -5.8436579332121,
+     -131.70156137277303
+    ],
+    [
+     5.284493236930274,
+     -84.47526416694947
+    ],
+    [
+     -4.506881458095222,
+     -90.42785273617363
+    ],
+    [
+     -2.153199565776049,
+     -70.89345207714956
+    ],
+    [
+     1.7624162663498453,
+     -110.88868156849591
+    ],
+    [
+     -5.986729803428489,
+     -87.94228197707986
+    ],
+    [
+     68.79102669671623,
+     -524.7684485291899
+    ],
+    [
+     14.124823803773893,
+     -91.70951995565167
+    ],
+    [
+     40.286346043924084,
+     -69.28146018033965
+    ],
+    [
+     -29.942522998009167,
+     24.52667763968114
+    ],
+    [
+     16.37295851657666,
+     30.73700124674815
+    ],
+    [
+     -31.490693594812512,
+     7.0749488299680365
+    ],
+    [
+     -37.98233320520026,
+     25.176388029110996
+    ],
+    [
+     -26.797516959931215,
+     -9.676878138665415
+    ],
+    [
+     24.512929963304373,
+     -6.4582737267369055
+    ],
+    [
+     29.941627888940502,
+     -9.412731429372002
+    ],
+    [
+     -5.625518818751573,
+     10.96446957258948
+    ],
+    [
+     -21.35676962726862,
+     24.905202807070168
+    ],
+    [
+     -60.95670776738734,
+     -0.6422752935354765
+    ],
+    [
+     -60.17690935783712,
+     -0.9214214038308626
+    ],
+    [
+     73.85659277119726,
+     -13.90280178736424
+    ],
+    [
+     -130.66836206361376,
+     -36.63021846294265
+    ],
+    [
+     -57.245782703538595,
+     -13.62214099304964
+    ],
+    [
+     -47.8658592003311,
+     10.727805061834317
+    ],
+    [
+     -99.18929873476725,
+     -39.003241745746095
+    ],
+    [
+     -35.67027839356872,
+     -2.314615255578417
+    ],
+    [
+     -93.75649636628202,
+     -14.592347348402626
+    ],
+    [
+     -14.78048489588636,
+     29.929690162933497
+    ],
+    [
+     -30.771874948920214,
+     21.854997633286303
+    ],
+    [
+     23.414547770133368,
+     10.810053622994644
+    ],
+    [
+     -37.4221937862516,
+     35.05988157574973
+    ],
+    [
+     33.52281695962972,
+     27.232613913523835
+    ],
+    [
+     8.015296631413946,
+     20.308053680575085
+    ]
+   ]
+  }
+ },
+ "colour": {
+  "frames": 192,
+  "thr_rgb": 60.0,
+  "fraction_within_thr": {
+   "cyan_molmoact": {
+    "mean": 0.0,
+    "p95": 0.0,
+    "max": 0.0
+   },
+   "green_r2": {
+    "mean": 0.0,
+    "p95": 0.0,
+    "max": 0.0
+   },
+   "magenta": {
+    "mean": 0.0,
+    "p95": 0.0,
+    "max": 0.0
+   },
+   "yellow": {
+    "mean": 3.3e-05,
+    "p95": 0.000226,
+    "max": 0.000958
+   }
+  },
+  "chosen": "cyan_molmoact",
+  "chosen_rgb": [
+   0,
+   255,
+   255
+  ]
+ },
+ "diversity_v2": {
+  "segments": 32,
+  "segments_by_src": {
+   "RB1": 18,
+   "RB2": 14
+  },
+  "same_start_end_pairs": 3,
+  "RB1": {
+   "pairs": 3,
+   "median_div_px": 73.7,
+   "p90_div_px": 95.78,
+   "frac_div_ge_40px": 1.0
+  },
+  "RB2": {
+   "pairs": 0,
+   "median_div_px": null,
+   "p90_div_px": null,
+   "frac_div_ge_40px": null
+  }
+ },
+ "scenes_first_frame": {
+  "RB1": {
+   "episodes": 718,
+   "instructions": 1,
+   "nn_mad_median": 9.52,
+   "nn_mad_p10": 3.1,
+   "near_pairs": {
+    "3.0": {
+     "same_instr": 369,
+     "diff_instr": 0
+    },
+    "5.0": {
+     "same_instr": 1963,
+     "diff_instr": 0
+    },
+    "8.0": {
+     "same_instr": 4238,
+     "diff_instr": 0
+    }
+   },
+   "diff_instr_examples": []
+  },
+  "RB2": {
+   "episodes": 857,
+   "instructions": 11,
+   "nn_mad_median": 6.86,
+   "nn_mad_p10": 3.83,
+   "near_pairs": {
+    "3.0": {
+     "same_instr": 110,
+     "diff_instr": 0
+    },
+    "5.0": {
+     "same_instr": 889,
+     "diff_instr": 6
+    },
+    "8.0": {
+     "same_instr": 2796,
+     "diff_instr": 426
+    }
+   },
+   "diff_instr_examples": []
+  }
+ },
+ "episodes_v2": [
+  {
+   "src": "RB1",
+   "ep": 41,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 113,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -16.449366094788957,
+     -87.59859856245652
+    ],
+    "n_offset": 121
+   },
+   "kept": {
+    "left": 111,
+    "right": 0
+   },
+   "releases": {
+    "left": 1,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 97,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 150,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -10.145749427534383,
+     -62.90150639099835
+    ],
+    "n_offset": 193
+   },
+   "kept": {
+    "left": 111,
+    "right": 87
+   },
+   "releases": {
+    "left": 1,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 101,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 160,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     9.144569539737006,
+     -91.40364585550165
+    ],
+    "n_offset": 149
+   },
+   "kept": {
+    "left": 87,
+    "right": 50
+   },
+   "releases": {
+    "left": 1,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 142,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 159,
+   "split": "val",
+   "filter_info": {
+    "offset": [
+     95.85359809426751,
+     -142.09402343729136
+    ],
+    "n_offset": 191
+   },
+   "kept": {
+    "left": 99,
+    "right": 41
+   },
+   "releases": {
+    "left": 0,
+    "right": 1
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 143,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 163,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     91.3264835618862,
+     -135.12409873065607
+    ],
+    "n_offset": 216
+   },
+   "kept": {
+    "left": 131,
+    "right": 47
+   },
+   "releases": {
+    "left": 0,
+    "right": 1
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 150,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 168,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -0.6712375334942351,
+     -72.72364321612201
+    ],
+    "n_offset": 161
+   },
+   "kept": {
+    "left": 145,
+    "right": 0
+   },
+   "releases": {
+    "left": 1,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 223,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 80,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -67.22543559530635,
+     -69.07662196588022
+    ],
+    "n_offset": 82
+   },
+   "kept": {
+    "left": 18,
+    "right": 51
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 256,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 139,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -15.126955921936855,
+     -88.95346100105061
+    ],
+    "n_offset": 134
+   },
+   "kept": {
+    "left": 96,
+    "right": 48
+   },
+   "releases": {
+    "left": 0,
+    "right": 1
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 265,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 149,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     6.320257368309058,
+     -89.41167234063482
+    ],
+    "n_offset": 175
+   },
+   "kept": {
+    "left": 84,
+    "right": 46
+   },
+   "releases": {
+    "left": 1,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 288,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 38,
+   "split": "val",
+   "filter_info": {
+    "offset": [
+     -16.0716026923332,
+     -154.91935637053624
+    ],
+    "n_offset": 36
+   },
+   "kept": {
+    "left": 25,
+    "right": 0
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 310,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 41,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -69.68124586397738,
+     -398.897448950921
+    ],
+    "n_offset": 69
+   },
+   "kept": {
+    "left": 27,
+    "right": 28
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 317,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 45,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     8.458463600353724,
+     -109.2657127170441
+    ],
+    "n_offset": 48
+   },
+   "kept": {
+    "left": 0,
+    "right": 44
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 366,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 46,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     27.836434000079635,
+     -70.78523508415944
+    ],
+    "n_offset": 46
+   },
+   "kept": {
+    "left": 0,
+    "right": 46
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 394,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 43,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     36.221528152131384,
+     -78.95996172508512
+    ],
+    "n_offset": 43
+   },
+   "kept": {
+    "left": 0,
+    "right": 43
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 414,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 132,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -15.758108894180694,
+     -98.60714597715253
+    ],
+    "n_offset": 163
+   },
+   "kept": {
+    "left": 0,
+    "right": 105
+   },
+   "releases": {
+    "left": 0,
+    "right": 1
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 430,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 156,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -5.8436579332121,
+     -131.70156137277303
+    ],
+    "n_offset": 208
+   },
+   "kept": {
+    "left": 130,
+    "right": 75
+   },
+   "releases": {
+    "left": 0,
+    "right": 1
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 488,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 143,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     5.284493236930274,
+     -84.47526416694947
+    ],
+    "n_offset": 167
+   },
+   "kept": {
+    "left": 122,
+    "right": 50
+   },
+   "releases": {
+    "left": 0,
+    "right": 1
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 497,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 139,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -4.506881458095222,
+     -90.42785273617363
+    ],
+    "n_offset": 134
+   },
+   "kept": {
+    "left": 88,
+    "right": 47
+   },
+   "releases": {
+    "left": 0,
+    "right": 1
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 516,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 151,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -2.153199565776049,
+     -70.89345207714956
+    ],
+    "n_offset": 155
+   },
+   "kept": {
+    "left": 144,
+    "right": 45
+   },
+   "releases": {
+    "left": 0,
+    "right": 1
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 523,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 145,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     1.7624162663498453,
+     -110.88868156849591
+    ],
+    "n_offset": 162
+   },
+   "kept": {
+    "left": 130,
+    "right": 41
+   },
+   "releases": {
+    "left": 0,
+    "right": 1
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 545,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 492,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -5.986729803428489,
+     -87.94228197707986
+    ],
+    "n_offset": 463
+   },
+   "kept": {
+    "left": 201,
+    "right": 136
+   },
+   "releases": {
+    "left": 2,
+    "right": 2
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 597,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 39,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     68.79102669671623,
+     -524.7684485291899
+    ],
+    "n_offset": 66
+   },
+   "kept": {
+    "left": 22,
+    "right": 0
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 616,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 55,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     14.124823803773893,
+     -91.70951995565167
+    ],
+    "n_offset": 67
+   },
+   "kept": {
+    "left": 0,
+    "right": 40
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB1",
+   "ep": 633,
+   "task": "Place bottles in color-matching boxes: red\u2192top left, green\u2192bottom left, white\u2192top right, orange\u2192bottom right",
+   "frames": 55,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     40.286346043924084,
+     -69.28146018033965
+    ],
+    "n_offset": 72
+   },
+   "kept": {
+    "left": 0,
+    "right": 40
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 41,
+   "task": "Grasp the handle of the crate.",
+   "frames": 53,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -29.942522998009167,
+     24.52667763968114
+    ],
+    "n_offset": 106
+   },
+   "kept": {
+    "left": 53,
+    "right": 53
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 98,
+   "task": "Put the yellow pliers into the crate.",
+   "frames": 134,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     16.37295851657666,
+     30.73700124674815
+    ],
+    "n_offset": 243
+   },
+   "kept": {
+    "left": 103,
+    "right": 101
+   },
+   "releases": {
+    "left": 0,
+    "right": 1
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 143,
+   "task": "Grasp the handle of the crate.",
+   "frames": 82,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -31.490693594812512,
+     7.0749488299680365
+    ],
+    "n_offset": 136
+   },
+   "kept": {
+    "left": 73,
+    "right": 54
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 144,
+   "task": "Grasp the handle of the crate.",
+   "frames": 91,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -37.98233320520026,
+     25.176388029110996
+    ],
+    "n_offset": 154
+   },
+   "kept": {
+    "left": 90,
+    "right": 71
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 224,
+   "task": "Put the yellow paint brush into the crate.",
+   "frames": 131,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -26.797516959931215,
+     -9.676878138665415
+    ],
+    "n_offset": 165
+   },
+   "kept": {
+    "left": 130,
+    "right": 1
+   },
+   "releases": {
+    "left": 1,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 257,
+   "task": "Put the yellow pliers into the crate.",
+   "frames": 136,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     24.512929963304373,
+     -6.4582737267369055
+    ],
+    "n_offset": 218
+   },
+   "kept": {
+    "left": 77,
+    "right": 121
+   },
+   "releases": {
+    "left": 0,
+    "right": 1
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 266,
+   "task": "Put the yellow pliers into the crate.",
+   "frames": 125,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     29.941627888940502,
+     -9.412731429372002
+    ],
+    "n_offset": 195
+   },
+   "kept": {
+    "left": 64,
+    "right": 121
+   },
+   "releases": {
+    "left": 0,
+    "right": 1
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 289,
+   "task": "Put the yellow roller into the crate.",
+   "frames": 103,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -5.625518818751573,
+     10.96446957258948
+    ],
+    "n_offset": 195
+   },
+   "kept": {
+    "left": 92,
+    "right": 96
+   },
+   "releases": {
+    "left": 0,
+    "right": 1
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 311,
+   "task": "Put the tool with the wooden handle into the crate.",
+   "frames": 119,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -21.35676962726862,
+     24.905202807070168
+    ],
+    "n_offset": 235
+   },
+   "kept": {
+    "left": 119,
+    "right": 111
+   },
+   "releases": {
+    "left": 0,
+    "right": 1
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 367,
+   "task": "Place the crate on the table.",
+   "frames": 83,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -60.95670776738734,
+     -0.6422752935354765
+    ],
+    "n_offset": 115
+   },
+   "kept": {
+    "left": 83,
+    "right": 32
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 395,
+   "task": "Put the blue scissors into the crate.",
+   "frames": 118,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -60.17690935783712,
+     -0.9214214038308626
+    ],
+    "n_offset": 166
+   },
+   "kept": {
+    "left": 114,
+    "right": 0
+   },
+   "releases": {
+    "left": 1,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 415,
+   "task": "Put the black wrench into the crate.",
+   "frames": 113,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     73.85659277119726,
+     -13.90280178736424
+    ],
+    "n_offset": 155
+   },
+   "kept": {
+    "left": 38,
+    "right": 89
+   },
+   "releases": {
+    "left": 0,
+    "right": 1
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 431,
+   "task": "Grasp the handle of the crate.",
+   "frames": 78,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -130.66836206361376,
+     -36.63021846294265
+    ],
+    "n_offset": 110
+   },
+   "kept": {
+    "left": 70,
+    "right": 19
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 489,
+   "task": "Grasp the handle of the crate.",
+   "frames": 85,
+   "split": "val",
+   "filter_info": {
+    "offset": [
+     -57.245782703538595,
+     -13.62214099304964
+    ],
+    "n_offset": 86
+   },
+   "kept": {
+    "left": 81,
+    "right": 17
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 498,
+   "task": "Grasp the handle of the crate.",
+   "frames": 76,
+   "split": "val",
+   "filter_info": {
+    "offset": [
+     -47.8658592003311,
+     10.727805061834317
+    ],
+    "n_offset": 118
+   },
+   "kept": {
+    "left": 70,
+    "right": 48
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 517,
+   "task": "Place the crate on the table.",
+   "frames": 94,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -99.18929873476725,
+     -39.003241745746095
+    ],
+    "n_offset": 139
+   },
+   "kept": {
+    "left": 81,
+    "right": 45
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 524,
+   "task": "Place the crate on the table.",
+   "frames": 93,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -35.67027839356872,
+     -2.314615255578417
+    ],
+    "n_offset": 168
+   },
+   "kept": {
+    "left": 72,
+    "right": 79
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 598,
+   "task": "Put the red screwdriver into the crate.",
+   "frames": 101,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -93.75649636628202,
+     -14.592347348402626
+    ],
+    "n_offset": 105
+   },
+   "kept": {
+    "left": 62,
+    "right": 6
+   },
+   "releases": {
+    "left": 1,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 634,
+   "task": "Put the black wrench into the crate.",
+   "frames": 94,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -14.78048489588636,
+     29.929690162933497
+    ],
+    "n_offset": 174
+   },
+   "kept": {
+    "left": 81,
+    "right": 87
+   },
+   "releases": {
+    "left": 0,
+    "right": 1
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 774,
+   "task": "Put the blue scissors into the crate.",
+   "frames": 107,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -30.771874948920214,
+     21.854997633286303
+    ],
+    "n_offset": 171
+   },
+   "kept": {
+    "left": 107,
+    "right": 64
+   },
+   "releases": {
+    "left": 1,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 777,
+   "task": "Put the red glue tube into the crate.",
+   "frames": 142,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     23.414547770133368,
+     10.810053622994644
+    ],
+    "n_offset": 279
+   },
+   "kept": {
+    "left": 115,
+    "right": 129
+   },
+   "releases": {
+    "left": 1,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 803,
+   "task": "Put the yellow pliers into the crate.",
+   "frames": 94,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     -37.4221937862516,
+     35.05988157574973
+    ],
+    "n_offset": 183
+   },
+   "kept": {
+    "left": 94,
+    "right": 78
+   },
+   "releases": {
+    "left": 0,
+    "right": 1
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 819,
+   "task": "Put the red colored gloves into the crate.",
+   "frames": 36,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     33.52281695962972,
+     27.232613913523835
+    ],
+    "n_offset": 57
+   },
+   "kept": {
+    "left": 21,
+    "right": 36
+   },
+   "releases": {
+    "left": 0,
+    "right": 0
+   }
+  },
+  {
+   "src": "RB2",
+   "ep": 850,
+   "task": "Put the yellow paint brush into the crate.",
+   "frames": 128,
+   "split": "train",
+   "filter_info": {
+    "offset": [
+     8.015296631413946,
+     20.308053680575085
+    ],
+    "n_offset": 256
+   },
+   "kept": {
+    "left": 126,
+    "right": 128
+   },
+   "releases": {
+    "left": 1,
+    "right": 0
+   }
+  }
+ ],
+ "camfit": {
+  "source_level": {
+   "RB1": {
+    "thr15": {
+     "points": 5673,
+     "inlier_frac": 0.01,
+     "median_resid_inlier_px": 11.71
+    },
+    "thr30": {
+     "points": 5673,
+     "inlier_frac": 0.1572,
+     "median_resid_inlier_px": 12.93
+    }
+   },
+   "RB2": {
+    "thr15": {
+     "points": 4696,
+     "inlier_frac": 0.1642,
+     "median_resid_inlier_px": 6.772
+    },
+    "thr30": {
+     "points": 4696,
+     "inlier_frac": 0.3335,
+     "median_resid_inlier_px": 11.348
+    }
+   }
+  },
+  "episode_level": [
+   {
+    "src": "RB1",
+    "ep": 41,
+    "points": 221,
+    "fit": true,
+    "inlier_frac": 0.1222,
+    "median_resid_inlier_px": 7.026
+   },
+   {
+    "src": "RB1",
+    "ep": 97,
+    "points": 300,
+    "fit": true,
+    "inlier_frac": 0.34,
+    "median_resid_inlier_px": 4.799
+   },
+   {
+    "src": "RB1",
+    "ep": 101,
+    "points": 311,
+    "fit": true,
+    "inlier_frac": 0.209,
+    "median_resid_inlier_px": 5.108
+   },
+   {
+    "src": "RB1",
+    "ep": 142,
+    "points": 311,
+    "fit": true,
+    "inlier_frac": 0.0868,
+    "median_resid_inlier_px": 8.753
+   },
+   {
+    "src": "RB1",
+    "ep": 143,
+    "points": 325,
+    "fit": true,
+    "inlier_frac": 0.5046,
+    "median_resid_inlier_px": 7.297
+   },
+   {
+    "src": "RB1",
+    "ep": 150,
+    "points": 322,
+    "fit": true,
+    "inlier_frac": 0.1242,
+    "median_resid_inlier_px": 6.722
+   },
+   {
+    "src": "RB1",
+    "ep": 223,
+    "points": 137,
+    "fit": true,
+    "inlier_frac": 0.2044,
+    "median_resid_inlier_px": 8.385
+   },
+   {
+    "src": "RB1",
+    "ep": 256,
+    "points": 278,
+    "fit": true,
+    "inlier_frac": 0.1619,
+    "median_resid_inlier_px": 8.292
+   },
+   {
+    "src": "RB1",
+    "ep": 265,
+    "points": 290,
+    "fit": true,
+    "inlier_frac": 0.2172,
+    "median_resid_inlier_px": 2.979
+   },
+   {
+    "src": "RB1",
+    "ep": 288,
+    "points": 67,
+    "fit": true,
+    "inlier_frac": 0.4478,
+    "median_resid_inlier_px": 5.007
+   },
+   {
+    "src": "RB1",
+    "ep": 310,
+    "points": 82,
+    "fit": true,
+    "inlier_frac": 0.4878,
+    "median_resid_inlier_px": 3.217
+   },
+   {
+    "src": "RB1",
+    "ep": 317,
+    "points": 85,
+    "fit": true,
+    "inlier_frac": 0.1059,
+    "median_resid_inlier_px": 8.064
+   },
+   {
+    "src": "RB1",
+    "ep": 366,
+    "points": 92,
+    "fit": true,
+    "inlier_frac": 0.5109,
+    "median_resid_inlier_px": 5.258
+   },
+   {
+    "src": "RB1",
+    "ep": 394,
+    "points": 86,
+    "fit": true,
+    "inlier_frac": 0.3837,
+    "median_resid_inlier_px": 8.619
+   },
+   {
+    "src": "RB1",
+    "ep": 414,
+    "points": 263,
+    "fit": true,
+    "inlier_frac": 0.2395,
+    "median_resid_inlier_px": 3.232
+   },
+   {
+    "src": "RB1",
+    "ep": 430,
+    "points": 312,
+    "fit": true,
+    "inlier_frac": 0.6282,
+    "median_resid_inlier_px": 4.018
+   },
+   {
+    "src": "RB1",
+    "ep": 488,
+    "points": 264,
+    "fit": true,
+    "inlier_frac": 0.4167,
+    "median_resid_inlier_px": 5.731
+   },
+   {
+    "src": "RB1",
+    "ep": 497,
+    "points": 256,
+    "fit": true,
+    "inlier_frac": 0.293,
+    "median_resid_inlier_px": 6.581
+   },
+   {
+    "src": "RB1",
+    "ep": 516,
+    "points": 249,
+    "fit": true,
+    "inlier_frac": 0.4779,
+    "median_resid_inlier_px": 3.199
+   },
+   {
+    "src": "RB1",
+    "ep": 523,
+    "points": 282,
+    "fit": true,
+    "inlier_frac": 0.2624,
+    "median_resid_inlier_px": 3.588
+   },
+   {
+    "src": "RB1",
+    "ep": 545,
+    "points": 858,
+    "fit": true,
+    "inlier_frac": 0.197,
+    "median_resid_inlier_px": 1.211
+   },
+   {
+    "src": "RB1",
+    "ep": 597,
+    "points": 68,
+    "fit": true,
+    "inlier_frac": 0.5294,
+    "median_resid_inlier_px": 5.662
+   },
+   {
+    "src": "RB1",
+    "ep": 616,
+    "points": 104,
+    "fit": true,
+    "inlier_frac": 0.1827,
+    "median_resid_inlier_px": 5.815
+   },
+   {
+    "src": "RB1",
+    "ep": 633,
+    "points": 110,
+    "fit": true,
+    "inlier_frac": 0.3,
+    "median_resid_inlier_px": 8.006
+   },
+   {
+    "src": "RB2",
+    "ep": 41,
+    "points": 106,
+    "fit": true,
+    "inlier_frac": 0.1792,
+    "median_resid_inlier_px": 5.742
+   },
+   {
+    "src": "RB2",
+    "ep": 98,
+    "points": 267,
+    "fit": true,
+    "inlier_frac": 0.2322,
+    "median_resid_inlier_px": 5.851
+   },
+   {
+    "src": "RB2",
+    "ep": 143,
+    "points": 163,
+    "fit": true,
+    "inlier_frac": 0.3988,
+    "median_resid_inlier_px": 5.413
+   },
+   {
+    "src": "RB2",
+    "ep": 144,
+    "points": 182,
+    "fit": true,
+    "inlier_frac": 0.4176,
+    "median_resid_inlier_px": 4.472
+   },
+   {
+    "src": "RB2",
+    "ep": 224,
+    "points": 219,
+    "fit": true,
+    "inlier_frac": 0.3151,
+    "median_resid_inlier_px": 4.136
+   },
+   {
+    "src": "RB2",
+    "ep": 257,
+    "points": 270,
+    "fit": true,
+    "inlier_frac": 0.4407,
+    "median_resid_inlier_px": 3.881
+   },
+   {
+    "src": "RB2",
+    "ep": 266,
+    "points": 250,
+    "fit": true,
+    "inlier_frac": 0.48,
+    "median_resid_inlier_px": 4.474
+   },
+   {
+    "src": "RB2",
+    "ep": 289,
+    "points": 206,
+    "fit": true,
+    "inlier_frac": 0.5146,
+    "median_resid_inlier_px": 4.96
+   },
+   {
+    "src": "RB2",
+    "ep": 311,
+    "points": 237,
+    "fit": true,
+    "inlier_frac": 0.4979,
+    "median_resid_inlier_px": 8.281
+   },
+   {
+    "src": "RB2",
+    "ep": 367,
+    "points": 166,
+    "fit": true,
+    "inlier_frac": 0.3976,
+    "median_resid_inlier_px": 3.828
+   },
+   {
+    "src": "RB2",
+    "ep": 395,
+    "points": 232,
+    "fit": true,
+    "inlier_frac": 0.2888,
+    "median_resid_inlier_px": 4.061
+   },
+   {
+    "src": "RB2",
+    "ep": 415,
+    "points": 226,
+    "fit": true,
+    "inlier_frac": 0.1504,
+    "median_resid_inlier_px": 5.096
+   },
+   {
+    "src": "RB2",
+    "ep": 431,
+    "points": 123,
+    "fit": true,
+    "inlier_frac": 0.439,
+    "median_resid_inlier_px": 3.252
+   },
+   {
+    "src": "RB2",
+    "ep": 489,
+    "points": 170,
+    "fit": true,
+    "inlier_frac": 0.3059,
+    "median_resid_inlier_px": 4.773
+   },
+   {
+    "src": "RB2",
+    "ep": 498,
+    "points": 152,
+    "fit": true,
+    "inlier_frac": 0.5395,
+    "median_resid_inlier_px": 3.839
+   },
+   {
+    "src": "RB2",
+    "ep": 517,
+    "points": 151,
+    "fit": true,
+    "inlier_frac": 0.4636,
+    "median_resid_inlier_px": 2.549
+   },
+   {
+    "src": "RB2",
+    "ep": 524,
+    "points": 178,
+    "fit": true,
+    "inlier_frac": 0.2697,
+    "median_resid_inlier_px": 7.493
+   },
+   {
+    "src": "RB2",
+    "ep": 598,
+    "points": 201,
+    "fit": true,
+    "inlier_frac": 0.2239,
+    "median_resid_inlier_px": 8.05
+   },
+   {
+    "src": "RB2",
+    "ep": 634,
+    "points": 187,
+    "fit": true,
+    "inlier_frac": 0.5508,
+    "median_resid_inlier_px": 3.098
+   },
+   {
+    "src": "RB2",
+    "ep": 774,
+    "points": 214,
+    "fit": true,
+    "inlier_frac": 0.3645,
+    "median_resid_inlier_px": 5.406
+   },
+   {
+    "src": "RB2",
+    "ep": 777,
+    "points": 280,
+    "fit": true,
+    "inlier_frac": 0.6036,
+    "median_resid_inlier_px": 3.115
+   },
+   {
+    "src": "RB2",
+    "ep": 803,
+    "points": 188,
+    "fit": true,
+    "inlier_frac": 0.6223,
+    "median_resid_inlier_px": 5.345
+   },
+   {
+    "src": "RB2",
+    "ep": 819,
+    "points": 72,
+    "fit": true,
+    "inlier_frac": 0.2083,
+    "median_resid_inlier_px": 5.372
+   },
+   {
+    "src": "RB2",
+    "ep": 850,
+    "points": 256,
+    "fit": true,
+    "inlier_frac": 0.7109,
+    "median_resid_inlier_px": 6.667
+   }
+  ]
+ },
+ "nominal_diag_sample1": {
+  "g": {
+   "n": 93,
+   "d_named_median": 51.3,
+   "d_named_p90": 136.17999999999998,
+   "d_other_median": 300.8
+  },
+  "o": {
+   "n": 22,
+   "d_named_median": 323.2,
+   "d_named_p90": 573.5300000000001,
+   "d_other_median": 57.3
+  },
+  "x": {
+   "n": 5,
+   "d_named_median": 230.9,
+   "d_named_p90": 397.72,
+   "d_other_median": 339.1
+  },
+  "n": {
+   "n": 14,
+   "d_named_median": 422.7,
+   "d_named_p90": 647.7900000000001,
+   "d_other_median": 419.55
+  },
+  "u": {
+   "n": 7,
+   "d_named_median": 186.0,
+   "d_named_p90": 432.0000000000001,
+   "d_other_median": 101.0
+  }
+ },
+ "sim_default_path": {
+  "G-default": {
+   "gate": "G-default",
+   "utc": "2026-09-26T05:30:00Z",
+   "a": "/data/harvest/r2/molmo/gdefault",
+   "b": "/data/harvest/r2/train",
+   "n": 3,
+   "bit_identical": 3,
+   "meta_keys_equal": 3,
+   "PASS": true
+  },
+  "G-x2": {
+   "gate": "G-x2",
+   "utc": "2026-09-26T05:29:08Z",
+   "a": "/data/harvest/r2/molmo/gx2",
+   "b": "/data/harvest/r2/train",
+   "n": 2,
+   "bit_identical": 2,
+   "meta_keys_equal": 2,
+   "PASS": true
+  }
+ },
+ "utc_collected": "2026-09-26T06:14:44Z"
+}
