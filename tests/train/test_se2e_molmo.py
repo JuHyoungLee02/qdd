@@ -98,6 +98,41 @@ def test_filter_episode_drops_arm_that_does_not_follow_its_end_effector():
     assert not any(kL2) and not any(kR2) and info2["fit"] is False
 
 
+def _nominal_episode(n=80, seed=3):
+    """Two arms' 'nominal' projections and pointings = nominal + a common episode offset + noise."""
+    rng = np.random.default_rng(seed)
+    s = np.linspace(0, 1, n)
+    nomL = np.stack([150 + 60 * s, 300 - 40 * s], 1)
+    nomR = np.stack([500 - 50 * s, 290 - 30 * s], 1)
+    off = np.array([-20.0, -70.0])
+    uvL = [tuple(p) for p in nomL + off + rng.normal(0, 8, (n, 2))]
+    uvR = [tuple(p) for p in nomR + off + rng.normal(0, 8, (n, 2))]
+    return nomL, nomR, off, uvL, uvR
+
+
+def test_episode_offset_recovers_common_shift():
+    nomL, nomR, off, uvL, uvR = _nominal_episode()
+    uvR[5] = uvL[5]  # a wrong-arm answer must not bias the offset
+    est, n = M.episode_offset(uvL, uvR, nomL, nomR)
+    assert np.allclose(est, off, atol=4.0) and n >= 140
+    none, n0 = M.episode_offset([None] * 80, [None] * 80, nomL, nomR)
+    assert none is None and n0 == 0
+
+
+def test_filter_nominal_side_and_gate():
+    nomL, nomR, off, uvL, uvR = _nominal_episode()
+    uvR[5] = uvL[5]  # "right" prompt answered on the left gripper -> wrong side, dropped; the left point stays
+    uvL[7] = None
+    uvL[9] = (uvL[9][0], uvL[9][1] - 200.0)  # far from both arms -> gate
+    kL, wL, kR, wR, info = M.filter_nominal(uvL, uvR, nomL, nomR)
+    assert wR[5] == "side" and kL[5] and wL[7] == "fail" and wL[9] == "gate"
+    assert sum(kL) == 78 and sum(kR) == 79
+    assert np.allclose(info["offset"], off, atol=4.0)
+    # no offset possible (no usable points): everything dropped with reason 'no_offset'
+    kL2, wL2, kR2, wR2, info2 = M.filter_nominal([None] * 80, [(1.0, 1.0)] * 80, nomL, nomR)
+    assert not any(kR2) and set(wR2) == {"no_offset"} and info2["offset"] is None
+
+
 def test_path_divergence():
     a = np.array([[0.0, 0.0], [10.0, 0.0], [20.0, 0.0]])
     b = np.array([[0.0, 0.0], [10.0, 7.0], [20.0, 0.0]])

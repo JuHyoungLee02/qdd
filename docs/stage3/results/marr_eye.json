@@ -1,0 +1,15 @@
+{
+ "_about": "Blind eye judgments (Claude, Read tool on /data/harvest/logs/marr/eye_sheet_00..11.jpg, 2026-09-26 06:03-06:12 UTC) of 144 Molmo2-ER gripper pointings on S-E2E head frames, made BEFORE reading any filter decision. Codes: g = on the named arm's gripper (fingers or body), o = on the other arm's gripper, x = elsewhere (object, arm link away from the gripper, person, background) while the named gripper is visible, n = the named gripper not visible (or no point with the gripper not visible), u = on a gripper whose arm identity could not be decided from the image (added during judging; counted as an error in the conservative rate). Arm identity was read from the image side and the arm chain the gripper hangs from (robot left = image left). Many RB1 grippers show only fingertips at the bottom edge, so single judgments are uncertain (see the results doc).",
+ "0": "u", "1": "u", "2": "g", "3": "g", "4": "n", "5": "o", "6": "u", "7": "u", "8": "n", "9": "g", "10": "g", "11": "g",
+ "12": "g", "13": "g", "14": "g", "15": "g", "16": "g", "17": "n", "18": "g", "19": "g", "20": "g", "21": "g", "22": "o", "23": "o",
+ "24": "o", "25": "g", "26": "n", "27": "g", "28": "n", "29": "o", "30": "o", "31": "n", "32": "g", "33": "g", "34": "g", "35": "o",
+ "36": "g", "37": "x", "38": "n", "39": "g", "40": "n", "41": "g", "42": "n", "43": "g", "44": "o", "45": "g", "46": "u", "47": "g",
+ "48": "n", "49": "o", "50": "x", "51": "g", "52": "x", "53": "o", "54": "o", "55": "n", "56": "n", "57": "n", "58": "n", "59": "g",
+ "60": "g", "61": "g", "62": "u", "63": "g", "64": "x", "65": "g", "66": "n", "67": "g", "68": "o", "69": "g", "70": "g", "71": "g",
+ "72": "x", "73": "g", "74": "g", "75": "g", "76": "g", "77": "g", "78": "o", "79": "g", "80": "g", "81": "g", "82": "g", "83": "g",
+ "84": "o", "85": "g", "86": "o", "87": "g", "88": "g", "89": "n", "90": "g", "91": "g", "92": "g", "93": "g", "94": "g", "95": "g",
+ "96": "g", "97": "g", "98": "g", "99": "g", "100": "g", "101": "g", "102": "g", "103": "g", "104": "g", "105": "g", "106": "g", "107": "o",
+ "108": "g", "109": "g", "110": "g", "111": "g", "112": "o", "113": "g", "114": "g", "115": "g", "116": "n", "117": "g", "118": "g", "119": "g",
+ "120": "g", "121": "u", "122": "o", "123": "o", "124": "g", "125": "g", "126": "o", "127": "g", "128": "g", "129": "g", "130": "g", "131": "g",
+ "132": "g", "133": "g", "134": "g", "135": "g", "136": "o", "137": "g", "138": "g", "139": "g", "140": "o", "141": "g", "142": "g", "143": "g"
+}

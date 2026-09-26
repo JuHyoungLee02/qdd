@@ -12,6 +12,8 @@ with Molmo2-ER ("point to the <left|right> robot gripper") on the head frames. T
   filter_points       F1 no point, F2 left/right points on the same spot, F3 temporal jump, F4 off the episode's DLT
                       (proprio disagreement); thresholds fixed in the plan before measurement
   path_divergence_px  directed Hausdorff distance between two image paths
+  filter_nominal      filter v2 (plan change 1, after v1 failed G-filter): side assignment and a gross gate against
+                      the nominal URDF head-camera projection of both arms plus a per-episode 2-D offset
 """
 from __future__ import annotations
 
@@ -151,6 +153,60 @@ def filter_episode(uv_l, X_l, uv_r, X_r, seed: int = 0):
                 for i in idx:
                     why[a][cand[i][1]] = "dlt_arm"
     return ([w == "ok" for w in why["l"]], why["l"], [w == "ok" for w in why["r"]], why["r"], info)
+
+
+# ---------------------------------------------------------------- filter v2 (change 1, after G-filter failed on v1)
+# The nominal URDF head-camera projection of the FK end effectors is ~50-100 px off in absolute terms (E-MA1 G0) but
+# keeps the two arms apart: on eye sample 1 correct pointings lay a median 51 px from the (episode-offset corrected)
+# nominal projection of the NAMED arm and 301 px from the other arm's; wrong-arm pointings the reverse (323 / 57 px).
+BORDER_PX = 12.0  # pointings this close to the border are clamps of an off-image gripper (not used for the offset)
+OFFSET_SEP_PX = 40.0
+GATE_PX = 150.0  # max distance to the named arm's corrected nominal projection (~ p90 of correct points, sample 1)
+W_IMG, H_IMG = 672, 376
+
+
+def _interior(p, border: float = BORDER_PX) -> bool:
+    return p is not None and border <= p[0] <= W_IMG - border and border <= p[1] <= H_IMG - border
+
+
+def episode_offset(uv_l, uv_r, nom_l, nom_r, sep: float = OFFSET_SEP_PX, iters: int = 2, min_n: int = 10):
+    """(2-D offset of the pointings from the nominal projection, number of points used) -- median of (point - named
+    nominal) over interior points clearly nearer (by > sep px, after the current offset) the named arm; None if
+    fewer than min_n such points."""
+    off, n = np.zeros(2), 0
+    pairs = ((uv_l, nom_l, nom_r), (uv_r, nom_r, nom_l))
+    for _ in range(iters):
+        d = []
+        for uv, na, nb in pairs:
+            for k, p in enumerate(uv):
+                if _interior(p) and math.dist(p, nb[k] + off) - math.dist(p, na[k] + off) > sep:
+                    d.append(np.asarray(p, float) - na[k])
+        n = len(d)
+        if n < min_n:
+            return None, n
+        off = np.median(np.asarray(d), 0)
+    return off, n
+
+
+def filter_nominal(uv_l, uv_r, nom_l, nom_r, gate: float = GATE_PX):
+    """Filter v2 for one episode: fail (no point) -> side (nearer the OTHER arm's corrected nominal projection) ->
+    gate (> gate px from the named arm's). 'no_offset' when the episode offset cannot be estimated.
+    Returns (keep_l, why_l, keep_r, why_r, info)."""
+    off, n = episode_offset(uv_l, uv_r, nom_l, nom_r)
+    out = {}
+    for arm, uv, na, nb in (("l", uv_l, nom_l, nom_r), ("r", uv_r, nom_r, nom_l)):
+        why = []
+        for k, p in enumerate(uv):
+            if p is None:
+                why.append("fail")
+            elif off is None:
+                why.append("no_offset")
+            else:
+                da, db = math.dist(p, na[k] + off), math.dist(p, nb[k] + off)
+                why.append("side" if db <= da else ("gate" if da > gate else "ok"))
+        out[arm] = ([w == "ok" for w in why], why)
+    info = {"offset": None if off is None else [float(v) for v in off], "n_offset": n}
+    return out["l"][0], out["l"][1], out["r"][0], out["r"][1], info
 
 
 def path_divergence_px(a, b) -> float:
