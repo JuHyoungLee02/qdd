@@ -212,3 +212,83 @@ def test_reanchor_after_deviate_resets_the_reference():
     assert s.step_outcome(pushed)[0] == "DEVIATE"
     s.reanchor(pushed)
     assert s.step_outcome(pushed)[0] == "OK"
+
+
+# ---------------------------------------------------------------- Task 19 fix 3 (ruling F19c): bias on the objects
+_SGN = {(1, 0): "plus_x", (1, 1): "plus_x_plus_y", (0, 1): "plus_y", (-1, 1): "minus_x_plus_y", (-1, 0): "minus_x",
+        (-1, -1): "minus_x_minus_y", (0, -1): "minus_y", (1, -1): "plus_x_minus_y", (0, 0): "none_xy"}
+
+
+def _follow(s, raw_of, pred_of, tcp, seconds, t0=0.0, until=None):
+    """Closed loop with a perfect arm (the TCP follows the command); each 0.33 s the decision is the sign of the
+    remaining motion toward the skill's own (biased) sub-goal, phase next, so only the skill's switches matter."""
+    from harvest.labels_v2 import _delta, _motion
+    tcp = np.asarray(tcp, float).copy()
+    for i in range(int(round(seconds * 100))):
+        t = t0 + i * 0.01
+        g = tcp - [0, 0, TZ]
+        raw, pred = raw_of(g), pred_of(t)
+        if i % 33 == 0:
+            rel = {k: np.asarray(o["pos"], float) - g + s.bias for k, o in raw["objs"].items()}
+            from harvest.labels_v2 import gripper_state
+            M = _motion(s.stage, gripper_state(pred), rel)
+            d = _delta(M, float(g[2]), rel) if M != "wait" else np.zeros(3)
+            sg = [0 if abs(x) < 0.005 else int(np.sign(x)) for x in d]
+            s.begin_slot(i // 33, {"dir_xy": _SGN[(sg[0], sg[1])], "dir_z": {1: "up", -1: "down", 0: "none_z"}[sg[2]],
+                                   "mag_coarse": "xlarge", "phase": "next",
+                                   "target": "o5" if M in ("carry", "place") else "o3"})
+        cmd = s.tick(t, raw, pred, tcp, TZ)
+        tcp = cmd.pos_w.copy()
+        if until is not None and s.phase == until:
+            break
+    return tcp
+
+
+def test_xy_bias_during_approach_still_reaches_the_grasp():
+    """F19c (1): with a 2 cm xy bias (> ALIGN_XY_M 1.5 cm) the sub-phase switch sees the biased mug, so the skill
+    descends and closes above mug + bias (the unbiased switch stayed in approach forever)."""
+    s, tcp = _skill()
+    s.bias = np.array([0.0, 0.02, 0.0])
+    tcp = _follow(s, lambda g: _raw(g), lambda t: OPEN, tcp, 8.0, until="close")
+    assert s.phase == "close"
+    np.testing.assert_allclose(tcp[:2], [0.40, -0.20 + 0.02], atol=0.011)
+
+
+def test_xy_bias_during_lift_does_not_drift():
+    """F19c (2): lift holds the tip's xy (goal xy = tip xy); a 5 mm bias added to d moved the goal with the tip."""
+    g0 = np.array([0.40, -0.20, 0.10])
+    s = PickPlaceSkill(dt=0.01)
+    tcp = g0 + [0, 0, TZ]
+    s.reset(0.0, tcp, [1, 0, 0, 0])
+    s.bias = np.array([0.005, 0.0, 0.0])
+    hold = {**HOLD, "lifted(o3)": False}
+    out = _follow(s, lambda g: _raw(g, mug=(g[0], g[1], g[2] - 0.03)), lambda t: hold, tcp, 1.0)
+    assert s.phase == "lift" and abs(out[0] - tcp[0]) < 1e-9 and abs(out[1] - tcp[1]) < 1e-9
+    assert out[2] > tcp[2] + 0.05
+
+
+def test_xy_bias_during_retreat_reaches_done():
+    """F19c (2): retreat is tip-held in xy too; a 1.5 cm bias left |d_xy| >= the dead band and done never fired."""
+    s = PickPlaceSkill(dt=0.01)
+    g0 = np.array([0.45, -0.05, 0.08])
+    tcp = g0 + [0, 0, TZ]
+    s.reset(0.0, tcp, [1, 0, 0, 0])
+    s.stage, s.phase = "S2", "retreat"
+    s.bias = np.array([0.015, 0.0, 0.0])
+    _follow(s, lambda g: _raw(g, mug=(0.45, -0.05, 0.0625)), lambda t: OPEN, tcp, 4.0)
+    assert s.phase == "done"
+
+
+def test_nudge_bias_stays_within_the_grasp_floor():
+    """F19c minor: nudge clips z at the grasp floor, so the bias records only the motion actually kept."""
+    s = PickPlaceSkill(dt=0.01)
+    mug = (0.40, -0.20, 0.0475)
+    g = np.array([0.40, -0.20, 0.0475 + 0.0475 - 0.018])  # grasp height, aligned
+    tcp = g + [0, 0, TZ]
+    s.reset(0.0, tcp, [1, 0, 0, 0])
+    s.begin_slot(0, {**DEC, "dir_xy": "none_xy", "dir_z": "none_z", "phase": "continue"})
+    s.tick(0.0, _raw(g, mug=mug), OPEN, tcp, TZ)
+    floor = TZ + 0.0475 + 0.0475 - 0.018 - 0.003
+    z0 = s.cmd_pos[2]
+    s.nudge([0.0, 0.0, -0.02, 0.0, 0.0, 0.0], TZ)
+    assert s.cmd_pos[2] == pytest.approx(floor) and s.bias[2] == pytest.approx(floor - z0)

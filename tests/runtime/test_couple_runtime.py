@@ -14,9 +14,12 @@ from .fakeworld import FakeWorld
 
 FRAME = np.full((12, 16, 3), 60, np.uint8)
 # the VLA fast check is Task 7's test; here the offset must run in full. Plan Task 19: the same for the canon §91
-# reconciliation -- it drops / holds edits whose world moved on (in the modular FakeWorld the first edit, judged in
-# approach, arrives in descend -> changed; a later one meets the skill heading back to its absolute target ->
-# conflict), so the offset-mechanics tests run its log-only arm (tests/couple/test_reconcile.py covers the verdicts)
+# reconciliation -- it drops edits whose world moved on: in the modular FakeWorld these tests' first edit, judged in
+# approach, arrives in descend -> changed / segment, so their two-agreeing-edit scripts would confirm nothing. The
+# offset-mechanics tests therefore run its log-only arm (tests/couple/test_reconcile.py covers the verdicts;
+# test_modular_skill_keeps_the_offset_with_reconciliation_on the modular path with it on). The phantom `conflict`
+# once listed here is gone since the skill keeps the bias (Task 19 fix F19 I2 / F19c; re-checked with NO_RECON = {}:
+# the remaining failures are only the changed / segment first edit).
 NO_RECON = {"reconcile_apply": False}
 NO_FAST = {"contra_steps": 10 ** 6, **NO_RECON}
 

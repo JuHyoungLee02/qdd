@@ -107,6 +107,7 @@ class PickPlaceSkill:
         self.events: list = []
         self._t_hold = None  # last tick with holding(o3) measured true (debounce)
         self.bias = np.zeros(3)  # sum of the Astra offset translations applied by nudge (plan Task 19 fix F19 I2)
+        self._floor_z = None  # the last tick's grasp floor (nudge keeps cmd_pos and the bias above it, F19c)
 
     # ------------------------------------------------------------------ decisions
     def begin_slot(self, ds: int, dec: dict) -> None:
@@ -166,15 +167,18 @@ class PickPlaceSkill:
             self._set_phase("approach", t, "object_lost")
             self.wait_until = t + OPEN_WAIT_S
             return self._cmd(t, "wait", False)
-        M = _motion(self.stage, gs, rel) if {"o3", "o5"} <= set(rel) else "wait"
-        d = _delta(M, float(g[2]), rel, hm, hr) if M != "wait" else np.zeros(3)
-        if M != "wait":  # the sub-goal shifted by the Astra offset so far (F19 I2: else the skill pulls it back)
-            d = d + self.bias
+        # the Astra offset so far shifts the OBJECT positions the skill steers by (plan Task 19 fix F19 I2 / fix 3
+        # F19c): the sub-phase switches see the biased target and lift / retreat keep the tip's xy (a bias added to
+        # d moved their goal with the tip); the grasp floor below stays on the measured mug (safety)
+        rb = {k: v + self.bias for k, v in rel.items()} if np.any(self.bias) else rel
+        M = _motion(self.stage, gs, rb) if {"o3", "o5"} <= set(rel) else "wait"
+        d = _delta(M, float(g[2]), rb, hm, hr) if M != "wait" else np.zeros(3)
         floor_z = None
         if M == "grasp":  # code safety floor: TCP not below the planner's grasp height - 3 mm (R5 smokes: the
             # finger-mid goal alone sank the gripper body onto the rim; the pool's grasps sat 7.8 mm above the goal)
             floor_z = table_z + float(g[2] + rel["o3"][2]) + hm - GRASP_BELOW_TOP_M - GRASP_FLOOR_M
         at_floor = floor_z is not None and tcp_pos_w[2] <= floor_z + 0.002
+        self._floor_z = floor_z
         reached = bool(np.all(np.abs(d[:2]) < DEADBAND_M) and (abs(d[2]) < DEADBAND_M or at_floor))
         self._label(M, gs, t)
         ph = self.dec.get("phase")
@@ -187,7 +191,7 @@ class PickPlaceSkill:
                 return self._cmd(t, "close", False)
             if (self.stage == "S1" and pred.get("holding(o3)") and pred.get("lifted(o3)")
                     and self.stage_gate == "self" and self._gate("stage", t)):
-                d = d - self._enter_s2(t)  # this tick's sub-goal without the cleared bias too
+                self._enter_s2(t)
                 self._set_phase("carry", t, "next+exit_S1")
             elif (self.stage == "S2" and gs == "closed_holding" and M == "place"
                   and (pred.get("in_contact(o3,o5)") or reached) and self._gate("release", t)):
@@ -233,16 +237,19 @@ class PickPlaceSkill:
     def nudge(self, step6, table_z: float):
         """One tick of the Astra offset (couple.offset): the reference itself moves (the skill goes on from the shifted
         point and M4 (b) compares the measured TCP with it); rotation turns cmd_quat (the skill slerps it back). The
-        clipped translation also accumulates in self.bias, which shifts the skill's sub-goal (tick: d + bias) so the
-        skill does not pull the reference back to its object-derived goal (plan Task 19 fix F19 I2; zeroed by reset,
+        clipped translation also accumulates in self.bias, which shifts the object positions the skill steers by
+        (tick: rel + bias, fix 3 F19c) so the skill does not pull the reference back to its object-derived goal; z is
+        clipped at the last tick's grasp floor too, so the bias holds only what was kept (plan Task 19 fix F19 I2;
+        zeroed by reset,
         reanchor and the S1 -> S2 stage change, fix 2 F19b -- phase changes inside a stage keep it)."""
         from ..couple.geom import quat_from_rotvec, quat_mul
         s = np.asarray(step6, float)
         p = self.cmd_pos + s[:3]
         old = self.cmd_pos
         self.cmd_pos = np.array([np.clip(p[0], *WS_X), np.clip(p[1], *WS_Y),
-                                 np.clip(p[2], table_z + WS_Z[0], table_z + WS_Z[1])])
-        self.bias = self.bias + (self.cmd_pos - old)  # the clipped translation, kept in the sub-goal (tick)
+                                 np.clip(p[2], max(table_z + WS_Z[0], self._floor_z if self._floor_z is not None
+                                                   else -np.inf), table_z + WS_Z[1])])
+        self.bias = self.bias + (self.cmd_pos - old)  # the clipped translation, kept on the objects (tick)
         if np.any(s[3:]):
             self.cmd_quat = quat_mul(quat_from_rotvec(s[3:]), self.cmd_quat)
         return self.cmd_pos.copy(), self.cmd_quat.copy()
