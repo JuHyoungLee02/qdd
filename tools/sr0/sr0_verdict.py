@@ -184,7 +184,7 @@ def decide(a_xy: dict, a_z: dict, rho: dict) -> dict:
 
 
 def load(path: str, n_expect: int, grip: bool) -> list:
-    """'snap' records in file order; checks: summary present with n = n_expect = records, no 'skip', unique keys, every
+    """'snap' records in file order; checks: summary present with n = n_expect = records, no 'skip', unique snapshot ids, every
     condition present, finite values."""
     want = set(cond_names(grip))
     snaps, summ, skips = [], None, 0
@@ -197,12 +197,12 @@ def load(path: str, n_expect: int, grip: bool) -> list:
             skips += 1
         elif ev == "snap":
             snaps.append(r)
-    keys = [s["key"] for s in snaps]
+    keys = [s["id"] for s in snaps]  # the sample id: R2 stage-B keys repeat across folders (prereg §8 change 1)
     if summ is None or summ.get("n") != n_expect or len(snaps) != n_expect or skips:
         raise SystemExit(f"{path}: {len(snaps)} snaps, {skips} skips, summary n {summ and summ.get('n')} "
                          f"!= expected {n_expect}")
     if len(set(keys)) != len(keys):
-        raise SystemExit(f"{path}: duplicate keys")
+        raise SystemExit(f"{path}: duplicate snapshot ids")
     for s in snaps:
         if set(s["c"]) != want:
             raise SystemExit(f"{path} {s['key']}: conditions {sorted(set(s['c']) ^ want)} differ")
@@ -240,7 +240,7 @@ def main(argv=None):
     ap.add_argument("--boot", type=int, default=10000)
     a = ap.parse_args(argv)
     s1, s2 = (load(p, a.n_se2e, False) for p in a.se2e)
-    if [x["key"] for x in s1] != [x["key"] for x in s2]:
+    if [x["id"] for x in s1] != [x["id"] for x in s2]:
         raise SystemExit("se2e: the two seeds are not on the same snapshots in the same order")
     r2 = load(a.r2, a.n_r2, True)
     st = {"se2e_s1": [snap_stats(x, False) for x in s1], "se2e_s2": [snap_stats(x, False) for x in s2],

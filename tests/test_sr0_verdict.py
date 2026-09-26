@@ -43,7 +43,7 @@ def _snap(key="k0", follow=True, lab=LAB, grip=False, amp=0.01, base=(0.004, 0.0
         if n == "pid:open":
             g1 = 1.0 if follow else 0.0
         c[n] = [float(d[0]), float(d[1]), float(d[2]), 0.5, g1, 0.01 if n != "flip" else 0.02]
-    return {"event": "snap", "key": key, "labels": dict(lab), "preds": dict(lab), "disp_gt": [0.01, 0.0, 0.0],
+    return {"event": "snap", "id": key, "key": key, "labels": dict(lab), "preds": dict(lab), "disp_gt": [0.01, 0.0, 0.0],
             "c": c}
 
 
@@ -130,6 +130,12 @@ def test_load_checks_count_duplicates_and_conditions(tmp_path):
     _write(p, [_snap("a"), _snap("a")])
     with pytest.raises(SystemExit):
         V.load(str(p), n_expect=2, grip=False)
+    # R2 (prereg §8 change 1): the stage-B key <kind>_ep<seed>_k<k> repeats across variant / task folders; the
+    # snapshot identity is the sample id (S-E2E: id = key)
+    a, b = _snap("a"), _snap("b")
+    b["key"] = "a"
+    _write(p, [a, b])
+    assert [s["id"] for s in V.load(str(p), n_expect=2, grip=False)] == ["a", "b"]
     s = _snap("a")
     del s["c"]["mag:large"]
     _write(p, [s, _snap("b")])
