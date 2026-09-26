@@ -114,7 +114,7 @@ def noisy_depth(r: dict, out_dir: str, preset: str) -> tuple:
 
 def build(root: str, out_dir: str, split: str, fmt: str = "v2", tags: bool = False, seed: int = 0,
           repeats: bool | None = None, aux: bool = True, depth_noise: str | None = None,
-          self_lift: bool = False) -> dict:
+          self_lift: bool = False, manifest=None) -> dict:
     """depth_noise: None (perfect simulator depth) or a depth_noise.PRESETS name -> every row's depth_path points to
     a noisy copy (track D against realistic depth; the images and answers are unchanged)."""
     if fmt not in FORMATS:
@@ -123,6 +123,11 @@ def build(root: str, out_dir: str, split: str, fmt: str = "v2", tags: bool = Fal
     repeats = (split == "train") if repeats is None else repeats
     arm = PT_ARM[fmt]
     dirs = episode_dirs(root)
+    if manifest is not None:  # a frozen bundle: only its episodes (relative paths to root)
+        keep = {os.path.normpath(os.path.join(root, p)) for p in manifest}
+        dirs = [d for d in dirs if os.path.normpath(d) in keep]
+        if len(dirs) != len(keep):
+            raise ValueError(f"manifest: {len(keep) - len(dirs)} episodes missing under {root}")
     base = [r for d in dirs for r in load_rows(d, split)]
     rng = np.random.default_rng([seed, PD.ARMS.index(arm)])
     sfx = ("_tags" if tags else "") + ("_lift" if self_lift else "")

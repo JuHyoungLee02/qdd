@@ -98,6 +98,17 @@ def test_self_lift_line(root, fmt):
     assert plain["control_unique"] == len({r["id"] for r in rows})
 
 
+def test_manifest_restricts_the_episodes(root):
+    m = ["standard_tz0.850/mug_tray_s30001"]
+    c = D.build(str(root / "collect" / "train"), str(root / "data_man"), "train", "v2", manifest=m)
+    assert c["episodes"] == 1
+    rows = _rows(root / "data_man" / "train_v2.jsonl")
+    assert rows and {r["seed"] for r in rows} == {30001}
+    with pytest.raises(ValueError):
+        D.build(str(root / "collect" / "train"), str(root / "data_man2"), "train", "v2",
+                manifest=m + ["standard_tz0.850/mug_tray_s39999"])
+
+
 def test_split_guards():
     with pytest.raises(ValueError):
         D.check_row({"seed": 70001, "variant": "standard"}, "train")
