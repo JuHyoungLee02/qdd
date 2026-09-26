@@ -23,7 +23,7 @@ LOST = {"gripper_open": False, "holding(o3)": False, "lifted(o3)": False}  # T1 
 
 
 def test_format_version_bumped():
-    assert SERIALIZER_VERSION == "ser-A-min-2"
+    assert SERIALIZER_VERSION == "ser-A-min-3"
 
 
 def test_pool_lines_get_the_post_step_category_from_their_own_recorded_predicates():
@@ -76,17 +76,17 @@ def test_stage_a_prompt_config_records_the_format_and_old_runs_are_refused(tmp_p
     from harvest.eval import common as C
     from harvest.train.stagea_train import prompt_config
     pc = prompt_config([{"image": "x.jpg"}], SimpleNamespace(state="S1", step_cm=0.1))
-    assert pc["serializer"] == "ser-A-min-2"
+    assert pc["serializer"] == "ser-A-min-3"
     run = tmp_path / "run"
     (run / "adapter").mkdir(parents=True)
     (run / "adapter" / "adapter_config.json").write_text("{}")
     old = {k: v for k, v in pc.items() if k != "serializer"}
     old["files_sha"] = {"harvest/deccall_snap.py": "000000000000"}
     (run / "config.json").write_text(json.dumps({"prompt_config": old}))
-    with pytest.raises(ValueError, match="ser-A-min-2"):
+    with pytest.raises(ValueError, match="ser-A-min-3"):
         C.training_prompt_config(str(run / "adapter"))
     (run / "config.json").write_text(json.dumps({"prompt_config": pc}))
-    assert C.training_prompt_config(str(run / "adapter"))["serializer"] == "ser-A-min-2"
+    assert C.training_prompt_config(str(run / "adapter"))["serializer"] == "ser-A-min-3"
 
 
 def test_fused_check_prompt_refuses_an_old_stage_b_checkpoint_with_a_clear_message():

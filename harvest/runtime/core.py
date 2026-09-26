@@ -34,7 +34,7 @@ from .astra_hb import EFFORT, HB_PROMPT_ID, MAX_OUT, HeartbeatScheduler, heartbe
 from .clock import DeliveryQueue
 from .m4 import CommitLedger, M4Params, Vote
 from .measure import Critic, HardChannel, ProprioRules, VerifyCal, expected_check, measure, values
-from .models import DECISION_QUESTIONS, build_live_request, fused_state_text, jpeg_bytes
+from .models import build_live_request, decision_questions, fused_state_text, jpeg_bytes
 from .reqhash import json_blob, request_body, request_hash
 from .skills import PickPlaceSkill, apply_residual, residual_hook_zero
 
@@ -121,6 +121,8 @@ class RuntimeConfig:
     couple_ledger: str = ""  # JSONL cost ledger under /data, shared by the workers of one experiment
     couple_prices: str = ""  # the run day's price table (required with the paid API)
     couple_run_id: str = ""
+    motion_bins: dict | None = None  # checkpoint prompt_config["motion"] (canon §83); None = unknown line
+    motion_window_s: float = 0.1  # 1 / the checkpoint data rate
 
 
 def _pct(xs, q):
@@ -166,7 +168,15 @@ class OursRuntime:
     # ------------------------------------------------------------------ lifecycle
     def reset(self) -> None:
         p = M4Params(**self.cfg.m4)
-        self.ledger = CommitLedger(p, DECISION_QUESTIONS)
+        # canon §87: the fused backend also commits the gripper intent (close / open / keep); modular: 5 questions
+        self.questions = decision_questions(self.cfg.backend)
+        self.ledger = CommitLedger(p, self.questions)
+        from ..serialize import SEGMENT_UNKNOWN
+        from .motion import MotionTracker
+        self.motion = MotionTracker(self.cfg.motion_bins, self.cfg.motion_window_s)  # canon §83
+        # canon §90 segment-intent line: Astra's agreed segment plan (set by the coupling in a later task); unknown
+        # until set -- never the skill's own phase (that would be a privileged input the VLA must not rely on)
+        self.segment_intent = SEGMENT_UNKNOWN
         self.q = DeliveryQueue(self.cfg.clock, wall=self.wall)
         self.skill = PickPlaceSkill(dt=self.dt)
         self.hb = HeartbeatScheduler(self.cfg.hb_N_s, self.cfg.hb_timeout_s, budget=self.cfg.hb_budget,
@@ -351,17 +361,21 @@ class OursRuntime:
         sk = self.skill
         s0 = self._s0(now, pred, present, support)
         ls = self.b_line()
-        req, shown = build_live_request(slots[0], sk.phase, s0, present, raw, last_step=ls)
+        mline, seg = self.motion.line(), self.segment_intent  # canon §83 / §90 (ser-A-min-3)
+        req, shown = build_live_request(slots[0], sk.phase, s0, present, raw, last_step=ls, motion=mline,
+                                        segment=seg, questions=self.questions)
         ctx = {"t_state": now, "ds": slots[0], "slots": slots, "epoch": self.ledger.epoch, "phase": sk.phase,
                "req": req, "shown": shown, "images": {k: v.copy() for k, v in self.frames.items()},
-               "joint_pos": np.asarray(obs["joint_pos"], float).copy(), "last_step": ls}
+               "joint_pos": np.asarray(obs["joint_pos"], float).copy(), "last_step": ls, "motion": mline,
+               "segment": seg}
         if self.cfg.backend == "fused":  # canon §58: no S1 coordinates in the fused model's input
             from ..serialize import canonicalize
             from ..train.stageb_data import image_only_state
             ctx["privileged_s1"] = req["state"]  # used by the MOCK fused model only (flagged in its meta)
             # the stage-B prompt_config state IMG: the DecCall items and the context prompt carry the same text
-            ctx["req"], _ = build_live_request(slots[0], sk.phase, s0, present, raw, state="IMG", last_step=ls)
-            ctx["ctx_text"] = canonicalize(image_only_state(s0))
+            ctx["req"], _ = build_live_request(slots[0], sk.phase, s0, present, raw, state="IMG", last_step=ls,
+                                               motion=mline, segment=seg, questions=self.questions)
+            ctx["ctx_text"] = canonicalize(image_only_state(s0) + "\n" + seg + "\n" + mline)
             ctx["proprio_text"] = fused_state_text(self.instruction, sk.stage, sk.phase, obs["joint_pos"])  # log only
         return ctx
 
@@ -387,7 +401,7 @@ class OursRuntime:
         self.n_hb += 1
         template, allowed, pid = prompt_for(self.cfg.hb_mode, kind)
         sk, L = self.skill, self.ledger
-        dec = {k: L.decision(k, self.cur_k, now)[0] for k in DECISION_QUESTIONS} if self.cur_k is not None else {}
+        dec = {k: L.decision(k, self.cur_k, now)[0] for k in self.questions} if self.cur_k is not None else {}
         outs = [s.get("outcome") for s in self.slots_log[-6:-1]]
         mv = values(self.meas_last) if self.meas_last is not None else {}  # measured facts (canon §64), not oracle
         facts = {"holding(o3)": mv.get("holding_t"), "lifted_holding(o3)": mv.get("lifted_holding"),
@@ -594,6 +608,7 @@ class OursRuntime:
         if self._t_jp is not None and now > self._t_jp + 1e-12:
             self._jp_prev, self._t_prev = self._jp_last, self._t_jp
         self._jp_last, self._t_jp = jp.copy(), now
+        self.motion.add(now, jp[:7], jp[7])
         proprio = {"width": float(jp[7]), "grip_effort": float(raw["grip"].get("effort", 0.0)),
                    "tcp_z": float(tcp_p[2] - tz)}
         v = self.v1h_last
@@ -629,7 +644,7 @@ class OursRuntime:
         for r in got:
             self._deliver(r, now)
         if got:
-            for qq in DECISION_QUESTIONS:
+            for qq in self.questions:
                 self.ledger.try_commit_prefix(qq, now, near=self.near_now)
         # decision-step boundary
         k = int(math.floor(now / self.cfg.T_c + 1e-9))
@@ -652,7 +667,7 @@ class OursRuntime:
         if self.ledger.p.agree == "stream" and not self.hold_step:
             # C2 VLM Stream (M4 §5 :332 "매 틱 … 가장 새 유효 응답 하나의 보기를 그대로 적용", canon §74): a newer
             # answer (or the 5 s timeout -> default action) changes the running step's decisions at this tick
-            dec = {q: c for q in DECISION_QUESTIONS if (c := self.ledger.decision(q, self.cur_k, now)[0]) is not None}
+            dec = {q: c for q in self.questions if (c := self.ledger.decision(q, self.cur_k, now)[0]) is not None}
             if dec != self.skill.dec:
                 self.skill.redecide(dec)
         if self.driver is not None:
@@ -660,7 +675,7 @@ class OursRuntime:
             self.couple_out = self.driver.tick(TickView(
                 now=now, dt=self.dt, tcp_p=np.asarray(tcp_p, float), phase=self.skill.phase, stage=self.skill.stage,
                 near=self.near_now, committed={q: c for q, c in self.skill.dec.items() if c is not None},
-                frames=self.frames, cams=obs.get("cams"), t1=self._t1(), motion=None))
+                frames=self.frames, cams=obs.get("cams"), t1=self._t1(), motion=self.motion.line()))
             self._advance_play_clock(now)  # before a chunk request of this tick records the lag at its observation
         if self.cfg.backend == "fused":
             self._maybe_request_chunk(now, obs)
@@ -719,7 +734,7 @@ class OursRuntime:
                 self.skill.reanchor(tcp_p)
             if sig["early_call"]:
                 self.early = True
-            for qq in DECISION_QUESTIONS:
+            for qq in self.questions:
                 self.ledger.try_commit_prefix(qq, now, near=self.near_now)
         decs = self.ledger.mark_executed(k, now)
         dec = {} if self.hold_step else {q: c for q, (c, st) in decs.items() if c is not None}
@@ -791,7 +806,7 @@ class OursRuntime:
         if kn in self.chunk_req or now < self.ledger.t_start(kn) - self.cfg.chunk_lead_s - 1e-9:
             return
         self.chunk_req.add(kn)
-        dec = {q: self.ledger.decision(q, kn, now) for q in DECISION_QUESTIONS}
+        dec = {q: self.ledger.decision(q, kn, now) for q in self.questions}
         committed = {q: c for q, (c, st) in dec.items() if c is not None}
         from ..serialize import canonicalize
         from ..train.stageb_data import image_only_state
@@ -800,7 +815,8 @@ class OursRuntime:
                "joint_pos_prev": None if self._jp_prev is None else self._jp_prev.copy(),
                "dt_prev": None if self._t_prev is None else now - self._t_prev,
                "images": {k: v.copy() for k, v in self.frames.items()}, "phase": self.skill.phase,
-               "ctx_text": canonicalize(image_only_state(self._s0(now, l1[2], l1[1], l1[3]))),
+               "ctx_text": canonicalize(image_only_state(self._s0(now, l1[2], l1[1], l1[3])) + "\n"
+                                        + self.segment_intent + "\n" + self.motion.line()),
                "text": fused_state_text(self.instruction, self.skill.stage, self.skill.phase, obs["joint_pos"])}
         model, cfg = self.model, self.cfg
 

@@ -63,7 +63,9 @@ PROPRIO_IN_DIM = PROPRIO_DIM + len(PROPRIO_KEYS)  # expert proprio input: normal
 #                /data/harvest/tmp/r7fix/grip_range.json. Teleop commands reach -0.46 .. 1.34 -> clipped.
 GRIP_CAL = {"sim_width_m": (GRIP_MAX_W, 0.0), "RB1": (0.0, 1.10), "RB2": (0.0, 1.14)}
 GRIP_SPACE = "open01@v1"  # recorded in ActionNorm / stageb.json: expert gripper dims are openness (runtime maps back)
-QUESTIONS = ("dir_xy", "dir_z", "mag_coarse", "target", "phase")  # = stagea_data.QUESTIONS
+# = stagea_data.QUESTIONS + the canon §87 gripper decision (ser-A-min-3), appended: expert decision slots 0-4 unchanged,
+# slot 5 = gripper (close / open / keep) conditions the expert's gripper like the other committed decisions
+QUESTIONS = ("dir_xy", "dir_z", "mag_coarse", "target", "phase", "gripper")
 CAMS = {"right": "cam_wrist_right", "left": "cam_wrist_left"}
 # auxiliary geometry (privileged sim state; meters / binary). "tgt" = the stage target object, "goal" = the
 # sub-phase goal point of labels_v2 (§54), "place" = the placement object.
@@ -375,8 +377,10 @@ def make_sample(row: dict, line: dict | None, items: list, state: str = "IMG", w
     arm = row.get("arm", "right")
     ctx = None
     if line is not None:
-        from ..jevcall import canonicalize  # the same state string the DecCall items carry
-        ctx = {"text": canonicalize(prompt_state(line, state)), "images": images_of(line, arm, wrist, image_root)}
+        from ..deccall_snap import motion_of, segment_of
+        from ..jevcall import canonicalize  # the same state string the DecCall items carry (up to last_step)
+        ctx = {"text": canonicalize(prompt_state(line, state) + "\n" + segment_of(line) + "\n" + motion_of(line)),
+               "images": images_of(line, arm, wrist, image_root)}
     return {"key": f"{row['kind']}_ep{row['seed']}_k{row['k']}", "split": items[0]["split"] if items else
             (line or {}).get("split"), "items": items, "context": ctx, "committed": committed,
             "skill_id": row["skill_id"], "phase_id": row["phase_id"], "proprio": proprio,
@@ -420,7 +424,7 @@ def load_stageb(pool_dir: str, rows_path: str | None = None, labels_v2: str | No
                 continue
             items = []
             if src is not None and ln.get("decision"):
-                items = build_items([ln], src, lambda x: prompt_state(x, state), 0, dev_val_seeds)
+                items = build_items([ln], src, lambda x: prompt_state(x, state), 0, dev_val_seeds, QUESTIONS)
                 ims = images_of(ln, row.get("arm", "right"), wrist, pool_dir)
                 for it in items:
                     it["images"] = ims

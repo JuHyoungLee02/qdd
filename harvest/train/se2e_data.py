@@ -35,7 +35,7 @@ import zlib
 
 import numpy as np
 
-from ..jevcall import DIR_XY, DIR_Z, MAG, build_choice
+from ..jevcall import DIR_XY, DIR_Z, GRIPPER, MAG, build_choice
 from ..clients.jevl import question_text
 from ..labels_v2 import dir_xy_label, dir_z_label, mag_label
 
@@ -47,11 +47,16 @@ MOVE_MIN_M = 0.02
 ARM_NAMES = {a: [f"arm_{a[0]}_joint{i}" for i in range(1, 8)] + [f"gripper_{a[0]}_joint1"] for a in ("left", "right")}
 FEATURE_NAMES_16 = ARM_NAMES["left"] + ARM_NAMES["right"]
 FEATURE_NAMES_19 = FEATURE_NAMES_16 + ["head_joint1", "head_joint2", "lift_joint"]
-QUESTIONS = ("dir_xy", "dir_z", "mag_coarse")
-_OPTS = {"dir_xy": DIR_XY, "dir_z": DIR_Z, "mag_coarse": MAG}
+QUESTIONS = ("dir_xy", "dir_z", "mag_coarse")  # the heuristic motion labels (E-TC transition strata read these)
+# ser-A-min-3 (canon §87): the stage-B items also ask the gripper decision, labelled from the recorded gripper
+# command (gripper_label, harvest.intent.from_openness)
+ITEM_QUESTIONS = QUESTIONS + ("gripper",)
+_OPTS = {"dir_xy": DIR_XY, "dir_z": DIR_Z, "mag_coarse": MAG, "gripper": GRIPPER}
 _QTEXT = {"dir_xy": "Which horizontal direction should the active gripper move during the next {w:.2f} s?",
           "dir_z": "Which vertical direction should the active gripper move during the next {w:.2f} s?",
-          "mag_coarse": "How far should the active gripper move during the next {w:.2f} s?"}
+          "mag_coarse": "How far should the active gripper move during the next {w:.2f} s?",
+          "gripper": "Should the active gripper close (grasp), open (release), or keep its state during the next "
+                     "{w:.2f} s?"}
 
 
 # ------------------------------------------------------------------------------------------ kinematics
@@ -146,6 +151,37 @@ def decision_labels(delta) -> dict:
     return {"dir_xy": dir_xy_label(delta), "dir_z": dir_z_label(delta), "mag_coarse": mag_label(delta)}
 
 
+def gripper_label(row: dict) -> str | None:
+    """canon §87 gripper decision of a row from its recorded gripper JOINT COMMAND (action_exec dim 7) over the
+    decision-label window (label_steps, the direction labels' 1/3 s): openness (stageb_data.GRIP_CAL of the row's
+    dataset) at k and k + label_steps -> harvest.intent.from_openness. None (not derivable) for a row without the
+    label window fields (episode_rows always writes them)."""
+    from ..intent import from_openness
+    from .stageb_data import grip_open01, grip_source
+    if "label_steps" not in row or "label_window_s" not in row:
+        return None
+    n, a = int(row["label_steps"]), row["action_exec"]
+    if not 0 < n < len(a):
+        raise ValueError(f"label_steps {n}: needs 0 < n < chunk length {len(a)}")
+    src = grip_source(row)
+    return from_openness(grip_open01(a[0][7], src), grip_open01(a[n][7], src), float(row["label_window_s"]))
+
+
+def segment_lines(rows: list) -> dict:
+    """canon §90 segment-intent line of every row, per episode (kind, seed) in frame order, from the rows' gripper
+    labels (harvest.intent.segments_from_events). {row key: line}."""
+    from ..intent import segments_from_events
+    by = {}
+    for r in rows:
+        by.setdefault((r["kind"], r["seed"]), []).append(r)
+    out = {}
+    for ep in by.values():
+        ep = sorted(ep, key=lambda r: r["k"])
+        for r, s in zip(ep, segments_from_events([gripper_label(r) for r in ep])):
+            out[f"{r['kind']}_ep{r['seed']}_k{r['k']}"] = s
+    return out
+
+
 def _travel(p):
     p = np.asarray(p, float)
     return float(np.linalg.norm(np.diff(p, axis=0), axis=1).sum()) if len(p) > 1 else 0.0
@@ -222,7 +258,7 @@ def context_text(row: dict) -> str:
 
 def decision_items(committed: dict, ctx: str, split: str, key: str, window_s: float) -> list:
     out = []
-    for q in QUESTIONS:
+    for q in ITEM_QUESTIONS:
         if committed.get(q) is None:
             continue
         qid, spec = build_choice(f"se2e.{q}@v1", _QTEXT[q].format(w=window_s), _OPTS[q])
@@ -244,17 +280,24 @@ def load_se2e(rows_path: str, image_root: str = "", labels: bool = True, wrist: 
               hz: int | None = None) -> list:
     """Stage-B samples (stageb_data.make_sample format) from a converted rows file. Rows missing a needed camera
     (e.g. Task_0002 episodes 617-816 have no wrist videos) are skipped. hz = the dataset rate every row must have
-    (None = each row's own hz). make_sample maps the gripper joint to [0, 1] openness (canon §63 (2), GRIP_CAL)."""
+    (None = each row's own hz). make_sample maps the gripper joint to [0, 1] openness (canon §63 (2), GRIP_CAL).
+    ser-A-min-3: labels mode adds the canon §87 gripper decision (gripper_label) to `committed` and the items; the
+    context ends with the canon §90 segment-intent line (segment_lines, from the episode's gripper events)."""
     from .stageb_data import images_of, make_sample
     out = []
-    for x in open(rows_path, encoding="utf-8"):
-        r = json.loads(x)
+    rows = [json.loads(x) for x in open(rows_path, encoding="utf-8")]
+    segs = segment_lines(rows)
+    for r in rows:
         if not set(needed_cams(r, wrist)) <= set(r.get("images") or {}):
             continue
         if not labels:
             r.pop("committed", None)
-        ctx = context_text(r)
+        elif r.get("committed") is not None and "gripper" not in r["committed"]:
+            g = gripper_label(r)
+            if g is not None:
+                r["committed"] = {**r["committed"], "gripper": g}
         key = f"{r['kind']}_ep{r['seed']}_k{r['k']}"
+        ctx = context_text(r) + "\n" + segs[key]
         ims = images_of({"images": r["images"]}, "both" if r.get("bimanual") else r["arm"], wrist, image_root)
         items = decision_items(r.get("committed") or {}, ctx, r["split"], key, r["label_window_s"]) if labels else []
         for it in items:

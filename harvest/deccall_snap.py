@@ -3,12 +3,14 @@
 Six questions per snapshot: D-zoom dir_xy / dir_z / mag_coarse, H-plan target / phase, M7 mon.progress. Shown names
 follow canon §27 R1 (jevcall option tables), NONE_ESCALATE last; answers are scored by option_key (R5).
 """
-from .jevcall import DIR_XY, DIR_Z, MAG, NE, PROGRESS, build_choice, build_request
+from .jevcall import DIR_XY, DIR_Z, GRIPPER, MAG, NE, PROGRESS, build_choice, build_request
 from .options import Option, to_option_key
-from .serialize import with_last_step
+from .serialize import MOTION_UNKNOWN, with_intent_last_step
 from .sim.snapshot import SPEC_NAMES, stage_of
 
 QUESTIONS = ("dir_xy", "dir_z", "mag_coarse", "target", "phase", "progress")
+# canon §87 (ser-A-min-3): the fused VLA's DecCall adds the gripper question right after `phase` (gripper=True)
+ORDER_WITH_GRIPPER = ("dir_xy", "dir_z", "mag_coarse", "target", "phase", "gripper", "progress")
 ORACLE_FIELD = {"dir_xy": "dir_xy", "dir_z": "dir_z", "mag_coarse": "mag_coarse", "target": "target",
                 "phase": "phase_choice", "progress": "progress"}
 PHASE = [Option("continue", "continue", "Keep executing the current motion phase."),
@@ -75,11 +77,27 @@ def annotate_last_step(lines: list) -> list:
     return lines
 
 
-def build_snapshot_request(line, text_state=None, shift=0):
+def motion_of(line: dict) -> str:
+    """The motion line of a snapshot line (canon §83): the runtime / datagen value, else the trained 'unknown'."""
+    return line.get("motion") or MOTION_UNKNOWN
+
+
+def segment_of(line: dict) -> str:
+    """The segment-intent line of a snapshot line (canon §90): an explicit value (runtime: Astra's agreed plan, unknown
+    until set), else the training rule from the recorded planner phase (harvest.intent.segment_from_phase)."""
+    if line.get("segment"):
+        return line["segment"]
+    from .intent import segment_from_phase
+    return segment_from_phase(line.get("phase"))
+
+
+def build_snapshot_request(line, text_state=None, shift=0, gripper=False):
     """line: one ep<seed>.jsonl row (cli_pool.write_episode). Returns (request, {qid: oracle key}, {qid: options}).
     text_state: state text to send instead of line["text_state"] (E3-lite S1/S2); shift: cyclic left shift of every
-    option list, NONE_ESCALATE stays last (C3'' rotation, e3lite.md prereg). The state ends with the M4 (b) line
-    `last_step: <category>` (last_step_of(line), canon §77, serializer ser-A-min-2)."""
+    option list, NONE_ESCALATE stays last (C3'' rotation, e3lite.md prereg). The state ends with the segment-intent
+    line (segment_of, canon §90), the motion line (motion_of, canon §83) and the M4 (b) line `last_step: <category>`
+    (last_step_of(line), canon §77), serializer ser-A-min-3. gripper: add the canon §87 gripper decision question
+    after `phase` (the fused VLA's DecCall; its oracle = the rule label of the line's phase, harvest.intent)."""
     ds, sid = line["ds_id"], stage_of(line["phase"])
     q_dir = f"Which direction should the gripper move during step {ds} to make progress toward the exit of stage {sid}?"
     spec = {
@@ -92,17 +110,24 @@ def build_snapshot_request(line, text_state=None, shift=0):
                                  f"next phase of stage {sid}, or pause?", PHASE),
         "progress": ("mon.progress", f"Considering the change since the last step, how is stage {sid} going?",
                      PROGRESS),
+        "gripper": (f"{ds}.gripper", f"During step {ds}, should the gripper close (grasp), open (release), or keep "
+                                     f"its current state?", GRIPPER),
     }
     qs, oracle, shown = [], {}, {}
-    for q in QUESTIONS:
+    for q in (ORDER_WITH_GRIPPER if gripper else QUESTIONS):
         qid, text, opts = spec[q]
         if shift:
             opts = rotate(opts, shift)
         qs.append(build_choice(qid, text, opts))
-        oracle[qid] = line["oracle"][ORACLE_FIELD[q]]
+        if q == "gripper":
+            from .intent import from_phase
+            oracle[qid] = from_phase(line.get("phase"))
+        else:
+            oracle[qid] = line["oracle"][ORACLE_FIELD[q]]
         shown[qid] = (q, opts)
     st = line["text_state"] if text_state is None else text_state
-    return build_request(with_last_step(st, last_step_of(line)), qs), oracle, shown
+    return build_request(with_intent_last_step(st, segment_of(line), motion_of(line), last_step_of(line)), qs), \
+        oracle, shown
 
 
 def rotate(opts, i):

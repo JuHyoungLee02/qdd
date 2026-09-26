@@ -55,7 +55,8 @@ def file_sha(paths):
 PROMPT_FILES = ("harvest/clients/jevl.py", "harvest/deccall_snap.py", "harvest/jevcall.py", "harvest/options.py",
                 "harvest/e3lite.py",
                 "harvest/serialize.py", "harvest/train/stagea_data.py", "harvest/train/stagea_loss.py",
-                "harvest/train/prefix_share.py")
+                "harvest/train/prefix_share.py",
+                "harvest/intent.py")  # ser-A-min-3: the §90 segment line of training prompts comes from its rule
 
 
 def Scorer(processor, image_root):
@@ -101,7 +102,7 @@ def batch_logprobs(model, scorer, items, device, share=True, micro=8, canonical=
 def serializer_of(pc: dict) -> str:
     """State serializer version a checkpoint was trained with (canon §77): prompt_config["serializer"]; a config
     without it (stage-B stageb_train.prompt_config, pre-§77 runs) is current only if its prompt-building files are
-    byte-identical to this code's (the version constant lives in one of them), else it predates ser-A-min-2."""
+    byte-identical to this code's (the version constant lives in one of them), else it predates the current one."""
     from ..serialize import SERIALIZER_VERSION
     if pc.get("serializer"):
         return pc["serializer"]
@@ -110,7 +111,7 @@ def serializer_of(pc: dict) -> str:
         same = bool(fs) and isinstance(fs, dict) and file_sha(tuple(fs)) == fs
     except OSError:
         same = False
-    return SERIALIZER_VERSION if same else "ser-A-min-1 (pre canon §77: no last_step line)"
+    return SERIALIZER_VERSION if same else f"older than {SERIALIZER_VERSION} (prompt-building files changed)"
 
 
 def require_serializer(pc: dict | None, what: str) -> None:
@@ -122,8 +123,8 @@ def require_serializer(pc: dict | None, what: str) -> None:
     got = serializer_of(pc)
     if got != SERIALIZER_VERSION:
         raise ValueError(f"{what}: trained with state serializer {got!r}, this code feeds {SERIALIZER_VERSION!r} "
-                         f"(canon §77: the DecCall state ends with the M4 (b) 'last_step:' line) -- retrain on the "
-                         f"new format")
+                         f"(canon §77 / §83 / §90: the DecCall state ends with the segment, motion and M4 (b) "
+                         f"'last_step:' lines) -- retrain on the new format")
 
 
 def prompt_config(items, a):

@@ -100,7 +100,7 @@ def test_training_prompt_config_from_merged_dir(tmp_path):
                                                  "prompt_files_sha": {"a.py": "123"}}))
     (run / "merged" / "merge_info.json").write_text(json.dumps({"adapter": str(run / "best")}))
     pc = common._training_prompt_config(str(run / "merged"))
-    with pytest.raises(ValueError, match="ser-A-min-2"):  # pre-canon-§77 run: refused (R7 cycle 12 D3)
+    with pytest.raises(ValueError, match="ser-A-min-3"):  # pre-canon-§77 run: refused (R7 cycle 12 D3)
         common.training_prompt_config(str(run / "merged"))
     assert pc["state"] == "S1" and pc["camera"] == ["H:cam_head"] and pc["files_sha"] == {"a.py": "123"}
     assert common.default_layout(pc) == "H"

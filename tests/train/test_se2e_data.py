@@ -187,8 +187,10 @@ def test_load_se2e_samples_and_actions_only(tmp_path):
     assert s["context"]["text"].startswith('task: "sort the coffee"')
     labs = [lab for lab, _ in s["context"]["images"]]
     assert labs[0] == "head camera:" and labs[1].startswith(rows[0]["arm"])
-    assert len(s["items"]) == 3 and s["items"][0]["images"] == s["context"]["images"]
-    assert s["committed"] == rows[0]["committed"]
+    # ser-A-min-3: + the canon §87 gripper item / decision (recorded command) and the §90 segment line (gripper events)
+    assert len(s["items"]) == 4 and s["items"][0]["images"] == s["context"]["images"]
+    assert s["committed"] == {**rows[0]["committed"], "gripper": S.gripper_label(rows[0])}
+    assert s["context"]["text"].split("\n")[-1] == S.segment_lines(rows)[s["key"]]
     off = S.load_se2e(str(p), labels=False)
     assert all(x["items"] == [] and x["committed"] == {} for x in off)
 

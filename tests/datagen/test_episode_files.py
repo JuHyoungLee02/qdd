@@ -72,7 +72,7 @@ def test_finalize_validate_merge_and_load_stageb(tmp_path):
     assert len(samples) == 22 and samples[0]["split"] == "val"
     dec = [s for s in samples if s["items"]]
     assert len(dec) == 3 and {it["question"] for it in dec[0]["items"]} == {"dir_xy", "dir_z", "mag_coarse", "target",
-                                                                            "phase"}
+                                                                            "phase", "gripper"}  # §87 ser-A-min-3
     tgt = [it for it in dec[0]["items"] if it["question"] == "target"][0]
     assert tgt["target"] == ["o8"] and [lab for lab, _ in samples[0]["context"]["images"]] == [
         "head camera:", "right wrist camera (active arm):"]

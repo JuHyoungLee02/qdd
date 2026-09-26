@@ -222,7 +222,7 @@ def run_worker(spec_path: str) -> None:
     from ..runtime.conditions import condition
     from ..runtime.core import OursRuntime, RuntimeConfig
     from ..runtime.ir_policy import OursPolicy
-    from ..runtime.models import JevLSelector, MockFusedModel, MockSelector
+    from ..runtime.models import JevLSelector, MockFusedModel, MockSelector, decision_questions
     from ..runtime.run_r5 import question_ids
     from ..sim.scene import SCENE_SPEC
     rows, t0 = [], time.monotonic()
@@ -258,12 +258,17 @@ def run_worker(spec_path: str) -> None:
             elif len(arms) > 1:
                 astra, amode = None, "none"  # E-Couple A0 = VLA alone: no Astra at all
             _, rto = condition(cond)
+            mb, mw = None, 0.1  # canon §83 motion line: the checkpoint's bins and data step (none -> unknown line)
+            if spec["selector"] == "stageb" and spec.get("model_path"):
+                sb = json.load(open(os.path.join(spec["model_path"], "stageb.json"), encoding="utf-8"))
+                mb, mw = (sb.get("prompt_config") or {}).get("motion"), 1.0 / float(sb.get("hz", 30))
             cfg = RuntimeConfig(backend=spec["backend"], selector=spec["selector"],
                                 model_id=getattr(model, "model_id", spec["name"]), model_path=spec["model_path"] or "",
                                 layout=spec["layout"] if spec["selector"] == "jevl" else "",
                                 call_mode=spec["mode"] if spec["selector"] == "jevl" else "", clock=spec["clock"],
                                 question_ids=question_ids(spec["layout"] or "H",
-                                                          "IMG" if spec["selector"] == "stageb" else "S1-1mm"),
+                                                          "IMG" if spec["selector"] == "stageb" else "S1-1mm",
+                                                          decision_questions(spec["backend"])),
                                 astra_mode=amode, condition=cond,
                                 m4=m4_config(cond, spec.get("m4_H", 3), spec.get("m4_lead_max")),
                                 calibration=spec["calibration"] or "",
@@ -276,7 +281,8 @@ def run_worker(spec_path: str) -> None:
                                 couple_budget_krw=spec.get("couple_budget_krw", 0.0),
                                 couple_ledger=spec.get("couple_ledger", ""),
                                 couple_prices=spec.get("couple_prices", ""),
-                                couple_run_id=f"{os.path.basename(spec['out'])}/{spec['variant']}/{label}", **rto)
+                                couple_run_id=f"{os.path.basename(spec['out'])}/{spec['variant']}/{label}",
+                                motion_bins=mb, motion_window_s=mw, **rto)
             if spec["backend"] == "fused":
                 cfg.state_repr = "fused: images (head + active wrist) + task + contract summary + proprio (canon §58)"
             rt = OursRuntime(cfg, model, astra=astra)

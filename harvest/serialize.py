@@ -2,17 +2,55 @@
 import re
 import unicodedata
 
-SERIALIZER_VERSION = "ser-A-min-2"
+SERIALIZER_VERSION = "ser-A-min-3"
 # -2 (canon §77, R7 cycle 12 D3): every DecCall state ends with the M4 (b) category line of the last finished
 # decision step, `last_step: <category>` (M4 §4.2 `next_jev_input.add_line(f"last_step: {s.outcome}")`); "none" =
 # no step checked yet / no check in the data / the category withheld (C5', conditions without (b)).
+# -3 (canon §83, §90, plan 2026-09-26 Task 12): the segment-intent line `segment: now=<..> do=<..> next=<..>` (§90:
+# current segment, the gripper action in it, next segment; names only) and the motion line `motion: arm=<..>
+# gripper=<..>` (se2e-motion@v1 bins, causal backward differences) sit before the last_step line, in this order:
+# state -> segment -> motion -> last_step. "unknown" where no plan / no history is recorded.
 LAST_STEP_VALUES = ("none", "OK", "LAG", "DEVIATE", "CONTRADICT")
+MOTION_UNKNOWN = "motion: arm=unknown gripper=unknown"
+_MOTION_RE = re.compile(r"^motion: arm=(still|slow|fast|unknown) gripper=(closing|still|opening|unknown)$")
+# §90 vocabulary: segments = the R2 planner phases renamed 1:1 (harvest.intent.PHASE_SEGMENT), actions = the §87
+# gripper options (close / open) + none
+SEGMENTS = ("approach", "descend", "grasp", "lift", "carry", "place", "release", "retreat", "done")
+SEGMENT_ACTIONS = ("close", "open", "none")
+SEGMENT_UNKNOWN = "segment: now=unknown do=unknown next=unknown"
 
 
 def with_last_step(state: str, last_step: str) -> str:
     if last_step not in LAST_STEP_VALUES:
         raise ValueError(f"last_step {last_step!r}: one of {LAST_STEP_VALUES}")
     return f"{state}\nlast_step: {last_step}"
+
+
+def with_motion_last_step(state: str, motion: str, last_step: str) -> str:
+    if not _MOTION_RE.match(motion):
+        raise ValueError(f"motion line {motion!r}: 'motion: arm=<still|slow|fast|unknown> "
+                         f"gripper=<closing|still|opening|unknown>'")
+    return with_last_step(f"{state}\n{motion}", last_step)
+
+
+def segment_line(now: str, do: str, nxt: str) -> str:
+    """The §90 segment-intent line; ValueError on a name outside the vocabulary (+ "unknown")."""
+    for v, allowed in ((now, SEGMENTS), (do, SEGMENT_ACTIONS), (nxt, SEGMENTS)):
+        if v not in allowed + ("unknown",):
+            raise ValueError(f"segment value {v!r}: one of {allowed + ('unknown',)}")
+    return f"segment: now={now} do={do} next={nxt}"
+
+
+def check_segment(line: str) -> str:
+    m = re.match(r"^segment: now=(\S+) do=(\S+) next=(\S+)$", line)
+    if not m:
+        raise ValueError(f"segment line {line!r}: 'segment: now=<segment> do=<action> next=<segment>'")
+    return segment_line(*m.groups())
+
+
+def with_intent_last_step(state: str, segment: str, motion: str, last_step: str) -> str:
+    """ser-A-min-3 DecCall state tail: state -> segment line -> motion line -> last_step line."""
+    return with_motion_last_step(f"{state}\n{check_segment(segment)}", motion, last_step)
 
 
 def _v(x):

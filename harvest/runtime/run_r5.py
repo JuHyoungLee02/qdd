@@ -17,16 +17,18 @@ import sys
 import time
 
 
-def question_ids(layout: str, state: str = "S1-1mm") -> dict:
-    """question_id@vN of the 5 decision questions (canon §28 J1), ds / stage templated, camera layout in the legend
-    (canon §59)."""
+def question_ids(layout: str, state: str = "S1-1mm", questions: tuple | None = None) -> dict:
+    """question_id@vN of the decision questions (canon §28 J1), ds / stage templated, camera layout in the legend
+    (canon §59). questions: None = the 5 modular questions (models.DECISION_QUESTIONS); the fused backend passes
+    models.decision_questions("fused") (+ the canon §87 gripper question)."""
     import numpy as np  # noqa: F401
     from ..qid import question_id
-    from .models import build_live_request
+    from .models import DECISION_QUESTIONS, build_live_request
     raw = {"grip": {"pos": [0.3, -0.1, 0.25], "w": 0.107, "effort": 0.0},
            "objs": {k: {"pos": [0.4, -0.2, 0.05], "quat": [1, 0, 0, 0], "he": [0.03, 0.03, 0.05]} for k in ("o3", "o5")},
            "contacts": [], "support": {}}
-    req, shown = build_live_request(0, "approach", "stage: S1\ngripper=open", ["o3", "o5"], raw)
+    req, shown = build_live_request(0, "approach", "stage: S1\ngripper=open", ["o3", "o5"], raw,
+                                    questions=questions or DECISION_QUESTIONS)
     out = {}
     for qid, (q, opts) in shown.items():
         text = re.sub(r"stage S\d", "stage {stage}", re.sub(r"ds\d+", "{ds}", req["questions"][qid]["instructions"]))
@@ -72,7 +74,7 @@ def main(argv=None):
     from .astra_hb import MODEL as ASTRA_MODEL, MockAstra
     from .core import OursRuntime, RuntimeConfig
     from .ir_policy import OursPolicy
-    from .models import JevLSelector, MockFusedModel, MockSelector
+    from .models import JevLSelector, MockFusedModel, MockSelector, decision_questions
 
     if a.selector == "jevl":
         model = JevLSelector(a.url, a.model, layout=a.layout, mode=a.mode)
@@ -98,7 +100,8 @@ def main(argv=None):
     cfg = RuntimeConfig(backend=a.backend, selector=a.selector, model_id=getattr(model, "model_id", a.model),
                         model_path=a.model_path, layout=a.layout if a.selector == "jevl" else "",
                         call_mode=a.mode if a.selector == "jevl" else "", clock=a.clock,
-                        question_ids=question_ids(a.layout, "IMG" if a.selector == "stageb" else "S1-1mm"),
+                        question_ids=question_ids(a.layout, "IMG" if a.selector == "stageb" else "S1-1mm",
+                                                  decision_questions(a.backend)),
                         astra_mode=astra_mode, hb_mode=a.hb_mode, hb_budget=a.hb_budget, verify_cal=a.verify_cal,
                         canary_id=canary_id_for(a.model_path, mock=a.selector in ("mock", "mock_fused")))
     if a.backend == "fused":

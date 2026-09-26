@@ -26,6 +26,11 @@ DIR_Z = [Option("up", "up", "Move up."), Option("down", "down", "Move down."),
 MAG = [Option("tiny", "tiny", "about 0.5 cm"), Option("small", "small", "about 1 cm"),
        Option("medium", "medium", "about 2 cm"), Option("large", "large", "about 4 cm"),
        Option("xlarge", "xlarge", "about 8 cm"), NE]
+# canon §87 gripper decision question (fused VLA only, ser-A-min-3): the intent; execution stays behind the two-layer
+# gate + T1 premise (canon §84 / §86)
+GRIPPER = [Option("close", "close", "Close the gripper on the object now (grasp)."),
+           Option("open", "open", "Open the gripper now (release)."),
+           Option("keep", "keep", "Keep the gripper as it is."), NE]
 # M7 PROGRESS_OPTIONS (canon §11.2); shown names renamed per §27 R1, keys unchanged
 PROGRESS = [
     Option("valid_progress", "advancing", "The stage is moving toward its exit as expected."),

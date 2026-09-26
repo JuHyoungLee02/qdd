@@ -5,7 +5,8 @@ aux geometry head, verification head) + stageb.json (config, normalization, voca
 One model process, one backbone (R5 §5 "2순위": HF for both paths, the decision pass and the context hidden states
 come from ONE forward):
   decide = the R3 shared-prefix forward (train.prefix_share.samples_forward): the context prompt (system -> head ->
-      active wrist -> IMG state, §59) and the 5 decision questions share one prefix pass -> option-trie renormalized
+      active wrist -> IMG state, §59) and the decision questions (5 + the canon §87 gripper question) share one
+      prefix pass -> option-trie renormalized
       probabilities (what stage A/B trained, same prompt_config) + the context hidden states -> verification head
       logits (the 9 E-M4b test predicates; runtime.measure turns them into measurements); the context is cached.
   chunk = expert flow sampling (10 Euler steps) replayed from a CUDA graph (fused_action.GraphedSampler) on the
@@ -318,27 +319,32 @@ def _jpegs(images: dict) -> dict:
 
 def check_prompt(pc: dict, strict: bool = True) -> dict:
     """The checkpoint's training prompt_config against what this runtime feeds (§59 camera layout, IMG state,
-    system prompt, state serializer version (canon §77 ser-A-min-2: the (b) `last_step:` line), prompt-building
-    source files)."""
+    system prompt, state serializer version (canon §77 / §83 / §87 / §90 ser-A-min-3: segment + motion + `last_step:`
+    lines, fused gripper question), prompt-building source files). A checkpoint trained with the motion line
+    (prompt_config_t: "motion" bins, TEMPORAL_FILES in files_sha) is accepted in the default layout; a video2 layout
+    (not adopted, canon §83) is refused."""
     import hashlib
 
     from ..clients.jevl import SYSTEM
     from ..serialize import SERIALIZER_VERSION
     from ..train import stageb_data as D
     from ..train.stagea_train import PROMPT_FILES, file_sha, serializer_of
-    from ..train.stageb_train import PROMPT_FILES_B
+    from ..train.stageb_train import PROMPT_FILES_B, TEMPORAL_FILES
     cam = D.CAMERA_LAYOUT + ":" + "|".join(lab for _, lab in CAMS)
     ser = serializer_of(pc)
+    files = PROMPT_FILES + PROMPT_FILES_B + (TEMPORAL_FILES if pc.get("motion") else ())
     now = {"camera_ok": cam in (pc.get("camera") or []), "state_ok": pc.get("state") == "IMG",
+           "layout_ok": pc.get("layout", D.CAMERA_LAYOUT) == D.CAMERA_LAYOUT,
            "system_ok": pc.get("system_sha") == hashlib.sha256(SYSTEM.encode()).hexdigest()[:12],
            "serializer_ok": ser == SERIALIZER_VERSION,
-           "files_ok": pc.get("files_sha") == file_sha(PROMPT_FILES + PROMPT_FILES_B), "sha": pc.get("sha"),
-           "serializer": ser}
+           "files_ok": pc.get("files_sha") == file_sha(files), "sha": pc.get("sha"), "serializer": ser}
     now["mismatch"] = [k for k, v in now.items() if k.endswith("_ok") and not v]
     if now["mismatch"] and strict:
         extra = "" if now["serializer_ok"] else (f"; state serializer {ser!r} != runtime {SERIALIZER_VERSION!r} "
-                                                 f"(canon §77: the DecCall state ends with the M4 (b) 'last_step:' "
-                                                 f"line; checkpoints before it are invalid -- retrain)")
+                                                 f"(canon §77 / §83 / §87 / §90: the DecCall state ends with the "
+                                                 f"segment, motion and M4 (b) 'last_step:' lines and the fused "
+                                                 f"model decides the gripper; older checkpoints are invalid -- "
+                                                 f"retrain)")
         raise ValueError(f"prompt_config mismatch between training and runtime: {now['mismatch']} (camera {cam!r}, "
                          f"trained {pc.get('camera')}){extra}")
     return now

@@ -106,6 +106,9 @@ class LabelsV2:
 
     def __call__(self, line, question, keys):
         lab = self.labels.get((line["seed"], line.get("kind"), line["k"]))
+        if lab is not None and question == "gripper":  # canon §87 (stage B only): rule label of the recorded phase
+            from ..intent import from_phase
+            return {from_phase(line.get("phase"))}, False
         if lab is None or question not in V2_FIELD or lab.get(V2_FIELD[question]) is None:
             return None
         v = lab[V2_FIELD[question]]
@@ -157,11 +160,12 @@ def split_of(line: dict, dev_val_seeds=None) -> str:
     return SPLIT[sp]
 
 
-def build_items(lines, source, state_fn=None, shift: int = 0, dev_val_seeds=None) -> list[dict]:
+def build_items(lines, source, state_fn=None, shift: int = 0, dev_val_seeds=None, questions=QUESTIONS) -> list[dict]:
     """lines: pool ep<seed>.jsonl rows; source: see module doc; state_fn(line) -> state text (None = the pool's
-    text_state, i.e. E3-lite S0); shift: C3'' option rotation (0 = fixed order). The DecCall state ends with the M4
-    (b) line of the snapshot (deccall_snap.annotate_last_step: the recorded post-step check, canon §77) -- pass the
-    whole episode (a pre-annotated line keeps its value)."""
+    text_state, i.e. E3-lite S0); shift: C3'' option rotation (0 = fixed order). The DecCall state ends with the
+    segment / motion lines and the M4 (b) line of the snapshot (deccall_snap.annotate_last_step: the recorded
+    post-step check, canon §77) -- pass the whole episode (a pre-annotated line keeps its value). questions: stage A
+    = QUESTIONS; stage B (the fused VLA) adds the canon §87 gripper question (stageb_data.QUESTIONS)."""
     items = []
     lines = annotate_last_step(list(lines))
     for line in lines:
@@ -170,9 +174,10 @@ def build_items(lines, source, state_fn=None, shift: int = 0, dev_val_seeds=None
         blind = {k: v for k, v in line.items() if k != "oracle"}
         split = split_of(line, dev_val_seeds)
         req, _, shown = build_snapshot_request({**blind, "oracle": _NO_ORACLE},
-                                               text_state=None if state_fn is None else state_fn(blind), shift=shift)
+                                               text_state=None if state_fn is None else state_fn(blind), shift=shift,
+                                               gripper="gripper" in questions)
         for qid, (q, opts) in shown.items():
-            if q not in QUESTIONS:
+            if q not in questions:
                 continue
             keys = [o.key for o in opts if o.key != NE]
             got = source(blind, q, keys)

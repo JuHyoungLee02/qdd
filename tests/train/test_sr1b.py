@@ -91,7 +91,9 @@ def test_drop_rows_rate_and_determinism():
 
 def test_joystick_slots_follow_the_question_order():
     from harvest.train import stageb_data as D
-    assert S.QUESTIONS == D.QUESTIONS
+    # ser-A-min-3 appended the §87 gripper slot (index 5); sr1b (concluded, SR1B_FILES hash-pinned) names slots 0-4,
+    # which keep their indices
+    assert D.QUESTIONS[:len(S.QUESTIONS)] == S.QUESTIONS and D.QUESTIONS[len(S.QUESTIONS):] == ("gripper",)
     assert [D.QUESTIONS[i] for i in S.JOY_SLOTS] == list(S.JOY) == ["dir_xy", "dir_z", "mag_coarse"]
 
 

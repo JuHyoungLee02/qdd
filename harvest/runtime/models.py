@@ -1,7 +1,8 @@
 """Runtime model back-ends behind one call interface (canon §58: "최대한 하나로 융합").
 
 decide(ctx) -> ModelResult is called in a worker thread (never on the rollout thread). ctx is a plain dict:
-  req / shown  the DecCall request (5 typed decision questions, option tables of jevcall / deccall_snap) and
+  req / shown  the DecCall request (5 typed decision questions, + the canon §87 gripper question on the fused
+               backend; option tables of jevcall / deccall_snap) and
                {qid: (question, options)} to map shown names back to option_keys (canon §27 R5);
   images       {"cam_head": HxWx3 uint8, "cam_wrist_right": ...} (latest frames at t_state);
   joint_pos    8-D proprioception; t_state, ds, slots, epoch.
@@ -29,9 +30,17 @@ from ..deccall_snap import build_snapshot_request
 from ..labels_v2 import code_rule_v2
 from ..options import to_option_key
 
-DECISION_QUESTIONS = ("dir_xy", "dir_z", "mag_coarse", "target", "phase")
+DECISION_QUESTIONS = ("dir_xy", "dir_z", "mag_coarse", "target", "phase")  # the modular stack (Jev-L) DecCall
+# canon §87 (ser-A-min-3): the fused VLA also decides the gripper intent (close / open / keep); the modular stack keeps
+# its five questions (its scripted skill fires close / open on phase = next + the code gate)
+FUSED_QUESTIONS = DECISION_QUESTIONS + ("gripper",)
 RULE_FIELD = {"dir_xy": "dir_xy", "dir_z": "dir_z", "mag_coarse": "mag_coarse", "target": "target",
               "phase": "phase_choice"}
+
+
+def decision_questions(backend: str) -> tuple:
+    """The M4 / DecCall question set of a runtime backend."""
+    return FUSED_QUESTIONS if backend == "fused" else DECISION_QUESTIONS
 NE = "NONE_ESCALATE"
 WRIST_LABEL = {"cam_wrist_right": "right wrist camera (active arm):", "cam_wrist_left": "left wrist camera (active arm):"}
 
@@ -50,17 +59,21 @@ class ModelResult:
 
 
 def build_live_request(ds: int, phase: str, text_s0: str, present, raw: dict, step_cm: float = 0.1,
-                       state: str = "S1", last_step: str = "none"):
+                       state: str = "S1", last_step: str = "none", motion: str | None = None,
+                       segment: str | None = None, questions: tuple = DECISION_QUESTIONS):
     """DecCall for the live state, built exactly as the stage-A / stage-B items (stagea_data.build_items): the pool
-    line fields, questions restricted to the 5 decision questions. state S1 = E3-lite S1 on a 1 mm grid (canon §54,
-    the modular stack); IMG = stageb_data.image_only_state of the S0 text (canon §58 fused model: no coordinates,
-    no predicate facts -- the stage-B prompt_config state). last_step = the M4 (b) category line that ends the
-    state (M4 §4.2 :232, canon §77; "none" = none to show)."""
+    line fields, questions restricted to `questions` (DECISION_QUESTIONS, or FUSED_QUESTIONS = + the canon §87
+    gripper question). state S1 = E3-lite S1 on a 1 mm grid (canon §54, the modular stack); IMG =
+    stageb_data.image_only_state of the S0 text (canon §58 fused model: no coordinates, no predicate facts -- the
+    stage-B prompt_config state). The state ends with the segment-intent line (canon §90; None = unknown: the runtime
+    shows Astra's agreed plan only, never the skill's own phase), the motion line (canon §83; None = unknown) and the
+    M4 (b) category line (M4 §4.2 :232, canon §77; "none" = none to show) -- serializer ser-A-min-3."""
     from .. import e3lite
-    from ..serialize import LAST_STEP_VALUES
+    from ..serialize import LAST_STEP_VALUES, MOTION_UNKNOWN, SEGMENT_UNKNOWN
     if last_step not in LAST_STEP_VALUES:
         raise ValueError(f"last_step {last_step!r}: one of {LAST_STEP_VALUES}")
     line = {"ds_id": f"ds{ds}", "phase": phase, "text_state": text_s0, "last_step": last_step,
+            "motion": motion or MOTION_UNKNOWN, "segment": segment or SEGMENT_UNKNOWN,
             "state": {"present": list(present), "obs": {"raw": raw}}, "oracle": defaultdict(lambda: None)}
     if state == "IMG":
         from ..train.stageb_data import image_only_state
@@ -69,8 +82,8 @@ def build_live_request(ds: int, phase: str, text_s0: str, present, raw: dict, st
         st = e3lite.state_text(line, "S1", step_cm=step_cm)
     else:
         raise ValueError(f"state {state!r}: S1 | IMG")
-    req, _, shown = build_snapshot_request(line, text_state=st)
-    keep = {qid for qid, (q, _) in shown.items() if q in DECISION_QUESTIONS}
+    req, _, shown = build_snapshot_request(line, text_state=st, gripper="gripper" in questions)
+    keep = {qid for qid, (q, _) in shown.items() if q in questions}
     req = {**req, "questions": {k: v for k, v in req["questions"].items() if k in keep}}
     return req, {k: v for k, v in shown.items() if k in keep}
 
@@ -84,12 +97,15 @@ def fused_state_text(instruction: str, stage: str, phase: str, joint_pos) -> str
             f"proprio: joint_pos=[{q}] (7 right-arm joints rad, gripper width m)")
 
 
-def _rule_answers(state_text: str, shown: dict) -> dict:
+def _rule_answers(state_text: str, shown: dict, phase: str | None = None) -> dict:
+    """Mock answers: the labels_v2 S1 code rule; the gripper question (fused only) = the training rule label of the
+    skill phase (harvest.intent.from_phase)."""
+    from ..intent import from_phase
     rule = code_rule_v2(state_text)
     out = {}
     for qid, (q, opts) in shown.items():
         keys = [o.key for o in opts]
-        k = rule.get(RULE_FIELD[q])
+        k = from_phase(phase) if q == "gripper" else rule.get(RULE_FIELD[q])
         k = k if k in keys else NE
         out[q] = {"choice": k, "p_chosen": 1.0, "p_second": 0.0, "probs": {k: 1.0}, "qid": qid}
     return out
@@ -123,7 +139,7 @@ class MockFusedModel(MockSelector):
         self.model_id = "mock:fused(code_rule_v2 decisions + hold chunk)"
 
     def decide(self, ctx: dict) -> ModelResult:
-        ans = _rule_answers(ctx["privileged_s1"], ctx["shown"])
+        ans = _rule_answers(ctx["privileged_s1"], ctx["shown"], ctx.get("phase"))
         return ModelResult(ans, self.synthetic_latency, call_id=uuid.uuid4().hex,
                            meta={"mock": True, "privileged_decisions": True},
                            raw={"mock": self.name, "answers": ans})

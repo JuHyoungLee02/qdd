@@ -233,7 +233,7 @@ def test_aux_vectors_mask_null_and_missing():
 def test_vocab_and_decision_ids():
     v = D.Vocab(["dir_xy=plus_x", "dir_z=up"])
     ids = D.dec_ids({"dir_xy": "plus_x", "dir_z": "down"}, v)
-    assert ids == [1, 0, 0, 0, 0] and len(ids) == len(D.QUESTIONS)
+    assert ids == [1, 0, 0, 0, 0, 0] and len(ids) == len(D.QUESTIONS)  # + the §87 gripper slot (ser-A-min-3)
     assert D.Vocab.from_json(v.to_json()).ids == v.ids and len(v) == 3
 
 
@@ -258,17 +258,18 @@ def test_load_stageb_joins_pool_labels_and_rows_without_oracle(tmp_path):
     ss = D.load_stageb(str(folder))
     assert len(ss) == 2
     s, s2 = ss
-    assert s["split"] == "train" and len(s["items"]) == 5 and s2["items"] == [] and s2["split"] == "train"
+    assert s["split"] == "train" and len(s["items"]) == 6 and s2["items"] == [] and s2["split"] == "train"  # + gripper
     ims = [[lab, os.path.join(str(folder), p)] for lab, p in D.images_of(ln)]
     assert s["context"]["images"] == ims and [lab for lab, _ in ims] == ["head camera:",
                                                                         "right wrist camera (active arm):"]
     assert all(it["images"] == ims for it in s["items"])
     from harvest.jevcall import canonicalize
-    assert s["context"]["text"] == canonicalize(D.image_only_state(TS))
-    # the DecCall items end their state with the (b) line (canon §77); the expert context has no DecCall line
+    tail = "\nsegment: now=carry do=none next=place\nmotion: arm=unknown gripper=unknown"  # ser-A-min-3 (§90, §83)
+    assert s["context"]["text"] == canonicalize(D.image_only_state(TS) + tail)
+    # the DecCall items end their state with the (b) line (canon §77); the expert context has no (b) line
     assert all(it["text"].startswith(s["context"]["text"] + "\nlast_step: none\n\nQuestion") for it in s["items"])
     assert s["committed"] == {"dir_xy": "minus_y", "dir_z": "up", "mag_coarse": "small", "target": "o5",
-                              "phase": "next"}
+                              "phase": "next", "gripper": "keep"}
     # the pool oracle never matters
     ln_o = copy.deepcopy(ln)
     ln_o["oracle"] = {k: "zzz" for k in ln["oracle"]}
@@ -276,7 +277,7 @@ def test_load_stageb_joins_pool_labels_and_rows_without_oracle(tmp_path):
     assert json.dumps(D.load_stageb(str(folder))) == json.dumps(ss)
     # S1-style ablation keeps the full text state
     s0 = D.load_stageb(str(folder), state="S0")[0]
-    assert s0["context"]["text"] == canonicalize(TS)
+    assert s0["context"]["text"] == canonicalize(TS + tail)
 
 
 def test_committed_row_field_overrides_label_default(tmp_path):
