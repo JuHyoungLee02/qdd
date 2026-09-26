@@ -131,3 +131,4 @@
 | 2026-09-26 20:5x | 01·04·05 | E-TEACH-35B 소규모 결과(ul 137, 4 에폭 → 최적 ep2, 8B 대비 OOD-H SAME, 폐루프 4/4, 약 4.1 GPU-h, 0원): 01 결과 행(`끝`)·예정 행 상태, 04 파드 경로·도구 행, 05 GPU 행; 새 함정 없음 | [R/teach_35b](../stage3/results/teach_35b.md), 이 줄과 같은 커밋 |
 | 2026-09-26 21:02 | 01·04 | E-DIST8 등록: 01 행(`등록`), 04 코드 행 | [P/prereg_dist8](../stage3/prereg_dist8.md), 이 줄과 같은 커밋 |
 | 2026-09-26 21:4x | 04 | 작전 T 최종 점수판(ul 144·147): 04 파드 표에 t4r2·rb3t4v·ffs_rb2·ffs_rb2_prod·droid·h2h_dryrun_l8 행 | [research/public_data_conversion_howto](../research/public_data_conversion_howto_2026-09-26.md) 13.4절, 이 줄과 같은 커밋 |
+| 2026-09-26 21:4x | 02 | L8-D / L8-X 함정 P131(편마다 관절 기본값은 cfg.init_state에도·실측 확인), P132(CPU 쿼터 스로틀 — Isaac 수는 CPU로 정함), P133(탐침 단발 튐), P134(Git Bash KST) | [R/l8d](../stage3/results/l8d.md), 이 줄과 같은 커밋 |
