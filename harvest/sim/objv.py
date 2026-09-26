@@ -73,7 +73,7 @@ def geom(row: dict) -> dict:
             "spawn_quat_wxyz": [float(v) for v in row["spawn_quat_wxyz"]],
             "root_above_bottom": float(row["root_above_bottom"]),
             "centre_from_root_xy": [float(v) for v in row["centre_from_root_xy"]],
-            "half_extents": tuple(he), "height": float(row["height"]), "footprint_r": float(row["footprint_r"]),
+            "half_extents": tuple(he), "size": (2 * he[0], 2 * he[1], float(row["height"])), "height": float(row["height"]), "footprint_r": float(row["footprint_r"]),
             "grasp_width": float(row["grasp_width"]), "mass": float(row.get("mass", 0.3)),
             "friction": tuple(row.get("friction", (0.8, 0.8))), "name": row["name"], "category": row["category"],
             "split": row["split"], "license": row["license"], "attribution": row.get("attribution")}
