@@ -147,6 +147,14 @@ def events_text(events: list) -> str:
     return "Events in the request: " + "; ".join(f"{n} = {EVENT_LEGEND[n]}" for n in names) + ".\n"
 
 
+GOALCHECK = ("Target check before you answer: compare where the tip will be when your answer arrives "
+             "(predicted_ee_at_arrival and the committed arrow) with the object or place that the current segment "
+             "needs, and state in evidence roughly how many cm apart they are horizontally. A policy that is heading "
+             "for, or hovering at, a spot several cm beside the correct object or place pursues the wrong subgoal: "
+             "intent=misaligned.\n")
+GOALCHECK_ID = hashlib.sha256(GOALCHECK.encode()).hexdigest()[:6]
+
+
 def _v3(v) -> str:
     return "(" + ", ".join(f"{float(x):+.2f}" for x in v) + ")"
 
@@ -166,13 +174,17 @@ def campose_text(cams: dict, order: list, tip_above_table_m: float) -> str:
 
 
 def build_v2(req: dict, images: dict, cams_order: list, task: str, *, arm: str = "right", trace_s: float = 2.5,
-             horizon_s: float = 9.3, drawn: dict | None = None, campose: str = "", detail: str | None = None) -> list:
-    """Same message layout as the production build_input: text first, then 'cam:' label + JPEG per camera sent."""
+             horizon_s: float = 9.3, drawn: dict | None = None, campose: str = "", detail: str | None = None,
+             goalcheck: bool = False) -> list:
+    """Same message layout as the production build_input: text first, then 'cam:' label + JPEG per camera sent.
+    goalcheck (E-ACC stage 2 arm 'gc', prereg change 5): GOALCHECK goes right before the mode rule line; off ->
+    byte-identical v2 text."""
     sent = [c for c in cams_order if images.get(c) is not None]
     text = TEMPLATE.format(task=task, arm=arm, horizon=round(horizon_s, 1), campose=campose,
                            cameras=camera_text(sent, arm), legend=legend_text(drawn, trace_s),
                            events=events_text(req.get("events", [])),
-                           context=CONTEXT_RULE if "since_last_request" in req else "", mode_rules=MODE_RULE,
+                           context=CONTEXT_RULE if "since_last_request" in req else "",
+                           mode_rules=(GOALCHECK + MODE_RULE) if goalcheck else MODE_RULE,
                            req_open=CP.REQ_OPEN, request_json=json.dumps(req, sort_keys=True, ensure_ascii=False),
                            req_close=CP.REQ_CLOSE, answer_form=ANSWER_FORM)
     content = [{"type": "input_text", "text": text}]

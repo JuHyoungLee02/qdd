@@ -190,6 +190,41 @@ def decide(srows: list, tab: dict) -> dict:
             inv2 = tab[best + "_2cam"]["invalid"]["rate"]
             out["R5_two_cameras"] = {"correct_3cam": n3, "correct_2cam": n2, "invalid_2cam": inv2,
                                      "drop_left_wrist": bool(n2 >= n3 and inv2 <= 0.10)}
+    out.update(stage2(srows, tab))
+    if "S2A_effort_medium" in out:
+        out.pop("R3_effort_medium", None)  # the registered P2 rule R3 is replaced by S2A (prereg change 5)
+    return out
+
+
+S2_OFF = ("off_a", "off_c")
+
+
+def stage2(srows: list, tab: dict) -> dict:
+    """Prereg change 5 rules. detects = gated command edit on an off_a / off_c snapshot; correct = detects and the
+    arrival direction < 60 deg (M1). Both arms are compared with v2 (low) on the same snapshots."""
+    out = {}
+    have = set(tab)
+
+    def detects(arm):
+        rs = [r for r in srows if r["arm"] == arm and r["kind"] in S2_OFF]
+        return {"n": len(rs), "detects": sum(r.get("command") == "edit" for r in rs),
+                "correct": sum(bool(r["score"].get("dir_ok")) for r in rs)}
+    for arm, key in (("v2_med", "S2A_effort_medium"), ("v2_gc", "S2B_goal_check")):
+        if arm not in have or "v2" not in have:
+            continue
+        m1 = paired(srows, "v2", arm, "dir_ok", S2_OFF)
+        inv = tab[arm]["invalid"]["rate"]
+        rec = {"M1": m1, "v2": detects("v2"), arm: detects(arm), "invalid": inv,
+               "latency_p50": tab[arm]["latency_p50"], "latency_p95": tab[arm]["latency_p95"]}
+        gain = m1.get("n", 0) > 0 and m1["diff"] >= 0.25 and m1["ci95"][0] > 0 and inv <= 0.10
+        if key == "S2A_effort_medium":
+            rec["recommend"] = bool(gain and tab[arm]["latency_p95"] is not None and tab[arm]["latency_p95"] <= 15.0)
+        else:
+            on = paired(srows, "v2", arm, "cmd_ok", ("on",))
+            rec["on_M3"] = on
+            on_ok = on.get("n", 0) > 0 and (on["mean_b"] - on["mean_a"]) * on["n"] >= -1 - 1e-9
+            rec["adopt_into_v2"] = bool(gain and on_ok)
+        out[key] = rec
     return out
 
 

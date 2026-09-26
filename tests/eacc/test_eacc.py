@@ -222,7 +222,7 @@ def _bench(tmp_path):
 def test_build_every_arm(tmp_path):
     root = _bench(tmp_path)
     m = json.loads((root / "off_a_00" / "meta.json").read_text())
-    for name in ("v1", "v2", "v2cp", "v2_2cam", "v2_noov", "v2_noctx", "v2cp_dlow", "v2_ax"):
+    for name in ("v1", "v2", "v2cp", "v2_2cam", "v2_noov", "v2_noctx", "v2cp_dlow", "v2_ax", "v2_gc", "v2_med"):
         arm = A.parse_arm(name)
         inp, req, pid, text = A.build(str(root / "off_a_00"), m, arm)
         n_img = sum(c.get("type") == "input_image" for c in inp[0]["content"])
@@ -232,7 +232,8 @@ def test_build_every_arm(tmp_path):
         else:
             ax = "Axis guide on" in text
             assert ax == arm["axis"]  # the synthetic camera sees the tip
-            assert pid == P2.PROMPT_ID + (f"+ax{P2.AXISGUIDE_ID}" if ax else "") and '"segment": {"now"' in text
+            assert pid == P2.PROMPT_ID + (f"+ax{P2.AXISGUIDE_ID}" if ax else "") + (f"+gc{P2.GOALCHECK_ID}" if arm["goalcheck"] else "")
+            assert (P2.GOALCHECK in text) == arm["goalcheck"] and "\"segment\": {\"now\"" in text
             assert ("Camera poses now" in text) == arm["campose"]
             assert ("since_last_request (in the request)" in text) == arm["context"]
             assert ("No overlay is drawn" in text) == (not arm["overlay"])
@@ -294,6 +295,28 @@ def test_eacc_client_reports_stream_failure():
     tr2 = httpx.MockTransport(lambda req: httpx.Response(200, text=ok, headers={"content-type": "text/event-stream"}))
     rec2 = EaccAstraClient("x", "m", transport=tr2).call([{"role": "user", "content": []}], "low", 10, {})
     assert rec2.error is None and rec2.output_text == "{}" and rec2.usage["output_tokens"] == 2
+
+
+def test_stage2_rules():
+    srows = []
+    for i in range(13):  # v2 never detects; v2_gc detects 5 correctly, v2_med detects 2
+        kind = "off_a" if i < 7 else "off_c"
+        srows.append({"arm": "v2", "snap": f"s{i}", "kind": kind, "command": "continue",
+                      "score": {"dir_ok": False, "cmd_ok": False}})
+        srows.append({"arm": "v2_gc", "snap": f"s{i}", "kind": kind, "command": "edit" if i < 5 else "continue",
+                      "score": {"dir_ok": i < 5, "cmd_ok": i < 5}})
+        srows.append({"arm": "v2_med", "snap": f"s{i}", "kind": kind, "command": "edit" if i < 2 else "continue",
+                      "score": {"dir_ok": i < 2, "cmd_ok": i < 2}})
+    for i in range(5):  # on: v2 5/5; v2_gc one false edit
+        srows.append({"arm": "v2", "snap": f"o{i}", "kind": "on", "command": "continue", "score": {"cmd_ok": True}})
+        srows.append({"arm": "v2_gc", "snap": f"o{i}", "kind": "on", "command": "edit" if i == 0 else "continue",
+                      "score": {"cmd_ok": i != 0}})
+    tab = {a: {"invalid": {"rate": 0.0}, "latency_p50": 5.0, "latency_p95": 20.0 if a == "v2_med" else 9.0}
+           for a in ("v2", "v2_gc", "v2_med")}
+    out = S.stage2(srows, tab)
+    assert out["S2B_goal_check"]["adopt_into_v2"] is True  # +5/13, lower > 0, on loses 1 (allowed)
+    assert out["S2B_goal_check"]["v2_gc"]["detects"] == 5
+    assert out["S2A_effort_medium"]["recommend"] is False  # +2/13 < 0.25 and p95 20 s
 
 
 def test_decide_without_off_rows_is_not_decidable():

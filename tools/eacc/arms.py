@@ -22,7 +22,7 @@ except ImportError:  # run as a script from tools/eacc
     import prompt_v2 as P2  # type: ignore
 
 BASES = ("v1", "v2", "v2cp")
-MODS = ("med", "r1", "r2", "2cam", "noov", "noctx", "dlow", "dhigh", "ax")
+MODS = ("med", "r1", "r2", "2cam", "noov", "noctx", "dlow", "dhigh", "ax", "gc")
 CAMS3 = ("cam_head", "cam_wrist_left", "cam_wrist_right")
 CAMS2 = ("cam_head", "cam_wrist_right")
 
@@ -32,14 +32,14 @@ def parse_arm(name: str) -> dict:
     base, mods = parts[0], parts[1:]
     if base not in BASES or any(m not in MODS for m in mods) or len(set(mods)) != len(mods):
         raise ValueError(f"arm {name!r}: base in {BASES}, modifiers in {MODS}")
-    if base == "v1" and set(mods) & {"2cam", "noov", "noctx", "dlow", "dhigh", "ax"}:
+    if base == "v1" and set(mods) & {"2cam", "noov", "noctx", "dlow", "dhigh", "ax", "gc"}:
         raise ValueError(f"arm {name!r}: v1 is production only (effort / repeat modifiers)")
     return {"name": name, "base": base, "effort": "medium" if "med" in mods else "low",
             "rep": 2 if "r2" in mods else 1 if "r1" in mods else 0,
             "cams": CAMS2 if "2cam" in mods else CAMS3, "overlay": "noov" not in mods,
             "context": base != "v1" and "noctx" not in mods, "campose": base == "v2cp",
             "detail": "low" if "dlow" in mods else "high" if "dhigh" in mods else None,
-            "axis": "ax" in mods and "noov" not in mods}
+            "axis": "ax" in mods and "noov" not in mods, "goalcheck": "gc" in mods}
 
 
 AXIS_LONG_M = 0.10
@@ -136,6 +136,7 @@ def build(snap_dir: str, meta: dict, arm: dict) -> tuple:
             cp = P2.campose_text({c: meta["cams"][c] for c in cams}, cams,
                                  float(meta["tip"][2]) - float(meta["table_z"]))
         inp = P2.build_v2(req, imgs, cams, meta["instruction"], horizon_s=B.L_ARR, drawn=drawn, campose=cp,
-                          detail=arm["detail"])
-        pid = P2.PROMPT_ID + (f"+ax{P2.AXISGUIDE_ID}" if (drawn or {}).get("axisguide") else "")
+                          detail=arm["detail"], goalcheck=arm.get("goalcheck", False))
+        pid = (P2.PROMPT_ID + (f"+ax{P2.AXISGUIDE_ID}" if (drawn or {}).get("axisguide") else "")
+               + (f"+gc{P2.GOALCHECK_ID}" if arm.get("goalcheck") else ""))
     return inp, req, pid, inp[0]["content"][0]["text"]
