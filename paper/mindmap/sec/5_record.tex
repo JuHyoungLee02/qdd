@@ -11,7 +11,7 @@
   \item 항목마다 \textbf{사용자}(빨강, \texttt{docs/user-log.md} 원문 그대로) $\rightarrow$ \textbf{해 봄}(실험·설정·사전 등록 커밋) $\rightarrow$ \textbf{결과}(결과 문서의 숫자 그대로, 커밋 해시) $\rightarrow$ \textbf{그래서(결정)}(정본 절, 채택·불채택) $\rightarrow$ \textbf{다음} 순서다.
   \item \tentative{주황}은 아직 진행 중이거나 결과가 없는 것이다. 숫자를 지어내지 않는다 --- 결과 문서가 없는 실험은 ``진행 중''으로만 적는다.
   \item 시각은 모두 KST(UTC+9)다. 저장소의 원래 기록(정본·user-log·결과 문서)은 UTC이고, 커밋 시각은 git 기록(KST) 그대로다. ``ul N''은 user-log 번호, ``§N''은 정본 \texttt{docs/design/00-interfaces.md}의 절이다.
-  \item 사용자 말 중 user-log에 번호가 없는 것(통제자가 전한 말)은 빨강이 아니라 검정으로, 출처를 붙여 적는다.
+  \item 통제자가 전한 사용자 말도 user-log에 번호를 붙여 올린 뒤(ul 130--133) 빨강으로 적는다. 빨강은 모두 user-log 원문과 글자가 같아야 한다(\texttt{tools/intent\_check.py}).
 \end{itemize}
 
 \input{mindmap/sec/5_rec_a}
