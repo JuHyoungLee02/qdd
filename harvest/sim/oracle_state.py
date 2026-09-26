@@ -37,7 +37,7 @@ def oracle_objects(env):
     the other objects; any finger link -> "gripper"). Only objects in play (env.present) are reported.
     """
     from ..predicates import Gripper, Obj
-    from .scene import FINGER_BODIES, OBJ_GEOM, VISUAL_ONLY
+    from .scene import FINGER_BODIES, OBJ_GEOM, VISUAL_ONLY, X_VISUAL_ONLY
     from .tasks import lowest_z, marker_contacts
 
     z0 = env.table_top_z
@@ -47,11 +47,11 @@ def oracle_objects(env):
         he = np.array(OBJ_GEOM[k]["half_extents"])
         objs[k] = Obj(id=k, pos=to_table_frame(p, z0), quat_wxyz=q, half_extents=he)
         half_z[k] = he[2]
-    all_ids = ["o3", "o5", "o8", "o9", "o10"]
+    all_ids = list(getattr(env, "obj_ids", ["o3", "o5", "o8", "o9", "o10"]))  # = the contact filter order (scene)
     n_f = len(FINGER_BODIES[env.arm])
     contacts = set()
     for k in env.present:
-        if k in VISUAL_ONLY:  # R2 marker: no sensor; virtual contacts (tasks.marker_contacts)
+        if k in VISUAL_ONLY or k in X_VISUAL_ONLY:  # marker / L8-X spots: no sensor; virtual contacts
             contacts |= marker_contacts({j: o.pos for j, o in objs.items()},
                                         {j: lowest_z(j, o.pos, o.quat_wxyz) for j, o in objs.items()}, k)
             continue

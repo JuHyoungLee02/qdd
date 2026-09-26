@@ -24,6 +24,17 @@ OBJ_DESC = {"o3": "cylinder, diameter 6.4 cm, height 9.5 cm (solid, flat top)",
             "o8": "cylinder, diameter 5.0 cm, height 10.0 cm (solid, flat top)",
             "o9": "box 5 x 5 cm, 7 cm high",
             "o11": "flat disc on the table, diameter 10 cm, 2 mm high (a painted target spot; no collision)"}
+# L8-X objects (harvest/sim/scene.py X_OBJ_GEOM; only in L8-X scenes)
+OBJ_NAME.update({"o12": "white stand", "o13": "blue mug", "o14": "small red cup", "o15": "grey bin",
+                 "o17": "spot left of the green bottle", "o18": "spot right of the green bottle"})
+OBJ_DESC.update({"o12": "box 12 x 12 cm, 8 cm high (a raised stand)",
+                 "o13": "cylinder, diameter 6.4 cm, height 9.5 cm (solid, flat top)",
+                 "o14": "cylinder, diameter 5.0 cm, height 7.5 cm (solid, flat top)",
+                 "o15": "open box 16 x 16 cm with 5 cm high walls (put things inside, on its floor)",
+                 "o17": "an empty place on the table about 10 cm to the robot's left (+y) of the green bottle's centre "
+                        "(nothing is drawn there)",
+                 "o18": "an empty place on the table about 10 cm to the robot's right (-y) of the green bottle's "
+                        "centre (nothing is drawn there)"})
 
 STATIC = """You control the right arm of a humanoid robot (ROBOTIS AI Worker FFW-SG2) at a table, in simulation, by looking at its cameras and giving short end-effector commands.
 
@@ -130,6 +141,12 @@ def place_rule(place: str, place_name: str) -> str:
     if place == "o11":
         return (f"on the {place_name} (its centre within 4 cm of the marker centre, standing on the table inside the "
                 f"marker)")
+    if place == "o15":  # L8-X
+        return f"inside the {place_name} (standing on its floor, supported by it)"
+    if place in ("o17", "o18"):  # L8-X relational spot
+        side = "left (+y)" if place == "o17" else "right (-y)"
+        return (f"on the table about 10 cm to the robot's {side} of the green bottle (its centre within 4 cm of "
+                f"that point, standing on the table)")
     return f"on the {place_name} (resting on it, supported by it)"
 
 

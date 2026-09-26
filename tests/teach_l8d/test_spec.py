@@ -107,3 +107,14 @@ def test_reach_band_from_columns():
     assert (lo, hi) == (0.40, 0.48)
     lo, hi = S.reach_band(xs, zs, err, z_need=(0.85, 0.90))
     assert (lo, hi) == (0.40, 0.50)
+
+
+def test_median3_drops_single_step_transients_only():
+    e = np.array([1, 1, 200, 1, 1, 30, 40, 1], float)
+    m = S.median3(e)
+    assert m[2] == 1 and m[5] >= 30 and m[6] >= 30
+    zs = [0.80, 0.82, 0.84, 0.86, 0.88, 0.90, 0.92, 0.94]
+    err = np.ones((1, 2, 8))
+    err[0, 0] = e
+    assert S.reach_band([0.40, 0.42], zs, err, z_need=(0.80, 0.86)) == (0.40, 0.42)
+    assert S.reach_band([0.40, 0.42], zs, err, z_need=(0.80, 0.92)) == (0.42, 0.42)

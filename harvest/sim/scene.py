@@ -52,15 +52,35 @@ OBJ_GEOM = {
     # magenta: orange (1.0, 0.45, 0) rendered yellow in the bright standard scene (= the yellow box o9), DEV frames
     "o11": dict(shape="marker", radius=0.05, height=0.002, color=(0.85, 0.0, 0.65)),
 }
+# L8-X objects (docs/research/l8x_env_suite_design_2026-09-27.md): only in an env made with objset="x" (make_env);
+# the default env, its bodies, sensors and layouts are unchanged.
+X_OBJ_GEOM = {
+    "o12": dict(shape="cuboid", size=(0.12, 0.12, 0.08), mass=2.0, friction=(1.0, 1.0), color=(0.85, 0.85, 0.80)),
+    "o13": dict(shape="cylinder", radius=0.032, height=0.095, mass=0.20, friction=(1.0, 1.0),
+                color=(0.15, 0.35, 0.95)),  # blue mug = the red mug's twin (colour attribute)
+    "o14": dict(shape="cylinder", radius=0.025, height=0.075, mass=0.12, friction=(1.0, 1.0),
+                color=(0.80, 0.08, 0.08)),  # small red cup (size attribute vs the red mug)
+    # open box (floor + 4 walls, one rigid body): place-into container; support_top = floor top
+    "o15": dict(shape="openbox", size=(0.16, 0.16, 0.05), wall=0.008, mass=1.0, friction=(0.8, 0.8),
+                color=(0.50, 0.50, 0.50)),
+    # invisible relational spots (no prim, no collider): 10 cm left / right (+y / -y) of the bottle o8
+    "o17": dict(shape="marker", radius=0.04, height=0.002, invisible=True),
+    "o18": dict(shape="marker", radius=0.04, height=0.002, invisible=True),
+}
+X_RIGID = ("o12", "o13", "o14", "o15")
+X_VISUAL_ONLY = ("o17", "o18")
+SUPPORT_TOP = {"o15": 0.008}  # place surface above the object's bottom when it is not its top (bin floor)
+OBJ_GEOM.update(X_OBJ_GEOM)
 VISUAL_ONLY = ("o11",)
 PRESENT_IDS = ("o3", "o5", "o8", "o9", "o11")  # objects in play when the layout has them (o10 joins after P2 fires)
+X_PRESENT_IDS = PRESENT_IDS + X_RIGID + X_VISUAL_ONLY
 for _g in OBJ_GEOM.values():
     if _g["shape"] in ("cylinder", "marker"):
         _g["half_extents"] = (_g["radius"], _g["radius"], _g["height"] / 2)
     else:
         _g["half_extents"] = tuple(s / 2 for s in _g["size"])
-    _g["footprint_r"] = float(math.hypot(_g["half_extents"][0], _g["half_extents"][1])) if _g["shape"] == "cuboid" \
-        else _g["radius"]
+    _g["footprint_r"] = float(math.hypot(_g["half_extents"][0], _g["half_extents"][1])) \
+        if _g["shape"] in ("cuboid", "openbox") else _g["radius"]
 
 # right-arm top-down workspace (world xy), measured reach margin from the shoulder at (-0.02, -0.23, 1.33)
 WS_X = (0.36, 0.48)
@@ -68,7 +88,8 @@ WS_Y = (-0.40, -0.06)
 DISTRACTOR_X = (0.34, 0.56)
 DISTRACTOR_Y = (-0.46, 0.08)
 PARK_XY = {"o8": (-3.0, 3.0), "o9": (-3.3, 3.0), "o10": (-3.6, 3.0),  # parked behind the robot (out of the head view)
-           "o11": (-3.0, -3.0)}
+           "o11": (-3.0, -3.0),
+           "o12": (-3.0, 4.2), "o13": (-3.3, 4.2), "o14": (-3.6, 4.2), "o15": (-3.9, 4.2)}  # L8-X objects
 
 # RH-P12-RN: gripper_r_joint1 (0 = open, 1.1 = closed; joints 2-4 mimic). Inner pad gap measured in sim
 # (probe2, 2026-09-24): finger link2 origin distance minus 7.7 mm (pad inner faces from the USD bbox).
@@ -105,6 +126,12 @@ def width_to_joint(w: float) -> float:
 
 
 WS_MIN_W = 0.08  # L8-D gate G-H: a table height's workspace (view x reach) must be >= 8 cm wide in x
+
+
+def _check_objset(task: str, objset) -> None:
+    from .tasks import X_TASKS
+    if task in X_TASKS and objset != "x":
+        raise ValueError(f"task {task!r} is an L8-X task: make_env(objset='x')")
 
 
 def check_ws(ws):
@@ -234,11 +261,23 @@ _LAYOUT = {"layout": {}}  # current seed's layout, read by the reset event (modu
 # "table_z" (set by Env): the table top of the current env; TABLE_TOP_Z unless make_env(table_z=...) (E-PT OOD-H)
 
 
+def base_z(k: str, layout: dict, table_z: float) -> float:
+    """World z of k's bottom at reset: the table, or (L8-X layout entry (x, y, yaw, support)) the support's top."""
+    e = layout[k]
+    if len(e) > 3 and e[3]:
+        s = e[3]
+        return base_z(s, layout, table_z) + SUPPORT_TOP.get(s, 2 * OBJ_GEOM[s]["half_extents"][2])
+    return table_z
+
+
 def _object_reset_pose(k: str, layout: dict):
     g = OBJ_GEOM[k]
     if k in layout:
-        x, y, yaw = layout[k]
-        return (x, y, _LAYOUT.get("table_z", TABLE_TOP_Z) + g["half_extents"][2] + 0.001), yaw_quat(yaw)
+        x, y, yaw = layout[k][:3]
+        z0 = _LAYOUT.get("table_z", TABLE_TOP_Z)
+        if len(layout[k]) > 3:  # L8-X: standing on another object
+            z0 = base_z(k, layout, z0)
+        return (x, y, z0 + g["half_extents"][2] + 0.001), yaw_quat(yaw)
     x, y = PARK_XY.get(k, (-2.4 - 0.3 * len(k), 2.4))
     return (x, y, g["half_extents"][2] + 0.001), yaw_quat(0.0)
 
@@ -250,7 +289,7 @@ def _place_layout_event(env, env_ids):
     import torch
     rob = env.scene["robot"]
     rob.set_joint_position_target(rob.data.default_joint_pos[env_ids], env_ids=env_ids)
-    for k in ("o3", "o5", "o8", "o9", "o10"):
+    for k in _LAYOUT.get("obj_ids", ("o3", "o5", "o8", "o9", "o10")):  # + L8-X objects when objset="x"
         pos, quat = _object_reset_pose(k, _LAYOUT["layout"])
         o = env.scene[k]
         p = torch.tensor([[*pos, *quat]], dtype=torch.float32, device=env.device)
@@ -264,7 +303,7 @@ def _place_layout_event(env, env_ids):
 
 def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu", variant: str = "standard",
                decimation: int = 5, render_interval: int | None = None, task: str = "mug_tray",
-               table_z: float = TABLE_TOP_Z, ws=None, lift: float | None = None):
+               table_z: float = TABLE_TOP_Z, ws=None, lift: float | None = None, objset: str | None = None):
     import isaaclab.envs.mdp as mdp
     import isaaclab.sim as sim_utils
     from isaaclab.assets import AssetBaseCfg, RigidObjectCfg
@@ -284,7 +323,7 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
     layout = task_layout(seed, task, ws=ws)  # mug_tray = sample_layout(seed)
     robot_prefix = "{ENV_REGEX_NS}/Robot/ffw_sg2_follower"
     finger_paths = [f"{robot_prefix}/right_gripper/{b}" for b in FINGER_BODIES[arm]]
-    obj_ids = ["o3", "o5", "o8", "o9", "o10"]
+    obj_ids = ["o3", "o5", "o8", "o9", "o10"] + (list(X_RIGID) if objset == "x" else [])
 
     def obj_cfg(k):
         g = OBJ_GEOM[k]
@@ -299,10 +338,14 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
         )
         if g["shape"] == "cylinder":
             spawn = sim_utils.CylinderCfg(radius=g["radius"], height=g["height"], axis="Z", **common)
+        elif g["shape"] == "openbox":  # L8-X container: floor + 4 walls in one rigid body (spawn_open_box)
+            spawn = sim_utils.CuboidCfg(size=g["size"], func=spawn_open_box, **common)
         else:
             spawn = sim_utils.CuboidCfg(size=g["size"], **common)
-        x, y, yaw = layout.get(k, (*PARK_XY.get(k, (-3.9, 3.0)), 0.0))
+        x, y, yaw = layout.get(k, (*PARK_XY.get(k, (-3.9, 3.0)), 0.0))[:3]
         z = (table_z if k in layout else 0.0) + g["half_extents"][2] + 0.001
+        if k in layout and len(layout[k]) > 3:  # L8-X: standing on another object
+            z = base_z(k, layout, table_z) + g["half_extents"][2] + 0.001
         return RigidObjectCfg(prim_path="{ENV_REGEX_NS}/" + k.upper(), spawn=spawn,
                               init_state=RigidObjectCfg.InitialStateCfg(pos=(x, y, z), rot=yaw_quat(yaw)))
 
@@ -437,14 +480,22 @@ class Env:
 
     def __init__(self, seed: int, headless=True, cameras=DEFAULT_CAMERAS, arm="right", depth=True, sim_device="cpu",
                  variant="standard", decimation: int = 5, render_interval: int | None = None, task: str = "mug_tray",
-                 hard_reset: bool = True, table_z: float | None = None, ws=None, lift: float | None = None):
+                 hard_reset: bool = True, table_z: float | None = None, ws=None, lift: float | None = None,
+                 objset: str | None = None):
         from . import randomize
         from .tasks import check_task
+        if objset not in (None, "x"):
+            raise ValueError(f"objset {objset!r}: None or 'x'")
+        self.objset = objset  # L8-X objects (o12-o15 rigid, o17 / o18 invisible spots) only with "x"
+        self.obj_ids = ["o3", "o5", "o8", "o9", "o10"] + (list(X_RIGID) if objset == "x" else [])
+        self.present_ids = X_PRESENT_IDS if objset == "x" else PRESENT_IDS
+        _LAYOUT["obj_ids"] = tuple(self.obj_ids)
         self.ws = check_ws(ws)  # L8-D per-height workspace box (None = WS_X / WS_Y)
         self.lift = None if lift is None else float(lift)  # L8-D lift flag (None = INIT_JOINTS lift, default)
         self.hard_reset = bool(hard_reset)
         self.variant = randomize.check_variant(variant)
         self.task = check_task(task)
+        _check_objset(self.task, objset)
         cameras = tuple(cameras or ())
         _ensure_app(headless, bool(cameras))
         import torch
@@ -455,7 +506,7 @@ class Env:
         tz = TABLE_TOP_Z if table_z is None else float(table_z)
         _LAYOUT["table_z"] = tz  # randomize.write_distractor_poses reads it (distractors stand on this table)
         cfg, self.layout = _build_cfg(seed, cameras, arm, depth, sim_device, variant, decimation, render_interval,
-                                      task, tz, self.ws, self.lift)
+                                      task, tz, self.ws, self.lift, objset)
         self.sim_device = cfg.sim.device
         _LAYOUT["layout"] = self.layout
         self.randomization = randomize.sample_randomization(seed, variant, self.layout, path=self.task_path())
@@ -466,9 +517,9 @@ class Env:
         self.robot = self.scene["robot"]
         if not self.robot.is_fixed_base:  # canon §38 (the one deviation from the copied FFW_SG2_MOBILE_CFG)
             raise RuntimeError("robot base is not fixed")
-        self.objects = {k: self.scene[k] for k in ("o3", "o5", "o8", "o9", "o10")}
+        self.objects = {k: self.scene[k] for k in self.obj_ids}
         self.contact = {k: self.scene[f"contact_{k}"] for k in self.objects}
-        self.present = [k for k in PRESENT_IDS if k in self.layout]  # o10 joins after P2 fires
+        self.present = [k for k in self.present_ids if k in self.layout]  # o10 joins after P2 fires
         jn = self.robot.joint_names
         self.arm_ids = [jn.index(n) for n in ARM_JOINTS[arm]]
         self.grip_id = jn.index(GRIP_JOINT[arm])
@@ -500,6 +551,7 @@ class Env:
         from .randomize import sample_randomization
         from .tasks import check_task, layout_for, layout_paths
         self.seed, self.task = int(seed), check_task(task)
+        _check_objset(self.task, getattr(self, "objset", None))
         self.layout = layout_for(seed, self.task, layout, ws=getattr(self, "ws", None))
         self.layout_mode = layout
         _LAYOUT["layout"] = self.layout
@@ -516,12 +568,12 @@ class Env:
         if prim.IsValid():
             _set_pose(prim, tuple(float(v) for v in self._marker_pos()))
 
-    def _marker_pos(self) -> np.ndarray:
-        g = OBJ_GEOM["o11"]
-        if "o11" in self.layout:
-            x, y = self.layout["o11"][:2]
+    def _marker_pos(self, k: str = "o11") -> np.ndarray:
+        g = OBJ_GEOM[k]
+        if k in self.layout:
+            x, y = self.layout[k][:2]
             return np.array([x, y, self.table_top_z + g["height"] / 2])
-        return np.array([*PARK_XY["o11"], g["height"] / 2])
+        return np.array([*PARK_XY.get(k, (-3.0, -3.3)), g["height"] / 2])
 
     def _recreate_physx_scene(self):
         """Timeline stop/play (SimulationContext.reset(soft=False)): a new PhysX scene, so no episode starts from
@@ -560,7 +612,7 @@ class Env:
             from .randomize import apply_visuals
             apply_visuals(self, self.randomization)
         self._place_marker()
-        self.present = [k for k in PRESENT_IDS if k in self.layout]
+        self.present = [k for k in getattr(self, "present_ids", PRESENT_IDS) if k in self.layout]
         self.perturb_state = None
         if hasattr(self, "carry_start_xy"):
             del self.carry_start_xy
@@ -605,8 +657,8 @@ class Env:
         return float(self.robot.data.applied_torque[0, self.grip_id].abs())
 
     def object_pose(self, k):
-        if k in VISUAL_ONLY:  # the marker is not a physics body: its pose is the layout pose
-            return self._marker_pos(), np.array([1.0, 0.0, 0.0, 0.0])
+        if k in VISUAL_ONLY or k in X_VISUAL_ONLY:  # the marker is not a physics body: its pose is the layout pose
+            return self._marker_pos(k), np.array([1.0, 0.0, 0.0, 0.0])
         d = self.objects[k].data
         return d.root_pos_w[0].cpu().numpy(), d.root_quat_w[0].cpu().numpy()
 
@@ -635,6 +687,47 @@ def _no_callback(event):
     pass
 
 
+def spawn_open_box(prim_path, cfg, translation=None, orientation=None, **kwargs):
+    """L8-X container (OBJ_GEOM shape "openbox", size (x, y, h), wall t): one rigid body = the Isaac Lab cuboid
+    spawner for the floor (t thick, bottom at -h/2 of the body origin; rigid body, mass, contact report, materials)
+    + four wall cubes (colliders, same materials) as extra children of its geometry prim."""
+    import omni.usd
+    from isaaclab.sim import schemas
+    from isaaclab.sim.spawners.shapes import spawn_cuboid
+    from isaaclab.sim.utils import bind_physics_material, bind_visual_material
+    from pxr import Gf, UsdGeom, UsdPhysics
+
+    from .randomize import _set_pose
+    path = prim_path.replace("env_.*", "env_0")
+    sx, sy, h = (float(v) for v in cfg.size)
+    t = float(OBJ_GEOM["o15"]["wall"])
+    prim = spawn_cuboid(path, cfg.replace(size=(sx, sy, t)), translation=translation, orientation=orientation,
+                        **kwargs)
+    stage = omni.usd.get_context().get_stage()
+    _set_pose(stage.GetPrimAtPath(path + "/geometry/mesh"), (0.0, 0.0, -h / 2 + t / 2))
+    geo = path + "/geometry"
+    vis = cfg.visual_material_path if cfg.visual_material_path.startswith("/") else f"{geo}/{cfg.visual_material_path}"
+    phy = cfg.physics_material_path if cfg.physics_material_path.startswith("/") else \
+        f"{geo}/{cfg.physics_material_path}"
+    walls = [((0.0, sy / 2 - t / 2), (sx, t)), ((0.0, -sy / 2 + t / 2), (sx, t)),
+             ((sx / 2 - t / 2, 0.0), (t, sy - 2 * t)), ((-sx / 2 + t / 2, 0.0), (t, sy - 2 * t))]
+    for i, ((cx, cy), (lx, ly)) in enumerate(walls):
+        p = f"{geo}/wall{i}"
+        cube = UsdGeom.Cube.Define(stage, p)
+        cube.GetSizeAttr().Set(1.0)
+        xf = UsdGeom.Xformable(cube)
+        xf.AddTranslateOp().Set(Gf.Vec3d(cx, cy, t / 2))  # from the floor top to the rim (z -h/2 + t .. h/2)
+        xf.AddScaleOp().Set(Gf.Vec3f(lx, ly, h - t))
+        UsdPhysics.CollisionAPI.Apply(cube.GetPrim())
+        if cfg.collision_props is not None:
+            schemas.define_collision_properties(p, cfg.collision_props)
+        if cfg.visual_material is not None:
+            bind_visual_material(p, vis)
+        if cfg.physics_material is not None:
+            bind_physics_material(p, phy)
+    return prim
+
+
 def _author_usd_pose(path: str, pos, quat_wxyz) -> None:
     """USD pose of a prim under /World/envs/env_0 (env-local, like _object_reset_pose); only while stopped."""
     import omni.usd
@@ -646,7 +739,8 @@ def _author_usd_pose(path: str, pos, quat_wxyz) -> None:
 def make_env(seed: int, headless: bool = True, cameras=DEFAULT_CAMERAS, arm: str = "right", depth: bool = True,
              sim_device: str = "cpu", variant: str = "standard", decimation: int = 5,
              render_interval: int | None = None, task: str = "mug_tray", hard_reset: bool = True,
-             table_z: float | None = None, ws=None, lift: float | None = None) -> Env:
+             table_z: float | None = None, ws=None, lift: float | None = None,
+             objset: str | None = None) -> Env:
     """cameras: names from KNOWN_CAMERAS (real robot cameras); () for no rendering.
     task: tasks.TASK_IDS (R2); the default is the original mug -> tray task with the standard layout.
     sim_device: 'cpu' (PhysX on CPU, default, canon §48) or 'cuda' (GPU PhysX, the v1 setting).
@@ -661,8 +755,10 @@ def make_env(seed: int, headless: bool = True, cameras=DEFAULT_CAMERAS, arm: str
     standing on it (E-PT OOD-H, docs/stage3/prereg_pt.md; any variant since L8-D: pool distractors stand on it too).
     ws: None (default) = WS_X / WS_Y; a box ((x0, x1), (y0, y1)) for the task layouts (L8-D per-height box, gate G-H).
     lift: None (default) = INIT_JOINTS lift_joint; a float = the lift joint's start / hold position (L8-D lift flag,
-    default off, docs/stage3/prereg_l8d.md). The head pitch is never changed."""
-    kw = {} if ws is None and lift is None else {"ws": ws, "lift": lift}
+    default off, docs/stage3/prereg_l8d.md). The head pitch is never changed.
+    objset: None (default) = the five objects o3-o10; "x" = + the L8-X objects (X_OBJ_GEOM: stand, blue mug, small
+    cup, open bin, invisible relational spots; docs/research/l8x_env_suite_design_2026-09-27.md)."""
+    kw = {} if ws is None and lift is None and objset is None else {"ws": ws, "lift": lift, "objset": objset}
     return Env(seed, headless=headless, cameras=cameras, arm=arm, depth=depth, sim_device=sim_device, variant=variant,
                decimation=decimation, render_interval=render_interval, task=task, hard_reset=hard_reset,
                table_z=table_z, **kw)

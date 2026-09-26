@@ -56,6 +56,37 @@ TASK_IDS = ("mug_tray", "bottle_tray", "mug_marker")  # the generated task set (
 EXPERIMENTAL_TASKS = ("box_marker",)
 TASK_CODE = {"mug_tray": 0, "bottle_tray": 1, "box_marker": 2, "mug_marker": 3}  # layout RNG stream id (fixed)
 
+# L8-X tasks (docs/research/l8x_env_suite_design_2026-09-27.md): need scene.make_env(objset="x"); own layout rules
+# (x_task_layout). support: the target starts ON that object (layout entry (x, y, yaw, support)).
+X_TASKS = {
+    "mug_stand": Task("mug_stand", "o3", "o12", "Put the red mug on the white stand.",
+                      {"S1": "pick up mug o3", "S2": "place mug o3 on stand o12"}, extras=("o8", "o9")),
+    "stand_mug_tray": Task("stand_mug_tray", "o3", "o5",
+                           "Take the red mug from the white stand and put it on the blue tray.",
+                           {"S1": "pick up mug o3 from stand o12", "S2": "place mug o3 on tray o5"},
+                           extras=("o8",)),
+    "mug_bin": Task("mug_bin", "o3", "o15", "Put the red mug in the grey bin.",
+                    {"S1": "pick up mug o3", "S2": "place mug o3 in bin o15"}, extras=("o8", "o9")),
+    "bottle_bin": Task("bottle_bin", "o8", "o15", "Put the green bottle in the grey bin.",
+                       {"S1": "pick up bottle o8", "S2": "place bottle o8 in bin o15"}, extras=("o9",)),
+    "bluemug_tray": Task("bluemug_tray", "o13", "o5", "Put the blue mug on the blue tray.",
+                         {"S1": "pick up mug o13", "S2": "place mug o13 on tray o5"}, extras=("o8",)),
+    "smallcup_tray": Task("smallcup_tray", "o14", "o5", "Put the small red cup on the blue tray.",
+                          {"S1": "pick up cup o14", "S2": "place cup o14 on tray o5"}, extras=("o9",)),
+    "mug_left_of_bottle": Task("mug_left_of_bottle", "o3", "o17",
+                               "Put the red mug about 10 cm to the left of the green bottle (the robot's left).",
+                               {"S1": "pick up mug o3", "S2": "place mug o3 at spot o17 left of bottle o8"}),
+    "mug_right_of_bottle": Task("mug_right_of_bottle", "o3", "o18",
+                                "Put the red mug about 10 cm to the right of the green bottle (the robot's right).",
+                                {"S1": "pick up mug o3", "S2": "place mug o3 at spot o18 right of bottle o8"}),
+}
+X_TASK_IDS = tuple(X_TASKS)
+X_TASK_CODE = {t: 100 + i for i, t in enumerate(X_TASK_IDS)}  # layout RNG stream ids (fixed; append new ones)
+X_SUPPORT = {"stand_mug_tray": ("o12", "o3")}  # (support object, object standing on it)
+X_CONFUSER = {"bluemug_tray": "o3", "smallcup_tray": "o3"}  # attribute twin, always 8-14 cm from the target
+X_REL = {"mug_left_of_bottle": ("o8", "o17", 0.10), "mug_right_of_bottle": ("o8", "o18", -0.10)}  # ref, spot, dy
+TASKS.update(X_TASKS)
+
 
 def check_task(task: str) -> str:
     if task not in TASKS:
@@ -80,6 +111,8 @@ def task_layout(seed: int, task: str, ws=None) -> dict:
     check_task(task)
     if task == "mug_tray":
         return sample_layout(seed, ws=ws)
+    if task in X_TASKS:
+        return x_task_layout(seed, task, ws)
     wx, wy = check_ws(ws) or (WS_X, WS_Y)
     s = TASKS[task]
     rng = np.random.default_rng([int(seed), 11, 1000 + TASK_CODE[task]])
@@ -96,6 +129,70 @@ def task_layout(seed: int, task: str, ws=None) -> dict:
         yaw = math.atan2(math.sin(yaw), math.cos(yaw))
     out = {s.target: (float(m[0]), float(m[1]), yaw), s.place: (float(p[0]), float(p[1]), 0.0)}
     extra = ([] if s.target == "o3" else ["o3"]) + [k for k in s.extras if rng.random() < 0.5]
+    for k in extra:
+        for _ in range(10000):
+            q = (float(rng.uniform(*DISTRACTOR_X)), float(rng.uniform(*DISTRACTOR_Y)),
+                 float(rng.uniform(-math.pi, math.pi)) if OBJ_GEOM[k]["shape"] == "cuboid" else 0.0)
+            ok = (math.dist(q[:2], m) >= 0.10 and math.dist(q[:2], p) >= _fr(k) + _fr(s.place) + 0.04
+                  and all(math.dist(q[:2], v[:2]) >= _fr(k) + _fr(j) + 0.02 for j, v in out.items()))
+            if ok:
+                out[k] = q
+                break
+    return out
+
+
+def x_task_layout(seed: int, task: str, ws=None) -> dict:
+    """L8-X task layouts (own RNG stream X_TASK_CODE). Target / place (or stand / relational reference) inside the
+    workspace box by the task_layout rules; stand_mug_tray: the stand at the pick spot, the mug on it
+    ((x, y, yaw, 'o12')); attribute tasks: the twin (red mug) 8-14 cm from the target; relational tasks: bottle and
+    the invisible spot 10 cm to its left / right both inside the box, the mug >= 12 cm from the spot; extras by the
+    task_layout rule (p = 1/2 each, the red mug always present)."""
+    wx, wy = check_ws(ws) or (WS_X, WS_Y)
+    s = TASKS[task]
+    rng = np.random.default_rng([int(seed), 11, X_TASK_CODE[task]])
+    out: dict = {}
+    if task in X_REL:
+        ref, spot, dy = X_REL[task]
+        for _ in range(100000):
+            b = (rng.uniform(wx[0] + 0.02, wx[1]), rng.uniform(wy[0] + 0.03, wy[1] - 0.03))
+            sp = (b[0], b[1] + dy)
+            m = (rng.uniform(*wx), rng.uniform(*wy))
+            if (wy[0] + 0.03 <= sp[1] <= wy[1] - 0.03 and math.dist(m, b) >= _fr("o3") + _fr(ref) + 0.05
+                    and math.dist(m, sp) >= 0.12):
+                break
+        else:  # pragma: no cover
+            raise RuntimeError("layout")
+        out = {s.target: (float(m[0]), float(m[1]), 0.0), ref: (float(b[0]), float(b[1]), 0.0),
+               spot: (float(sp[0]), float(sp[1]), 0.0)}
+        p = sp
+    else:
+        sup = X_SUPPORT.get(task, (None,))[0]
+        fr_t = _fr(sup) if sup else _fr(s.target)
+        for _ in range(100000):
+            p = (rng.uniform(wx[0] + 0.02, wx[1]), rng.uniform(wy[0] + 0.03, wy[1] - 0.03))
+            m = (rng.uniform(*wx), rng.uniform(*wy))
+            if math.dist(p, m) >= max(0.16, fr_t + _fr(s.place) + 0.03):
+                break
+        else:  # pragma: no cover
+            raise RuntimeError("layout")
+        out[s.place] = (float(p[0]), float(p[1]), 0.0)
+        if sup:
+            out[sup] = (float(m[0]), float(m[1]), 0.0)
+            out[s.target] = (float(m[0]), float(m[1]), 0.0, sup)
+        else:
+            out[s.target] = (float(m[0]), float(m[1]), 0.0)
+        tw = X_CONFUSER.get(task)
+        if tw:
+            for _ in range(100000):
+                a, r = rng.uniform(-math.pi, math.pi), rng.uniform(0.08, 0.14)
+                q = (m[0] + r * math.cos(a), m[1] + r * math.sin(a))
+                if (DISTRACTOR_X[0] <= q[0] <= DISTRACTOR_X[1] and DISTRACTOR_Y[0] <= q[1] <= DISTRACTOR_Y[1]
+                        and math.dist(q, p) >= _fr(tw) + _fr(s.place) + 0.04):
+                    out[tw] = (float(q[0]), float(q[1]), 0.0)
+                    break
+            else:  # pragma: no cover
+                raise RuntimeError("confuser")
+    extra = ([] if "o3" in out else ["o3"]) + [k for k in s.extras if rng.random() < 0.5 and k not in out]
     for k in extra:
         for _ in range(10000):
             q = (float(rng.uniform(*DISTRACTOR_X)), float(rng.uniform(*DISTRACTOR_Y)),

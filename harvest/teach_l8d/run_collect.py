@@ -16,18 +16,20 @@ import time
 OUT = "/data/harvest/out/teach_l8d/collect"
 
 
-def make_world(variant: str, table_z: float, ws, lift):
+def make_world(variant: str, table_z: float, ws, lift, objset=None):
     from ..astra_motion.world_isaac import CAMS, NO_RENDER, IsaacWorld
     from ..astra_solo.world import SoloWorld
     from ..sim.scene import GRIP_MAX_W, make_env
+    from .xlabels import x_info
 
     class L8DWorld(SoloWorld):
-        """SoloWorld (depth on) with the R2 tasks, one table height, the height's workspace box and the lift flag."""
+        """SoloWorld (depth on) with the R2 tasks, one table height, the height's workspace box and the lift flag;
+        objset "x" adds the L8-X objects and tasks (task_info then carries the support heights, xlabels)."""
 
-        def __init__(self):  # = SoloWorld.__init__ + ws / lift
+        def __init__(self):  # = SoloWorld.__init__ + ws / lift / objset
             self.variant, self.depth = variant, True
             self.env = make_env(0, headless=True, cameras=CAMS, depth=True, render_interval=NO_RENDER,
-                                variant=variant, table_z=float(table_z), ws=ws, lift=lift)
+                                variant=variant, table_z=float(table_z), ws=ws, lift=lift, objset=objset)
             self.dt = float(self.env.step_dt)
             self.table_z = float(self.env.table_top_z)
             self.w_open = float(GRIP_MAX_W)
@@ -36,6 +38,9 @@ def make_world(variant: str, table_z: float, ws, lift):
 
         def reset(self, seed, task="mug_tray"):
             IsaacWorld.reset(self, seed, task)
+
+        def task_info(self):
+            return x_info(self.env, IsaacWorld.task_info(self))
 
     return L8DWorld()
 
@@ -51,6 +56,7 @@ def main(argv=None):
     ap.add_argument("--table-z", type=float, required=True)
     ap.add_argument("--ws-x", required=True, help="x0,x1 of the height's workspace box (gate G-H)")
     ap.add_argument("--lift", type=float, default=None)
+    ap.add_argument("--objset", default=None, help="x = L8-X objects and tasks")
     ap.add_argument("--seeds", default=None)
     ap.add_argument("--plan", default=None)
     ap.add_argument("--task", default=None, help="override the per-seed task (gate / OOD sets)")
@@ -85,7 +91,7 @@ def main(argv=None):
             if a.task:
                 e["task"] = a.task
         vids = {int(v) for v in a.video_seeds.split(",") if v.strip()}
-        world = make_world(a.variant, a.table_z, ws, a.lift)
+        world = make_world(a.variant, a.table_z, ws, a.lift, a.objset)
         lim = None
         if a.lift is not None:
             rob = world.env.robot

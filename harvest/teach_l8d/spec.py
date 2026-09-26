@@ -150,10 +150,25 @@ def _run(xs, ok):
     return None if best is None else (_r(best[0]), _r(best[1]))
 
 
+def median3(err):
+    """Running median of 3 along z (last axis; ends keep a 2-point window's larger value): a single-step transient
+    (one hold of 25 ticks landing mid-swing, e.g. 114-237 mm between 1-2 mm neighbours in the probe) is not a reach
+    limit; two consecutive failing steps still fail (prereg_l8d.md change 1)."""
+    e = np.asarray(err, float)
+    out = e.copy()
+    n = e.shape[-1]
+    for i in range(n):
+        lo, hi = max(0, i - 1), min(n, i + 2)
+        w = e[..., lo:hi]
+        out[..., i] = np.median(w, axis=-1) if w.shape[-1] == 3 else np.max(w, axis=-1)
+    return out
+
+
 def reach_band(xs, zs, err_mm, z_need, ok_mm: float = REACH_OK_MM):
     """err_mm[y, x, z] = settled TCP error of a top-down target (IK probe). x is reachable when every y and every
-    probed z inside z_need = (z_lo, z_hi) (world) is within ok_mm. -> (x_lo, x_hi) (longest run) or None."""
-    err = np.asarray(err_mm, float)
+    probed z inside z_need = (z_lo, z_hi) (world) is within ok_mm after median3 along z. -> (x_lo, x_hi) (longest
+    run) or None."""
+    err = median3(np.asarray(err_mm, float))
     zs = np.asarray(zs, float)
     zi = (zs >= z_need[0] - 1e-9) & (zs <= z_need[1] + 1e-9)
     ok = [bool(np.all(err[:, i, zi] <= ok_mm)) for i in range(len(xs))]
