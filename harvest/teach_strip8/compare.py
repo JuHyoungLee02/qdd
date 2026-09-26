@@ -16,8 +16,18 @@ MARGIN_MM = 5.0
 N_BOOT = 10000
 
 
-def load_scores(d: str) -> dict:
-    return {s["id"]: s for s in (json.loads(x) for x in open(os.path.join(d, "scores.jsonl")))}
+def load_scores(d: str, only=None) -> dict:
+    """scores by id; only = substrings (e.g. ["tz0.82", "tz0.88"]): keep ids containing any of them."""
+    sc = {s["id"]: s for s in (json.loads(x) for x in open(os.path.join(d, "scores.jsonl")))}
+    return {k: v for k, v in sc.items() if not only or any(o in k for o in only)}
+
+
+def summary_of(sc: dict) -> dict:
+    """evaluate.summarize-shaped summary recomputed from scores (for a subset of the states)."""
+    from ..teach_pt import metrics as M
+    s = list(sc.values())
+    return {"control_all": M.summarize(s), "control_first_call": M.summarize([x for x in s if x["call"] == 0]),
+            "by_step": {k: M.summarize([x for x in s if x["step"] == k]) for k in sorted({x["step"] for x in s})}}
 
 
 def paired(a: dict, b: dict, key: str, n_boot: int = N_BOOT, seed: int = 0) -> dict:
@@ -70,13 +80,16 @@ def main(argv=None):
     ap.add_argument("--set", required=True)
     ap.add_argument("--arm", action="append", required=True, help="name=eval dir")
     ap.add_argument("--ref", default="s-full")
+    ap.add_argument("--only", default="", help="comma-separated id substrings (e.g. tz0.82,tz0.88)")
     a = ap.parse_args(argv)
+    only = [o for o in a.only.split(",") if o]
     arms = dict(x.split("=", 1) for x in a.arm)
-    out = {"set": a.set, "arms": {}, "paired_vs_" + a.ref: {}}
+    out = {"set": a.set, "only": only, "arms": {}, "paired_vs_" + a.ref: {}}
     sc = {}
     for k, d in arms.items():
-        out["arms"][k] = brief(json.load(open(os.path.join(d, "summary.json"))))
-        sc[k] = load_scores(d)
+        sc[k] = load_scores(d, only)
+        out["arms"][k] = brief(dict(summary_of(sc[k]), latency_s_p50=json.load(
+            open(os.path.join(d, "summary.json"))).get("latency_s_p50")))
     if a.ref in sc:
         for k in sc:
             if k != a.ref:
