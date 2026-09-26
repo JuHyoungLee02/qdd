@@ -381,7 +381,10 @@ def _args(argv):
     ap.add_argument("--couple-prices", default="", help="the run day's price table JSON (paid runs)")
     ap.add_argument("--couple-budget-krw", type=float, default=0.0, help="the pre-registered experiment cap")
     ap.add_argument("--couple-ledger", default="", help="experiment cost ledger JSONL under /data")
-    ap.add_argument("--approval", default="", help="self-check reference for paid calls: prereg self-check section (user-log 87), e.g. 'prereg_couple.md §0'")
+    ap.add_argument("--approval", default="",
+                    help="user approval reference for paid calls: the user's explicit approval, obtained through the "
+                         "coordinator, of purpose/call count/cost estimate (user-log 114; replaces user-log 87's "
+                         "self-check), e.g. 'user approval: user-log 114, prereg_couple.md §0'")
     ap.add_argument("--worker", default="", help=argparse.SUPPRESS)
     return ap.parse_args(argv)
 

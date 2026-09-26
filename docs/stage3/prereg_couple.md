@@ -1,15 +1,16 @@
 # E-Couple — Astra 직렬 1개 + 두 층 M4 대 VLA 단독 (사전 등록 **초안**, 유료 호출 0)
 
-- 작성: 2026-09-26 05:20 UTC, 계획 `docs/superpowers/plans/2026-09-26-astra-vla-coupling.md` Task 15. 상태: **초안 — 자체 검사 절(§0: 바꾸는 결정·표본 충분성·무료 Qwen 사전 실행 결과·관문별 재설계 조건) 작성·커밋 전 유료 실행 금지**(user-log 87). 결과를 본 뒤 문턱·조건·시드·예산을 바꾸지 않는다(바꾸려면 새 등록).
+- 작성: 2026-09-26 05:20 UTC, 계획 `docs/superpowers/plans/2026-09-26-astra-vla-coupling.md` Task 15. 상태: **초안 — §0 자체 검사 절(바꾸는 결정·표본 충분성·무료 Qwen 사전 실행 결과·관문별 재설계 조건) 작성·커밋, 그리고 그 위에 사용자가 목적·호출 수·예상 비용을 보고 통제자 경유로 명시 승인해야만 유료 실행**(user-log 114 "돈드는건 내 허락맡고 하기", user-log 87의 자체 판단 규칙을 대체). 결과를 본 뒤 문턱·조건·시드·예산을 바꾸지 않는다(바꾸려면 새 등록).
 - 근거: 설계 §9·§15·§16, 정본 §84 보충 2(직렬 1개, E-Couple 조건 = {VLA 단독, Astra 직렬 1개 + 두 층 M4}).
 
-## 0. 자체 검사 (user-log 87, [작성 전])
+## 0. 자체 검사 + 사용자 승인 (user-log 114, user-log 87 대체, [작성 전])
 
 **[작성 전]** 실행 전(§0 작성·커밋 없이는 유료 실행 금지, 정본 §85):
 - 이 결과로 바꾸는 설계 결정: [작성 전]
 - 이 표본으로 그 결정을 가를 수 있는가(층·표본 크기가 §5 문턱을 통계적으로 가릴 힘이 있는가): [작성 전]
 - 더 싼 사전 실행(무료 모델·작은 판) 결과: [작성 전] — 계획된 값싼 사전 실행은 (1) `--astra mock`(`ScriptedCoupleAstra`)으로 시드 0–2 파이프라인 스모크(§3에 이미 기재 — 사이드카 `couple` 행·블롭·요약이 채워지는지만 확인, 유료 0), (2) 무료 Qwen3-VL 흐름 사전 실행(예: `--couple-upper local`, GPU 빈 곳, 시드 몇 개) — Astra 대신 로컬 VLM으로 A1 배선 전체(직렬 흐름 → 편향 → 두 층 관문 → 청크 준수 로그)가 끝까지 도는지 유료 호출 없이 먼저 확인한다. 이 항목에는 사전 실행이 끝난 뒤 그 결과가 §5 판정에 주는 함의를 적는다.
-- 관문·재설계 규칙(정본 §85, user-log 87 (2)): 실행 중 단계 관문마다 결함(버그·무효 답 > 10 %·교란·비용이나 시간 2배 초과·관문 실패)이 보이면 그 자리에서 멈추고 재설계한다 — 재설계는 이 사전 등록 문서를 고쳐 **커밋한 뒤에만** 재개한다(틀린 설계로 계속 쓰지 않는다). 끝에는 검증 명령으로 결과를 확인한 뒤 보고한다(유익성 판단은 Claude가 하고, 사용자 승인은 받지 않는다 — 판단 근거는 보고).
+- 관문·재설계 규칙(정본 §85, user-log 87 (2)): 실행 중 단계 관문마다 결함(버그·무효 답 > 10 %·교란·비용이나 시간 2배 초과·관문 실패)이 보이면 그 자리에서 멈추고 재설계한다 — 재설계는 이 사전 등록 문서를 고쳐 **커밋한 뒤에만** 재개한다(틀린 설계로 계속 쓰지 않는다). 끝에는 검증 명령으로 결과를 확인한 뒤 보고한다.
+- **유료 실행 승인(user-log 114, user-log 87 대체)**: 위 자체 검사 절을 커밋한 뒤, 이 목적·호출 수·예상 비용을 통제자 경유로 사용자에게 제안하고 **사용자가 명시로 승인**해야만 유료 실행을 시작한다("유익성 판단은 Claude가 하고 사용자 승인은 받지 않는다"는 user-log 87 문구는 더는 유효하지 않다). 승인 근거는 `--approval`에 남긴다.
 
 ## 1. 질문
 Astra(low) 일반 조종 흐름을 한 번에 하나씩 부르고 두 층 M4로 합치면, 같은 융합 VLA 단독보다 폐루프 성공률이 오르는가? 새 환경 층(DR)에서 낙폭이 줄어드는가? 호출 수·지연·비용은 얼마인가?
@@ -45,7 +46,7 @@ Astra(low) 일반 조종 흐름을 한 번에 하나씩 부르고 두 층 M4로 
 - **탐침 실측값으로 지금 추정**(정본 §86 보충 2, `docs/stage3/results/astra_motion.md` §2/§5: 직렬 F0 호출당 **약 49.7원**, 지연(벽시계) p50 **약 9.3 s**; 참고로 로봇 1분당 약 350–500원): 편 수 40 × 판 길이 60 s / L 9.3 s = **약 258회**(40 × 60 / 9.3 = 258.06), 비용 = 258회 × 49.7원 ≈ **12,826원**(약 12,800원) — 이 값은 실행 전 추정일 뿐이며, **실행일에는 위 CLI로 그날 가격표를 다시 읽어 재계산한다**(설계 §8·§15의 옛 사전 추정 28원/호출·L = 4 s는 탐침 전 값이라 더는 쓰지 않는다).
 - **상한 25,000원**(80 % = 20,000원에서 정지·보고).
 - **누적**(정본 §82 보충 "약 10만 원" 한도, E-Astra-necessity §5가 참조하는 계산과 같음): **탐침 실제 지출 6,933원**(하드 정지 상한 15,000원이 아니라 실측 지출 — `docs/stage3/results/astra_motion.md` §2, `docs/book/05-costs.md` 누적행) **+ 이 실험 상한 25,000원 + E-Astra-necessity 흐름 자리 상한 20,000원 = 51,933원 ≤ 100,000원**. 실측 단가(탐침: low 파지 질문 15.7원, 흐름 질문 49.7원)가 이미 나와 있으므로 실행 전 위 CLI 재계산 값이 이 문단의 12,826원 추정을 대체한다.
-- 실행 명령(자체 검사 뒤, 파드): `python -m harvest.eval.closed --model <체크포인트> --backend fused --out /data/harvest/out/e_couple --split dev --seeds 0-19 --variants standard,dr --couple off,serial --astra api --couple-prices <가격표> --couple-budget-krw 25000 --couple-ledger /data/harvest/out/e_couple/ledger.jsonl --approval "prereg_couple.md §0 자체 검사" --parallel`
+- 실행 명령(자체 검사 뒤, 파드): `python -m harvest.eval.closed --model <체크포인트> --backend fused --out /data/harvest/out/e_couple --split dev --seeds 0-19 --variants standard,dr --couple off,serial --astra api --couple-prices <가격표> --couple-budget-krw 25000 --couple-ledger /data/harvest/out/e_couple/ledger.jsonl --approval "user approval: user-log 114, prereg_couple.md §0" --parallel`
 
 ## 7. 산출물
 `docs/stage3/results/e_couple.md`(표·그림·영상: 판마다 카메라 3대 영상 확인), `closed.json`, 장부 JSONL, 블롭.

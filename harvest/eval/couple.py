@@ -1,8 +1,9 @@
 """E-Couple / E-Astra-necessity (stream slot) evaluation pieces for harvest.eval.closed (spec §9, §15, §16; canon §82,
 §84 supplement 2, 4, 5). Arms: off (no Astra at all when compared with a coupling arm = VLA alone), serial (one Astra
 request in flight + two-layer M4), serial_pause (+ the optional phase pause, cost fallback). Paid runs need the run
-day's price table, the pre-registered budget, a ledger path and a self-check reference -- the prereg's self-check
-section (user-log 87; replaces user approval). Episodes cut by the 80 % budget stop are excluded from the judgment
+day's price table, the pre-registered budget, a ledger path and a user approval reference -- the user's explicit
+approval, obtained through the coordinator, of the purpose/call count/cost estimate (user-log 114, "돈드는건 내
+허락맡고 하기"; replaces user-log 87's self-judged rule). Episodes cut by the 80 % budget stop are excluded from the judgment
 and counted (plan ruling 10). couple_cell() also pools the per-episode chunk-level adherence (canon §84 supplement
 4-5, controller ruling C4): CoupleDriver.summary()["adherence"] is already {"chunk_vs_offset": {n, follow_rate},
 "chunk_vs_decision": {...}} per episode; the cell pools n x follow_rate across episodes (skipping None rates).
@@ -50,8 +51,8 @@ def check_paid(a) -> None:
     miss = [k for k, ok in (("--couple-prices", bool(a.couple_prices)), ("--couple-budget-krw", a.couple_budget_krw > 0),
                             ("--couple-ledger", bool(a.couple_ledger)), ("--approval", bool(a.approval))) if not ok]
     if miss:
-        raise SystemExit(f"paid Astra coupling run refused: {miss} missing (user-log 87: self-check reference, the run day's "
-                         f"prices, the pre-registered budget and a ledger)")
+        raise SystemExit(f"paid Astra coupling run refused: {miss} missing (user-log 114: a user approval reference, "
+                         f"the run day's prices, the pre-registered budget and a ledger)")
 
 
 def stream_client(spec: dict):

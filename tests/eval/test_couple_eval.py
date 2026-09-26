@@ -21,7 +21,8 @@ def test_arms_labels_and_configs():
 
 
 def test_paid_runs_need_prices_budget_ledger_and_approval():
-    base = dict(couple_prices="p.json", couple_budget_krw=25000.0, couple_ledger="/data/x.jsonl", approval="prereg_couple.md §0 self-check")
+    base = dict(couple_prices="p.json", couple_budget_krw=25000.0, couple_ledger="/data/x.jsonl",
+                approval="user approval: user-log 114, prereg_couple.md §0")
     CP.check_paid(SimpleNamespace(**base))
     for k, v in (("approval", ""), ("couple_prices", ""), ("couple_budget_krw", 0.0), ("couple_ledger", "")):
         with pytest.raises(SystemExit):
