@@ -369,9 +369,13 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
         return RigidObjectCfg(prim_path="{ENV_REGEX_NS}/" + k.upper(), spawn=spawn,
                               init_state=RigidObjectCfg.InitialStateCfg(pos=(x, y, z), rot=yaw_quat(yaw)))
 
+    def body_path(k):  # the rigid body prim (L8-X mesh objects keep it under their USD root)
+        g = OBJ_GEOM[k]
+        return "{ENV_REGEX_NS}/" + k.upper() + ("/" + g["body_rel"] if g.get("body_rel") else "")
+
     def contact_cfg(k):
-        others = [f"{{ENV_REGEX_NS}}/{j.upper()}" for j in obj_ids if j != k]
-        return ContactSensorCfg(prim_path="{ENV_REGEX_NS}/" + k.upper(), update_period=0.0, history_length=0,
+        others = [body_path(j) for j in obj_ids if j != k]
+        return ContactSensorCfg(prim_path=body_path(k), update_period=0.0, history_length=0,
                                 filter_prim_paths_expr=finger_paths + others)
 
     robot = _robot_cfg()

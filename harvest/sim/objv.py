@@ -69,7 +69,8 @@ def grasp_yaw_of(g) -> float:
 
 def geom(row: dict) -> dict:
     he = [float(v) for v in row["half_extents"]]
-    return {"shape": "mesh", "usd": row["usd_physics"], "spawn_quat_wxyz": [float(v) for v in row["spawn_quat_wxyz"]],
+    return {"shape": "mesh", "usd": row["usd_physics"], "body_rel": f"Geometry/obja_{row['uid']}",
+            "spawn_quat_wxyz": [float(v) for v in row["spawn_quat_wxyz"]],
             "root_above_bottom": float(row["root_above_bottom"]),
             "centre_from_root_xy": [float(v) for v in row["centre_from_root_xy"]],
             "half_extents": tuple(he), "height": float(row["height"]), "footprint_r": float(row["footprint_r"]),
