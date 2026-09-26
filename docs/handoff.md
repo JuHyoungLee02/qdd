@@ -167,3 +167,4 @@
 - 2026-09-26 14:5x UTC E-TEACH-L8 끝(user-log 117, `docs/stage3/results/teach_l8.md`, 0원): 8B 참값 SFT(1.39 GPU-h)로 오프라인 접근 xy 125.5 → 2.6 mm, 폐루프 DEV 4/4(영샷 0/4) — TREND·STRONG·WORKS.
   - 모델: 병합 가중치 `/data/harvest/out/teach_l8/merged_ep2`, 어댑터 `run_main/epoch2`. 서빙은 `tools/teach_l8/vllm.sh`, 폐루프는 `closed.sh`.
   - 다음 후보: (1) OOD·다양화 평가(ul 116)에서 8B 대 35B-A3B; (2) 35B-A3B LoRA 50걸음 처리량 스모크; (3) Astra 라벨 팔(L-A, 유료 — 사용자 허락 필요, ul 114).
+- 2026-09-26 15:20 UTC E-PT 등록(user-log 120–122, 정본 §97 보충 2, `docs/stage3/prereg_pt.md`, 유료 0원): 주 팔 = 깊이 없이 모델이 거리를 아는 ND-1 `nd-xyz`(격자·탁자 높이 없이 xyz)·ND-2 `nd-est`(추정 먼저), 비교 = 깊이 점 `pt`·L8-xyz; F0 영샷 점 + F2 같은 L8 편·816걸음 LoRA를 DEV + OOD-H(탁자 0.82·0.88)에서. 진행 상태는 §0이 아니라 결과 문서 `docs/stage3/results/pt.md`에.

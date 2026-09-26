@@ -216,13 +216,14 @@ def _robot_cfg():
 
 
 _LAYOUT = {"layout": {}}  # current seed's layout, read by the reset event (module global: cfgs get deep-copied)
+# "table_z" (set by Env): the table top of the current env; TABLE_TOP_Z unless make_env(table_z=...) (E-PT OOD-H)
 
 
 def _object_reset_pose(k: str, layout: dict):
     g = OBJ_GEOM[k]
     if k in layout:
         x, y, yaw = layout[k]
-        return (x, y, TABLE_TOP_Z + g["half_extents"][2] + 0.001), yaw_quat(yaw)
+        return (x, y, _LAYOUT.get("table_z", TABLE_TOP_Z) + g["half_extents"][2] + 0.001), yaw_quat(yaw)
     x, y = PARK_XY.get(k, (-2.4 - 0.3 * len(k), 2.4))
     return (x, y, g["half_extents"][2] + 0.001), yaw_quat(0.0)
 
@@ -247,7 +248,8 @@ def _place_layout_event(env, env_ids):
 
 
 def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu", variant: str = "standard",
-               decimation: int = 5, render_interval: int | None = None, task: str = "mug_tray"):
+               decimation: int = 5, render_interval: int | None = None, task: str = "mug_tray",
+               table_z: float = TABLE_TOP_Z):
     import isaaclab.envs.mdp as mdp
     import isaaclab.sim as sim_utils
     from isaaclab.assets import AssetBaseCfg, RigidObjectCfg
@@ -285,7 +287,7 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
         else:
             spawn = sim_utils.CuboidCfg(size=g["size"], **common)
         x, y, yaw = layout.get(k, (*PARK_XY.get(k, (-3.9, 3.0)), 0.0))
-        z = (TABLE_TOP_Z if k in layout else 0.0) + g["half_extents"][2] + 0.001
+        z = (table_z if k in layout else 0.0) + g["half_extents"][2] + 0.001
         return RigidObjectCfg(prim_path="{ENV_REGEX_NS}/" + k.upper(), spawn=spawn,
                               init_state=RigidObjectCfg.InitialStateCfg(pos=(x, y, z), rot=yaw_quat(yaw)))
 
@@ -308,7 +310,7 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
                 size=TABLE_SIZE, collision_props=sim_utils.CollisionPropertiesCfg(),
                 physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=0.6, dynamic_friction=0.6),
                 visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.55, 0.45, 0.35))),
-            init_state=AssetBaseCfg.InitialStateCfg(pos=(*TABLE_CENTER_XY, TABLE_TOP_Z - TABLE_SIZE[2] / 2))),
+            init_state=AssetBaseCfg.InitialStateCfg(pos=(*TABLE_CENTER_XY, table_z - TABLE_SIZE[2] / 2))),
     }
     for k in obj_ids:
         scene_attrs[k] = obj_cfg(k)
@@ -419,7 +421,7 @@ class Env:
 
     def __init__(self, seed: int, headless=True, cameras=DEFAULT_CAMERAS, arm="right", depth=True, sim_device="cpu",
                  variant="standard", decimation: int = 5, render_interval: int | None = None, task: str = "mug_tray",
-                 hard_reset: bool = True):
+                 hard_reset: bool = True, table_z: float | None = None):
         from . import randomize
         from .tasks import check_task
         self.hard_reset = bool(hard_reset)
@@ -432,8 +434,12 @@ class Env:
 
         self.torch = torch
         self.seed, self.arm, self.cameras = int(seed), arm, cameras
+        tz = TABLE_TOP_Z if table_z is None else float(table_z)
+        if tz != TABLE_TOP_Z and self.variant != "standard":  # randomize.py places distractors at TABLE_TOP_Z
+            raise ValueError("table_z other than TABLE_TOP_Z: variant standard only (E-PT OOD-H)")
+        _LAYOUT["table_z"] = tz
         cfg, self.layout = _build_cfg(seed, cameras, arm, depth, sim_device, variant, decimation, render_interval,
-                                      task)
+                                      task, tz)
         self.sim_device = cfg.sim.device
         _LAYOUT["layout"] = self.layout
         self.randomization = randomize.sample_randomization(seed, variant, self.layout, path=self.task_path())
@@ -455,7 +461,7 @@ class Env:
         self.step_dt = float(self.env.step_dt)
         self._steps = 0
         self.perturb_state = None
-        self.table_top_z = TABLE_TOP_Z
+        self.table_top_z = tz
         self.tcp_offset, self.tip_offset = _measure_finger_offsets(arm)
         if self.variant != "standard":
             randomize.setup_visuals(self)
@@ -498,7 +504,7 @@ class Env:
         g = OBJ_GEOM["o11"]
         if "o11" in self.layout:
             x, y = self.layout["o11"][:2]
-            return np.array([x, y, TABLE_TOP_Z + g["height"] / 2])
+            return np.array([x, y, self.table_top_z + g["height"] / 2])
         return np.array([*PARK_XY["o11"], g["height"] / 2])
 
     def _recreate_physx_scene(self):
@@ -623,7 +629,8 @@ def _author_usd_pose(path: str, pos, quat_wxyz) -> None:
 
 def make_env(seed: int, headless: bool = True, cameras=DEFAULT_CAMERAS, arm: str = "right", depth: bool = True,
              sim_device: str = "cpu", variant: str = "standard", decimation: int = 5,
-             render_interval: int | None = None, task: str = "mug_tray", hard_reset: bool = True) -> Env:
+             render_interval: int | None = None, task: str = "mug_tray", hard_reset: bool = True,
+             table_z: float | None = None) -> Env:
     """cameras: names from KNOWN_CAMERAS (real robot cameras); () for no rendering.
     task: tasks.TASK_IDS (R2); the default is the original mug -> tray task with the standard layout.
     sim_device: 'cpu' (PhysX on CPU, default, canon §48) or 'cuda' (GPU PhysX, the v1 setting).
@@ -633,6 +640,9 @@ def make_env(seed: int, headless: bool = True, cameras=DEFAULT_CAMERAS, arm: str
     D23 §3) uses 1 (100 Hz). render_interval: physics substeps per render (default = decimation).
     hard_reset: True (default) = every reset() recreates the PhysX scene, so an episode depends only on its seed
     (physx_hard_reset.md); False = the old soft reset, only for replaying episodes recorded before (history-dependent,
-    pool_replay_debug.md)."""
+    pool_replay_debug.md).
+    table_z: None (default) = TABLE_TOP_Z 0.85 (every path unchanged); a float moves the table and the objects
+    standing on it (variant standard only; E-PT OOD-H, docs/stage3/prereg_pt.md)."""
     return Env(seed, headless=headless, cameras=cameras, arm=arm, depth=depth, sim_device=sim_device, variant=variant,
-               decimation=decimation, render_interval=render_interval, task=task, hard_reset=hard_reset)
+               decimation=decimation, render_interval=render_interval, task=task, hard_reset=hard_reset,
+               table_z=table_z)

@@ -114,3 +114,4 @@
 | 2026-09-26 15:0x | 04 | 무좌표 조종 조사(ul 118): 04 저장소 표에 `docs/research/no_metric_xyz_control_survey_2026-09-26.md` 행 | [research/no_metric_xyz_control_survey](../research/no_metric_xyz_control_survey_2026-09-26.md), 이 줄과 같은 커밋 |
 | 2026-09-26 16:4x | 04 | 공개 데이터 변환 방법(ul 119): 04 저장소 표에 `docs/research/public_data_conversion_howto_2026-09-26.md` 행, 파드 표에 `out/xemb_proto/` 행 | [research/public_data_conversion_howto](../research/public_data_conversion_howto_2026-09-26.md), 이 줄과 같은 커밋 |
 | 2026-09-26 15:18 | — | 결합 최종 검토 재검토 반영: 인계 §0 결합 줄에 새 ser-A-min-3 체크포인트 뒤 재생성 절차(카나리·보정·폐루프 스모크, 융합 보정 qid 한계) 가리킴 복원 — 계획 Task 12 Step 17 + 정본 §83 구현 기록 4 | 계획 2026-09-26 최종 검토, 이 줄과 같은 커밋 |
+| 2026-09-26 15:20 | 01·03·04 | E-PT 등록(ul 120–122): 01 행(`등록`), 03 §97 보충 2 행, 04 코드 경로 행 | [P/prereg_pt](../stage3/prereg_pt.md), 이 줄과 같은 커밋 |
