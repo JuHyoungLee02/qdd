@@ -126,6 +126,8 @@ def build(root: str, out_dir: str, split: str, fmt: str = "v2", tags: bool = Fal
     repeats = (split == "train") if repeats is None else repeats
     arm = PT_ARM[fmt]
     dirs = episode_dirs(root)
+    from ..sim.objv import register_for_tasks  # prompt names / sizes of L8-X mesh objects (s-min strip, aux QA)
+    register_for_tasks([os.path.basename(d).rsplit("_s", 1)[0] for d in dirs])
     if manifest is not None:  # a frozen bundle: only its episodes (relative paths to root)
         keep = {os.path.normpath(os.path.join(root, p)) for p in manifest}
         dirs = [d for d in dirs if os.path.normpath(d) in keep]

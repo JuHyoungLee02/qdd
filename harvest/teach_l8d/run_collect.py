@@ -201,6 +201,8 @@ def main(argv=None):
             if a.task:
                 e["task"] = a.task
         vids = {int(v) for v in a.video_seeds.split(",") if v.strip()}
+        from ..sim.objv import register_for_tasks  # L8-X mesh objects used by this process (before make_env)
+        objv_ids = register_for_tasks([e["task"] for e in eps])
         if a.furniture and a.variant != "standard":
             raise ValueError("furniture scenes: variant standard only (the drx table material / pool distractors "
                              "assume the L8 table)")

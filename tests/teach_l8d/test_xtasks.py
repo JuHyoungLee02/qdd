@@ -16,7 +16,7 @@ WS = ((0.37, 0.49), (-0.40, -0.06))
 
 def test_registry_and_codes():
     assert set(T.X_TASK_IDS) <= set(T.TASKS) and not set(T.X_TASK_IDS) & set(T.TASK_IDS)
-    assert len(set(T.X_TASK_CODE.values())) == len(T.X_TASK_IDS)
+    assert len({T.X_TASK_CODE[t] for t in T.X_TASK_IDS}) == len(T.X_TASK_IDS)  # static tasks (ov_* are dynamic)
     assert not set(T.X_TASK_CODE.values()) & {1000 + v for v in T.TASK_CODE.values()}
     for t in T.X_TASK_IDS:
         s = T.TASKS[t]

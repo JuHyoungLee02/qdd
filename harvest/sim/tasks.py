@@ -170,6 +170,41 @@ def task_layout(seed: int, task: str, ws=None) -> dict:
     return out
 
 
+def _target_yaw(k: str, rng) -> float:
+    """Layout yaw of a target: 0 for the primitive objects (no rng draw, so their layout streams are unchanged);
+    licensed mesh objects are turned so their narrow side faces the fingers (objv.grasp_yaw_of) +- 10 deg."""
+    g = OBJ_GEOM[k]
+    if g["shape"] != "mesh":
+        return 0.0
+    from .objv import grasp_yaw_of
+    return float(grasp_yaw_of(g) + math.radians(rng.uniform(-10.0, 10.0)))
+
+
+OBJV_TASK_KINDS = {"tray": ("o5", "Put the {n} on the blue tray.", ()),
+                   "bin": ("o15", "Put the {n} in the grey bin.", ("o8",))}
+
+
+def objv_task_id(kind: str, obj: str) -> str:
+    return f"ov_{kind}__{obj}"
+
+
+def register_objv_tasks(ids, names: dict) -> list:
+    """L8-X tasks for registered licensed mesh objects (harvest.sim.objv.register): per object 'ov_tray__<id>' (onto
+    the blue tray) and 'ov_bin__<id>' (into the grey bin). Layout streams: code 5000 + a stable hash of the id."""
+    import hashlib
+    out = []
+    for k in ids:
+        for kind, (pl, text, extras) in OBJV_TASK_KINDS.items():
+            t = objv_task_id(kind, k)
+            if t not in TASKS:
+                n = names[k]
+                TASKS[t] = X_TASKS[t] = Task(t, k, pl, text.format(n=n),
+                                             {"S1": f"pick up {n} {k}", "S2": f"place {n} {k} on {pl}"}, extras=extras)
+                X_TASK_CODE[t] = 5000 + int(hashlib.sha256(t.encode()).hexdigest()[:6], 16) % 100000
+            out.append(t)
+    return out
+
+
 def x_task_layout(seed: int, task: str, ws=None) -> dict:
     """L8-X task layouts (own RNG stream X_TASK_CODE). Target / place (or stand / relational reference) inside the
     workspace box by the task_layout rules; stand_mug_tray: the stand at the pick spot, the mug on it
@@ -241,7 +276,7 @@ def x_task_layout(seed: int, task: str, ws=None) -> dict:
             out[sup] = (float(m[0]), float(m[1]), 0.0)
             out[s.target] = (float(m[0]), float(m[1]), 0.0, sup)
         else:
-            out[s.target] = (float(m[0]), float(m[1]), 0.0)
+            out[s.target] = (float(m[0]), float(m[1]), _target_yaw(s.target, rng))
         tw = X_CONFUSER.get(task)
         if tw:
             for _ in range(100000):
@@ -345,7 +380,7 @@ def close_width(obj: str) -> float:
     """Squeeze target: the grasped dimension minus GRIP_SQUEEZE_M (cylinder diameter, cuboid x side after the
     yaw alignment of grasp_yaw)."""
     g = OBJ_GEOM[obj]
-    size = 2 * g["radius"] if g["shape"] == "cylinder" else g["size"][0]
+    size = 2 * g["radius"] if g["shape"] == "cylinder" else (g["grasp_width"] if g["shape"] == "mesh" else g["size"][0])
     return max(0.0, size - GRIP_SQUEEZE_M)
 
 

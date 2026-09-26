@@ -79,6 +79,7 @@ OBJ_GEOM.update(X_OBJ_GEOM)
 VISUAL_ONLY = ("o11",)
 PRESENT_IDS = ("o3", "o5", "o8", "o9", "o11")  # objects in play when the layout has them (o10 joins after P2 fires)
 X_PRESENT_IDS = PRESENT_IDS + X_RIGID + X_VISUAL_ONLY
+OBJV_IDS: list = []  # L8-X licensed mesh objects registered in this process (harvest.sim.objv.register)
 for _g in OBJ_GEOM.values():
     if _g["shape"] in ("cylinder", "marker"):
         _g["half_extents"] = (_g["radius"], _g["radius"], _g["height"] / 2)
@@ -282,9 +283,15 @@ def _object_reset_pose(k: str, layout: dict):
         z0 = _LAYOUT.get("table_z", TABLE_TOP_Z)
         if len(layout[k]) > 3:  # L8-X: standing on another object
             z0 = base_z(k, layout, z0)
-        return (x, y, z0 + g["half_extents"][2] + 0.001), yaw_quat(yaw)
-    x, y = PARK_XY.get(k, (-2.4 - 0.3 * len(k), 2.4))
-    return (x, y, g["half_extents"][2] + 0.001), yaw_quat(0.0)
+        pos, q = (x, y, z0 + g["half_extents"][2] + 0.001), yaw_quat(yaw)
+    else:
+        x, y = PARK_XY.get(k, (-2.4 - 0.3 * len(k), 2.4))
+        pos, q = (x, y, g["half_extents"][2] + 0.001), yaw_quat(0.0)
+    if g["shape"] == "mesh":  # L8-X licensed mesh object: canonical (bbox centre, upright) -> its USD root pose
+        from .objv import root_from_canonical
+        r, rq = root_from_canonical(g, pos, q)
+        return tuple(float(v) for v in r), tuple(float(v) for v in rq)
+    return pos, q
 
 
 def _place_layout_event(env, env_ids):
@@ -328,10 +335,18 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
     layout = task_layout(seed, task, ws=ws)  # mug_tray = sample_layout(seed)
     robot_prefix = "{ENV_REGEX_NS}/Robot/ffw_sg2_follower"
     finger_paths = [f"{robot_prefix}/right_gripper/{b}" for b in FINGER_BODIES[arm]]
-    obj_ids = ["o3", "o5", "o8", "o9", "o10"] + (list(X_RIGID) if objset == "x" else [])
+    obj_ids = ["o3", "o5", "o8", "o9", "o10"] + (list(X_RIGID) + list(OBJV_IDS) if objset == "x" else [])
 
     def obj_cfg(k):
         g = OBJ_GEOM[k]
+        if g["shape"] == "mesh":  # L8-X licensed mesh (own convex-hull colliders in its physics USD)
+            spawn = sim_utils.UsdFileCfg(usd_path=g["usd"],
+                                         rigid_props=sim_utils.RigidBodyPropertiesCfg(max_depenetration_velocity=1.0),
+                                         mass_props=sim_utils.MassPropertiesCfg(mass=g["mass"]),
+                                         activate_contact_sensors=True)
+            pos, rot = _object_reset_pose(k, layout)
+            return RigidObjectCfg(prim_path="{ENV_REGEX_NS}/" + k.upper(), spawn=spawn,
+                                  init_state=RigidObjectCfg.InitialStateCfg(pos=pos, rot=rot))
         common = dict(
             rigid_props=sim_utils.RigidBodyPropertiesCfg(max_depenetration_velocity=1.0),
             mass_props=sim_utils.MassPropertiesCfg(mass=g["mass"]),
@@ -492,8 +507,8 @@ class Env:
         if objset not in (None, "x"):
             raise ValueError(f"objset {objset!r}: None or 'x'")
         self.objset = objset  # L8-X objects (o12-o15 rigid, o17 / o18 invisible spots) only with "x"
-        self.obj_ids = ["o3", "o5", "o8", "o9", "o10"] + (list(X_RIGID) if objset == "x" else [])
-        self.present_ids = X_PRESENT_IDS if objset == "x" else PRESENT_IDS
+        self.obj_ids = ["o3", "o5", "o8", "o9", "o10"] + (list(X_RIGID) + list(OBJV_IDS) if objset == "x" else [])
+        self.present_ids = X_PRESENT_IDS + tuple(OBJV_IDS) if objset == "x" else PRESENT_IDS
         _LAYOUT["obj_ids"] = tuple(self.obj_ids)
         self.ws = check_ws(ws)  # L8-D per-height workspace box (None = WS_X / WS_Y)
         self.lift = None if lift is None else float(lift)  # L8-D lift flag (None = INIT_JOINTS lift, default)
@@ -679,7 +694,12 @@ class Env:
         if k in VISUAL_ONLY or k in X_VISUAL_ONLY:  # the marker is not a physics body: its pose is the layout pose
             return self._marker_pos(k), np.array([1.0, 0.0, 0.0, 0.0])
         d = self.objects[k].data
-        return d.root_pos_w[0].cpu().numpy(), d.root_quat_w[0].cpu().numpy()
+        p, q = d.root_pos_w[0].cpu().numpy(), d.root_quat_w[0].cpu().numpy()
+        if OBJ_GEOM[k]["shape"] == "mesh":  # L8-X mesh: USD root -> canonical (bbox centre, upright = identity)
+            from .objv import canonical_from_root
+            c, qc = canonical_from_root(OBJ_GEOM[k], p, q)
+            return c, np.asarray(qc, float)
+        return p, q
 
     def object_vel(self, k) -> float:
         return float(self.objects[k].data.root_lin_vel_w[0].norm())
