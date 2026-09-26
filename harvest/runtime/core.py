@@ -159,6 +159,9 @@ class OursRuntime:
             prices = PriceTable.load(cfg.couple_prices) if cfg.couple_prices else PriceTable.free()
             self.couple_ledger = CostLedger(cfg.couple_ledger or None, cfg.couple_budget_krw, prices,
                                             run_id=cfg.couple_run_id)
+        from ..couple.recovery_cache import RecoveryCache
+        self.recovery = RecoveryCache()
+        self.recovery_apply = lambda lesson: "m9_not_built"  # M9 recovery not built (canon §67 SCOPED)
 
     # ------------------------------------------------------------------ lifecycle
     def reset(self) -> None:
@@ -241,6 +244,20 @@ class OursRuntime:
         self.hb.advance(now)
         if self.driver is not None:
             self.driver.flag(name, now)
+
+    def _fail_event(self, now: float, mode: str, evidence: str) -> None:
+        """T_fail stand-in (M9 not built): falsify first (canon §84 + supplement 1) before the Astra call."""
+        from ..couple.recovery_cache import FailSig
+        sig = FailSig(stage=self.skill.stage, target=_PHASE_TARGET.get(self.skill.phase, "o5"), mode=mode,
+                      evidence=evidence)
+        dec, lesson, why = self.recovery.decide(self.episode, sig, self._t1(), now)
+        self.events.append({"t": round(now, 4), "event": "fail_path", "sig": sig.to_json(), "decision": dec,
+                            "why": why})
+        if dec == "reuse":
+            self.events.append({"t": round(now, 4), "event": "recovery_reuse", "recovery": lesson.recovery,
+                                "source": lesson.source, "applied": self.recovery_apply(lesson)})
+            return
+        self._event(now, mode)
 
     def _chunk_vec(self, k, dec):
         """Chunk-level adherence input (canon §84 supplements 4-5, controller ruling C3): the executed motion of step
@@ -463,7 +480,7 @@ class OursRuntime:
         if cr["alarm"]:  # M7 FAIL stand-in (M9 recovery not built): log + Astra heartbeat now (T_fail rule)
             self.measure_stats["critic_alarms"] += 1
             self.events.append({"t": round(now, 4), "event": "m7_critic_alarm", **cr})
-            self._event(now, "m7_critic_alarm")
+            self._fail_event(now, "m7_critic_alarm", "v1h_critic")
         keep = []
         meas = measure(None, logits, self.vcal, self.rules)
         for p in self.pending_t2:
@@ -691,7 +708,7 @@ class OursRuntime:
             if hev is not None:  # M7 hard channel (T1 only): FAIL stand-in -> Astra now (M9 recovery not built)
                 self.measure_stats["hard_events"] += 1
                 self.events.append({"t": round(now, 4), "event": "m7_hard_t1", **hev})
-                self._event(now, "m7_hard_t1")
+                self._fail_event(now, "m7_hard_t1", "t1_hard")
             sig = self.ledger.on_step_executed(prev, out, now)
             self.b_last = {"ds": prev, "outcome": out}
             if out == "CONTRADICT":  # an existing event call (canon §45): pulls the next Astra call forward
@@ -746,7 +763,7 @@ class OursRuntime:
             if e.get("event") in ("object_lost", "grasp_miss"):  # diagnostics: the last 0.4 s of grip signals
                 e["trace"] = [list(x) for x in self._trace]
                 e["trace_cols"] = ["t", "phase", "w", "effort", "gripped", "holding", "gripper_open"]
-                self._event(now, e["event"])  # T_fail stand-in (M9 recovery = the skill retry): Astra next free slot
+                self._fail_event(now, e["event"], "t1_skill")  # T_fail stand-in (falsify first, canon §84 supp 1)
             self.events.append(e)
         self.prev_cmd = self.skill.cmd_pos.copy()
         if self.cfg.backend == "fused":

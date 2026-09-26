@@ -55,7 +55,10 @@ class OursPolicy:
             for kind, rows in (("call", rt.calls), ("step", rt.slots_log), ("astra", rt.astra_log),
                                ("event", rt.events), ("m4", rt.ledger.log), ("chunk", rt.chunk_log),
                                ("measure", getattr(rt, "measure_log", [])),
-                               ("couple", _couple_rows(rt))):
+                               ("couple", _couple_rows(rt)),
+                               ("recovery", [r for r in getattr(rt, "recovery", None).audit
+                                             if r.get("episode") in (None, rt.episode)]
+                                if getattr(rt, "recovery", None) else [])):
                 for r in rows:
                     f.write(json.dumps({"type": kind, **_jsonable(r)}) + "\n")
         nb = write_blobs(d, getattr(rt, "blobs", {}))  # raw requests / responses / Astra images (canon §77)
