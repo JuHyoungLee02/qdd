@@ -1,0 +1,2 @@
+# G-x2 (x2 pod GPU 1): render test = R2_TRAIN seed 10002 re-recorded (physics must equal R2_TRAIN; frames looked at)
+gx2 gen --out /data/harvest/r2/molmo/gx2 --variant standard --tasks mug_tray,bottle_tray --kinds P0 --seeds 10002 --confirm-train

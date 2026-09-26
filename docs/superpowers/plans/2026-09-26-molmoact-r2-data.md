@@ -1,5 +1,7 @@
 # MolmoAct R2 데이터 준비(M1·M3·M4·M5·M6) 구현 계획
 
+> **중단(2026-09-26 05:30 UTC, user-log 99 · 정본 §89)**: 사용자가 "시뮬거쳤다오는건 절대 반대 몰모엑트 참고해" — MolmoAct 이식은 **실데이터(S-E2E·ROBOTIS) + 모델 라벨(포인팅)**로만 한다. 이 계획의 R2 시뮬 생성 경로(Task 5–8)는 버렸다. Task 1·2의 생성기 옵션(`--layout pair`, `--waypoints`, 커밋 `8016973`·`4e4536f`)은 코드에 남지만 **MolmoAct에는 쓰지 않는다**(기본 경로 무변경: 시험 + 파드 재녹화 R2_TRAIN 5편 물리 배열 비트 동일 — G-default standard 시드 10001 × 3과제 3/3, G-x2 x2 GPU 1 시드 10002 × 2과제 2/2, `/data/harvest/mar2d/gates/`). 파일럿은 경유점 편 8편에서 멈추고(05:29:51Z, 우리 프로세스만 PID로 종료) 산출물·임시 파일을 지웠다. Task 3의 궤적 규칙(끝 = 놓기 끝, 5점·0–255, 덧그림 색)은 실데이터 판으로 옮긴다 → `docs/stage3/molmoact_real_readiness.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** MolmoAct 이식(E-MAR-AO·E-MAR-S)의 데이터 쪽 성립 조건을 R2에서 만든다 — 궤적 끝 = 놓기 끝(M1), 경로 다양화 편(M3), 같은 장면 두 대상 편(M4), R2에 안전한 덧그림 색(M5), 조종 전용 평가 집합 n ≥ 300(M6). **학습은 하지 않는다**(메인 지시 뒤 E-MAR).

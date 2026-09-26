@@ -1,0 +1,3 @@
+# pilot slot A (main GPU 0): M3 standard, M4 standard
+wpS gen --out /data/harvest/r2/molmo/wp --variant standard --tasks all --kinds P0 --seeds 10001-10010 --confirm-train --waypoints
+pairS gen --out /data/harvest/r2/molmo/pair --variant standard --tasks mug_tray,bottle_tray --kinds P0 --seeds 11000,11001-11010,11020,11040,11060,11080 --confirm-train --layout pair

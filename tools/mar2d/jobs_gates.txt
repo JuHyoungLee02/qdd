@@ -1,0 +1,7 @@
+# gate slot C (main GPU 0): G-default (R2_TRAIN seed 10001 re-recorded without options), then G-det (fresh processes)
+gdefS gen --out /data/harvest/r2/molmo/gdefault --variant standard --tasks all --kinds P0 --seeds 10001 --confirm-train
+gdefD gen --out /data/harvest/r2/molmo/gdefault --variant dr --tasks all --kinds P0 --seeds 10001 --confirm-train
+gdetW1 gen --out /data/harvest/r2/molmo/gdet/wp --variant standard --tasks mug_tray --kinds P0 --seeds 10001 --confirm-train --waypoints
+gdetW2 gen --out /data/harvest/r2/molmo/gdet/wp --variant dr --tasks bottle_tray --kinds P0 --seeds 10002 --confirm-train --waypoints
+gdetP1 gen --out /data/harvest/r2/molmo/gdet/pair --variant standard --tasks mug_tray --kinds P0 --seeds 11001 --confirm-train --layout pair
+gdetP2 gen --out /data/harvest/r2/molmo/gdet/pair --variant dr --tasks bottle_tray --kinds P0 --seeds 11001 --confirm-train --layout pair
