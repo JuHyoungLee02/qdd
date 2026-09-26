@@ -130,23 +130,32 @@ class Episode:
         return out
 
     def video(self, cam):
-        return glob.glob(os.path.join(self.pkg, f"episode_{self.k:08d}_{cam}_batch_*.mp4"))[0]
+        return os.path.join(self.pkg, f"episode_{self.k:08d}_{cam}_{self.batch}.mp4")
 
     def names(self):
-        r = self.scene.get("referral_expressions", {})
-        pick = r.get("pickup_name", [["object"]])[0][0]
-        place = r.get("place_name", [["target"]])[0][0]
+        r = self.scene.get("referral_expressions") or {}
+        pick = (r.get("pickup_name") or [["object"]])[0][0]  # some episodes carry empty lists
+        place = (r.get("place_name") or [["target"]])[0][0]
         return pick, place
 
 
 def episodes(root: str):
+    """Every trajectory of every h5 batch of every package. A package can hold several batches
+    ('trajectories_batch_4_of_20.h5' ...) whose videos carry the same batch tag; trajectories flagged False in
+    'valid_traj_mask' are skipped."""
     for pkg in sorted(glob.glob(os.path.join(root, "*"))):
-        h5s = glob.glob(os.path.join(pkg, "*.h5"))
-        if not h5s:
-            continue
-        h = h5py.File(h5s[0], "r")
-        for key in sorted(h.keys()):
-            yield Episode(pkg, h, int(key.split("_")[1]))
+        for hp in sorted(glob.glob(os.path.join(pkg, "trajectories_*.h5"))):
+            h = h5py.File(hp, "r")
+            batch = os.path.basename(hp)[len("trajectories_"):-3]
+            mask = h["valid_traj_mask"][:] if "valid_traj_mask" in h else None
+            for key in sorted(k for k in h.keys() if k.startswith("traj_")):
+                k = int(key.split("_")[1])
+                if mask is not None and k < len(mask) and not mask[k]:
+                    continue
+                e = Episode(pkg, h, k)
+                e.batch = batch
+                e.name = f"{os.path.basename(pkg)}_{batch.replace('batch_', 'b').replace('_of_', 'o')}_t{k}"
+                yield e
 
 
 def approach_axis(eps):
@@ -188,6 +197,7 @@ def convert(root: str, out: str, every: int = 10, max_eps: int = 50) -> dict:
     lag_gate, g_near = {}, []
     n_c_all = [0]
     ph_agree = []
+    tilt_meas = []
     for e in eps:
         robot["arm"] = e.arm
         cam_r = f"wrist_camera_{e.arm[0]}"
@@ -209,6 +219,10 @@ def convert(root: str, out: str, every: int = 10, max_eps: int = 50) -> dict:
             Rw = (e.T_world_base(t) @ e.T_base_ee(t))[:3, :3]
             tilt = G.tilt_deg(sg * Rw[:, ax])
             tilts.append(tilt)
+            if e.arm == "left":  # obs tcp_pose = the LEFT gripper: a measured (not commanded) pose to cross-check
+                tp = e.g["obs/extra/tcp_pose"][t].astype(float)
+                Rm = (e.T_world_base(t) @ G.pose_to_T(tp[:3], G.quat_wxyz_to_mat(tp[3:])))[:3, :3]
+                tilt_meas.append((tilt, G.tilt_deg(sg * Rm[:, ax])))
         ups = np.nonzero(closed[1:] & ~closed[:-1])[0]
         grasp_t = int(ups[0]) + 1 if len(ups) else e.n  # object at obj_start only before the first close
         n_ee = [0, 0]
@@ -315,6 +329,7 @@ def convert(root: str, out: str, every: int = 10, max_eps: int = 50) -> dict:
            "gate_ee_near_gripper_0.5diag": Q.rate(g_near),
            "obj_start_proj_px": Q.err_stats(g_obj),
            "grasp_tilt_deg": sorted(round(t, 1) for t in tilts),
+           "tilt_cmd_vs_measured_left": [[round(a, 1), round(b, 1)] for a, b in tilt_meas],
            "topdown_keep_30": Q.rate([t <= 30 for t in tilts]), "topdown_keep_20": Q.rate([t <= 20 for t in tilts]),
            "n_P": len(recP), "n_C": len(recC), "n_C_without_topdown_filter": n_c_all[0], "step_vs_planner_phase_agree": Q.rate(ph_agree),
            "P_by_kind": {k: sum(r["qa_kind"] == k for r in recP) for k in sorted({r["qa_kind"] for r in recP})},

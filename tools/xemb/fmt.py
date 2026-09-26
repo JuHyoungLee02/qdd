@@ -21,6 +21,8 @@ FOREIGN_KEYS = ("frame", "point", "points", "xyz_cam", "uv", "pixel", "source")
 
 
 def _cam_line(i: int, c: dict) -> str:
+    if c.get("K") is None:  # route 4: no calibration shipped (and none made): say so, never invent numbers
+        return f"- Image {i + 1}: {c['name']}, {c['W']}x{c['H']} px; camera: unknown (no calibration)."
     K = np.asarray(c["K"], float)
     s = (f"- Image {i + 1}: {c['name']}, {c['W']}x{c['H']} px, fx {K[0, 0]:.1f} fy {K[1, 1]:.1f} cx {K[0, 2]:.1f} "
          f"cy {K[1, 2]:.1f}")
@@ -110,6 +112,9 @@ def control_record(robot: dict, seg: dict, k: int, tcp, opening_m: float, task: 
 
 _ASK = {
     "ee_point": "Point to the {arm} gripper's TCP (midway between the finger tips) in image {i}.",
+    "ee_point_detected": "Point to the {arm} robot gripper in image {i}.",
+    "ee_trace": ("Where will the {arm} gripper go? Give its path in image {i} as up to 5 points, from where it is now to "
+                 "where it releases the object."),
     "obj_point": "Point to the {name} in image {i}.",
     "place_point": "Point to the {name} (where the object will be put) in image {i}.",
     "obj_center_cam": "What is the 3D centre of the {name} in the {cam} frame (x right, y down, z forward, metres)?",
@@ -134,6 +139,14 @@ def cam_frame(robot: dict, cam: int) -> str:
 
 def qa_point(robot, kind, uv, cam, image, rid, name=""):
     return _qa(robot, kind, "pixel", cam, image, rid, {"point": [int(round(uv[0])), int(round(uv[1]))]}, name)
+
+
+def qa_trace(robot, uvs, cam, image, rid, arm="right"):
+    """Route 1/2 (pixel only): the gripper path as up to 5 pixel points (MolmoAct trace, in pixels of this image)."""
+    r = dict(robot, arm=robot.get("arm", arm) if "arm" in robot else arm)
+    r["arm"] = arm
+    ans = {"trace": [[int(round(u)), int(round(v))] for u, v in uvs]}
+    return _qa(r, "ee_trace", "pixel", cam, image, rid, ans)
 
 
 def qa_xyz(robot, kind, xyz, cam, image, rid, name=""):

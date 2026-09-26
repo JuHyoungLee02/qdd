@@ -16,6 +16,17 @@ def main(argv):
     if src == "molmobot":
         from . import src_molmobot as M
         rep, items = M.convert(root, out)
+    elif src == "refspatial":
+        from . import src_refspatial as M
+        R_ = "/data/harvest/data/upper_vlm_survey/raw/JingkunAn__RefSpatial/SubsetVisualization"
+        rep = M.convert({"sim": f"{R_}/Simulator-00000-of-00001.parquet", "3d": f"{R_}/3D-00000-of-00001.parquet"}, out)
+        items = []
+    elif src == "rb2":
+        from . import src_rb2 as M
+        rep, items = M.convert(root, out)
+    elif src == "mbfranka":
+        from . import src_mbfranka as M
+        rep, items = M.convert(root, out)
     elif src == "behavior":
         from . import src_behavior as M
         rep, items = M.convert(root, out)

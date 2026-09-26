@@ -120,3 +120,4 @@
 | 2026-09-27 16:2x | 03 | 최종 상위 35B 확정(8B는 임시 대리) + 상위↔VLA 의도 공유 프로토콜 필수(ul 125, 정본 §96 보충 2): 03 §96 보충 2 행 추가 | 이 줄과 같은 커밋 |
 | 2026-09-26 16:4x | 01·03·04 | 결합 학습 계획(ul 127·128): 01 `[예정]` 행 VLA-R3·E-VLA-E2E·E-TEACH-L8C·E-COUPLE-8B·E-TEACH-35C, 03 §96 보충 3·4 행, 04 계획 문서 행 | [research/coupled_training_plan](../research/coupled_training_plan_2026-09-27.md), 이 줄과 같은 커밋 |
 | 2026-09-26 17:4x | 01·04·05 | E-TEACH-35B 준비(ul 135): 01 `[예정]` 행 E-TEACH-35B, 04 파드 경로·코드 행, 05 GPU 행(≈ 1.3 GPU-h, 0원) | [R/teach_35b_ready](../stage3/results/teach_35b_ready.md), 이 줄과 같은 커밋 |
+| 2026-09-26 17:5x | 04 | 좌표계 없는 오픈소스 네 트랙·E-OPEN8(ul 123): 04 저장소 표에 prereg_xemb8·prereg_open8(초안) 행, 파드 표에 `out/xemb_proto` 추가분·`out/xemb/open8` 행 | [research/public_data_conversion_howto](../research/public_data_conversion_howto_2026-09-26.md) 9–12절, 이 줄과 같은 커밋 |
