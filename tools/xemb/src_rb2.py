@@ -152,7 +152,9 @@ def heldout_resid(eps, K, E):
 
 
 def convert(root, out, urdf="/data/harvest/data/se2e/urdf/ffw_bg2_rev4_follower.urdf", every=5,
-            cache_dir="/data/harvest/out/xemb_proto/cache/rb2"):
+            cache_dir="/data/harvest/out/xemb_proto/cache/rb2", t4_cam=None, t4_heldout=None):
+    """t4_cam: npz (E, K) of the T4 silhouette-aligned camera; t4_heldout: its held-out boundary chamfer (px). When given
+    and <= T1_GATE_PX, projection QA / C' with camera info use the T4 camera and the FK end-effector point."""
     import cv2
     os.makedirs(os.path.join(out, "frames"), exist_ok=True)
     eps = load(root)
@@ -238,6 +240,10 @@ def convert(root, out, urdf="/data/harvest/data/se2e/urdf/ffw_bg2_rev4_follower.
         rep["T1"]["vs_nominal_urdf_camera"] = {"rot_deg": round(rot, 2), "centre_cm": round(dist * 100, 2)}
         nom = {"E": En, "K": K_SPEC, "o_left": fit["o_left"], "o_right": fit["o_right"]}
         rep["T1"]["heldout_nominal_camera_same_offsets"] = held(te, nom)
+    if t4_cam:
+        z4 = np.load(t4_cam)
+        E, K = z4["E"], z4["K"]
+        fit = dict(fit, E=E, K=K, o_left=np.zeros(3), o_right=np.zeros(3))  # T4: camera from silhouettes, EE point
     T_base_cam = G.inv_T(E)
     fit_rb2 = fit
     # ---- samples
@@ -257,6 +263,9 @@ def convert(root, out, urdf="/data/harvest/data/se2e/urdf/ffw_bg2_rev4_follower.
     fC = open(os.path.join(out, "records_C.jsonl"), "w")
     # T1 gate (<= 5 px held-out): only then projection QA and C' with camera info; otherwise route 4 + pixel labels
     t1_pass = rep["T1"]["heldout"]["median_px"] <= T1_GATE_PX
+    if t4_cam and t4_heldout is not None:
+        t1_pass = float(t4_heldout) <= T1_GATE_PX
+        rep["T4"] = {"camera": t4_cam, "heldout_boundary_chamfer_px": float(t4_heldout), "gate_pass": bool(t1_pass)}
     rep["T1"]["gate_px"] = T1_GATE_PX
     rep["T1"]["gate_pass"] = bool(t1_pass)
     cnt["pixel_agree_rate"] = [0, 0]

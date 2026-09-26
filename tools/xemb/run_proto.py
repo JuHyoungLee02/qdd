@@ -21,6 +21,9 @@ def main(argv):
         R_ = "/data/harvest/data/upper_vlm_survey/raw/JingkunAn__RefSpatial/SubsetVisualization"
         rep = M.convert({"sim": f"{R_}/Simulator-00000-of-00001.parquet", "3d": f"{R_}/3D-00000-of-00001.parquet"}, out)
         items = []
+    elif src == "rb2t4":
+        from . import src_rb2 as M
+        rep, items = M.convert(root, out, t4_cam=argv[4], t4_heldout=float(argv[5]))
     elif src == "rb2":
         from . import src_rb2 as M
         rep, items = M.convert(root, out)
