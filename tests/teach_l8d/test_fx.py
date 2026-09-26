@@ -45,6 +45,24 @@ def test_two_surfaces_and_virtual_surface_contacts():
     assert not T.surface_contacts(pos, bottom, "o19", (0.04, 0.04))
 
 
+def test_mesh_kind_subsets():
+    import os
+
+    from harvest.sim.assets_x import furniture as FU
+    d = os.path.join(os.path.dirname(fx.__file__), "..", "sim", "assets_x")
+    m = fx.load_mesh_assets(d)
+    kinds = FU.mesh_kinds(m)
+    assert "cyclo_basket" in kinds and "cyclo_work_table" in kinds and any(k.startswith("thor_") for k in kinds)
+    assert fx.is_mesh_kind("cyclo_basket") and fx.is_mesh_kind("thor_table") and not fx.is_mesh_kind("low_table")
+    sub = fx.mesh_subset(m, "cyclo_basket", "train")
+    assert sub and all(a["category"] == "basket" for a in sub.values())
+    for seed in range(35060, 35070):  # pure scene sampling with the subset only
+        sc = FU.sample_scene("cyclo_basket", seed, mesh_assets=sub)
+        assert any(s.get("container") for s in sc["surfaces"])
+        sc2 = FU.sample_scene("cyclo_work_table", seed, mesh_assets=fx.mesh_subset(m, "cyclo_work_table", "train"))
+        assert sc2["surfaces"]
+
+
 def test_choose_container():
     box = {"id": "s2", "kind": "bin_floor", "top_z": 0.87, "container": True,
            "xy_box": [[0.45, 0.58], [-0.20, -0.07]]}

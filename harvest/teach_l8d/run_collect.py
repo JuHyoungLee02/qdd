@@ -16,14 +16,24 @@ import time
 OUT = "/data/harvest/out/teach_l8d/collect"
 
 
-def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=None, reach_path=None):
+def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=None, reach_path=None,
+               mesh_split: str = "train"):
+    import os
+
     from ..astra_motion.world_isaac import CAMS, NO_RENDER, PRE_RENDER, IsaacWorld
     from ..astra_solo.world import SoloWorld
     from ..sim.scene import GRIP_MAX_W, make_env
     from .xlabels import x_info
+    mesh = None
     if furniture is not None:  # L8-X furniture: no L8 table, furniture slots (helper L8X-assets, 85a37da)
         from ..sim.assets_x import isaac as FX
-        FX.without_table(None)
+        from . import fx as _fx
+        if _fx.is_mesh_kind(furniture):  # licensed mesh pieces (THOR / cyclo_lab): only this kind's pieces
+            d = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sim", "assets_x")
+            mesh = _fx.mesh_subset(_fx.load_mesh_assets(d), furniture, mesh_split)
+            if not mesh:
+                raise ValueError(f"no {mesh_split} mesh pieces for {furniture}")
+        FX.without_table(mesh)
 
     class L8DWorld(SoloWorld):
         """SoloWorld (depth on) with the R2 tasks, one table height, the height's workspace box and the lift flag;
@@ -62,7 +72,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             if not hasattr(self, "_rm"):
                 self._rm = ReachModel.load(reach_path)
             from ..sim.tasks import X_FURNITURE_TASKS
-            sc = FU.sample_scene(furniture, seed, reach=self._rm)
+            sc = FU.sample_scene(furniture, seed, reach=self._rm, mesh_assets=mesh, split=mesh_split)
             upper, vid = None, TASKS[task].place
             if task in X_FURNITURE_TASKS:  # cross-surface: o19 = a higher surface, o20 = a container's floor
                 pick = fx.choose_container if vid == "o20" else fx.choose_two_surfaces
@@ -83,7 +93,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             # the hard reset re-initialises the articulation from cfg.init_state (default_joint_pos alone was reset
             # to the INIT_JOINTS lift: measured -0.125 in every scene, L8X-assets finding): set it there too
             rob.cfg.init_state.joint_pos["lift_joint"] = env.lift
-            FX.author_scene(env, sc)
+            FX.author_scene(env, sc, mesh)
             try:
                 env.set_seed(seed, task)
             except RuntimeError as ex:  # task_layout found no layout in this box
@@ -194,7 +204,8 @@ def main(argv=None):
         if a.furniture and a.variant != "standard":
             raise ValueError("furniture scenes: variant standard only (the drx table material / pool distractors "
                              "assume the L8 table)")
-        world = make_world(a.variant, a.table_z, ws, a.lift, a.objset, a.furniture, a.reach)
+        world = make_world(a.variant, a.table_z, ws, a.lift, a.objset, a.furniture, a.reach,
+                           "ood" if a.split == "ood_s" else "train")
         lim = None
         if a.lift is not None:
             rob = world.env.robot

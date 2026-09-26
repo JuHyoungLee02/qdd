@@ -14,6 +14,32 @@ class SkipScene(Exception):
     pass
 
 
+MESH_TABLES = ("assets_table.json", "assets_cyclo.json")  # harvest/sim/assets_x (helper L8X-assets)
+
+
+def load_mesh_assets(directory: str) -> dict:
+    """The helper's licensed mesh tables merged: {name: asset} (THOR + cyclo_lab)."""
+    import json
+    import os
+    out = {}
+    for f in MESH_TABLES:
+        p = os.path.join(directory, f)
+        if os.path.exists(p):
+            out.update(json.load(open(p))["assets"])
+    return out
+
+
+def is_mesh_kind(kind: str) -> bool:
+    return "_" in kind and kind.split("_", 1)[0] in ("thor", "cyclo")
+
+
+def mesh_subset(mesh_assets: dict, kind: str, split: str) -> dict:
+    """Only the pieces a process with this kind / split can draw (loading every piece as a prim is heavy)."""
+    tag, cat = kind.split("_", 1)
+    return {n: a for n, a in mesh_assets.items()
+            if a.get("tag", "thor") == tag and a["category"] == cat and a["split"] == split}
+
+
 def choose_surface(scene: dict) -> tuple:
     """-> (surface dict, region [[x0, x1], [y0, y1]]) of the usable surface with the largest region area."""
     by_id = {s["id"]: s for s in scene["surfaces"]}
