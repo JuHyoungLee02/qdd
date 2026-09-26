@@ -98,7 +98,9 @@ class Runner:
         used = author_scene(env, sc, self.mesh_assets)
         li = env.robot.joint_names.index("lift_joint")
         lift = sc.get("lift")
-        env.robot.data.default_joint_pos[0, li] = float(SC.INIT_JOINTS["lift_joint"] if lift is None else lift)
+        lv = float(SC.INIT_JOINTS["lift_joint"] if lift is None else lift)
+        env.robot.cfg.init_state.joint_pos["lift_joint"] = lv  # the hard reset re-initialises defaults from cfg
+        env.robot.data.default_joint_pos[0, li] = lv
         env.layout = {}
         SC._LAYOUT["layout"] = {}
         t0 = time.time()
