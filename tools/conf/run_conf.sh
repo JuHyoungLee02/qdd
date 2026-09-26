@@ -66,6 +66,13 @@ case $MODE in
     hashes $L/CODE_HASHES.txt
     units $X
     touch $L/A.done;;
+  A2)  # prereg change 1: S-E2E units again with batch 1 (E-SR0 / runtime decide path); previous files kept as *.b8
+    X=$L/ext
+    for s in 1 2; do mv $X/se2e_s$s.jsonl $X/se2e_s$s.b8.jsonl; mv $X/se2e_s$s.out $X/se2e_s$s.b8.out; done
+    hashes $L/CODE_HASHES_A2.txt
+    ex $X/se2e_s1.jsonl $SDATA --set se2e --ckpt $SE/motion_s1/last --latency 200 --batch 1
+    ex $X/se2e_s2.jsonl $SDATA --set se2e --ckpt $SE/motion_s2/last --latency 200 --batch 1
+    touch $L/A2.done;;
   gate)
     gates $L/ext; echo "gate done $(ts)";;
   verdict)
