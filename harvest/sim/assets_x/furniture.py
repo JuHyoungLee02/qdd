@@ -11,10 +11,10 @@ Kinds (all numbers drawn from np.random.default_rng([seed, 97, KIND_CODE[kind]])
   shelf_low        low bookcase facing the robot: open top 0.78-0.95 + a covered inner tier
   shelf_tall       tall bookcase: a covered middle tier 0.62-0.72, open top 0.92-1.12 (reachable with the lift up)
   low_table        coffee table, top 0.40-0.62 (reachable with the lift down)
-  bin              table + an open bin (inner >= 12 cm, walls 6-12 cm): a container place target
+  bin              table + an open bin (24-30 cm along x, the finger axis; walls 6-12 cm): a container place target
   stand            table + a raised block 5-12 cm: a second, higher surface on the table
   multi_level      two tables side by side in y at heights 5-15 cm apart
-  floor_bin        an open crate on a solid base on the floor: inner floor 0.20-0.35, walls 10-16 cm (lift down)
+  floor_bin        an open crate on a solid base on the floor: inner floor 0.28-0.38, walls 10-16 cm (lift down)
 Every kind may get a back wall and a side wall (appearance / head-camera context, never reachable).
 Parts never enter the robot keep-out box (KEEP_OUT) -- checked in sample_scene.
 """
@@ -140,7 +140,8 @@ def _build(kind: str, rng) -> tuple[list, dict]:
         ps = _table(rng, "table", top, xf, dx, yc - dy / 2, yc + dy / 2, wood)
         cx, cy = rng.uniform(0.40, 0.46), rng.uniform(-0.32, -0.15)
         if kind == "bin":
-            bx, by, bh, t = rng.uniform(0.16, 0.24), rng.uniform(0.18, 0.28), rng.uniform(0.06, 0.12), 0.01
+            bx, by, bh, t = rng.uniform(0.24, 0.30), rng.uniform(0.16, 0.20), rng.uniform(0.06, 0.12), 0.01
+            cy = -0.43 + by / 2 + 0.02 * (cy + 0.32) / 0.17  # right side of the y band: a table strip stays free
             x0, x1, y0, y1 = cx - bx / 2, cx + bx / 2, cy - by / 2, cy + by / 2
             col = _pick(rng, BIN)
             ps += [part("bin_floor", (x0, y0, top), (x1, y1, top + t), col, "bin_floor", "bin_floor"),
@@ -154,9 +155,9 @@ def _build(kind: str, rng) -> tuple[list, dict]:
                        "stand", "stand"))
         return ps, dict(top=top, stand=[_r(s), _r(h)])
     if kind == "floor_bin":  # an open crate on a solid base standing on the floor (reachable only with the lift down)
-        fz, wh, t = rng.uniform(0.20, 0.35), rng.uniform(0.10, 0.16), 0.015
-        bx, by = rng.uniform(0.24, 0.34), rng.uniform(0.28, 0.40)
-        cx, cy = rng.uniform(0.46, 0.50), rng.uniform(-0.30, -0.16)  # front >= 0.29 (v2: nearer bodies jam the robot)
+        fz, wh, t = rng.uniform(0.28, 0.38), rng.uniform(0.10, 0.16), 0.015  # floor >= 0.28: lift -0.5 reaches z >= ~0.34
+        bx, by = rng.uniform(0.30, 0.38), rng.uniform(0.24, 0.30)  # long in x: the fingers close along x
+        cx, cy = 0.29 + bx / 2 + rng.uniform(0.0, 0.02), rng.uniform(-0.28, -0.18)  # front 0.29-0.31 (v2: nearer bodies jam the robot)
         x0, x1, y0, y1 = cx - bx / 2, cx + bx / 2, cy - by / 2, cy + by / 2
         col = _pick(rng, BIN)
         ps = [part("crate_base", (x0, y0, 0.0), (x1, y1, fz), _pick(rng, WOOD), "body", "bin_floor"),

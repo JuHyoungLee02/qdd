@@ -29,6 +29,7 @@ FINGER_X = 0.065  # open pad half-gap 53.5 mm + 12 mm: keep-out along the closin
 FINGER_Y = 0.03  # finger half-width + margin across it
 OBJ_H = 0.10  # = teach_l8d.spec.OBJ_TOP_MAX
 VIEW_MARGIN_PX = 10
+MIN_REGION = 0.08  # a placement region is >= 8 cm on both sides (L8-D workspace minimum)
 LIFT_DEFAULT = -0.0993  # = scene.INIT_JOINTS lift_joint
 LIFT_LIMITS = (-0.50, 0.0)  # lift_joint soft limits (probe)
 LIFTS = tuple([LIFT_DEFAULT] + [round(v, 2) for v in np.arange(-0.50, 0.001, 0.05)])  # default first
@@ -166,7 +167,15 @@ def region_of(s: dict, rm: ReachModel, obj_h: float = OBJ_H, obstacles=()) -> di
     V = rm.visible_grid(xs, ys, top, obj_h)
     F = free_of_obstacles(xs, ys, top, obstacles)
     U = R & V & F
-    r = max_rect(U)
+    r, W = None, U.copy()
+    for _ in range(8):  # the largest rectangle at least MIN_REGION x MIN_REGION (a thin strip is no workspace)
+        q = max_rect(W)
+        if q is None:
+            break
+        if (q[1] - q[0] + 1) * RES >= MIN_REGION - 1e-9 and (q[3] - q[2] + 1) * RES >= MIN_REGION - 1e-9:
+            r = q
+            break
+        W[q[0]:q[1] + 1, q[2]:q[3] + 1] = False
     reg, reason, area = None, None, 0.0
     if r is not None:
         i0, i1, j0, j1 = r
@@ -175,7 +184,7 @@ def region_of(s: dict, rm: ReachModel, obj_h: float = OBJ_H, obstacles=()) -> di
         area = round((i1 - i0 + 1) * (j1 - j0 + 1) * RES * RES, 4)
     else:
         reason = "reach" if not R.any() else ("view" if not V.any() else (
-            "reach_and_view_disjoint" if not (R & V).any() else "obstacle"))
+            "reach_and_view_disjoint" if not (R & V).any() else ("obstacle" if not U.any() else "narrow")))
     return dict(out, reach_frac=round(float(R.mean()), 3), view_frac=round(float(V.mean()), 3),
                 usable_frac=round(float(U.mean()), 3), region=reg, area=area, reason=reason)
 
