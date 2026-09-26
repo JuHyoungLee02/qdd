@@ -38,6 +38,8 @@ GRASP_BELOW_TOP_M = 0.02  # the prompt's recipe ("z = table + h - 0.02")
 PLACE_CLEAR_M = 0.01  # the prompt's recipe (bottom about 1 cm above the target surface)
 PLACE_FALLBACK_M = 0.12
 CARRY_DZ = 0.22  # = teach_l8.labels.CARRY_DZ
+ROBOT_BELOW_TCP_M = 0.035
+ROBOT_FLOOR_M = 0.105  # just above the tallest pickable object (bottle 10 cm)
 INTENTS = ("above", "grasp", "place", "lift")
 SCALE = 1000.0
 
@@ -88,13 +90,24 @@ def _region(P: np.ndarray, above: np.ndarray, seed: tuple) -> np.ndarray:
         cur = nxt
 
 
-def resolve_point(cam, depth: np.ndarray, prior_z: float, point_2d) -> dict:
+def robot_mask(hgt: np.ndarray, plane: float, tcp) -> np.ndarray:
+    """Pixels that are the robot's own arm / gripper (robot self-measurement only): higher than both the TCP - 3.5 cm
+    (the gripper is top-down: its fingers end ~2.3 cm below the TCP and every arm link is above it) and the table +
+    10.5 cm (above every pickable object of the scene, so a low TCP never masks one). Needed because the renderer's depth mixes
+    values at occlusion edges and lets a region leak from an object into the arm (E-PT smoke, change 1)."""
+    if tcp is None:
+        return np.zeros(hgt.shape, bool)
+    lim = max(float(tcp[2]) - plane - ROBOT_BELOW_TCP_M, ROBOT_FLOOR_M)
+    return np.isfinite(hgt) & (hgt > lim)
+
+
+def resolve_point(cam, depth: np.ndarray, prior_z: float, point_2d, tcp=None) -> dict:
     """-> {"kind": "object" | "table", "xy": [x, y], "top": z, "plane": z, "pixel": [iu, iv], "seed": [iu, iv],
-    "snapped": bool, "n_px": int}."""
+    "snapped": bool, "n_px": int}. tcp (measured TCP) masks the robot itself (robot_mask)."""
     P = depth_points(cam, depth)
     plane = table_plane(P, prior_z)
     hgt = P[..., 2] - plane
-    above = np.isfinite(hgt) & (hgt > H_MIN)
+    above = np.isfinite(hgt) & (hgt > H_MIN) & ~robot_mask(hgt, plane, tcp)
     iu, iv = to_pixel(point_2d, cam.W, cam.H)
     seed, snapped = (iv, iu), False
     if not above[iv, iu]:

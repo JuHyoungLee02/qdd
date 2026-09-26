@@ -13,6 +13,7 @@ from PIL import Image
 
 pt, l8, split = sys.argv[1], sys.argv[2], sys.argv[3]
 n = same_t = same_i = same_l = 0
+mads = []
 missing, diffs = [], []
 for ep in sorted(glob.glob(os.path.join(pt, split, "*", "*"))):
     rel = os.path.relpath(ep, pt)
@@ -32,6 +33,8 @@ for ep in sorted(glob.glob(os.path.join(pt, split, "*", "*"))):
         a = np.asarray(Image.open(os.path.join(d1, "img1_head_camera.png")), np.int16)
         b = np.asarray(Image.open(os.path.join(d2, "img1_head_camera.png")), np.int16)
         i = a.shape == b.shape and int(np.abs(a - b).max()) == 0
+        if a.shape == b.shape:
+            mads.append(float(np.abs(a - b).mean()))
         lab = c in lb and la[c]["step"] == lb[c]["step"] and la[c]["gt"]["tcp"] == lb[c]["gt"]["tcp"]
         same_t, same_i, same_l = same_t + t, same_i + i, same_l + lab
         if not (t and i and lab) and len(diffs) < 10:
@@ -39,5 +42,5 @@ for ep in sorted(glob.glob(os.path.join(pt, split, "*", "*"))):
                                    "img_maxdiff": None if a.shape != b.shape else int(np.abs(a - b).max())}))
     if len(lb) != len(la):
         diffs.append((rel, "n_calls", len(la), len(lb)))
-print("IDENTITY " + json.dumps({"calls": n, "text_same": same_t, "image_same": same_i, "label_same": same_l,
+print("IDENTITY " + json.dumps({"calls": n, "img_mean_absdiff_median": round(float(np.median(mads)), 3) if mads else None, "img_mean_absdiff_max": round(max(mads), 3) if mads else None, "text_same": same_t, "image_same": same_i, "label_same": same_l,
                                 "missing_episodes": missing[:10], "n_missing": len(missing), "first_diffs": diffs[:10]}))

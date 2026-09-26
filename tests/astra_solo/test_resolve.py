@@ -56,6 +56,22 @@ def test_tray_and_table_and_snap():
     assert r["kind"] == "object" and r["snapped"] and np.hypot(r["xy"][0] - MUG[0], r["xy"][1] - MUG[1]) < 0.006
 
 
+def test_robot_mask_stops_leak_into_arm():
+    """An arm box 1.8 cm above the mug top (a depth-edge bridge at the silhouette): without the TCP the region leaks into it; with the
+    measured TCP the arm is masked and the mug's top / centre come back."""
+    he = np.array(OBJ_GEOM["o3"]["half_extents"])
+    arm_lo, arm_hi = MUG + [-0.03, -0.02, he[2] + 0.018], MUG + [0.03, 0.02, he[2] + 0.25]  # fingers end 1.8 cm up
+    d = raycast(HEAD, [(MUG - he, MUG + he), (arm_lo, arm_hi)])[1]
+    p = _pt(MUG + [0, 0.025, 0.0])
+    arm_px = _pt(MUG + [0, 0, he[2] + 0.10])
+    assert RS.resolve_point(HEAD, d, TZ, arm_px)["top"] > TZ + 0.2  # unmasked: the arm itself
+    tcp = [MUG[0], MUG[1], TZ + 0.095 + 0.04]  # the gripper just above the mug
+    r = RS.resolve_point(HEAD, d, TZ, p, tcp=tcp)
+    assert r["kind"] == "object" and abs(r["top"] - (TZ + 0.095)) < 0.003
+    r = RS.resolve_point(HEAD, d, TZ, arm_px, tcp=tcp)
+    assert r["kind"] != "object" or r["top"] < TZ + 0.1
+
+
 def test_intents():
     res = {"xy": [0.4, -0.3], "top": TZ + 0.095}
     tcp = [0.3, -0.2, TZ + 0.3]

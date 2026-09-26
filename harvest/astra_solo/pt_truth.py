@@ -21,6 +21,7 @@ from ..astra_motion.harness import obj_height
 from . import resolve as RS
 
 XY_TOL = 0.012
+XY_TOL_LARGE = 0.025
 TOP_TOL = 0.008
 STEP_MAP = {"above_target": ("tgt", "above", "keep"), "descend_close": ("tgt", "grasp", "close"),
             "carry_over": ("place", "above", "keep"), "lower_open": ("place", "place", "open"),
@@ -48,21 +49,28 @@ def candidates(center, key: str) -> list:
     return out
 
 
-def label_pixel(cam, depth, table_z: float, center, key: str):
-    """-> (point_2d [x, y] on the 0-1000 scale, info) or (None, info)."""
+def xy_tol(key: str) -> float:
+    """12 mm for the graspable objects; 25 mm for a large place target (the 18 x 14 cm tray: its visible top is often
+    partly hidden by the carried object, and 25 mm off-centre still puts the object well inside it)."""
+    return XY_TOL if _radius(key) < 0.05 else XY_TOL_LARGE
+
+
+def label_pixel(cam, depth, table_z: float, center, key: str, tcp=None):
+    """-> (point_2d [x, y] on the 0-1000 scale, info) or (None, info). tcp masks the robot (resolve.robot_mask)."""
     c = np.asarray(center, float)
     top = c[2] + obj_height(key) / 2
     flat = obj_height(key) < 2 * RS.H_MIN  # e.g. the 2 mm marker: a table point
+    tol = xy_tol(key)
     for k, p in enumerate(candidates(c, key)):
         u, v, z = G.project(cam, p)
         if z <= 0 or not (0 <= u < cam.W and 0 <= v < cam.H):
             continue
         pt = RS.to_scaled(u, v, cam.W, cam.H)
-        r = RS.resolve_point(cam, depth, table_z, pt)
+        r = RS.resolve_point(cam, depth, table_z, pt, tcp=tcp)
         if r["xy"] is None:
             continue
         exy = float(np.hypot(r["xy"][0] - c[0], r["xy"][1] - c[1]))
-        ok = exy <= XY_TOL and ((r["kind"] == "object" and abs(r["top"] - top) <= TOP_TOL) or
+        ok = exy <= tol and ((r["kind"] == "object" and abs(r["top"] - top) <= TOP_TOL) or
                                 (flat and r["kind"] == "table"))
         if ok:
             return pt, {"cand": k, "xy_err_mm": round(exy * 1e3, 1),
@@ -77,7 +85,7 @@ def pt_command(step: str, xyz_cmd: dict, st: dict, info: dict, cam, depth, table
         if role is None:
             return {"mode": "point", "point_2d": None, "height": h, "gripper": g}, {}
         key = info[role]
-        pt, meta = label_pixel(cam, depth, table_z, st["obj"][key], key)
+        pt, meta = label_pixel(cam, depth, table_z, st["obj"][key], key, tcp=st["tcp"])
         if pt is None:
             return None, meta
         return {"mode": "point", "point_2d": pt, "height": h, "gripper": g}, meta

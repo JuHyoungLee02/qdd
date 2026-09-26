@@ -93,7 +93,8 @@ def aux_pixels(r: dict) -> dict:
     from ..astra_solo.pt_truth import label_pixel
     cam = Cam.from_json(json.load(open(r["cams_path"]))["head"])
     depth = np.load(r["depth_path"])["depth"]
-    return {k: label_pixel(cam, depth, r["pt_state"]["plane"], c, k)[0] for k, (_, c) in _objects(r).items()}
+    return {k: label_pixel(cam, depth, r["pt_state"]["plane"], c, k, tcp=r["gt"]["tcp"])[0]
+            for k, (_, c) in _objects(r).items()}
 
 
 def aux_for(r: dict, arm: str, rng):

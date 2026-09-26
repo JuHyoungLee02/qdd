@@ -125,7 +125,7 @@ class PtEpisode(Episode):
         plane = self._plane_now()
         res = None
         if cmd["height"] != "lift":
-            res = RS.resolve_point(self.head, self.depth, self.w.table_z, cmd["point_2d"])
+            res = RS.resolve_point(self.head, self.depth, self.w.table_z, cmd["point_2d"], tcp=st["tcp"])
             plane = res["plane"]
         if res is not None and res["kind"] == "none":
             return {"kind": "none", "goal": None, "holding": hold}

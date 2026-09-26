@@ -54,7 +54,7 @@ def goal_of(row: dict, parsed: dict, arm: str, cache: dict | None = None):
     if arm == "pt":
         plane, res = s["plane"], None
         if cmd["height"] != "lift":
-            res = RS.resolve_point(cam, depth, s["plane"], cmd["point_2d"])
+            res = RS.resolve_point(cam, depth, s["plane"], cmd["point_2d"], tcp=row["gt"]["tcp"])
             if res["kind"] == "none":
                 return None
             plane = res["plane"]
