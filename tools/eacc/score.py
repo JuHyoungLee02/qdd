@@ -134,6 +134,14 @@ def decide(srows: list, tab: dict) -> dict:
     """Pre-registered rules (prereg §6)."""
     out = {}
     have = set(tab)
+    n_off = sum(r["kind"] in OFF for r in srows)
+    if n_off == 0:  # no off-plan snapshot answered: M1 does not exist, R1 / R2 cannot be decided
+        out["no_off_data"] = True
+        for a, b, key in (("v1", "v2", "R1_v2_vs_v1"), ("v2", "v2cp", "R2_campose")):
+            if {a, b} <= have:
+                out[key] = {"verdict": "not_decidable_no_off_data", "M3": paired(srows, a, b, "cmd_ok"),
+                            "M2": paired(srows, a, b, "seg_ok") if a != "v1" else None}
+        return out
     if {"v1", "v2"} <= have:
         m1 = paired(srows, "v1", "v2", "dir_ok", OFF)
         m3 = paired(srows, "v1", "v2", "cmd_ok")

@@ -256,6 +256,16 @@ def test_runner_mock_and_score(tmp_path):
     assert "R1_v2_vs_v1" in dec and dec["R2_campose"]["verdict"] in ("adopt", "reject", "undecided")
 
 
+def test_decide_without_off_rows_is_not_decidable():
+    srows = [{"arm": a, "snap": f"s{i}", "kind": "on", "valid": True,
+              "score": {"cmd_ok": True, "seg_ok": None if a == "v1" else i % 2 == 0, "dir_ok": None}}
+             for i in range(4) for a in ("v1", "v2", "v2cp")]
+    tab = {a: {"invalid": {"rate": 0.0}} for a in ("v1", "v2", "v2cp")}
+    d = S.decide(srows, tab)
+    assert d["no_off_data"] and d["R1_v2_vs_v1"]["verdict"] == "not_decidable_no_off_data"
+    assert d["R2_campose"]["M2"]["n"] == 4
+
+
 def test_paired_bootstrap_counts():
     srows = []
     for i in range(10):

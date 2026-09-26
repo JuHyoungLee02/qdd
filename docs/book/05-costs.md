@@ -17,7 +17,8 @@
 | E-Astra-motion API 설정 시험 | 3 (HTTP 400) | 0원 | temperature·top_p·seed 모두 거부 | 사전 등록 수정 1 |
 | 프롬프트 검진 Astra 표본(Q1 방향 60 + Q2 잡기 60, low) | 120 | **2,093.9원** | 호출당 16.45원(방향, 영상 2장 JPEG)·18.45원(잡기, 3장 PNG detail high), 무효 0 | [R/prompt_health](../stage3/results/prompt_health.md) 5절, 장부 `H/logs/prompt_health/astra_ledger.jsonl`(상한 3,000원) |
 | E-Astra-solo P1 폐루프 low 4편 + P2 medium 짝 재질문 12 | 44 + 12 | **3,080.9원**(P1 2,366.1 + P2 714.8) | low **53.8원/호출**(입력 2,339·출력 274·추론 118), 지연 p50 6.8 s·p95 16.5 s, **원/성공 591.5원**; medium 59.6원/호출(추론 약 200), 지연 p50 10.0 s | [R/astra_solo_pilot](../stage3/results/astra_solo_pilot.md) 8절, 장부 `H/logs/astra_solo/ledger.jsonl` 56행(상한 5,000원) |
-| **누적(확정분)** | | **12,108.2원** = E-Astra-motion 6,933.4원(장부 `H/logs/astra_motion/cost.jsonl` 256행 합; 상한 15,000원) + 프롬프트 검진 2,093.9원(장부 `H/logs/prompt_health/astra_ledger.jsonl` 120행; 상한 3,000원) + E-Astra-solo 3,080.9원(장부 `H/logs/astra_solo/ledger.jsonl` 56행; 상한 5,000원) + 이전 `[금액 미기록]` 분 | | |
+| E-ACC P1(on 10장 × v1·v2·v2cp, low; 크레딧 소진으로 중단) | 30(+ 빈 답 37, 진단 1) | **1,352.7원** | 원/호출 v1 35.3·v2 47.8·v2cp 52.2, 지연 p50 4.3·5.6·6.1 s; 빈 답 37은 과금 없음(장부 no_usage 예약액 5,043원은 미과금) | [R/eacc](../stage3/results/eacc.md) 7절, 장부 `H/logs/eacc/astra_ledger.jsonl` charge 30행(상한 8,000원) |
+| **누적(확정분)** | | **13,460.9원** = E-Astra-motion 6,933.4원(장부 `H/logs/astra_motion/cost.jsonl` 256행 합; 상한 15,000원) + 프롬프트 검진 2,093.9원(장부 `H/logs/prompt_health/astra_ledger.jsonl` 120행; 상한 3,000원) + E-Astra-solo 3,080.9원(장부 `H/logs/astra_solo/ledger.jsonl` 56행; 상한 5,000원) + E-ACC 1,352.7원(장부 `H/logs/eacc/astra_ledger.jsonl` charge 30행; 상한 8,000원) + 이전 `[금액 미기록]` 분 | | |
 
 ### 예정 예산 (계획 [Task 14–16](../superpowers/plans/2026-09-26-astra-vla-coupling.md))
 | 실험 | 상한 | 비고 |
