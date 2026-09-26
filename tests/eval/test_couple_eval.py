@@ -75,6 +75,35 @@ def test_estimate_cli(tmp_path, capsys):
              "--in-tokens", "3500", "--out-tokens", "1000"])
     out = json.loads(capsys.readouterr().out)
     assert out["calls"] == pytest.approx(600.0) and out["price_date"] == "2026-09-26"
+    assert out["unanswered"]["per_episode"] == 1.0
+    CP.main(["estimate", "--prices", str(f), "--episodes", "40", "--episode-s", "60", "--latency-s", "4",
+             "--in-tokens", "3500", "--out-tokens", "1000", "--unanswered-per-episode", "0"])
+    out = json.loads(capsys.readouterr().out)
+    assert out["unanswered"]["krw"] == 0.0 and out["krw_total"] == out["krw"]
+
+
+def test_t21_estimate_adds_the_unanswered_allowance_as_a_separate_line():
+    """B7: every episode ends with a request in flight, charged at the reservation (max output tokens)."""
+    e = CP.estimate(TEST, episodes=40, episode_s=60.0, latency_s=4.0, in_tokens=3500, out_tokens=1000)
+    per = TEST.krw({"input_tokens": 3500, "output_tokens": 1000})
+    up = TEST.krw_upper(3500, 1200)
+    assert e["krw"] == pytest.approx(600 * per, abs=0.1)  # the answered estimate is unchanged
+    assert e["unanswered"] == {"per_episode": 1.0, "calls": 40.0, "krw_per_call": pytest.approx(up, abs=1e-3),
+                               "krw": pytest.approx(40 * up, abs=0.1), "max_output_tokens": 1200}
+    assert e["krw_total"] == pytest.approx(e["krw"] + e["unanswered"]["krw"], abs=0.1)
+    e2 = CP.estimate(TEST, 40, 60.0, 4.0, 3500, 1000, unanswered_per_episode=2.0)
+    assert e2["unanswered"]["calls"] == 80.0
+
+
+def test_t21_fatal_episodes_excluded_and_reported():
+    t = _trial("C5|cp-serial", 0, False)
+    assert not CP.is_budget_excluded(t) and CP.fatal_code([t]) is None
+    t["summary"]["couple"]["fatal"] = "insufficient_quota"
+    assert CP.is_budget_excluded(t) and CP.fatal_code([_trial("C5|cp-off", 0, True), t]) == "insufficient_quota"
+    s = [_trial("C5|cp-serial", i, True)["summary"] for i in range(2)]
+    s[0]["couple"]["unanswered"] = {"n": 1, "krw": 13.6}
+    cell = CP.couple_cell(s)
+    assert cell["unanswered_n"] == 1 and cell["unanswered_krw"] == pytest.approx(13.6)
 
 
 def _trial_adh(cond, seed, ok, n, follow_rate):

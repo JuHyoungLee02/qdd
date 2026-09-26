@@ -60,6 +60,48 @@ def test_finalize_charges_unanswered_reservations_by_prefix(tmp_path):
     assert rows[-1]["kind"] == "unanswered" and rows[-1]["key"] == "e1:5"
 
 
+def test_t21_no_usage_api_error_costs_zero_and_releases_the_reservation(tmp_path):
+    """D1 (P108): the API reported an error and no usage -> it did not bill: row kind no_usage, cost 0. A missing usage
+    without an API error (client timeout, transport error) stays at the reservation (no_usage_reserved)."""
+    f = str(tmp_path / "l.jsonl")
+    L = CostLedger(f, 100.0, TEST)
+    L.reserve("e1:1", 13.6)
+    assert L.charge("e1:1", None, {"error": "insufficient_quota"}, api_error=True) == 0.0
+    assert L.reserved == {} and L.spent == 0.0
+    L.reserve("e1:2", 13.6)
+    assert L.charge("e1:2", None, {"error": "timeout"}) == pytest.approx(13.6)
+    kinds = [(json.loads(x)["kind"], json.loads(x)["cost_krw"]) for x in open(f, encoding="utf-8")]
+    assert kinds == [("no_usage", 0.0), ("no_usage_reserved", 13.6)]
+
+
+def test_t21_unanswered_counted_separately_and_still_in_the_80_percent_stop(tmp_path):
+    """B7: the conservative reservation charge of never-answered requests stays (the stop counts it), but state()
+    reports it apart from the answered spend."""
+    f = str(tmp_path / "l.jsonl")
+    L = CostLedger(f, 100.0, TEST)
+    L.reserve("e1:1", 30.0)
+    L.charge("e1:1", {"input_tokens": 0, "output_tokens": 1000})  # 11.2 KRW billed
+    L.reserve("e1:2", 70.0)
+    L.finalize(prefix="e1:")
+    st = CostLedger(f, 100.0, TEST).state()  # another process reading the same file
+    assert st["unanswered_n"] == 1 and st["unanswered_krw"] == pytest.approx(70.0)
+    assert st["answered_krw"] == pytest.approx(11.2) and st["spent_krw"] == pytest.approx(81.2)
+    assert st["stopped"] is True and st["fatal"] is None
+
+
+def test_t21_fatal_row_is_shared_through_the_file(tmp_path):
+    f = str(tmp_path / "l.jsonl")
+    A, B = CostLedger(f, 100.0, TEST), CostLedger(f, 100.0, TEST)
+    A.mark_fatal("insufficient_quota", "You exceeded your current quota")
+    A.mark_fatal("insufficient_quota")  # once only
+    B.refresh()
+    assert A.fatal == B.fatal == "insufficient_quota" and B.spent == 0.0
+    assert [json.loads(x)["kind"] for x in open(f, encoding="utf-8")] == ["fatal"]
+    M = CostLedger(None, 0.0, PriceTable.free())  # in-memory ledger (mock / local model)
+    M.mark_fatal("insufficient_quota")
+    assert M.fatal == "insufficient_quota" and M.state()["fatal"] == "insufficient_quota"
+
+
 def test_free_prices_never_stop_and_priced_needs_a_budget():
     L = CostLedger(None, 0.0, PriceTable.free())
     L.reserve("k", L.prices.krw_upper(5000, 1200))

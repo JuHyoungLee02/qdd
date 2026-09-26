@@ -6,7 +6,8 @@ event_window_s after an event, wait until last send + phase_pause_s). A timed-ou
 answer still arrives it is 'late' (never applied, still charged). fail_slow_after failed calls in a row (timeout,
 API error, schema error) slow the robot down (spec §7) until a valid answer. max_inflight = the true maximum of
 concurrent requests (sends minus deliveries and timeout drops; 1 in a correct serial run); max_outstanding also
-counts dropped requests whose late answer has not come back."""
+counts dropped requests whose late answer has not come back. A fatal API error recorded in the ledger
+(ledger.fatal, plan Task 21 D1: insufficient_quota) stops sending for the rest of the run (hold reason "fatal")."""
 from __future__ import annotations
 
 import math
@@ -43,7 +44,10 @@ class SerialStream:
         if (pp is not None and self.last_send is not None and not contact_window
                 and now - self.last_event_t > self.p.event_window_s + 1e-9 and now < self.last_send + pp - 1e-9):
             return False, "pause"
-        if not self.ledger.can_send(est_krw):
+        ok = self.ledger.can_send(est_krw)  # refreshes the shared ledger file first
+        if getattr(self.ledger, "fatal", None):
+            return False, "fatal"
+        if not ok:
             return False, "budget"
         return True, "send"
 

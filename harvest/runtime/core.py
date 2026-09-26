@@ -811,6 +811,8 @@ class OursRuntime:
             self.b_last = {"ds": prev, "outcome": out}
             if out == "CONTRADICT":  # an existing event call (canon §45): pulls the next Astra call forward
                 self._event(now, "b_contradict")
+            elif self.driver is not None:  # plan Task 21 B6: the condition cleared -> its next flag is a new edge
+                self.driver.clear("b_contradict")
             entry.update(prev_outcome=out, prev_residual_mm=round(resid * 1e3, 1), signals=sig)
             self.hold_step = sig["hold"]
             if out in ("DEVIATE", "CONTRADICT") and self.cfg.backend != "fused":

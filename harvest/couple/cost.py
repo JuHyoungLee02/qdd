@@ -5,7 +5,12 @@ experiment: every process re-reads new rows before deciding to send (spent grows
 workers see each other's charges; an in-flight reservation is local to its process (overshoot <= one call per
 worker, inside the 20 % margin). Requests are reserved at the upper bound (no cache credit, max output tokens);
 an answer replaces its reservation by the billed usage, a missing usage or a never-answered request is charged at
-the reservation."""
+the reservation.
+Plan 2026-09-26 Task 21 (book 02 P108): row kinds charge (billed usage), no_usage (the API reported an error and no
+usage: it did not bill -> cost 0, reservation released), no_usage_reserved (no usage without an API error, e.g. a
+client timeout: charged at the reservation), unanswered (never delivered by the episode end: charged at the
+reservation, conservative -- the 80 % stop counts it; state() reports it apart from the answered spend, B7) and
+fatal (cost 0: a fatal API error such as insufficient_quota; every ledger on the file stops sending, D1)."""
 from __future__ import annotations
 
 import datetime as _dt
@@ -85,7 +90,16 @@ class CostLedger:
         self.path, self.budget, self.prices = path, float(budget_krw), prices
         self.stop_frac, self.run_id = float(stop_frac), run_id
         self.spent, self._off, self.reserved = 0.0, 0, {}
+        self.unanswered_n, self.unanswered_krw, self.fatal = 0, 0.0, None
         self.refresh()
+
+    def _apply(self, row: dict) -> None:
+        self.spent += float(row["cost_krw"])
+        if row.get("kind") == "unanswered":
+            self.unanswered_n += 1
+            self.unanswered_krw += float(row["cost_krw"])
+        elif row.get("kind") == "fatal" and self.fatal is None:
+            self.fatal = row.get("code") or "fatal"
 
     @property
     def limit(self) -> float:
@@ -106,7 +120,7 @@ class CostLedger:
             return
         for line in data[:end + 1].splitlines():
             if line.strip():
-                self.spent += float(json.loads(line)["cost_krw"])
+                self._apply(json.loads(line))
         self._off += end + 1
 
     def can_send(self, est_krw: float) -> bool:
@@ -118,22 +132,39 @@ class CostLedger:
     def reserve(self, key: str, est_krw: float) -> None:
         self.reserved[key] = float(est_krw)
 
-    def charge(self, key: str, usage: dict | None, meta: dict | None = None) -> float:
+    def charge(self, key: str, usage: dict | None, meta: dict | None = None, api_error: bool = False) -> float:
+        """api_error: the API itself reported the failure (AstraRecord.api_error); with no usage it did not bill."""
         est = self.reserved.pop(key, 0.0)
-        cost = self.prices.krw(usage) if usage else est
-        self._append({**(meta or {}), "key": key, "kind": "charge" if usage else "no_usage", "cost_krw": cost,
-                      "usage": usage or {}})
+        if usage:
+            kind, cost = "charge", self.prices.krw(usage)
+        elif api_error:
+            kind, cost = "no_usage", 0.0
+        else:
+            kind, cost = "no_usage_reserved", est
+        self._append({**(meta or {}), "key": key, "kind": kind, "cost_krw": cost, "usage": usage or {}})
         return cost
 
-    def finalize(self, prefix: str = "") -> None:
+    def finalize(self, prefix: str = "") -> tuple[int, float]:
+        """Charge the never-answered reservations of `prefix` (kind unanswered); returns (n, krw)."""
+        n, krw = 0, 0.0
         for k in [k for k in self.reserved if k.startswith(prefix)]:
-            self._append({"key": k, "kind": "unanswered", "cost_krw": self.reserved.pop(k), "usage": {}})
+            c = self.reserved.pop(k)
+            self._append({"key": k, "kind": "unanswered", "cost_krw": c, "usage": {}})
+            n, krw = n + 1, krw + c
+        return n, krw
+
+    def mark_fatal(self, code: str, message: str | None = None) -> None:
+        """A fatal API error (D1: insufficient_quota): one cost-0 row; every ledger reading the file stops sending."""
+        self.refresh()
+        if self.fatal is None:
+            self._append({"key": "fatal", "kind": "fatal", "code": code, "message": message, "cost_krw": 0.0,
+                          "usage": {}})
 
     def _append(self, row: dict) -> None:
         row = {"t_utc": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"), "run_id": self.run_id,
                "model": self.prices.model, "price_date": self.prices.date, "budget_krw": self.budget, **row}
         if not self.path:
-            self.spent += float(row["cost_krw"])
+            self._apply(row)
             return
         os.makedirs(os.path.dirname(os.path.abspath(self.path)), exist_ok=True)
         with open(self.path, "a", encoding="utf-8") as f:
@@ -141,6 +172,8 @@ class CostLedger:
         self.refresh()
 
     def state(self) -> dict:
-        return {"spent_krw": round(self.spent, 3), "reserved_krw": round(sum(self.reserved.values()), 3),
+        return {"spent_krw": round(self.spent, 3), "answered_krw": round(self.spent - self.unanswered_krw, 3),
+                "unanswered_krw": round(self.unanswered_krw, 3), "unanswered_n": self.unanswered_n,
+                "fatal": self.fatal, "reserved_krw": round(sum(self.reserved.values()), 3),
                 "budget_krw": self.budget, "limit_krw": round(self.limit, 3), "stopped": self.stopped,
                 "price_date": self.prices.date, "price_model": self.prices.model}

@@ -12,7 +12,13 @@ Chunk-level adherence (canon §84 supplement 4, plan Task 9 controller ruling C2
 chunk_vec, the executed motion of the current expert chunk (fused backend: chunk TCP displacement, a 3-vector;
 None on the modular backend, where the committed decision is what skills execute directly). The VLA fast check --
 and the offset-adherence log -- use vla_vec = chunk_vec if given, else committed_vector(committed); a decision
-token is never assumed to steer the chunk on its own (canon §84 supplement 4-5, E-MA2/E-SR0)."""
+token is never assumed to steer the chunk on its own (canon §84 supplement 4-5, E-MA2/E-SR0).
+
+Plan Task 21 (couple_dry.md B6/B7, book 02 P108): flag() is edge-triggered with a per-name refractory window
+(event_refractory_s; clear() re-arms a name), suppressed repeats are counted (summary events_suppressed); the
+episode's never-answered requests are reported apart (summary unanswered); an API error without usage costs 0
+(ledger no_usage) and insufficient_quota is fatal: the ledger records it and no request is sent again (hold fatal,
+summary fatal)."""
 from __future__ import annotations
 
 from collections import Counter
@@ -33,6 +39,7 @@ from .stream import SerialStream
 from .twolayer import NoProgress, TwoLayerGate, VlaFastCheck, adherence_cos, committed_vector, follows
 
 CONTACT_PHASES = ("descend", "close", "place_descend", "open")
+FATAL_ERRORS = ("insufficient_quota",)  # plan Task 21 D1 (book 02 P108): API errors that end the run's paid calls
 MAG_CENTER_M = {"tiny": 0.005, "small": 0.01, "medium": 0.02, "large": 0.04, "xlarge": 0.08}
 
 
@@ -106,13 +113,29 @@ class CoupleDriver:
         self.est_text_tokens = p.est_text_tokens
         self.budget_hit, self.stop_confirmed_t, self._hold = False, None, None
         self.auth_s, self._auth_last = {"a0": 0.0, "band": 0.0, "a1": 0.0}, None
+        self._ev_last, self._ev_armed, self.events_suppressed = {}, set(), Counter()
+        self.unanswered_closed = (0, 0.0)
 
     def key(self, no: int) -> str:
         return f"e{self.episode}:{no}"
 
     def flag(self, name: str, now: float) -> None:
+        """Edge-triggered with a per-name refractory window (plan Task 21 B6, couple_dry.md: b_contradict fired at
+        every decision step): a name reaches the stream only if it was not flagged in the last event_refractory_s
+        or its condition cleared (clear) and re-appeared; suppressed repeats are counted per name."""
+        last = self._ev_last.get(name)
+        if last is not None and name not in self._ev_armed and now - last < self.p.event_refractory_s - 1e-9:
+            self.events_suppressed[name] += 1
+            return
+        self._ev_last[name] = now
+        self._ev_armed.discard(name)
         self.stream.flag(name, now)
         self.events.append({"t": round(now, 3), "event": name})
+
+    def clear(self, name: str) -> None:
+        """The condition behind `name` cleared: its next flag is a new edge and is not held by the refractory."""
+        if name in self._ev_last:
+            self._ev_armed.add(name)
 
     # ------------------------------------------------------------------ per tick
     def tick(self, v: TickView) -> TickOut:
@@ -125,7 +148,7 @@ class CoupleDriver:
         ok, why = self.stream.next_send(v.now, bool(v.near or v.phase in CONTACT_PHASES), est)
         if ok:
             self._send(v, cams, est)
-        elif why in ("budget", "pause") and why != self._hold:
+        elif why in ("budget", "pause", "fatal") and why != self._hold:
             self.log.append({"type": "hold_send", "why": why, "t": round(v.now, 3), "ledger": self.ledger.state()})
         if why == "budget":
             self.budget_hit = True
@@ -201,8 +224,13 @@ class CoupleDriver:
     def on_delivery(self, r: dict, now: float, t1: dict) -> None:
         m, rec = r["meta"], r["rec"]
         no = m["no"]
+        api_error = bool(getattr(rec, "api_error", False))
+        code = getattr(rec, "error_code", None) or rec.error
         cost = self.ledger.charge(self.key(no), rec.usage or None,
-                                  {"no": no, "resp_model": rec.model_field, "error": rec.error})
+                                  {"no": no, "resp_model": rec.model_field, "error": rec.error,
+                                   "error_message": getattr(rec, "error_message", None)}, api_error=api_error)
+        if api_error and code in FATAL_ERRORS:  # D1: stop sending for the rest of the run (every ledger on the file)
+            self.ledger.mark_fatal(code, getattr(rec, "error_message", None))
         h, ims = r["req_hash"]
         self.blobs[h] = ("json", r["req_body"])
         for c, b in (r.get("images_raw") or {}).items():
@@ -213,6 +241,8 @@ class CoupleDriver:
                "latency_s": round(float(r["latency_s"]), 3), "cost_krw": round(cost, 4), "usage": rec.usage,
                "error": rec.error, "model": rec.model_field, "effort": rec.effort, "request_sha256": h,
                "image_sha256": ims, "output_text": rec.output_text, "prompt_id": PROMPT_ID[self.p.request_mode]}
+        if api_error:
+            row.update(error_code=getattr(rec, "error_code", None), error_message=getattr(rec, "error_message", None))
         if self.stream.is_late(no):
             row["late"] = True
             self.log.append(row)
@@ -304,12 +334,22 @@ class CoupleDriver:
                 "cost_krw": round(sum(r.get("cost_krw", 0.0) for r in self.log if r["type"] == "answer"), 4),
                 "gates": dict(Counter(r["gate"] for r in good)), "layer": dict(self.layer.counts),
                 "offset": self.offset.stats(), "irrev": dict(self.gate.counts),
-                "events": dict(Counter(e["event"] for e in self.events)), "budget_excluded": self.budget_hit,
+                "events": dict(Counter(e["event"] for e in self.events)),
+                "events_suppressed": dict(self.events_suppressed), "fatal": getattr(self.ledger, "fatal", None),
+                "unanswered": self._unanswered(), "budget_excluded": self.budget_hit,
                 "stop_confirmed_t": self.stop_confirmed_t, "prompt_id": PROMPT_ID[self.p.request_mode],
                 "adherence": {"chunk_vs_offset": rate(adh, "follows_offset"),
                              "chunk_vs_decision": rate(adh, "follows_decision")},
                 "authority": auth,
                 "params": self.p.to_json(), "ledger": self.ledger.state()}
 
+    def _unanswered(self) -> dict:
+        """B7: this episode's never-answered requests -- still reserved (charged as unanswered at close) plus those
+        already charged by close(); counted apart from the answered cost_krw."""
+        pend = [v for k, v in self.ledger.reserved.items() if k.startswith(f"e{self.episode}:")]
+        n, krw = self.unanswered_closed
+        return {"n": n + len(pend), "krw": round(krw + sum(pend), 4)}
+
     def close(self) -> None:
-        self.ledger.finalize(prefix=f"e{self.episode}:")
+        n, krw = self.ledger.finalize(prefix=f"e{self.episode}:")
+        self.unanswered_closed = (self.unanswered_closed[0] + n, self.unanswered_closed[1] + krw)

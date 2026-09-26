@@ -23,6 +23,8 @@ class CoupleParams:
     min_interval_s: float = 0.0  # E-Astra-necessity: pace a local model to Astra's latency p50
     phase_pause_s: float | None = None  # optional cost fallback (canon §84 supp 2); None = off
     event_window_s: float = 3.0  # spec §15: no pause for 3 s after an event
+    event_refractory_s: float = 3.0  # plan Task 21 B6 (couple_dry.md): a name re-flags only after this long or on a
+    # new edge (condition cleared, CoupleDriver.clear); = event_window_s (spec §15)
     fail_slow_after: int = 3  # spec §7: 3 failed calls in a row -> slow down
     slow_factor: float = 0.5
     slow_down_s: float = 2.0  # info_request slow_down (plan ruling 3)

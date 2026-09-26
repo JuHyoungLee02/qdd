@@ -225,11 +225,13 @@ def run_worker(spec_path: str) -> None:
     from ..runtime.models import JevLSelector, MockFusedModel, MockSelector, decision_questions
     from ..runtime.run_r5 import question_ids
     from ..sim.scene import SCENE_SPEC
-    rows, t0 = [], time.monotonic()
+    rows, t0, fatal = [], time.monotonic(), None
     for lab in run_labels(spec["conditions"], spec.get("hb_n", [5.0]), tuple(spec.get("hb_mode", ["K2"]))):
         cond, hb_n, lab_label = lab[:3]
         hb_mode = lab[3] if len(lab) > 3 else "K2"
         for arm in arms:
+            if fatal:
+                break
             label = CP.couple_label(lab_label, arm, arms)
             if spec["selector"] == "jevl":
                 model = JevLSelector(spec["url"], spec["name"], layout=spec["layout"], mode=spec["mode"])
@@ -317,8 +319,15 @@ def run_worker(spec_path: str) -> None:
             rows.append({"_cond_done": label, "wall_s": round(time.monotonic() - tc, 1), "status": log.status,
                          "error": getattr(log, "error", None) and str(log.error)[:2000], "log_dir": log_dir})
             rt.close()
+            fatal = CP.fatal_code(rows)  # plan Task 21 D1: e.g. insufficient_quota -> no further labels
+            if fatal:
+                print(f"COUPLE_FATAL {fatal}: the Astra API refused the stream (no more paid calls); worker "
+                      f"{spec['variant']} stops after {label}", flush=True)
+        if fatal:
+            break
     with open(os.path.join(spec["out"], f"worker_{spec['variant']}.json"), "w", encoding="utf-8") as f:
-        json.dump({"rows": rows, "wall_s": round(time.monotonic() - t0, 1)}, f, indent=1, default=str)
+        json.dump({"rows": rows, "wall_s": round(time.monotonic() - t0, 1), "fatal": fatal}, f, indent=1,
+                  default=str)
     print("R6_WORKER_DONE", spec["variant"], flush=True)
     sys.stdout.flush()
     os._exit(0)  # SimulationApp.close() hangs after eval in this rootfs (R5); results are written
@@ -498,14 +507,21 @@ def run(a) -> dict:
             p.wait()
             wall.setdefault(v, round(time.monotonic() - tv, 1))
             logf.close()
-    trials, cond_runs = [], []
+    trials, cond_runs, fatal = [], [], {}
     for v in variants:
         wp = os.path.join(a.out, f"worker_{v}.json")
         if not os.path.exists(wp):
             raise SystemExit(f"worker {v} wrote no result, see {a.out}/worker_{v}.log")
-        for r in json.load(open(wp, encoding="utf-8"))["rows"]:
+        wj = json.load(open(wp, encoding="utf-8"))
+        if wj.get("fatal"):
+            fatal[v] = wj["fatal"]
+        for r in wj["rows"]:
             (cond_runs if "_cond_done" in r else trials).append(r)
+    if fatal:  # plan Task 21 D1: stopped, reported, never judged as a result
+        print("COUPLE_FATAL " + json.dumps(fatal) + ": the run stopped early (Astra API refused the stream); "
+              "affected episodes are excluded", flush=True)
     res = aggregate(trials, a.n_boot)
+    res["couple_fatal"] = fatal or None
     res["trials"] = [{k: t[k] for k in ("variant", "condition", "seed", "epoch", "success", "sim_time",
                                         "termination", "sidecar")} for t in trials]
     res["eval_runs"] = cond_runs

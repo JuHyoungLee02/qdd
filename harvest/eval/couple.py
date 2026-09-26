@@ -6,9 +6,12 @@ section (user-log 87; replaces user approval). Episodes cut by the 80 % budget s
 and counted (plan ruling 10). couple_cell() also pools the per-episode chunk-level adherence (canon §84 supplement
 4-5, controller ruling C4): CoupleDriver.summary()["adherence"] is already {"chunk_vs_offset": {n, follow_rate},
 "chunk_vs_decision": {...}} per episode; the cell pools n x follow_rate across episodes (skipping None rates).
+Plan Task 21: episodes whose stream was stopped by a fatal API error (summary couple.fatal, D1: insufficient_quota)
+are excluded like budget-cut ones; the estimate adds the never-answered request of every episode (charged at the
+reservation, max output tokens) as a separate line (B7).
 
   python -m harvest.eval.couple estimate --prices P.json --episodes 40 --episode-s 60 --latency-s 4 \
-      --in-tokens 3500 --out-tokens 1000 [--phase-pause 8 --dense-frac 0.3]
+      --in-tokens 3500 --out-tokens 1000 [--phase-pause 8 --dense-frac 0.3] [--unanswered-per-episode 1]
 """
 from __future__ import annotations
 
@@ -69,7 +72,17 @@ def stream_client(spec: dict):
 
 
 def is_budget_excluded(t: dict) -> bool:
-    return bool((((t.get("summary") or {}).get("couple")) or {}).get("budget_excluded"))
+    c = ((t.get("summary") or {}).get("couple")) or {}
+    return bool(c.get("budget_excluded") or c.get("fatal"))
+
+
+def fatal_code(rows: list):
+    """The first fatal API error code (D1) in trial rows' couple summaries, else None."""
+    for t in rows:
+        f = (((t.get("summary") or {}).get("couple")) or {}).get("fatal")
+        if f:
+            return f
+    return None
 
 
 def _pool_adherence(cs: list, key: str) -> dict:
@@ -109,6 +122,8 @@ def couple_cell(summaries: list):
             "timeouts": sum(c["timeouts"] for c in cs), "schema_errors": sum(c["schema_errors"] for c in cs),
             "gates": tot("gates"), "layer": tot("layer"), "irrev": tot("irrev"), "events": tot("events"),
             "max_outstanding": max(c.get("max_outstanding", 1) for c in cs),
+            "unanswered_n": sum(((c.get("unanswered") or {}).get("n") or 0) for c in cs),
+            "unanswered_krw": round(sum(((c.get("unanswered") or {}).get("krw") or 0.0) for c in cs), 3),
             "adherence": {"chunk_vs_offset": _pool_adherence(cs, "chunk_vs_offset"),
                          "chunk_vs_decision": _pool_adherence(cs, "chunk_vs_decision")}}
 
@@ -137,14 +152,24 @@ def couple_diff(trials: list, n_boot: int) -> dict:
 
 
 def estimate(prices, episodes: int, episode_s: float, latency_s: float, in_tokens: int, out_tokens: int,
-             phase_pause_s: float | None = None, dense_frac: float = 0.3) -> dict:
+             phase_pause_s: float | None = None, dense_frac: float = 0.3, unanswered_per_episode: float = 1.0,
+             max_output_tokens: int | None = None) -> dict:
+    """unanswered_per_episode (B7): requests still in flight at each episode end, charged at the reservation
+    (in_tokens + the stream's max_output_tokens, CoupleParams default) -- a separate line added in krw_total."""
+    if max_output_tokens is None:
+        from ..couple.params import CoupleParams
+        max_output_tokens = CoupleParams().max_output_tokens
     if phase_pause_s is None:
         per_ep = episode_s / latency_s
     else:
         per_ep = dense_frac * episode_s / latency_s + (1 - dense_frac) * episode_s / max(latency_s, phase_pause_s)
     per_call = prices.krw({"input_tokens": in_tokens, "output_tokens": out_tokens})
     calls = episodes * per_ep
+    u_calls, u_per = episodes * float(unanswered_per_episode), prices.krw_upper(in_tokens, max_output_tokens)
+    un = {"per_episode": float(unanswered_per_episode), "calls": round(u_calls, 3), "krw_per_call": round(u_per, 3),
+          "krw": round(u_calls * u_per, 1), "max_output_tokens": int(max_output_tokens)}
     return {"calls": round(calls, 3), "krw_per_call": round(per_call, 3), "krw": round(calls * per_call, 1),
+            "unanswered": un, "krw_total": round(calls * per_call + u_calls * u_per, 1),
             "price_date": prices.date, "price_model": prices.model,
             "assumptions": {"episodes": episodes, "episode_s": episode_s, "latency_s": latency_s,
                             "in_tokens": in_tokens, "out_tokens": out_tokens, "phase_pause_s": phase_pause_s,
@@ -164,9 +189,11 @@ def main(argv=None):
     e.add_argument("--out-tokens", type=int, required=True)
     e.add_argument("--phase-pause", type=float, default=None)
     e.add_argument("--dense-frac", type=float, default=0.3)
+    e.add_argument("--unanswered-per-episode", type=float, default=1.0,
+                   help="requests in flight at each episode end, charged at the reservation (plan Task 21 B7)")
     a = ap.parse_args(argv)
     r = estimate(PriceTable.load(a.prices), a.episodes, a.episode_s, a.latency_s, a.in_tokens, a.out_tokens,
-                 a.phase_pause, a.dense_frac)
+                 a.phase_pause, a.dense_frac, a.unanswered_per_episode)
     print(json.dumps(r, indent=1))
     return r
 

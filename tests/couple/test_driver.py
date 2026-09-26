@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import pytest
 
@@ -195,3 +197,110 @@ def test_authority_none_is_one_and_band_is_counted():
     s = drv2.summary()["authority"]
     assert s["share"] == {"a0": 0.25, "band": 0.5, "a1": 0.25}
     assert [(r["t"], r["a"]) for r in drv2.log if r["type"] == "authority"] == [(0.0, 1.0), (1.0, 0.5), (3.0, 0.0)]
+
+
+# ---- Task 21 (controller rulings T21, T21b): B6 event refractory, B7 unanswered accounting, D1 stream errors
+def _bare(p=None, ledger=None, astra=None):
+    q = MiniQueue()
+    drv = CoupleDriver(p or CoupleParams(), astra or ScriptedCoupleAstra([answer("continue")], latency_s=30.0),
+                       ledger or CostLedger(None, 0.0, PriceTable.free()), q.submit, "Put the red mug on the blue tray.")
+    return drv, q
+
+
+def _tv(now):
+    return TickView(now=now, dt=0.01, tcp_p=np.array([1.0, 0.0, 0.0]), phase="approach", stage="S1", near=False,
+                    committed={"dir_xy": "plus_x", "dir_z": "none_z", "mag_coarse": "small"}, frames=FR, cams=CAMS)
+
+
+def test_b6_repeated_flag_is_refractory_and_the_request_in_flight_stays():
+    """Dry run B6: b_contradict at every decision step (0.33 s) for 10 s -> at most ceil(10/3)+1 stream events."""
+    drv, _ = _bare(CoupleParams(timeout_s=60.0))
+    drv.tick(_tv(0.0))
+    assert drv.stream.inflight[0] == 1
+    for i in range(30):
+        drv.flag("b_contradict", round(i * 0.33, 3))
+    emitted = [e["t"] for e in drv.events if e["event"] == "b_contradict"]
+    assert len(emitted) <= 5 and emitted == [0.0, 3.3, 6.6]
+    assert drv.summary()["events_suppressed"] == {"b_contradict": 30 - len(emitted)}
+    assert drv.summary()["events"] == {"b_contradict": len(emitted)}
+    assert drv.stream.inflight[0] == 1 and drv.stream.pending_events == ["b_contradict"]
+
+
+def test_b6_phase_pause_engages_after_the_refractory_window():
+    drv, _ = _bare(CoupleParams(phase_pause_s=8.0))
+    drv.stream.sent(0.0)
+    drv.stream.delivered(1, 0.2, True, 0.2)
+    for i in range(10):  # 0.00 ... 2.97: only the first one reaches the stream
+        drv.flag("b_contradict", round(i * 0.33, 3))
+    assert drv.stream.last_event_t == 0.0
+    assert drv.stream.next_send(3.1, False, 0.0) == (False, "pause")
+    drv.flag("b_contradict", 3.3)  # refractory over -> a new event, the pause window reopens
+    assert drv.stream.next_send(3.4, False, 0.0) == (True, "send")
+
+
+def test_b6_distinct_names_independent_and_edge_reflags():
+    drv, _ = _bare()
+    drv.flag("b_contradict", 0.0)
+    drv.flag("no_progress", 0.5)
+    drv.flag("b_contradict", 1.0)  # suppressed
+    drv.clear("b_contradict")  # the condition cleared ...
+    drv.flag("b_contradict", 1.3)  # ... and re-appeared: an edge, flagged inside the refractory window
+    drv.flag("b_contradict", 1.6)  # suppressed again
+    assert [(e["t"], e["event"]) for e in drv.events] == [(0.0, "b_contradict"), (0.5, "no_progress"),
+                                                          (1.3, "b_contradict")]
+    assert drv.summary()["events_suppressed"] == {"b_contradict": 2}
+    assert CoupleParams().event_refractory_s == CoupleParams().event_window_s == 3.0
+
+
+def test_b7_unanswered_reported_separately_before_and_after_close(tmp_path):
+    led = CostLedger(str(tmp_path / "l.jsonl"), 1000.0, TEST)
+    ast = ScriptedCoupleAstra([answer("continue")], latency_s=3.0, usage={"input_tokens": 3000, "output_tokens": 900})
+    drv, _, _ = _run(ast, 4.0, ledger=led)  # answer 1 at 3.0 s, request 2 still in flight at the end
+    s = drv.summary()
+    est = [r["est_krw"] for r in drv.log if r["type"] == "send"][1]
+    assert s["unanswered"] == {"n": 1, "krw": pytest.approx(est, abs=1e-3)}
+    drv.close()
+    s = drv.summary()
+    assert s["unanswered"] == {"n": 1, "krw": pytest.approx(est, abs=1e-3)}
+    st = s["ledger"]
+    assert st["unanswered_n"] == 1 and st["unanswered_krw"] == pytest.approx(est, abs=1e-3)
+    assert st["answered_krw"] == pytest.approx(TEST.krw({"input_tokens": 3000, "output_tokens": 900}), abs=1e-3)
+    assert st["spent_krw"] == pytest.approx(st["answered_krw"] + st["unanswered_krw"], abs=2e-3)
+
+
+class _ErrAstra:
+    """An AstraClient-shaped stand-in whose calls fail the way P108 did (stream `error`, no usage)."""
+    model = "mock:err"
+    synthetic_latency = 2.0
+
+    def __init__(self, code="insufficient_quota"):
+        self.code, self.calls = code, 0
+
+    def call(self, inp, effort, max_output_tokens, meta):
+        from harvest.clients.astra import AstraRecord
+        self.calls += 1
+        return AstraRecord(http_status=200, effort=effort, meta=dict(meta), error=self.code, error_code=self.code,
+                           error_message="You exceeded your current quota", api_error=True)
+
+
+def test_d1_insufficient_quota_is_fatal_no_more_sends_and_no_usage_rows_cost_zero(tmp_path):
+    f = str(tmp_path / "l.jsonl")
+    led = CostLedger(f, 1000.0, TEST)
+    ast = _ErrAstra()
+    drv, _, _ = _run(ast, 10.0, ledger=led)
+    assert ast.calls == 1 and drv.stream.n_sent == 1
+    s = drv.summary()
+    assert s["fatal"] == "insufficient_quota" and s["api_errors"] == 1 and s["cost_krw"] == 0.0
+    assert [r["why"] for r in drv.log if r["type"] == "hold_send"] == ["fatal"]
+    rows = [json.loads(x) for x in open(f, encoding="utf-8")]
+    assert [(r["kind"], r["cost_krw"]) for r in rows] == [("no_usage", 0.0), ("fatal", 0.0)]
+    assert rows[0]["error"] == "insufficient_quota" and led.reserved == {}
+    other = CostLedger(f, 1000.0, TEST)  # another worker / the next episode's driver on the same ledger file
+    drv2, _, _ = _run(ScriptedCoupleAstra([answer("continue")], latency_s=3.0), 2.0, ledger=other)
+    assert drv2.stream.n_sent == 0 and drv2.summary()["fatal"] == "insufficient_quota"
+
+
+def test_d1_non_fatal_api_error_keeps_sending():
+    ast = _ErrAstra("server_error")
+    drv, _, _ = _run(ast, 5.0, p=CoupleParams(request_mode="F0"))
+    assert ast.calls == 3 and drv.summary()["fatal"] is None and drv.summary()["api_errors"] == 2

@@ -1,4 +1,9 @@
-"""Astra client over the OpenAI Responses API with streaming (first-token timing), no retries (canon §28 A6)."""
+"""Astra client over the OpenAI Responses API with streaming (first-token timing), no retries (canon §28 A6).
+API errors (plan 2026-09-26 Task 21 D1, book 02 P108): a stream `error` event or `response.failed` sets rec.error to
+the reported code (e.g. insufficient_quota, rate_limit_exceeded, server_error; "stream_error" / "response_failed"
+without a code), never an empty answer; a non-200 status keeps rec.error = "http_<status>" and records the body's
+code. error_code / error_message hold the API's code and message; api_error = the API itself reported the failure
+(a client-side timeout or transport error is not one: the call may still have been billed)."""
 from __future__ import annotations
 
 import base64
@@ -28,6 +33,21 @@ class AstraRecord:
     # F21 (prompt_health.md): a response.incomplete event / status "incomplete" (e.g. max_output_tokens truncation)
     incomplete: bool = False
     incomplete_reason: str | None = None
+    # Task 21 D1: the API's own error report (stream error / response.failed / HTTP error body)
+    error_code: str | None = None
+    error_message: str | None = None
+    api_error: bool = False
+
+
+def _api_error(rec: AstraRecord, err, fallback: str, set_error: bool = True) -> None:
+    err = err if isinstance(err, dict) else {}
+    if rec.api_error and not err.get("code"):  # an error event's code is not overwritten by a code-less failure
+        return
+    rec.api_error = True
+    rec.error_code = err.get("code") or None
+    rec.error_message = err.get("message")
+    if set_error:
+        rec.error = rec.error_code or fallback
 
 
 def _image_hashes(inp):
@@ -61,6 +81,11 @@ class AstraClient:
                     resp.read()
                     rec.t_done = time.monotonic()
                     rec.error = f"http_{resp.status_code}"
+                    try:
+                        body = resp.json()
+                    except ValueError:
+                        body = {}
+                    _api_error(rec, body.get("error") if isinstance(body, dict) else None, rec.error, set_error=False)
                     return rec
                 for line in resp.iter_lines():
                     if not line.startswith("data:"):
@@ -77,6 +102,12 @@ class AstraClient:
                             rec.incomplete = True
                             rec.incomplete_reason = (r.get("incomplete_details") or {}).get("reason")
                             rec.error = f"incomplete:{rec.incomplete_reason}"
+                    elif ev.get("type") == "error":
+                        _api_error(rec, ev, "stream_error")
+                    elif ev.get("type") == "response.failed":
+                        r = ev.get("response", {}) or {}
+                        rec.model_field, rec.usage = r.get("model"), r.get("usage") or {}
+                        _api_error(rec, r.get("error"), "response_failed")
         except httpx.HTTPError as e:
             rec.error = "timeout" if isinstance(e, httpx.TimeoutException) else type(e).__name__
         rec.t_done = time.monotonic()
