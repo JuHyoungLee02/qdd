@@ -37,15 +37,16 @@ displacement (committed_arrow) + remaining correction (predict_mode "chunk"; the
 extrapolation, book 02 P113, stays selectable as "extrapolate"), labelled in the request. Every valid delivered
 answer is reconciled BEFORE the gate (reconcile.classify: done / valid / changed / conflict from the state at its
 t_state vs now and the VLA's own motion since = tip displacement minus the offset applied meanwhile; the per-step
-execution trace, gripper events, fast-check contradictions and the prediction error are logged with it); a valid
-verdict lifts the gate's stale drop (the stale rule is subsumed), changed / conflict drop / hold the command, done
-shrinks or skips it; the offset's authority a still multiplies (a = 0 -> nothing applied, verdict logged). The
-verdict and the raw command ride the next request (since_last_request.previous_request). reconcile_apply False =
-verdicts logged only."""
+execution trace, gripper events, fast-check contradictions and the prediction error are logged with it); a stale
+answer (age > stale_edit_s) is never applied (verdict changed / stale, the gate's stale drop unchanged; fix F19a),
+changed / conflict drop / hold the command, done and valid moving_partial shrink (or skip) the whole edit; the
+offset's authority a still multiplies (a = 0 -> nothing applied, verdict logged). The verdict and the raw command
+ride the next request (since_last_request.previous_request). reconcile_apply False = verdicts logged only.
+predict_mode "extrapolate" keeps the old method label byte for byte (EXTRAPOLATE_LABEL)."""
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 import numpy as np
 
@@ -141,6 +142,11 @@ def predict_ee(trace: list, horizon: float, cap: float, extra) -> np.ndarray:
     if n > cap:
         d = d * (cap / n)
     return p1 + d + np.asarray(extra, float)
+
+
+# the pre-Task-19 method label, kept byte for byte so predict_mode "extrapolate" reproduces recorded requests (v1 and
+# the v2 requests before Task 19; fix F19 I4)
+EXTRAPOLATE_LABEL = "0.5 s tip velocity x horizon (capped) + remaining correction"
 
 
 def predict_chunk(tip, chunk_disp, extra) -> np.ndarray:
@@ -333,7 +339,7 @@ class CoupleDriver:
         rem = self.offset.rem[:3]
         if self.p.predict_mode == "extrapolate":
             return (predict_ee(self.trace.window(v.now, 0.5), self.stream.L_hat, self.p.predict_cap_m, rem),
-                    "extrapolate: 0.5 s tip velocity x horizon (capped) + remaining correction")
+                    EXTRAPOLATE_LABEL)
         vec, src = committed_arrow(self.chunk_vec_last, v.committed, v.phase, self.backend)
         return (predict_chunk(v.tcp_p, vec, rem),
                 f"chunk: tip now + executing chunk displacement ({src}) + remaining correction, no extrapolation")
@@ -443,8 +449,8 @@ class CoupleDriver:
             self.log.append(row)
             return
         rc = self._reconcile(a, no, now, t1)
-        on = self.p.reconcile_apply  # False: verdict logged only, the pre-Task-19 path (gate incl. stale drop)
-        a = gate_answer(a, self.p, t1, stale_ok=on and rc["verdict"] == "valid")
+        on = self.p.reconcile_apply  # False: verdict logged only, the pre-Task-19 path
+        a = gate_answer(a, self.p, t1)  # the stale drop always holds (canon §86 / §92, fix F19a)
         rc["action"] = self._apply_verdict(a, rc) if on else "log_only"
         self._rc[no]["reconcile"]["action"] = rc["action"]
         res = self.layer.on_answer(a, authority=self.a_now)
@@ -495,6 +501,8 @@ class CoupleDriver:
                "gripper_events": [{"t": round(t, 3), "gripper": w} for t, w in self._grip_ev if t > t0 + 2e-9],
                "fast_contra": sum(1 for t in self._contra_t if t >= t0),
                "pred_err_m": None if st["pred"] is None else _r1(np.linalg.norm(tip_now - st["pred"])),
+               # a / effective = a snapshot at delivery (factor x a now); the applied motion follows a per tick
+               # (OffsetApplier), so a later change of a is not reflected here (fix F19 M7)
                "a": round(self.a_now, 4), "effective": round(c["factor"] * self.a_now, 6),
                "eat_candidate": c["verdict"] in ("done", "conflict"), "outcome": None}
         self.log.append(row)
@@ -509,18 +517,20 @@ class CoupleDriver:
     def _apply_verdict(a, rc: dict) -> str:
         """The verdict's effect on the GATED answer (what the layer then sees): changed -> an edit / stop becomes
         continue (assessment kept); conflict -> an edit is held (continue; the evidence rides the next request);
-        done -> the edit translation x factor, skipped (continue) at factor 0; valid -> unchanged."""
-        v = rc["verdict"]
+        done or valid moving_partial -> the whole edit (translation AND rotation) x factor, skipped (continue) at
+        factor 0; valid otherwise -> unchanged. The scaled edit is a new Edit (the parsed answer's is not mutated,
+        fix F19 M8)."""
+        v, f = rc["verdict"], float(rc["factor"])
         if a.command not in ("edit", "stop"):
             return "none"
         if v == "changed" or (v == "conflict" and a.command == "edit"):
             a.command, a.edit = "continue", None
             return "dropped" if v == "changed" else "held"
-        if v == "done" and a.command == "edit":
-            if rc["factor"] <= 0.0:
+        if a.command == "edit" and f < 1.0:
+            if f <= 0.0:
                 a.command, a.edit = "continue", None
                 return "skipped"
-            a.edit.dp = np.asarray(a.edit.dp, float) * rc["factor"]
+            a.edit = replace(a.edit, dp=np.asarray(a.edit.dp, float) * f, dr=np.asarray(a.edit.dr, float) * f)
             return "shrunk"
         return "unchanged"
 
@@ -574,7 +584,7 @@ class CoupleDriver:
             return {"n": len(xs), "follow_rate": round(sum(xs) / len(xs), 4) if xs else None}
         adh = [r for r in self.log if r["type"] == "adherence"]
         rec = [r for r in self.log if r["type"] == "reconcile"]
-        T =sum(self.auth_s.values())
+        T = sum(self.auth_s.values())
         auth = {"share": {k: round(v / T, 4) if T > 0 else None for k, v in self.auth_s.items()},
                 "seconds": round(T, 3)}
         return {"calls_sent": self.stream.n_sent, "answers": len(good),

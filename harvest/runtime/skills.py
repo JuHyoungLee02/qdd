@@ -106,6 +106,7 @@ class PickPlaceSkill:
         self.pending_outcome = None  # CONTRADICT from an expected_after check in this step
         self.events: list = []
         self._t_hold = None  # last tick with holding(o3) measured true (debounce)
+        self.bias = np.zeros(3)  # sum of the Astra offset translations applied by nudge (plan Task 19 fix F19 I2)
 
     # ------------------------------------------------------------------ decisions
     def begin_slot(self, ds: int, dec: dict) -> None:
@@ -167,6 +168,8 @@ class PickPlaceSkill:
             return self._cmd(t, "wait", False)
         M = _motion(self.stage, gs, rel) if {"o3", "o5"} <= set(rel) else "wait"
         d = _delta(M, float(g[2]), rel, hm, hr) if M != "wait" else np.zeros(3)
+        if M != "wait":  # the sub-goal shifted by the Astra offset so far (F19 I2: else the skill pulls it back)
+            d = d + self.bias
         floor_z = None
         if M == "grasp":  # code safety floor: TCP not below the planner's grasp height - 3 mm (R5 smokes: the
             # finger-mid goal alone sank the gripper body onto the rim; the pool's grasps sat 7.8 mm above the goal)
@@ -217,12 +220,17 @@ class PickPlaceSkill:
 
     def nudge(self, step6, table_z: float):
         """One tick of the Astra offset (couple.offset): the reference itself moves (the skill goes on from the shifted
-        point and M4 (b) compares the measured TCP with it); rotation turns cmd_quat (the skill slerps it back)."""
+        point and M4 (b) compares the measured TCP with it); rotation turns cmd_quat (the skill slerps it back). The
+        clipped translation also accumulates in self.bias, which shifts the skill's sub-goal (tick: d + bias) so the
+        skill does not pull the reference back to its object-derived goal (plan Task 19 fix F19 I2; zeroed by reset
+        and reanchor)."""
         from ..couple.geom import quat_from_rotvec, quat_mul
         s = np.asarray(step6, float)
         p = self.cmd_pos + s[:3]
+        old = self.cmd_pos
         self.cmd_pos = np.array([np.clip(p[0], *WS_X), np.clip(p[1], *WS_Y),
                                  np.clip(p[2], table_z + WS_Z[0], table_z + WS_Z[1])])
+        self.bias = self.bias + (self.cmd_pos - old)  # the clipped translation, kept in the sub-goal (tick)
         if np.any(s[3:]):
             self.cmd_quat = quat_mul(quat_from_rotvec(s[3:]), self.cmd_quat)
         return self.cmd_pos.copy(), self.cmd_quat.copy()
@@ -264,6 +272,7 @@ class PickPlaceSkill:
         """After an M4 DEVIATE / CONTRADICT the reference ref(t) is re-planned from the measured TCP (M5 replans;
         00-interfaces §3): the command stops chasing a point the arm was pushed away from."""
         self.cmd_pos = np.asarray(tcp_pos_w, float).copy()
+        self.bias = np.zeros(3)
         self.events.append({"event": "reanchor", "cmd": [round(float(v), 4) for v in self.cmd_pos]})
 
     def step_outcome(self, tcp_pos_w) -> tuple[str, float]:

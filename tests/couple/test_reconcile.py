@@ -74,8 +74,17 @@ def test_classify_each_verdict_and_the_precedence():
     assert (pl["verdict"], pl["reason"]) == ("done", "action_done")
     mv = _cls(vla_motion=(0.03, 0.0, 0.0))  # moved sideways in the same segment: still a valid correction
     assert (mv["verdict"], mv["reason"]) == ("valid", "moving")
-    # stale (age > 15 s): changed unless the valid-still conditions hold
-    assert _cls(age=16.0)["verdict"] == "valid"
+    # fix F19 I3: a lateral correction while the VLA travels 15 cm is not held (backward projection 1.49 cm but
+    # cos -0.0995, not mostly against the edit)
+    lat = _cls(edit_dp=(-0.002, 0.02, 0.0), vla_motion=(0.15, 0.0, 0.0))
+    assert lat["verdict"] == "valid" and lat["back_m"] == pytest.approx(0.0149, abs=1e-4)
+    assert _cls(vla_motion=(0.0, 0.0, -0.02))["back_m"] == pytest.approx(0.02)
+    # fix F19 M5: partial progress along the edit (0 < frac < 0.8, cos > adhere_cos) shrinks it, verdict valid
+    pp = _cls(vla_motion=(0.0, 0.0, 0.01))
+    assert (pp["verdict"], pp["reason"], pp["factor"]) == ("valid", "moving_partial", pytest.approx(0.5))
+    # stale (age > 15 s): ALWAYS changed / stale, never applied (fix F19a, canon §86 / §92)
+    st0 = _cls(age=16.0)
+    assert (st0["verdict"], st0["reason"], st0["factor"]) == ("changed", "stale", 0.0)
     st = _cls(age=16.0, vla_motion=(0.03, 0.0, 0.0))
     assert (st["verdict"], st["reason"]) == ("changed", "stale")
     assert _cls(age=16.0, vla_motion=(0.0, 0.0, -0.02))["reason"] == "stale"  # stale before conflict
@@ -128,7 +137,7 @@ def test_log_only_arm_keeps_the_pre_task19_path():
     assert steps[:, 2].sum() == pytest.approx(0.01, abs=2e-4)
     drv2, steps2 = _loop(ScriptedCoupleAstra([answer("edit", **EDIT_Z)], latency_s=16.0), 19.5,
                          p=CoupleParams(reconcile_apply=False))
-    assert _rec(drv2)[0]["verdict"] == "valid" and np.abs(steps2).sum() == 0.0
+    assert _rec(drv2)[0]["verdict"] == "changed" and np.abs(steps2).sum() == 0.0
     assert [x["gate"] for x in drv2.log if x["type"] == "answer"] == ["stale"]
 
 
@@ -144,11 +153,11 @@ def test_changed_by_segment_and_by_gripper_drops_the_command():
 
 def test_stale_precedence_age_over_15s():
     ed = answer("edit", **EDIT_Z)
-    drv, steps = _loop(ScriptedCoupleAstra([ed], latency_s=16.0), 19.5)  # still world: valid overrides the stale drop
+    drv, steps = _loop(ScriptedCoupleAstra([ed], latency_s=16.0), 19.5)  # still world: stale is still never applied
     r = _rec(drv)[0]
-    assert (r["verdict"], r["reason"]) == ("valid", "still") and r["age_s"] == pytest.approx(16.0)
-    assert [x["gate"] for x in drv.log if x["type"] == "answer"] == ["ok"]
-    assert steps[:, 2].sum() == pytest.approx(0.01, abs=2e-4)
+    assert (r["verdict"], r["reason"]) == ("changed", "stale") and r["age_s"] == pytest.approx(16.0)
+    assert [x["gate"] for x in drv.log if x["type"] == "answer"] == ["stale"]
+    assert np.abs(steps).sum() == 0.0
     drv2, steps2 = _loop(ScriptedCoupleAstra([ed], latency_s=16.0), 18.0, tip=_ramp((0.03, 0.0, 0.0)))
     r2 = _rec(drv2)[0]
     assert (r2["verdict"], r2["reason"]) == ("changed", "stale") and np.abs(steps2).sum() == 0.0
@@ -231,7 +240,7 @@ def test_predicted_state_near_a_stop_stays_within_the_chunk_displacement():
           step=lambda d, now: d.on_step(SMALL_X, "OK", now, chunk_vec=chunk))
     req2 = ast2.calls[1]["req"]
     d2 = np.asarray(req2["predicted_ee_at_arrival"]["pos_m"]) - np.asarray(req2["tip_now_m"])
-    assert np.linalg.norm(d2) > 0.05 and req2["predicted_ee_at_arrival"]["method"].startswith("extrapolate")
+    assert np.linalg.norm(d2) > 0.05 and req2["predicted_ee_at_arrival"]["method"].startswith("0.5 s tip velocity")
 
 
 def test_predicted_state_sources_by_backend():
@@ -252,3 +261,33 @@ def test_predict_mode_is_validated():
         CoupleParams(recon_done_frac=0.0)
     p = CoupleParams()
     assert (p.predict_mode, p.recon_done_frac, p.recon_still_m, p.reconcile_apply) == ("chunk", 0.8, 0.01, True)
+
+
+# ------------------------------------------------------------------ fix round 1 (ruling F19)
+def test_extrapolate_keeps_the_old_method_label_byte_for_byte():
+    """I4: predict_mode "extrapolate" reproduces the pre-Task-19 request field exactly."""
+    ast = ScriptedCoupleAstra([answer("continue")], latency_s=3.0)
+    _loop(ast, 1.0, p=CoupleParams(predict_mode="extrapolate"))
+    assert ast.calls[0]["req"]["predicted_ee_at_arrival"]["method"] == (
+        "0.5 s tip velocity x horizon (capped) + remaining correction")
+
+
+def test_partial_progress_shrinks_the_edit_in_the_driver():
+    """M5: the VLA already moved 1 cm of a 2 cm edit -> valid / moving_partial, the edit x 0.5 (0.5 x 0.02 x 0.5)."""
+    drv, steps = _loop(ScriptedCoupleAstra([answer("edit", **EDIT_Z), answer("continue")], latency_s=3.0), 6.5,
+                       tip=_ramp((0.0, 0.0, 0.01)))
+    r = _rec(drv)[0]
+    assert (r["verdict"], r["reason"], r["action"]) == ("valid", "moving_partial", "shrunk")
+    assert steps[:, 2].sum() == pytest.approx(0.005, abs=2e-4)
+
+
+def test_shrink_copies_the_edit_and_scales_rotation_too():
+    """M8: _apply_verdict never mutates the parsed Edit; translation and rotation get the same factor."""
+    from types import SimpleNamespace
+
+    from harvest.couple.schema import Edit
+    e = Edit(np.array([0.0, 0.0, 0.02]), np.array([0.0, 0.0, 0.2]), "keep")
+    a = SimpleNamespace(command="edit", edit=e)
+    assert CoupleDriver._apply_verdict(a, {"verdict": "done", "factor": 0.25}) == "shrunk"
+    assert a.edit is not e and list(e.dp) == [0.0, 0.0, 0.02] and list(e.dr) == [0.0, 0.0, 0.2]
+    assert a.edit.dp[2] == pytest.approx(0.005) and a.edit.dr[2] == pytest.approx(0.05)

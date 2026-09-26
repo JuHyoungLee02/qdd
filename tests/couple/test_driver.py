@@ -72,11 +72,8 @@ def test_two_agreeing_edits_move_the_full_delta():
 def test_stale_edit_is_not_applied():
     # controller ruling P2: stale default is now 15 s (canon §86 supplement); latency 16 s > stale_edit_s,
     # run 18 s so the run window (default timeout_s 20 s > 16 s) still lets the answer arrive and be gated stale.
-    # Plan Task 19: with the canon §91 reconciliation on, a stale answer whose world did not change (this test's still
-    # tip) is `valid` and applied (tests/couple/test_reconcile.py covers that precedence); the gate's stale rule is
-    # the log-only arm's path (reconcile_apply False), checked here.
     ed = answer("edit", execution="failed", dp=(0.0, 0.0, 0.02))
-    drv, steps, _ = _run(ScriptedCoupleAstra([ed], latency_s=16.0), 18.0, p=CoupleParams(reconcile_apply=False))
+    drv, steps, _ = _run(ScriptedCoupleAstra([ed], latency_s=16.0), 18.0)
     assert np.abs(steps).sum() == 0.0 and {r["gate"] for r in drv.log if "gate" in r} == {"stale"}
 
 

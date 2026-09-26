@@ -242,6 +242,25 @@ def test_runtime_reconciles_an_edit_whose_segment_moved_on():
     rt.close()
 
 
+def test_modular_skill_keeps_the_offset_with_reconciliation_on(monkeypatch):
+    """Fix F19 I2: the modular skill keeps the nudged translation as a sub-goal bias (PickPlaceSkill.bias), so the
+    tip follows the offset instead of being pulled back to the object-derived goal (that pull read as a phantom
+    `conflict`). A failed-assessment first answer holds the skill in descend (irreversible-gate veto); the two edits
+    judged there are valid, the tip rises by about the applied offset, no conflict."""
+    _force_a(monkeypatch, 1.0)
+    ed = answer("edit", execution="failed", intent="misaligned", dp=(0.0, 0.0, 0.03))
+    no = answer("continue", execution="failed")
+    rt, _, hist = _run("modular", ScriptedCoupleAstra([no, ed, ed, answer("continue")], latency_s=3.0), 13.0)
+    rows = [r for r in rt.driver.log if r["type"] == "reconcile"]
+    assert [(r["verdict"], r["reason"]) for r in rows[1:3]] == [("valid", "still"), ("valid", "still")]
+    assert "conflict" not in rt.summary()["couple"]["reconcile"]["counts"]
+    applied = rt.summary()["couple"]["offset"]["applied_m"][2]
+    z = [tcp[2] for _, _, tcp in hist]
+    assert applied > 0.015 and z[-1] - z[590] == pytest.approx(applied, abs=2e-3)  # index 590 = t 5.9 s
+    assert rt.skill.bias[2] == pytest.approx(applied, abs=1e-5)  # summary rounds to 5 decimals
+    rt.close()
+
+
 def test_reset_with_request_in_flight_charges_and_forgets_it(tmp_path):
     f = tmp_path / "prices.json"
     f.write_text('{"model": "test", "date": "2026-09-26", "usd_per_mtok_input": 2.0, "usd_per_mtok_cached_input": 0.5,'

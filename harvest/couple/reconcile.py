@@ -1,4 +1,5 @@
-"""Arrival reconciliation (canon §91, user-log 101; plan 2026-09-26 Task 19, controller rulings N2 / R19).
+"""Arrival reconciliation (canon §91, user-log 101; plan 2026-09-26 Task 19, controller rulings N2 / R19, fix round 1
+ruling F19).
 
 An Astra answer judges the state at its request time t_state (about 9-10 s before it arrives) while the VLA kept
 moving. On every valid delivered answer the driver compares (1) the state at t_state with the state now (runtime
@@ -9,21 +10,24 @@ exactly one verdict:
 
   done      the planned gripper action (edit gripper or plan `do`, open / close) already happened since t_state
             (reason action_done, factor 0), or the VLA already moved >= recon_done_frac of the edit translation in
-            its direction (cos > adhere_cos; reason moved) -> the edit translation shrinks by the fraction done
-            (factor = 1 - frac, 0 = skipped)
+            its direction (cos > adhere_cos; reason moved) -> the edit shrinks by the fraction done (factor = 1 - frac,
+            0 = skipped)
   changed   the runtime phase changed (segment), the T1 gripper state changed (gripper), or the answer is older than
-            stale_edit_s and the valid-still conditions do not hold (stale) -> the command is dropped, the assessment
-            is kept
-  conflict  the VLA moved >= recon_still_m against the edit translation (cos < 0) -> the command is held (no offset)
-            and the next request carries the evidence (since_last_request.previous_request.reconcile)
-  valid     otherwise -> §11 rules unchanged (factor 1): reason still (tip moved < recon_still_m, same phase and
-            gripper) or moving (moved, same phase and gripper, neither done nor against the edit)
+            stale_edit_s (stale; canon §86 / §92: a stale answer is NEVER applied, fix F19a) -> the command is
+            dropped, the assessment is kept
+  conflict  the VLA moved backwards along the edit translation by >= recon_still_m (backward projection
+            -(vla_motion . e_edit), fix F19 I3) AND mostly against it (cos < -adhere_cos, the mirror of the adherence
+            rule) -> the command is held (no offset) and the next request carries the evidence
+            (since_last_request.previous_request.reconcile). The cos condition is needed for the ruling's lateral case:
+            VLA 15 cm +x vs edit (-0.002, 0.02, 0) projects 1.49 cm backwards (cos -0.0995) and must not be held.
+  valid     otherwise -> §11 rules: reason still (tip moved < recon_still_m, same phase and gripper), moving_partial
+            (0 < frac < recon_done_frac along the edit with cos > adhere_cos: factor 1 - frac, ruling F19 M5) or
+            moving (moved, same phase and gripper, none of the above: factor 1)
 
-Precedence (first match): action_done > segment > gripper > stale > conflict > done(moved) > valid. The stale rule
-(canon §86, 15 s) is subsumed: an answer older than stale_edit_s is `changed` unless the valid-still conditions hold,
-in which case it is `valid` and is applied (the world it judged is still the world now); the gate's stale drop is then
-skipped for that answer (gate_answer stale_ok). The effective weight = layer weight x factor x authority a (the offset
-multiplies a per tick, canon §84 supplement 8), so a = 0 applies nothing while the verdict is still logged."""
+Precedence (first match): action_done > segment > gripper > stale > conflict > done(moved) > valid. The stale branch
+is unconditional after the segment / gripper reasons, so the gate's stale drop and this verdict agree. The factor
+scales the whole edit (translation and rotation). The effective weight = layer weight x factor x authority a (the
+offset multiplies a per tick, canon §84 supplement 8), so a = 0 applies nothing while the verdict is still logged."""
 from __future__ import annotations
 
 import numpy as np
@@ -58,8 +62,8 @@ def _r(x):
 def classify(*, command: str, edit_dp, edit_gripper, plan_do, vla_motion, phase0: str, phase1: str, grip0: dict,
              grip1: dict, age: float, p) -> dict:
     """One verdict (see the module doc). edit_dp / edit_gripper: the answer's raw edit (None without an edit);
-    plan_do: the answer's segment-plan `do` (None in v1). Returns verdict, reason, factor (multiplier on the edit
-    translation, 0 = command not applied) and the numbers used."""
+    plan_do: the answer's segment-plan `do` (None in v1). Returns verdict, reason, factor (multiplier on the whole
+    edit, 0 = command not applied) and the numbers used."""
     d = np.asarray(vla_motion, float)
     moved = float(np.linalg.norm(d))
     dp = None if edit_dp is None or command != "edit" else np.asarray(edit_dp, float)
@@ -67,6 +71,7 @@ def classify(*, command: str, edit_dp, edit_gripper, plan_do, vla_motion, phase0
     has_tr = n_dp >= p.small_edit_m
     cos = adherence_cos(d, dp) if has_tr else None
     frac = float(d @ dp) / (n_dp * n_dp) if has_tr else None
+    back = -float(d @ dp) / n_dp if has_tr else None  # backward projection on the edit direction (m)
     seg_changed, g_changed = phase0 != phase1, grip_changed(grip0, grip1)
     still = moved < p.recon_still_m and not seg_changed and not g_changed
     stale = age > p.stale_edit_s + 1e-9
@@ -78,13 +83,15 @@ def classify(*, command: str, edit_dp, edit_gripper, plan_do, vla_motion, phase0
         verdict, reason, factor = "changed", "segment", 0.0
     elif g_changed:
         verdict, reason, factor = "changed", "gripper", 0.0
-    elif stale and not still:
+    elif stale:
         verdict, reason, factor = "changed", "stale", 0.0
-    elif has_tr and moved >= p.recon_still_m and cos is not None and cos < 0.0:
+    elif has_tr and back >= p.recon_still_m - 1e-12 and cos is not None and cos < -p.adhere_cos:
         verdict, reason, factor = "conflict", "opposite", 0.0
     elif has_tr and cos is not None and cos > p.adhere_cos and frac >= p.recon_done_frac - 1e-9:
         verdict, reason, factor = "done", "moved", max(0.0, 1.0 - frac)
+    elif has_tr and cos is not None and cos > p.adhere_cos and frac > 0.0:
+        verdict, reason, factor = "valid", "moving_partial", 1.0 - frac
     else:
         verdict, reason = "valid", ("still" if still else "moving")
     return {"verdict": verdict, "reason": reason, "factor": round(factor, 6), "moved_m": _r(moved), "cos": _r(cos),
-            "frac_done": _r(frac), "stale": stale, "still": still}
+            "frac_done": _r(frac), "back_m": _r(back), "stale": stale, "still": still}

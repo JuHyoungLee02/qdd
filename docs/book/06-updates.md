@@ -96,3 +96,4 @@
 | 2026-09-26 11:20 | 01·04·05 | E-OpenVLM-proxy 결과(0/4, PERCEPTION): 01 행, 04 파드 경로·영상 행, 05 유료 1,322.4원·0.42 GPU-h 행 | [R/open_vlm_solo](../stage3/results/open_vlm_solo.md), 이 줄과 같은 커밋 |
 | 2026-09-26 11:37 | 03·04 | 결합 Task 19: 정본 §91 도착 시 대조 구현·예상 상태 청크 기준(§86 보충 4) — 03 행, 04 `harvest/couple/`·`tests/couple/`·`tests/runtime/` 행 | 계획 Task 19, 이 줄과 같은 커밋 |
 | 2026-09-26 11:4x | 01·03 | 자동 맥락 설계(정본 §97, ul 110): 01 E-AutoCtx-A0·A1·A2 `[예정]` 두 행, 03 §97 결정 행 | [auto_context_design](../research/auto_context_design_2026-09-26.md), 이 줄과 같은 커밋 |
+| 2026-09-26 12:09 | 03·04 | 결합 Task 19 수정 1회(통제 판정 F19): 늦은 답 무조건 폐기, 모듈형 스킬 편향 유지, 뒤 사영 충돌, extrapolate 문구 복원, 부분 진행 — 03 §91 구현 행 정정, 04 `harvest/couple/`(`stale_ok` 삭제)·`harvest/runtime/`·`tests/runtime/` 행; 정본 §91 구현 기록·§86 보충 4 정정 | 계획 Task 19 수정, 이 줄과 같은 커밋 |

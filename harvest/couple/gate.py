@@ -2,8 +2,7 @@
   - claims: kept only from the ACTIVE wrist camera and when not contradicted by the T1 proprio holding value
     (wrist first + proprio cross-check, spec §12); head-only / other-wrist / contradicted claims are logged in notes;
   - task_progress with grasp / lift / place words is trusted only when the active wrist is among the evidence views;
-  - edit / stop: stale (answer age > stale_edit_s, canon §86: 15 s; skipped with stale_ok when the canon §91
-    reconciliation found the judged world unchanged, plan Task 19) -> continue (assessment kept); uncertain
+  - edit / stop: stale (answer age > stale_edit_s, canon §86: 15 s) -> continue (assessment kept); uncertain
     execution or intent or confidence low -> continue (spec §11); an edit needs execution failed or intent
     misaligned; edit and stop need evidence text + views; stop needs a wrist placed / released claim (plan ruling 8).
 takeover_ok (used by the layer for F1 keep) = a takeover reason, not uncertain, evidence present, not stale."""
@@ -16,9 +15,7 @@ PROGRESS_WORDS = re.compile(r"grasp|hold|held|pick|lift|place|put|release|contac
 _T1_CONTRA = {"grasped": True, "released": False, "placed": False, "not_grasped": False}  # claim valid if holding ==
 
 
-def gate_answer(a, p, t1: dict, stale_ok: bool = False):
-    """stale_ok: the arrival reconciliation (canon §91, reconcile.py) found the world the answer judged unchanged
-    (verdict valid-still) -- the age rule is subsumed there, so the stale drop is skipped (plan Task 19)."""
+def gate_answer(a, p, t1: dict):
     wrist = ACTIVE_WRIST[p.active_arm]
     keep = []
     for kind, view in a.claims:
@@ -41,7 +38,7 @@ def gate_answer(a, p, t1: dict, stale_ok: bool = False):
     uncertain = a.execution == "uncertain" or a.intent == "uncertain" or a.confidence == "low"
     reason = a.execution == "failed" or a.intent == "misaligned"
     has_ev = bool(a.evidence.strip()) and bool(a.evidence_views)
-    stale = a.age > p.stale_edit_s + 1e-9 and not stale_ok
+    stale = a.age > p.stale_edit_s + 1e-9
     a.takeover_ok = reason and not uncertain and has_ev and not stale
     if a.diff == "keep" and stale:
         a.notes.append("stale_keep")
