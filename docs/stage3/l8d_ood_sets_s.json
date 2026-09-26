@@ -1,0 +1,336 @@
+{
+"schema": "qdd.l8d.ood_sets/v1",
+"note": "OOD-S (prereg_l8d.md change 5): unseen furniture kinds = furniture.OOD_S_KINDS (counter_cabinet, shelf_tall; name hash, helper L8X-assets) x 20 phase-1 episodes each, protected seeds 70500-70539, standard variant, lift auto; frozen before any furniture training episode. The other frozen sets are unchanged.",
+"counts": {
+"ood_s": 40
+},
+"by_task_variant_height": {
+"ood_s": {
+"bottle_tray|standard|0.000": 10,
+"mug_marker|standard|0.000": 10,
+"mug_tray|standard|0.000": 20
+}
+},
+"episodes": [
+{
+"seed": 70500,
+"split": "ood_s",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70501,
+"split": "ood_s",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70502,
+"split": "ood_s",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70503,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70504,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70505,
+"split": "ood_s",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70506,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70507,
+"split": "ood_s",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70508,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70509,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70510,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70511,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70512,
+"split": "ood_s",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70513,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70514,
+"split": "ood_s",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70515,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70516,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70517,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70518,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70519,
+"split": "ood_s",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "counter_cabinet"
+},
+{
+"seed": 70520,
+"split": "ood_s",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70521,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70522,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70523,
+"split": "ood_s",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70524,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70525,
+"split": "ood_s",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70526,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70527,
+"split": "ood_s",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70528,
+"split": "ood_s",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70529,
+"split": "ood_s",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70530,
+"split": "ood_s",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70531,
+"split": "ood_s",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70532,
+"split": "ood_s",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70533,
+"split": "ood_s",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70534,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70535,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70536,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70537,
+"split": "ood_s",
+"task": "mug_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70538,
+"split": "ood_s",
+"task": "mug_marker",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+},
+{
+"seed": 70539,
+"split": "ood_s",
+"task": "bottle_tray",
+"variant": "standard",
+"table_z": 0.0,
+"furniture": "shelf_tall"
+}
+]
+}
