@@ -344,7 +344,7 @@ def fig_model():
     ax.text(0.32, 0.64, "텍스트", ha="center", va="center", fontsize=6.4, color=TXT)
     ax.text(0.32, 0.42, "과제·단계\n그리퍼\n움직임 줄", ha="center", va="center", fontsize=5.8, color="#555555",
             linespacing=1.15)
-    rbox(ax, 0.78, 0.10, 0.74, 2.02, "jev", "Qwen3-VL-4B", fs=7.2, sub="LoRA r32\n비전 동결", sfs=6.0)
+    rbox(ax, 0.78, 0.10, 0.74, 2.02, "jev", "Qwen3-VL-4B", fs=7.2, sub="LoRA r32\nSigLIP2-L\n영상 탑 동결", sfs=5.8)
     arr(ax, [(0.60, 1.90), (0.78, 1.90)])
     arr(ax, [(0.60, 1.19), (0.78, 1.19)])
     arr(ax, [(0.60, 0.50), (0.78, 0.50)])
@@ -369,6 +369,9 @@ def fig_model():
     arr(ax, [(xr, rows["dec"] + hh / 2), (3.14, rows["dec"] + hh / 2), (3.14, ye), (xr, ye)], color="#6F6F6F")
     ax.text(3.19, (rows["dec"] + ye) / 2 + 0.25, "M4\n확정\n결정", ha="left", va="center", fontsize=5.6,
             color="#555", linespacing=1.1)
+    # E-SR0 (canon §84 supp 5): the expert barely follows the conditioning decision
+    ax.text(3.19, (rows["dec"] + ye) / 2 - 0.25, "준수\n약함\n(E-SR0)", ha="left", va="center", fontsize=5.2,
+            color=TENT, linespacing=1.1)
     # call brackets
     ax.plot([1.74, 1.74], [rows["ver"], rows["dec"] + hh], color="#4A7FC1", lw=0.8)
     ax.text(1.72, rows["dec"] + hh + 0.02, "호출 1 decide", ha="left", va="bottom", fontsize=5.6, color="#4A7FC1")

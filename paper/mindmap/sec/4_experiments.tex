@@ -116,4 +116,24 @@
   \item \idea{(MolmoAct 조각 시험 결과) E-MA1b 3D 궤적 보조 \tentative{+0.0031} [\tentative{$-$0.0022, +0.0085}] 불채택; E-MA3 층별 KV 청크 오차 \tentative{$-$2.19\%} [\tentative{1.48, 2.88}] $<$ 5\% 불채택(expert·LoRA 기울기 자르기 결합 주의, 책 P71). 남은 것: R2에서 trace5·덧그림(E-MA1 재등록), E-MA2 명령 추종(\tentative{예정})}
   \item \idea{(R2\_TRAIN 결과) 6,000편 생성, 유효 \tentative{5,126}(85.4\%; 병 과제 \tentative{58.5\%}), 단계 B 행 \tentative{1,495,348}, 결정 \tentative{152,409}, 병합 18/18 검증, 로더 전체 적재 확인. LeRobot 내보내기 \tentative{진행 중}}
   \item \dirn{이번 판(09-25 23:56 UTC, 4시간 주기): E-MA1b·E-CAM3·E-MA3 불채택 반영(실험 지도·표·방법·서론·결론), R2\_TRAIN 결과, R7 25--34회차 요약(코드 결함 0, 기준점 태그 전)}
+  \item \intent{Siglip을 쓸 방법도 찾아봐 어떻게 엮을 수 있을지}
+  \item \intent{나는 저걸 우리vla에 쓰는게 어떨가 싶은데}
+  \item \intent{그래c,e반영가능성도 검사해보고 결정하자 일단ema2 다되고 나면 그거보고 ㄱ}
+  \item \intent{만약 시그립이 그래서 필요없다면 굳이 더하란 내말은 무시해두돼}
+  \item \chg{(정본 §84 보충 6) SigLIP 별도 통합 안 함 --- 융합 VLA의 영상 탑이 이미 SigLIP2-Large 계열(24층·폭 1024·패치 16, 동결). 손목 패치를 expert에 직접 주는 판은 결정 준수 해결 뒤 근거 있을 때만}
+  \item \intent{x2점유시작}
+  \item \intent{준수율이 0.8은 될방법론알 찾아야해}
+  \item \intent{근데 그냥 소능 움직일때 물체가 근접하지 않았다면 상관 없지만 물체에 가깝게 다가가서 미세조정이 필요한데 아스트라의 반응성이 너무 느리면 그걸 보조하는 역할이라서 어떤걸 잡아야한다 이때 놓아야한다등에 대한 지식을 가져야하는데}
+  \item \dirn{(user-log 93) 거리에 따른 권한 분배: 물체에서 멀면 조이스틱·Astra 조종을 강하게 따르고, 접촉 근처(5\,cm 안)에서는 VLA 자신의 판단(무엇을 잡고 언제 쥐고 놓을지)이 주도}
+  \item \intent{그 잡고, 놓고 하는 판단 자체도 vla가 선체택지에 있어야한다는 뜻}
+  \item \intent{vla자테가세부 조종스틱이기도하지 물론}
+  \item \chg{(정본 §87) 잡기·놓기 판단을 VLA 선택지에: 그리퍼 질문 close/open/keep, 실행 허가는 T1 관문, 움직임 줄과 같은 직렬화 판본 올림에서 \tentative{구현 예정}. 계층: Astra 큰 조종 $\rightarrow$ VLA 결정 = 세부 조종 스틱 $\rightarrow$ expert 실행}
+  \item \idea{(E-MA2 NONE, R2 평가 1,200) 준수율 C0 \tentative{0.0008}, C1 문장 \tentative{0.177}, C2 화살표 \tentative{0.0008} $<$ 0.6 $\rightarrow$ VLA는 명령을 보지 않고 코드 편향만. 결정층은 명령 칸 \tentative{0.970}인데 청크는 \tentative{0.275}/\tentative{0.093}만 따름}
+  \item \idea{(E-SR0 WEAK) expert 반사실 방향 준수율 공개 실물 \tentative{0.340}, 시뮬 \tentative{0.431}(우연 약 0.33); 하위 단계 토큰 그리퍼 \tentative{0.95}. 결합은 조건 강화 전까지 청크·손끝 기준 경유(정본 §84 보충 5)}
+  \item \dirn{(조건 강화, \tentative{진행 중}) E-SR1b 결정 드롭아웃 + CFG·되짚기 결정 라벨, E-SR1c 먼 구간 반사실 분기 + 권한 게이트 adaLN. 목표 먼 구간 준수율 0.8, 접촉 근처 능력 비열등. 억지 반사실은 스트레스 시험, 그럴듯한 수정 준수율 따로}
+  \item \intent{나는 몰모엑트가 우리가 제대로 준비를 안해놔서 도움이 안되는 교훈ㅇ,로 작동한듯}
+  \item \intent{준비를 아ㅖ제대로해서 검증 필요. 시간 걸려두되니까}
+  \item \idea{(MolmoAct 성립 조건 관문, 학습 없음) 조건 14개 추출. 카메라 투영 \tentative{0.21\,px} 통과, 궤적 라벨 손끝 영상 안 \tentative{0.994} 통과, URDF 대 시뮬 손끝 \tentative{9.5\,mm} 실패. 미비 조건 9개(궤적 끝, 색, 1:1 조건 데이터, 경로 다양화, 두 대상 장면 등) $\rightarrow$ E-MAR-AO·E-MAR-S \tentative{예정}}
+  \item \idea{(R7 35--37회차) 35 실패(시뮬 결과 문서 수치 2), 36·37 연속 통과 $\rightarrow$ E2E 준비 기준점 태그 \texttt{stage3-e2e-ready}. 기준점 뒤 검증기 약점 9건 TDD로 고침(실데이터 342편 새 오류 0). R2\_TRAIN LeRobot 6개 \tentative{22.13\,GB} 검증 6/6. 결합 구현 과제 1--8 끝}
+  \item \dirn{이번 판(09-26 03시 UTC 무렵, 4시간 주기): E2E 기준점, R2\_TRAIN LeRobot, E-MA2 NONE, E-SR0 WEAK와 조건 강화 절·표(\texttt{tab:adh}), 조이스틱 세 층·거리 권한·그리퍼 선택지(§87), SigLIP 판단(§84 보충 6), MolmoAct 성립 조건 관문, 모델 그림(SigLIP2 영상 탑, 준수 약함 표시), 초록·서론·결론·한계}
 \end{itemize}
