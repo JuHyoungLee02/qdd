@@ -30,12 +30,19 @@ class SerialStream:
         self.max_inflight, self.max_outstanding = 0, 0
         self.counts = {"sent": 0, "answered": 0, "failed": 0, "timeouts": 0, "late": 0}
 
-    def flag(self, name: str, now: float) -> None:
+    def flag(self, name: str, now: float, refresh: bool = True) -> None:
+        """refresh=False (a persisting condition's re-flag, plan Task 21 fix F21): rides the next request but does
+        not refresh the pause clock last_event_t."""
         if name not in self.pending_events:
             self.pending_events.append(name)
-        self.last_event_t = now
+        if refresh:
+            self.last_event_t = now
 
     def next_send(self, now: float, contact_window: bool, est_krw: float) -> tuple[bool, str]:
+        if hasattr(self.ledger, "refresh"):
+            self.ledger.refresh()  # the shared ledger file: another worker's fatal row counts too
+        if getattr(self.ledger, "fatal", None):  # fix F21: fatal first, whatever else holds the send
+            return False, "fatal"
         if self.inflight is not None:
             return False, "inflight"
         if self.last_send is not None and now < self.last_send + self.p.min_interval_s - 1e-9:
@@ -44,10 +51,7 @@ class SerialStream:
         if (pp is not None and self.last_send is not None and not contact_window
                 and now - self.last_event_t > self.p.event_window_s + 1e-9 and now < self.last_send + pp - 1e-9):
             return False, "pause"
-        ok = self.ledger.can_send(est_krw)  # refreshes the shared ledger file first
-        if getattr(self.ledger, "fatal", None):
-            return False, "fatal"
-        if not ok:
+        if not self.ledger.can_send(est_krw):
             return False, "budget"
         return True, "send"
 

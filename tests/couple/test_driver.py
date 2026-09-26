@@ -234,8 +234,54 @@ def test_b6_phase_pause_engages_after_the_refractory_window():
         drv.flag("b_contradict", round(i * 0.33, 3))
     assert drv.stream.last_event_t == 0.0
     assert drv.stream.next_send(3.1, False, 0.0) == (False, "pause")
-    drv.flag("b_contradict", 3.3)  # refractory over -> a new event, the pause window reopens
-    assert drv.stream.next_send(3.4, False, 0.0) == (True, "send")
+    drv.flag("b_contradict", 3.3)  # Task 21 fix F21: a persisting re-flag (no clear) does not reopen the pause window
+    assert drv.stream.next_send(3.4, False, 0.0) == (False, "pause")
+    assert drv.stream.pending_events == ["b_contradict"]  # it still rides the next request as a persisting note
+    drv.clear("b_contradict")
+    drv.flag("b_contradict", 3.6)  # a new edge refreshes the pause clock
+    assert drv.stream.next_send(3.7, False, 0.0) == (True, "send")
+
+
+def test_f21_never_clearing_condition_keeps_the_phase_pause_engaged():
+    """Fix round 1 (F21): b_contradict flagged every 0.33 s for 20 s and never cleared -> only the first flag is an
+    edge; the pause engages after event_window_s and stays engaged (sends only at last_send + phase_pause_s)."""
+    drv, _ = _bare(CoupleParams(phase_pause_s=8.0))
+    sends, due = [], None
+    for i in range(20, 2000):
+        now = round(i * 0.01, 3)
+        if due is not None and now >= due[1] - 1e-9:
+            drv.stream.delivered(due[0], now, True, 1.0)
+            due = None
+        if i % 33 == 0:
+            drv.flag("b_contradict", now)
+        ok, _ = drv.stream.next_send(now, False, 0.0)
+        if ok:
+            no, _ = drv.stream.sent(now)
+            sends.append(now)
+            due = (no, now + 1.0)
+    assert sends == [0.2, 1.2, 2.2, 3.2, 11.2, 19.2]  # event window 0.33 + 3 s, then every phase_pause_s
+    assert drv.stream.last_event_t == 0.33
+    ev = [e for e in drv.events if e["event"] == "b_contradict"]
+    assert [e["t"] for e in ev] == [0.33, 3.63, 6.93, 10.23, 13.53, 16.83] and [e["edge"] for e in ev].count(True) == 1
+    s = drv.summary()
+    assert s["events_persisting"] == {"b_contradict": 5} and s["events_suppressed"]["b_contradict"] == 60 - 6
+
+
+def test_f21_a_gap_longer_than_the_refractory_is_a_new_edge():
+    """Sources without clear() (m7, no_progress, ...): not flagged at all for longer than event_refractory_s -> the
+    condition is taken as cleared, the next flag is an edge."""
+    drv, _ = _bare()
+    drv.flag("m7_critic_alarm", 0.0)
+    drv.flag("m7_critic_alarm", 5.0)
+    assert [e["edge"] for e in drv.events] == [True, True] and drv.stream.last_event_t == 5.0
+
+
+def test_f21_fatal_is_reported_first_even_with_a_request_in_flight():
+    led = CostLedger(None, 0.0, PriceTable.free())
+    drv, _ = _bare(ledger=led)
+    drv.stream.sent(0.0)
+    led.mark_fatal("insufficient_quota")
+    assert drv.stream.next_send(1.0, False, 0.0) == (False, "fatal")
 
 
 def test_b6_distinct_names_independent_and_edge_reflags():

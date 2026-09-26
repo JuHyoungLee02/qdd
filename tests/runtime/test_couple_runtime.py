@@ -291,6 +291,42 @@ def test_adherence_uses_the_executed_chunk_on_fused_and_the_decision_on_modular(
 # Task 17 (canon §84 supplement 8, E-SR1c ADOPT_C1): authority a on the offset; dry-run fixes B1 / B3
 
 
+def test_f21_boundary_clears_b_contradict_and_a_persisting_contradict_does_not_rearm(monkeypatch):
+    """Task 21 fix round 1 (F21): _boundary calls driver.clear("b_contradict") on every non-CONTRADICT outcome; a
+    CONTRADICT that persists step after step gives one edge (the pause clock) and no clear."""
+    monkeypatch.setattr("harvest.runtime.core.expected_check", lambda ph, meas: {"outcome": "OK", "t1_false": []})
+    rt, w, _ = _run("modular", ScriptedCoupleAstra([answer("continue")], latency_s=3.0), 0.0)
+    script = {"out": "CONTRADICT"}
+    monkeypatch.setattr(rt.skill, "step_outcome", lambda tcp_p: (script["out"], 0.0))
+    clears = []
+    real_clear = rt.driver.clear
+    monkeypatch.setattr(rt.driver, "clear", lambda name: (clears.append(name), real_clear(name)))
+
+    def drive(seconds):
+        for i in range(int(seconds * 100)):
+            o = w.obs()
+            if i % 10 == 0:
+                o["images"] = {c: FRAME for c in ("cam_head", "cam_wrist_left", "cam_wrist_right")}
+            a, _ = rt.act(o)
+            w.step(a)
+
+    def b_events():
+        return [e for e in rt.driver.events if e["event"] == "b_contradict"]
+    drive(8.0)
+    assert clears == [] and len(b_events()) >= 2
+    assert [e["edge"] for e in b_events()].count(True) == 1  # persisting: re-flags are never edges
+    assert rt.driver.stream.last_event_t == b_events()[0]["t"]
+    script["out"] = "OK"
+    drive(1.0)
+    assert clears and set(clears) == {"b_contradict"}
+    n_before = len(b_events())
+    script["out"] = "CONTRADICT"
+    drive(1.0)
+    new = b_events()[n_before:]
+    assert new and new[0]["edge"] is True and rt.driver.stream.last_event_t == new[0]["t"]
+    rt.close()
+
+
 def _force_a(monkeypatch, a):
     """The runtime's authority passes through sr1c_authority.Hysteresis every tick: pin its output."""
     monkeypatch.setattr("harvest.train.sr1c_authority.Hysteresis.step", lambda self, d, phase, contact=False: a)

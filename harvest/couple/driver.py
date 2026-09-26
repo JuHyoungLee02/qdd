@@ -15,7 +15,8 @@ and the offset-adherence log -- use vla_vec = chunk_vec if given, else committed
 token is never assumed to steer the chunk on its own (canon §84 supplement 4-5, E-MA2/E-SR0).
 
 Plan Task 21 (couple_dry.md B6/B7, book 02 P108): flag() is edge-triggered with a per-name refractory window
-(event_refractory_s; clear() re-arms a name), suppressed repeats are counted (summary events_suppressed); the
+(event_refractory_s; clear() re-arms a name), suppressed repeats are counted (summary events_suppressed), and only
+edges refresh the pause clock (fix round 1: persisting re-flags ride the next request, events_persisting); the
 episode's never-answered requests are reported apart (summary unanswered); an API error without usage costs 0
 (ledger no_usage) and insufficient_quota is fatal: the ledger records it and no request is sent again (hold fatal,
 summary fatal).
@@ -145,6 +146,7 @@ class CoupleDriver:
         self.budget_hit, self.stop_confirmed_t, self._hold = False, None, None
         self.auth_s, self._auth_last = {"a0": 0.0, "band": 0.0, "a1": 0.0}, None
         self._ev_last, self._ev_armed, self.events_suppressed = {}, set(), Counter()
+        self._ev_call, self.events_persisting = {}, Counter()
         self.unanswered_closed = (0, 0.0)
         # astra-couple@v2 (plan Task 18)
         self.v2 = p.prompt_version == "v2"
@@ -202,16 +204,25 @@ class CoupleDriver:
 
     def flag(self, name: str, now: float) -> None:
         """Edge-triggered with a per-name refractory window (plan Task 21 B6, couple_dry.md: b_contradict fired at
-        every decision step): a name reaches the stream only if it was not flagged in the last event_refractory_s
-        or its condition cleared (clear) and re-appeared; suppressed repeats are counted per name."""
-        last = self._ev_last.get(name)
-        if last is not None and name not in self._ev_armed and now - last < self.p.event_refractory_s - 1e-9:
+        every decision step). An EDGE = the first flag of a name, or a flag after its condition cleared: clear(name),
+        or no flag of that name at all (not even a suppressed one) for longer than event_refractory_s (sources that
+        never call clear). Only an edge refreshes the stream's pause clock (fix round 1, ruling F21). A persisting
+        condition re-flags at most once per event_refractory_s: it rides the next request as a persisting note
+        (Astra learns the condition still holds) but does not refresh the pause clock (summary events_persisting);
+        the repeats in between are counted (events_suppressed)."""
+        last, called = self._ev_last.get(name), self._ev_call.get(name)
+        self._ev_call[name] = now
+        edge = (last is None or name in self._ev_armed
+                or (called is not None and now - called > self.p.event_refractory_s + 1e-9))
+        if not edge and now - last < self.p.event_refractory_s - 1e-9:
             self.events_suppressed[name] += 1
             return
         self._ev_last[name] = now
         self._ev_armed.discard(name)
-        self.stream.flag(name, now)
-        self.events.append({"t": round(now, 3), "event": name})
+        if not edge:
+            self.events_persisting[name] += 1
+        self.stream.flag(name, now, refresh=edge)
+        self.events.append({"t": round(now, 3), "event": name, "edge": edge})
 
     def clear(self, name: str) -> None:
         """The condition behind `name` cleared: its next flag is a new edge and is not held by the refractory."""
@@ -450,7 +461,8 @@ class CoupleDriver:
                 "gates": dict(Counter(r["gate"] for r in good)), "layer": dict(self.layer.counts),
                 "offset": self.offset.stats(), "irrev": dict(self.gate.counts),
                 "events": dict(Counter(e["event"] for e in self.events)),
-                "events_suppressed": dict(self.events_suppressed), "fatal": getattr(self.ledger, "fatal", None),
+                "events_suppressed": dict(self.events_suppressed),
+                "events_persisting": dict(self.events_persisting), "fatal": getattr(self.ledger, "fatal", None),
                 "unanswered": self._unanswered(), "budget_excluded": self.budget_hit,
                 "stop_confirmed_t": self.stop_confirmed_t, "prompt_id": self.prompt_id(),
                 "schema": SCHEMA_IDS[self.p.prompt_version], "segment_plan": self.layer.plan,
