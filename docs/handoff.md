@@ -10,6 +10,7 @@
 
 - **R7** (확인 2026-09-26 00:46 UTC): **E2E 준비 기준점 도달** — 36·37회차 연속 무결(대상 ffe335c·3d4738a), 태그 `stage3-e2e-ready` = 3d4738a. 이후 코드 변경은 새 회차로 검토한다(기준점은 태그로 고정). 태그 뒤 할 일: 결합 설계 구현 계획 실행(subagent-driven), 논문 N192.
 - **결합 구현(계획 2026-09-26, subagent-driven)** (확인 2026-09-26 00:54 UTC): Task 1(`harvest/couple/` — params·schema·prompt astra-couple@v1·mock) 끝, 상수는 정본 §86 보충 2대로. Task 12는 E-MA2 결과(`docs/stage3/results/ma2.md`)가 커밋될 때까지 보류.
+- **E-SR1b 조이스틱 결정 조건 강화(학습 8판)** (확인 2026-09-26 02:30 UTC): 사전 등록 `docs/stage3/prereg_sr1b.md` 커밋 뒤 x2 파드 GPU 0·1(X0 A s0 → B s1, X1 B s0 → AB s1)·메인 파드 GPU 2·3(M2 AB s0 → C0 s1 → 지연, M3 A s1 → A02 s0 → C0 s0 평가)에서 `tools/sr1b/run_sr1b.sh` 실행, 출력 `/data/harvest/logs/sr1b/`·`/data/harvest/ckpt/sr1b/`. 결과 문서 `docs/stage3/results/sr1b.md` 커밋 때 이 줄을 지운다.
 
 ## 1. 먼저 할 일
 1. `dev` 브랜치인지 확인한다. **모든 작업(글, 코드)은 `dev`에서 시작하고 `dev`에만 푸시한다. `main`은 절대 건드리지 않는다**(사용자가 직접 반영).
