@@ -41,14 +41,16 @@ def distractor_count(layout: dict, info: dict, randomization: dict | None) -> di
 
 
 def scene_record(world, seed: int, task: str, variant: str, split: str, style: str) -> dict:
-    env = world.env
+    env = getattr(world, "env", None)  # None in the pure fake world (tests)
     info = world.task_info()
     rand = getattr(env, "randomization", None)
+    layout = dict(getattr(env, "layout", None) or {k: None for k in info.get("present", [])})
     return _jl({"schema": SCENE_SCHEMA, "seed": seed, "split": split, "task": task, "variant": variant,
-                "style": style, "instruction": info["instruction"], "table_z": float(env.table_top_z),
-                "lift": getattr(env, "lift", None), "ws": getattr(env, "ws", None), "layout": dict(env.layout),
+                "style": style, "instruction": info["instruction"],
+                "table_z": float(getattr(env, "table_top_z", world.table_z)),
+                "lift": getattr(env, "lift", None), "ws": getattr(env, "ws", None), "layout": layout,
                 "randomization": rand, "rand_settle": getattr(env, "rand_settle", None),
-                "distractors": distractor_count(env.layout, info, rand)})
+                "distractors": distractor_count(layout, info, rand)})
 
 
 def collect_episode(world, seed: int, task: str, variant: str, split: str, out_dir: str, p: float,

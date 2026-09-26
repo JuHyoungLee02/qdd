@@ -73,6 +73,16 @@ def test_view_band_matches_the_head_camera():
     assert lo2 > lo and lo3 > lo  # both directions shrink the view band's near edge
 
 
+def test_live_camera_dict_projects_like_the_constants():
+    from harvest.train.r2_ma2 import HEAD_K, HEAD_POS, HEAD_R
+    fwd, left, up = HEAD_R[:, 0], HEAD_R[:, 1], HEAD_R[:, 2]
+    cam = {"fx": HEAD_K["fx"], "fy": HEAD_K["fy"], "cx": HEAD_K["cx"], "cy": HEAD_K["cy"], "W": 672, "H": 376,
+           "R": np.stack([-left, -up, fwd], 1).tolist(), "t": HEAD_POS.tolist()}
+    P = [[0.42, -0.2, 0.85], [0.5, -0.35, 0.95]]
+    assert np.allclose(S.project(P, cam), S.project(P), atol=1e-6)
+    assert S.view_band(0.88, cam) == S.view_band(0.88)
+
+
 def test_gate_verdict():
     reach = {"xs": [0.40, 0.42, 0.44, 0.46, 0.48, 0.50], "ok": {"0.850": [True] * 5 + [False]}}
     g = S.gate_h(0.85, (0.36, 0.80), (0.36, 0.48), n_clean=10, n_success=9)

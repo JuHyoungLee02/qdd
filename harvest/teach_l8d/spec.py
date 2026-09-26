@@ -105,22 +105,35 @@ def _head_cam():
 
 
 def project(P, cam=None):
+    """cam = (K, pos, R) in the r2_ma2 convention (R columns = camera forward / left / up in world) or a live
+    probe camera dict {fx, fy, cx, cy, W, H, R (base_from_optical), t} (world_isaac.camera_pose convention)."""
+    if isinstance(cam, dict):
+        R, t = np.asarray(cam["R"], float), np.asarray(cam["t"], float)
+        Pc = (np.atleast_2d(np.asarray(P, float)) - t) @ R  # optical x right, y down, z forward
+        return np.stack([cam["cx"] + cam["fx"] * Pc[:, 0] / Pc[:, 2], cam["cy"] + cam["fy"] * Pc[:, 1] / Pc[:, 2]], 1)
     K, pos, R = cam or _head_cam()
     Pc = (np.atleast_2d(np.asarray(P, float)) - pos) @ R
     return np.stack([K["cx"] - K["fx"] * Pc[:, 1] / Pc[:, 0], K["cy"] - K["fy"] * Pc[:, 2] / Pc[:, 0]], 1)
 
 
+def _wh(cam):
+    if isinstance(cam, dict):
+        return cam["W"], cam["H"]
+    K = (cam or _head_cam())[0]
+    return K["width"], K["height"]
+
+
 def view_band(tz: float, cam=None, ys=GATE_Y, top=OBJ_TOP_MAX, margin=VIEW_MARGIN_PX, xs=None):
     """x band where an object's base centre and top centre (height `top`) at every y of ys project inside the head
     image with `margin` px (fixed head pitch). -> (x_lo, x_hi) or None."""
-    K = (cam or _head_cam())[0]
+    W, H = _wh(cam)
     xs = np.round(np.arange(0.25, 0.805, 0.005), 3) if xs is None else np.asarray(xs, float)
     ok = []
     for x in xs:
         P = [[x, y, tz + dz] for y in ys for dz in (0.0, top)]
         uv = project(P, cam)
-        ok.append(bool(np.all((uv[:, 0] >= margin) & (uv[:, 0] <= K["width"] - margin) & (uv[:, 1] >= margin)
-                              & (uv[:, 1] <= K["height"] - margin))))
+        ok.append(bool(np.all((uv[:, 0] >= margin) & (uv[:, 0] <= W - margin) & (uv[:, 1] >= margin)
+                              & (uv[:, 1] <= H - margin))))
     return _run(xs, ok)
 
 
