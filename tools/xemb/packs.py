@@ -130,5 +130,77 @@ def build(out, X="/data/harvest/out/xemb_proto", sizes=None, seed=0):
     return counts
 
 
+def stereo_ok(rows_json):
+    """{(ep, k)} of RB2 frames whose stereo depth passed the arm-mesh gate (ffs_rb2_prod/rows.json)."""
+    return {(r["ep"], r["k"]) for r in json.load(open(rows_json)) if r.get("pass")}
+
+
+_RB2_IMG = re.compile(r"RB2/ep(\d+)/f(\d+)\.jpg")
+
+
+def rb2_frame(img):
+    m = _RB2_IMG.search(img)
+    return (int(m.group(1)), int(m.group(2))) if m else None
+
+
+def _negatives(X):
+    gt = json.load(open(f"{X}/point/gt.json"))
+    tmpl = _rows(f"{X}/molmobot50/records_P.jsonl", ["ee_point"])[0]
+    negs = []
+    for key, g in gt.items():
+        if key.startswith("mb|") and (np.array(g["pts"], float) < 0).all():
+            _, name, k, arm = key.split("|")
+            img = f"{X}/point/img/mb_{name}_{int(k):04d}.jpg"
+            if os.path.exists(img):
+                p = re.sub(r"- Image 1: .*", "- Image 1: head camera, 1024x576 px; camera: unknown (no calibration).",
+                           tmpl["prompt"])
+                p = re.sub(r"Point to the \w+ gripper", f"Point to the {arm} gripper", p)
+                negs.append(negative(dict(tmpl, prompt=p), img, f"neg_{name}_{k}_{arm}"))
+    return negs
+
+
+def build_t1t4(out, X="/data/harvest/out/xemb_proto", sizes=None, seed=0):
+    """Operation T final (user-log 155: T1+T4 adopted): E-DIST8 +px pixel pack and C-level 3D pack from T1+T4 streams.
+    pixel: RB2 T4-camera projected EE points, RB3 per-frame-verified T4 points, RB2 tracker+pointing agreed points and
+           traces, 'not visible' negatives -- all 0-1000 normalised, 'frame: pixel'
+    3d:    BEHAVIOR metric 3-D QA (GT depth / poses) + camera-info C' of RB2 (only frames whose stereo depth passed the
+           2 cm arm-mesh gate) and RB3 (per-frame verified)"""
+    rng = np.random.default_rng(seed)
+    sizes = sizes or {"px_rb2_t4": 1500, "px_rb3_t4": 1000, "px_rb2_det": 500, "px_rb2_tr": 400, "px_neg": 130,
+                      "3d_obj": 1300, "3d_plane": 300, "c_rb2_t4": 1000, "c_rb3_t4": 500}
+    px = []
+    px += [to_n1000(r) for r in _take(_rows(f"{X}/rb2t4/records_P.jsonl", ["ee_point"]), sizes["px_rb2_t4"], rng)]
+    px += [to_n1000(r) for r in _take(_rows(f"{X}/rb3t4v/records_P.jsonl", ["ee_point"]), sizes["px_rb3_t4"], rng)]
+    px += [to_n1000(r) for r in _take(_rows(f"{X}/rb2t4/records_P.jsonl", ["ee_point_detected"]), sizes["px_rb2_det"], rng)]
+    px += [to_n1000(r) for r in _take(_rows(f"{X}/rb2t4/records_P.jsonl", ["ee_trace"]), sizes["px_rb2_tr"], rng)]
+    px += _take(_negatives(X), sizes["px_neg"], rng)
+    ok = stereo_ok(f"{X}/ffs_rb2_prod/rows.json")
+    rc = [r for r in _rows(f"{X}/rb2t4/records_C.jsonl") if "camera: unknown" not in r["prompt"]
+          and rb2_frame(r["images"][0]) in ok]
+    r3 = [r for r in _rows(f"{X}/rb3t4v/records_C.jsonl") if "camera: unknown" not in r["prompt"]]
+    d3 = []
+    d3 += _take(_rows(f"{X}/behavior100/records_P.jsonl", ["obj_center_cam"]), sizes["3d_obj"], rng)
+    d3 += _take(_rows(f"{X}/behavior100/records_P.jsonl", ["table_plane_cam"]), sizes["3d_plane"], rng)
+    d3 += _take(rc, sizes["c_rb2_t4"], rng)
+    d3 += _take(r3, sizes["c_rb3_t4"], rng)
+    os.makedirs(out, exist_ok=True)
+    counts = {"pools": {"c_rb2_t4_stereo_ok": len(rc), "c_rb3_t4": len(r3)}}
+    for name, rows in (("t1t4_pixel", px), ("t1t4_3d", d3)):
+        with open(os.path.join(out, f"{name}.jsonl"), "w", encoding="utf-8") as f:
+            for i in rng.permutation(len(rows)):
+                f.write(json.dumps(rows[i]) + "\n")
+        c = {"rows": len(rows), "by_source": {}, "by_kind": {}}
+        for r in rows:
+            s, k = r.get("source", "?"), ("negative" if r.get("negative") else (r.get("qa_kind") or r["kind"]))
+            c["by_source"][s] = c["by_source"].get(s, 0) + 1
+            c["by_kind"][k] = c["by_kind"].get(k, 0) + 1
+        counts[name] = c
+    json.dump(counts, open(os.path.join(out, "t1t4_counts.json"), "w"), indent=1)
+    return counts
+
+
 if __name__ == "__main__":
-    print(json.dumps(build(sys.argv[1]), indent=1))
+    if len(sys.argv) > 2 and sys.argv[2] == "t1t4":
+        print(json.dumps(build_t1t4(sys.argv[1]), indent=1))
+    else:
+        print(json.dumps(build(sys.argv[1]), indent=1))
