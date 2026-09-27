@@ -16,13 +16,14 @@ up() { for i in $(seq 120); do curl -s -m 5 http://127.0.0.1:$1/v1/models | grep
 # 1
 (bash $C/tools/teach_strip8/vllm.sh $G /data/harvest/out/dist8/merged_b_d-min b2_bd 8403 0.30 &)
 up 8403 || { echo "BOOST2_FAIL serve_bd" >> $L/lanes.log; exit 1; }
-$P tools/teach_strip8/dagger_pick.py /data/harvest/out/teach_l8d/bundles/b1_phase1_x.json $N > $L/boost2_pick.txt
+$P tools/teach_strip8/dagger_pick.py /data/harvest/out/teach_l8d/bundles/b1_phase1_x.json $N | grep -E "${B2_PICK_GREP:-.}" > $L/boost2_pick.txt
 while read -r v eps; do
   [ -n "$eps" ] || continue
   $S/isaac.sh $C $G dg_${v//./} harvest.teach_strip8.run_dagger --qwen-url http://127.0.0.1:8403 --qwen-name b2_bd \
     --out $O/collect --episodes $eps
 done < $L/boost2_pick.txt
 $S/stop.sh b2_bd
+[ -n "$B2_WAIT_MAIN" ] && until grep -q BOOST2_MAIN_COLLECT_DONE $L/lanes.log; do sleep 60; done
 echo "BOOST2_COLLECT_DONE $(date -u +%FT%TZ)" >> $L/lanes.log
 # 2
 $S/py.sh train - b2_build $C tools/teach_strip8/build_dagger.py $O/collect $D
