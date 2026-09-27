@@ -41,19 +41,27 @@ def converter(K, T_base_cam, depth, uv, r=2):
     return T[:3, :3] @ pc + T[:3, 3]
 
 
-def rows(robot, W, H, K, T_base_cam, uv, xyz_base, name, images, rid):
+_ASK = {"grasp": "where the gripper should grasp it", "above": "that the gripper should move above",
+        "place": "where the held object should be put down", "lift": "that the gripper should lift"}
+
+
+def rows(robot, W, H, K, T_base_cam, uv, xyz_base, name, images, rid, intent="grasp"):
+    """images: [rgb] (D only, no depth: h is None) or [rgb, encoded depth png] (D and H)."""
     cams = [{"name": "head camera", "W": W, "H": H, "K": np.asarray(K).tolist(), "T_base_cam": np.asarray(T_base_cam).tolist()}]
+    depth = len(images) > 1
     head = F.header(robot, f"base_{robot['name']}") + "CAMERAS\n" + F._cam_line(0, cams[0]) + "\n"
-    head += "- Image 2: head depth (grey, 0.25-1.60 m, near = bright, black = no depth).\n"
-    head += "depth: sensor (head, metric, gray 0.25-1.60 m, near=bright)\n"
-    q = (f"Point to the {name} in image 1 where the gripper should grasp it (0-1000, x right, y down) and give the "
-         f"height intent")
+    if depth:
+        head += "- Image 2: head depth (grey, 0.25-1.60 m, near = bright, black = no depth).\n"
+        head += "depth: sensor (head, metric, gray 0.25-1.60 m, near=bright)\n"
+    q = (f"Point to the {name} in image 1 {_ASK[intent]} (0-1000, x right, y down) and give the height intent")
     p = [int(round(uv[0] * 1000 / W)), int(round(uv[1] * 1000 / H))]
     x = [round(float(v), 3) for v in xyz_base]
     d = {"id": rid + "_D", "kind": "qa_xemb", "qa_kind": "dh_point", "track": "D", "source": robot["source"],
-         "frame": f"base_{robot['name']}", "images": list(images), "coords": "n1000",
-         "prompt": head + q + ".\nReturn JSON only.", "answer": json.dumps({"point_2d": p, "height": "grasp"})}
+         "frame": f"base_{robot['name']}", "images": list(images[:1]) if not depth else list(images), "coords": "n1000",
+         "prompt": head + q + ".\nReturn JSON only.", "answer": json.dumps({"point_2d": p, "height": intent})}
+    if not depth:
+        return d, None
     h = dict(d, id=rid + "_H", track="H", qa_kind="dh_point_xyz",
              prompt=head + q + ", and the TCP target position_m in metres in the robot base frame.\nReturn JSON only.",
-             answer=json.dumps({"point_2d": p, "height": "grasp", "position_m": x}))
+             answer=json.dumps({"point_2d": p, "height": intent, "position_m": x}))
     return d, h
