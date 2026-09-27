@@ -4,7 +4,8 @@ rows (xemb.dh). The only OXE depth dataset in the user-log 156 list whose featur
 OpenCV axes, base_pose / tcp_pose / target_object_or_part_initial_pose in the world frame, [x, y, z, qw, qx, qy, qz]).
 Reads RLDS TFRecord shards without TensorFlow (minimal tf.train.Example wire-format parser).
 Gates per state (before the first close, object at its initial pose):
-  G-unit  depth at the projected object centre vs the object centre depth: |dz| <= 5 cm (the surface is in front)
+  target  the initial object pose when given (clutter tasks), else the TCP at the first close (grasp point)
+  G-unit  depth at the projected target vs the target depth: |dz| <= 5 cm (the surface is in front)
   G-conv  converter (point + depth -> base xyz) within dh.CONV_TOL_M of the object centre
 usage (pod): python -m xemb.src_maniskill SHARD_GLOB OUT_DIR [MAX_EPISODES]"""
 from __future__ import annotations
@@ -142,14 +143,19 @@ def convert(shard_glob, out, max_eps=400, per_ep=3):
             grip = ex["steps/observation/state"].reshape(T, 18)[:, 7:9].sum(1)
             closed = np.nonzero(grip < 0.9 * grip[0])[0]
             t_end = int(closed[0]) if len(closed) else T
-            if not valid[0, :3].all() or t_end < 1:
+            if t_end < 1 or t_end >= T:
                 continue
-            for t in sorted({int(x) for x in np.linspace(0, max(0, t_end - 1), per_ep)}):
+            # target: the object's initial pose when the task gives it (clutter tasks only); otherwise the TCP at the
+            # first close = the grasp point (single-object tasks leave the pose invalid)
+            tcp = ex["steps/observation/tcp_pose"].reshape(T, 7)
+            xw_fixed = obj[0, :3].astype(float) if valid[0, :3].all() else tcp[t_end, :3].astype(float)
+            st["target_from_tcp"] = st.get("target_from_tcp", 0) + (not valid[0, :3].all())
+            for t in sorted({int(x) for x in np.linspace(0, max(0, t_end - 8), per_ep)}):
                 st["states"] += 1
                 K, E = Kall[t].astype(float), Eall[t].astype(float)
                 Twb = pose_T(base[t])
                 Tbc = G.inv_T(Twb) @ G.inv_T(E)
-                xw = obj[t, :3].astype(float)
+                xw = xw_fixed
                 uv, z = G.project(K, E, xw)
                 dep = cv2.imdecode(np.frombuffer(ex["steps/observation/depth"][t], np.uint8), cv2.IMREAD_UNCHANGED)
                 if dep is None or z <= 0:

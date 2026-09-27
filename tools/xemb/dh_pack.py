@@ -12,9 +12,10 @@ def gate(rep):
     gu = rep.get("g_unit_absdz_cm")
     if gu is not None and gu["median"] > 3.0:
         return False, "unit"
-    share = rep.get("converter_le5cm") or (rep.get("g_conv_cm") or {}).get("le5cm")
-    if share is not None and share < 0.5:
-        return False, "converter"
+    # per-row converter <= 5 cm is applied by the converters; the source gate checks units / quantisation only
+    q, g = rep.get("quant_step_cm_at_point"), rep.get("measured_level_gap_cm")
+    if q and g and abs(g["median"] - q["median"]) > 0.3 * q["median"]:
+        return False, "quant_step"
     return True, "ok"
 
 
