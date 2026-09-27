@@ -180,6 +180,7 @@ def convert(shard_glob, out, max_eps=400, per_ep=3):
                 cv2.imwrite(pi, rgb)
                 cv2.imwrite(pd, DH.encode_depth(dep))
                 d, h = DH.rows(robot, Ww, Hh, K, Tbc, uv, gt_b, nm, [pi, pd], rid)
+                d["conv_err_m"] = h["conv_err_m"] = round(e, 4)
                 fd.write(json.dumps(d) + "\n")
                 fh.write(json.dumps(h) + "\n")
                 st["rows"] += 1

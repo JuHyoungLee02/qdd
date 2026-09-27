@@ -97,6 +97,7 @@ def _episode(args):
             cv2.imwrite(pd, DH.encode_depth(dep[i]))
             nice = nm.rsplit("_", 1)[0].replace("_", " ")
             d, h = DH.rows(robot, 720, 720, K_HEAD, Tbc, c2, gt_b, nice, [pi, pd], rid)
+            d["conv_err_m"] = h["conv_err_m"] = round(e, 4)
             res["D"].append(d)
             res["H"].append(h)
     return res

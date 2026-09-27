@@ -19,23 +19,40 @@ def gate(rep):
     return True, "ok"
 
 
-def main(out, srcs):
+def main(out, srcs, tol=None, suffix=""):
+    """tol: extra per-row converter-error threshold (m) on top of the converters' 5 cm; files dh_D<suffix>.jsonl."""
+    import numpy as np
     os.makedirs(out, exist_ok=True)
     counts = {}
-    with open(os.path.join(out, "dh_D.jsonl"), "w") as fD, open(os.path.join(out, "dh_H.jsonl"), "w") as fH:
+    with open(os.path.join(out, f"dh_D{suffix}.jsonl"), "w") as fD, open(os.path.join(out, f"dh_H{suffix}.jsonl"), "w") as fH:
         for s in srcs:
             rep = json.load(open(os.path.join(s, "report.json")))
             ok, why = gate(rep)
-            n = 0
+            errs, n = [], 0
             if ok:
                 for name, f in (("records_D.jsonl", fD), ("records_H.jsonl", fH)):
                     for line in open(os.path.join(s, name)):
+                        e = json.loads(line).get("conv_err_m")
+                        if tol is not None and (e is None or e > tol):
+                            continue
                         f.write(line)
-                        n += name == "records_D.jsonl"
-            counts[os.path.basename(s.rstrip("/"))] = {"gate": why, "states": n, "report": rep}
-    json.dump(counts, open(os.path.join(out, "dh_counts.json"), "w"), indent=1)
-    print(json.dumps({k: {"gate": v["gate"], "states": v["states"]} for k, v in counts.items()}))
+                        if name == "records_D.jsonl":
+                            n += 1
+                            if e is not None:
+                                errs.append(e)
+            e = np.array(errs)
+            dist = {"median_cm": round(float(np.median(e)) * 100, 2), "p90_cm": round(float(np.percentile(e, 90)) * 100, 2)} \
+                if len(e) else None
+            counts[os.path.basename(s.rstrip("/"))] = {"gate": why, "states": n, "kept_conv_err": dist, "report": rep}
+    json.dump(counts, open(os.path.join(out, f"dh_counts{suffix}.json"), "w"), indent=1)
+    print(json.dumps({k: {"gate": v["gate"], "states": v["states"], "kept_conv_err": v["kept_conv_err"]}
+                      for k, v in counts.items()}))
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2:])
+    a = sys.argv[1:]
+    tol = None
+    if a and a[0].startswith("--tol="):
+        tol = float(a[0].split("=")[1])
+        a = a[1:]
+    main(a[0], a[1:], tol, suffix="" if tol is None else f"_{int(round(tol * 100))}cm")
