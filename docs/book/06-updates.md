@@ -134,3 +134,4 @@
 | 2026-09-26 21:4x | 02 | L8-D / L8-X 함정 P131(편마다 관절 기본값은 cfg.init_state에도·실측 확인), P132(CPU 쿼터 스로틀 — Isaac 수는 CPU로 정함), P133(탐침 단발 튐), P134(Git Bash KST) | [R/l8d](../stage3/results/l8d.md), 이 줄과 같은 커밋 |
 | 2026-09-27 02:2x | 01·04·05 | E-STRIP8b 결과(KEEP_PRIVILEGED: L8-X에서 S-full이 참 높이를 써 OOD-H 4 mm, 최소 요청 21 mm): 01 행, 04 경로 행, 05 GPU 행 | [R/strip8b](../stage3/results/strip8b.md), 이 줄과 같은 커밋 |
 | 2026-09-27 02:52 | 01 | E-DIST8 중간 결과: 01 행 | [R/dist8](../stage3/results/dist8.md), 이 줄과 같은 커밋 |
+| 2026-09-27 04:2x | 01·04·05 | E-PRIV8 결과(M1·M3·G-px 모두 NOT_ADOPT, MONOCULAR_LIMIT): 01 행, 04 경로 행, 05 GPU 행 | [R/priv8](../stage3/results/priv8.md), 이 줄과 같은 커밋 |
