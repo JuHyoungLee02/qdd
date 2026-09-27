@@ -119,6 +119,15 @@ def choose_container(scene: dict) -> tuple:
     return a[0], a[1], b[0], b[1]
 
 
+LIFT_TOL_M = 0.04  # the lift joint sags ~2.6 cm under load; more = the lift was not applied
+
+
+def check_lift(set_q: float, measured_q: float, tol: float = LIFT_TOL_M) -> None:
+    """After reset: a scene whose measured lift is off by more than tol is skipped (reason kept), not fatal."""
+    if abs(measured_q - set_q) > tol:
+        raise SkipScene(f"lift not applied: set {set_q:+.4f}, measured {measured_q:+.4f}")
+
+
 def ws_from_region(region) -> tuple:
     from ..sim.scene import check_ws
     try:

@@ -63,6 +63,12 @@ def test_mesh_kind_subsets():
         assert sc2["surfaces"]
 
 
+def test_lift_check_skips_the_scene():
+    fx.check_lift(-0.2000, -0.2260)  # the usual ~2.6 cm sag passes
+    with pytest.raises(fx.SkipScene, match="lift not applied"):
+        fx.check_lift(-0.2000, -0.2404)  # rs1_3: 4.04 cm off -> skip this scene, the job goes on
+
+
 def test_room_split():
     import os
     d = os.path.join(os.path.dirname(fx.__file__), "..", "sim", "assets_x")

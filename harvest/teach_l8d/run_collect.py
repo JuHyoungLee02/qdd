@@ -113,9 +113,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                 self.furniture_scene["place_surface"] = {"id": upper["id"], "kind": upper.get("kind"),
                                                          "top_z": upper["top_z"], "region": uregion}
             env.reset()
-            q = float(rob.data.joint_pos[0, li])
-            if abs(q - env.lift) > 0.04:  # the lift joint sags ~2.6 cm under load; more = the lift was not applied
-                raise RuntimeError(f"lift not applied: set {env.lift:+.4f}, measured {q:+.4f}")
+            fx.check_lift(env.lift, float(rob.data.joint_pos[0, li]))  # SkipScene (skipped.json), job goes on
             perturb(env, "P0", seed)
             for _ in range(PRE_RENDER):
                 env.env.sim.render()
