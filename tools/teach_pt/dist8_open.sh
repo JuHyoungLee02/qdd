@@ -23,6 +23,7 @@ for arm in "$@"; do
     c_px_r) base=$B1/train_s-min.jsonl; mix="$P3:0.125 $PX:0.125"; tr=r-min;;
     c_px_d) base=$DB/train_d-min.jsonl; mix="$P3:0.125 $PX:0.125"; tr=d-min;;
     b_obj_d) base=$DB/train_d-min.jsonl; mix="$OBJ:0.25"; tr=d-min;;  # change 5: object-pointing pack
+    c_h) base=$DB/train_h-min.jsonl; mix="$P3:0.25"; tr=h-min;;  # change 6: H at level C (R lane stopped)
     *) echo "unknown arm $arm" >> $L/dist8_open.log; continue;;
   esac
   until [ -f $base ]; do sleep 60; done
