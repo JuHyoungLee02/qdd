@@ -156,3 +156,26 @@
   \item \textbf{해 봄:} 사전 등록 1f1db1e(학습 전, 무료) + 변경 1(7f74f04): 공통 최소 요청(E-STRIP8 S-min) 위에서 줄기별로 답 부분만 다름; 데이터 A 옛 L8 / B L8-X b1 / C L8-X + 공개 3D, 각각 공개 픽셀 유무; 모든 수준에서 R 대 D, H는 A와 B+px; 816걸음·같은 표본; 평가 옛 DEV·OOD-H + L8-X DEV·OOD-H/O/S/T, 깊이 방식 on·noisy(·off). A-R은 STRIP8 S-min 재사용.
   \item \textbf{진행 중·대기:} \tentative{학습 중(통제자 09-27 08:53 기준). 결과 문서 전 --- 수치 없음. 요청 형식은 E-STRIP8b 결과에 따라 바뀔 수 있음(등록 1.1).}
 \end{itemize}
+
+\paragraph{B17. E-STRIP8b 판정 KEEP\_PRIVILEGED --- 손 정보는 참값이라 입력 금지, 학습에서만}
+{\small 09-27 06:2x -- 12:1x KST}
+\begin{itemize}
+  \item \textbf{해 봄:} 사전 등록 a1b93fb(학습 전): L8-X b1(탁자 높이 8칸)에서 S-full / S-min / S-drop 각 816걸음, 같은 채점기·세트.
+  \item \textbf{결과:} 중간(통제자 08:53 전달): 손 정보를 뺀 판의 OOD-H 접근 오차 3.3 $\rightarrow$ 20.1 mm --- 판정 아님으로만 기록.
+  \item \textbf{사용자} (ul 154, 10:0x KST (음성 입력)): \intent{손정부는 그냥 들어가면 안 되는 거야 주택값이라 가지고 그런데 이걸 학습을 할 때는 다른 데서는 어떻게 활용을 하는지 한번 제대로 확인을 해봐 봐 그러면 근데 그렇기 때문에 더더욱이 이제 데이터를 어떻게 처리할 것인가에 대한 정보를 확실히 해야겠지 데스가 있는 거를 최대한 잘 활용을 하고 그러니까 그래서 데이터를 잘 선택해야 되는 거야 그세 가지 방법론이 있잖아 RGB로 하냐 하이브리드로 하냐 데스로 하냐 그게 거기서 중요한 거야 그리고 어떤 식으로 처리할 건지 뭐 그건 결정이 났나? 그 그리드 그려가지고 점 찍어서 할 건지 뭐 그냥 점만 찍을 건지 뭐 그리드만 그릴 건지 하는 이런 방법론들은 결정이 났어 그 중에 뭐 할지}
+  \item \textbf{그래서(결정):} user-log 154 반영: 판정 선택지 중 KEEP\_AS\_INPUT(참값을 추론 입력으로)은 [사용자 결정]으로 제외, 남은 선택은 REMOVE 또는 KEEP\_PRIVILEGED. 특권 정보 학습 활용법 조사 착수.
+  \item \textbf{결과:} ac0c1cc(\texttt{results/\allowbreak{}strip8b.\allowbreak{}md}): KEEP\_PRIVILEGED(주·둘째 판정 같음). S-full은 이제 요청의 참 높이를 쓴다 --- 옛 OOD-H 3D 좁게 31.2 $\rightarrow$ 4.0 mm, 넓게 70.5 $\rightarrow$ 4.5 mm; 최소 판은 약 21 mm. 최선 최소 판 S-drop은 DEV 비열등(2.5 mm)이나 OOD-H 짝 차 +16.4 [+9.9, +23.6] mm로 REMOVE 불가. E-STRIP8의 NOT\_NEEDED는 한 높이 데이터의 교란이었다.
+  \item \textbf{결과:} 조사 a14a577(\texttt{research/\allowbreak{}privileged\_\allowbreak{}info\_\allowbreak{}training\_\allowbreak{}survey}): 문헌의 특권 정보는 입력이 아니라 목표·교사·보상 --- (a) 출력 쪽 보조 필드(ECoT-Lite CoRL 2025: 학습에만 쓰고 추론 때 빼도 이득 상당 부분 유지), (b) 교사-학생(우리는 교사 출력이 참값과 같아 이득 적음), (c) 특권 입력 드롭아웃·커리큘럼, (d) 센서(깊이)에서 재기. 모방 격차 위험: RGB에서 원리적으로 안 보이면 오차가 남음 --- D의 3.5 mm가 (d)의 우리 쪽 증거. 격자·점: 점만 찍고(출력) 입력 영상에 격자를 덧그리지 않음(덧그림은 미세조정 없는 API 모델용).
+  \item \textbf{그래서(결정):} E-PRIV8 사전 등록 7fba0be(학습 전, 무료): M1(참값으로 감독한 table\_z·obj\_h 추정 필드, 50 \% 생략, 추론 때 유지·제거 두 판)·M3(손 정보 입력 커리큘럼 p 1 $\rightarrow$ 0, 마지막 40 \% 0) 대 R0 = S-min, L8-X b1, 816걸음; 채택 = 새 높이 3D $\leq$ R0의 0.6배이자 $\leq$ 12 mm, 본 높이 $\leq$ R0 + 1 mm. 변경 1 247b0b9(G-px 학습 전, M1·M3 답 보기 전): G-px = E-DIST8 B-D 행 + 머리 영상 0--1000 픽셀 좌표 격자(100마다), 채택 = 새 높이 점 px $\leq$ B-D의 0.8배 등.
+  \item \textbf{진행 중·대기:} \tentative{E-PRIV8 진행 중. 논문 3.2절·5절에 KEEP\_PRIVILEGED와 E-PRIV8 방법만 반영(09-27 12:4x).}
+\end{itemize}
+
+\paragraph{B18. E-DIST8 중간 --- D는 높이·장면, R은 새 물체, H는 깊이 따라}
+{\small 09-27 11:5x KST (결과 문서 중간판)}
+\begin{itemize}
+  \item \textbf{해 봄:} 등록 1f1db1e + 변경 1: 수준 A(옛 L8)·B(L8-X b1)에서 A-R·A-D·A-H·B-R·B-D, 816걸음, 오프라인, 세트 옛 DEV·OOD-H + L8-X dev\_x·OOD-H·HL·D·O·S·T. +px·C 수준과 폐루프는 아직.
+  \item \textbf{결과:} \texttt{results/\allowbreak{}dist8.\allowbreak{}md}(중간): 접근 3D 중앙 D 대 R --- L8-X OOD-H 4.2 대 20.1 mm, OOD-H-lift 4.4 대 11.2, OOD-S 4.5 대 7.5, OOD-T 4.0 대 7.1(모두 BETTER), OOD-D SAME. 새 물체 범주 OOD-O는 D 96.9 대 R 25.9 mm(WORSE) --- 변환기 참값 상한 3.5 mm라 모델이 본 적 없는 물체에 점을 못 찍음.
+  \item \textbf{결과:} 데이터 효과: R은 A $\rightarrow$ B에서 크게 좋아짐(OOD-H 43.0 $\rightarrow$ 20.1, OOD-O 89.0 $\rightarrow$ 25.9, HL 131.8 $\rightarrow$ 11.2 mm), D는 A $\approx$ B. H(수준 A, 예비): 깊이 있음은 D와 비열등이나 dev\_x·OOD-H-lift 꼬리가 나쁨, 깊이 없음은 R과 비열등. zed\_mini 잡음은 D 중앙 +1--3 mm, 그래도 OOD-H·S·T·HL에서 R보다 나음.
+  \item \textbf{그래서(결정):} 잠정: 높이 일반화는 깊이 변환이 풀었고 새 물체는 다양화 데이터로도 안 풀림 $\rightarrow$ 다음은 D의 새 물체 점 실패 분해, 폐루프(영상), 공개 팩 수준. 요청은 STRIP8b 판정대로 손 정보 없이.
+  \item \textbf{진행 중·대기:} \tentative{중간 결과 --- 한 시드·8B·오프라인. H 확정은 B+px 수준에서.}
+\end{itemize}

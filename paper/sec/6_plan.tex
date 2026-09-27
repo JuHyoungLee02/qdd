@@ -17,9 +17,10 @@
 \multicolumn{4}{@{}l}{\textbf{1단계: 상위 계획기 단독(실행기와 함께) --- 이번 마일스톤}} \\
 U0 & 8B 경향: 시뮬 참값 LoRA, 동기 단독 형식 & 오프라인 접근 오차 $\le$ 영샷의 절반, 폐루프 성공 $\ge1$ & 끝(\tentative{4/4}) \\
 (1) 결정 & 출력 형식(E-PT/ND: 깊이 점 D 대 깊이 없는 xyz, 한 높이 학습; R·H는 L8-X에서 다시) & DEV, OOD-H(좁게·넓게) 접근 오차 & D 우세(\tentative{3.5} 대 \tentative{31.2\,mm}) \\
-(1) 결정 & 손으로 준 정보(E-STRIP8 $\rightarrow$ L8-X에서 E-STRIP8b, \tentative{재검증 진행 중}) & DEV·OOD 비열등, 공정 짝 비교 & 잠정 제거 가능 \\
-(1) 결정 & 데이터 구성 $\times$ 줄기(E-DIST8: 옛 L8 / L8-X / L8-X + 공개 3D $\times$ 공개 픽셀 유무 $\times$ R·H·D) & 수준마다 픽셀 짝 효과, 줄기 짝, DEV·OOD-H/O/S/T & \tentative{학습 중} \\
-(1) 결정 & 공개 데이터 경로(작전 T: 좌표계 만들기 대 카메라 없는 조종; E-H2H-T, E-OPEN8) & L8-X에서 같은 조건 짝 비교, 누수 0 & T1+T4 추천, \tentative{결정 대기} \\
+(1) 결정 & 손으로 준 정보(E-STRIP8 $\rightarrow$ L8-X에서 E-STRIP8b; 추론 입력 금지) & DEV·OOD 비열등, 공정 짝 비교 & KEEP\_PRIVILEGED \\
+(1) 결정 & 손 정보를 학습에서만 쓰는 법(E-PRIV8: M1 추정 필드, M3 입력 커리큘럼, G-px 픽셀 격자) & 새 높이 3D $\le$ 최소 판의 0.6배·12\,mm 등 & \tentative{진행 중} \\
+(1) 결정 & 데이터 구성 $\times$ 줄기(E-DIST8: 옛 L8 / L8-X / L8-X + 공개 3D $\times$ 공개 픽셀 유무 $\times$ R·H·D) & 수준마다 픽셀 짝 효과, 줄기 짝, DEV·OOD-H/O/S/T & \tentative{중간}: D는 높이·장면, R은 새 물체 \\
+(1) 결정 & 공개 데이터 경로(작전 T: 좌표계 만들기 대 카메라 없는 조종; E-H2H-T, E-OPEN8) & L8-X에서 같은 조건 짝 비교, 누수 0 & 대체 판 SAME; 더하는 판 \tentative{진행 중} \\
 (1) 결정 & 35B 학습 길이(E-TEACH-35B, 4 에폭, 에폭마다 오프라인 평가) & DEV 규칙의 최적 에폭 & ep2(\tentative{2 에폭 충분}) \\
 (1.5) 강화 & 선정된 방법마다 기본 성능 올리기(문헌 + 8B 사전 등록 짝 시험) & 효과가 확인된 것만 최종 레시피에 & \tentative{예정} \\
 (2) 최종 & 35B-A3B 소규모 학습, 줄기 R·H·D 세 판 & H-L 기준(\cref{sec:hl}) & \tentative{예정} \\
@@ -130,7 +131,7 @@ PaceNotes 2단계 & 상위 + VLA (트리거 시) & 35B 학생 & \todoexp & \todo
 \multicolumn{3}{@{}l}{\textbf{1단계}} \\
 Q1 & 가설 H-L(\cref{sec:hl}) & 8B·35B DEV \tentative{4/4}; 35B p50 \tentative{1.04\,s}; 짝 40판 미측정 \\
 Q2 & 상위 단독이 분포 밖에서도 버틴다 & 한 높이 학습은 OOD-H에서 무너짐(8B·35B); E-DIST8, 최종 35B \\
-Q3 & 손으로 준 정보 없이도 된다; 줄기 R·H·D 중 무엇이 나은가 & E-STRIP8b(진행 중), E-PT(D 우세, 한 높이), E-DIST8, 최종 35B 세 판 \\
+Q3 & 손으로 준 정보 없이도 된다; 줄기 R·H·D 중 무엇이 나은가 & E-STRIP8b(학습 때만), E-PRIV8(진행 중), E-DIST8 중간(D 높이·장면, R 새 물체), 최종 35B 세 판 \\
 Q4 & 상위 한 호출의 명령이 충분히 정확 & 방향 \tentative{13/13}, 알아채기 \tentative{0/13} \\
 Q5 & 지연·비용이 실물 조건에서도 유지 & 실물 단계 \\
 \midrule

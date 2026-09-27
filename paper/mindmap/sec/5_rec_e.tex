@@ -137,12 +137,20 @@
 \begin{itemize}
   \item \textbf{결과:} 점수판(fd9cc42, howto 13.4): T1+T4 --- 실루엣 경계 RB2 2.32 px·RB3 2.32 px(다시 잰 값)·RB1 4.78 px(경계선), RB2 스테레오 m 깊이 7,050장(팔 메시 대비 중앙 1.32 cm); C$'$ --- 누수 1/305(원인 고침, 재측정은 L8-X), 공개 보류분 목표 2.6--3.6 cm, 수율 MolmoBot 3,381·DROID 실물 3,857 등.
   \item \textbf{그래서(결정):} Claude 추천 T1+T4(누수 없는 픽셀 라벨 + 깊이, E-PT가 가리키는 점 + 깊이 형식과 맞음). C$'$는 역할이 달라 폐기 보류(ul 143 규칙). E-H2H-T 사전 등록(0c20e1f, 학습 전): L8-X b1 기본 6,521행 대 + T1+T4 묶음 2,000 대 + C$'$ 묶음 2,000, 같은 816걸음·시드·세트, E-PT 5.2 규칙.
-  \item \textbf{진행 중·대기:} \tentative{E-H2H-T 진행 중. 최종 결정은 09-27 12:53 KST 이후 사용자.}
+  \item \textbf{참고:} E-H2H-T 결과는 E17(e31f1df). 최종 결정은 사용자 확인 대기.
 \end{itemize}
 
 \paragraph{E16. E-STRIP8b --- 손으로 준 정보 제거를 L8-X에서 다시}
 {\small 09-27 06:2x KST \textasciitilde{}}
 \begin{itemize}
   \item \textbf{해 봄:} 사전 등록 a1b93fb(학습 전, 무료): L8-X b1에서 S-full(참 탁자 높이·크기·요령 + 격자) / S-min / S-drop, 각 816걸음, 판정 KEEP\_AS\_INPUT / REMOVE / KEEP\_PRIVILEGED는 strip8 등록에서 이미 고정.
-  \item \textbf{진행 중·대기:} \tentative{진행 중. 중간 관측으로 손 정보를 뺀 판의 OOD-H 접근 오차가 3.3 $\rightarrow$ 20.1 mm로 커지는 모습(통제자 09-27 08:53 전달) --- 판정 아님, 결과로 쓰지 않음. 판정이 KEEP이면 E-DIST8 요청 형식이 바뀐다.}
+  \item \textbf{참고:} 중간 관측(3.3 $\rightarrow$ 20.1 mm)과 판정 KEEP\_PRIVILEGED(ac0c1cc)는 B17에.
+\end{itemize}
+
+\paragraph{E17. E-H2H-T 결과 --- 대체 판은 T1+T4 = C$'$, 둘 다 희석으로 나빠짐}
+{\small 09-27 10:4x KST \textasciitilde{}}
+\begin{itemize}
+  \item \textbf{결과:} e31f1df(\texttt{results/\allowbreak{}h2h.\allowbreak{}md}): 기본 b1 6,521행 중 2,000행을 공개 묶음으로 바꾼 판. t1t4 대 cp는 9개 세트 모두 SAME $\rightarrow$ 학습 효과로 못 가름, 등록대로 점수판의 관문·수율·위험 칸으로 결정. 두 묶음 모두 기본보다 나아지지 않음 --- t1t4는 OOD-H-lift·D·S, cp는 옛 OOD-H·OOD-H-lift·D·T에서 WORSE. 좌표 누수(source·frame 글) 0.
+  \item \textbf{그래서(결정):} 묶음 폐기 아님(ul 143). 원인 후보는 같은 걸음에서 L8-X 행 31 \% 감소(희석). 추가 판 사전 등록 191fae6(학습 전): 기본 6,521 + 같은 묶음 2,000행, 1,066걸음(기본 노출 같게), 같은 9 세트·규칙.
+  \item \textbf{진행 중·대기:} \tentative{추가 판 진행 중. 작전 T 최종 결정은 사용자 확인 대기.}
 \end{itemize}
