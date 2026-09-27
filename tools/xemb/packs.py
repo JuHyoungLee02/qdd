@@ -199,8 +199,38 @@ def build_t1t4(out, X="/data/harvest/out/xemb_proto", sizes=None, seed=0):
     return counts
 
 
+_GENERIC = re.compile(r"Point to the (object|target|item|place)\b")  # the named target itself is generic
+
+
+def build_obj(out, X="/data/harvest/out/xemb_proto", n=4000, seed=0):
+    """Object-referral pixel pack (PT-ND request: new-object failures are target identification): MolmoBot RBY1 and
+    Franka obj_point / place_point rows (calibrated sim, named objects), 0-1000 normalised; rows whose prompt names only
+    a generic 'the object' / 'the target' are dropped. Half RBY1, half Franka where the pools allow."""
+    rng = np.random.default_rng(seed)
+    pools = {}
+    for src in ("molmobot50", "mbfranka"):
+        rows = _rows(f"{X}/{src}/records_P.jsonl", ["obj_point", "place_point"])
+        pools[src] = [r for r in rows if not _GENERIC.search(r["prompt"])]
+    half = n // 2
+    a = min(len(pools["molmobot50"]), max(half, n - len(pools["mbfranka"])))
+    rows = _take(pools["molmobot50"], a, rng) + _take(pools["mbfranka"], n - a, rng)
+    rows = [to_n1000(r) for r in rows]
+    os.makedirs(out, exist_ok=True)
+    with open(os.path.join(out, "obj_pixel.jsonl"), "w", encoding="utf-8") as f:
+        for i in rng.permutation(len(rows)):
+            f.write(json.dumps(rows[i]) + "\n")
+    c = {"rows": len(rows), "pools": {k: len(v) for k, v in pools.items()}, "by_source": {}, "by_kind": {}}
+    for r in rows:
+        c["by_source"][r.get("source", "?")] = c["by_source"].get(r.get("source", "?"), 0) + 1
+        c["by_kind"][r["qa_kind"]] = c["by_kind"].get(r["qa_kind"], 0) + 1
+    json.dump(c, open(os.path.join(out, "obj_counts.json"), "w"), indent=1)
+    return c
+
+
 if __name__ == "__main__":
-    if len(sys.argv) > 2 and sys.argv[2] == "t1t4":
+    if len(sys.argv) > 2 and sys.argv[2] == "obj":
+        print(json.dumps(build_obj(sys.argv[1]), indent=1))
+    elif len(sys.argv) > 2 and sys.argv[2] == "t1t4":
         print(json.dumps(build_t1t4(sys.argv[1]), indent=1))
     else:
         print(json.dumps(build(sys.argv[1]), indent=1))
