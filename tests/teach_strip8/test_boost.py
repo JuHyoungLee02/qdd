@@ -76,6 +76,46 @@ def test_episode_truth_and_loop(tmp_path):
     assert A  # the shared assessment block is importable (fixture module)
 
 
+def test_h_move_fixes(tmp_path):
+    """H (h-min, move commands): truth succeeds with the fixes on and off; off = the parent episode's history; the
+    fixes act only on the PT branch (H without depth -> xyz branch: no memory resolve, no switch)."""
+    import json
+
+    from harvest.astra_motion.truth import Rep
+    from harvest.astra_solo.pt_episode import PtEpisode
+    from harvest.astra_solo.pt_truth import HTruth
+
+    from astra_solo.test_pt_episode import PadWorld
+
+    def run(cls, h_depth="on", model=HTruth, **kw):
+        w = PadWorld()
+        m = model(w)
+        ep = cls(w, m, 3, "mug_tray", None, iface="h-min", h_depth=h_depth, **kw)
+        m.ep = ep
+        return ep.run()
+
+    base = run(PtEpisode)
+    off = run(B.BoostEpisode)
+    on = run(B.BoostEpisode, fix_mem=True, fix_loop=True)
+    assert base["success"] and off["success"] and on["success"]
+    assert off["history"] == base["history"]
+    assert on["boost"]["n_memory_resolves"] > 0
+    nod = run(B.BoostEpisode, h_depth="off", fix_mem=True, fix_loop=True)
+    assert nod["boost"]["n_memory_resolves"] == 0 and nod["boost"]["switches"] == []
+
+    class HLooper(HTruth):
+        def ask(self, text, images, meta):
+            d = json.loads(super().ask(text, images, meta).text)
+            c = d["command"]
+            if c.get("mode") == "move" and c.get("height") == "grasp":
+                d["command"] = dict(c, height="above", gripper="keep")
+            return Rep(json.dumps(d))
+
+    lo = {fl: run(B.BoostEpisode, model=HLooper, fix_loop=fl, stop_calls=12) for fl in (False, True)}
+    assert not lo[False]["success"] and lo[True]["success"]
+    assert lo[True]["boost"]["switches"][0]["switch"] == {"height": "grasp", "gripper": "close"}
+
+
 def test_memory_frame_choice():
     M = B.PlaceMemory()
     d0, d1 = np.zeros((2, 2)), np.ones((2, 2))

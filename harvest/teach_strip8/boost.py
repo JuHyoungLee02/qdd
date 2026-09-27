@@ -6,7 +6,9 @@ loop, no retraining, from the PT-ND failure decomposition (results/dist8.md 5b, 
   (b) LoopGuard: an 'above' point whose target is within tol of the previous 'above' target, after the arm has
       reached that target (TCP within tol), counts as a repeat; at the n-th repeat the command is turned into the next
       intent: holding -> place + open, not holding -> grasp + close (same point). Any other command resets the count.
-BoostEpisode(fix_mem, fix_loop): both False = teach_pt d-min episode unchanged (the 'before' arm)."""
+BoostEpisode(fix_mem, fix_loop): both False = the teach_pt episode unchanged (the 'before' arm). H (h-min, move
+commands): the same two fixes on the PT branch only (memory = the depth H saw before the grasp); the xyz branch (no
+depth / unresolved) is never touched."""
 from __future__ import annotations
 
 import numpy as np
@@ -82,7 +84,51 @@ class BoostEpisode(PtEpisode):
         return dict(res, goal=[round(float(v), 4) for v in goal], holding=hold, notes=notes, memory=True,
                     grip_offset=None if self.grip_offset is None else round(self.grip_offset, 4))
 
+    def _h_resolver(self, st):
+        """H (move): the PT converter bound to H's depth; with fix_mem, while holding, bound to the depth H saw on
+        the last call before the grasp (H's own depth: on / noisy). No depth -> None (xyz branch, no fix)."""
+        base = super()._h_resolver(st)
+        if base is None or not self.fix_mem:
+            return base
+        hold = self.holding(st)
+        self.mem.update(self.h_used_depth, st["tcp"], self.plane, hold)
+        depth, mtcp, used = self.mem.frame(hold, self.h_used_depth)
+        if not used:
+            return base
+
+        def res(cmd):
+            if cmd["height"] == "lift":
+                return base(cmd)
+            r = RS.resolve_point(self.head, depth, self.w.table_z, cmd["point_2d"], tcp=mtcp)
+            if r["kind"] == "none":
+                return None, dict(r, memory=True)
+            g, notes = RS.target_of(cmd["height"], r, r["plane"], st["tcp"], hold, self.grip_offset)
+            return g, dict(r, notes=notes, memory=True)
+        return res
+
+    def _execute_move(self, cmd) -> list:
+        from ..astra_solo import hybrid as HY
+        st = self.w.status()
+        goal, branch, _ = HY.select(dict(cmd), self._h_resolver(st))
+        sw = None
+        if branch == "pt":
+            sw = self.guard.check(dict(cmd, mode="point"), goal, st["tcp"], self.holding(st))
+        else:
+            self.guard.check({"mode": "none"}, None, st["tcp"], False)  # xyz / none branch: reset, no fix
+        if sw is not None:
+            self.boost_log.append({"call": len(self.calls), "switch": sw, "from": cmd.get("height")})
+            cmd.update(sw)
+        evs = super()._execute(cmd)
+        if self.last_res is not None and sw is not None:
+            self.last_res["loop_switch"] = sw
+        above = (branch == "pt" and cmd.get("height") == "above" and self.last_res is not None
+                 and self.last_res.get("branch") == "pt")
+        self.guard.done(self.last_res.get("goal") if above else None)
+        return evs
+
     def _execute(self, cmd) -> list:
+        if cmd.get("mode") == "move" and self.fix_loop:
+            return self._execute_move(cmd)
         if cmd.get("mode") == "point" and self.fix_loop:
             st = self.w.status()
             probe = self.resolve(cmd, st)
@@ -100,5 +146,6 @@ class BoostEpisode(PtEpisode):
 
     def _save(self, res):
         res["boost"] = {"fix_mem": self.fix_mem, "fix_loop": self.fix_loop, "switches": self.boost_log,
-                        "n_memory_resolves": sum(1 for c in self.calls if (c.get("resolved") or {}).get("memory"))}
+                        "n_memory_resolves": sum(1 for c in self.calls if (c.get("resolved") or {}).get("memory")
+                                                 or ((c.get("resolved") or {}).get("resolved") or {}).get("memory"))}
         super()._save(res)
