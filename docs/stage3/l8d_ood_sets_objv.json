@@ -1,0 +1,182 @@
+{
+"schema": "qdd.l8d.ood_sets/v1",
+"note": "OOD-O Objaverse extension (prereg_l8d.md changes 7-8): ood_o-split Objaverse objects (never trained) that passed the object gate (>= 2 of 3 clean truth ov_tray, GATE 35070-35072) x ov_tray, 10 episodes each, table 0.85 standard, protected seeds 70140-; frozen before any Objaverse training episode. Train objects that passed are listed for reference.",
+"gate": {
+"n_objects": 52,
+"n_pass": 19,
+"pass_ood_o": [
+"objv_0b57e80bcfc8",
+"objv_337bb3f78267"
+],
+"pass_train": [
+"objv_0100598f46bd",
+"objv_0152582550bb",
+"objv_0503854981b4",
+"objv_0e342ea75d97",
+"objv_11307d06bb25",
+"objv_134f666a4803",
+"objv_1714a1a292ee",
+"objv_208c66798195",
+"objv_277bb8afe481",
+"objv_2a09a3dc7536",
+"objv_2e7a4fd41a08",
+"objv_3a40810c85cd",
+"objv_43d82abf4826",
+"objv_4abb06a66fc1",
+"objv_581eea647f8f",
+"objv_72dcc52efa4c",
+"objv_8587d39f1c40"
+]
+},
+"counts": {
+"ood_o_objv": 20
+},
+"by_task_variant_height": {
+"ood_o_objv": {
+"ov_tray__objv_0b57e80bcfc8|standard|0.850": 10,
+"ov_tray__objv_337bb3f78267|standard|0.850": 10
+}
+},
+"episodes": [
+{
+"seed": 70140,
+"split": "ood_o",
+"task": "ov_tray__objv_0b57e80bcfc8",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70141,
+"split": "ood_o",
+"task": "ov_tray__objv_0b57e80bcfc8",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70142,
+"split": "ood_o",
+"task": "ov_tray__objv_0b57e80bcfc8",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70143,
+"split": "ood_o",
+"task": "ov_tray__objv_0b57e80bcfc8",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70144,
+"split": "ood_o",
+"task": "ov_tray__objv_0b57e80bcfc8",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70145,
+"split": "ood_o",
+"task": "ov_tray__objv_0b57e80bcfc8",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70146,
+"split": "ood_o",
+"task": "ov_tray__objv_0b57e80bcfc8",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70147,
+"split": "ood_o",
+"task": "ov_tray__objv_0b57e80bcfc8",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70148,
+"split": "ood_o",
+"task": "ov_tray__objv_0b57e80bcfc8",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70149,
+"split": "ood_o",
+"task": "ov_tray__objv_0b57e80bcfc8",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70150,
+"split": "ood_o",
+"task": "ov_tray__objv_337bb3f78267",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70151,
+"split": "ood_o",
+"task": "ov_tray__objv_337bb3f78267",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70152,
+"split": "ood_o",
+"task": "ov_tray__objv_337bb3f78267",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70153,
+"split": "ood_o",
+"task": "ov_tray__objv_337bb3f78267",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70154,
+"split": "ood_o",
+"task": "ov_tray__objv_337bb3f78267",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70155,
+"split": "ood_o",
+"task": "ov_tray__objv_337bb3f78267",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70156,
+"split": "ood_o",
+"task": "ov_tray__objv_337bb3f78267",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70157,
+"split": "ood_o",
+"task": "ov_tray__objv_337bb3f78267",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70158,
+"split": "ood_o",
+"task": "ov_tray__objv_337bb3f78267",
+"variant": "standard",
+"table_z": 0.85
+},
+{
+"seed": 70159,
+"split": "ood_o",
+"task": "ov_tray__objv_337bb3f78267",
+"variant": "standard",
+"table_z": 0.85
+}
+]
+}
