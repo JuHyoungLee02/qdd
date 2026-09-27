@@ -13,6 +13,7 @@ case $T in d) F=pt; TR=d-min;; h) F=nd-xyz; TR=h-min;; esac
   --manifest $MAN >> $L/build_$T.log 2>&1
 [ -f $D/train_$TR.jsonl ] || nice $P tools/teach_pt/convert_min.py $S/train_$F.jsonl $D $TR train_$TR.jsonl >> $L/build_$T.log 2>&1
 if [ $# -gt 0 ]; then
+  rm -f $D/train_${T}_mix.jsonl  # never write through the no-pack symlink onto the base file
   nice $P tools/teach_pt/mix_pack.py $D/train_$TR.jsonl $D/train_${T}_mix.jsonl "$@" >> $L/build_$T.log 2>&1
 else
   ln -sfn $D/train_$TR.jsonl $D/train_${T}_mix.jsonl
