@@ -18,10 +18,10 @@
 | 1 | **BEHAVIOR-1K 2025 데모** | MIT·게이트 없음, m 깊이+분할+과제 물체 GT+보정 전부 있음, 1만 편, 변환기 이미 운용 중(D·H 5,277행). 자산 재렌더만 별도 약관 필요 |
 | 2 | **ROBOTIS AI Worker RB2/RB3** | 우리 로봇 계열(FFW-BG2), T4 실루엣 보정(2.32 px) + 스테레오 깊이(관문 통과 81 %) 관문 통과, 변환기 생산판 완료(투영점 1.8만 + C′ 3,073 + 깊이 7,050장) |
 | 3 | **MolmoBot Franka** | ODC-BY·게이트 없음, 계획기 10단계가 우리 6단계와 거의 1:1, 위에서 잡기 93.7 %, C′ 3,381행, 전체 약 9.2만 꾸러미(수백만 행 추정) |
-| 4 | **RoboTwin 2.0** | MIT·게이트 없음, 시뮬 5기체, 위에서 잡기 100 %(집기 과제), C′ 353행, 깊이는 재생 필요(SAPIEN) |
+| 4 | **RoboTwin 2.0** | MIT·게이트 없음, 시뮬 5기체, 위에서 잡기 100 %(집기 과제), C′ 353행, 깊이는 재생 필요(SAPIEN). **D 변환 보류**: 눈 확인에서 일부 과제의 물체 이름이 뒤바뀜('kitchenpot'이 캔 위) — 이름 매핑부터 고침 |
 | 5 | **CALVIN** (신규 발견, 미착수) | MIT, 정적+손목 RGB-D 네이티브, 시뮬 카메라 보정 코드에 있음, Franka. **아직 아무 변환기도 없음 — 우선순위 대비 방치**, 다음 착수 후보 1순위 |
 | 6 | **DROID**(lerobot C′ 완료 + 원본 스테레오는 후보) | CC BY 4.0·게이트 없음, 실물 Franka 9.2만+ 편, lerobot판 C′ 3,857행 완료, 깊이는 원본 스테레오 처리해야 함(설계만, 13.1 DROID 오른쪽 카메라 보류) |
-| 7 | OXE 보정+깊이 4종(taco_play·maniskill·stanford_robocook·fmb) | 소규모지만 즉시 변환 가능(보정+깊이 필드 확인됨), 라이선스는 개별 확인 필요 |
+| 7 | OXE ManiSkill (+ 깊이만 있는 OXE 6종) | ManiSkill만 깊이 단위(÷1024 m)와 K·외부 보정이 명세에 있음 → D·H 3,850행 완료. stanford_robocook은 외부만(K 없음), taco_play·fmb·uiuc_d3field·berkeley_autolab_ur5·nyu_franka_play는 보정 없음 → 관문 불통(features.json 확인) |
 | 게이트 1 | InternData-M1 | 필드가 우리 형식에 가장 딱 맞음(`tcp_2d_trace`·`bbox3d`·`pick/place_obj_uid`), CC BY-NC-SA·게이트, 사용자 동의 필요 |
 | 게이트 2 | AgiBot World Beta | 규모 최대(100만+ 궤적, 48 TB), 깊이 PNG 있으나 단위 확인 필요, CC BY-NC-SA·게이트 |
 
