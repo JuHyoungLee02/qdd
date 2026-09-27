@@ -12,7 +12,7 @@ export OMP_WAIT_POLICY=PASSIVE
 for ARM in "$@"; do
   echo "START train $ARM $(date -u +%FT%TZ) gpu=$G" >> $L/$ARM.log
   CUDA_VISIBLE_DEVICES=$G PYTHONPATH=$C /data/harvest/venv_train/bin/python -m harvest.teach_l8.train \
-    --data $D/$ARM.jsonl --out $D/run_$ARM --epochs 3 --max-steps 816 --micro 8 --accum 2 --log-every 10 --workers 3 \
+    --data $D/$ARM.jsonl --out $D/run_$ARM --epochs 3 --max-steps ${H2H_STEPS:-816} --micro 8 --accum 2 --log-every 10 --workers 3 \
     >> $L/$ARM.log 2>&1
   echo "EXIT train $ARM $? $(date -u +%FT%TZ)" >> $L/$ARM.log
   EP=$(ls -d $D/run_$ARM/epoch* 2>/dev/null | sort -V | tail -1)
