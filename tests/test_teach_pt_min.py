@@ -86,6 +86,22 @@ def test_convert_matches_build(roots):
             assert all(json.loads(r["answer"])["command"].get("mode") != "eef" for r in ctrl)
 
 
+def test_min_episodes_closed_loop(tmp_path):
+    """r-min / d-min / h-min through the runtime episode: the truth succeeds, the request is the S-min body."""
+    from harvest.astra_solo.pt_episode import PtEpisode
+    from harvest.astra_solo.pt_truth import HTruth, NdTruth, PtTruth
+    for iface, mk in (("r-min", lambda w: NdTruth(w, "nd-xyz")), ("d-min", PtTruth), ("h-min", HTruth)):
+        w = PadWorld()
+        m = mk(w)
+        ep = PtEpisode(w, m, 3, "mug_tray", str(tmp_path / iface), iface=iface)
+        m.ep = ep
+        res = ep.run()
+        assert res["success"], (iface, res["end_reason"], res["history"])
+        t = (tmp_path / iface / "calls" / "c000" / "prompt.txt").read_text(encoding="utf-8")
+        assert "Table top surface" not in t and "Grasping an upright" not in t and "WHITE GRID" not in t
+        assert ("POINT, THEN ACT" in t) == (iface == "d-min") and (HY.TAG_ON in t) == (iface == "h-min")
+
+
 def test_train_rows(roots):
     out = roots / "data"
     out.mkdir(exist_ok=True)

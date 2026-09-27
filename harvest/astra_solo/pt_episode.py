@@ -31,7 +31,9 @@ from .executor import MinJerkExec
 from .overlay import head_overlay, png_bytes
 
 HOLD_GAP_M = 0.005
-IFACES = {"pt": PT.VERSION, "nd-xyz": "nd-xyz@v1", "nd-est": "nd-est@v1", "nd-pt": "nd-pt@v1", "h": HY.VERSION}
+IFACES = {"pt": PT.VERSION, "nd-xyz": "nd-xyz@v1", "nd-est": "nd-est@v1", "nd-pt": "nd-pt@v1", "h": HY.VERSION,
+          "r-min": "dist8-r-min@v1", "d-min": "dist8-d-min@v1", "h-min": "dist8-h-min@v1"}
+MIN_IFACES = ("r-min", "d-min", "h-min")  # E-DIST8: S-min body (teach_pt.min_format), ring-only head image
 H_DEPTH = ("on", "noisy", "off")  # track H evaluation modes: sim depth / zed_mini stereo noise / no depth
 
 
@@ -47,8 +49,12 @@ class PtEpisode(Episode):
         if h_depth not in H_DEPTH:
             raise ValueError(h_depth)
         self.h_depth, self.h_branches, self.h_used_depth = h_depth, [], None
-        self.prompt_id = PT.PROMPT_ID if iface == "pt" else (HY.PROMPT_ID if iface == "h" else
-                                                             NP.PROMPT_IDS[self.version])
+        if iface in MIN_IFACES:
+            import hashlib
+            self.prompt_id = hashlib.sha256((self.version + PT.PROMPT_ID + HY.PROMPT_ID).encode()).hexdigest()[:12]
+        else:
+            self.prompt_id = PT.PROMPT_ID if iface == "pt" else (HY.PROMPT_ID if iface == "h" else
+                                                                 NP.PROMPT_IDS[self.version])
         self.grip_offset = None
         self.plane = None
         self.est_table = None
@@ -58,9 +64,11 @@ class PtEpisode(Episode):
 
     # ------------------------------------------------------------------ model
     def _validate(self, text):
-        if self.iface == "h":
+        if self.iface in ("h", "h-min"):
             return HY.validate(text)
-        if self.iface == "pt":
+        if self.iface == "r-min":
+            return ND.validate(text, "nd-xyz@v1")
+        if self.iface in ("pt", "d-min"):
             return PS.validate(text, allow_eef=self.allow_eef)
         return ND.validate(text, self.version, allow_eef=self.allow_eef)
 
@@ -225,6 +233,17 @@ class PtEpisode(Episode):
             ims = ring_ims + ([(HY.DEPTH_LABEL, HY.depth_png(self.h_used_depth))] if self.h_used_depth is not None
                               else [])
             return HY.request(statics["nd-xyz@v1"], nowt + nd_note, self.h_used_depth is not None), ims
+        if self.iface in MIN_IFACES:
+            from ..teach_pt import min_format as MF
+            v2full = statics["v2"] + nowt + V2P.ANSWER + note
+            if self.iface == "r-min":
+                return MF.r_text(v2full), ring_ims
+            if self.iface == "d-min":
+                return MF.d_text(v2full), ring_ims
+            self.h_used_depth = self._h_depth(obs)
+            ims = ring_ims + ([(HY.DEPTH_LABEL, HY.depth_png(self.h_used_depth))] if self.h_used_depth is not None
+                              else [])
+            return MF.h_text(v2full, self.h_used_depth is not None), ims
         return nd[self.version], ring_ims
 
     def _h_depth(self, obs):
@@ -260,7 +279,8 @@ class PtEpisode(Episode):
             obs = w.observe(depth=True)
             self.depth = (obs.depth or {}).get("head")
             if self.depth is None and (self.iface == "pt" or self.save_nd or self.save_v2 or
-                                       (self.iface == "h" and self.h_depth != "off")):
+                                       (self.iface in ("h", "h-min") and self.h_depth != "off") or
+                                       self.iface == "d-min"):
                 raise RuntimeError("this E-PT episode needs the head depth (world built with depth=True)")
             self.cams, self.head = dict(obs.cams), obs.cams["head"]
             if self.depth is not None:
@@ -320,13 +340,13 @@ class PtEpisode(Episode):
     def _save(self, res):
         res["prompt_id"] = self.prompt_id
         res["prompt_version"] = self.version + ("+px" if self.coords == "px" else "")
-        modes = PS.MODES if self.iface in ("pt", "nd-pt") else (HY.MODES if self.iface == "h" else
+        modes = PS.MODES if self.iface in ("pt", "nd-pt", "d-min") else (HY.MODES if self.iface in ("h", "h-min") else
                                                                ("eef", "edit", "gripper", "stop"))
         res["modes"] = {k: sum(1 for c in self.calls if ((c.get("parsed") or {}).get("command") or {}).get("mode") == k)
                         for k in modes + (("eef",) if self.allow_eef and "eef" not in modes else ())}
         res["n_point_unresolved"] = sum(e["event"] == "point_unresolved" for e in self.events)
         res["interface"] = self.iface
-        if self.iface == "h":
+        if self.iface in ("h", "h-min"):
             n = len(self.h_branches)
             res["h_depth"] = self.h_depth
             res["h_branches"] = {b: sum(x["branch"] == b for x in self.h_branches) for b in ("pt", "xyz", "none")}
