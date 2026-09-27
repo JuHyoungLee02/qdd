@@ -151,7 +151,7 @@ def fig_overview():
     bw, bh, by = 2.16, 0.60, 0.05
     bx = [0.05, 2.36, 4.67]
     rbox(ax, bx[0], by, bw, bh, "astra", "상위 계획기 증류 (주 기여)", fs=6.4, bold=True,
-         sub="Astra·시뮬 참값 선생 → 학생이 간 상태에 라벨\n8B 대리 → 35B, 줄기 R·H·D를 끝까지 짝 비교", sfs=5.2)
+         sub="Astra·시뮬 참값 선생 → 학생이 간 상태에 라벨\n8B 대리 → 35B, 줄기 D 대 H(R은 대조)", sfs=5.2)
     rbox(ax, bx[1], by, bw, bh, "mem", "다양화 데이터", fs=6.4, bold=True,
          sub="L8-X: 받침면 9·과제 14·높이 약 0.45–1.08 m\n공개 데이터: 좌표계 만들기 대 카메라 없는 조종", sfs=5.2)
     dbox(ax, bx[2], by, bw, bh, "#EEF4FB", VL[1])

@@ -167,7 +167,7 @@
   \item \textbf{결과:} ac0c1cc(\texttt{results/\allowbreak{}strip8b.\allowbreak{}md}): KEEP\_PRIVILEGED(주·둘째 판정 같음). S-full은 이제 요청의 참 높이를 쓴다 --- 옛 OOD-H 3D 좁게 31.2 $\rightarrow$ 4.0 mm, 넓게 70.5 $\rightarrow$ 4.5 mm; 최소 판은 약 21 mm. 최선 최소 판 S-drop은 DEV 비열등(2.5 mm)이나 OOD-H 짝 차 +16.4 [+9.9, +23.6] mm로 REMOVE 불가. E-STRIP8의 NOT\_NEEDED는 한 높이 데이터의 교란이었다.
   \item \textbf{결과:} 조사 a14a577(\texttt{research/\allowbreak{}privileged\_\allowbreak{}info\_\allowbreak{}training\_\allowbreak{}survey}): 문헌의 특권 정보는 입력이 아니라 목표·교사·보상 --- (a) 출력 쪽 보조 필드(ECoT-Lite CoRL 2025: 학습에만 쓰고 추론 때 빼도 이득 상당 부분 유지), (b) 교사-학생(우리는 교사 출력이 참값과 같아 이득 적음), (c) 특권 입력 드롭아웃·커리큘럼, (d) 센서(깊이)에서 재기. 모방 격차 위험: RGB에서 원리적으로 안 보이면 오차가 남음 --- D의 3.5 mm가 (d)의 우리 쪽 증거. 격자·점: 점만 찍고(출력) 입력 영상에 격자를 덧그리지 않음(덧그림은 미세조정 없는 API 모델용).
   \item \textbf{그래서(결정):} E-PRIV8 사전 등록 7fba0be(학습 전, 무료): M1(참값으로 감독한 table\_z·obj\_h 추정 필드, 50 \% 생략, 추론 때 유지·제거 두 판)·M3(손 정보 입력 커리큘럼 p 1 $\rightarrow$ 0, 마지막 40 \% 0) 대 R0 = S-min, L8-X b1, 816걸음; 채택 = 새 높이 3D $\leq$ R0의 0.6배이자 $\leq$ 12 mm, 본 높이 $\leq$ R0 + 1 mm. 변경 1 247b0b9(G-px 학습 전, M1·M3 답 보기 전): G-px = E-DIST8 B-D 행 + 머리 영상 0--1000 픽셀 좌표 격자(100마다), 채택 = 새 높이 점 px $\leq$ B-D의 0.8배 등.
-  \item \textbf{진행 중·대기:} \tentative{E-PRIV8 진행 중. 논문 3.2절·5절에 KEEP\_PRIVILEGED와 E-PRIV8 방법만 반영(09-27 12:4x).}
+  \item \textbf{참고:} E-PRIV8 결과는 B19(ecf68a3). 논문 3.2절·5절에 KEEP\_PRIVILEGED 반영(09-27 12:4x).
 \end{itemize}
 
 \paragraph{B18. E-DIST8 중간 --- D는 높이·장면, R은 새 물체, H는 깊이 따라}
@@ -177,5 +177,35 @@
   \item \textbf{결과:} \texttt{results/\allowbreak{}dist8.\allowbreak{}md}(중간): 접근 3D 중앙 D 대 R --- L8-X OOD-H 4.2 대 20.1 mm, OOD-H-lift 4.4 대 11.2, OOD-S 4.5 대 7.5, OOD-T 4.0 대 7.1(모두 BETTER), OOD-D SAME. 새 물체 범주 OOD-O는 D 96.9 대 R 25.9 mm(WORSE) --- 변환기 참값 상한 3.5 mm라 모델이 본 적 없는 물체에 점을 못 찍음.
   \item \textbf{결과:} 데이터 효과: R은 A $\rightarrow$ B에서 크게 좋아짐(OOD-H 43.0 $\rightarrow$ 20.1, OOD-O 89.0 $\rightarrow$ 25.9, HL 131.8 $\rightarrow$ 11.2 mm), D는 A $\approx$ B. H(수준 A, 예비): 깊이 있음은 D와 비열등이나 dev\_x·OOD-H-lift 꼬리가 나쁨, 깊이 없음은 R과 비열등. zed\_mini 잡음은 D 중앙 +1--3 mm, 그래도 OOD-H·S·T·HL에서 R보다 나음.
   \item \textbf{그래서(결정):} 잠정: 높이 일반화는 깊이 변환이 풀었고 새 물체는 다양화 데이터로도 안 풀림 $\rightarrow$ 다음은 D의 새 물체 점 실패 분해, 폐루프(영상), 공개 팩 수준. 요청은 STRIP8b 판정대로 손 정보 없이.
-  \item \textbf{진행 중·대기:} \tentative{중간 결과 --- 한 시드·8B·오프라인. H 확정은 B+px 수준에서.}
+  \item \textbf{참고:} 중간 결과 --- 한 시드·8B. 폐루프·원인 분해와 등록 변경 4·6·7은 B20, 실행기 규칙은 B21.
+\end{itemize}
+
+\paragraph{B19. E-PRIV8 결과 --- 손 정보를 학습에서만 써도 NOT\_ADOPT, 단안 한계라 높이는 깊이가}
+{\small 09-27 12:5x -- 13:3x KST}
+\begin{itemize}
+  \item \textbf{해 봄:} 사전 등록 7fba0be + 변경 1 247b0b9(학습 전): M1(추정 필드 참값 감독, 추론 때 생략·유지), M3(손 정보 입력 커리큘럼 1 $\rightarrow$ 0), G-px(B-D + 머리 영상 0--1000 픽셀 격자) 대 R0 = S-min(b1)·B-D, L8-X b1 816걸음.
+  \item \textbf{결과:} ecf68a3(\texttt{results/\allowbreak{}priv8.\allowbreak{}md}): 세 판 모두 NOT\_ADOPT. 새 높이 3D --- R0 20.1 mm, M1-drop 12.4(문턱 12.0을 0.4 넘음), M3 10.9(통과)이나 본 높이 7.8 > 6.1(실패), M1-keep 20.5; 짝 평균 차 구간 모두 0 포함. 원인 MONOCULAR\_LIMIT: M1-keep의 table\_z 추정 오차 중앙 새 높이 20 mm(p90 40) = 3D 오차와 같은 크기. G-px: 점 픽셀 1.0 대 1.0 px, 3D 4.0 대 4.2 mm, 짝 차 +1.9 [$-$3.4, +7.9] $\rightarrow$ NOT\_ADOPT(점이 이미 약 1 px).
+  \item \textbf{그래서(결정):} 최소 요청 + xyz(R)의 높이 오차는 학습법으로 크게 줄지 않는다 $\rightarrow$ 깊이 줄기(D·H)로 간다(등록 3절 규칙). D의 새 높이 4.2 mm = 참 손 정보 입력 교사 3.3--4.0 mm 수준 --- 손 정보의 척도·높이를 깊이가 대신한다. 격자 덧그림은 쓰지 않는다(점만).
+\end{itemize}
+
+\paragraph{B20. 최종 35B는 D 대 H만 --- 바로 쓸 수 있는 깊이 데이터, R은 대조군}
+{\small 09-27 12:5x -- 15:xx KST}
+\begin{itemize}
+  \item \textbf{결과:} E-DIST8 중간 폐루프(680d2c5·f703243, L8-X 8편): B-D 2/8(OOD-H 0.74 2/2) 대 B-R 0/8. 실패 분해: D 높은 탁자 0.98 = 든 머그가 쟁반을 가려 깊이 중심 19--23 mm 치우침 $\times$ `above' 20호출 되풀이(목표 계산 $\times$ 의도 고리); D 새 물체 = 점이 익숙한 빨간 머그로(오프라인 53 \%, 대상 식별), 1편은 `above' 고리; R = 첫 닫기가 물체 위 36--118 mm(높이 추정). D에서 닫은 편은 모두 쥐고 들었다 --- 실패는 인식·목표·의도.
+  \item \textbf{사용자} (ul 156, 13:4x KST): \intent{니금 바로쓸 수 있는걸로 해보자 소규모할때.}
+  \item \textbf{사용자} (ul 156, 13:4x KST): \intent{그럼 댑스가 나은지 하이브리드가 나은지만 비교해보면 될듯}
+  \item \textbf{그래서(결정):} 정본 §98 보충 2(3db7921): 최종 35B 소규모는 게이트 없이 바로 쓸 수 있는 깊이 데이터(L8-X, RB2 스테레오, BEHAVIOR 2025 데모, OXE 깊이 필드)로 D 대 H 두 판만. 버리기 전 재검증 근거: RGB만의 새 높이 오차 12--21 mm(STRIP8b·PRIV8) 대 D 4.2 mm, 폐루프 R 0/8 대 D 2/8. R 결과는 대조군으로 남김. 게이트·DROID 원본은 효과 확인 뒤 사용자에게 제안.
+  \item \textbf{그래서(결정):} E-DIST8 등록 변경(모델 답 보기 전): 4(5c2e512) 공개 데이터 팔은 기본 유지 + 공개 25 \% 추가, 1,088걸음(816 / 0.75), 먼저 돈 816걸음 두 판은 버림; 6(5a5c958) R 줄은 B+px-R 뒤 멈춤, C-R·C+px-R·A+px-R 취소, C-H 추가; 7(65e8beb) D·H 폐루프는 BoostEpisode(fix\_mem, fix\_loop)로.
+  \item \textbf{결과:} 논문 반영(09-27 16:3x): 3.2절 제목을 `깊이 줄기 D·H를 최종 35B까지, R은 대조군'으로, 사다리 (2)를 D·H 두 판으로, 주 결과 표의 35B R 줄 삭제, 5절에 폐루프 원인 분해.
+\end{itemize}
+
+\paragraph{B21. boost1 --- 실행기 규칙 두 개로 D 폐루프 2/8 $\rightarrow$ 4/8 (ADOPT)}
+{\small 09-27 13:1x -- 14:2x KST}
+\begin{itemize}
+  \item \textbf{해 봄:} 사전 등록 aafecbf(실행 전, 무료, 재학습 없음): 폐루프 분해에서 나온 두 코드 수정 --- (i) 쥐기 전 깊이 점을 기저 좌표로 기억해 운반 중 가림 편향 대신 사용, (ii) 같은 목표의 `above' 되풀이를 다음 단계(잡기·놓기)로 전환. 같은 B-D·같은 8편, 채택 = 성공 차 $\geq$ 2이고 퇴행 0.
+  \item \textbf{결과:} d1f33f3(\texttt{results/\allowbreak{}boost1.\allowbreak{}md}): ADOPT --- 2/8 $\rightarrow$ 4/8, 퇴행 0. OOD-H 0.98 2/4 $\rightarrow$ 4/4(운반 목표 xy 중앙 18.7 $\rightarrow$ 13.1 mm, `above' 한도 도달 편 6 $\rightarrow$ 3), OOD-O 0/4 그대로(대상 식별 실패, 전환된 grasp가 엉뚱한 곳에서 닫혀 머그를 탁자 밖으로 민 편 1). x2 GPU 1 약 1.1 GPU-h, 0원.
+  \item \textbf{그래서(결정):} D·H 실행기 기본값 \texttt{BoostEpisode(fix\_\allowbreak{}mem=True, fix\_\allowbreak{}loop=True)}, H에도 확장(16301ef). 논문에는 실행기 규칙으로 명시하고, 모델 효과와 섞이지 않게 규칙 켠 판·끈 판을 따로 보고. 남은 실패(새 물체 대상 식별)는 boost2·B+obj 쪽.
+  \item \textbf{해 봄:} boost1b 사전 등록 5c25b5d(실행 전, 재학습 없음): 기억한 점이 장면 변화 뒤 낡는 위험 대책 --- 장면 변화 검사, FK 재투영 등. fe08 두 레인으로 이전(41ada79).
+  \item \textbf{해 봄:} boost2 사전 등록 76af164(실행 전, 무료): D 줄기 DAgger 한 바퀴 --- B-D가 b1 TRAIN 장면을 몰고 참값 라벨을 붙여 재학습.
+  \item \textbf{진행 중·대기:} \tentative{boost1b·boost2 진행 중 --- 결과 문서 전.}
 \end{itemize}

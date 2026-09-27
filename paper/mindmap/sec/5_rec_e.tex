@@ -152,5 +152,25 @@
 \begin{itemize}
   \item \textbf{결과:} e31f1df(\texttt{results/\allowbreak{}h2h.\allowbreak{}md}): 기본 b1 6,521행 중 2,000행을 공개 묶음으로 바꾼 판. t1t4 대 cp는 9개 세트 모두 SAME $\rightarrow$ 학습 효과로 못 가름, 등록대로 점수판의 관문·수율·위험 칸으로 결정. 두 묶음 모두 기본보다 나아지지 않음 --- t1t4는 OOD-H-lift·D·S, cp는 옛 OOD-H·OOD-H-lift·D·T에서 WORSE. 좌표 누수(source·frame 글) 0.
   \item \textbf{그래서(결정):} 묶음 폐기 아님(ul 143). 원인 후보는 같은 걸음에서 L8-X 행 31 \% 감소(희석). 추가 판 사전 등록 191fae6(학습 전): 기본 6,521 + 같은 묶음 2,000행, 1,066걸음(기본 노출 같게), 같은 9 세트·규칙.
-  \item \textbf{진행 중·대기:} \tentative{추가 판 진행 중. 작전 T 최종 결정은 사용자 확인 대기.}
+  \item \textbf{참고:} 추가 판 결과와 사용자 결정(ul 155)은 E18.
+\end{itemize}
+
+\paragraph{E18. 작전 T 최종 --- T1+T4 채택, 그러나 `추가' 판에서 C$'$가 뒤집혀 세 시드 재비교}
+{\small 09-27 12:5x -- 16:2x KST}
+\begin{itemize}
+  \item \textbf{사용자} (ul 155, 12:5x KST): \intent{T1+T4 채택 (추천)}
+  \item \textbf{그래서(결정):} 정본 §97 보충 3(8dec2fe): 좌표계 없는 공개 데이터는 T1 자기 보정 + T4 렌더 정렬, T0 픽셀 경로는 공통 기반, T3 폐기 유지, C$'$는 추가 판 결과까지 폐기 보류. E-DIST8용 T1+T4 팩(1135c5c): 픽셀 3,441행 등.
+  \item \textbf{결과:} 추가 판 35a90e7(\texttt{results/\allowbreak{}h2h.\allowbreak{}md} 추가 판 절, 191fae6 등록): 기본 6,521 전부 + 묶음 2,000, 1,066걸음. add\_cp는 L8-X OOD-H BETTER(2.0 대 4.0 mm)·WORSE 없음, add\_t1t4는 OOD-H-lift·OOD-D WORSE, t1t4 대 cp는 3개 세트 WORSE(나머지 SAME). 누수 0. 해석 후보: T1+T4의 점 답(0--1000)이 xyz 제어 답과 형식이 달라 높이 추정과 간섭 --- 점 + 깊이 줄기에서는 반대일 수 있음.
+  \item \textbf{그래서(결정):} ul 143 규칙: C$'$ 보류를 풀되 T1+T4도 버리지 않는다. E-H2H-T2 사전 등록 2bab779(학습 전): 3 시드, xyz·D·H 세 줄기, add\_both와 h\_both 점검 팔. 공개 데이터 비율은 그 결과로.
+  \item \textbf{진행 중·대기:} \tentative{E-H2H-T2 진행 중(e9f3·fe08·메인 GPU 레인).}
+\end{itemize}
+
+\paragraph{E19. D·H 깊이 팩 --- BEHAVIOR + ManiSkill 9,127행, 변환기 오차가 큼}
+{\small 09-27 13:4x -- 16:2x KST}
+\begin{itemize}
+  \item \textbf{해 봄:} fcf1cb1(ul 156): dh 행 = 점 + 머리 m 깊이 + 보정(D는 점·의도, H는 + position\_m), 변환기 관문, BEHAVIOR 양자화 예산, TF 없는 OXE ManiSkill RLDS 읽기. c5d8919: ManiSkill 목표 = 유효하면 물체 초기 자세, 아니면 첫 닫기 때 TCP; e9f3 샤드 병렬. 보정값 없는 다른 OXE 6종은 제외.
+  \item \textbf{결과:} 팩 dh\_D·dh\_H 각 9,127행(BEHAVIOR 5,277 + ManiSkill 3,850, 보드 16:28). ManiSkill 시운전 20편: 깊이 |dz| 중앙 2.6 cm, 변환기 오차 1.4 cm --- 우리 시뮬 수 mm보다 한 자릿수 큼.
+  \item \textbf{그래서(결정):} 5389764: 행마다 변환기 오차 저장, 남긴 행 오차 분포, 더 엄한 문턱 판(--tol=0.02 $\rightarrow$ dh\_*\_2cm)을 따로. 논문 5절에 한계로 적음.
+  \item \textbf{사실 확인:} 자원: 09-27부터 e9f3·fe08 노드 파드를 더해 병렬 레인(E-H2H-T2, boost1b, L8-D 분할)을 늘림. fe08 GPU3 Isaac 기동 DEVICE\_LOST라 GPU4·5 사용(41ada79).
+  \item \textbf{진행 중·대기:} \tentative{D 대 H 최종 35B 학습 전 --- 팩 효과는 E-DIST8 C 수준·최종 학습에서.}
 \end{itemize}
