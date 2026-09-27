@@ -42,6 +42,30 @@ CONTRA\-DICT & \multicolumn{3}{p{0.67\linewidth}@{}}{판본$+1$, 미확정 표 �
 
 \paragraph{적합성 감사.} 독립 검증 에이전트가 등록 문서에서 대조표를 새로 만들어 평가 코드가 숫자와 조건 문장을 그대로 구현하는지 확인한다. 두 번 연속 결함 없이 끝나야 통과이며, \tentative{37}회차 가운데 36·37회차가 연속으로 통과해 파이프라인 기준점을 고정했다. 감사는 실행 확인만으로는 보이지 않던 불일치를 여러 건 찾았다. 합의 비율 0.67을 소수로 비교해 ``세 표 중 두 표''가 확정되지 않던 것, 기준 조건의 정의가 등록과 다르던 것 등이다.
 
+\section{데이터 카드: L8-X 외부 자산과 저작자 표시}
+\label{sec:supp_data}
+L8-X의 가구 장면에는 외부 3D 자산을 쓴다(\cref{tab:supp_assets}). 상업적 이용과 수정이 허용되는 라이선스만 남겼다. Objaverse 물체는 CC0·CC BY·CC BY-SA만 쓰고, 비상업(NC, 687개)과 변경 금지(ND) 물체는 뺐다. 자산 목록은 학습 전에 물체 범주의 해시로 학습과 OOD-O 보류로 나누었고, 방은 이름의 해시로 20\%를 OOD용으로 보류했다.
+
+\paragraph{저작자 표시 의무.} CC BY 계열 자산은 원 저작자, 출처, 라이선스, 변경 여부를 밝혀야 한다. Objaverse 물체는 개별 저작자가 다르므로 물체마다 표시한다. 그 목록의 출처는 저장소의 자산 표 \texttt{harvest/sim/assets\_x/objects\_objv.json}이다. 이 표는 물체마다 \texttt{license}와 \texttt{attribution}(저작자 \texttt{creator}, 원 모델 주소 \texttt{uri})을 싣고 있으며, MolmoSpaces 배포본의 메타데이터에서 옮겼다. 방 배경(\texttt{rooms\_ithor.json})과 THOR 가구(\texttt{assets\_table.json})는 표 머리에 출처와 라이선스를 적었다. 우리가 한 변경은 USD 변환, 크기·기준 자세 맞춤, 충돌체 설정이다. 데이터를 공개할 때는 이 표에서 만든 저작자·라이선스 목록을 함께 싣고, CC BY-SA 물체(\tentative{12}개)를 바꾼 자산을 배포하게 되면 같은 라이선스로 배포한다. 영상과 라벨만 공개하는 경우에도 목록은 싣는다.
+
+\begin{table}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}p{0.25\linewidth}p{0.25\linewidth}p{0.20\linewidth}p{0.26\linewidth}@{}}
+\toprule
+자산 & 출처 & 라이선스 & 수와 쓰임 \\
+\midrule
+공개 3D 물체 & Objaverse 1.0~\cite{objaverse2023}, MolmoSpaces 변환본 & CC BY 4.0 355, CC BY-SA 4.0 12, CC0 11 & 378개(학습 291, OOD-O 87); 선 자세 안정 150 \\
+방 배경 & AI2-THOR iTHOR~\cite{ai2thor2017}, MolmoSpaces 변환본 & CC BY 4.0 & 평면도 120 중 작업 구역이 비는 38(렌더만) \\
+가구 & THOR 가구, MolmoSpaces 변환본 & CC BY 4.0 & 탁자·수납장 등 \\
+작업대·바구니 & ROBOTIS cyclo\_lab & Apache-2.0 & 작업대 3, 바구니 1 \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{L8-X 외부 자산.} 물체별 저작자 표시는 \texttt{objects\_objv.json}의 \texttt{attribution} 칸에 있다. 첫 동결 묶음(1,196편)의 받침면은 원시 상자 조합이며, 이 자산들은 다음 묶음부터 들어간다.}
+\label{tab:supp_assets}
+\end{table}
+
 \section{입력 형식 시험과 채택하지 않은 보강}
 \label{sec:supp_tests}
 아래는 입력 형식과 학습 보강을 고르기 위한 소규모 시험이다. 공개 실물 데이터에서 돈 시험은 파이프라인 시험이며, 수치는 형식 선택에만 쓰고 결과로 쓰지 않는다(\cref{tab:supptests}).

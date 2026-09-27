@@ -117,3 +117,32 @@
   \item \textbf{사용자} (ul 147, 04:5x KST): \intent{데이터는 1년반해제해줄게}
   \item \textbf{그래서(결정):} CLAUDE.md 예외 줄(99a98d9·d0fdc10): 데이터셋에는 1.5년 규칙을 적용하지 않음(DROID·RH20T·OXE 등 사용 가능), 논문·방법 근거에는 유지; 라이선스·게이트·신뢰도·Astra 전송 제한은 그대로. 논문 3.3절에 한 문장.
 \end{itemize}
+
+\paragraph{E14. L8-X --- 심 환경을 먼저 약 10배로, 리프트도 쓴다 (중간 결과)}
+{\small 09-27 03:0x -- 08:3x KST}
+\begin{itemize}
+  \item \textbf{사용자} (ul 150, 03:0x KST): \intent{관 동의가 필요한 공개 데이터를 쓰긴할거임 근데 일단은 없는 것들에서 먼저 보고 나중에 꼭 말해줘 잘된다면 그거 하자고. 그치 저 L8이라는 것 자체를 여런 테스크에다가 여러 높이 장애물을 더 훨씬 다변화할 수 있음 좋겠어}
+  \item \textbf{그래서(결정):} 정본 §97 보충 1 줄(b6fb619): 게이트 공개 데이터는 비게이트 먼저, 잘되면 사용자에게 게이트 데이터 사용을 제안. L8-D 다양화 생성기 착수(등록 e4dced8).
+  \item \textbf{사용자} (ul 151, 03:5x KST): \intent{그 우리가 만든 심환경 더 복잡하게 하는걸 먼저 하고 나서 거기서 다 돌리도록 해야해 알겠지? 기존건 너무 몇개가 없어서 환경도 좀 많이 다양하게 한 지금의 10배? 책상높이도 다르고 환경도 책상이 아닌 더 복잡한 테스크이런걸 만들어봐도 좋을듯}
+  \item \textbf{사용자} (ul 152, 05:0x KST): \intent{리프트도 쓰자}
+  \item \textbf{그래서(결정):} prereg\_l8d 변경 4(36afa28): 리프트 관절 [$-$0.50, 0.00]로 약 0.45--1.08 m, 리프트 값은 로봇 자기 정보로 요청에. OOD-H-lift(0.45·0.59·1.08 m) 학습 전 동결. 변경 5(a5792b7): 가구 장면·받침면 사이·가구 통 과제, OOD-S(counter\_cabinet·shelf\_tall) 동결. DEV 세트 dev\_x(34800--34999) 동결(3d06d98).
+  \item \textbf{결과:} cd23596(\texttt{results/\allowbreak{}l8d.\allowbreak{}md}, 중간): 관문 G-H 0.74--0.98 m 모든 높이 참값 $\geq$ 8/10(계획 $-$5/+10 cm보다 넓은 $-$11/+13 cm), 리프트 끝점 0.45·1.08 m 5/5. 가구 table 10/10·counter 9/10·low\_table 8/10·shelf\_low 9/9·multi\_level 8/8. 첫 동결 묶음 b1 1,196편(성공 937, 에폭 27,968행). 다양성(L8 대비): 받침면 1 $\rightarrow$ 9, 탁자 높이 1 $\rightarrow$ 134, 과제 3 $\rightarrow$ 14, 조합 13 $\rightarrow$ 1,273(약 98배).
+  \item \textbf{결과:} 자산 묶음 2(ec7c257·32fda24·5473bb8·df9d0ed): cyclo\_lab 작업대·바구니(Apache-2.0), MolmoSpaces Objaverse 물체 378개(CC0·CC BY·CC BY-SA만, NC 687 제외, 물체마다 저작자 표시; 선 자세 안정 150), iTHOR 방 배경 38개(CC BY 4.0, 이름 해시로 20 \% OOD 보류). 첫 묶음 b1은 원시 상자 받침면이고 메시 자산은 다음 묶음부터.
+  \item \textbf{그래서(결정):} 이후 모든 상위 실험(E-DIST8·E-STRIP8b·E-H2H-T·최종 35B)은 L8-X에서. 논문 부록에 데이터 카드(외부 자산·라이선스·저작자 표시 목록 출처 = \texttt{objects\_\allowbreak{}objv.\allowbreak{}json}의 attribution 칸).
+  \item \textbf{진행 중·대기:} \tentative{생성 계속 중(병 과제 참값 약함, 높은 탁자에서 시작 자세 가림). 게이트 데이터·BEHAVIOR-1K 자산은 비게이트 결과 뒤 사용자에게 제안(ul 150).}
+\end{itemize}
+
+\paragraph{E15. 작전 T 점수판 --- T1+T4 추천, C$'$는 보류, 공정 짝 비교 E-H2H-T}
+{\small 09-27 06:4x -- 12:53 KST}
+\begin{itemize}
+  \item \textbf{결과:} 점수판(fd9cc42, howto 13.4): T1+T4 --- 실루엣 경계 RB2 2.32 px·RB3 2.32 px(다시 잰 값)·RB1 4.78 px(경계선), RB2 스테레오 m 깊이 7,050장(팔 메시 대비 중앙 1.32 cm); C$'$ --- 누수 1/305(원인 고침, 재측정은 L8-X), 공개 보류분 목표 2.6--3.6 cm, 수율 MolmoBot 3,381·DROID 실물 3,857 등.
+  \item \textbf{그래서(결정):} Claude 추천 T1+T4(누수 없는 픽셀 라벨 + 깊이, E-PT가 가리키는 점 + 깊이 형식과 맞음). C$'$는 역할이 달라 폐기 보류(ul 143 규칙). E-H2H-T 사전 등록(0c20e1f, 학습 전): L8-X b1 기본 6,521행 대 + T1+T4 묶음 2,000 대 + C$'$ 묶음 2,000, 같은 816걸음·시드·세트, E-PT 5.2 규칙.
+  \item \textbf{진행 중·대기:} \tentative{E-H2H-T 진행 중. 최종 결정은 09-27 12:53 KST 이후 사용자.}
+\end{itemize}
+
+\paragraph{E16. E-STRIP8b --- 손으로 준 정보 제거를 L8-X에서 다시}
+{\small 09-27 06:2x KST \textasciitilde{}}
+\begin{itemize}
+  \item \textbf{해 봄:} 사전 등록 a1b93fb(학습 전, 무료): L8-X b1에서 S-full(참 탁자 높이·크기·요령 + 격자) / S-min / S-drop, 각 816걸음, 판정 KEEP\_AS\_INPUT / REMOVE / KEEP\_PRIVILEGED는 strip8 등록에서 이미 고정.
+  \item \textbf{진행 중·대기:} \tentative{진행 중. 중간 관측으로 손 정보를 뺀 판의 OOD-H 접근 오차가 3.3 $\rightarrow$ 20.1 mm로 커지는 모습(통제자 09-27 08:53 전달) --- 판정 아님, 결과로 쓰지 않음. 판정이 KEEP이면 E-DIST8 요청 형식이 바뀐다.}
+\end{itemize}

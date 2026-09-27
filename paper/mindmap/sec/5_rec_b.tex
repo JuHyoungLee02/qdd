@@ -71,7 +71,7 @@
   \item \textbf{그래서(결정):} 정본 §97 보충 2 + 사전 등록 18533d6(00:20): 주 팔 ND-1 \texttt{nd-\allowbreak{}xyz}(RGB만, 격자·탁자 높이 없이 xyz --- 암묵)·ND-2 \texttt{nd-\allowbreak{}est}(탁자 높이·물체 위치·크기를 먼저 추정한 뒤 xyz), 비교 팔 \texttt{pt}(점 0--1000 + 높이 의도, 코드가 머리 깊이·보정·평면 위 군집으로 목표)·L8-xyz(격자), 선택 \texttt{nd-\allowbreak{}pt}. F0 영샷 점, F2 같은 L8 편·816걸음 LoRA $\times$ 팔, DEV + OOD-H(탁자 0.82·0.88). 판정 규칙은 결과 전 고정.
   \item \textbf{결과:} 변경 1(fbf45f7, 00:36, 본 실행 전 스모크 DEV 8편): 깊이 해석기에 로봇 자기 가림, 큰 놓을 곳 라벨 허용 25 mm, 관문 G1 = 글 + 라벨 동일(pt 라벨 결측 4/60, v2 요청 60/60·라벨 60/60이 L8과 동일, 머리 PNG 평균 차 0.46/255). 855ffa5(00:50): 평가 세트에 팔 라벨이 없는 상태도 유지(label\_missing).
   \item \textbf{결과:} 변경 2(64bb9d6, 02:06, 미세조정 팔 답은 아직 없음 --- 학습 중): 이미 본 기준 L8-xyz의 OOD-H($\pm$3 cm)는 오프라인 접근 xy 중앙 2.5 mm·접근 3D 중앙 31.2 mm(z가 탁자 변화만큼 어긋남), 폐루프 4/4(패드 4.5 cm가 $\pm$3 cm z 어긋남을 흡수) --- $\pm$3 cm로는 팔을 가르기 어려워 탁자 0.78·0.92 m($\pm$7 cm) 넓은 OOD-H를 둘째 판정으로 추가(주 판정은 $\pm$3 cm 그대로).
-  \item \textbf{진행 중·대기:} \tentative{결과 문서(\texttt{results/\allowbreak{}pt.\allowbreak{}md})는 아직 없다 --- 진행 중. 유료 비교(Astra·gpt-5.2 $\times$ pt/nd-est)는 제안만, 사용자 허락 전 실행 금지.}
+  \item \textbf{참고:} 결과는 B14(e5af865). 유료 비교(Astra·gpt-5.2 $\times$ pt/nd-est)는 제안만, 사용자 허락 전 실행 금지.
 \end{itemize}
 
 \paragraph{B8. 최종 상위 = 35B, 8B는 임시 대리}
@@ -119,4 +119,40 @@
   \item \textbf{사용자} (ul 146, 04:4x KST): \intent{근데 저건 깊이가 있어야 하니까 그럼 결과물로 깊이 말고 그냥 일반만 쓴것도 무조건 같이 비교해줘야해 데이터 양에서는 rgb가 우세니까 이건 끝까지 35B돌릴때 까지도 들고갈 거란얘기최종 비교로까지 끌고가야하는 놈인거야}
   \item \textbf{그래서(결정):} §98 보충 1 추가(151199a): 줄기 D(점 + 깊이 $\rightarrow$ xyz)와 줄기 R(RGB만, xyz 직접·ND)을 E-DIST8·강화·최종 35B·평가까지 같은 조건으로 짝 비교(최종 35B도 두 판). L8-X 깊이 줄기용 스테레오식 깊이 잡음 변형(830473f).
   \item \textbf{결과:} 논문 본문 반영(09-27): 3.2절 출력 형식을 두 줄기로, 6절에 `이번 마일스톤' 절(단계·E-DIST8·절차 규칙), 사다리 1단계를 (1)--(3) 단계로, 주 결과 표에 35B 줄기 D·R 두 줄.
+\end{itemize}
+
+\paragraph{B13. 35B-A3B 실제 학습(소규모) --- 2 에폭이면 충분, 높이는 크기로 안 풀림}
+{\small 09-27 02:4x -- 05:5x KST}
+\begin{itemize}
+  \item \textbf{사용자} (ul 137, 02:4x KST): \intent{35B 학습하는 걸로 하자 학습은 얼마나하는게 최적인지 모르니 너 생각의 2배만큼 해줘 일단 소규모로 하는거지마는말이야}
+  \item \textbf{해 봄:} 사전 등록 5ecb030(7절, 학습 전): 통제자 추정 2 에폭의 2배 = 4 에폭(1,632걸음), L8 데이터 그대로(에폭당 6,521행), 에폭마다 어댑터 저장·평가. 최적 에폭 규칙은 DEV만 본다(xy 중앙 최소 + 1 mm, 그리퍼 최대 $-$ 0.01 안의 가장 이른 에폭).
+  \item \textbf{결과:} 4925713(\texttt{results/\allowbreak{}teach\_\allowbreak{}35b.\allowbreak{}md}): 최적 ep2. ep3·ep4는 DEV를 1 mm 안에서만 다듬고(xy 0.6 mm) OOD-H는 그대로. 35B ep2 대 8B: DEV 접근 xy 1.2 대 2.6 mm(둘 다 천장, 가르지 못함), OOD-H SAME($\pm$3 cm 3D 30.95 대 31.2 mm, $\pm$7 cm 72.5 대 70.5 mm). 지연 BF16 p50 1.04 s(8B 3.5 s의 약 3.4배 빠름). 폐루프 DEV 4/4(편당 6호출, 벽시계 13.6--26.2 s, 8B 32.9--34.2 s). H-L (a) 지연·(c) 정밀(편 중앙의 중앙 4.9 mm) 통과, (b) 짝 40판은 안 함. 약 4.1 GPU-h, 0원.
+  \item \textbf{그래서(결정):} 이 데이터에서는 2 에폭이면 충분 --- 모자란 것은 학습량이 아니라 데이터 다양성. 한 높이 데이터로는 35B도 높이를 외운다(크기로 안 풀림). 도중 우선순위 변경(L8-X 먼저)으로 이 결과는 기준점·학습 곡선 참고용이고, 최종 35B는 L8-X에서 같은 걸음 수로.
+\end{itemize}
+
+\paragraph{B14. E-PT 결과 --- 깊이 점만 본 적 없는 높이에 일반화}
+{\small 09-27 05:0x KST (결과 e5af865)}
+\begin{itemize}
+  \item \textbf{결과:} e5af865(\texttt{results/\allowbreak{}pt.\allowbreak{}md}): 같은 L8 편·816걸음, 형식만 다름. OOD-H 접근 3D 중앙 --- 깊이 점 pt $\pm$3 cm 3.5 mm·$\pm$7 cm 3.6 mm(BETTER) 대 L8-xyz 31.2·70.5 mm; ND-1 격자 없는 xyz SAME, ND-2 추정 먼저 WORSE(탁자 높이를 늘 0.85로 추정 = 외움), ND-pt WORSE. 폐루프 OOD-H pt 8/8, L8-xyz $\pm$7 cm 0/4. 영샷 8B 점은 55--95 px 빗나가 0/4(F0 NO). 약 11 GPU-h, 0원.
+  \item \textbf{그래서(결정):} 등록 6절대로 깊이 가정(§97) 유지. 깊이 없는 길은 `안 된다'가 아니라 `형식만으로는 안 된다' --- 버리지 않고 L8-X에서 다시(ul 146 두 줄기 $\rightarrow$ ul 148 세 줄기). 시뮬 깊이는 잡음이 없어 pt에 유리하므로 다음 판에 깊이 잡음 팔.
+  \item \textbf{진행 중·대기:} \tentative{유료 비교(Astra·gpt-5.2 $\times$ pt, 합 약 3,900원 추정)는 제안만, 사용자 허락 전 실행 안 함.}
+\end{itemize}
+
+\paragraph{B15. 세 줄기 R·H·D --- 하이브리드 조사와 H 설계}
+{\small 09-27 04:4x -- 05:4x KST}
+\begin{itemize}
+  \item \textbf{사용자} (ul 148, 04:4x KST): \intent{아니면3가지 아예 없는 rgb 둘다있는 하이브리드 논문찾아보기 어떤식으로 쓰는지 추가 뎁스ㅡㄴ 필수로 쓰기 이걸 다 비교해볼 필요가 있음}
+  \item \textbf{그래서(결정):} 정본 §98 보충 1(b257d9d): 두 줄기 D·R에 줄기 H(깊이 있으면 쓰고 없어도 동작)를 더해 R·H·D 세 줄기를 E-DIST8·강화·최종 35B(세 판 모두 학습)까지 같은 조건 짝 비교. H는 깊이 있음·없음 평가 둘 다, H·D는 스테레오 잡음 판도.
+  \item \textbf{사용자} (ul 149, 04:5x KST): \intent{뎁스가 있는 데이터 셋이 있음? 심 데이터는 처리하면 되겠고}
+  \item \textbf{결과:} 조사 393bf79(\texttt{research/\allowbreak{}rgb\_\allowbreak{}depth\_\allowbreak{}hybrid\_\allowbreak{}survey}): 믿을 만한 하이브리드는 거의 한 틀 --- 별도 깊이 갈래 + 학습 때 깊이 무작위 빼기(FALCON ICLR 2026: 평균은 깊이 유무로 비슷, 높이 바뀐 실물 과제 60 $\rightarrow$ 80 \%; RoboRefer NeurIPS 2025). 경고: 3D 토큰을 VLM 본체에 넣으면 일반화 하락(3.91 $\rightarrow$ 3.79). 깊이 있는 공개 데이터: BEHAVIOR 2025 데모(MIT, 게이트 없음)·OXE RGB-D 넷; RH20T·AgiBot World는 동의 필요; DROID·RB2는 스테레오 쌍만(계산 필요).
+  \item \textbf{사용자} (ul 153, 05:4x KST): \intent{우리 H 설계 (추천)고}
+  \item \textbf{그래서(결정):} 6d2f4e8(코드·시험만, 학습 없음): 깊이 = 두 번째 영상(0.25--1.60 m 고정 회색조, 가까울수록 밝게, 무효 검정, 1/2 해상도) + 요청 줄 \texttt{depth: sensor|none}; 한 답에 점 + 높이 의도와 xyz; 실행 선택기는 깊이 유효·점 풀림이면 D 변환기, 아니면 모델 xyz; 학습 때 깊이 50 \% 빼기 + 남긴 것 절반 zed\_mini 잡음; 평가 H-on·H-noisy·H-off(대조 D·D-noisy·R).
+  \item \textbf{결과:} 논문 반영(09-27 08:5x): 3.2절 `세 줄기를 끝까지'(H 설계 문단), 주 결과 표에 35B 줄기 H 줄, 사다리 (2)를 세 판으로.
+\end{itemize}
+
+\paragraph{B16. E-DIST8 등록 --- 데이터 수준 $\times$ 공개 픽셀 $\times$ 줄기 R·H·D}
+{\small 09-27 06:xx KST \textasciitilde{}}
+\begin{itemize}
+  \item \textbf{해 봄:} 사전 등록 1f1db1e(학습 전, 무료) + 변경 1(7f74f04): 공통 최소 요청(E-STRIP8 S-min) 위에서 줄기별로 답 부분만 다름; 데이터 A 옛 L8 / B L8-X b1 / C L8-X + 공개 3D, 각각 공개 픽셀 유무; 모든 수준에서 R 대 D, H는 A와 B+px; 816걸음·같은 표본; 평가 옛 DEV·OOD-H + L8-X DEV·OOD-H/O/S/T, 깊이 방식 on·noisy(·off). A-R은 STRIP8 S-min 재사용.
+  \item \textbf{진행 중·대기:} \tentative{학습 중(통제자 09-27 08:53 기준). 결과 문서 전 --- 수치 없음. 요청 형식은 E-STRIP8b 결과에 따라 바뀔 수 있음(등록 1.1).}
 \end{itemize}
