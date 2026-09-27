@@ -5,7 +5,8 @@
 # usage: dist8_open.sh <code dir> <gpu> <arm> [<arm> ...]
 C=$1; G=$2; shift 2
 P=/data/harvest/venv_train/bin/python
-K=/data/harvest/out/xemb/dist8_packs; PX=$K/t1t4_pixel.jsonl; P3=$K/t1t4_3d.jsonl
+K=/data/harvest/out/xemb/dist8_packs; PX=$K/t1t4_pixel.jsonl; P3=$K/t1t4_3d.jsonl; OBJ=$K/obj_pixel.jsonl
+W=${WORKERS:-6}  # dataloader workers (the x3 pod has 2 CPUs: WORKERS=1)
 DA=/data/harvest/out/dist8/data_a; DB=/data/harvest/out/dist8/data_b1; B1=/data/harvest/out/teach_l8d/data/b1
 M=/data/harvest/out/dist8/data_open; L=/data/harvest/logs/dist8
 mkdir -p $M $L
@@ -21,12 +22,13 @@ for arm in "$@"; do
     c_d) base=$DB/train_d-min.jsonl; mix="$P3:0.25"; tr=d-min;;
     c_px_r) base=$B1/train_s-min.jsonl; mix="$P3:0.125 $PX:0.125"; tr=r-min;;
     c_px_d) base=$DB/train_d-min.jsonl; mix="$P3:0.125 $PX:0.125"; tr=d-min;;
+    b_obj_d) base=$DB/train_d-min.jsonl; mix="$OBJ:0.25"; tr=d-min;;  # change 5: object-pointing pack
     *) echo "unknown arm $arm" >> $L/dist8_open.log; continue;;
   esac
   until [ -f $base ]; do sleep 60; done
   $P tools/teach_pt/mix_pack.py $base $M/train_$arm.jsonl $mix >> $L/build_open.log 2>&1
   bash $C/tools/teach_pt/py.sh train $G train_$arm $C harvest.teach_l8.train --data $M/train_$arm.jsonl \
-    --out /data/harvest/out/dist8/run_$arm --epochs 3 --max-steps 1088 --micro 8 --accum 2 --log-every 10
+    --out /data/harvest/out/dist8/run_$arm --epochs 3 --max-steps 1088 --micro 8 --accum 2 --log-every 10 --workers $W
   E=$(ls -d /data/harvest/out/dist8/run_$arm/epoch* 2>/dev/null | sort -V | tail -1)
   [ -n "$E" ] && bash $C/tools/teach_pt/py.sh train $G merge_$arm $C harvest.teach_l8.merge --adapter $E \
     --out /data/harvest/out/dist8/merged_$arm
