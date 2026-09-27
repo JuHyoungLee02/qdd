@@ -22,10 +22,9 @@ FORMATS = (SOLO, COUPLE)
 
 
 def row_format(row: dict) -> str:
-    f = row.get("format", SOLO)
-    if f not in FORMATS:
-        raise ValueError(f"row {row.get('id')}: format {f!r} not in {FORMATS}")
-    return f
+    """The row's format. E-PT / E-DIST8 rows carry their arm name ('pt' = D track, 'nd-xyz' with h_mode = H track,
+    ...): they use the solo layout (as harvest.teach_l8.train does) and the parser of their track (label_problems)."""
+    return row.get("format", SOLO)
 
 
 def request_text(row: dict) -> str:
@@ -56,10 +55,20 @@ def label_problems(row: dict) -> list:
     """[] when the runtime parser of the row's format accepts a control label (aux rows are not checked)."""
     if row.get("kind") != "control":
         return []
-    if row_format(row) == SOLO:
-        from ..astra_solo.schema import validate
-        parsed, err = validate(row["answer"])
+    f = row_format(row)
+    if f == SOLO or "h_mode" in row or f == "pt":
+        if "h_mode" in row:
+            from ..astra_solo.hybrid import validate
+            parsed, err = validate(row["answer"])
+        elif f == "pt":
+            from ..astra_solo.pt_schema import validate
+            parsed, err = validate(row["answer"], allow_eef=True)
+        else:
+            from ..astra_solo.schema import validate
+            parsed, err = validate(row["answer"])
         return [] if parsed is not None else [str(e) for e in err][:4]
+    if f != COUPLE:
+        return []  # other E-PT arm formats: checked by their builder
     from ..couple import schema as CS
     try:
         CS.parse_answer(row["answer"], row.get("mode", "F0"), row.get("cameras", []), 1, 0.0, 1.0, version="v2")

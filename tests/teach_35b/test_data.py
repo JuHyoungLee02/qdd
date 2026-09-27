@@ -51,3 +51,25 @@ def test_label_check(tmp_path):
     solo_bad = {"kind": "control", "answer": "{}", "id": "s"}
     assert DT.label_problems(solo_bad)
     assert DT.row_format(solo_bad) == "astra-solo@v2"
+
+
+def test_min_track_rows(tmp_path):
+    """E-PT / E-DIST8 rows (format 'pt' = D track, h_mode = H track, other arm names) use the solo layout and the
+    parser of their track; unknown arm formats are not rejected (the builder checked them)."""
+    p = tmp_path / "prompt.txt"
+    p.write_text("REQ", encoding="utf-8")
+    a = {"assessment": {"task_progress": {"verified_completed": [], "currently_attempting": "go above",
+                                          "remaining": ["grasp"]}, "execution_status": "not_started",
+                         "evidence": "TCP at (0.3, -0.2, 1.0) m", "evidence_view": "both", "confidence": "high"},
+         "command": {"mode": "point", "point_2d": [601, 790], "offset_m": 0.1, "gripper": "keep"}, "reason": "Next."}
+    d = {"kind": "control", "format": "pt", "prompt_path": str(p), "images": ["a", "b"], "answer": json.dumps(a),
+         "d_mode": "clean"}
+    assert DT.row_format(d) == "pt"
+    from harvest.teach_l8 import train as L8
+    assert DT.messages(d, True) == L8.messages(d, True)
+    from harvest.astra_solo import pt_schema
+    assert (DT.label_problems(d) == []) == (pt_schema.validate(d["answer"], allow_eef=True)[0] is not None)
+    assert DT.label_problems(dict(d, answer="{}"))
+    h = dict(d, format="nd-xyz", h_mode="on", answer="{}")
+    assert DT.label_problems(h)
+    assert DT.label_problems(dict(d, format="other-arm", answer="{}")) == []

@@ -1,0 +1,57 @@
+# 최종 35B 소규모 — D 대 H (Qwen3.5-35B-A3B LoRA, L8-X b2, 무료, 사전 등록)
+
+- 작성: E-TEACH-35B 에이전트, 2026-09-27T10:1xZ(UTC) = 19:1x KST. **학습 전** 커밋한다(P15). 결과는 `docs/stage3/results/final35.md`.
+- 근거(사용자 결정):
+  - user-log 156·157, 정본 §98 보충 2: 최종 35B 소규모는 **D(깊이 필수) 대 H(하이브리드) 두 판만**, 필수만, 토큰 절약.
+  - 통제자 지시(18:4x KST): L8-X b1+b2 참값 라벨이 주. 공개 데이터는 **점 라벨만**(xyz·높이 없음)이고 추가 방식으로 넣는다. 공개 깊이는 H의 입력 영상으로만 쓴다. 실행기는 boost1 규칙이다. 두 판 모두 2 에폭.
+- 비용: 유료 0원, GPU만.
+
+## 0. 자체 검사
+- **결정**: 최종 상위 모델의 출력 줄기를 D·H 중 무엇으로 할지 정한다(35B, 같은 데이터·같은 걸음).
+- **이미 본 것(P16)**:
+  - E-DIST8 8B 결과(`dist8.md` + 파드 eval 표)를 봤다. 접근 3D 중앙(mm): B-D·B-H·B+px-D·B+px-H는 dev_x·OOD-H·HL·D·S·T에서 모두 3.8–4.8로 같았다.
+  - 차이가 난 것은 OOD-O다(새 물체). B-D 96.9, B+px-D 96.9, **B+obj-D 64.6**, B+px-H 93.8, C-H 88.2.
+  - boost1 ADOPT(D 폐루프 2/8 → 4/8)를 봤다.
+  - E-TEACH-35B 소규모(L8)에서는 ep2가 최적이었고, 8B 대비 SAME이었다.
+  - E-H2H-T2와 boost1b·boost2는 끝나지 않았다. 35B D·H의 답은 없다.
+- **표본**: 오프라인 L8-X 7세트(수백–1,600 스냅숏, 짝 부트스트랩)이고, 폐루프는 판마다 8편이라 방향만 본다.
+
+## 1. 데이터
+- **L8-X 묶음 b2**(b1 포함 3,662편, 성공 2,790, digest `49622565b16fa41d`, 목록 `docs/stage3/l8d_bundle_b2.json` — 이 커밋이 목록 커밋).
+- 빌드: `tools/teach_l8d/build.py --manifest`로 train_pt·train_nd-xyz를 만들고, `tools/teach_pt/convert_min.py`로 **d-min**(D)·**h-min**(H)을 만든다. E-DIST8과 같은 변환이며, H의 깊이는 학습 행마다 켬·zed_mini 잡음·뺌을 섞는다(`hybrid.train_depth_mode`).
+- **공개 점 팩(두 판 같음, 추가 방식)**: 작전T 물체 지시 `obj_pixel.jsonl`(4,000행, RBY1·Franka)을 12.5 %, T1+T4 픽셀 `t1t4_pixel.jsonl`(3,441행)을 12.5 % 넣어, 합해 파일의 25 %가 되게 한다(`mix_pack.py`).
+  - 근거: B+obj-D가 OOD-O를 96.9 → 64.6 mm로 줄인 유일한 팩이었다. B+px는 D·H 모두 중립~조금 좋았다.
+  - 둘을 합친 판은 8B에서 재지 않았다(가정으로 적는다). 둘 다 점 라벨(0–1000)만 있고 xyz·높이는 없다.
+- **H만의 추가(변경 기록으로 결정)**: E-H2H-T2 h_* 팔(h_cp 대 h_px, 세 시드)이 끝나면(~20시 KST) 그 등록의 결정 규칙대로 정한다. C′ 묶음을 H 파일에 넣을지, 비율은 얼마로 할지를 **H 학습 시작 전** 변경 기록으로 커밋한다.
+  - 공개 깊이 묶음(작전T dh_H: BEHAVIOR·ManiSkill)은 H의 **입력 영상으로만** 쓸 수 있고 라벨로는 쓰지 않는다. 넣을지도 같은 변경 기록에서 정한다.
+  - 그 전에 D판을 먼저 시작한다. 공개 팩 차이를 줄이려고, H가 C′·dh를 넣더라도 obj·t1t4 점 팩 25 %는 같게 둔다.
+- 학습 전 라벨 검사: `harvest.teach_35b.data`가 D 행(format `pt`)을 `pt_schema.validate`로, H 행(`h_mode`)을 `hybrid.validate`로 검사한다(`--label-check strict`). 이 커밋에서 로더가 E-PT·E-DIST8 행을 받게 고쳤다(시험 `test_min_track_rows`).
+
+## 2. 학습 (두 판 같은 조건)
+- Qwen3.5-35B-A3B + LoRA. 레시피는 `tools/teach_35b/train.conf`: r 16·α 32·lr 1e-4 코사인·warmup 20·미세 4, 전역 배치 16(N장 DDP면 누적 4/N), fla 겹침, thinking 끔, 라우팅 전문가 제외.
+- **2 에폭**(통제자 지시). 근거: E-TEACH-35B 소규모에서 2 에폭이 최적이었다. 이번 데이터는 그보다 약 15배 크므로 결과에 걸음 수를 같이 적는다.
+- GPU: D = fe08 0·1·3·4 DDP(4장, 35B DDP 첫 실측 — 첫 20걸음 손실·처리량을 1장 기준과 비교). H = E-H2H-T2가 끝난 뒤 빈 카드.
+- 코드 고정 사본 `/data/harvest/code_final35_<이 커밋>`(git archive LF). 사슬 `tools/final35/chain.sh`(build → train → merge → eval → closed).
+
+## 3. 평가
+- **오프라인**: 마지막 에폭 병합 모델(BF16, thinking 끔)로 L8-X **7세트** dev_x·OOD-H·OOD-HL·OOD-D·OOD-O·OOD-S·OOD-T를 잰다(`/data/harvest/out/dist8/data_x`, E-DIST8 채점기 `harvest.teach_pt.evaluate`).
+  - 깊이는 D: clean·noisy, H: clean·noisy·off(`tools/final35/eval.sh`).
+  - 주 지표는 접근 3D 오차 중앙이다. 잡기 |z| ≤ 15 mm 비율·유효 JSON·행동 정확도를 같이 적는다.
+- **D 대 H 판정**(세트별, `tools/teach_pt/dist8_compare.py` 스냅숏 짝 부트스트랩 10,000회 시드 0, 비열등 여유 2 mm): H − D 평균 차 구간으로 BETTER / SAME(비열등) / WORSE를 매긴다.
+  - **H 채택** = clean에서 WORSE가 없고, noisy 또는 off에서 BETTER가 하나 이상(깊이 불완전 때 이득)이다. 또는 OOD-O에서 BETTER.
+  - **D 채택** = H가 clean 세트 하나 이상에서 WORSE.
+  - 그 밖 = SAME → 더 단순한 **D**를 기본으로 두고, H는 깊이 없는 입력용 대체로 기록한다.
+- **8B 기준(기술)**: 같은 세트의 E-DIST8 B+px-D·B+obj-D·B+px-H와 표로 비교한다(크기 효과 방향).
+- **폐루프**(두 판, 방향만): boost1 실행기(`BoostEpisode` fix_mem·fix_loop, `d1f33f3`)로 E-DIST8과 같은 L8-X 8편(OOD-H 0.74·0.98, OOD-O 0.86·0.94 × 2)을 돌린다. 서빙은 FP8 온라인이고, H는 depth on이다.
+  - 성공 수, 실패 단계 분해(인식·목표·의도·실행기), 편당 호출·벽시계를 적는다.
+  - 영상(필수): `/data/harvest/videos/final35/<판>/` + 색인.
+  - boost1b·boost2 결과가 평가 시작 전에 나오고 ADOPT이면 변경 기록으로 그 실행기를 쓴다. 아니면 boost1이다.
+- 지연: 폐루프 호출 p50·p95(FP8, Isaac 공유)를 적는다.
+
+## 4. 이 시험이 말하는 것과 못 하는 것
+- 말하는 것: 35B에서 같은 데이터·같은 걸음일 때 D와 H 중 어느 출력 줄기가 L8-X 일반화(높이·장면·새 물체·깊이 불완전)에 나은가.
+- 못 하는 것:
+  - 실물 성능.
+  - 시드 흔들림(판마다 1시드).
+  - 공개 팩 조합의 개별 효과(8B에서 따로 잰 것만).
+  - 폐루프 성공률의 차이(n = 8).
