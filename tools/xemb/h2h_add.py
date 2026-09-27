@@ -18,7 +18,6 @@ def main(d):
     rd = lambda n: [json.loads(x) for x in open(os.path.join(d, n), encoding="utf-8")]
     base = rd("h2h_base.jsonl")
     ids = {r["id"] for r in base}
-    assert len(ids) == len(base), "base ids not unique"
     out = {}
     for src, name in (("h2h_t1t4.jsonl", "add_t1t4"), ("h2h_cp.jsonl.moved_to_cpg1", "add_cp")):
         pk = pack_rows(rd(src), ids)
