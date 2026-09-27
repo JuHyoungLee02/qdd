@@ -10,6 +10,11 @@ case $T in r-min) ARM=xyz; MODES="clean";; d-min) ARM=pt; MODES="clean noisy";; 
 until [ -f $M/config.json ]; do sleep 30; done
 setsid nohup bash $C/tools/teach_pt/vllm.sh $G $M $N $PORT $U < /dev/null > /dev/null 2>&1 &
 for i in $(seq 1 90); do curl -s 127.0.0.1:$PORT/v1/models | grep -q $N && break; sleep 10; done
+if ! curl -s 127.0.0.1:$PORT/v1/models | grep -q $N; then  # never score against a dead server (cached errors)
+  echo "EVAL_FAIL $TAG server_not_up $(date -u +%FT%TZ)" >> $L/dist8_eval.log
+  bash $C/tools/teach_pt/stop.sh $N >> $L/dist8_eval.log 2>&1
+  exit 1
+fi
 echo "EVAL_START $TAG $(date -u +%FT%TZ)" >> $L/dist8_eval.log
 for f in /data/harvest/out/dist8/data_a/{dev,ood_h}_${T}_*.jsonl /data/harvest/out/dist8/data_x/x_*_${T}_*.jsonl; do
   [ -f "$f" ] || continue
