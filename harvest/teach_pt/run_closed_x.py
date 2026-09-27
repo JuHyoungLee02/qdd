@@ -30,6 +30,7 @@ def main(argv=None):
     ap.add_argument("--episodes", nargs="+", required=True)
     ap.add_argument("--out", default="/data/harvest/out/dist8/closed")
     ap.add_argument("--confirm-ood", action="store_true", help="evaluation on protected OOD seeds (never trained)")
+    ap.add_argument("--boost", type=int, default=0, help="1 = STRIP8 BoostEpisode(fix_mem, fix_loop) (change 7)")
     ap.add_argument("--stop-calls", type=int, default=20)
     ap.add_argument("--stop-motion", type=float, default=60.0)
     a = ap.parse_args(argv)
@@ -61,8 +62,13 @@ def main(argv=None):
             if os.path.exists(os.path.join(od, "result.json")):
                 continue
             t0 = time.perf_counter()
-            ep = PtEpisode(world, model, c["seed"], c["task"], od, iface=a.iface, h_depth=a.h_depth, video=True,
-                           variant=c["variant"], stop_calls=a.stop_calls, stop_motion_s=a.stop_motion)
+            kw = dict(iface=a.iface, h_depth=a.h_depth, video=True, variant=c["variant"], stop_calls=a.stop_calls,
+                      stop_motion_s=a.stop_motion)
+            if a.boost and a.iface != "r-min":
+                from ..teach_strip8.boost import BoostEpisode
+                ep = BoostEpisode(world, model, c["seed"], c["task"], od, fix_mem=True, fix_loop=True, **kw)
+            else:
+                ep = PtEpisode(world, model, c["seed"], c["task"], od, **kw)
             res = ep.run()
             print("EP " + json.dumps({k: res.get(k) for k in (
                 "seed", "task", "variant", "success", "grasp_lift", "fail_stage", "end_reason", "n_calls", "n_invalid",
