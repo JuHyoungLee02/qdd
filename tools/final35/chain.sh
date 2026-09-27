@@ -9,7 +9,7 @@ C=$1; T=$2; TC=$3; TMIN=$4; EC=$5; SC=$6; RC=$7; PORT=$8; shift 8
 D=/data/harvest/out/final35; L=/data/harvest/logs/final35; mkdir -p $L
 FG=$C/tools/final35/free_gpus.sh
 export TEACH_35B_JOB=f35chain_$T
-case $T in d) TR=d-min;; h|hc) TR=h-min;; esac
+case $T in d|dn) TR=d-min;; h|hc) TR=h-min;; esac
 echo "CHAIN_START $T host=$(hostname) train=$TC(min $TMIN) eval=$EC cl=$SC/$RC $(date -u +%FT%TZ)" >> $L/chain.log
 bash $C/tools/final35/build.sh $C $T "$@"
 RUN=$D/run_$T
