@@ -62,3 +62,4 @@
 | E-STRIP8(8B LoRA 2팔 학습 + 오프라인 평가 5팔 + 폐루프 12편 + 영상) | x2 1 + 메인 0·1 + x3 0 | ≈ 3.7 GPU-h(S-min 학습 1.25 = x2 1 16:36–17:51; S-drop 학습 1.47 = 메인 0 16:36–18:04; vLLM·평가·폐루프 ≈ 1.0; L8 평가는 PT-ND의 L8 vLLM 공유) — **유료 0원** | [R/strip8](../stage3/results/strip8.md) 7절 |
 | E-PT(수집 380편 + 8B LoRA 4팔 + 영샷·미세조정 평가 + 폐루프 약 70편) | 메인 0·2·3 + x2 0·1 | ≈ 11 GPU-h 점유(학습 6.0 = nd-xyz 1.32·nd-est 1.59·pt 1.55·nd-pt 1.54 h; 수집·폐루프 Isaac 약 4 프로세스-h; vLLM 평가 약 1.5 GPU-h), **유료 0원** | [R/pt](../stage3/results/pt.md) |
 | E-TEACH-35B 소규모(35B LoRA 4 에폭 + 에폭 평가 4 + 지연 + 폐루프 4편 + 영상) | 메인 1·2 + x2 1 | ≈ 4.1 GPU-h(학습 2.84 = 메인 1 17:47–20:38 UTC; 에폭 평가 0.61 + 지연 0.14 = 메인 2; 폐루프 0.49 = x2 1 20:13–20:43), **유료 0원** | [R/teach_35b](../stage3/results/teach_35b.md) 7절 |
+| E-STRIP8b(8B LoRA 3팔 학습 + 평가 + 폐루프 24편) | x3 0 + 메인 0 | ≈ 6.5 GPU-h(학습 3 × 약 1.45 h; 평가·폐루프 ≈ 2.1) — **유료 0원** | [R/strip8b](../stage3/results/strip8b.md) 3절 |

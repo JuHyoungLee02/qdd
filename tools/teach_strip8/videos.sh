@@ -3,8 +3,8 @@
 # every arm, episodes linked (read-only symlinks) from the closed-loop roots. -> /data/harvest/videos/strip8/<set>/
 # usage: videos.sh <code dir> <arm>=<closed root of that arm> [...]   (closed root = .../<arm> holding <variant dir>/s*)
 C=$1; shift
-V=/data/harvest/videos/strip8
-S=/data/harvest/out/strip8/vidsrc
+V=${STRIP8_VIDEO_ROOT:-/data/harvest/videos/strip8}
+S=${STRIP8_VIDSRC:-/data/harvest/out/strip8/vidsrc}
 PY=/data/harvest/venv_train/bin/python
 for set in ${STRIP8_VIDEO_SETS:-dev oodh082 oodh088 oodh078 oodh092}; do
   specs=()
