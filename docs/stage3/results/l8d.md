@@ -42,10 +42,22 @@
 | stand, floor_bin | 6/6, 0 | 대부분 | 한계 탐침(쓸 면 부족) |
 | mug_to_upper(받침면 사이) | 3/3 | 17 | multi_level·shelf_low 각 20 |
 
+## 3b. b2 관문 (변경 7·8)
+| 대상 | 결과 | 쓰임 |
+|---|---|---|
+| thor_counter / thor_low_table / thor_shelf / thor_side_table | 5/6, 8/9, 7/7, 6/7 | 각 학습 40(TRAIN 33900–) |
+| cyclo_basket(바구니 = 통 넣기) | 7/8 | mug_to_container 30 |
+| cyclo_work_table, thor_table | 5/7, 5/7 | 불통(병 과제 약함) — b2에서 뺌 |
+| thor_bin, thor_low | 쓸 면 없음 | 한계 탐침 |
+| 방 배경(iTHOR) table / counter | 4/5, 4/5 = 8/10 | 학습 방으로 각 40(TRAIN 34100–) |
+| Objaverse 물체(ov_tray 3편 중 2) | 첫 15개 중 3 통과(모두 높이 8 cm) | 변경 8: 후보를 높이 7–10 cm·폭 2.5–8.5 cm로 좁혀 나머지 38개(train 32·ood_o 6) 관문 중 |
+
+- Objaverse 불통 양상: 닫은 뒤 패드 간격이 8.3–8.7 cm에서 멈춰(`grip_w` 0.085) 잡힘이 안 되고 다시 열기를 되풀이하다 호출 상한. 높이 5 cm 물체는 패드가 탁자 위 약 3 cm에서 닫힌다 — 원인은 \tentative(짧은 물체를 8 cm로 다시 축척하면 살릴 수 있음).
+
 ## 4. 데이터 (2026-09-26 21:43 UTC 스냅숏, 생성 계속 중)
 - **1차 동결 묶음 `b1_phase1_x`**(E-DIST8·E-STRIP8b의 첫 학습 묶음): 1,196편, 성공 937. 과제별 편: mug_tray 347, bottle_tray 250, mug_marker 242, mug_stand 59, bottle_bin 54, stand_mug_tray 51, mug_right_of_bottle 50, bluemug_tray 48, mug_bin 48, mug_left_of_bottle 47. 높이 구간: 낮음 349·가운데 368·높음 479. 방해물 구간 0/1–2/3–4/5+ = 53/431/277/435. drx 920·standard 276. 행: 고유 조종 10,828 → 반복 가중 17,140 + 인식 QA 10,828 = **에폭 27,968**. 빌드 `/data/harvest/out/teach_l8d/data/b1/train_<형식>.jsonl`(+ counts).
 - **전체 학습 편 스냅숏**(`bundles/snapshot_all.json`): 1,611편(성공 1,262), 높이 구간 lift_low 113·low 482·mid 405·high 564·lift_high 47, 방해물 0/1–2/3–4/5+ = 90/613/354/554. 깨끗한 편 성공: bottle_tray 44/62(병 과제 약함 — L8과 같은 경향), clear_to_bin 3/6(관문 0.85의 3/3보다 낮음 — 높이 전반에서 다시 볼 것).
-- 평가 세트: OOD-H 85/96, OOD-D 40/40, OOD-O·OOD-T·OOD-H-lift·OOD-S·dev_x 생성 중.
+- 평가 세트(빌드 `/data/harvest/out/teach_l8d/data/eval/<세트>_<형식>.jsonl`, 형식 v2·nd-xyz·nd-est·nd-pt·pt·s-min): OOD-H 96편(성공 59)·OOD-D 40(32)·OOD-O 40(29)·OOD-S 30(23; 계획 40 중 쓸 면 없는 장면 10 건너뜀 — shelf_tall 8·counter_cabinet 2)·OOD-H-lift 60(48) 빌드됨, OOD-T 빌드 중, dev_x 180 중 155 생성(2026-09-26 23:50Z).
 - **다양성(L8 대비, `tools/teach_l8d/variety.py`)**: 받침면 종류 1 → 9, 탁자 높이(서로 다른 값) 1 → 134, 과제 3 → 14, 과제 유형 2 → 10, 물체 조합 11 → 751, 받침면×높이×과제×물체 조합 13 → 1,273(약 98배). L8의 dr 외관은 변형 이름으로만 셌기 때문에 외관 배수(471배)는 과대.
 
 ## 5. 영상(눈 확인)
