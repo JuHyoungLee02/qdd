@@ -21,7 +21,7 @@ N=$(echo $G | tr ',' '\n' | wc -l)
 export CUDA_VISIBLE_DEVICES=$G TEACH_35B_JOB=$J PYTHONPATH=$C${PYLIB:+:$PYLIB} OMP_NUM_THREADS=8
 export TRITON_CACHE_DIR=/data/harvest/cache/triton TORCHINDUCTOR_CACHE_DIR=/data/harvest/cache/inductor
 export CC=/data/harvest/jevl/bin/cc
-ARGS=(--data "$D" --out "$O" --model "$MODEL" --epochs $EPOCHS --lr $LR --r $R --alpha $ALPHA --micro $MICRO
+ARGS=(--data "$D" --out "$O" --model "$MODEL" --epochs $EPOCHS --lr $LR --lora-r $R --alpha $ALPHA --micro $MICRO
       --accum $ACCUM --warmup $WARMUP --workers $WORKERS --log-every $LOG_EVERY --experts-impl $EXPERTS_IMPL "$@")
 V=/data/harvest/venv_train/bin
 echo "START $(date -u +%FT%TZ) host=$(hostname) gpus=$G n=$N code=$C ${ARGS[*]}" >> $L/$J.log

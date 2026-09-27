@@ -113,7 +113,7 @@ def main(argv=None):
     ap.add_argument("--model", default=DEFAULT_MODEL)
     ap.add_argument("--epochs", type=float, default=2.0)
     ap.add_argument("--lr", type=float, default=1e-4)
-    ap.add_argument("--r", type=int, default=16)
+    ap.add_argument("--r", "--lora-r", dest="r", type=int, default=16)  # --lora-r under torchrun (--r is ambiguous there)
     ap.add_argument("--alpha", type=int, default=32)
     ap.add_argument("--micro", type=int, default=4)
     ap.add_argument("--accum", type=int, default=4)
