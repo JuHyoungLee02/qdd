@@ -30,12 +30,21 @@ def pool_for(rows: dict, key: str, n: int = 30, split: str = "train", exclude=()
     return {k: rows[k] for k in ok[:n]}
 
 
-def add_clutter(layout: dict, seed: int, pool: dict, ws, fr: dict, n_range=(5, 12)) -> tuple:
-    """-> (layout + clutter entries, placements). fr: footprint radius of each layout object."""
+def add_clutter(layout: dict, seed: int, pool: dict, ws, fr: dict, n_range=(5, 12), surface: dict | None = None
+                ) -> tuple:
+    """-> (layout + clutter entries, placements). fr: footprint radius of each layout object. surface: a furniture
+    scene's work surface (b4, change 12: its xy_box / top_z / covered_above; the layout z is its top) instead of the
+    visible L8 table box."""
     from ..sim.assets_x.clutter import sample_clutter
-    (x0, x1), (y0, y1) = TABLE_BOX
-    scene = {"surfaces": [{"id": "table", "top_z": 0.0, "xy_box": [[x0, x1], [y0, y1]],
-                           "area": (x1 - x0) * (y1 - y0)}]}
+    if surface is None:
+        (x0, x1), (y0, y1) = TABLE_BOX
+        s = {"id": "table", "top_z": 0.0, "xy_box": [[x0, x1], [y0, y1]]}
+    else:
+        if "xy_box" not in surface or "top_z" not in surface:
+            raise ValueError(f"surface {surface.get('id')}: needs xy_box and top_z")
+        (x0, x1), (y0, y1) = surface["xy_box"]
+        s = {k: surface[k] for k in ("id", "top_z", "xy_box", "covered_above") if surface.get(k) is not None}
+    scene = {"surfaces": [dict(s, area=(x1 - x0) * (y1 - y0))]}
     keep = [((ws[0][0] - MARGIN, ws[0][1] + MARGIN), (ws[1][0] - MARGIN, ws[1][1] + MARGIN))]
     for k, v in layout.items():
         r = fr[k] + LAYOUT_GAP

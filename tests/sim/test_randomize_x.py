@@ -41,7 +41,7 @@ def _overlap(a, b):
 
 def test_variants_and_pools():
     assert R.VARIANT_POOL == {"random": "test", "dr": "train"}  # unchanged
-    assert R.X_VARIANT_POOL == {"drx": "train_x", "randx": "test_x"}
+    assert R.X_VARIANT_POOL == {"drx": "train_x", "randx": "test_x", "drf": "train_x"}  # drf: change 12 (b4)
     assert set(X["pools"]) == {"train_x", "test_x"}
     assert R.pool_name("drx") == "train_x" and R.pool_name("dr") == "train" and R.pool_name("standard") is None
     for v in ("drx", "randx"):

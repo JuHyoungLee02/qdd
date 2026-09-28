@@ -407,7 +407,7 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
     for k in obj_ids:
         scene_attrs[k] = obj_cfg(k)
         scene_attrs[f"contact_{k}"] = contact_cfg(k)
-    if variant != "standard":  # random / dr: one parked rigid body per pool distractor (their own colliders only)
+    if variant not in ("standard", "drf"):  # random / dr: one parked rigid body per pool distractor (own colliders)
         from .randomize import distractor_scene_cfgs, randomized_table_cfg
         scene_attrs.update(distractor_scene_cfgs(variant))
         scene_attrs["table"] = randomized_table_cfg(scene_attrs["table"])  # same table + own material (visual)

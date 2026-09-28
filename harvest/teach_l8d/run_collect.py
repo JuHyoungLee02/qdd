@@ -131,6 +131,11 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             lay, dropped = fx.filter_layout(env.layout, surf, keep)
             if upper is not None:  # the place surface centre (its region, not the layout box)
                 lay[vid] = ((uregion[0][0] + uregion[0][1]) / 2, (uregion[1][0] + uregion[1][1]) / 2, 0.0)
+            if clutter_pool:  # b4 (change 12): real clutter on the work surface, clear of the layout
+                from .clutter_x import add_clutter
+                fr = {k: SC.OBJ_GEOM[k]["footprint_r"] for k in lay}
+                lay, placed = add_clutter(lay, seed, clutter_pool, env.ws, fr, surface=surf)
+                self.clutter_scene = {"n": len(placed), "ids": [p["id"] for p in placed]}
             env.layout = lay
             SC._LAYOUT["layout"] = lay
             self.furniture_scene = fx.summary(sc, surf, region, dropped)
@@ -250,15 +255,18 @@ def main(argv=None):
         objv_ids = register_for_tasks([e["task"] for e in eps])
         pool = None
         if a.clutter:  # b3 clutter objects of this process (prims before make_env), change 11
-            if a.furniture or a.objset != "x":
-                raise ValueError("--clutter: L8 table scenes with --objset x only")
+            if a.objset != "x":
+                raise ValueError("--clutter: --objset x only")
             from ..sim.objv import register
             from .clutter_x import load_real, pool_for
-            pool = pool_for(load_real(), f"{a.variant}|{a.table_z:.3f}|{a.lift}", n=a.clutter)
+            key = f"{a.variant}|{a.table_z:.3f}|{a.lift}" + (f"|{a.furniture}" if a.furniture else "")
+            pool = pool_for(load_real(), key, n=a.clutter)
             register(pool)
-        if a.furniture and a.variant != "standard":
-            raise ValueError("furniture scenes: variant standard only (the drx table material / pool distractors "
+        if a.furniture and a.variant not in ("standard", "drf"):
+            raise ValueError("furniture scenes: variant standard or drf (drx: the table material / pool distractors "
                              "assume the L8 table)")
+        if a.variant == "drf" and not a.furniture:
+            raise ValueError("variant drf: furniture scenes only (L8 table scenes use drx)")
         world = make_world(a.variant, a.table_z, ws, a.lift, a.objset, a.furniture, a.reach,
                            "ood" if a.split == "ood_s" else "train",
                            ("ood" if a.split == "ood_s" else "train") if a.rooms else None, pool)

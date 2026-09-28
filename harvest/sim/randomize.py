@@ -26,12 +26,14 @@ POOLS_PATH = Path(__file__).with_name("randomization_pools.json")
 # L8-D (docs/stage3/prereg_l8d.md): wider pools in their own file so the original file, its digest and every
 # 'random' / 'dr' sample stay byte-identical. drx = TRAIN_X (training), randx = TEST_X (OOD-D evaluation only).
 POOLS_X_PATH = Path(__file__).with_name("randomization_pools_x.json")
-VARIANTS = ("standard", "random", "dr", "drx", "randx")
+VARIANTS = ("standard", "random", "dr", "drx", "randx", "drf")
 VARIANT_POOL = {"random": "test", "dr": "train"}
-X_VARIANT_POOL = {"drx": "train_x", "randx": "test_x"}
+X_VARIANT_POOL = {"drx": "train_x", "randx": "test_x", "drf": "train_x"}
 EVAL_ONLY_VARIANTS = ("random", "randx")
+LOOK_ONLY_VARIANTS = ("drf",)  # furniture scenes (b4, prereg_l8d change 12): HDR + key light only, no table /
+# floor slab / pool distractors (the scene has no L8 table; the room and the meshes keep their own PBR materials)
 META_SCHEMA = "qdd.randomization/v1"
-_VCODE = {"random": 1, "dr": 2, "drx": 3, "randx": 4}
+_VCODE = {"random": 1, "dr": 2, "drx": 3, "randx": 4, "drf": 5}
 _AXIS = {"table": 1, "floor": 2, "hdr": 3, "light": 4, "distractors": 5}
 _POOLS_CACHE: dict = {}
 
@@ -193,10 +195,11 @@ def sample_randomization(seed: int, variant: str, layout: dict | None = None, po
     c, pool = pools["common"], pools["pools"][pool_name(variant)]
     meta["pools_digest"] = pools_digest(pools)
 
-    rng = _rng(seed, variant, "table")
-    meta["table_material"] = dict(pool["table_materials"][int(rng.integers(len(pool["table_materials"])))])
-    rng = _rng(seed, variant, "floor")
-    meta["floor_material"] = dict(pool["floor_materials"][int(rng.integers(len(pool["floor_materials"])))])
+    if variant not in LOOK_ONLY_VARIANTS:
+        rng = _rng(seed, variant, "table")
+        meta["table_material"] = dict(pool["table_materials"][int(rng.integers(len(pool["table_materials"])))])
+        rng = _rng(seed, variant, "floor")
+        meta["floor_material"] = dict(pool["floor_materials"][int(rng.integers(len(pool["floor_materials"])))])
 
     rng = _rng(seed, variant, "hdr")
     h = pool["hdr_maps"][int(rng.integers(len(pool["hdr_maps"])))]
@@ -224,6 +227,9 @@ def sample_randomization(seed: int, variant: str, layout: dict | None = None, po
                      "quat_wxyz": [_r(v, 6) for v in look_at_quat(pos, tgt)],
                      "shape": {k: v for k, v in c["light_types"][lt].items() if k != "base_intensity"}}
 
+    if variant in LOOK_ONLY_VARIANTS:
+        meta["distractors"] = []
+        return meta
     rng = _rng(seed, variant, "distractors")
     dists = pool["distractors"]
     nr = pool.get("n_distractors", c["n_distractors"])  # pool-level override (L8-D x pools)
@@ -276,6 +282,10 @@ def validate_meta(m: dict) -> list:
         return bad + [f"{k} set" for k in ("table_material", "floor_material", "light", "hdr", "distractors")
                       if m[k] is not None]
     for ax in ("table_material", "floor_material"):
+        if m["variant"] in LOOK_ONLY_VARIANTS:
+            if m[ax] is not None:
+                bad.append(f"{ax} set")
+            continue
         if not isinstance(m[ax], dict) or "name" not in m[ax]:
             bad.append(ax)
     for ax in ("light", "hdr"):
@@ -491,6 +501,8 @@ def setup_visuals(env) -> dict:
     xf.AddScaleOp().Set((fl["size_m"][0], fl["size_m"][1], fl["thickness_m"]))
     _omnipbr(stage, ROOT + "/FloorMat", {"color": (0.5, 0.5, 0.5)})
     sim_utils.bind_visual_material(ROOT + "/Floor", ROOT + "/FloorMat", stage=stage, stronger_than_descendants=True)
+    if getattr(env, "variant", None) in LOOK_ONLY_VARIANTS:  # drf: the room / grid ground stays, no slab
+        UsdGeom.Imageable(cube).MakeInvisible()
     grid = stage.GetPrimAtPath("/World/GroundPlane/Environment")
     if grid.IsValid():
         UsdGeom.Imageable(grid).MakeInvisible()
@@ -527,8 +539,10 @@ def apply_visuals(env, meta: dict) -> None:
     from pxr import Gf, Sdf, UsdLux
 
     stage = omni.usd.get_context().get_stage()
-    set_material(stage, f"{ENV0}/Table/{MAT}", meta["table_material"])
-    set_material(stage, ROOT + "/FloorMat", meta["floor_material"])
+    if meta["table_material"] is not None:  # drf (furniture scenes): no L8 table, no floor slab
+        set_material(stage, f"{ENV0}/Table/{MAT}", meta["table_material"])
+    if meta["floor_material"] is not None:
+        set_material(stage, ROOT + "/FloorMat", meta["floor_material"])
     cols = {c["name"]: c["color"] for c in pool_of(meta["variant"])["distractor_colors"]}
     for d in meta["distractors"]:
         if d["color"] is not None:

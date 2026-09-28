@@ -24,7 +24,7 @@ from . import spec as SP
 FORMATS = ("v2", "nd-xyz", "nd-est", "nd-pt", "pt", "s-min")
 PT_ARM = {"v2": "xyz", "nd-xyz": "nd-xyz", "nd-est": "nd-est", "nd-pt": "nd-pt", "pt": "pt", "s-min": "nd-xyz"}
 TAG_LINES = "source: qdd_sim/ffw_sg2\nframe: base_ffw_sg2\n"
-TRAIN_VARIANTS = ("standard", "drx")
+TRAIN_VARIANTS = ("standard", "drx", "drf")  # drf: b4 furniture look randomization (change 12)
 # robot self-information (canon §97: robot-intrinsic, from the robot's own joint setpoint, not a scene value)
 FRAME_LINE = ("- Robot frame: origin at the robot base, x forward (away from the robot), y to the robot's left, z up; "
               "positions in metres.")
