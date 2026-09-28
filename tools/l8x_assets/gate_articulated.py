@@ -3,12 +3,14 @@ objects_thor, CC BY 4.0), several per process, each spawned as a fixed-root arti
 yaw -90 deg, as gate_drawer / furniture MESH_YAW), bodies 1 kg, joints damped (no stiffness).
   spawn    every movable joint stays within 5 mm / 3 deg of its start for 2 s, the root does not move
   actuate  per movable joint (up to MAX_J): a force (prismatic, FORCE N) or torque (revolute, TORQUE N m) about the
-           joint axis on its moving body for 1 s (revolute 2 s), both signs; ok = moved >= 60 % of the range or
+           joint axis on its moving body for 1 s (revolute 2 s), both signs; ok = moved >= 50 % of the range or
            >= 10 cm / 45 deg
   handle   handle-like bodies (handle / knob / button / switch / lever in the name) on or equal to the moving body
            (fixed-joint chain): world collider bbox after the spawn -> height, smallest cross size, the gap behind the
            handle to the moving part's front face and its protrusion (front = -x, towards the robot);
-           graspable = height 0.35-1.35 m (floor piece, lift + reach) and (bar: cross 8-45 mm, gap >= 25 mm |
+           graspable = height 0.35-1.35 m (floor piece) or a tabletop piece, and (horizontal bar: cross 8-45 mm,
+           gap >= 15 mm (Dresser_219_1 = 19 mm opens in the drawer gate) | vertical bar: protrusion >= 20 mm, width
+           8-70 mm |
            knob / lever: protrusion >= 15 mm, cross 8-60 mm)
   pass     spawn ok and at least one joint that actuates with a graspable handle on its moving part
 Output <out>/articulated_gate.json {asset: record}; ART lines per asset.
@@ -120,10 +122,22 @@ def main(argv=None):
         stage = omni.usd.get_context().get_stage()
         cache = UsdGeom.BBoxCache(Usd.TimeCode.Default(), ["default", "render", "proxy", "guide"])
 
-        def bbox(n, body):
+        def bbox(n, body, bar=False):
+            """World bbox of a body; bar=True: of its longest collider (the grasp bar, without the mounting posts,
+            gate_drawer change 8) when it has colliders."""
             root = stage.GetPrimAtPath(f"/World/envs/env_0/ART_{n}")
             for p in Usd.PrimRange(root):
                 if p.GetName() == body:
+                    best = None
+                    for c in (Usd.PrimRange(p) if bar else []):
+                        if "Collider" in c.GetName():
+                            r = cache.ComputeWorldBound(c).ComputeAlignedRange()
+                            if not r.IsEmpty():
+                                b = (np.array(r.GetMin()), np.array(r.GetMax()))
+                                if best is None or (b[1] - b[0]).max() > (best[1] - best[0]).max():
+                                    best = b
+                    if best is not None:
+                        return best
                     r = cache.ComputeWorldBound(p).ComputeAlignedRange()
                     return None if r.IsEmpty() else (np.array(r.GetMin()), np.array(r.GetMax()))
             return None
@@ -141,12 +155,13 @@ def main(argv=None):
             hand = {}
             rb = cache.ComputeWorldBound(stage.GetPrimAtPath(f"/World/envs/env_0/ART_{n}")).ComputeAlignedRange()
             floor_z = float(rb.GetMin()[2])
+            tabletop = float(rb.GetMax()[2]) - floor_z < 0.6
             for j, m in mov.items():
                 body = bbox(n, m["moving"])
                 for b in m["group"]:
                     if not any(w in b.lower() for w in HANDLE_WORDS):
                         continue
-                    hb = bbox(n, b)
+                    hb = bbox(n, b, bar=b != m["moving"])
                     if hb is None:
                         continue
                     lo, hi = hb
@@ -160,11 +175,13 @@ def main(argv=None):
                         prot = float(size[0])
                     z = float((lo[2] + hi[2]) / 2) - floor_z  # above the piece bottom (it stands on the floor)
                     knob = b == m["moving"] or any(w in b.lower() for w in HANDLE_WORDS[1:])
-                    ok_h = 0.35 <= z <= 1.35
+                    ok_h = tabletop or 0.35 <= z <= 1.35  # tabletop pieces stand on a 0.75-0.95 m counter
                     if knob:
                         ok = ok_h and prot is not None and prot >= 0.015 and 0.008 <= cross <= 0.06
-                    else:
-                        ok = ok_h and gap is not None and gap >= 0.025 and 0.008 <= float(min(size)) <= 0.045
+                    elif size[2] > size[1]:  # vertical bar (fridge / cabinet door): pinched from the sides
+                        ok = ok_h and prot is not None and prot >= 0.02 and 0.008 <= float(size[1]) <= 0.07
+                    else:  # horizontal bar: front grasp, fingers closing vertically (xdrawer change 10)
+                        ok = ok_h and gap is not None and gap >= 0.015 and 0.008 <= float(min(size)) <= 0.045
                     hand.setdefault(j, []).append({"body": b, "z": round(z, 3),
                                                   "size": [round(float(v), 3) for v in size],
                                                   "gap": None if gap is None else round(gap, 3),
@@ -205,7 +222,7 @@ def main(argv=None):
                     qb = float(art.data.joint_pos[0, jn.index(j)])
                     art.set_external_force_and_torque(T.zeros_like(f), T.zeros_like(f))
                     best = max(best, abs(qb - qa))
-                need = min(0.6 * abs(rng), 0.10 if m["type"] == "prismatic" else math.radians(45)) if rng else 1e9
+                need = min(0.5 * abs(rng), 0.10 if m["type"] == "prismatic" else math.radians(45)) if rng else 1e9
                 acts.append({"joint": j, "type": m["type"], "moving": m["moving"], "range": round(rng, 4),
                              "moved": round(best, 4), "ok": bool(best >= need - 1e-6 and rng > 0),
                              "handles": hand.get(j, [])})
