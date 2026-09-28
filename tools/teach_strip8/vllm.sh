@@ -3,7 +3,7 @@
 # greedy decoding from the client). usage: vllm.sh <gpu> <model dir> <served name pt_*> <port> [gpu mem util]
 # log -> /data/harvest/logs/strip8/vllm_<name>.log ; stop: tools/teach_strip8/stop.sh <name>
 source /data/harvest/env.sh
-G=$1; M=$2; N=$3; PORT=$4; U=${5:-0.40}
+G=$1; M=$2; N=$3; PORT=$4; U=${5:-0.40}; shift 5 2>/dev/null || shift $#  # extra args (e.g. --host 0.0.0.0) follow
 L=/data/harvest/logs/strip8; mkdir -p $L
 export CUDA_VISIBLE_DEVICES=$G TEACH_STRIP8_JOB=$N
 # same environment as tools/prompt_health/serve.sh and the astra_solo / couple_dry Qwen runs (C compiler for Triton,
@@ -16,4 +16,4 @@ export CC=/data/harvest/jevl/bin/cc ZIG_GLOBAL_CACHE_DIR=/data/harvest/cache/zig
 echo "START $(date -u +%FT%TZ) host=$(hostname) gpu=$G $M $N $PORT" >> $L/vllm_$N.log
 exec /data/harvest/venv_vllm/bin/vllm serve $M --host 127.0.0.1 --port $PORT --dtype bfloat16 --max-model-len 12288 \
   --served-model-name $N --gpu-memory-utilization $U --enable-prefix-caching \
-  --limit-mm-per-prompt '{"image":3,"video":0,"audio":0}' --seed 0 >> $L/vllm_$N.log 2>&1
+  --limit-mm-per-prompt '{"image":3,"video":0,"audio":0}' --seed 0 "$@" >> $L/vllm_$N.log 2>&1
