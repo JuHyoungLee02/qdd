@@ -2,7 +2,7 @@
 # E-OPRATIO8 driver (prereg_opratio.md). prep: base d-min rows from L8-X b2, guarded open pool, the four training
 # files, the G rows. arm: train one ratio on one GPU (--save-every 200, resume if a state exists), merge, then the
 # G evaluation and the L8-X evaluation (dist8_eval.sh, d-min) with vLLM on the same GPU.
-# usage: opratio.sh <code dir> prep | opratio.sh <code dir> arm <ratio 0|25|50|75> <gpu> <port>
+# usage: opratio.sh <code dir> prep | opratio.sh <code dir> arm <ratio 0|25|50|75> <gpu> <port> [seed, default 0]
 C=$1; CMD=$2
 O=/data/harvest/out/opratio; L=/data/harvest/logs/opratio; P=/data/harvest/venv_train/bin/python
 mkdir -p $O $L
@@ -16,12 +16,12 @@ if [ "$CMD" = prep ]; then
     && echo "PREP_DONE $(date -u +%FT%TZ)" >> $L/opratio.log || echo "PREP_FAIL $(date -u +%FT%TZ)" >> $L/opratio.log
   exit 0
 fi
-R=$3; G=$4; PORT=$5; A=op_p$R
+R=$3; G=$4; PORT=$5; SEED=${6:-0}; A=op_p$R; [ "$SEED" != 0 ] && A=${A}_s$SEED
 until grep -q PREP_DONE $L/opratio.log 2>/dev/null; do grep -q PREP_FAIL $L/opratio.log && exit 1; sleep 30; done
 S=$(( 1632 * (100 + R) / 100 ))  # = train.counts.json steps (1632 / 2040 / 2448 / 2856)
 RES=""; [ -d $O/run_$A/state ] && RES="--resume"
 bash $C/tools/teach_pt/py.sh train $G train_$A $C harvest.teach_l8.train --data $O/train_p$R.jsonl --out $O/run_$A \
-  --epochs 3 --max-steps $S --micro 8 --accum 2 --log-every 10 --save-every 200 $RES
+  --epochs 3 --max-steps $S --micro 8 --accum 2 --log-every 10 --save-every 200 --seed $SEED $RES
 E=$(ls -d $O/run_$A/epoch* 2>/dev/null | sort -V | tail -1)
 [ -n "$E" ] && bash $C/tools/teach_pt/py.sh train $G merge_$A $C harvest.teach_l8.merge --adapter $E --out $O/merged_$A
 echo "TRAIN_DONE $A $E $(date -u +%FT%TZ)" >> $L/opratio.log
