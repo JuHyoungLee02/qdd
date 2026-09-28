@@ -4,7 +4,8 @@
 P=${1:-40}
 X=/data/harvest/out/xemb_proto
 S=/data/harvest/data/oxe_depth/maniskill
-PY=/data/harvest/venv_e3st/bin/python
+PY=/data/juhyoung_pi05/uvpython/cpython-3.12.13-linux-x86_64-gnu/bin/python3.12  # venv_e3st link is broken off 7a2a
+export PYTHONPATH=$X/code:/data/harvest/venv_e3st/lib/python3.12/site-packages
 cd $X/code
 rm -rf $X/dh_msk_parts; mkdir -p $X/dh_msk_parts
 ls $S | xargs -P $P -I{} bash -c "$PY -m xemb.src_maniskill $S/{} $X/dh_msk_parts/{} 2000 > /dev/null 2>&1"
