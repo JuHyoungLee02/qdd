@@ -131,12 +131,14 @@ def _stack_on(rng, pool: dict, placed: list, used: set, box, keep, h_room: float
 
 
 def add_clutter(layout: dict, seed: int, pool: dict, ws, fr: dict, n_range=(5, 12), surface: dict | None = None,
-                arrange: bool = False) -> tuple:
+                arrange: bool = False, taken_names: set | None = None) -> tuple:
     """-> (layout + clutter entries, placements). fr: footprint radius of each layout object. surface: a furniture
     scene's work surface (b4, change 12: its xy_box / top_z / covered_above; the layout z is its top) instead of the
     visible L8 table box. arrange (user-log 175): + a display row of products along the far edge (p = P_DISPLAY) and
     products stacked on flat-topped products (p = P_STACK); stacked entries are (x, y, yaw, base id)."""
     from ..sim.assets_x.clutter import sample_clutter
+    if taken_names is not None:  # change 18 (audit P2): every object name in the scene is unique
+        pool = unique_named(pool, taken_names)
     if surface is None:
         (x0, x1), (y0, y1) = TABLE_BOX
         s = {"id": "table", "top_z": 0.0, "xy_box": [[x0, x1], [y0, y1]]}
@@ -191,7 +193,8 @@ def confuser_ids(rows: dict, target: str, n: int = 2, split: str = "train") -> l
     return c[:n]
 
 
-def add_confusers(layout: dict, seed: int, target: str, place: str, pool: dict, fr: dict, box) -> tuple:
+def add_confusers(layout: dict, seed: int, target: str, place: str, pool: dict, fr: dict, box,
+                  taken_names: set | None = None) -> tuple:
     """With p = P_CONFUSE (seeded): 1-2 look-alikes of the target (confuser_ids, registered in the pool) 8-16 cm from
     it, inside the surface box, clear of every layout object and of the place. -> (layout, ids)."""
     import math
@@ -201,6 +204,8 @@ def add_confusers(layout: dict, seed: int, target: str, place: str, pool: dict, 
     if rng.random() >= P_CONFUSE or target not in layout:
         return layout, []
     cand = [k for k in confuser_ids(pool, target) if k in pool and k not in layout]
+    if taken_names is not None:  # look-alikes must have their own names (audit P2)
+        cand = [k for k in cand if name_of(pool[k]) not in taken_names]
     (x0, x1), (y0, y1) = box
     out, ids = dict(layout), []
     m = layout[target]
@@ -218,5 +223,44 @@ def add_confusers(layout: dict, seed: int, target: str, place: str, pool: dict, 
                    for j, v in out.items() if j != place):
                 out[k] = (q[0], q[1], float(rng.uniform(-math.pi, math.pi)))
                 ids.append(k)
+                if taken_names is not None:
+                    taken_names.add(name_of(pool[k]))
                 break
     return out, ids
+
+
+def name_of(row: dict) -> str:
+    """The name an instruction / prompt uses for a real object (lower case, single spaces)."""
+    return " ".join(str(row.get("task_name") or row.get("name") or "").lower().split())
+
+
+def unique_named(pool: dict, taken: set) -> dict:
+    """Pool entries whose name is not taken and not shared with an earlier (sorted) entry."""
+    out, seen = {}, set(taken)
+    for k in sorted(pool):
+        n = name_of(pool[k])
+        if n and n not in seen:
+            out[k] = pool[k]
+            seen.add(n)
+    return out
+
+
+HEAD_TILT0 = 0.785  # rad, 45 deg: the real robot's head pitch (head_joint1)
+HEAD_P = 0.15  # share of L8S episodes with a random head pose (user-log 181, change 17)
+HEAD_PAN_MAX, HEAD_TILT_MAX = 0.2618, 0.1745  # +-15 deg pan (head_joint2), +-10 deg tilt (user); the roll is never moved
+
+
+def head_pose(seed: int) -> dict:
+    """Head joints of an L8S episode: default (tilt 0.785, pan 0) or, with p = HEAD_P, a small pose drawn from
+    normals truncated at the limits (sd = limit / 2, so most poses stay near the default)."""
+    import numpy as np
+    rng = np.random.default_rng([int(seed), 17, 1])
+    if rng.random() >= HEAD_P:
+        return {"tilt": HEAD_TILT0, "pan": 0.0, "random": False}
+
+    def tn(lim):
+        while True:
+            v = float(rng.normal(0.0, lim / 2))
+            if abs(v) <= lim:
+                return v
+    return {"tilt": round(HEAD_TILT0 + tn(HEAD_TILT_MAX), 4), "pan": round(tn(HEAD_PAN_MAX), 4), "random": True}

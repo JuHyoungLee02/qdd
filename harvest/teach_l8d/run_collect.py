@@ -31,6 +31,8 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
         if _fx.is_mesh_kind(furniture):  # licensed mesh pieces (THOR / cyclo_lab): only this kind's pieces
             d = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sim", "assets_x")
             mesh = _fx.mesh_subset(_fx.load_mesh_assets(d), furniture, mesh_split)
+            if clutter_pool:  # L8S (change 17): only the pieces that passed the helper's per-piece gate
+                mesh = _fx.passed_pieces(mesh)
             if not mesh:
                 raise ValueError(f"no {mesh_split} mesh pieces for {furniture}")
         rooms = None
@@ -52,6 +54,20 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             self.w_open = float(GRIP_MAX_W)
             self._st = None
             self.last_obs = None
+            if clutter_pool and furniture is not None:  # L8S: head pitch 0.785 (+10 deg) above the URDF's 0.6951
+                self._head_limit()
+
+        def _head_limit(self, upper: float = 1.0):
+            import torch
+            rob = self.env.robot
+            if "head_joint1" not in rob.joint_names:
+                return
+            j = rob.joint_names.index("head_joint1")
+            lim = rob.data.soft_joint_pos_limits[0, j].clone() if hasattr(rob.data, "soft_joint_pos_limits") else None
+            lo = float(lim[0]) if lim is not None else -0.2317
+            limits = torch.tensor([[[lo, upper]]], device=rob.device)
+            fn = getattr(rob, "write_joint_position_limit_to_sim", None) or getattr(rob, "write_joint_limits_to_sim")
+            fn(limits, joint_ids=[j])
 
         def reset(self, seed, task="mug_tray"):
             if furniture is None:
@@ -122,7 +138,19 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             # the hard reset re-initialises the articulation from cfg.init_state (default_joint_pos alone was reset
             # to the INIT_JOINTS lift: measured -0.125 in every scene, L8X-assets finding): set it there too
             rob.cfg.init_state.joint_pos["lift_joint"] = env.lift
+            head = None
+            from .clutter_x import HEAD_TILT0
+            if clutter_pool:  # L8S change 17: head 0.785 rad (45 deg, the real robot); ~15 % get a small pan / tilt
+                from .clutter_x import head_pose
+                head = head_pose(seed)
+                for jn, v in (("head_joint1", head["tilt"]), ("head_joint2", head["pan"])):
+                    if jn in rob.joint_names:
+                        rob.data.default_joint_pos[0, rob.joint_names.index(jn)] = v
+                        rob.cfg.init_state.joint_pos[jn] = v
             FX.author_scene(env, sc, mesh, rooms)
+            if clutter_pool and os.environ.get("L8S_ISO"):  # calibration runs only: the tonemapper's film ISO
+                import carb
+                carb.settings.get_settings().set("/rtx/post/tonemap/filmIso", float(os.environ["L8S_ISO"]))
             try:
                 env.set_seed(seed, task)
             except RuntimeError as ex:  # task_layout found no layout in this box
@@ -152,6 +180,9 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             env.layout = lay
             SC._LAYOUT["layout"] = lay
             self.furniture_scene = fx.summary(sc, surf, region, dropped)
+            self.furniture_scene["room"] = (sc.get("room") or {}).get("name")  # audit P6: record the room
+            if head is not None:
+                self.furniture_scene["head"] = head
             if upper is not None:
                 self.furniture_scene["place_surface"] = {"id": upper["id"], "kind": upper.get("kind"),
                                                          "top_z": upper["top_z"], "region": uregion}
@@ -160,11 +191,39 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             perturb(env, "P0", seed)
             for _ in range(PRE_RENDER):
                 env.env.sim.render()
+            if head is not None and head["random"] and not self._head_sees(lay, task, tz, upper):
+                # change 17: a random head pose is used only when the object and its destination stay in view
+                for jn, v in (("head_joint1", HEAD_TILT0), ("head_joint2", 0.0)):
+                    if jn in rob.joint_names:
+                        rob.data.default_joint_pos[0, rob.joint_names.index(jn)] = v
+                        rob.cfg.init_state.joint_pos[jn] = v
+                head.update(tilt=HEAD_TILT0, pan=0.0, random=False, fallback=True)
+                env.reset()
+                perturb(env, "P0", seed)
+                for _ in range(PRE_RENDER):
+                    env.env.sim.render()
             self.pl = OraclePlanner(env)
             self.cmd_quat = np.asarray(self.pl.cmd_quat, float)
             self.quat0 = np.asarray(self.pl.goal_quat, float)
             self.w_close = float(self.pl.w_close)
             self._st = None
+
+        def _head_sees(self, lay, task, tz, upper, margin: float = 0.05) -> bool:
+            """Target and destination project inside the head image (5 % margin) at the current head pose."""
+            from ..astra_motion import geometry as G
+            from ..sim.tasks import TASKS
+            cam = self._cam("cam_head", "head")
+            s = TASKS[task]
+            pts = [(lay[s.target][0], lay[s.target][1], tz + 0.03)]
+            if s.place in lay:
+                pz = float(upper["top_z"]) if upper is not None and s.place == "o19" else tz
+                pts.append((lay[s.place][0], lay[s.place][1], pz + 0.01))
+            for p in pts:
+                u, v, z = G.project(cam, p)
+                if not (z > 0 and margin * cam.W <= u <= (1 - margin) * cam.W
+                        and margin * cam.H <= v <= (1 - margin) * cam.H):
+                    return False
+            return True
 
         def task_info(self):
             from ..sim.tasks import X_STEPS

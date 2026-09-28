@@ -14,7 +14,21 @@ class SkipScene(Exception):
     pass
 
 
-MESH_TABLES = ("assets_table.json", "assets_cyclo.json")  # harvest/sim/assets_x (helper L8X-assets)
+MESH_TABLES = ("assets_table.json", "assets_cyclo.json", "assets_ph.json")  # harvest/sim/assets_x (helper L8X-assets;
+# assets_ph = Poly Haven display fixtures, tag "ph", change 17)
+B4_ASSETS = "docs/stage3/l8x_b4_assets.json"  # helper's L8S lists (pieces passing the per-piece gate, fixtures)
+
+
+def passed_pieces(mesh: dict) -> dict:
+    """L8S: the mesh pieces of the helper's gate lists (furniture_pieces.pass + display_fixtures.fixtures); cyclo_lab
+    pieces (gated as a kind in change 7) stay."""
+    import json
+    import os
+    p = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), B4_ASSETS)
+    a = json.load(open(p))
+    fix = a["display_fixtures"]["fixtures"]
+    ok = set(a["furniture_pieces"]["pass"]) | set(fix if isinstance(fix, list) else fix.keys())
+    return {n: m for n, m in mesh.items() if n in ok or m.get("tag") == "cyclo"}
 
 
 def load_mesh_assets(directory: str) -> dict:
@@ -30,7 +44,7 @@ def load_mesh_assets(directory: str) -> dict:
 
 
 def is_mesh_kind(kind: str) -> bool:
-    return "_" in kind and kind.split("_", 1)[0] in ("thor", "cyclo")
+    return "_" in kind and kind.split("_", 1)[0] in ("thor", "cyclo", "ph")
 
 
 def mesh_subset(mesh_assets: dict, kind: str, split: str) -> dict:

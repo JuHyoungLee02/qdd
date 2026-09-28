@@ -169,3 +169,22 @@ def test_front_behind_between_change18():
         mid = ((w["o8"][0] + w["o9"][0]) / 2, (w["o8"][1] + w["o9"][1]) / 2)
         assert math.dist(mid, w["o29"][:2]) < 1e-9 and 0.20 - 1e-9 <= math.dist(w["o8"][:2], w["o9"][:2]) <= 0.26 + 1e-9
         assert math.dist(w[k][:2], w["o29"][:2]) >= 0.12 - 1e-9
+
+
+def test_unique_names_change18():
+    rows = CX.load_real()
+    pool = CX.pool_for(rows, "drf|0.000|thor_table", n=60, n_base=12)
+    banned = CX.name_of(next(iter(pool.values())))
+    surf = {"id": "s1", "top_z": 0.46, "xy_box": [[0.30, 0.75], [-0.55, 0.20]]}
+    for seed in range(40000, 40020):
+        out, placed = CX.add_clutter({"o5": (0.48, -0.33, 0.0)}, seed, pool, ((0.38, 0.52), (-0.40, -0.10)), {"o5": 0.114}, surface=surf, arrange=True, taken_names={banned})
+        names = [CX.name_of(pool[p["id"]]) for p in placed]
+        assert banned not in names and len(names) == len(set(names))
+
+
+def test_head_pose_change17():
+    hs = [CX.head_pose(s) for s in range(40000, 42000)]
+    r = [h for h in hs if h["random"]]
+    assert 0.12 <= len(r) / len(hs) <= 0.18
+    assert all(h["tilt"] == 0.785 and h["pan"] == 0.0 for h in hs if not h["random"])
+    assert all(abs(h["pan"]) <= CX.HEAD_PAN_MAX and abs(h["tilt"] - 0.785) <= CX.HEAD_TILT_MAX for h in r)
