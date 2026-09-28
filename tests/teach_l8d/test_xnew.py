@@ -128,3 +128,8 @@ def test_hooks_push_plan_layout_and_label():
     assert XL.plan(st, info, 0.85, 0.107) == XN.plan_push(st, info, 0.85, 0.107)
     lab = XL.label(st, info, 0.85, 0.107, first=True)
     assert lab["step"] == "above_start" and "behind the red cup" in lab["answer"]
+
+
+def test_gate_seeds_cover_the_new_task_gates():
+    from harvest.teach_l8d import spec as S
+    assert S.check_seed(35205, "gate") == 35205 and S.check_seed(35000, "gate") == 35000

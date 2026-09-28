@@ -17,7 +17,8 @@ import math
 import numpy as np
 
 TRAIN_SEEDS = range(30000, 35000)
-GATE_SEEDS = range(35000, 35200)
+TRAIN_SEEDS_2 = range(36000, 38000)  # second TRAIN block (change 10: confuser scenes 36000-; 30000-34999 is full)
+GATE_SEEDS = range(35000, 35300)  # 35200-35299: L8-X new-task gates (prereg_l8x_tasks change 1)
 OOD_SEEDS = range(70000, 71000)
 OOD_SETS = {"ood_h": range(70000, 70100), "ood_o": range(70100, 70300), "ood_d": range(70300, 70500),
             "ood_s": range(70500, 70700), "ood_t": range(70700, 70900), "ood_hl": range(70900, 71000)}
@@ -37,6 +38,8 @@ OOD_T_TASKS = ("bluemug_bin", "bottle_stand")  # unseen compositions of trained 
 X_MULTI_TASKS = ("mug_tray_bluemug_marker", "clear_to_bin")  # multi-step (prompt +m version, change 3)
 X_REJECTED_TASKS = ("mug_tray_bottle_marker",)  # truth gate 1/3 (the bottle tipped on the marker): not generated
 X_FURNITURE_ONLY = ("mug_to_upper", "mug_to_container")  # = tasks.X_FURNITURE_TASKS (furniture scenes)
+CONF_TASKS = ("cf_mug_tray", "cf_bottle_tray", "cf_mug_marker", "cf_bluemug_tray", "cf_mug_bin")  # change 10
+CONF_START = 36000
 X_TRAIN_START = 31200  # TRAIN seeds of the L8-X task episodes (phase 1 = 30000-31199)
 STANDARD_SHARE = 1 / 3
 CLEAN_SHARE = 0.25  # = L8
@@ -54,9 +57,14 @@ def _r(v, n=3):
     return round(float(v), n)
 
 
+def is_train_seed(seed: int) -> bool:
+    s = int(seed)
+    return (s in TRAIN_SEEDS and s not in DEV_X) or s in TRAIN_SEEDS_2
+
+
 def check_seed(seed: int, split: str, confirm_ood: bool = False) -> int:
     s = int(seed)
-    if split == "train" and s in TRAIN_SEEDS and s not in DEV_X:
+    if split == "train" and is_train_seed(s):
         return s
     if split == "dev_x" and s in DEV_X:
         return s
