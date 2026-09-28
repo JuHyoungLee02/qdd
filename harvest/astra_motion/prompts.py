@@ -45,6 +45,15 @@ OBJ_DESC.update({"o21": "box 7 x 5 cm, 6 cm high", "o22": "flat cylinder, diamet
                  "o23": "thin cylinder, diameter 3.6 cm, height 12.0 cm",
                  "o24": "cylinder, diameter 7.0 cm, height 5.5 cm",
                  "o25": "box 6 x 6 cm, 5 cm high", "o26": "box 7 x 5 cm, 6 cm high"})
+# relational spots (change 18)
+OBJ_NAME.update({"o27": "spot in front of the green bottle", "o28": "spot behind the green bottle",
+                 "o29": "spot between the green bottle and the yellow box"})
+OBJ_DESC.update({"o27": "an empty place on the table about 10 cm in front of (toward the robot, -x) the green bottle's "
+                        "centre (nothing is drawn there)",
+                 "o28": "an empty place on the table about 10 cm behind (away from the robot, +x) the green bottle's "
+                        "centre (nothing is drawn there)",
+                 "o29": "an empty place on the table halfway between the green bottle and the yellow box (nothing is "
+                        "drawn there)"})
 
 STATIC = """You control the right arm of a humanoid robot (ROBOTIS AI Worker FFW-SG2) at a table, in simulation, by looking at its cameras and giving short end-effector commands.
 
@@ -161,6 +170,13 @@ def place_rule(place: str, place_name: str) -> str:
         side = "left (+y)" if place == "o17" else "right (-y)"
         return (f"on the table about 10 cm to the robot's {side} of the green bottle (its centre within 4 cm of "
                 f"that point, standing on the table)")
+    if place in ("o27", "o28"):  # change 18: in front of / behind the bottle
+        side = "in front of (toward the robot, -x)" if place == "o27" else "behind (away from the robot, +x)"
+        return (f"on the table about 10 cm {side} the green bottle (its centre within 4 cm of that point, standing on "
+                f"the table)")
+    if place == "o29":
+        return ("on the table halfway between the green bottle and the yellow box (its centre within 4 cm of that "
+                "point, standing on the table)")
     return f"on the {place_name} (resting on it, supported by it)"
 
 

@@ -151,3 +151,21 @@ def test_confusers_change16():
         for k in ids:
             assert rows[k]["footprint_r"] + rows[tgt]["footprint_r"] + 0.02 - 1e-9 <= math.dist(out[k][:2], lay[tgt][:2]) <= 0.08 + max(0.08, rows[k]["footprint_r"] + rows[tgt]["footprint_r"] + 0.02) + 1e-9
     assert 0.1 <= hits / 200 <= 0.3
+
+
+def test_front_behind_between_change18():
+    import math
+    from harvest.sim import objv as OV
+    from harvest.sim import tasks as T
+    k = sorted(k for k, r in CX.load_real().items() if r["split"] == "train" and r.get("task_target_ok"))[5]
+    OV.register_for_tasks([f"ov_front__{k}", f"ov_behind__{k}", f"ov_between__{k}"])
+    ws = ((0.37, 0.55), (-0.42, -0.04))
+    for seed in range(40000, 40010):
+        f = T.x_task_layout(seed, f"ov_front__{k}", ws=ws)
+        assert abs(f["o27"][0] - f["o8"][0] + 0.10) < 1e-9 and ws[0][0] <= f["o27"][0] <= ws[0][1]
+        b = T.x_task_layout(seed, f"ov_behind__{k}", ws=ws)
+        assert abs(b["o28"][0] - b["o8"][0] - 0.10) < 1e-9
+        w = T.x_task_layout(seed, f"ov_between__{k}", ws=ws)
+        mid = ((w["o8"][0] + w["o9"][0]) / 2, (w["o8"][1] + w["o9"][1]) / 2)
+        assert math.dist(mid, w["o29"][:2]) < 1e-9 and 0.20 - 1e-9 <= math.dist(w["o8"][:2], w["o9"][:2]) <= 0.26 + 1e-9
+        assert math.dist(w[k][:2], w["o29"][:2]) >= 0.12 - 1e-9

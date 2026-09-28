@@ -196,8 +196,15 @@ OBJV_TASK_KINDS = {"tray": ("o5", "Put the {n} on the blue tray.", ()),
                    "left": ("o17", "Put the {n} to the left of the green bottle.", ()),
                    "right": ("o18", "Put the {n} to the right of the green bottle.", ()),
                    # change 15: onto another furniture surface (virtual place o19 = a higher usable surface)
-                   "upper": ("o19", "Put the {n} on the higher surface.", ())}
-OBJV_REL = {"left": ("o8", "o17", 0.10), "right": ("o8", "o18", -0.10)}
+                   "upper": ("o19", "Put the {n} on the higher surface.", ()),
+                   # change 18: in front of / behind the bottle, between the bottle and the yellow box
+                   "front": ("o27", "Put the {n} in front of the green bottle.", ()),
+                   "behind": ("o28", "Put the {n} behind the green bottle.", ()),
+                   "between": ("o29", "Put the {n} between the green bottle and the yellow box.", ())}
+OBJV_REL = {"left": ("o8", "o17", 0.10), "right": ("o8", "o18", -0.10),
+            "front": ("o8", "o27", 0.0, -0.10), "behind": ("o8", "o28", 0.0, 0.10)}  # ref, spot, dy[, dx]
+OBJV_BETWEEN = {"between": ("o8", "o9", "o29")}  # refs a, b, spot (their midpoint)
+X_BETWEEN: dict = {}
 
 
 def objv_task_id(kind: str, obj: str) -> str:
@@ -219,6 +226,8 @@ def register_objv_tasks(ids, names: dict) -> list:
                 X_TASK_CODE[t] = 5000 + int(hashlib.sha256(t.encode()).hexdigest()[:6], 16) % 100000
                 if kind in OBJV_REL:
                     X_REL[t] = OBJV_REL[kind]
+                if kind in OBJV_BETWEEN:
+                    X_BETWEEN[t] = OBJV_BETWEEN[kind]
             out.append(t)
     return out
 
@@ -268,7 +277,37 @@ def x_task_layout(seed: int, task: str, ws=None) -> dict:
         else:  # pragma: no cover
             raise RuntimeError("layout")
         return {k: (float(pos[k][0]), float(pos[k][1]), 0.0) for k in ids}
-    if task in X_REL:
+    if task in X_BETWEEN:  # change 18: the spot halfway between two references 20-26 cm apart
+        ra, rb, spot = X_BETWEEN[task]
+        for _ in range(100000):
+            sp = (rng.uniform(wx[0] + 0.02, wx[1]), rng.uniform(wy[0] + 0.03, wy[1] - 0.03))
+            half = rng.uniform(0.10, 0.13)
+            ang = rng.uniform(-0.35, 0.35)  # the pair runs roughly along y
+            a = (sp[0] + half * math.sin(ang), sp[1] + half * math.cos(ang))
+            b = (sp[0] - half * math.sin(ang), sp[1] - half * math.cos(ang))
+            m = (rng.uniform(*wx), rng.uniform(*wy))
+            if (math.dist(m, sp) >= 0.12 and math.dist(m, a) >= _fr(s.target) + _fr(ra) + 0.05
+                    and math.dist(m, b) >= _fr(s.target) + _fr(rb) + 0.05):
+                break
+        else:  # pragma: no cover
+            raise RuntimeError("layout")
+        out = {s.target: (float(m[0]), float(m[1]), 0.0), ra: (float(a[0]), float(a[1]), 0.0),
+               rb: (float(b[0]), float(b[1]), 0.0), spot: (float(sp[0]), float(sp[1]), 0.0)}
+        p = sp
+    elif task in X_REL and len(X_REL[task]) > 3:  # change 18: in front of / behind (x offset); spot in the box
+        ref, spot, dy, dx = X_REL[task]
+        for _ in range(100000):
+            sp = (rng.uniform(wx[0] + 0.02, wx[1]), rng.uniform(wy[0] + 0.03, wy[1] - 0.03))
+            b = (sp[0] - dx, sp[1] - dy)
+            m = (rng.uniform(*wx), rng.uniform(*wy))
+            if math.dist(m, b) >= _fr(s.target) + _fr(ref) + 0.05 and math.dist(m, sp) >= 0.12:
+                break
+        else:  # pragma: no cover
+            raise RuntimeError("layout")
+        out = {s.target: (float(m[0]), float(m[1]), 0.0), ref: (float(b[0]), float(b[1]), 0.0),
+               spot: (float(sp[0]), float(sp[1]), 0.0)}
+        p = sp
+    elif task in X_REL:
         ref, spot, dy = X_REL[task]
         for _ in range(100000):
             b = (rng.uniform(wx[0] + 0.02, wx[1]), rng.uniform(wy[0] + 0.03, wy[1] - 0.03))

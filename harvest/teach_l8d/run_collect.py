@@ -127,10 +127,12 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                 env.set_seed(seed, task)
             except RuntimeError as ex:  # task_layout found no layout in this box
                 raise fx.SkipScene(f"layout: {ex}") from ex
-            from ..sim.tasks import X_REL
+            from ..sim.tasks import X_BETWEEN, X_REL
             keep = {TASKS[task].target, TASKS[task].place} | {o for st in X_STEPS.get(task, ()) for o in st[:2]}
             if task in X_REL:  # relational placement: keep its reference object (and its spot)
                 keep |= {X_REL[task][0], X_REL[task][1]}
+            if task in X_BETWEEN:  # between two references: keep both and the spot
+                keep |= set(X_BETWEEN[task])
             lay, dropped = fx.filter_layout(env.layout, surf, keep)
             if upper is not None:  # the place surface centre (its region, not the layout box)
                 lay[vid] = ((uregion[0][0] + uregion[0][1]) / 2, (uregion[1][0] + uregion[1][1]) / 2, 0.0)

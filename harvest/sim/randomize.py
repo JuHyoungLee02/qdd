@@ -36,9 +36,13 @@ META_SCHEMA = "qdd.randomization/v1"
 _VCODE = {"random": 1, "dr": 2, "drx": 3, "randx": 4, "drf": 5}
 _AXIS = {"table": 1, "floor": 2, "hdr": 3, "light": 4, "distractors": 5}
 LIGHT_GAIN = {"drf": 0.45}  # b4 gate: iTHOR rooms + the lab dome / key levels overexposed white surfaces
+_GAIN_ENV = "L8S_LIGHT_GAIN"  # calibration runs only (never in data generation): overrides the drf gain
 
 
 def _gain(variant: str) -> float:
+    import os
+    if variant == "drf" and os.environ.get(_GAIN_ENV):
+        return float(os.environ[_GAIN_ENV])
     return LIGHT_GAIN.get(variant, 1.0)
 
 

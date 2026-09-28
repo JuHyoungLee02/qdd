@@ -77,9 +77,13 @@ X_OBJ_GEOM = {
     "o24": dict(shape="cylinder", radius=0.035, height=0.055, mass=0.10, friction=(1.0, 1.0), color=(0.10, 0.65, 0.20)),
     "o25": dict(shape="cuboid", size=(0.06, 0.06, 0.05), mass=0.20, friction=(1.0, 1.0), color=(0.10, 0.65, 0.20)),
     "o26": dict(shape="cuboid", size=(0.07, 0.05, 0.06), mass=0.20, friction=(1.0, 1.0), color=(0.15, 0.35, 0.95)),
+    # relational spots of change 18 (invisible, no collider): in front of / behind the bottle, between bottle and box
+    "o27": dict(shape="marker", radius=0.04, height=0.002, invisible=True),
+    "o28": dict(shape="marker", radius=0.04, height=0.002, invisible=True),
+    "o29": dict(shape="marker", radius=0.04, height=0.002, invisible=True),
 }
 X_RIGID = ("o12", "o13", "o14", "o15", "o21", "o22", "o23", "o24", "o25", "o26")
-X_VISUAL_ONLY = ("o17", "o18", "o19", "o20")
+X_VISUAL_ONLY = ("o17", "o18", "o19", "o20", "o27", "o28", "o29")
 VIRTUAL_PLACES = ("o19", "o20")  # furniture surfaces as place objects (set per episode, Env.set_virtual_surface)
 SUPPORT_TOP = {"o15": 0.008}  # place surface above the object's bottom when it is not its top (bin floor)
 OBJ_GEOM.update(X_OBJ_GEOM)
