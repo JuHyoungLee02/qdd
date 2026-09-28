@@ -58,17 +58,19 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             if l8s and furniture is not None:  # L8S: head pitch 0.785 (+10 deg) above the URDF's 0.6951
                 self._head_limit()
 
-        def _head_limit(self, upper: float = 1.0):
-            import torch
-            rob = self.env.robot
-            if "head_joint1" not in rob.joint_names:
-                return
-            j = rob.joint_names.index("head_joint1")
-            lim = rob.data.soft_joint_pos_limits[0, j].clone() if hasattr(rob.data, "soft_joint_pos_limits") else None
-            lo = float(lim[0]) if lim is not None else -0.2317
-            limits = torch.tensor([[[lo, upper]]], device=rob.device)
-            fn = getattr(rob, "write_joint_position_limit_to_sim", None) or getattr(rob, "write_joint_limits_to_sim")
-            fn(limits, joint_ids=[j])
+        def _head_limit(self, upper_deg: float = 57.0):
+            """Raise head_joint1's upper limit on the USD joint prim (the hard reset re-reads the USD, so a
+            write_joint_limits call is lost; pilot: 'head_joint1 0.858 not in [-0.232, 0.785]'). 45 + 10 deg + 2."""
+            import omni.usd
+            from pxr import Usd
+            stage = omni.usd.get_context().get_stage()
+            root = stage.GetPrimAtPath("/World/envs/env_0/Robot")
+            for p in Usd.PrimRange(root if root.IsValid() else stage.GetPseudoRoot()):
+                if p.GetName() == "head_joint1":
+                    a = p.GetAttribute("physics:upperLimit")
+                    if a and a.IsValid() and float(a.Get()) < upper_deg:
+                        a.Set(float(upper_deg))
+                    break
 
         def reset(self, seed, task="mug_tray"):
             if furniture is None:
