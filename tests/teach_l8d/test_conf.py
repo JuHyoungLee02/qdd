@@ -70,3 +70,8 @@ def test_bundle_groups():
     assert ok("mug_tray", ["all"]) and ok("ov_tray__objv_0100598f46bd", ["all"]) and ok("mug_to_upper", ["all"])
     assert ok("clear_to_bin", ["all"]) and not ok("cf_mug_tray", ["all"]) and ok("cf_mug_tray", ["conf"])
     assert not ok("smallcup_tray", ["all"]) and not ok("bluemug_bin", ["all"]) and not ok("ov_tray__x", ["phase1"])
+
+
+def test_stack_group():
+    assert S.bundle_task_ok("st__gso_5_HTP__o12", ["all", "stack"]) and not S.bundle_task_ok("st__gso_5_HTP__o12", ["all"])
+    assert not S.bundle_task_ok("dr__x", ["all", "stack"])
