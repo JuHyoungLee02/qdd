@@ -22,6 +22,7 @@ REL_Z = 0.95  # handle height relative to the default-lift reach band centre
 MAX_CALLS = 60
 STEP_M = 0.005
 HOLD = 10
+CLEAR_DZ = 0.08
 
 
 def joints_all(usd: str) -> list:
@@ -134,13 +135,14 @@ def main(argv=None):
                 bq = art.data.body_quat_w[0, hi_].cpu().numpy()
                 from harvest.sim.objv import qinv, qrot
                 hoff_local = qrot(qinv(tuple(bq)), hc - art.data.body_pos_w[0, hi_].cpu().numpy())
-                plo, _ = world_bbox()
+                plo, phi = world_bbox()
                 dpos = np.array([HANDLE_X - hc[0], HANDLE_Y - hc[1], -plo[2]])
                 p0 = art.data.default_root_state[0, :3].cpu().numpy()
                 newp = p0 + dpos
                 art.data.default_root_state[0, :3] = env.torch.tensor(newp, device=env.env.device)
                 art.cfg.init_state.pos = tuple(float(v) for v in newp)
                 hz = float(hc[2] + dpos[2])
+                clear_z = float(phi[2] + dpos[2] + CLEAR_DZ)  # change 7: approach above the piece top
                 lift = float(np.clip(SC.INIT_JOINTS["lift_joint"] + (hz - REL_Z), -0.5, 0.0))
                 li = env.robot.joint_names.index("lift_joint")
                 env.robot.cfg.init_state.joint_pos["lift_joint"] = lift
@@ -167,7 +169,7 @@ def main(argv=None):
                 q = pl._ik(np.asarray(p, float), cmd_q, MAX_DQ_RAD)
                 env.step(np.concatenate([q, [w_cmd]]).astype(np.float32))
 
-            info = {"pull_dir": [-1.0, 0.0, 0.0], "open_target": XD.OPEN_TARGET}
+            info = {"pull_dir": [-1.0, 0.0, 0.0], "open_target": XD.OPEN_TARGET, "clear_z": clear_z}
             steps = []
             h_start = status()["handle"]
             for call in range(MAX_CALLS):
@@ -179,7 +181,7 @@ def main(argv=None):
                 if cmd.get("gripper") == "close":
                     w_cmd = 0.0
                 elif cmd.get("gripper") == "open":
-                    w_cmd = float(SC.GRIP_MAX_W)
+                    w_cmd = float(cmd.get("width_m", SC.GRIP_MAX_W))
                 if cmd["mode"] == "eef":
                     tgt = np.asarray(cmd["position_m"], float)
                     cur = st["tcp"]

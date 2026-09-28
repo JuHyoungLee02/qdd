@@ -6,11 +6,12 @@ from harvest.teach_l8d import xdrawer as XD
 W_OPEN = 0.107
 
 
-def run(h0=(0.52, -0.22, 0.90), u=(-1.0, 0.0, 0.0), n=200, stick=True):
+def run(h0=(0.52, -0.22, 0.90), u=(-1.0, 0.0, 0.0), n=200, stick=True, clear_z=1.05):
     """Toy world: the TCP goes to each command; a closed gripper on the handle drags the handle (drawer) along u."""
     tcp, w, q = np.array([0.34, -0.25, 1.10]), W_OPEN, 0.0
     h0, u = np.asarray(h0, float), np.asarray(u, float)
-    info = {"pull_dir": u, "open_target": 0.20}
+    info = {"pull_dir": u, "open_target": 0.20, "clear_z": clear_z}
+    low_off = 0
     steps = []
     for _ in range(n):
         h = h0 + u * q
@@ -21,18 +22,21 @@ def run(h0=(0.52, -0.22, 0.90), u=(-1.0, 0.0, 0.0), n=200, stick=True):
         if cmd.get("gripper") == "close":
             w = 0.02
         elif cmd.get("gripper") == "open":
-            w = W_OPEN
+            w = cmd.get("width_m", W_OPEN)
         if cmd["mode"] == "eef":
             new = np.array(cmd["position_m"], float)
             if step == "pull" and stick:
                 q = max(q, float((new - h0) @ u))
+            if np.linalg.norm(new[:2] - h[:2]) > XD.NEAR_XY and new[2] < clear_z - 0.03 and step != "retreat":
+                low_off += 1
             tcp = new
+    assert low_off == 0, "approach dipped below the clear height away from the handle"
     return steps, q, w
 
 
 def test_plan_opens_the_drawer_and_releases():
     steps, q, w = run()
-    assert steps[-1] == "done" and q >= 0.2 - XD.OPEN_TOL and w == W_OPEN
+    assert steps[-1] == "done" and q >= 0.2 - XD.OPEN_TOL and w == XD.PRESHAPE_W
     assert [s for s in XD.STEPS if s in steps] == list(XD.STEPS)
     assert XD.success_drawer(q, w, W_OPEN, 0.0) and not XD.success_drawer(0.1, w, W_OPEN, 0.0)
     assert not XD.success_drawer(q, 0.02, W_OPEN, 0.0) and not XD.success_drawer(q, w, W_OPEN, 0.05)
@@ -44,8 +48,12 @@ def test_slipping_handle_reopens_and_regrasps():
 
 
 def test_list_and_ids():
-    js = {"Dresser_1": {"handles": [{"prim": "Dresser_1_drawer_1_handle_PrimitiveCollider_2", "ok": True, "top_z": 0.8},
-                                    {"prim": "Dresser_1_drawer_1_handle_PrimitiveCollider_3", "ok": True, "top_z": 0.8},
+    js = {"Dresser_1": {"handles": [{"prim": "Dresser_1_drawer_1_handle_PrimitiveCollider_2", "ok": True, "top_z": 0.8,
+                                     "standoff_m": 0.03},
+                                    {"prim": "Dresser_1_drawer_1_handle_PrimitiveCollider_3", "ok": True, "top_z": 0.8,
+                                     "standoff_m": 0.03},
+                                    {"prim": "Dresser_1_drawer_3_handle_PrimitiveCollider_1", "ok": True,
+                                     "top_z": 0.7, "standoff_m": 0.015},  # too close to the front (change 7)
                                     {"prim": "Dresser_1_drawer_2_handle_PrimitiveCollider_1", "ok": False,
                                      "top_z": 0.6}]}}
     lst = XD.drawer_list(js)
