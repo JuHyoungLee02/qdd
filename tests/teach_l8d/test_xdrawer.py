@@ -89,3 +89,19 @@ def test_front_plan_opens_the_drawer():
             tcp = new
     assert steps[-1] == "done" and q >= 0.2 - XD.OPEN_TOL
     assert [s for s in XD.STEPS_FRONT if s in steps] == list(XD.STEPS_FRONT)
+
+
+def test_front_plan_seats_before_closing_and_keeps_a_released_drawer_done():
+    """change 14: a TCP stopped 9 mm short / 9 mm low re-inserts past the grasp point; a released drawer that drifted
+    back from 0.20 to 0.19 m is done (not re-grasped)."""
+    h, u = np.array([0.52, -0.17, 0.94]), [-1.0, 0.0, 0.0]
+    g = h + np.array(u) * XD.FRONT_GRASP
+    info = {"pull_dir": u, "open_target": 0.20}
+    st = {"tcp": g + np.array([-0.009, 0.0, -0.009]), "grip_w": XD.FRONT_W, "handle": h, "joint": 0.0}
+    step, cmd = XD.plan_drawer_front(st, info, 0.107)
+    assert step == "insert" and cmd["position_m"][0] > g[0] and cmd["position_m"][2] > g[2]
+    st = dict(st, tcp=g + np.array([-0.003, 0.0, 0.002]))
+    assert XD.plan_drawer_front(st, info, 0.107)[0] == "close"
+    st = {"tcp": g + np.array([-0.2, 0.0, 0.0]), "grip_w": XD.FRONT_W, "handle": h - np.array([0.19, 0, 0]),
+          "joint": 0.19}
+    assert XD.plan_drawer_front(st, info, 0.107)[0] in ("retreat", "done")

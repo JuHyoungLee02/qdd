@@ -30,7 +30,7 @@ SCENE_SCHEMA = "qdd.l8d.scene/v1"
 PERTURB_STEPS = ("front_of_handle", "insert", "retreat")
 PERTURB_M = (0.01, 0.03)  # offset length range of a behaviour perturbation (y / z, across the approach line)
 MAX_CALLS, MOTION_LIMIT_S = 40, 180.0  # the prompt's stated limits (= astra_solo.episode)
-HANDLE_X, HANDLE_Y = (0.50, 0.54), (-0.28, -0.16)  # change 12: seeded handle position (retreat stays in x >= 0.25)
+HANDLE_X, HANDLE_Y = (0.50, 0.52), (-0.28, -0.16)  # change 12/14: seeded handle position (x <= 0.52: reach)
 LIFT_JITTER = 0.02
 DR_STOP_CALLS = MAX_CALLS  # change 13: 20 cm in 1 cm pulls + approach / release needs ~25-32 calls; the runner cap 30
 # ended 7/13 Dresser_224_1 episodes at 0.19-0.20 m unreleased (b3d first pass); the prompt limit (40) is unchanged

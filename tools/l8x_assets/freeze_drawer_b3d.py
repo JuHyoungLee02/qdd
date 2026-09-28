@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 from harvest.teach_l8d import xdrawer as XD  # noqa: E402
 
 OOD_PIECE = "Desk_306_1"  # the only desk (a different furniture kind): held out
+EXCLUDED = ("Dresser_210_1_1",)  # change 14: 28 mm behind the bar -- the front grasp is blocked (b3d 8/30, 0/4 re-run)
 TRAIN_SEEDS = range(34652, 34800)
 
 
@@ -29,11 +30,18 @@ def handle_y(handles_json: dict, piece: str, body: str) -> float:
 
 def freeze(handles_json: dict, lst: dict) -> dict:
     rows = [dict(r, handle_y=handle_y(handles_json, r["piece"], r["handle_body"]),
-                 split="ood" if r["piece"] == OOD_PIECE else "train") for r in lst["tasks"]]
-    train = sorted(r["task"] for r in rows if r["split"] == "train")
-    order = sorted(train, key=lambda t: hashlib.sha256(f"b3d:{t}".encode()).hexdigest())
-    plan = [{"seed": s, "task": order[k % len(order)], "variant": "standard", "split": "train", "objset": None,
-             "furniture": "drawer", "table_z": 0.0} for k, s in enumerate(TRAIN_SEEDS)]
+                 split="ood" if r["piece"] == OOD_PIECE else "excluded" if r["piece"] in EXCLUDED else "train")
+            for r in lst["tasks"]]
+    first = sorted(r["task"] for r in rows if r["split"] != "ood")  # the change-12 order (seed -> task kept)
+    order = sorted(first, key=lambda t: hashlib.sha256(f"b3d:{t}".encode()).hexdigest())
+    keep = [t for t in order if t.split("__")[1] not in EXCLUDED]
+    plan, n_moved = [], 0
+    for k, s in enumerate(TRAIN_SEEDS):
+        t = order[k % len(order)]
+        if t.split("__")[1] in EXCLUDED:  # change 14: its seeds go to the kept handles in turn
+            t, n_moved = keep[n_moved % len(keep)], n_moved + 1
+        plan.append({"seed": s, "task": t, "variant": "standard", "split": "train", "objset": None,
+                     "furniture": "drawer", "table_z": 0.0})
     out = {"tasks": rows, "ood_piece": OOD_PIECE, "plan": plan, "source_digest": lst["digest"]}
     out["digest"] = hashlib.sha256(json.dumps(out, sort_keys=True).encode()).hexdigest()
     return out

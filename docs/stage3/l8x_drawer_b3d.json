@@ -13,7 +13,7 @@
    "piece": "Dresser_210_1_1",
    "handle_body": "Dresser_210_1_1_handle_1_178mm_01",
    "handle_top_z": 0.944,
-   "split": "train",
+   "split": "excluded",
    "handle_y": 0.275
   },
   {
@@ -21,7 +21,7 @@
    "piece": "Dresser_210_1_1",
    "handle_body": "Dresser_210_1_1_handle_1_178mm_03",
    "handle_top_z": 0.944,
-   "split": "train",
+   "split": "excluded",
    "handle_y": -0.273
   },
   {
@@ -93,7 +93,7 @@
  "plan": [
   {
    "seed": 34652,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_01",
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_1_handle",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -147,7 +147,7 @@
   },
   {
    "seed": 34658,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_03",
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -183,7 +183,7 @@
   },
   {
    "seed": 34662,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_01",
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm_03",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -237,7 +237,7 @@
   },
   {
    "seed": 34668,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_03",
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm_000",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -273,7 +273,7 @@
   },
   {
    "seed": 34672,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_01",
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_3_handle",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -327,7 +327,7 @@
   },
   {
    "seed": 34678,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_03",
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_4_handle",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -363,7 +363,7 @@
   },
   {
    "seed": 34682,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_01",
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_2_handle",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -417,7 +417,7 @@
   },
   {
    "seed": 34688,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_03",
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm_01",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -453,7 +453,7 @@
   },
   {
    "seed": 34692,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_01",
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_1_handle",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -507,7 +507,7 @@
   },
   {
    "seed": 34698,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_03",
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -543,7 +543,7 @@
   },
   {
    "seed": 34702,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_01",
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm_03",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -597,7 +597,7 @@
   },
   {
    "seed": 34708,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_03",
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm_000",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -633,7 +633,7 @@
   },
   {
    "seed": 34712,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_01",
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_3_handle",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -687,7 +687,7 @@
   },
   {
    "seed": 34718,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_03",
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_4_handle",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -723,7 +723,7 @@
   },
   {
    "seed": 34722,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_01",
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_2_handle",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -777,7 +777,7 @@
   },
   {
    "seed": 34728,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_03",
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm_01",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -813,7 +813,7 @@
   },
   {
    "seed": 34732,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_01",
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_1_handle",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -867,7 +867,7 @@
   },
   {
    "seed": 34738,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_03",
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -903,7 +903,7 @@
   },
   {
    "seed": 34742,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_01",
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm_03",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -957,7 +957,7 @@
   },
   {
    "seed": 34748,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_03",
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm_000",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -993,7 +993,7 @@
   },
   {
    "seed": 34752,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_01",
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_3_handle",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -1047,7 +1047,7 @@
   },
   {
    "seed": 34758,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_03",
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_4_handle",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -1083,7 +1083,7 @@
   },
   {
    "seed": 34762,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_01",
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_2_handle",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -1137,7 +1137,7 @@
   },
   {
    "seed": 34768,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_03",
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm_01",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -1173,7 +1173,7 @@
   },
   {
    "seed": 34772,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_01",
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_1_handle",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -1227,7 +1227,7 @@
   },
   {
    "seed": 34778,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_03",
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -1263,7 +1263,7 @@
   },
   {
    "seed": 34782,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_01",
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm_03",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -1317,7 +1317,7 @@
   },
   {
    "seed": 34788,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_03",
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm_000",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -1353,7 +1353,7 @@
   },
   {
    "seed": 34792,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_01",
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_3_handle",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -1407,7 +1407,7 @@
   },
   {
    "seed": 34798,
-   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_03",
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_4_handle",
    "variant": "standard",
    "split": "train",
    "objset": null,
@@ -1425,5 +1425,5 @@
   }
  ],
  "source_digest": "65db24ee26c60c340b3937f41c8a2b3aafceaf6edf64e561d141609bcc6f4b28",
- "digest": "ac7e409f15c8cfd5e2f7a16072163f28de8283c9295a19a8228f4b04f675404c"
+ "digest": "705f9ca41037f9232de0fbb0bfe7e0b5d06455c658dc3ca04facc3f338d05c9e"
 }

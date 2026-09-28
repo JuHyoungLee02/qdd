@@ -77,6 +77,8 @@ FRONT_GRASP = 0.012  # pad centre this far in front of the bar centre (fingertip
 FRONT_W = 0.040  # change 11: front pre-shape (fingers vertical; 2.5 cm let the IK z sag of ~1 cm hit the bar)
 FRONT_PULL = 0.010  # change 11: 1 cm per pull command, the TCP lead over the grasp point capped at 1 cm
 FRONT_LEAD = 0.010
+KEEP_SHARE = 0.9  # change 14: released at >= 90 % of the target = done (judge: 80 %)
+SEAT_M, SEAT_MAX = 0.006, 0.02  # change 14: insert until the TCP is within 6 mm of the grasp point (overshoot <= 2 cm)
 FRONT_RETREAT = 0.035  # change 12: back off 3.5 cm from the released handle (was FRONT_BACK 10 cm)
 STEPS_FRONT = ("preshape", "front_of_handle", "insert", "close", "pull", "release", "retreat")
 STEPS_FRONT_ALL = STEPS_FRONT + ("reopen", "done")
@@ -102,7 +104,9 @@ def plan_drawer_front(st: dict, info: dict, w_open: float):
     def eef(step, p):
         return step, {"mode": "eef", "position_m": _r(p), "gripper": "keep", "orient": "front"}
 
-    if q >= target - OPEN_TOL:
+    released = w >= FRONT_W - 0.006
+    if q >= target - OPEN_TOL or (released and q >= KEEP_SHARE * target):
+        # change 14: a released drawer that drifts back a little stays done (it rebounded 5-10 mm on Dresser_224_1)
         if w < FRONT_W - 0.006:
             return "release", {"mode": "gripper", "gripper": "open", "width_m": FRONT_W}
         if float((tcp - g) @ u) < FRONT_RETREAT - 0.01:  # change 12: short retreat (the x >= 0.25 m box)
@@ -112,6 +116,9 @@ def plan_drawer_front(st: dict, info: dict, w_open: float):
         # from the TCP (it can stop short of g) along the pull line, the lead capped so the TCP never runs away
         return eef("pull", g + u * (min(max(along, 0.0), FRONT_LEAD) + min(FRONT_PULL, target - q)))
     if near and w >= FRONT_W - 0.006:
+        err = g - tcp
+        if np.linalg.norm(err) > SEAT_M:  # change 14: stopped short (reach sag): aim past g by the shortfall
+            return eef("insert", g + err * min(1.0, SEAT_MAX / float(np.linalg.norm(err))))
         return "close", {"mode": "gripper", "gripper": "close"}
     if w < FRONT_W - 0.006:
         return "reopen", {"mode": "gripper", "gripper": "open", "width_m": FRONT_W}  # change 12: the close missed
