@@ -104,6 +104,7 @@ def scene_record(world, seed: int, task: str, variant: str, split: str, style: s
                 "ws": getattr(env, "ws", None), "layout": layout,
                 "randomization": rand, "rand_settle": getattr(env, "rand_settle", None),
                 "steps": _steps(task), "furniture": getattr(world, "furniture_scene", None),
+                "clutter": getattr(world, "clutter_scene", None),
                 "surface": (getattr(world, "furniture_scene", None) or {}).get("kind", "table"),
                 "distractors": distractor_count(layout, info, rand)})
 

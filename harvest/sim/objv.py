@@ -125,6 +125,9 @@ def register_for_tasks(tasks, rows: dict | None = None) -> list:
     if not ids:
         return new
     rows = rows or load_rows()
+    if any(k not in rows for k in ids):  # b3 real objects (helper objects_real.json, objv-compatible rows)
+        from ..teach_l8d.clutter_x import load_real
+        rows = {**load_real(), **rows}
     register({k: rows[k] for k in ids})
     register_objv_tasks(ids, {k: prompt_name(rows[k]) for k in ids})
     return sorted(set(ids) | set(new))

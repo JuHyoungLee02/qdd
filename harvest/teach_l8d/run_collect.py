@@ -17,7 +17,7 @@ OUT = "/data/harvest/out/teach_l8d/collect"
 
 
 def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=None, reach_path=None,
-               mesh_split: str = "train", rooms_split: str | None = None):
+               mesh_split: str = "train", rooms_split: str | None = None, clutter_pool: dict | None = None):
     import os
 
     from ..astra_motion.world_isaac import CAMS, NO_RENDER, PRE_RENDER, IsaacWorld
@@ -55,9 +55,34 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
 
         def reset(self, seed, task="mug_tray"):
             if furniture is None:
+                if clutter_pool:  # b3 clutter (change 11): real objects around the task layout, set with the layout
+                    env, set_seed = self.env, self.env.set_seed
+
+                    def with_clutter(sd, tk, *a, **k):
+                        set_seed(sd, tk, *a, **k)
+                        self._apply_clutter(sd, tk)
+                    env.set_seed = with_clutter
+                    try:
+                        IsaacWorld.reset(self, seed, task)
+                    finally:
+                        del env.set_seed
+                    return
                 IsaacWorld.reset(self, seed, task)
                 return
             self._reset_furniture(seed, task)
+
+        def _apply_clutter(self, seed, task):
+            from ..sim import scene as SC
+            from ..sim.randomize import sample_randomization
+            from ..sim.tasks import layout_paths
+            from .clutter_x import add_clutter
+            env = self.env
+            fr = {k: SC.OBJ_GEOM[k]["footprint_r"] for k in env.layout}
+            lay, placed = add_clutter(env.layout, seed, clutter_pool, ws, fr)
+            env.layout = SC._LAYOUT["layout"] = lay
+            env.randomization = SC._LAYOUT["rand"] = sample_randomization(seed, env.variant, lay,
+                                                                          path=layout_paths(task, "task"))
+            self.clutter_scene = {"n": len(placed), "ids": [p["id"] for p in placed]}
 
         def _reset_furniture(self, seed, task):
             """= IsaacWorld.reset with a furniture scene: sample it, work on its best surface (fx.choose_surface),
@@ -138,16 +163,20 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
     return L8DWorld()
 
 
-def vdir(variant: str, table_z: float, lift, furniture=None) -> str:
+def vdir(variant: str, table_z: float, lift, furniture=None, clutter: bool = False) -> str:
     return (f"{variant}_tz{float(table_z):.3f}" + ("" if lift is None else f"_lift{float(lift):+.3f}")
-            if furniture is None else f"{variant}_fx_{furniture}")
+            + ("_cl" if clutter else "") if furniture is None else f"{variant}_fx_{furniture}")
 
 
-def select_plan(plan: list, variant: str, table_z: float, split: str, objset=None, lift=None, furniture=None) -> list:
-    """The plan rows this process runs: same split, variant, objset, lift and table height (or furniture kind)."""
+def select_plan(plan: list, variant: str, table_z: float, split: str, objset=None, lift=None, furniture=None,
+                clutter: bool = False) -> list:
+    """The plan rows this process runs: same split, variant, objset, lift, clutter flag and table height (or
+    furniture kind)."""
     out = []
     for e in plan:
         if e["variant"] != variant or e.get("split", "train") != split or (e.get("objset") or None) != objset:
+            continue
+        if bool(e.get("clutter")) != bool(clutter):
             continue
         if furniture is not None:
             if e.get("furniture") != furniture:
@@ -170,6 +199,7 @@ def main(argv=None):
     ap.add_argument("--furniture", default=None, help="L8-X furniture kind (harvest.sim.assets_x.furniture.KINDS)")
     ap.add_argument("--reach", default="/data/harvest/out/teach_l8d/gate/reach_base.json")
     ap.add_argument("--rooms", action="store_true", help="iTHOR room backgrounds (furniture scenes)")
+    ap.add_argument("--clutter", type=int, default=0, help="b3: pool size of real clutter objects (0 = none)")
     ap.add_argument("--seeds", default=None)
     ap.add_argument("--plan", default=None)
     ap.add_argument("--task", default=None, help="override the per-seed task (gate / OOD sets)")
@@ -196,7 +226,8 @@ def main(argv=None):
         x0, x1 = (float(v) for v in a.ws_x.split(","))
         ws = S.ws_of((x0, x1))
         if a.plan:
-            eps = select_plan(json.load(open(a.plan)), a.variant, a.table_z, a.split, a.objset, a.lift, a.furniture)
+            eps = select_plan(json.load(open(a.plan)), a.variant, a.table_z, a.split, a.objset, a.lift, a.furniture,
+                              bool(a.clutter))
         else:
             eps = [{"seed": s, "task": a.task or S.task_of(s)} for s in parse_seeds(a.seeds)]
         for e in eps:
@@ -206,12 +237,20 @@ def main(argv=None):
         vids = {int(v) for v in a.video_seeds.split(",") if v.strip()}
         from ..sim.objv import register_for_tasks  # L8-X mesh objects used by this process (before make_env)
         objv_ids = register_for_tasks([e["task"] for e in eps])
+        pool = None
+        if a.clutter:  # b3 clutter objects of this process (prims before make_env), change 11
+            if a.furniture or a.objset != "x":
+                raise ValueError("--clutter: L8 table scenes with --objset x only")
+            from ..sim.objv import register
+            from .clutter_x import load_real, pool_for
+            pool = pool_for(load_real(), f"{a.variant}|{a.table_z:.3f}|{a.lift}", n=a.clutter)
+            register(pool)
         if a.furniture and a.variant != "standard":
             raise ValueError("furniture scenes: variant standard only (the drx table material / pool distractors "
                              "assume the L8 table)")
         world = make_world(a.variant, a.table_z, ws, a.lift, a.objset, a.furniture, a.reach,
                            "ood" if a.split == "ood_s" else "train",
-                           ("ood" if a.split == "ood_s" else "train") if a.rooms else None)
+                           ("ood" if a.split == "ood_s" else "train") if a.rooms else None, pool)
         lim = None
         if a.lift is not None:
             rob = world.env.robot
@@ -221,7 +260,8 @@ def main(argv=None):
                                      "lift_limits": lim, "n": len(eps)}), flush=True)
         for e in eps:
             s, task = e["seed"], e["task"]
-            od = os.path.join(a.out, a.split, vdir(a.variant, a.table_z, a.lift, a.furniture), f"{task}_s{s}")
+            od = os.path.join(a.out, a.split, vdir(a.variant, a.table_z, a.lift, a.furniture, bool(a.clutter)),
+                              f"{task}_s{s}")
             if os.path.exists(os.path.join(od, "meta.json")) or os.path.exists(os.path.join(od, "skipped.json")):
                 continue
             style = "clean" if a.clean else style_of(s, S.CLEAN_SHARE)
