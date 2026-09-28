@@ -37,6 +37,16 @@ MIN_H, MAX_H, MIN_W, MAX_W = 0.07, 0.10, 0.025, 0.085  # = objv.eligible (truth:
 BASE_H = (0.03, 0.10)
 BASE_TOP_SHARE = 0.60
 BASE_MARGIN = 0.03  # gate 35200: a 5 cm candle on a 6 cm jar top fell off; +1 cm was too tight
+def _prim(name, noun, colour):
+    return {"task_name": name, "noun": noun, "colour": colour, "task_target_ok": True,
+            "name_check": {"claimed": noun, "noun": noun, "renamed": False, "reasons": []}}
+
+
+# primitive L8-X objects that pass the anti-tip rule (depth >= 5 cm, height <= 1.5 x depth), scene objset x
+PRIMITIVE_PUSH = {"o3": _prim("red mug", "mug", "red"), "o9": _prim("yellow box", "box", "yellow"),
+                  "o12": _prim("white stand", "stand", "white"), "o13": _prim("blue mug", "mug", "blue"),
+                  "o14": _prim("small red cup", "cup", "red")}
+PUSH_OOD = ("o14",)  # held out like L8D OOD-O (the small red cup is in no training task)
 ROLLING_NOUNS = ("egg", "apple", "potato", "tomato", "ball")  # gate 35203/35205/35207/35209: eggs rolled off
 # primitive stacking base (scene o12, the white stand 12 x 12 x 8 cm): every stack top also gets it as a base
 PRIMITIVE_BASES = {"o12": {"task_name": "white stand", "noun": "stand", "colour": "white", "height": 0.08,
@@ -44,8 +54,8 @@ PRIMITIVE_BASES = {"o12": {"task_name": "white stand", "noun": "stand", "colour"
                            "name_check": {"claimed": "stand", "noun": "stand", "renamed": False, "reasons": []}}}
 PUSH_STEPS = ("above_start", "lower_behind", "push", "lift_away")
 PUSH_BACKOFF = 0.035  # start this far behind the object's edge
-PUSH_TCP_DZ = 0.045  # TCP (pad centre) above the support while pushing: pads span ~2.5-6.5 cm, objects 7-10 cm
-PUSH_STEP_MAX = 0.04
+PUSH_TCP_DZ = 0.030  # TCP above the support while pushing (gate 2: 4.5 cm tipped 9/10; executor floor 2.5 cm)
+PUSH_STEP_MAX = 0.02
 PUSH_DONE_R = 0.03
 PUSH_OFFLINE_M = 0.02  # the object left the push line -> start again from behind
 
@@ -82,9 +92,15 @@ def base_ok(r: dict, top: dict, split: str = "train") -> bool:
 
 
 def push_ok(r: dict, split: str = "train") -> bool:
-    """Pushable: a target that slides (round or box, not a ball), base >= 3 cm."""
-    return (target_ok(r, split) and r.get("sphericity", 0.0) < 0.8 and r["grasp_width"] >= 0.03
-            and (r.get("circularity", 0.0) >= 0.88 or r.get("boxiness", 0.0) >= 0.5))
+    """Pushable: a target that slides (round or box, not a ball, not a rolling noun), depth >= 5 cm, height <= 1.5 x
+    depth (gate 2: slim bottles tipped when pushed at 4.5 cm; pushed at 3 cm now, and kept conservative)."""
+    # tipping: a push at contact height hc tips the object when mu * hc > half its depth along the push; the pads
+    # (TCP 3 cm) put hc near 2-3 cm: mu 0.8 x 3 cm < 2.5 cm half depth needs depth >= 5 cm, height <= 1.5 x depth
+    # no grasp limits (never grasped): stable, name-checked, 4-12 cm high (pad contact), upright or lying (shoes)
+    return (r.get("split") == split and r.get("task_target_ok") is True and 0.04 <= r["height"] <= 0.12
+            and r.get("length", 0.0) <= 0.25 and r.get("sphericity", 0.0) < 0.8 and r["grasp_width"] >= 0.05
+            and r["height"] <= 1.5 * r["grasp_width"] and r.get("noun") not in ROLLING_NOUNS
+            and (r.get("pose") == "lying" or r.get("circularity", 0.0) >= 0.88 or r.get("boxiness", 0.0) >= 0.5))
 
 
 def stack_top_ok(r: dict, split: str = "train") -> bool:
@@ -93,7 +109,11 @@ def stack_top_ok(r: dict, split: str = "train") -> bool:
 
 
 def _row(rows: dict, k: str) -> dict:
-    return PRIMITIVE_BASES[k] if k in PRIMITIVE_BASES else rows[k]
+    if k in PRIMITIVE_BASES:
+        return PRIMITIVE_BASES[k]
+    if k in PRIMITIVE_PUSH:
+        return PRIMITIVE_PUSH[k]
+    return rows[k]
 
 
 def stack_pairs(rows: dict, split: str = "train", per_top: int = 3) -> list:
@@ -108,7 +128,10 @@ def stack_pairs(rows: dict, split: str = "train", per_top: int = 3) -> list:
 
 
 def push_objects(rows: dict, split: str = "train") -> list:
-    return sorted(k for k, r in rows.items() if push_ok(r, split))
+    """Pushable real objects of the split + the primitive L8-X objects (train only; gate 2: only 4 real objects
+    pass the anti-tip rule)."""
+    prim = sorted(k for k in PRIMITIVE_PUSH if k not in PUSH_OOD) if split == "train" else sorted(PUSH_OOD)
+    return sorted(k for k, r in rows.items() if push_ok(r, split)) + prim
 
 
 def stack_task_id(a: str, b: str) -> str:
@@ -140,7 +163,7 @@ def instruction(t: str, rows: dict, idx: int = 0) -> str:
     kind, ids = parse(t)
     if kind == "st":
         return STACK_TEXTS[idx].format(a=rows[ids[0]]["task_name"], b=_row(rows, ids[1])["task_name"])
-    return PUSH_TEXTS[idx].format(a=rows[ids[0]]["task_name"])
+    return PUSH_TEXTS[idx].format(a=_row(rows, ids[0])["task_name"])
 
 
 def register_new_tasks(tasks, rows: dict | None = None) -> list:
@@ -153,7 +176,7 @@ def register_new_tasks(tasks, rows: dict | None = None) -> list:
         return []
     rows = rows or load_real_rows()
     ids = sorted({k for t in new for k in parse(t)[1]})
-    objv.register({k: rows[k] for k in ids if k not in PRIMITIVE_BASES})
+    objv.register({k: rows[k] for k in ids if k not in PRIMITIVE_BASES and k not in PRIMITIVE_PUSH})
     for t in new:
         if t in T.TASKS:
             continue
@@ -167,7 +190,7 @@ def register_new_tasks(tasks, rows: dict | None = None) -> list:
         else:
             a = obj[0]
             spec = T.Task(t, a, MARKER, instruction(t, rows),
-                          {"S1": f"push {rows[a]['task_name']} {a}", "S2": f"onto marker {MARKER}"})
+                          {"S1": f"push {_row(rows, a)['task_name']} {a}", "S2": f"onto marker {MARKER}"})
             code = 7000
         T.TASKS[t] = T.X_TASKS[t] = spec
         T.X_TASK_CODE[t] = code + _h(t) % 900
@@ -281,9 +304,12 @@ def texts(step: str, tn: str, pn: str):
 
 
 # ------------------------------------------------------------------------------------------------- judges
-def never_held(rows: list) -> bool:
-    """Push judge: the target was never held (grip on it) during the episode (labels rows carry the truth pred)."""
-    return not any(r.get("held") for r in rows)
+def never_held(rows: list, lift_tol: float = 0.01) -> bool:
+    """Push judge: the target was never lifted (its centre rose <= 1 cm above its start) -- pushed, not carried.
+    (Gate 2: the holding predicate is True while closed pads press on the object, so it can not tell pushing from
+    holding.)"""
+    zs = [float(r["gt"]["tgt"][2]) for r in rows if r.get("gt") and r["gt"].get("tgt") is not None]
+    return not zs or max(zs) - zs[0] <= lift_tol
 
 
 def success_stack(rows: list, max_base_move: float = 0.02) -> bool:
@@ -298,4 +324,4 @@ def success_push(rows: list) -> bool:
     return never_held(rows)
 
 
-assert math.isclose(PUSH_TCP_DZ, 0.045)
+assert math.isclose(PUSH_TCP_DZ, 0.030)

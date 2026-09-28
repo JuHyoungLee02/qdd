@@ -19,11 +19,11 @@ def row(k, name, h=0.08, w=0.05, L=0.07, top=None, noun="cup", colour=None, spli
             "mass": 0.2, "category": noun, "license": "CC BY 4.0", "top_surface": top}
 
 
-ROWS = {"gso_cup": row("gso_cup", "red cup", colour="red"),
+ROWS = {"gso_cup": row("gso_cup", "red cup", w=0.06, colour="red"),
         "gso_box": row("gso_box", "white box", h=0.05, w=0.12, L=0.16, noun="box", colour="white", circ=0.6, box=0.9,
                        top={"top_z": 0.05, "box": [[-0.055, 0.055], [-0.075, 0.075]], "area": 0.0165}),
         "gso_toy": dict(row("gso_toy", "toy", noun="object"), task_target_ok=False),
-        "gso_ood": row("gso_ood", "blue can", split="ood_o", noun="can", colour="blue")}
+        "gso_ood": row("gso_ood", "blue can", w=0.06, split="ood_o", noun="can", colour="blue")}
 
 
 def test_eligibility_and_frozen_lists():
@@ -35,7 +35,7 @@ def test_eligibility_and_frozen_lists():
     assert XN.instruction(XN.stack_task_id("gso_cup", "o12"), ROWS, 0) == "Put the red cup on the white stand."
     assert XN.name_gate(XN.stack_task_id("gso_cup", "o12"), ROWS) is None
     assert "gso_cup" in XN.push_objects(ROWS) and "gso_ood" not in XN.push_objects(ROWS)
-    assert XN.push_objects(ROWS, "ood_o") == ["gso_ood"]
+    assert XN.push_objects(ROWS, "ood_o") == ["gso_ood", "o14"]  # + the held-out small red cup
 
 
 def test_register_new_tasks_and_objv_body_rel():
@@ -106,10 +106,11 @@ def test_push_plan_reaches_the_marker():
 
 
 def test_judges():
-    rows = [{"gt": {"place": [0.4, -0.2, 0.9]}, "held": False}, {"gt": {"place": [0.41, -0.2, 0.9]}, "held": False}]
+    rows = [{"gt": {"place": [0.4, -0.2, 0.9], "tgt": [0.4, -0.3, 0.89]}},
+            {"gt": {"place": [0.41, -0.2, 0.9], "tgt": [0.45, -0.3, 0.89]}}]
     assert XN.success_stack(rows) and XN.success_push(rows)
     rows[1]["gt"]["place"] = [0.45, -0.2, 0.9]
-    rows[1]["held"] = True
+    rows[1]["gt"]["tgt"] = [0.45, -0.3, 0.95]  # lifted 6 cm: carried, not pushed
     assert not XN.success_stack(rows) and not XN.success_push(rows)
     assert XN.texts("push", "red cup", "magenta marker")[0] == "push the red cup onto the magenta marker"
 
@@ -137,3 +138,16 @@ def test_hooks_push_plan_layout_and_label():
 def test_gate_seeds_cover_the_new_task_gates():
     from harvest.teach_l8d import spec as S
     assert S.check_seed(35205, "gate") == 35205 and S.check_seed(35000, "gate") == 35000
+
+
+def test_push_filter_excludes_tall_narrow_objects():
+    tall = dict(ROWS["gso_cup"], height=0.095, grasp_width=0.047)  # the gate-2 bottles (tipped)
+    assert not XN.push_ok(tall) and XN.push_ok(ROWS["gso_cup"])
+
+
+def test_primitive_push_objects():
+    assert {"o3", "o9", "o12", "o13"} <= set(XN.push_objects(ROWS)) and "o14" not in XN.push_objects(ROWS)
+    assert XN.push_objects(ROWS, "ood_o") == ["gso_ood", "o14"] or XN.push_objects(ROWS, "ood_o")[-1] == "o14"
+    t = XN.push_task_id("o9")
+    XN.register_new_tasks([t], ROWS)
+    assert T.TASKS[t].instruction == "Push the yellow box onto the magenta marker." and XN.name_gate(t, ROWS) is None
