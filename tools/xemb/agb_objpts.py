@@ -104,7 +104,27 @@ def main(keep, meta, out, spec):
     cap = int(os.environ.get("AGB_TASK_CAP", "200"))  # rows per task (balance: task 327 would dominate)
     per_task = {}
     infos = {}
+    # resumable + stop-safe: every kept row is appended at once to rows_live.jsonl and every finished episode to
+    # done.txt; a restart skips done episodes and restores the per-task counts
+    live_p, done_p = os.path.join(out, "rows_live.jsonl"), os.path.join(out, "done.txt")
+    if os.path.exists(live_p):
+        for x in open(live_p):
+            t_ = json.loads(x)["task"]
+            per_task[t_] = per_task.get(t_, 0) + 1
+    done = set(open(done_p).read().split()) if os.path.exists(done_p) else set()
+    live, donef = open(live_p, "a"), open(done_p, "a")
+    prev = None
     for ep, task in episodes(keep, spec):
+        if f"{task}/{ep}" in done:
+            continue
+        if rows:
+            live.writelines(json.dumps(r) + "\n" for r in rows)
+            live.flush()
+            rows = []
+        if prev:  # the previous episode is complete (its rows are already in rows_live)
+            donef.write(prev + "\n")
+            donef.flush()
+        prev = f"{task}/{ep}"
         if task not in infos:
             infos[task] = {e["episode_id"]: e for e in
                            json.load(open(os.path.join(meta, "task_info", f"task_{task}.json")))}
@@ -230,9 +250,14 @@ def main(keep, meta, out, spec):
                 rows.append(r)
                 per_task[task] = per_task.get(task, 0) + 1
                 st["kept"] += 1
-    tr, g = GS.split(rows)
+    live.writelines(json.dumps(r) + "\n" for r in rows)
+    if prev:
+        donef.write(prev + "\n")
+    live.close()
+    donef.close()
+    tr, g = GS.split([json.loads(x) for x in open(live_p)])
     for fn, rr in (("records.jsonl", tr), ("records_G.jsonl", g)):
-        with open(os.path.join(out, fn), "a") as fh:
+        with open(os.path.join(out, fn), "w") as fh:
             fh.writelines(json.dumps(r) + "\n" for r in rr)
     st.update(rows_train=len(tr), rows_G=len(g))
     json.dump(st, open(os.path.join(out, "report.json"), "w"), indent=1)
