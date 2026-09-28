@@ -1,4 +1,7 @@
-"""AgiBot object points WITHOUT a TCP offset (controller decision 2026-09-28 b): on the grasp frame (Pick end_frame)
+"""AgiBot object points WITHOUT a TCP offset (controller decision 2026-09-28 b, revised): LABEL frame = Pick start + BOUND
+(object visible, before the approach); the grasp frame (Pick end) only identifies WHICH instance was grasped (SAM mask
+nearest the flange projection), then the label-frame mask nearest that instance is labelled. Cap AGB_TASK_CAP rows per
+task (default 200). Original note: on the grasp frame (Pick end_frame)
 SAM 3.1 masks of the object named in the action text; the FLANGE projection of the closing arm only selects which
 candidate mask (the nearest one); label = the top-surface centre of that mask (centroid of the upper 30 % of its rows,
 snapped onto the mask). Mask quality gate: largest connected component >= 90 % of the mask, area 0.05 %..15 % of the
@@ -60,6 +63,8 @@ def main(keep, meta, out, spec):
     seg = Sam31Image(thr=0.3)
     os.makedirs(os.path.join(out, "frames"), exist_ok=True)
     rows, st = [], {"episodes": 0, "cand": 0, "no_name": 0, "no_mask": 0, "fragmented": 0, "size": 0, "kept": 0}
+    cap = int(os.environ.get("AGB_TASK_CAP", "200"))  # rows per task (balance: task 327 would dominate)
+    per_task = {}
     infos = {}
     for ep, task in episodes(keep, spec):
         if task not in infos:
@@ -77,48 +82,67 @@ def main(keep, meta, out, spec):
         jobs = [(int(s["start_frame"]), int(s["end_frame"]), pick_name(s["action_text"]))
                 for s in info[ep]["label_info"]["action_config"]
                 if str(s.get("skill", "")).lower() in ("pick", "grasp", "retrieve", "grab")]
-        fr = frames(vid, [b for _, b, _ in jobs]) if jobs else {}
+        fr = frames(vid, sorted({b for _, b, _ in jobs} | {a + BOUND for a, _, _ in jobs})) if jobs else {}
+
+        def sam_masks(img, name):
+            # SAM recall drops on specific names ('shiitake mushroom'): fall back to the head noun ('mushroom');
+            # the label keeps the full name (a subtype of what SAM found)
+            for qn in [name] + ([name.split()[-1]] if len(name.split()) > 1 else []):
+                res, _ = seg.segment(img[:, :, ::-1], [qn])
+                ms = [mk.astype(bool) for sc, mk in res[qn] if sc >= 0.3]
+                if ms:
+                    return ms
+            return []
+
+        def nearest(masks, p):
+            best, bd = None, 1e9
+            for m in masks:
+                ys, xs = np.nonzero(m)
+                d = float(np.min(np.hypot(xs - p[0], ys - p[1])))
+                if d < bd:
+                    best, bd = m, d
+            return best, bd
+
         for a, b, name in jobs:
+            if per_task.get(task, 0) >= cap:
+                st["capped"] = st.get("capped", 0) + 1
+                continue
             st["cand"] += 1
             if not name:
                 st["no_name"] += 1
                 continue
-            if b not in fr or b >= len(Ts) or b >= len(z["end_pos"]):
+            L = a + BOUND  # label frame: Pick start, before the approach (object visible, 'where to go')
+            if b not in fr or L not in fr or b >= len(Ts) or b >= len(z["end_pos"]):
                 continue
-            img = fr[b]
-            H, W = img.shape[:2]
+            H, W = fr[b].shape[:2]
             arm = closing_arm(z, a, b)
             f = proj(K, dist, np.linalg.inv(Ts[b]), z["end_pos"][b][arm][None])
-            # SAM recall drops on specific names ('shiitake mushroom'): fall back to the head noun ('mushroom');
-            # the label keeps the full name (a subtype of what SAM found)
-            queries = [name] + ([name.split()[-1]] if len(name.split()) > 1 else [])
-            masks = []
-            for qn in queries:
-                res, _ = seg.segment(img[:, :, ::-1], [qn])
-                masks = [mk.astype(bool) for sc, mk in res[qn] if sc >= 0.3]
-                if masks:
-                    break
-            if f is None or not masks:
+            mb = sam_masks(fr[b], name)  # grasp frame: only to know WHICH instance was grasped
+            if f is None or not mb:
                 st["no_mask"] += 1
                 continue
-            f = f[0]
-            best, bd = None, 1e9
-            for m in masks:
-                ys, xs = np.nonzero(m)
-                d = float(np.min(np.hypot(xs - f[0], ys - f[1])))
-                if d < bd:
-                    best, bd = m, d
+            held, bd = nearest(mb, f[0])
+            c_held = np.array(np.nonzero(held)[::-1], float).mean(1)
+            ml = sam_masks(fr[L], name)  # label frame masks; the head is fixed, so the instance is at the same place
+            if not ml:
+                st["no_mask_label"] = st.get("no_mask_label", 0) + 1
+                continue
+            best, ld = nearest(ml, c_held)
             ok, why = quality(best, W, H)
             if not ok:
                 st[why] = st.get(why, 0) + 1
                 continue
             pt = top_centre(best)
-            img_p = os.path.join(out, "frames", f"agb_{task}_{ep}_{b}.jpg")
-            cv2.imwrite(img_p, img)
-            r = PL.row(SRC, LIC, "head", img_p, W, H, pt, name, "obj_point", f"agb_t{task}_{ep}_{b}_obj",
-                       extra={"task": task, "flange_to_mask_px": round(bd, 1)})
+            img_p = os.path.join(out, "frames", f"agb_{task}_{ep}_{L}.jpg")
+            cv2.imwrite(img_p, fr[L])
+            chk = os.path.join(out, "frames", f"agb_{task}_{ep}_{b}_grasp.jpg")  # check-only frame
+            cv2.imwrite(chk, fr[b])
+            r = PL.row(SRC, LIC, "head", img_p, W, H, pt, name, "obj_point", f"agb_t{task}_{ep}_{L}_obj",
+                       extra={"task": task, "grasp_frame": b, "grasp_image": chk,
+                              "flange_to_held_mask_px": round(bd, 1), "held_to_label_mask_px": round(ld, 1)})
             if r:
                 rows.append(r)
+                per_task[task] = per_task.get(task, 0) + 1
                 st["kept"] += 1
     tr, g = GS.split(rows)
     for fn, rr in (("records.jsonl", tr), ("records_G.jsonl", g)):
