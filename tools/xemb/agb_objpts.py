@@ -117,10 +117,18 @@ def main(keep, meta, out, spec):
         st["episodes"] += 1
         z = np.load(npz)
         K, dist, Ts = load_cam(pdir)
+        with open(os.path.join(out, "intents.jsonl"), "a") as fi:  # embodiment-free step intents (user-log 167)
+            for s in info[ep]["label_info"]["action_config"]:
+                sa, sb = int(s["start_frame"]), int(s["end_frame"])
+                for fi_ in range(sa + BOUND, sb - BOUND):  # boundary frames excluded
+                    it = intent_of(str(s.get("skill", "")), (fi_ - sa) / max(1, sb - sa))
+                    if it:
+                        fi.write(json.dumps({"task": task, "ep": ep, "frame": fi_, "intent": it,
+                                             "text": s.get("action_text", "")}) + "\n")
         jobs = [(int(s["start_frame"]), int(s["end_frame"]), pick_name(s["action_text"]))
                 for s in info[ep]["label_info"]["action_config"]
                 if str(s.get("skill", "")).lower() in ("pick", "grasp", "retrieve", "grab")]
-        QB = int(os.environ.get("AGB_QUERY_BACK", "0"))  # query frame = grasp frame - QB (less finger occlusion)
+        QB = int(os.environ.get("AGB_QUERY_BACK", "30"))  # query frame = grasp frame - QB (less finger occlusion)
         fr = frames(vid, sorted({b for _, b, _ in jobs} | {a + BOUND for a, _, _ in jobs} | {max(a + BOUND + 1, b - QB) for a, b, _ in jobs})) if jobs else {}
 
         def sam_masks(img, name):
