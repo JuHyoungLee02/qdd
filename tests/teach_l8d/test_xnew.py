@@ -151,3 +151,9 @@ def test_primitive_push_objects():
     t = XN.push_task_id("o9")
     XN.register_new_tasks([t], ROWS)
     assert T.TASKS[t].instruction == "Push the yellow box onto the magenta marker." and XN.name_gate(t, ROWS) is None
+
+
+def test_parse_ids_ending_with_underscore():
+    assert XN.parse("st__gso_Lavender_Snake_Tieks_Snake_Print_Ballet___o12") == \
+        ("st", ["gso_Lavender_Snake_Tieks_Snake_Print_Ballet_", "o12"])
+    assert XN.parse("st__a__b") == ("st", ["a", "b"]) and XN.parse("pu__gso_x_") == ("pu", ["gso_x_"])

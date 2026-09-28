@@ -147,8 +147,10 @@ def is_new_task(t: str) -> bool:
 
 
 def parse(t: str):
-    parts = str(t).split("__")
-    return parts[0], parts[1:]
+    """st__<top>__<base> / pu__<obj> -> (kind, ids). An object id may end with '_' (gso_..._Ballet_): the stack
+    split is the LAST '__' (the base ids -- o12 / real ids -- never end with '_'), the push id is all the rest."""
+    kind, rest = str(t).split("__", 1)
+    return kind, (rest.rsplit("__", 1) if kind == "st" else [rest])
 
 
 def text_index(t: str, seed: int, ood: bool = False) -> int:
