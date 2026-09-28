@@ -217,7 +217,7 @@ def name_gate(t: str, rows: dict, present_names=()) -> str | None:
     return None
 
 
-PUSH_DIRS = ((1.0, 0.0), (0.0, 1.0), (0.0, -1.0))  # away from the robot or sideways, never towards it
+PUSH_DIRS = ((1.0, 0.0), (0.0, 1.0))  # +x / +y only (change 4: pushing to -y stalled at TCP y ~ -0.20, 3/4 capped)
 PUSH_DIST = (0.10, 0.18)
 
 

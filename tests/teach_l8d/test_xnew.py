@@ -124,7 +124,7 @@ def test_hooks_push_plan_layout_and_label():
         lay = T.x_task_layout(35210 + s, t, ws)
         m, p = np.array(lay["gso_cup"][:2]), np.array(lay[XN.MARKER][:2])
         d = p - m
-        assert 0.10 - 1e-9 <= np.linalg.norm(d) <= 0.18 + 1e-9 and d[0] >= -1e-9  # never towards the robot
+        assert 0.10 - 1e-9 <= np.linalg.norm(d) <= 0.18 + 1e-9 and d[0] >= -1e-9 and d[1] >= -1e-9  # +x / +y
         assert ws[0][0] + 0.03 - 1e-9 <= p[0] <= ws[0][1] + 1e-9 and ws[1][0] + 0.03 - 1e-9 <= p[1] <= ws[1][1] - 0.03 + 1e-9
     st = {"tcp": np.array([0.34, -0.25, 1.1]), "grip_w": 0.107,
           "obj": {"gso_cup": np.array([0.40, -0.30, 0.89]), XN.MARKER: np.array([0.40, -0.16, 0.851])},
