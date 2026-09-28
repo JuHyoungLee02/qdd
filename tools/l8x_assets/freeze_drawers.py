@@ -1,5 +1,5 @@
 """Freeze the drawer task list before its gate (prereg_l8x_tasks 0 / change 6): top-down graspable handles from
-handle_topdown.py output, split by piece-name hash (20 % ood), gate picks 35330-35339 (change 7), digest.
+handle_topdown.py output, split by piece-name hash (20 % ood), gate picks 35340-35349 (change 8), digest.
 usage: python tools/l8x_assets/freeze_drawers.py HANDLES.json OUT.json"""
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 
 from harvest.teach_l8d import xdrawer as XD  # noqa: E402
 
-GATE = range(35330, 35340)  # change 7 (gate 3, from L8D; inside GATE_SEEDS); gate 2 used 35390-35399
+GATE = range(35340, 35350)  # change 8 (gate 4, from L8D; inside GATE_SEEDS); gate 3 35330 aborted, gate 2 35390-35399
 
 
 def split_of(piece: str) -> str:

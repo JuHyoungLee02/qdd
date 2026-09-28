@@ -113,6 +113,24 @@ def main(argv=None):
             rg = r.ComputeAlignedRange()
             return np.array(rg.GetMin()), np.array(rg.GetMax())
 
+        def bar_bbox(handle):
+            """change 8: the grasp bar = the handle body's longest collider (the body bbox also holds the mounting
+            posts, which moved the centre ~1.4 cm towards the drawer front, under the top's overhang)."""
+            root = stage.GetPrimAtPath("/World/envs/env_0/ART")
+            hp = next((p for p in Usd.PrimRange(root) if p.GetName() == handle), None)
+            cache = UsdGeom.BBoxCache(Usd.TimeCode.Default(), ["default", "render", "proxy", "guide"])
+            best = None
+            for p in Usd.PrimRange(hp) if hp else []:
+                if "Collider" not in p.GetName():
+                    continue
+                rg = cache.ComputeWorldBound(p).ComputeAlignedRange()
+                if rg.IsEmpty():
+                    continue
+                lo_, hi_b = np.array(rg.GetMin()), np.array(rg.GetMax())
+                if best is None or (hi_b - lo_).max() > (best[1] - best[0]).max():
+                    best = (lo_, hi_b)
+            return best if best is not None else world_bbox(handle)
+
         res = {}
         os.makedirs(a.out, exist_ok=True)
         placed = None
@@ -129,7 +147,8 @@ def main(argv=None):
             if placed != handle:  # move the piece: handle centre at (HANDLE_X, HANDLE_Y), bottom on the floor
                 if placed is not None:  # USD poses are only consistent with physics before the first move
                     raise RuntimeError("one handle per process (the USD bbox goes stale after a root move)")
-                lo, hi = world_bbox(handle)
+                lo, hi = bar_bbox(handle)
+                print("DR_BAR", handle, [round(float(v), 3) for v in lo], [round(float(v), 3) for v in hi], flush=True)
                 hc = (lo + hi) / 2
                 # the handle bar centre in the handle body's frame (physics pose and USD agree before any move)
                 bq = art.data.body_quat_w[0, hi_].cpu().numpy()

@@ -20,7 +20,7 @@ def run(h0=(0.52, -0.22, 0.90), u=(-1.0, 0.0, 0.0), n=200, stick=True, clear_z=1
         if cmd["mode"] == "stop":
             break
         if cmd.get("gripper") == "close":
-            w = 0.02
+            w = 0.01  # closed on a ~1 cm bar
         elif cmd.get("gripper") == "open":
             w = cmd.get("width_m", W_OPEN)
         if cmd["mode"] == "eef":
@@ -39,7 +39,7 @@ def test_plan_opens_the_drawer_and_releases():
     assert steps[-1] == "done" and q >= 0.2 - XD.OPEN_TOL and w == XD.PRESHAPE_W
     assert [s for s in XD.STEPS if s in steps] == list(XD.STEPS)
     assert XD.success_drawer(q, w, W_OPEN, 0.0) and not XD.success_drawer(0.1, w, W_OPEN, 0.0)
-    assert not XD.success_drawer(q, 0.02, W_OPEN, 0.0) and not XD.success_drawer(q, w, W_OPEN, 0.05)
+    assert not XD.success_drawer(q, 0.01, W_OPEN, 0.0) and not XD.success_drawer(q, w, W_OPEN, 0.05)
 
 
 def test_slipping_handle_reopens_and_regrasps():

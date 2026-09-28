@@ -23,8 +23,8 @@ NEAR_Z = 0.015
 PULL_STEP = 0.005
 OPEN_TARGET = 0.20
 OPEN_TOL = 0.004
-HELD_W = 0.025  # pad gap below this = closed on the handle bar (bars are 1-2 cm thick)
-PRESHAPE_W = 0.035  # change 7: pads opened only this wide around the bar (rear finger stays in front of the drawer)
+HELD_W = 0.018  # pad gap below this = closed on the handle bar (bars are ~1 cm thick; change 8)
+PRESHAPE_W = 0.025  # change 7/8: pads opened only this wide around the bar (rear pad stays < 2 cm behind it)
 JUDGE_SHARE = 0.8
 STANDOFF_MIN = 0.025  # change 7: gap behind the bar for the pre-shaped rear finger (handle_topdown asks only 12 mm)
 STEPS = ("preshape", "above_handle", "descend_close", "pull", "release", "retreat")
