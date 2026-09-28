@@ -8,6 +8,7 @@
 C=$1; CMD=$2
 O=/data/harvest/out/view8; L=/data/harvest/logs/view8; P=/data/harvest/venv_train/bin/python
 OP=/data/harvest/out/opratio
+Q=${V8_QUEUE:-$O/queue.txt}  # V8_QUEUE: a per-worker job file (7a2a spill-over)
 mkdir -p $O $L
 cd $C; export PYTHONPATH=$C
 if [ "$CMD" = prep ]; then
@@ -32,7 +33,7 @@ G=$3; PORT=$4; MARK=$5
 until grep -q PREP_DONE $L/view8.log 2>/dev/null; do grep -q PREP_FAIL $L/view8.log && exit 1; sleep 60; done
 [ -n "$MARK" ] && until grep -q S1_DONE $MARK 2>/dev/null; do sleep 120; done
 while true; do
-  JOB=$(flock $O/queue.lock bash -c "head -n 1 $O/queue.txt; sed -i 1d $O/queue.txt")
+  JOB=$(flock $O/queue.lock bash -c "head -n 1 $Q; sed -i 1d $Q")
   [ -z "$JOB" ] && break
   set -- $JOB; ARM=$1; SEED=$2; A=${ARM}_s$SEED
   S=$(grep "^$ARM " $O/steps.txt | tail -n 1 | cut -d' ' -f2)
