@@ -95,6 +95,25 @@ def author(stage, path: str, rec: dict, root: str = ROOT, uv_scale=(1.0, 1.0)):
     return mat
 
 
+def retexture(stage, path: str, rec: dict, root: str = ROOT, uv_scale=None) -> None:
+    """Per-episode change WITHOUT a binding change: point an existing author() material's texture inputs (diffuse /
+    roughness / normal) at another record's files (and optionally its UV scale). Bind once at scene setup (before
+    the simulation starts), then call this per episode."""
+    from pxr import Gf, Sdf, UsdShade
+    for name, key in (("diff", "diff"), ("rough", "rough"), ("nor", "nor_gl")):
+        sh = UsdShade.Shader.Get(stage, f"{path}/{name}")
+        if sh and key in rec["files"]:
+            sh.GetInput("file").Set(Sdf.AssetPath(os.path.join(root, rec["files"][key])))
+    if uv_scale is not None:
+        UsdShade.Shader.Get(stage, path + "/uv").GetInput("scale").Set(Gf.Vec2f(*[float(v) for v in uv_scale]))
+
+
+def hdr_paths(cat: dict, split: str = "train", root: str = ROOT) -> list:
+    """Absolute .hdr paths of the usable indoor HDRIs of a split (drop-in for a pool's hdr_maps)."""
+    return [os.path.join(root, r["files"]["hdr"]) for k, r in sorted(cat.items())
+            if r["role"] == "env" and split_of(k) == split]
+
+
 def bind(prim, mat) -> None:
     from pxr import UsdShade
     UsdShade.MaterialBindingAPI.Apply(prim).Bind(mat, UsdShade.Tokens.strongerThanDescendants)

@@ -1,0 +1,4402 @@
+{
+ "licence_texts": {
+  "CC BY 4.0": "https://creativecommons.org/licenses/by/4.0/",
+  "CC0 1.0": "https://creativecommons.org/publicdomain/zero/1.0/ (Poly Haven: https://polyhaven.com/license)"
+ },
+ "commercial_use": "all entries: CC BY 4.0 (attribution required) or CC0 1.0",
+ "assets": {
+  "prod_gso_2_of_Jenga_Classic_Game": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "2_of_Jenga_Classic_Game",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_45oz_RAMEKIN_ASST_DEEP_COLORS": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "45oz_RAMEKIN_ASST_DEEP_COLORS",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_5_HTP": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "5_HTP",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_ACE_Coffee_Mug_Kristen_16_oz_cup": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "ACE_Coffee_Mug_Kristen_16_oz_cup",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_AllergenFree_JarroDophilus": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "AllergenFree_JarroDophilus",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Apples_to_Apples_Kids_Edition": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Apples_to_Apples_Kids_Edition",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Arm_Hammer_Diaper_Pail_Refills_12_Pa": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Arm_Hammer_Diaper_Pail_Refills_12_Pack_MFWkmoweejt",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Aroma_Stainless_Steel_Milk_Frother_2": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Aroma_Stainless_Steel_Milk_Frother_2_Cup",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_BIA_Porcelain_Ramekin_With_Glazed_Ri": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "BIA_Porcelain_Ramekin_With_Glazed_Rim_35_45_oz_cup",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Balderdash_Game": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Balderdash_Game",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Beetle_Adventure_Racing_Nintendo_64": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Beetle_Adventure_Racing_Nintendo_64",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Beta_Glucan": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Beta_Glucan",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Bifidus_Balance_FOS": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Bifidus_Balance_FOS",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Big_Dot_Aqua_Pencil_Case": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Big_Dot_Aqua_Pencil_Case",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Big_Dot_Pink_Pencil_Case": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Big_Dot_Pink_Pencil_Case",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_BlackBlack_Nintendo_3DSXL": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "BlackBlack_Nintendo_3DSXL",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Black_Elderberry_Syrup_54_oz_Gaia_He": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Black_Elderberry_Syrup_54_oz_Gaia_Herbs",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Black_Forest_Fruit_Snacks_28_Pack_Gr": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Black_Forest_Fruit_Snacks_28_Pack_Grape",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Black_Forest_Fruit_Snacks_Juicy_Fill": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Black_Forest_Fruit_Snacks_Juicy_Filled_Centers_10_pouches_9_oz_total",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Blackcurrant_Lutein": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Blackcurrant_Lutein",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_BlueBlack_Nintendo_3DSXL": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "BlueBlack_Nintendo_3DSXL",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Borage_GLA240Gamma_Tocopherol": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Borage_GLA240Gamma_Tocopherol",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Bradshaw_International_11642_7_Qt_MP": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Bradshaw_International_11642_7_Qt_MP_Plastic_Bowl",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Brother_Ink_Cartridge_Magenta_LC75M": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Brother_Ink_Cartridge_Magenta_LC75M",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Brother_LC_1053PKS_Ink_Cartridge_Cya": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Brother_LC_1053PKS_Ink_Cartridge_CyanMagentaYellow_1pack",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Brother_Printing_Cartridge_PC501": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Brother_Printing_Cartridge_PC501",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Canon_225226_Ink_Cartridges_BlackCol": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Canon_225226_Ink_Cartridges_BlackColor_Cyan_Magenta_Yellow_6_count",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Canon_Ink_Cartridge_Green_6": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Canon_Ink_Cartridge_Green_6",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Canon_Pixma_Chromalife_100_Magenta_8": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Canon_Pixma_Chromalife_100_Magenta_8",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Canon_Pixma_Ink_Cartridge_251_M": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Canon_Pixma_Ink_Cartridge_251_M",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Canon_Pixma_Ink_Cartridge_8": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Canon_Pixma_Ink_Cartridge_8",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Canon_Pixma_Ink_Cartridge_8_Green": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Canon_Pixma_Ink_Cartridge_8_Green",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Canon_Pixma_Ink_Cartridge_8_Red": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Canon_Pixma_Ink_Cartridge_8_Red",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Canon_Pixma_Ink_Cartridge_Cyan_251": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Canon_Pixma_Ink_Cartridge_Cyan_251",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Central_Garden_Flower_Pot_Goo_425": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Central_Garden_Flower_Pot_Goo_425",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Circo_Fish_Toothbrush_Holder_1499598": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Circo_Fish_Toothbrush_Holder_14995988",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_CoQ10": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "CoQ10",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_CoQ10_BjTLbuRVt1t": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "CoQ10_BjTLbuRVt1t",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_CoQ10_wSSVoxVppVD": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "CoQ10_wSSVoxVppVD",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Cole_Hardware_Bowl_Scirocco_YellowBl": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Cole_Hardware_Bowl_Scirocco_YellowBlue",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Cole_Hardware_Butter_Dish_Square_Red": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Cole_Hardware_Butter_Dish_Square_Red",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Cole_Hardware_Deep_Bowl_Good_Earth_1": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Cole_Hardware_Deep_Bowl_Good_Earth_1075",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Cole_Hardware_Mini_Honey_Dipper": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Cole_Hardware_Mini_Honey_Dipper",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Cole_Hardware_Mug_Classic_Blue": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Cole_Hardware_Mug_Classic_Blue",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Cole_Hardware_School_Bell_Solid_Bras": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Cole_Hardware_School_Bell_Solid_Brass_38",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Connect_4_Launchers": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Connect_4_Launchers",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Cootie_Game_tDhURNbfU5J": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Cootie_Game_tDhURNbfU5J",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Crayola_Crayons_120_crayons": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Crayola_Crayons_120_crayons",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Crayola_Crayons_24_count": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Crayola_Crayons_24_count",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Crayola_Crayons_Washable_24_crayons": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Crayola_Crayons_Washable_24_crayons",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Crayola_Model_Magic_Modeling_Materia": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Crayola_Model_Magic_Modeling_Material_White_3_oz",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Crayola_Washable_Sidewalk_Chalk_16_p": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Crayola_Washable_Sidewalk_Chalk_16_pack_wDZECiw7J6s",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Creatine_Monohydrate": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Creatine_Monohydrate",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Crosley_Alarm_Clock_Vintage_Metal": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Crosley_Alarm_Clock_Vintage_Metal",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Crunch_Girl_Scouts_Candy_Bars_Peanut": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Crunch_Girl_Scouts_Candy_Bars_Peanut_Butter_Creme_78_oz_box",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_DIM_CDG": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "DIM_CDG",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Dell_Ink_Cartridge": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Dell_Ink_Cartridge",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Dell_Ink_Cartridge_Yellow_31": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Dell_Ink_Cartridge_Yellow_31",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Dell_Series_9_Color_Ink_Cartridge_MK": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Dell_Series_9_Color_Ink_Cartridge_MK993_High_Yield",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Deskstar_Desk_Top_Hard_Drive_1_TB": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Deskstar_Desk_Top_Hard_Drive_1_TB",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Dixie_10_ounce_Bowls_35_ct": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Dixie_10_ounce_Bowls_35_ct",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Don_Franciscos_Gourmet_Coffee_Medium": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Don_Franciscos_Gourmet_Coffee_Medium_Decaf_100_Colombian_12_oz_340_g",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Down_To_Earth_Orchid_Pot_Ceramic_Lim": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Down_To_Earth_Orchid_Pot_Ceramic_Lime",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Down_To_Earth_Orchid_Pot_Ceramic_Red": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Down_To_Earth_Orchid_Pot_Ceramic_Red",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Eat_to_Live_The_Amazing_NutrientRich": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Eat_to_Live_The_Amazing_NutrientRich_Program_for_Fast_and_Sustained_Weight_Loss_Revised_Edition_Book",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Ecoforms_Cup_B4_SAN": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Ecoforms_Cup_B4_SAN",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Ecoforms_Plant_Bowl_Turquoise_7": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Ecoforms_Plant_Bowl_Turquoise_7",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Ecoforms_Plant_Container_URN_NAT": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Ecoforms_Plant_Container_URN_NAT",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Ecoforms_Plant_Container_URN_SAN": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Ecoforms_Plant_Container_URN_SAN",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Ecoforms_Planter_Bowl_Cole_Hardware": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Ecoforms_Planter_Bowl_Cole_Hardware",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Epson_273XL_Ink_Cartridge_Magenta": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Epson_273XL_Ink_Cartridge_Magenta",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Epson_DURABrite_Ultra_786_Black_Ink_": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Epson_DURABrite_Ultra_786_Black_Ink_Cartridge_T786120S",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Epson_Ink_Cartridge_126_Yellow": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Epson_Ink_Cartridge_126_Yellow",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Epson_Ink_Cartridge_Black_200": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Epson_Ink_Cartridge_Black_200",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Epson_LabelWorks_LC4WBN9_Tape_reel_l": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Epson_LabelWorks_LC4WBN9_Tape_reel_labels_047_x_295_Roll_Black_on_White",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Epson_LabelWorks_LC5WBN9_Tape_reel_l": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Epson_LabelWorks_LC5WBN9_Tape_reel_labels_071_x_295_Roll_Black_on_White",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Epson_T5803_Ink_Cartridge_Magenta_1p": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Epson_T5803_Ink_Cartridge_Magenta_1pack",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Epson_UltraChrome_T0543_Ink_Cartridg": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Epson_UltraChrome_T0543_Ink_Cartridge_Magenta_1pack",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Epson_UltraChrome_T0548_Ink_Cartridg": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Epson_UltraChrome_T0548_Ink_Cartridge_Matte_Black_1pack",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_FemDophilus": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "FemDophilus",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Final_Fantasy_XIV_A_Realm_Reborn_60D": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Final_Fantasy_XIV_A_Realm_Reborn_60Day_Subscription",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Folic_Acid": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Folic_Acid",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Footed_Bowl_Sand": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Footed_Bowl_Sand",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Frozen_Olafs_In_Trouble_PopOMatic_Ga": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Frozen_Olafs_In_Trouble_PopOMatic_Game",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Frozen_Scrabble_Jr": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Frozen_Scrabble_Jr",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Germanium_GE132": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Germanium_GE132",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Google_Cardboard_Original_package": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Google_Cardboard_Original_package",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Grreatv_Choice_Dog_Bowl_Gray_Bones_P": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Grreatv_Choice_Dog_Bowl_Gray_Bones_Plastic_20_fl_oz_total",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_HP_Card_Invitation_Kit": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "HP_Card_Invitation_Kit",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Hasbro_Cranium_Performance_and_Actin": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Hasbro_Cranium_Performance_and_Acting_Game",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Hasbro_Monopoly_Hotels_Game": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Hasbro_Monopoly_Hotels_Game",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Hasbro_Trivial_Pursuit_Family_Editio": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Hasbro_Trivial_Pursuit_Family_Edition_Game",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Hey_You_Pikachu_Nintendo_64": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Hey_You_Pikachu_Nintendo_64",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_House_of_Cards_The_Complete_First_Se": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "House_of_Cards_The_Complete_First_Season_4_Discs_DVD",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Hyaluronic_Acid": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Hyaluronic_Acid",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Inositol": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Inositol",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_IsoRich_Soy": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "IsoRich_Soy",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_JBL_Charge_Speaker_portable_wireless": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "JBL_Charge_Speaker_portable_wireless_wired_Green",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_JarroDophilusFOS_Value_Size": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "JarroDophilusFOS_Value_Size",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_JarroSil_Activated_Silicon": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "JarroSil_Activated_Silicon",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_JarroSil_Activated_Silicon_5exdZHIeL": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "JarroSil_Activated_Silicon_5exdZHIeLAp",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Jarrow_Formulas_Glucosamine_Hci_Mega": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Jarrow_Formulas_Glucosamine_Hci_Mega_1000_100_ct",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Jarrow_Glucosamine_Chondroitin_Combi": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Jarrow_Glucosamine_Chondroitin_Combination_120_Caps",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Just_For_Men_Mustache_Beard_Brushin_": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Just_For_Men_Mustache_Beard_Brushin_Hair_Color_Gel_MediumDark_Brown_M40",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Just_For_Men_ShampooIn_Haircolor_Jet": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Just_For_Men_ShampooIn_Haircolor_Jet_Black_60",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Just_For_Men_ShampooIn_Haircolor_Lig": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Just_For_Men_ShampooIn_Haircolor_Light_Brown_25",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Just_For_Men_Shampoo_In_Haircolor_Da": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Just_For_Men_Shampoo_In_Haircolor_Darkest_Brown_50",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Justified_The_Complete_Fourth_Season": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Justified_The_Complete_Fourth_Season_3_Discs_DVD",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_KS_Chocolate_Cube_Box_Assortment_By_": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "KS_Chocolate_Cube_Box_Assortment_By_Neuhaus_2010_Ounces",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Kid_Icarus_Uprising_Nintendo_3DS_Gam": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Kid_Icarus_Uprising_Nintendo_3DS_Game",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Kong_Puppy_Teething_Rubber_Small_Pin": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Kong_Puppy_Teething_Rubber_Small_Pink",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Kotex_U_Barely_There_Liners_Thin_60_": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Kotex_U_Barely_There_Liners_Thin_60_count",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Kotex_U_Tween_Pads_16_pads": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Kotex_U_Tween_Pads_16_pads",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Krill_Oil": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Krill_Oil",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_LTyrosine": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "LTyrosine",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Lactoferrin": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Lactoferrin",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Leap_Frog_Paint_Dabber_Dot_Art_5_pai": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Leap_Frog_Paint_Dabber_Dot_Art_5_paint_bottles",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Little_Big_Planet_3_Plush_Edition": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Little_Big_Planet_3_Plush_Edition",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Little_Debbie_Cloud_Cakes_10_ct": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Little_Debbie_Cloud_Cakes_10_ct",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Little_House_on_the_Prairie_Season_T": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Little_House_on_the_Prairie_Season_Two_5_Discs_Includes_Digital",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Lutein": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Lutein",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_MK7": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "MK7",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Mad_Gab_Refresh_Card_Game": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Mad_Gab_Refresh_Card_Game",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Marc_Anthony_Skip_Professional_Oil_o": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Marc_Anthony_Skip_Professional_Oil_of_Morocco_Conditioner_with_Argan_Oil",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Marc_Anthony_Strictly_Curls_Curl_Env": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Marc_Anthony_Strictly_Curls_Curl_Envy_Perfect_Curl_Cream_6_fl_oz_bottle",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Marc_Anthony_True_Professional_Oil_o": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Marc_Anthony_True_Professional_Oil_of_Morocco_Argan_Oil_Treatment",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Marc_Anthony_True_Professional_Stric": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Marc_Anthony_True_Professional_Strictly_Curls_Curl_Defining_Lotion",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Mastic_Gum": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Mastic_Gum",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Mattel_SKIP_BO_Card_Game": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Mattel_SKIP_BO_Card_Game",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Melissa_Doug_Pound_and_Roll": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Melissa_Doug_Pound_and_Roll",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Mens_Gold_Cup_ASV_2Eye_Boat_Shoe_in_": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Mens_Gold_Cup_ASV_2Eye_Boat_Shoe_in_Cognac_Leather",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Mens_Gold_Cup_ASV_Capetown_Penny_Loa": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Mens_Gold_Cup_ASV_Capetown_Penny_Loafer_in_Black_GkQBKqABeQN",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Mens_Gold_Cup_ASV_Dress_Casual_Venet": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Mens_Gold_Cup_ASV_Dress_Casual_Venetian_in_Dark_Brown_Leather",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Mens_Santa_Cruz_Thong_in_Chocolate_L": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Mens_Santa_Cruz_Thong_in_Chocolate_La1fo2mAovE",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Mens_Santa_Cruz_Thong_in_Chocolate_l": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Mens_Santa_Cruz_Thong_in_Chocolate_lvxYW7lek6B",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_NESCAFE_NESCAFE_TC_STKS_DECAF_6_CT": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "NESCAFE_NESCAFE_TC_STKS_DECAF_6_CT",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_NattoMax": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "NattoMax",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Neat_Solutions_Character_Bib_2_pack": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Neat_Solutions_Character_Bib_2_pack",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Nescafe_16Count_Dolce_Gusto_Cappucci": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nescafe_16Count_Dolce_Gusto_Cappuccino_Capsules",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Nescafe_Memento_Latte_Caramel_8_08_o": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nescafe_Memento_Latte_Caramel_8_08_oz_23_g_packets_64_oz_184_g",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Nescafe_Momento_Mocha_Specialty_Coff": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nescafe_Momento_Mocha_Specialty_Coffee_Mix_8_ct",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Nescafe_Tasters_Choice_Instant_Coffe": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nescafe_Tasters_Choice_Instant_Coffee_Decaf_House_Blend_Light_7_oz",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Nestl_Crunch_Girl_Scouts_Cookie_Flav": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nestl_Crunch_Girl_Scouts_Cookie_Flavors_Caramel_Coconut_78_oz_box",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Nestl_Skinny_Cow_Heavenly_Crisp_Cand": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nestl_Skinny_Cow_Heavenly_Crisp_Candy_Bar_Chocolate_Raspberry_6_pack_462_oz_total",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Nestle_Carnation_Cinnamon_Coffeecake": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nestle_Carnation_Cinnamon_Coffeecake_Kit_1913OZ",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Nestle_Nesquik_Chocolate_Powder_Flav": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nestle_Nesquik_Chocolate_Powder_Flavored_Milk_Additive_109_Oz_Canister",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Nestle_Nips_Hard_Candy_Peanut_Butter": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nestle_Nips_Hard_Candy_Peanut_Butter",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Nestle_Pure_Life_Exotics_Sparkling_W": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nestle_Pure_Life_Exotics_Sparkling_Water_Strawberry_Dragon_Fruit_8_count_12_fl_oz_can_aX0ygjh3bxi",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Nestle_Raisinets_Milk_Chocolate_35_o": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nestle_Raisinets_Milk_Chocolate_35_oz_992_g",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Nestle_Skinny_Cow_Dreamy_Clusters_Ca": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nestle_Skinny_Cow_Dreamy_Clusters_Candy_Dark_Chocolate_6_pack_1_oz_pouches",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Nickelodeon_The_Spongebob_Movie_PopA": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nickelodeon_The_Spongebob_Movie_PopAPart_Spongebob",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Nintendo_2DS_Crimson_Red": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nintendo_2DS_Crimson_Red",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Nintendo_Mario_Action_Figure": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nintendo_Mario_Action_Figure",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Nintendo_Wii_Party_U_with_Controller": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nintendo_Wii_Party_U_with_Controller_Wii_U_Game",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Nintendo_Yoshi_Action_Figure": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nintendo_Yoshi_Action_Figure",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Nips_Hard_Candy_Rich_Creamy_Butter_R": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nips_Hard_Candy_Rich_Creamy_Butter_Rum_4_oz_1133_g",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Now_Designs_Bowl_Akita_Black": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Now_Designs_Bowl_Akita_Black",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_OXO_Soft_Works_Can_Opener_SnapLock": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "OXO_Soft_Works_Can_Opener_SnapLock",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_Canon_CL211XL_Remanufac": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_CL211XL_Remanufactured_Ink_Cartridge_TriColor",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_Canon_CLI36_Remanufactu": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_CLI36_Remanufactured_Ink_Cartridge_TriColor",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_Canon_CLI_221BK_Ink_Car": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_CLI_221BK_Ink_Cartridge_Black_2946B001",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_Canon_CLI_8CMY_Remanufa": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_CLI_8CMY_Remanufactured_Ink_Cartridges_Color_Cyan_Magenta_Yellow_3_count",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_Canon_CLI_8Y_Ink_Cartri": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_CLI_8Y_Ink_Cartridge_Yellow_0623B002",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_Canon_CL_41_Remanufactu": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_CL_41_Remanufactured_Ink_Cartridge_TriColor",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_Canon_PG21XL_Remanufact": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_PG21XL_Remanufactured_Ink_Cartridge_Black",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_Canon_PGI22_Remanufactu": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_PGI22_Remanufactured_Ink_Cartridge_Black",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_Canon_PGI35_Remanufactu": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_PGI35_Remanufactured_Ink_Cartridge_Black",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_Canon_PGI5BK_Remanufact": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_PGI5BK_Remanufactured_Ink_Cartridge_Black",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_Canon_PG_240XL_Ink_Cart": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_PG_240XL_Ink_Cartridge_Black_5206B001",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_Dell_Series_11_Remanufa": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Dell_Series_11_Remanufactured_Ink_Cartridge_TriColor",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_Dell_Series_1_Remanufac": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Dell_Series_1_Remanufactured_Ink_Cartridge_TriColor",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_Dell_Series_5_Remanufac": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Dell_Series_5_Remanufactured_Ink_Cartridge_Black",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_Dell_Series_9_Color_Ink": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Dell_Series_9_Color_Ink_Ink_Cartridge_MK991_MK993",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_Dell_Series_9_Ink_Cartr": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Dell_Series_9_Ink_Cartridge_Black_MK992",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_HP_2_Remanufactured_Ink": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_HP_2_Remanufactured_Ink_Cartridges_Color_Cyan_Magenta_Yellow_3_count",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_HP_564XL_Ink_Cartridge_": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_HP_564XL_Ink_Cartridge_Black_CN684WN",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_HP_564XL_Remanufactured": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_HP_564XL_Remanufactured_Ink_Cartridges_Color_Cyan_Magenta_Yellow_3_count",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_HP_61Tricolor_Ink_Cartr": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_HP_61Tricolor_Ink_Cartridge",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_HP_71_Remanufactured_In": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_HP_71_Remanufactured_Ink_Cartridge_Black",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_HP_74XL75_Remanufacture": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_HP_74XL75_Remanufactured_Ink_Cartridges_BlackTriColor_2_count",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_HP_75_Remanufactured_In": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_HP_75_Remanufactured_Ink_Cartridge_TriColor",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_HP_920XL_920_High_Yield": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_HP_920XL_920_High_Yield_Black_and_Standard_CMY_Color_Ink_Cartridges",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_HP_932XL_Ink_Cartridge_": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_HP_932XL_Ink_Cartridge_Black_CN053A",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_HP_950XL_Ink_Cartridge_": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_HP_950XL_Ink_Cartridge_Black_CN045AN",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_HP_96_Remanufactured_In": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_HP_96_Remanufactured_Ink_Cartridge_Black",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Office_Depot_HP_98_Remanufactured_In": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_HP_98_Remanufactured_Ink_Cartridge_Black",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Olive_Kids_Birdie_Lunch_Box": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Olive_Kids_Birdie_Lunch_Box",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Olive_Kids_Butterfly_Garden_Pencil_C": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Olive_Kids_Butterfly_Garden_Pencil_Case",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Olive_Kids_Dinosaur_Land_Lunch_Box": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Olive_Kids_Dinosaur_Land_Lunch_Box",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Olive_Kids_Game_On_Lunch_Box": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Olive_Kids_Game_On_Lunch_Box",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Olive_Kids_Paisley_Pencil_Case": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Olive_Kids_Paisley_Pencil_Case",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Olive_Kids_Robots_Pencil_Case": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Olive_Kids_Robots_Pencil_Case",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Orbit_Bubblemint_Mini_Bottle_6_ct": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Orbit_Bubblemint_Mini_Bottle_6_ct",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Organic_Whey_Protein_Unflavored": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Organic_Whey_Protein_Unflavored",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Organic_Whey_Protein_Vanilla": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Organic_Whey_Protein_Vanilla",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Paint_Maker": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Paint_Maker",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Pass_The_Popcorn_Movie_Guessing_Game": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Pass_The_Popcorn_Movie_Guessing_Game",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Paul_Frank_Dot_Lunch_Box": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Paul_Frank_Dot_Lunch_Box",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricoen_MD_No_Concealer_Concealer": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricoen_MD_No_Concealer_Concealer",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_AcylGlutathione_Deep_Cr": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_AcylGlutathione_Deep_Crease_Serum",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_AcylGlutathione_Eye_Lid": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_AcylGlutathione_Eye_Lid_Serum",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Blue_Plasma_Orbital": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Blue_Plasma_Orbital",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Chia_Serum": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Chia_Serum",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Cold_Plasma": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Cold_Plasma",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Cold_Plasma_Body": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Cold_Plasma_Body",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Face_Finishing_Moisturi": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Face_Finishing_Moisturizer_4_oz",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Firming_Neck_Therapy_Tr": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Firming_Neck_Therapy_Treatment",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Health_Weight_Managemen": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Health_Weight_Management_Supplements",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_High_Potency_Evening_Re": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_High_Potency_Evening_Repair",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Hypoallergenic_Firming_": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Hypoallergenic_Firming_Eye_Cream_05_oz",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Hypoallergenic_Gentle_C": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Hypoallergenic_Gentle_Cleanser",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Neuropeptide_Facial_Con": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Neuropeptide_Facial_Conformer",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Neuropeptide_Firming_Mo": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Neuropeptide_Firming_Moisturizer",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_No_Bronzer_Bronzer": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_No_Bronzer_Bronzer",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_No_Foundation_Foundatio": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_No_Foundation_Foundation_No_1",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_No_Foundation_Serum": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_No_Foundation_Serum",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_No_Lipstick_Lipstick": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_No_Lipstick_Lipstick",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_No_Mascara_Mascara": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_No_Mascara_Mascara",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Nutritive_Cleanser": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Nutritive_Cleanser",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_OVM": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_OVM",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Omega_3_Supplements": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Omega_3_Supplements",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Photo_Plasma": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Photo_Plasma",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Skin_Clear_Supplements": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Skin_Clear_Supplements",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Skin_Total_Body_Supplem": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Skin_Total_Body_Supplements",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Super_Berry_Powder_with": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Super_Berry_Powder_with_Acai_Supplements",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_The_Cold_Plasma_Face_Ey": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_The_Cold_Plasma_Face_Eyes_Duo",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_The_Crease_Cure_Duo": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_The_Crease_Cure_Duo",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_The_Metabolic_Formula_S": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_The_Metabolic_Formula_Supplements",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_The_Power_Treatments": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_The_Power_Treatments",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Vitamin_C_Ester_15": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Vitamin_C_Ester_15",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Perricone_MD_Vitamin_C_Ester_Serum": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Vitamin_C_Ester_Serum",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Persona_Q_Shadow_of_the_Labyrinth_Ni": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Persona_Q_Shadow_of_the_Labyrinth_Nintendo_3DS",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Pet_Dophilus_powder": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Pet_Dophilus_powder",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Philips_60ct_Warm_White_LED_Smooth_M": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Philips_60ct_Warm_White_LED_Smooth_Mini_String_Lights",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Philips_EcoVantage_43_W_Light_Bulbs_": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Philips_EcoVantage_43_W_Light_Bulbs_Natural_Light_2_pack",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Philips_Sonicare_Tooth_Brush_2_count": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Philips_Sonicare_Tooth_Brush_2_count",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Phillips_Caplets_Size_24": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Phillips_Caplets_Size_24",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Phillips_Colon_Health_Probiotic_Caps": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Phillips_Colon_Health_Probiotic_Capsule",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Phillips_Milk_of_Magnesia_Saline_Lax": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Phillips_Milk_of_Magnesia_Saline_Laxative_Liquid_Original",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Phillips_Stool_Softener_Liquid_Gels_": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Phillips_Stool_Softener_Liquid_Gels_30_liquid_gels",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_PhosphOmega": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "PhosphOmega",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Pinwheel_Pencil_Case": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Pinwheel_Pencil_Case",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Pokemon_Omega_Ruby_Alpha_Sapphire_Du": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Pok\u00e9mon_Omega_Ruby_Alpha_Sapphire_Dual_Pack_Nintendo_3DS",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Polar_Herring_Fillets_Smoked_Peppere": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Polar_Herring_Fillets_Smoked_Peppered_705_oz_total",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Prostate_Optimizer": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Prostate_Optimizer",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_QAbsorb_CoQ10": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "QAbsorb_CoQ10",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_QAbsorb_CoQ10_53iUqjWjW3O": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "QAbsorb_CoQ10_53iUqjWjW3O",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_QHPomegranate": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "QHPomegranate",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Quercetin_500": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Quercetin_500",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_ReadytoUse_Rolled_Fondant_Pure_White": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "ReadytoUse_Rolled_Fondant_Pure_White_24_oz_box",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_RedBlack_Nintendo_3DSXL": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "RedBlack_Nintendo_3DSXL",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Room_Essentials_Bowl_Turquiose": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Room_Essentials_Bowl_Turquiose",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Room_Essentials_Mug_White_Yellow": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Room_Essentials_Mug_White_Yellow",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_SAMe_200": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "SAMe_200",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_SAMe_200_KX7ZmOw47co": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "SAMe_200_KX7ZmOw47co",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Saccharomyces_Boulardii_MOS_Value_Si": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Saccharomyces_Boulardii_MOS_Value_Size",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Sapota_Threshold_4_Ceramic_Round_Pla": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Sapota_Threshold_4_Ceramic_Round_Planter_Red",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Sea_to_Summit_Xl_Bowl": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Sea_to_Summit_Xl_Bowl",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Shaxon_100_Molded_Category_6_RJ45RJ4": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Shaxon_100_Molded_Category_6_RJ45RJ45_Shielded_Patch_Cord_White",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Shurtape_30_Day_Removal_UV_Delct_15": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Shurtape_30_Day_Removal_UV_Delct_15",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Shurtape_Gaffers_Tape_Silver_2_x_60_": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Shurtape_Gaffers_Tape_Silver_2_x_60_yd",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Shurtape_Tape_Purple_CP28": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Shurtape_Tape_Purple_CP28",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Simon_Swipe_Game": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Simon_Swipe_Game",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Sleep_Optimizer": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Sleep_Optimizer",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Snack_Catcher_Snack_Dispenser": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Snack_Catcher_Snack_Dispenser",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Sony_Acid_Music_Studio": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Sony_Acid_Music_Studio",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Sony_Downloadable_Loops": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Sony_Downloadable_Loops",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Spectrum_Wall_Mount": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Spectrum_Wall_Mount",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Squirt_Strain_Fruit_Basket": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Squirt_Strain_Fruit_Basket",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Star_Wars_Rogue_Squadron_Nintendo_64": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Star_Wars_Rogue_Squadron_Nintendo_64",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Super_Mario_Kart_Super_Nintendo_Ente": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Super_Mario_Kart_Super_Nintendo_Entertainment_System",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Swiss_Miss_Hot_Cocoa_KCups_Milk_Choc": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Swiss_Miss_Hot_Cocoa_KCups_Milk_Chocolate_12_count",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_The_Coffee_Bean_Tea_Leaf_KCup_Packs_": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "The_Coffee_Bean_Tea_Leaf_KCup_Packs_Jasmine_Green_Tea_16_count",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_The_Scooper_Hooper": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "The_Scooper_Hooper",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Theanine": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Theanine",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Threshold_Bead_Cereal_Bowl_White": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Threshold_Bead_Cereal_Bowl_White",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Threshold_Porcelain_Coffee_Mug_All_O": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Threshold_Porcelain_Coffee_Mug_All_Over_Bead_White",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Threshold_Porcelain_Serving_Bowl_Cou": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Threshold_Porcelain_Serving_Bowl_Coupe_White",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Threshold_Porcelain_Spoon_Rest_White": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Threshold_Porcelain_Spoon_Rest_White",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Threshold_Ramekin_White_Porcelain": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Threshold_Ramekin_White_Porcelain",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Top_Paw_Dog_Bowl_Blue_Paw_Bone_Ceram": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Top_Paw_Dog_Bowl_Blue_Paw_Bone_Ceramic_25_fl_oz_total",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Travel_Smart_Neck_Rest_Inflatable": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Travel_Smart_Neck_Rest_Inflatable",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Tune_Belt_Sport_Armband_For_Samsung_": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Tune_Belt_Sport_Armband_For_Samsung_Galaxy_S3",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Twinlab_100_Whey_Protein_Fuel_Chocol": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Twinlab_100_Whey_Protein_Fuel_Chocolate",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Twinlab_100_Whey_Protein_Fuel_Cookie": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Twinlab_100_Whey_Protein_Fuel_Cookies_and_Cream",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Twinlab_100_Whey_Protein_Fuel_Vanill": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Twinlab_100_Whey_Protein_Fuel_Vanilla",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Twinlab_Nitric_Fuel": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Twinlab_Nitric_Fuel",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Twinlab_Premium_Creatine_Fuel_Powder": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Twinlab_Premium_Creatine_Fuel_Powder",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_U_By_Kotex_Cleanwear_Heavy_Flow_Pads": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "U_By_Kotex_Cleanwear_Heavy_Flow_Pads_32_Ct",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_U_By_Kotex_Sleek_Regular_Unscented_T": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "U_By_Kotex_Sleek_Regular_Unscented_Tampons_36_Ct_Box",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Ubisoft_RockSmith_Real_Tone_Cable_Xb": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Ubisoft_RockSmith_Real_Tone_Cable_Xbox_360",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Ultra_JarroDophilus": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Ultra_JarroDophilus",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Utana_5_Porcelain_Ramekin_Large": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Utana_5_Porcelain_Ramekin_Large",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_VANS_FIRE_ROASTED_VEGGIE_CRACKERS_GL": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "VANS_FIRE_ROASTED_VEGGIE_CRACKERS_GLUTEN_FREE",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Vans_Cereal_Honey_Nut_Crunch_11_oz_b": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Vans_Cereal_Honey_Nut_Crunch_11_oz_box",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Victor_Reversible_Bookend": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Victor_Reversible_Bookend",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Weston_No_22_Cajun_Jerky_Tonic_12_fl": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Weston_No_22_Cajun_Jerky_Tonic_12_fl_oz_nLj64ZnGwDh",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Weston_No_33_Signature_Sausage_Tonic": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Weston_No_33_Signature_Sausage_Tonic_12_fl_oz",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Whey_Protein_3_Flavor_Variety_Pack_1": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Whey_Protein_3_Flavor_Variety_Pack_12_Packets",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Whey_Protein_Chocolate_12_Packets": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Whey_Protein_Chocolate_12_Packets",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Whey_Protein_Vanilla": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Whey_Protein_Vanilla",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Whey_Protein_Vanilla_12_Packets": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Whey_Protein_Vanilla_12_Packets",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Wilton_Easy_Layers_Cake_Pan_Set": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Wilton_Easy_Layers_Cake_Pan_Set",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Wilton_Pearlized_Sugar_Sprinkles_525": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Wilton_Pearlized_Sugar_Sprinkles_525_oz_Gold",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Wilton_PreCut_Parchment_Sheets_10_x_": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Wilton_PreCut_Parchment_Sheets_10_x_15_24_sheets",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Wishbone_Pencil_Case": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Wishbone_Pencil_Case",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Womens_Multi_13": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Womens_Multi_13",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Wooden_ABC_123_Blocks_50_pack": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Wooden_ABC_123_Blocks_50_pack",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Wrigley_Orbit_Mint_Variety_18_Count": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Wrigley_Orbit_Mint_Variety_18_Count",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_Xyli_Pure_Xylitol": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Xyli_Pure_Xylitol",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_gso_YumYum_D3_Liquid": {
+   "kind": "product",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "YumYum_D3_Liquid",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "prod_ph_CheeseBox_01": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "CheeseBox_01",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Gabriel Radi\u0107 (CC0)"
+  },
+  "prod_ph_all_purpose_cleaner": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "all_purpose_cleaner",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Kuutti Siitonen (CC0)"
+  },
+  "prod_ph_bleach_bottle": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "bleach_bottle",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: James Ray Cock (CC0)"
+  },
+  "prod_ph_brass_vase_03": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "brass_vase_03",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rico Cilliers (CC0)"
+  },
+  "prod_ph_brass_vase_04": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "brass_vase_04",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rico Cilliers (CC0)"
+  },
+  "prod_ph_can_rusted": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "can_rusted",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rahul Chaudhary (CC0)"
+  },
+  "prod_ph_carrot_cake": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "carrot_cake",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Greg Zaal, James Ray Cock (CC0)"
+  },
+  "prod_ph_carved_wooden_plate": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "carved_wooden_plate",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Jan Martens (CC0)"
+  },
+  "prod_ph_ceramic_vase_02": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "ceramic_vase_02",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: James Ray Cock (CC0)"
+  },
+  "prod_ph_ceramic_vase_04": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "ceramic_vase_04",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: James Ray Cock (CC0)"
+  },
+  "prod_ph_cigarette_pack": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "cigarette_pack",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Ulrich B\u00fcch (CC0)"
+  },
+  "prod_ph_croissant": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "croissant",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dario Barresi, Greg Zaal (CC0)"
+  },
+  "prod_ph_jug_01": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "jug_01",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Kuutti Siitonen (CC0)"
+  },
+  "prod_ph_leather_cleaner_can": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "leather_cleaner_can",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: James Ray Cock (CC0)"
+  },
+  "prod_ph_lemon": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "lemon",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Kuutti Siitonen (CC0)"
+  },
+  "prod_ph_metal_jug": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "metal_jug",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Anzor Lezhava (CC0)"
+  },
+  "prod_ph_modified_thermos": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "modified_thermos",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Alex Weber (CC0)"
+  },
+  "prod_ph_multi_cleaner_5_litre": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "multi_cleaner_5_litre",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: James Ray Cock (CC0)"
+  },
+  "prod_ph_multi_cleaner_bottle": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "multi_cleaner_bottle",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: James Ray Cock (CC0)"
+  },
+  "prod_ph_oil_tin": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "oil_tin",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Niklas (CC0)"
+  },
+  "prod_ph_planter_pot_clay": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "planter_pot_clay",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Amal Kumar (CC0)"
+  },
+  "prod_ph_plastic_bottle_gallon": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "plastic_bottle_gallon",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rahul Chaudhary (CC0)"
+  },
+  "prod_ph_plastic_thermos": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "plastic_thermos",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: PierreB3D (CC0)"
+  },
+  "prod_ph_pot_enamel_01": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "pot_enamel_01",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Kuutti Siitonen (CC0)"
+  },
+  "prod_ph_russian_food_cans_01": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "russian_food_cans_01",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Kosan Aziz (CC0)"
+  },
+  "prod_ph_spray_paint_bottles": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "spray_paint_bottles",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: James Ray Cock (CC0)"
+  },
+  "prod_ph_strawberry_chocolate_cake": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "strawberry_chocolate_cake",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Kuutti Siitonen (CC0)"
+  },
+  "prod_ph_wooden_bowl_02": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "wooden_bowl_02",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Kuutti Siitonen (CC0)"
+  },
+  "prod_ph_wooden_spoon": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "wooden_spoon",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Ronnie Barter (CC0)"
+  },
+  "prod_ph_yellow_onion": {
+   "kind": "product",
+   "source": "Poly Haven",
+   "source_name": "yellow_onion",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Kuutti Siitonen (CC0)"
+  },
+  "gsor_11pro_SL_TRX_FG": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "11pro_SL_TRX_FG",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_3D_Dollhouse_Sink": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "3D_Dollhouse_Sink",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_3D_Dollhouse_Sofa": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "3D_Dollhouse_Sofa",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_ACE_Coffee_Mug_Kristen_16_oz_cup": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "ACE_Coffee_Mug_Kristen_16_oz_cup",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_ASICS_GEL1140V_WhiteBlackSilver": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "ASICS_GEL1140V_WhiteBlackSilver",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_ASICS_GEL1140V_WhiteRoyalSilver": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "ASICS_GEL1140V_WhiteRoyalSilver",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_ASICS_GELAce_Pro_Pearl_WhitePink": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "ASICS_GELAce_Pro_Pearl_WhitePink",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_ASICS_GELBlur33_20_GS_Flash_YellowHo": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "ASICS_GELBlur33_20_GS_Flash_YellowHot_PunchSilver",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_ASICS_GELDirt_Dog_4_SunFlameBlack": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "ASICS_GELDirt_Dog_4_SunFlameBlack",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_ASICS_GELLinksmaster_WhiteCoffeeSand": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "ASICS_GELLinksmaster_WhiteCoffeeSand",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_ASICS_GELLinksmaster_WhiteRasberryGu": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "ASICS_GELLinksmaster_WhiteRasberryGunmetal",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_ASICS_GELLinksmaster_WhiteSilverCaro": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "ASICS_GELLinksmaster_WhiteSilverCarolina_Blue",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_ASICS_GELTour_Lyte_WhiteOrchidSilver": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "ASICS_GELTour_Lyte_WhiteOrchidSilver",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Adrenaline_GTS_13_Color_DrkDenimWhtB": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Adrenaline_GTS_13_Color_DrkDenimWhtBachlorBttnSlvr_Size_50_yfK40TNjq0V",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Adrenaline_GTS_13_Color_WhtObsdianBl": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Adrenaline_GTS_13_Color_WhtObsdianBlckOlmpcSlvr_Size_70",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_BUNNY_RATTLE": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "BUNNY_RATTLE",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Big_Dot_Aqua_Pencil_Case": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Big_Dot_Aqua_Pencil_Case",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Borage_GLA240Gamma_Tocopherol": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Borage_GLA240Gamma_Tocopherol",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Brother_Printing_Cartridge_PC501": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Brother_Printing_Cartridge_PC501",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_CLIMACOOL_BOAT_BREEZE_IE6CyqSaDwN": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "CLIMACOOL_BOAT_BREEZE_IE6CyqSaDwN",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Cascadia_8_Color_AquariusHibscsBeari": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Cascadia_8_Color_AquariusHibscsBearingSeaBlk_Size_50",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Chelsea_lo_fl_rdheel_nQ0LPNF1oMw": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Chelsea_lo_fl_rdheel_nQ0LPNF1oMw",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Chelsea_lo_fl_rdheel_zAQrnhlEfw8": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Chelsea_lo_fl_rdheel_zAQrnhlEfw8",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_ClimaCool_Aerate_2_W_Wide": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "ClimaCool_Aerate_2_W_Wide",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Crayola_Crayons_120_crayons": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Crayola_Crayons_120_crayons",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_DOLL_FAMILY": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "DOLL_FAMILY",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_DRAGON_W": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "DRAGON_W",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_D_ROSE_ENGLEWOOD_II": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "D_ROSE_ENGLEWOOD_II",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Dell_Ink_Cartridge": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Dell_Ink_Cartridge",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Dino_3": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Dino_3",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Dino_5": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Dino_5",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_F10_TRX_FG_ssscuo9tGxb": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "F10_TRX_FG_ssscuo9tGxb",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_F10_TRX_TF_rH7tmKCdUJq": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "F10_TRX_TF_rH7tmKCdUJq",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_F5_TRX_FG": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "F5_TRX_FG",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_FIRE_TRUCK": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "FIRE_TRUCK",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_FemDophilus": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "FemDophilus",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Ghost_6_GTX_Color_AnthBlckSlvrFernSu": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Ghost_6_GTX_Color_AnthBlckSlvrFernSulphSprng_Size_80",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Glycerin_11_Color_AqrsDrsdnBluBlkSlv": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Glycerin_11_Color_AqrsDrsdnBluBlkSlvShckOrng_Size_50",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Glycerin_11_Color_BrllntBluSkydvrSlv": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Glycerin_11_Color_BrllntBluSkydvrSlvrBlckWht_Size_80",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Grand_Prix": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Grand_Prix",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Horse_Dreams_Pencil_Case": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Horse_Dreams_Pencil_Case",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Inositol": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Inositol",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_JarroDophilusFOS_Value_Size": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "JarroDophilusFOS_Value_Size",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_JarroSil_Activated_Silicon": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "JarroSil_Activated_Silicon",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Jarrow_Formulas_Glucosamine_Hci_Mega": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Jarrow_Formulas_Glucosamine_Hci_Mega_1000_100_ct",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Jarrow_Glucosamine_Chondroitin_Combi": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Jarrow_Glucosamine_Chondroitin_Combination_120_Caps",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Kotex_U_Barely_There_Liners_Thin_60_": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Kotex_U_Barely_There_Liners_Thin_60_count",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_LEUCIPPUS_ADIPURE": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "LEUCIPPUS_ADIPURE",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_LTyrosine": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "LTyrosine",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Little_Debbie_Cloud_Cakes_10_ct": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Little_Debbie_Cloud_Cakes_10_ct",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_MINI_ROLLER": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "MINI_ROLLER",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_MODERN_DOLL_FAMILY": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "MODERN_DOLL_FAMILY",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Mens_ASV_Shock_Light_Bungee_in_Light": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Mens_ASV_Shock_Light_Bungee_in_Light_Grey_xGCOvtLDnQJ",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Nestle_Pure_Life_Exotics_Sparkling_W": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nestle_Pure_Life_Exotics_Sparkling_Water_Strawberry_Dragon_Fruit_8_count_12_fl_oz_can_aX0ygjh3bxi",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Nickelodeon_Teenage_Mutant_Ninja_Tur": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nickelodeon_Teenage_Mutant_Ninja_Turtles_Raphael",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Nickelodeon_The_Spongebob_Movie_PopA": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nickelodeon_The_Spongebob_Movie_PopAPart_Spongebob",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Nintendo_Mario_Action_Figure": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nintendo_Mario_Action_Figure",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Nintendo_Yoshi_Action_Figure": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Nintendo_Yoshi_Action_Figure",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_Canon_CL211XL_Remanufac": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_CL211XL_Remanufactured_Ink_Cartridge_TriColor",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_Canon_CLI_221BK_Ink_Car": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_CLI_221BK_Ink_Cartridge_Black_2946B001",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_Canon_CLI_8Y_Ink_Cartri": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_CLI_8Y_Ink_Cartridge_Yellow_0623B002",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_Canon_CL_41_Remanufactu": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_CL_41_Remanufactured_Ink_Cartridge_TriColor",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_Canon_PG21XL_Remanufact": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_PG21XL_Remanufactured_Ink_Cartridge_Black",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_Canon_PGI22_Remanufactu": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_PGI22_Remanufactured_Ink_Cartridge_Black",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_Canon_PGI35_Remanufactu": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_PGI35_Remanufactured_Ink_Cartridge_Black",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_Canon_PGI5BK_Remanufact": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_PGI5BK_Remanufactured_Ink_Cartridge_Black",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_Canon_PG_240XL_Ink_Cart": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Canon_PG_240XL_Ink_Cartridge_Black_5206B001",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_Dell_Series_11_Remanufa": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Dell_Series_11_Remanufactured_Ink_Cartridge_Black",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_Dell_Series_1_Remanufac": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Dell_Series_1_Remanufactured_Ink_Cartridge_TriColor",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_Dell_Series_5_Remanufac": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Dell_Series_5_Remanufactured_Ink_Cartridge_Black",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_Dell_Series_9_Color_Ink": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Dell_Series_9_Color_Ink_Ink_Cartridge_MK991_MK993",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_Dell_Series_9_Ink_Cartr": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_Dell_Series_9_Ink_Cartridge_Black_MK992",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_HP_564XL_Ink_Cartridge_": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_HP_564XL_Ink_Cartridge_Black_CN684WN",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_HP_564XL_Remanufactured": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_HP_564XL_Remanufactured_Ink_Cartridges_Color_Cyan_Magenta_Yellow_3_count",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_HP_61Tricolor_Ink_Cartr": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_HP_61Tricolor_Ink_Cartridge",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_HP_71_Remanufactured_In": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_HP_71_Remanufactured_Ink_Cartridge_Black",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_HP_932XL_Ink_Cartridge_": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_HP_932XL_Ink_Cartridge_Black_CN053A",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Office_Depot_HP_950XL_Ink_Cartridge_": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Office_Depot_HP_950XL_Ink_Cartridge_Black_CN045AN",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Olive_Kids_Butterfly_Garden_Pencil_C": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Olive_Kids_Butterfly_Garden_Pencil_Case",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Olive_Kids_Robots_Pencil_Case": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Olive_Kids_Robots_Pencil_Case",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Orbit_Bubblemint_Mini_Bottle_6_ct": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Orbit_Bubblemint_Mini_Bottle_6_ct",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_PEEKABOO_ROLLER": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "PEEKABOO_ROLLER",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_PHEEHAN_RUN": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "PHEEHAN_RUN",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Perricoen_MD_No_Concealer_Concealer": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricoen_MD_No_Concealer_Concealer",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Perricone_MD_AcylGlutathione_Deep_Cr": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_AcylGlutathione_Deep_Crease_Serum",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Perricone_MD_AcylGlutathione_Eye_Lid": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_AcylGlutathione_Eye_Lid_Serum",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Perricone_MD_Best_of_Perricone_7Piec": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Best_of_Perricone_7Piece_Collection_MEGsO6GIsyL",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Perricone_MD_Chia_Serum": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Chia_Serum",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Perricone_MD_Cold_Plasma": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Cold_Plasma",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Perricone_MD_High_Potency_Evening_Re": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_High_Potency_Evening_Repair",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Perricone_MD_Neuropeptide_Facial_Con": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Neuropeptide_Facial_Conformer",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Perricone_MD_No_Bronzer_Bronzer": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_No_Bronzer_Bronzer",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Perricone_MD_No_Foundation_Foundatio": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_No_Foundation_Foundation_No_1",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Perricone_MD_No_Foundation_Serum": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_No_Foundation_Serum",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Perricone_MD_OVM": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_OVM",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Perricone_MD_Omega_3_Supplements": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Omega_3_Supplements",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Perricone_MD_Photo_Plasma": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Photo_Plasma",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Perricone_MD_The_Cold_Plasma_Face_Ey": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_The_Cold_Plasma_Face_Eyes_Duo",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Perricone_MD_The_Crease_Cure_Duo": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_The_Crease_Cure_Duo",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Perricone_MD_Vitamin_C_Ester_15": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Vitamin_C_Ester_15",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Perricone_MD_Vitamin_C_Ester_Serum": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Perricone_MD_Vitamin_C_Ester_Serum",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Pet_Dophilus_powder": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Pet_Dophilus_powder",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Philips_EcoVantage_43_W_Light_Bulbs_": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Philips_EcoVantage_43_W_Light_Bulbs_Natural_Light_2_pack",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Phillips_Colon_Health_Probiotic_Caps": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Phillips_Colon_Health_Probiotic_Capsule",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_PhosphOmega": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "PhosphOmega",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Playmates_Industrial_CoSplinter_Teen": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Playmates_Industrial_CoSplinter_Teenage_Mutant_Ninja_Turtle_Action_Figure",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Predator_LZ_TRX_FG": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Predator_LZ_TRX_FG",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Predito_LZ_TRX_FG_W": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Predito_LZ_TRX_FG_W",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Prostate_Optimizer": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Prostate_Optimizer",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_PureCadence_2_Color_HiRskRedNghtlfeS": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "PureCadence_2_Color_HiRskRedNghtlfeSlvrBlckWht_Size_70",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_PureConnect_2_Color_AnthrcteKnckoutP": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "PureConnect_2_Color_AnthrcteKnckoutPnkGrnGecko_Size_50",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_PureConnect_2_Color_BlckBrllntBluNgh": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "PureConnect_2_Color_BlckBrllntBluNghtlfeAnthrct_Size_70",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_PureConnect_2_Color_FernNightlifeSil": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "PureConnect_2_Color_FernNightlifeSilverBlack_Size_70_5w0BYsiogeV",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Ravenna_4_Color_WhtOlyBluBlkShkOrngS": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Ravenna_4_Color_WhtOlyBluBlkShkOrngSlvRdO_Size_70",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_BREAKPOINT_MID": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_BREAKPOINT_MID",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_CL_LTHR_R12": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_CL_LTHR_R12",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_CL_RAYEN": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_CL_RAYEN",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_DMX_MAX_MANIA_WD_D": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_DMX_MAX_MANIA_WD_D",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_DMX_MAX_PLUS_ATHLETIC": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_DMX_MAX_PLUS_ATHLETIC",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_DMX_MAX_PLUS_RAINWALKER": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_DMX_MAX_PLUS_RAINWALKER",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_EASYTONE_CL_LEATHER": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_EASYTONE_CL_LEATHER",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_FS_HI_INT_R12": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_FS_HI_INT_R12",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_FS_HI_MINI": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_FS_HI_MINI",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_FUELTRAIN": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_FUELTRAIN",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_GL_6000": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_GL_6000",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_HIMARA_LTR": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_HIMARA_LTR",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_JR_ZIG_COOPERSTOWN_MR": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_JR_ZIG_COOPERSTOWN_MR",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_REALFLEX_SELECT": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_REALFLEX_SELECT",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_REESCULPT_TRAINER_II": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_REESCULPT_TRAINER_II",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_R_CROSSFIT_OLY_UFORM": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_R_CROSSFIT_OLY_UFORM",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_R_DANCE_FLASH": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_R_DANCE_FLASH",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_SH_NEWPORT_LOW": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_SH_NEWPORT_LOW",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_SH_PRIME_COURT_LOW": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_SH_PRIME_COURT_LOW",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_SH_PRIME_COURT_MID": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_SH_PRIME_COURT_MID",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_SMOOTHFLEX_CUSHRUN_20": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_SMOOTHFLEX_CUSHRUN_20",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_SOMERSET_RUN": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_SOMERSET_RUN",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_TRIPLE_BREAK_LITE": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_TRIPLE_BREAK_LITE",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_TURBO_RC": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_TURBO_RC",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_ULTIMATIC_2V": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_ULTIMATIC_2V",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_VERSA_TRAIN": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_VERSA_TRAIN",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_ZIGLITE_RUSH": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_ZIGLITE_RUSH",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_ZIGLITE_RUSH_AC": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_ZIGLITE_RUSH_AC",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_ZIGSTORM": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_ZIGSTORM",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Reebok_ZIGTECH_SHARK_MAYHEM360": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Reebok_ZIGTECH_SHARK_MAYHEM360",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_SAMBA_HEMP": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "SAMBA_HEMP",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_SAMOA": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "SAMOA",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_SAMe_200_KX7ZmOw47co": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "SAMe_200_KX7ZmOw47co",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_SLACK_CRUISER": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "SLACK_CRUISER",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_SORTING_TRAIN": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "SORTING_TRAIN",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_SUPERSTAR_CLR": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "SUPERSTAR_CLR",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Saccharomyces_Boulardii_MOS_Value_Si": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Saccharomyces_Boulardii_MOS_Value_Size",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Samoa_onepiece": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Samoa_onepiece",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Schleich_African_Black_Rhino": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Schleich_African_Black_Rhino",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Schleich_S_Bayala_Unicorn_70432": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Schleich_S_Bayala_Unicorn_70432",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Schleich_Spinosaurus_Action_Figure": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Schleich_Spinosaurus_Action_Figure",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_TERREX_FAST_R": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "TERREX_FAST_R",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_TROCHILUS_BOOST": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "TROCHILUS_BOOST",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Teenage_Mutant_Ninja_Turtles_Rahzar_": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Teenage_Mutant_Ninja_Turtles_Rahzar_Action_Figure",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Thomas_Friends_Wooden_Railway_Porter": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Thomas_Friends_Wooden_Railway_Porter_5JzRhMm3a9o",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Thomas_Friends_Wooden_Railway_Talkin": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Thomas_Friends_Wooden_Railway_Talking_Thomas_z7yi7UFHJRj",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Timberland_Mens_Earthkeepers_Stormbu": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Timberland_Mens_Earthkeepers_Stormbuck_Plain_Toe_Oxford",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Twinlab_Nitric_Fuel": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Twinlab_Nitric_Fuel",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Twinlab_Premium_Creatine_Fuel_Powder": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Twinlab_Premium_Creatine_Fuel_Powder",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Ultra_JarroDophilus": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Ultra_JarroDophilus",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Womens_Betty_Chukka_Boot_in_Grey_Jer": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Womens_Betty_Chukka_Boot_in_Grey_Jersey_Sequin",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Womens_Betty_Chukka_Boot_in_Navy_Jer": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Womens_Betty_Chukka_Boot_in_Navy_Jersey_Sequin_y0SsHk7dKUX",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Womens_Betty_Chukka_Boot_in_Navy_aEE": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Womens_Betty_Chukka_Boot_in_Navy_aEE8OqvMII4",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Womens_Betty_Chukka_Boot_in_Salt_Was": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Womens_Betty_Chukka_Boot_in_Salt_Washed_Red_AL2YrOt9CRy",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Womens_Multi_13": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Womens_Multi_13",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Womens_Sequin_Bahama_in_White_Sequin": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Womens_Sequin_Bahama_in_White_Sequin_yGVsSA4tOwJ",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_Wooden_ABC_123_Blocks_50_pack": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "Wooden_ABC_123_Blocks_50_pack",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_ZX700_lYiwcTIekXk": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "ZX700_lYiwcTIekXk",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_ZX700_mf9Pc06uL06": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "ZX700_mf9Pc06uL06",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_ZX700_mzGbdP3u6JB": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "ZX700_mzGbdP3u6JB",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_adistar_boost_m": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "adistar_boost_m",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "gsor_adizero_F50_TRX_FG_LEA": {
+   "kind": "object",
+   "source": "Google Scanned Objects (Gazebo Fuel GoogleResearch)",
+   "source_name": "adizero_F50_TRX_FG_LEA",
+   "license": "CC BY 4.0",
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"
+  },
+  "fixture_CoffeeCart_01": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/CoffeeCart_01",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Joe Seabuhr"
+  },
+  "fixture_GothicCabinet_01": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/GothicCabinet_01",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Kirill Sannikov"
+  },
+  "fixture_GothicCommode_01": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/GothicCommode_01",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Kirill Sannikov"
+  },
+  "fixture_Shelf_01": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/Shelf_01",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Gabriel Radi\u0107"
+  },
+  "fixture_WoodenTable_03": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/WoodenTable_03",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Gabriel Radi\u0107"
+  },
+  "fixture_chinese_cabinet": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/chinese_cabinet",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Kirill Sannikov"
+  },
+  "fixture_chinese_commode": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/chinese_commode",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Kirill Sannikov"
+  },
+  "fixture_drawer_cabinet": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/drawer_cabinet",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Ulan Cabanilla"
+  },
+  "fixture_modern_wooden_cabinet": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/modern_wooden_cabinet",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Patrik Pangerl"
+  },
+  "fixture_painted_wooden_cabinet": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/painted_wooden_cabinet",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Kirill Sannikov"
+  },
+  "fixture_painted_wooden_cabinet_02": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/painted_wooden_cabinet_02",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Kirill Sannikov"
+  },
+  "fixture_painted_wooden_shelves": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/painted_wooden_shelves",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Kirill Sannikov"
+  },
+  "fixture_side_table_01": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/side_table_01",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: James Ray Cock"
+  },
+  "fixture_steel_frame_shelves_01": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/steel_frame_shelves_01",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: James Ray Cock"
+  },
+  "fixture_steel_frame_shelves_02": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/steel_frame_shelves_02",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: James Ray Cock"
+  },
+  "fixture_steel_frame_shelves_03": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/steel_frame_shelves_03",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Ulan Cabanilla"
+  },
+  "fixture_tool_cart": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/tool_cart",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Savva Zakharov"
+  },
+  "fixture_vintage_cabinet_01": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/vintage_cabinet_01",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rico Cilliers"
+  },
+  "fixture_vintage_wooden_drawer_01": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/vintage_wooden_drawer_01",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: James Ray Cock"
+  },
+  "fixture_wooden_bookshelf_worn": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/wooden_bookshelf_worn",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Ulan Cabanilla"
+  },
+  "fixture_wooden_display_shelves_01": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/wooden_display_shelves_01",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: James Ray Cock"
+  },
+  "fixture_worn_metal_rack": {
+   "kind": "fixture",
+   "source": "https://polyhaven.com/a/worn_metal_rack",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Luca B"
+  },
+  "material_diagonal_parquet": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/diagonal_parquet",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Jenelle van Heerden, Sergej Majboroda"
+  },
+  "material_wood_planks_dirt": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/wood_planks_dirt",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_herringbone_parquet": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/herringbone_parquet",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Jenelle van Heerden, Sergej Majboroda"
+  },
+  "material_synthetic_wood": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/synthetic_wood",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Charlotte Baglioni, Dario Barresi"
+  },
+  "material_plank_flooring": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/plank_flooring",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dario Barresi, Dimitrios Savva, Rico Cilliers"
+  },
+  "material_raw_plank_wall": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/raw_plank_wall",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva"
+  },
+  "material_dark_wooden_planks": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/dark_wooden_planks",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Amal Kumar"
+  },
+  "material_brown_planks_03": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/brown_planks_03",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_wooden_rough_planks": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/wooden_rough_planks",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_wood_trunk_wall": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/wood_trunk_wall",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Amal Kumar"
+  },
+  "material_laminate_floor": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/laminate_floor",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dario Barresi, Dimitrios Savva"
+  },
+  "material_rectangular_parquet": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/rectangular_parquet",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Jenelle van Heerden, Sergej Majboroda"
+  },
+  "material_brown_planks_07": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/brown_planks_07",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_dark_wood": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/dark_wood",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dario Barresi, Dimitrios Savva, Rico Cilliers"
+  },
+  "material_wooden_garage_door": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/wooden_garage_door",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva"
+  },
+  "material_moss_wood": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/moss_wood",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_laminate_floor_02": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/laminate_floor_02",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Charlotte Baglioni, Dario Barresi"
+  },
+  "material_wooden_gate": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/wooden_gate",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Amal Kumar"
+  },
+  "material_wood_cabinet_worn_long": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/wood_cabinet_worn_long",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva, Rico Cilliers"
+  },
+  "material_weathered_peeling_timber": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/weathered_peeling_timber",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva"
+  },
+  "material_brown_planks_04": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/brown_planks_04",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_brown_planks_09": {
+   "kind": "material_furniture",
+   "source": "https://polyhaven.com/a/brown_planks_09",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_patio_tiles": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/patio_tiles",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dario Barresi"
+  },
+  "material_slate_floor_03": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/slate_floor_03",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva"
+  },
+  "material_hangar_concrete_floor": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/hangar_concrete_floor",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva"
+  },
+  "material_floor_tiles_02": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/floor_tiles_02",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_running_track": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/running_track",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva, Rico Cilliers"
+  },
+  "material_smooth_concrete_floor": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/smooth_concrete_floor",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva"
+  },
+  "material_scuffed_cement": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/scuffed_cement",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dario Barresi, Dimitrios Savva"
+  },
+  "material_garage_floor": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/garage_floor",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Jenelle van Heerden"
+  },
+  "material_grey_plaster": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/grey_plaster",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_stone_tiles": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/stone_tiles",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Christopher Melani"
+  },
+  "material_floor_tiles_04": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/floor_tiles_04",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_brick_floor_003": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/brick_floor_003",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva, Rob Tuytel"
+  },
+  "material_floor_tiles_06": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/floor_tiles_06",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_marble_01": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/marble_01",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_painted_concrete": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/painted_concrete",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dario Barresi, Dimitrios Savva"
+  },
+  "material_tiled_floor_001": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/tiled_floor_001",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva, Rob Tuytel"
+  },
+  "material_white_plaster_02": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/white_plaster_02",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_plank_flooring_02": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/plank_flooring_02",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dario Barresi, Dimitrios Savva"
+  },
+  "material_climbing_wall_base": {
+   "kind": "material_wall",
+   "source": "https://polyhaven.com/a/climbing_wall_base",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva"
+  },
+  "material_white_sandstone_bricks_03": {
+   "kind": "material_wall",
+   "source": "https://polyhaven.com/a/white_sandstone_bricks_03",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_castle_brick_broken_06": {
+   "kind": "material_wall",
+   "source": "https://polyhaven.com/a/castle_brick_broken_06",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_concrete_wall_001": {
+   "kind": "material_wall",
+   "source": "https://polyhaven.com/a/concrete_wall_001",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva, Rico Cilliers"
+  },
+  "material_red_brick_03": {
+   "kind": "material_wall",
+   "source": "https://polyhaven.com/a/red_brick_03",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_brown_brick_02": {
+   "kind": "material_wall",
+   "source": "https://polyhaven.com/a/brown_brick_02",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_painted_brick": {
+   "kind": "material_wall",
+   "source": "https://polyhaven.com/a/painted_brick",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Amal Kumar"
+  },
+  "material_worn_plaster_wall": {
+   "kind": "material_wall",
+   "source": "https://polyhaven.com/a/worn_plaster_wall",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva"
+  },
+  "material_plaster_brick_pattern": {
+   "kind": "material_wall",
+   "source": "https://polyhaven.com/a/plaster_brick_pattern",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Amal Kumar"
+  },
+  "material_plastered_wall_05": {
+   "kind": "material_wall",
+   "source": "https://polyhaven.com/a/plastered_wall_05",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Charlotte Baglioni"
+  },
+  "material_brick_wall_003": {
+   "kind": "material_wall",
+   "source": "https://polyhaven.com/a/brick_wall_003",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva, Rob Tuytel"
+  },
+  "material_medieval_blocks_03": {
+   "kind": "material_wall",
+   "source": "https://polyhaven.com/a/medieval_blocks_03",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_patterned_plaster_wall": {
+   "kind": "material_wall",
+   "source": "https://polyhaven.com/a/patterned_plaster_wall",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Amal Kumar"
+  },
+  "material_dirty_tiles": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/dirty_tiles",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Jenelle van Heerden, Matterfield"
+  },
+  "material_rectangular_facade_tiles_02": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/rectangular_facade_tiles_02",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Charlotte Baglioni"
+  },
+  "material_checkered_pavement_tiles": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/checkered_pavement_tiles",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Amal Kumar"
+  },
+  "material_terrazzo_tiles": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/terrazzo_tiles",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Amal Kumar"
+  },
+  "material_worn_tile_floor": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/worn_tile_floor",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva"
+  },
+  "material_terracotta_floor_tiles": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/terracotta_floor_tiles",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva"
+  },
+  "material_granite_tile_03": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/granite_tile_03",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Charlotte Baglioni"
+  },
+  "material_interior_tiles": {
+   "kind": "material_floor",
+   "source": "https://polyhaven.com/a/interior_tiles",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Charlotte Baglioni"
+  },
+  "material_waffle_pique_cotton": {
+   "kind": "material_fabric",
+   "source": "https://polyhaven.com/a/waffle_pique_cotton",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rico Cilliers, colormass"
+  },
+  "material_caban": {
+   "kind": "material_fabric",
+   "source": "https://polyhaven.com/a/caban",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rico Cilliers, colormass"
+  },
+  "material_hessian_380": {
+   "kind": "material_fabric",
+   "source": "https://polyhaven.com/a/hessian_380",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rico Cilliers, colormass"
+  },
+  "material_denim_fabric_03": {
+   "kind": "material_fabric",
+   "source": "https://polyhaven.com/a/denim_fabric_03",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rico Cilliers, colormass"
+  },
+  "material_brown_leather": {
+   "kind": "material_fabric",
+   "source": "https://polyhaven.com/a/brown_leather",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_poly_wool_herringbone": {
+   "kind": "material_fabric",
+   "source": "https://polyhaven.com/a/poly_wool_herringbone",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rico Cilliers, colormass"
+  },
+  "material_fabric_leather_02": {
+   "kind": "material_fabric",
+   "source": "https://polyhaven.com/a/fabric_leather_02",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rob Tuytel"
+  },
+  "material_velour_velvet": {
+   "kind": "material_fabric",
+   "source": "https://polyhaven.com/a/velour_velvet",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Rico Cilliers, colormass"
+  },
+  "material_studio_wizja_01": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/studio_wizja_01",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Grzegorz Wronkowski"
+  },
+  "material_crossfit_gym": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/crossfit_gym",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva, Jarod Guest"
+  },
+  "material_hangar_interior": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/hangar_interior",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva, Jarod Guest"
+  },
+  "material_ballroom": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/ballroom",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Sergej Majboroda"
+  },
+  "material_blinds": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/blinds",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Greg Zaal"
+  },
+  "material_monochrome_studio_03": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/monochrome_studio_03",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Grzegorz Wronkowski"
+  },
+  "material_small_cave": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/small_cave",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Andreas Mischok"
+  },
+  "material_historic_cloister_passage": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/historic_cloister_passage",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Elvis Posa"
+  },
+  "material_industrial_pipe_and_valve_01": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/industrial_pipe_and_valve_01",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Philip Modin"
+  },
+  "material_mirrored_hall": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/mirrored_hall",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Grzegorz Wronkowski"
+  },
+  "material_burnt_warehouse": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/burnt_warehouse",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Sergej Majboroda"
+  },
+  "material_bell_tower": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/bell_tower",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dario Barresi"
+  },
+  "material_metro_noord": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/metro_noord",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Greg Zaal"
+  },
+  "material_anniversary_lounge": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/anniversary_lounge",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Greg Zaal"
+  },
+  "material_ferndale_studio_02": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/ferndale_studio_02",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva, Greg Zaal"
+  },
+  "material_cowboy_town_saloon": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/cowboy_town_saloon",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva, Jarod Guest"
+  },
+  "material_creepy_bathroom": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/creepy_bathroom",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Greg Zaal"
+  },
+  "material_combination_room": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/combination_room",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Sergej Majboroda"
+  },
+  "material_blocky_photo_studio": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/blocky_photo_studio",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Sergej Majboroda"
+  },
+  "material_warm_reception_dinner": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/warm_reception_dinner",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva, Jarod Guest"
+  },
+  "material_chapel_day": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/chapel_day",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva, Jarod Guest"
+  },
+  "material_storeroom": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/storeroom",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Greg Zaal"
+  },
+  "material_wooden_lounge": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/wooden_lounge",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Greg Zaal"
+  },
+  "material_white_studio_04": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/white_studio_04",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Grzegorz Wronkowski"
+  },
+  "material_sundowner_deck": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/sundowner_deck",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dario Barresi"
+  },
+  "material_story_studio_03": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/story_studio_03",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Grzegorz Wronkowski"
+  },
+  "material_workshop": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/workshop",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva, Jarod Guest"
+  },
+  "material_solitude_interior": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/solitude_interior",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Andreas Mischok"
+  },
+  "material_brown_photostudio_02": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/brown_photostudio_02",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Sergej Majboroda"
+  },
+  "material_theater_02": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/theater_02",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Oliksiy Yakovlyev"
+  },
+  "material_small_hangar_02": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/small_hangar_02",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Sergej Majboroda"
+  },
+  "material_poly_haven_studio": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/poly_haven_studio",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Greg Zaal"
+  },
+  "material_tv_studio": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/tv_studio",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Sergej Majboroda"
+  },
+  "material_photo_studio_01": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/photo_studio_01",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Sergej Majboroda"
+  },
+  "material_large_corridor": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/large_corridor",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Sergej Majboroda"
+  },
+  "material_blender_institute": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/blender_institute",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Greg Zaal"
+  },
+  "material_ferndale_studio_12": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/ferndale_studio_12",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Dimitrios Savva, Greg Zaal"
+  },
+  "material_christmas_photo_studio_03": {
+   "kind": "material_env",
+   "source": "https://polyhaven.com/a/christmas_photo_studio_03",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "attribution": "Poly Haven: Sergej Majboroda"
+  }
+ }
+}
