@@ -133,6 +133,8 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                 lay[vid] = ((uregion[0][0] + uregion[0][1]) / 2, (uregion[1][0] + uregion[1][1]) / 2, 0.0)
             if clutter_pool:  # b4 (change 12): real clutter on the work surface, clear of the layout
                 from .clutter_x import add_clutter
+                # realistic scenes: no primitive extras (red mug / bottle / box) besides the task's own objects
+                lay = {k: v for k, v in lay.items() if k in keep or k in SC.VIRTUAL_PLACES or k in SC.OBJV_IDS}
                 fr = {k: SC.OBJ_GEOM[k]["footprint_r"] for k in lay}
                 lay, placed = add_clutter(lay, seed, clutter_pool, env.ws, fr, surface=surf)
                 self.clutter_scene = {"n": len(placed), "ids": [p["id"] for p in placed]}

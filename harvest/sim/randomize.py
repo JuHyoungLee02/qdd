@@ -35,6 +35,11 @@ LOOK_ONLY_VARIANTS = ("drf",)  # furniture scenes (b4, prereg_l8d change 12): HD
 META_SCHEMA = "qdd.randomization/v1"
 _VCODE = {"random": 1, "dr": 2, "drx": 3, "randx": 4, "drf": 5}
 _AXIS = {"table": 1, "floor": 2, "hdr": 3, "light": 4, "distractors": 5}
+LIGHT_GAIN = {"drf": 0.45}  # b4 gate: iTHOR rooms + the lab dome / key levels overexposed white surfaces
+
+
+def _gain(variant: str) -> float:
+    return LIGHT_GAIN.get(variant, 1.0)
 _POOLS_CACHE: dict = {}
 
 
@@ -205,7 +210,7 @@ def sample_randomization(seed: int, variant: str, layout: dict | None = None, po
     h = pool["hdr_maps"][int(rng.integers(len(pool["hdr_maps"])))]
     mult = _band(rng, pool["light"]["dome_mult_bands"])
     meta["hdr"] = {"name": h["name"], "file": h["file"], "intensity_mult": _r(mult),
-                   "intensity": _r(h["base_intensity"] * c["dome_weight"] * mult, 2),
+                   "intensity": _r(h["base_intensity"] * c["dome_weight"] * mult * _gain(variant), 2),
                    "rotation_deg": _r(rng.uniform(*pool["light"]["dome_rotation_deg"]), 2)}
 
     rng = _rng(seed, variant, "light")
@@ -221,7 +226,7 @@ def sample_randomization(seed: int, variant: str, layout: dict | None = None, po
         math.sin(math.radians(el))
     pos = tgt + dist * np.array([ce * ca, ce * sa, se])
     meta["light"] = {"type": lt, "intensity_mult": _r(mult),
-                     "intensity": _r(c["light_types"][lt]["base_intensity"] * c["key_weight"] * mult, 2),
+                     "intensity": _r(c["light_types"][lt]["base_intensity"] * c["key_weight"] * mult * _gain(variant), 2),
                      "color_temperature_k": _r(ct, 1), "azimuth_deg": _r(az, 3), "elevation_deg": _r(el, 3),
                      "distance_m": _r(dist), "pos": [_r(v) for v in pos], "target": [_r(v) for v in tgt],
                      "quat_wxyz": [_r(v, 6) for v in look_at_quat(pos, tgt)],
