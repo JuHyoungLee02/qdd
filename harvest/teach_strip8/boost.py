@@ -126,15 +126,103 @@ class PointMemory:
         return stat <= CHANGE_MM, {"n": n, "stat_mm": round(stat, 1)}
 
 
+DESC_XY_M = 0.02  # DescendGuard: the TCP is above the pointed object (xy)
+DESC_ABOVE_M = 0.03  # ... and more than this above the grasp height (top - 0.02)
+DESC_DZ_M = 0.01  # a call 'descended' when the TCP went down more than this
+
+
+class DescendGuard:
+    """(d) Not holding, the command points at an object whose footprint centre is within DESC_XY_M of the TCP, the
+    TCP is still DESC_ABOVE_M above the grasp height, the intent is not grasp, and the previous such call did not
+    descend: n such calls in a row -> grasp + close at the same point."""
+
+    def __init__(self, n: int = N_REPEAT):
+        self.n, self.count, self.z = n, 0, None
+
+    def check(self, cmd: dict, res: dict | None, tcp, holding: bool):
+        t = np.asarray(tcp, float)
+        ok = (not holding and cmd.get("mode") == "point" and cmd.get("height") not in ("grasp", None)
+              and res is not None and res.get("kind") == "object" and res.get("xy") is not None
+              and np.hypot(*(t[:2] - np.asarray(res["xy"], float))) <= DESC_XY_M
+              and t[2] > float(res["top"]) - 0.02 + DESC_ABOVE_M)
+        if not ok or (self.z is not None and t[2] < self.z - DESC_DZ_M):
+            self.count, self.z = (1, float(t[2])) if ok else (0, None)
+            return None if self.count < self.n else self._fire()
+        self.count, self.z = self.count + 1, float(t[2])
+        return self._fire() if self.count >= self.n else None
+
+    def _fire(self):
+        self.count, self.z = 0, None
+        return {"height": "grasp", "gripper": "close"}
+
+
+def crop_png(png: bytes, point_2d, half: int = 64, out: int = 256) -> bytes:
+    """(a) A square crop of the head image around point_2d (0-1000 scale), a small cross at the point, resized."""
+    import io
+
+    from PIL import Image, ImageDraw
+    im = Image.open(io.BytesIO(png)).convert("RGB")
+    W, H = im.size
+    u, v = point_2d[0] / RS.SCALE * W, point_2d[1] / RS.SCALE * H
+    box = (int(u) - half, int(v) - half, int(u) + half, int(v) + half)
+    c = Image.new("RGB", (2 * half, 2 * half), (0, 0, 0))
+    c.paste(im.crop((max(box[0], 0), max(box[1], 0), min(box[2], W), min(box[3], H))),
+            (max(-box[0], 0), max(-box[1], 0)))
+    d = ImageDraw.Draw(c)
+    for w_, col in ((3, (0, 0, 0)), (1, (0, 255, 255))):
+        d.line([(half - 8, half), (half + 8, half)], fill=col, width=w_)
+        d.line([(half, half - 8), (half, half + 8)], fill=col, width=w_)
+    b = io.BytesIO()
+    c.resize((out, out)).save(b, format="PNG")
+    return b.getvalue()
+
+
+VERIFY_Q = ("Image 1 is a crop of the robot's head camera around a point marked with a small cyan cross. Is the marked "
+            "point on the {name} (the object to move)? Answer JSON only: {{\"yes\": true}} or {{\"yes\": false}}.")
+RECHECK_NOTE = ("\nNOTE: your point ({x:.0f}, {y:.0f}) was checked and it is not on the {name}. Point at the {name} "
+                "itself.")
+
+
 class BoostEpisode(PtEpisode):
-    def __init__(self, *a, fix_mem: bool = False, fix_loop: bool = False, mem_points: bool = False, **kw):
+    def __init__(self, *a, fix_mem: bool = False, fix_loop: bool = False, mem_points: bool = False,
+                 fix_descend: bool = False, recheck: bool = False, **kw):
         """mem_points (boost1b, D point commands only): the memory is a base-frame point cloud re-rendered into the
-        current head camera, with the scene-change check (implies the memory fix)."""
+        current head camera, with the scene-change check (implies the memory fix). fix_descend (round 2 d):
+        DescendGuard. recheck (round 2 a): verify the pointed pixel before the grasp and re-ask once."""
         kw.setdefault("iface", "d-min")
         super().__init__(*a, **kw)
-        self.fix_mem, self.fix_loop, self.mem_points = fix_mem or mem_points, fix_loop, mem_points
-        self.mem, self.guard, self.pmem = PlaceMemory(), LoopGuard(), PointMemory()
-        self.boost_log, self.mem_log = [], []
+        self.fix_mem, self.fix_loop, self.mem_points = fix_mem or mem_points, fix_loop or fix_descend, mem_points
+        self.fix_descend, self.recheck = fix_descend, recheck
+        self.mem, self.guard, self.pmem, self.dguard = PlaceMemory(), LoopGuard(), PointMemory(), DescendGuard()
+        self.boost_log, self.mem_log, self.recheck_log = [], [], []
+        self._loop_on = fix_loop
+
+    def _ask(self, text, images, i):
+        parsed, rec = super()._ask(text, images, i)
+        if not self.recheck or parsed is None:
+            return parsed, rec
+        c = parsed["command"]
+        st = self.w.status()
+        if (c.get("mode") != "point" or c.get("point_2d") is None or c.get("height") not in ("above", "grasp")
+                or self.holding(st)):
+            return parsed, rec
+        from ..astra_motion.prompts import OBJ_NAME
+        name = OBJ_NAME.get(self.info["tgt"], "object to move")
+        crop = crop_png(images[0][1], c["point_2d"])
+        rep = self.model.ask(VERIFY_Q.format(name=name), [("head camera crop", crop)],
+                             {"seed": self.seed, "task": self.task, "call": len(self.calls), "site": i, "verify": True})
+        ans = None
+        try:
+            from ..astra_motion.schema import extract_json
+            ans = bool(extract_json(rep.text or "").get("yes"))
+        except Exception:  # noqa: BLE001 - an unreadable verdict keeps the command
+            ans = None
+        self.recheck_log.append({"call": len(self.calls), "site": i, "point": list(c["point_2d"]), "answer": ans})
+        if ans is not False:
+            return parsed, rec
+        p2, rec2 = super()._ask(text + RECHECK_NOTE.format(x=c["point_2d"][0], y=c["point_2d"][1], name=name), images, i)
+        self.recheck_log[-1]["reasked"] = p2 is not None
+        return (p2, rec2) if p2 is not None else (parsed, rec)
 
     def _resolve_points(self, cmd: dict, st: dict) -> dict:
         hold = self.holding(st)
@@ -225,10 +313,17 @@ class BoostEpisode(PtEpisode):
         if cmd.get("mode") == "point" and self.fix_loop:
             st = self.w.status()
             probe = self.resolve(cmd, st)
-            sw = self.guard.check(cmd, probe.get("goal"), st["tcp"], self.holding(st))
+            sw = self.guard.check(cmd, probe.get("goal"), st["tcp"], self.holding(st)) if self._loop_on else None
             if sw is not None:
-                self.boost_log.append({"call": len(self.calls), "switch": sw, "from": cmd.get("height")})
+                self.boost_log.append({"call": len(self.calls), "switch": sw, "from": cmd.get("height"),
+                                       "guard": "above"})
                 cmd.update(sw)
+            elif self.fix_descend:
+                sw = self.dguard.check(cmd, probe, st["tcp"], self.holding(st))
+                if sw is not None:
+                    self.boost_log.append({"call": len(self.calls), "switch": sw, "from": cmd.get("height"),
+                                           "guard": "descend"})
+                    cmd.update(sw)
             evs = super()._execute(cmd)
             if self.last_res is not None and sw is not None:
                 self.last_res["loop_switch"] = sw
@@ -239,7 +334,8 @@ class BoostEpisode(PtEpisode):
 
     def _save(self, res):
         res["boost"] = {"fix_mem": self.fix_mem, "fix_loop": self.fix_loop, "mem_points": self.mem_points,
-                        "switches": self.boost_log, "mem_checks": self.mem_log,
+                        "switches": self.boost_log, "mem_checks": self.mem_log, "rechecks": self.recheck_log,
+                        "fix_descend": self.fix_descend, "recheck": self.recheck,
                         "perturb": getattr(self, "perturb_log", None),
                         "n_memory_resolves": sum(1 for c in self.calls if (c.get("resolved") or {}).get("memory")
                                                  or ((c.get("resolved") or {}).get("resolved") or {}).get("memory"))}
