@@ -11,6 +11,7 @@ usage: python -m xemb.gsplit check TRAIN_JSONL [...]     (exit 1 when a G row is
 from __future__ import annotations
 
 import hashlib
+import os
 import json
 import re
 import sys
@@ -83,3 +84,15 @@ if __name__ == "__main__" and sys.argv[1] == "check":
         print(p, "rows", len(rows), "G rows", len(bad))
         n += len(bad)
     sys.exit(1 if n else 0)
+
+if __name__ == "__main__" and sys.argv[1] == "split":  # FILE.jsonl -> FILE (training part, in place) + FILE_G.jsonl
+    for p in sys.argv[2:]:
+        rows = [json.loads(x) for x in open(p, encoding="utf-8")]
+        tr, g = split(rows)
+        gp = p[:-6] + "_G.jsonl"
+        old_g = [json.loads(x) for x in open(gp, encoding="utf-8")] if os.path.exists(gp) else []
+        with open(p, "w", encoding="utf-8") as f:
+            f.writelines(json.dumps(r) + "\n" for r in tr)
+        with open(gp, "w", encoding="utf-8") as f:
+            f.writelines(json.dumps(r) + "\n" for r in old_g + g)
+        print(p, "train", len(tr), "G", len(g))
