@@ -264,3 +264,8 @@ def head_pose(seed: int) -> dict:
             if abs(v) <= lim:
                 return v
     return {"tilt": round(HEAD_TILT0 + tn(HEAD_TILT_MAX), 4), "pan": round(tn(HEAD_PAN_MAX), 4), "random": True}
+
+
+ISO0 = 14.0  # film ISO at exposure 1.0 (change-17 calibration: ISO 100 / 50 / 25 -> 32-60 % saturated, 12 -> 0.1 %)
+DARK_MEAN = 45.0  # too dark below this mean pixel value
+SAT_MAX = 0.10  # audit P1: at most 10 % saturated pixels in the first head frame

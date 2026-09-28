@@ -128,6 +128,8 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             else:
                 surf, region = fx.choose_surface(sc)
             env.ws = fx.ws_from_region(region)
+            if clutter_pool and env.ws[0][1] - env.ws[0][0] >= 0.16:  # audit P5: not at the image's bottom edge
+                env.ws = ((env.ws[0][0] + 0.04, env.ws[0][1]), env.ws[1])
             tz = float(surf["top_z"])
             env.table_top_z, self.table_z = tz, tz
             SC._LAYOUT["table_z"] = tz
@@ -151,10 +153,14 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             if clutter_pool and os.environ.get("L8S_ISO"):  # calibration runs only: the tonemapper's film ISO
                 import carb
                 carb.settings.get_settings().set("/rtx/post/tonemap/filmIso", float(os.environ["L8S_ISO"]))
+            if clutter_pool:
+                self._retexture(seed, sc)
             try:
                 env.set_seed(seed, task)
             except RuntimeError as ex:  # task_layout found no layout in this box
                 raise fx.SkipScene(f"layout: {ex}") from ex
+            if clutter_pool and getattr(self, "_hdr", None) and env.randomization.get("hdr"):
+                env.randomization["hdr"].update(file=self._hdr, name=os.path.basename(self._hdr))
             from ..sim.tasks import X_BETWEEN, X_REL
             keep = {TASKS[task].target, TASKS[task].place} | {o for st in X_STEPS.get(task, ()) for o in st[:2]}
             if task in X_REL:  # relational placement: keep its reference object (and its spot)
@@ -169,12 +175,15 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                 # realistic scenes: no primitive extras (red mug / bottle / box) besides the task's own objects
                 lay = {k: v for k, v in lay.items() if k in keep or k in SC.VIRTUAL_PLACES or k in SC.OBJV_IDS}
                 from .clutter_x import add_confusers
+                from ..astra_motion.prompts import OBJ_NAME
                 fr = {k: SC.OBJ_GEOM[k]["footprint_r"] for k in lay}
+                taken = {" ".join(str(OBJ_NAME.get(k, k)).lower().split()) for k in lay}  # audit P2: unique names
                 # change 16: ~20 % of episodes get look-alikes of the target (same colour, similar size) near it
                 lay, conf = add_confusers(lay, seed, TASKS[task].target, TASKS[task].place, clutter_pool, fr,
-                                          surf["xy_box"])
+                                          surf["xy_box"], taken_names=taken)
                 fr = {k: SC.OBJ_GEOM[k]["footprint_r"] for k in lay}
-                lay, placed = add_clutter(lay, seed, clutter_pool, env.ws, fr, surface=surf, arrange=True)
+                lay, placed = add_clutter(lay, seed, clutter_pool, env.ws, fr, surface=surf, arrange=True,
+                                          taken_names=taken)
                 self.clutter_scene = {"n": len(placed), "ids": [p["id"] for p in placed], "confusers": conf,
                                       "arr": {a: sum(p.get("arr") == a for p in placed) for a in ("display", "stack")}}
             env.layout = lay
@@ -191,6 +200,8 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             perturb(env, "P0", seed)
             for _ in range(PRE_RENDER):
                 env.env.sim.render()
+            if clutter_pool:  # audit P1: auto exposure (film ISO), an episode still > 10 % saturated is skipped
+                self.furniture_scene["iso"] = self._auto_exposure()
             if head is not None and head["random"] and not self._head_sees(lay, task, tz, upper):
                 # change 17: a random head pose is used only when the object and its destination stay in view
                 for jn, v in (("head_joint1", HEAD_TILT0), ("head_joint2", 0.0)):
@@ -207,6 +218,72 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             self.quat0 = np.asarray(self.pl.goal_quat, float)
             self.w_close = float(self.pl.w_close)
             self._st = None
+
+        def _materials(self):
+            """L8S change 17: one Poly Haven CC0 material per mesh piece and per cuboid slot (bound once, visual
+            only); per episode retextured from the train split. -> (catalog, {prim path: material path})."""
+            if hasattr(self, "_mats"):
+                return self._mats
+            import omni.usd
+
+            from ..sim.assets_x import isaac as FX
+            from ..sim.assets_x import materials as M
+            stage = omni.usd.get_context().get_stage()
+            cat = M.usable(M.load())
+            first = M.pick(cat, "furniture", 0)
+            paths = {}
+            prims = [FX._mesh_path(n) for n in sorted(mesh or {})] + [FX._slot_path(i) for i in range(FX.N_SLOTS)]
+            for i, p in enumerate(prims):
+                prim = stage.GetPrimAtPath(p)
+                if not prim.IsValid():
+                    continue
+                mp = f"/World/Looks/l8s_{i}"
+                M.bind(prim, M.author(stage, mp, first))
+                paths[p] = mp
+            self._mats = (cat, paths, M.hdr_paths(cat, "train"))
+            return self._mats
+
+        def _retexture(self, seed, sc):
+            import hashlib
+
+            import omni.usd
+
+            from ..sim.assets_x import materials as M
+            cat, paths, hdrs = self._materials()
+            stage = omni.usd.get_context().get_stage()
+            n_furn = sum(1 for p in sc["furniture"] if p.get("usd") is None)
+            for j, (p, mp) in enumerate(sorted(paths.items())):
+                role = "wall" if "/FX_" in p and int(p.rsplit("_", 1)[1]) >= n_furn else "furniture"
+                M.retexture(stage, mp, M.pick(cat, role, int(seed) * 97 + j))
+            if hdrs:  # change 17: Poly Haven indoor HDRIs (train split) replace the pool's dome maps
+                h = hdrs[int(hashlib.sha256(f"l8s-hdr:{int(seed)}".encode()).hexdigest()[:8], 16) % len(hdrs)]
+                self._hdr = h
+
+        def _sat(self):
+            import numpy as np
+            rgb = self.env.scene["cam_head"].data.output["rgb"][0].cpu().numpy()[..., :3].astype(float)
+            return float((rgb.max(axis=2) >= 250).mean()), float(rgb.mean())
+
+        def _auto_exposure(self) -> dict:
+            import carb
+
+            from . import fx
+            from .clutter_x import DARK_MEAN, ISO0, SAT_MAX
+            st = carb.settings.get_settings()
+            e = float((self.env.randomization.get("lighting") or {}).get("exposure", 1.0))
+            iso = float(os.environ.get("L8S_ISO") or ISO0 * e)
+            for k in range(6):
+                st.set("/rtx/post/tonemap/filmIso", iso)
+                for _ in range(PRE_RENDER):
+                    self.env.env.sim.render()
+                sat, mean = self._sat()
+                if sat > SAT_MAX:
+                    iso *= 0.6
+                elif mean < DARK_MEAN:
+                    iso *= 1.6
+                else:
+                    return {"iso": round(iso, 2), "sat": round(sat, 4), "mean": round(mean, 1), "tries": k + 1}
+            raise fx.SkipScene(f"exposure not fixed: {sat:.3f} saturated, mean {mean:.0f}, ISO {iso:.1f}")
 
         def _head_sees(self, lay, task, tz, upper, margin: float = 0.05) -> bool:
             """Target and destination project inside the head image (5 % margin) at the current head pose."""
