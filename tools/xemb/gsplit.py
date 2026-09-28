@@ -29,6 +29,8 @@ _RULES = [
     ("rb2", re.compile(r"rb2_(\d+)_")),
 ]
 _rb2_test = None
+RB2_G_V2_FILE = "/data/harvest/out/xemb_proto/points/rb2_g_v2_episodes.json"  # change 1 (user-log 172)
+_rb2_v2 = None
 
 
 def group_of(row: dict):
@@ -51,6 +53,12 @@ def in_g(row: dict) -> bool:
     if g is None:
         return False
     fam, grp = g
+    if fam == "rb2" and os.environ.get("GSPLIT_V", "2") != "1" and os.path.exists(RB2_G_V2_FILE):
+        # change 1 (user-log 172): RB2 G = the listed episodes only (~1,500 rows); GSPLIT_V=1 gives the old G
+        global _rb2_v2
+        if _rb2_v2 is None:
+            _rb2_v2 = set(json.load(open(RB2_G_V2_FILE)))
+        return int(grp) in _rb2_v2
     if fam == "rb2":
         if _rb2_test is None:
             try:
