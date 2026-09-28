@@ -209,3 +209,17 @@
   \item \textbf{해 봄:} boost2 사전 등록 76af164(실행 전, 무료): D 줄기 DAgger 한 바퀴 --- B-D가 b1 TRAIN 장면을 몰고 참값 라벨을 붙여 재학습.
   \item \textbf{진행 중·대기:} \tentative{boost1b·boost2 진행 중 --- 결과 문서 전.}
 \end{itemize}
+
+\paragraph{B22. 최종 35B 소규모 D 대 H --- D 채택, 35B D가 새 물체를 풀었다}
+{\small 09-27 16:5x -- 09-28 12:5x KST}
+\begin{itemize}
+  \item \textbf{사용자} (ul 157, 09-27 16:5x KST): \intent{지금 클로드 토큰이 얼마 없어서 그런데 딱 필수적인 것만 한다면?}
+  \item \textbf{사용자} (ul 157, 09-27 16:5x KST): \intent{꼭 해야 되는 것만 한번 진행을 해보자.}
+  \item \textbf{그래서(결정):} 필수 = E-DIST8 D·H 결과 취합 $\rightarrow$ L8-X b2 동결 $\rightarrow$ 최종 35B D·H 사전 등록·학습·핵심 평가. 나머지 실험은 35B 등록 때 한 번에 읽고, 논문 갱신은 35B 결과 뒤 한 번.
+  \item \textbf{사용자} (ul 158, 09-27 19:5x KST): \intent{소규모 35B 결과를 보고 최종적으로 어떤 데이터를 어떻게 사용할지 판단하고 가용 가능한 데이터 모두 다 찾은 다음에 우리가 쓸 수 있게 데이터 변경할 준비도 다 맞춰 놔야 돼.}
+  \item \textbf{그래서(결정):} 35B 소규모(D 대 H) 결과를 최종 데이터 구성 판단의 근거로 삼고, 병렬로 가용 공개 데이터 전수 목록(비게이트·게이트 구분)과 D·H 형식 변환기를 준비. 게이트 데이터는 목록·변환기까지만, 사용은 사용자 동의 뒤.
+  \item \textbf{해 봄:} 사전 등록 b602b1a(+ 변경, 판정은 2 에폭 기준): Qwen3.5-35B-A3B LoRA, L8-X b2 + 같은 공개 점 팩(물체 지시·T1+T4 각 12.5 \%), D 104,993행·H 115,902행, 전역 배치 24. 판정 = clean 세트 하나라도 H가 D에 비열등(여유 2 mm)이 아니면 D. 폐루프는 boost1 규칙 켬, L8-X 8편.
+  \item \textbf{결과:} 4f68c06(\texttt{results/\allowbreak{}final35.\allowbreak{}md}): 접근 3D 중앙 D 대 H --- dev\_x 4.4 / 4.3, OOD-H 4.0 / 3.9, HL 4.2 / 3.7, OOD-D 3.6 / 3.5, OOD-T 3.8 / 3.7(같음), OOD-O(새 물체) 4.0 / 83.7 mm(H 비열등 아님, 구간 [$-$4.8, 17.7]). 깊이 뺀 H는 OOD-H·D·T에서 D보다 BETTER. 폐루프 D 6/8(OOD-H 4/4·OOD-O 2/4) 대 H 4/8(OOD-O 0/4). 8B는 OOD-O 64.6--96.9 mm, 폐루프 4/8.
+  \item \textbf{그래서(결정):} 판정 D\_ADOPT(등록 규칙). 35B D가 8B에서 못 풀던 새 물체를 4.0 mm로 풀었다. 논문 5절에 결과표(표 최종 35B)와 D 채택, 초록에 한 문단.
+  \item \textbf{진행 중·대기:} \tentative{확인할 것: 공개 점 팩을 뺀 D-nopub 1 에폭 OOD-O 85.6 mm $\rightarrow$ 개선이 공개 물체 지시 팩 덕인지 2 에폭 결과로; H의 OOD-O 1 에폭 7.1 $\rightarrow$ 2 에폭 83.7 mm 급변(과적합 추정) 재확인; H+C$'$ 2 에폭 진행 중.}
+\end{itemize}

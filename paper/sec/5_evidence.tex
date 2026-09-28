@@ -69,6 +69,28 @@ VLA 단독이 의미가 있는가 & 결합 사전 실행 DEV 12편 + 5조건(재
 
 \paragraph{최종 35B용 깊이 데이터: 중간.} \tentative{최종 비교(D 대 H)에 쓸, 게이트 없이 바로 쓸 수 있는 깊이 묶음을 만들었다. BEHAVIOR 2025 데모 \tentative{5,277}행과 OXE ManiSkill \tentative{3,850}행, 합 \tentative{9,127}행이며 행마다 점, 머리 m 깊이, 보정값을 싣는다.} 한계는 변환기 오차다. ManiSkill 시운전에서 깊이로 되찾은 목표의 오차가 중앙 \tentative{1.4\,cm}로, 우리 시뮬의 수 mm보다 한 자릿수 크다. 그래서 행마다 변환기 오차를 기록하고, 2\,cm 문턱으로 더 엄하게 거른 판을 따로 둔다. 보정값이 없는 다른 OXE 데이터는 뺐다.
 
+\paragraph{최종 35B 소규모 비교: D 채택.}
+\label{sec:final35}
+Qwen3.5-35B-A3B를 L8-X 둘째 동결 묶음과 같은 공개 점 묶음(물체 지시·T1+T4 각 12.5\%)으로 D와 H 두 판 LoRA 학습했다(2 에폭, 전역 배치 24, 판마다 한 시드, 유료 0원). 사전 등록 규칙은 ``깊이 있는(clean) 세트 하나라도 H가 D에 비열등(여유 2\,mm)하지 않으면 D''다. 새 물체 범주(OOD-O)에서 H가 비열등이 아니어서 판정은 D\_ADOPT다(\cref{tab:final35}). 나머지 다섯 세트에서는 두 판이 같았다(중앙 3.5--5.6\,mm). 깊이를 뺀 H는 OOD-H·D·T에서 깊이 있는 D보다도 나았다. 깊이가 없을 때 xyz로 대체해 제대로 동작한 것이고 H의 장점이지만, 규칙상 새 물체 결격이 우선한다. 폐루프(실행기 규칙 켬, L8-X 8편)는 D 6/8, H 4/8이었다. 같은 8편에서 8B D는 4/8이었다. 새 물체를 보면 방향이 뚜렷하다. 8B는 이 세트에서 64.6--96.9\,mm로 무너졌는데, 35B D는 4.0\,mm로 풀었다. \tentative{공개 점 묶음을 뺀 35B D(1 에폭)는 85.6\,mm였으므로 이 개선은 물체 지시 공개 묶음 덕으로 보이지만, 그 판의 2 에폭 결과를 기다린다.} \tentative{H의 새 물체 오차는 1 에폭 7.1\,mm에서 2 에폭 83.7\,mm로 급변했다. 둘째 에폭에서 새 물체 인식을 잃은 것으로 보이며(과적합 추정) 다시 확인한다.} \tentative{H에 C$'$ 묶음을 더한 판은 진행 중이다.} 깊이 잡음은 두 판 모두 약 1\,mm를 더했다. 한계는 판마다 한 시드, 폐루프 $n=8$, 두 판의 GPU 수 차이(3장 대 2장, 전역 배치는 같음)다.
+
+\begin{table}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.5pt}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{@{}lccccccc@{}}
+\toprule
+판 (접근 3D 중앙 mm) & dev\_x & OOD-H & OOD-HL & OOD-D & OOD-O & OOD-T & 폐루프 \\
+\midrule
+\textbf{35B D} & 4.4 & 4.0 & 4.2 & 3.6 & \textbf{4.0} & 3.8 & \textbf{6/8} \\
+35B H (깊이 있음) & 4.3 & 3.9 & 3.7 & 3.5 & 83.7 & 3.7 & 4/8 \\
+8B D / H (E-DIST8 +px) & 4.6 / 4.6 & 4.0 & 4.5 / 4.3 & 3.8 & 96.9 / 93.8 & 4.3 / 4.0 & 4/8 (D) \\
+\bottomrule
+\end{tabular}}
+\caption{\textbf{최종 35B 소규모 비교(2 에폭).} OOD-S는 D 4.1\,mm(H 미측정). 폐루프는 OOD-H 0.74·0.98과 OOD-O 0.86·0.94 각 2편, 실행기 규칙 켬; 8B 폐루프는 E-DIST8 B-D + 실행기 규칙. 판마다 한 시드.}
+\label{tab:final35}
+\end{table}
+
 \subsection{2단계(조건부) VLA 층의 근거}
 \label{sec:evidence_stage2}
 \paragraph{두 층 결합에서: VLA 단독 \tentative{0/12}의 분해.} 처음 구현한 두 층 결합의 무료 사전 실행(로컬 VLM을 상위 대역으로)은 배관을 통과했다. 그러나 VLA 단독이 \tentative{0/12}여서, 짝 비교의 기준 팔이 바닥이면 결합의 이득을 가를 수 없다. 기존 기록으로 나눠 보니 \tentative{8}편은 VLA가 아니라 런타임의 멈춤 고리였다(고유 감각 모순 $\rightarrow$ 확정 보류 $\rightarrow$ 결정 비움 $\rightarrow$ 청크 멈춤). 나머지 \tentative{4}편은 VLA 자체 실패였다. 뒤이은 무료 실험에서 VLA 단독은 모든 조건(두 확정 규칙, 재생 속도 1.0·0.75·0.5배)에서 \tentative{0/12}였고, 같은 장면의 스크립트 규칙 기준선은 \tentative{12/12}였다. 층 사이의 부품이 새 실패 방식을 만든다는 이 결과가, VLA 층을 보류하고 상위 단독을 먼저 재는 결정의 근거가 되었다.
