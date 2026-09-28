@@ -5,10 +5,12 @@ ones are not held by the truth plan; wider ones stop the pads). Google Scanned O
 uniformly so the height becomes TARGET_H (scale 0.6-1.7 only; the scaled grasp width 3-8 cm, length <= 25 cm, upright
 pose; no rolling nouns / sphericity >= 0.6 -- eggs and fruit tip on the tray, realgate 24/27 zero). A rescaled object
 is a NEW row "gsor_<name>" (the existing objects_real rows and ids stay byte-identical), its own USD
-model_qdd_s<scale*100>.usda (scaled scan vertices, mass from the scaled box), "scale" / "height_orig" recorded, no
-size word (the scaled size is not the real one: the name check keeps noun + colour only), split by the same noun hash.
-The rows then need the Isaac settle check (validate_objects -> objv_mark_stable) and the L8-D object gate.
-usage: python tools/l8x_assets/rescale_real.py --gso DIR --gso-meta models.json --table objects_real.json --out OUT.json"""
+model_qdd_s<scale*100>.usda (scaled scan vertices, mass from the scaled box), "scale" / "height_orig" recorded,
+no size word (the scaled size is not the real one: the name check keeps noun + colour only), split by the same
+noun hash. The rows then need the Isaac settle check (validate_objects -> objv_mark_stable) and the L8-D object
+gate.
+usage: python tools/l8x_assets/rescale_real.py --gso DIR --gso-meta models.json --table objects_real.json --out OUT.json
+"""
 from __future__ import annotations
 
 import argparse

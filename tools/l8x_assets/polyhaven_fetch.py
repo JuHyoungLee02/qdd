@@ -2,8 +2,8 @@
 fabric) and indoor HDR environment maps from Poly Haven (every asset CC0 1.0, https://polyhaven.com/license), via its
 public API (api.polyhaven.com). Stdlib only (pod).
 Per texture: 1k JPG diffuse / normal (OpenGL) / roughness; per HDRI: 2k .hdr. Selection: the API's categories, capped
-per group, sorted by id (deterministic). Catalog <out>/materials.json: id, group, role (furniture / floor / wall /
-fabric / env), files, authors, licence, source URL, md5 checked.
+per group, in id-hash order (deterministic, not alphabetical). Catalog <out>/materials.json: id, group, role
+(furniture / floor / wall / fabric / env), files, authors, licence, source URL, md5 checked.
 usage: python tools/l8x_assets/polyhaven_fetch.py --out /data/harvest/assets_x/materials [--dry]"""
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ GROUPS = {  # group: (asset type, API category, role, cap, required categories: 
     "wall": ("textures", "wall", "wall", 20, ("indoor", "plaster", "clean")),
     "tiles": ("textures", "tiles", "floor", 8, ()),
     "fabric": ("textures", "fabric", "fabric", 10, ()),
-    "indoor": ("hdris", "indoor", "env", 30, ()),
+    "indoor": ("hdris", "indoor", "env", 40, ()),
 }
 TEX_MAPS = {"Diffuse": "diff", "nor_gl": "nor_gl", "Rough": "rough"}
 
@@ -60,7 +60,8 @@ def main(argv=None):
     cat, seen = {}, set()
     for group, (typ, category, role, cap, need) in GROUPS.items():
         assets = json.loads(get(f"{API}/assets?t={typ}&c={category}"))
-        ids = [i for i in sorted(assets) if i not in seen and
+        order = sorted(assets, key=lambda i: hashlib.sha256(f"b4:{i}".encode()).hexdigest())
+        ids = [i for i in order if i not in seen and
                (not need or set(need) & set(assets[i].get("categories") or []))][:cap]
         for aid in ids:
             seen.add(aid)
