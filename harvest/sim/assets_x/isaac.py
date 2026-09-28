@@ -28,16 +28,81 @@ def _mesh_path(name):
     return f"{ROOT}/FM_{name}"
 
 
+_FACES = (  # unit cube faces: (normal axis, sign) -> 4 corners counter-clockwise seen from outside
+    (0, 1), (0, -1), (1, 1), (1, -1), (2, 1), (2, -1))
+
+
+def _cube_faces():
+    """24 vertices (4 per face, -0.5..0.5), 6 quads, per-vertex normals and the two in-face axes per face."""
+    P, N, axes = [], [], []
+    for ax, sg in _FACES:
+        u, v = ((1, 2), (2, 0), (0, 1))[ax]  # u x v = +ax: counter-clockwise seen from outside
+        if sg < 0:
+            u, v = v, u
+        for cu, cv in ((-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)):
+            p = [0.0, 0.0, 0.0]
+            p[ax], p[u], p[v] = 0.5 * sg, cu, cv
+            P.append(p)
+            n = [0.0, 0.0, 0.0]
+            n[ax] = float(sg)
+            N.append(n)
+        axes.append((u, v))
+    return P, N, axes
+
+
+def box_uv(size) -> list:
+    """Box-projected UVs (metres) of the unit visual cube scaled to `size`: on each face the two in-face axes x the
+    part size, so a texture tiles by metre whatever the part size (materials.author uv_scale = tiles per metre)."""
+    P, _, axes = _cube_faces()
+    st = []
+    for f, (u, v) in enumerate(axes):
+        for k in range(4):
+            p = P[4 * f + k]
+            st.append((float((p[u] + 0.5) * size[u]), float((p[v] + 0.5) * size[v])))
+    return st
+
+
+def _add_visual_cube(stage, path: str) -> None:
+    """Render mesh with UVs next to the collider cube (b4 textures: UsdGeom.Cube has no primvars:st, so a texture
+    showed one average colour); the collider cube is made invisible and keeps its size / collider (physics
+    unchanged). author_scene scales both and refreshes the UVs to the part size."""
+    from pxr import Sdf, UsdGeom, Vt
+    P, N, _ = _cube_faces()
+    m = UsdGeom.Mesh.Define(stage, path + "/geometry/visual")
+    m.CreatePointsAttr(Vt.Vec3fArray([tuple(p) for p in P]))
+    m.CreateFaceVertexCountsAttr(Vt.IntArray([4] * 6))
+    m.CreateFaceVertexIndicesAttr(Vt.IntArray(list(range(24))))
+    m.CreateNormalsAttr(Vt.Vec3fArray([tuple(n) for n in N]))
+    m.SetNormalsInterpolation(UsdGeom.Tokens.vertex)
+    m.CreateSubdivisionSchemeAttr(UsdGeom.Tokens.none)
+    pv = UsdGeom.PrimvarsAPI(m).CreatePrimvar("st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.vertex)
+    pv.Set(Vt.Vec2fArray(box_uv((1.0, 1.0, 1.0))))
+    UsdGeom.Imageable(stage.GetPrimAtPath(path + "/geometry/mesh")).MakeInvisible()
+
+
 def spawn_fx(prim_path, cfg, translation=None, orientation=None, **kwargs):
-    """Unit cuboid (Isaac Lab shape: collider on geometry/mesh) + its own OmniPBR material, bound at spawn."""
+    """Unit cuboid (Isaac Lab shape: collider on geometry/mesh, made invisible) + a UV render mesh
+    (geometry/visual) + its own OmniPBR material, bound at spawn."""
     import omni.usd
     from isaaclab.sim.spawners.shapes import spawn_cuboid
 
     from ..randomize import _bind_new_material
     path = prim_path.replace("env_.*", "env_0")
     prim = spawn_cuboid(path, cfg, translation=translation, orientation=orientation, **kwargs)
-    _bind_new_material(omni.usd.get_context().get_stage(), path, path)
+    stage = omni.usd.get_context().get_stage()
+    _add_visual_cube(stage, path)
+    _bind_new_material(stage, path, path)
     return prim
+
+
+def _set_visual(stage, i: int, size) -> None:
+    """Scale the slot's UV mesh like its collider and refresh its UVs to the part size (render only)."""
+    from pxr import UsdGeom, Vt
+    vis = stage.GetPrimAtPath(_slot_path(i) + "/geometry/visual")
+    if not vis:
+        return
+    _set_scale(vis, size)
+    UsdGeom.PrimvarsAPI(vis).GetPrimvar("st").Set(Vt.Vec2fArray(box_uv(size)))
 
 
 def slot_cfgs(mesh_assets: dict | None = None, n: int = N_SLOTS, rooms: dict | None = None) -> dict:
@@ -111,11 +176,13 @@ def author_scene(env, scene: dict, mesh_assets: dict | None = None, rooms: dict 
             p = cub[i]
             _set_pose(prim, tuple(p["pos"]), yaw_quat(p.get("yaw", 0.0)))
             _set_scale(mesh, p["size"])
+            _set_visual(stage, i, p["size"])
             set_material(stage, _slot_path(i) + "/" + MAT, {"color": tuple(p.get("color", (0.6, 0.6, 0.6))),
                                                               "roughness": 0.6})
         else:
             _set_pose(prim, (PARK[0] - 1.2 * i, PARK[1], PARK[2]), (1.0, 0.0, 0.0, 0.0))
             _set_scale(mesh, (0.1, 0.1, 0.1))
+            _set_visual(stage, i, (0.1, 0.1, 0.1))
     used = set()
     for p in msh:
         name = p["asset"]
