@@ -68,6 +68,8 @@ def _rows(path, kinds=None):
         r["images"] = [p if os.path.isabs(p) else os.path.join(base, p) for p in r.get("images", [])]
         if GS.in_g(r):  # user-log 166: the G evaluation split never enters a training pack
             continue
+        if r.get("exclude"):  # user-log 169: e.g. MolmoBot wide-fisheye (gopro) rows, kept on disk but not trained
+            continue
         if all(os.path.exists(p) for p in r["images"]):
             out.append(r)
     return out
