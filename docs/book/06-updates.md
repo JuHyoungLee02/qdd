@@ -135,3 +135,4 @@
 | 2026-09-27 02:2x | 01·04·05 | E-STRIP8b 결과(KEEP_PRIVILEGED: L8-X에서 S-full이 참 높이를 써 OOD-H 4 mm, 최소 요청 21 mm): 01 행, 04 경로 행, 05 GPU 행 | [R/strip8b](../stage3/results/strip8b.md), 이 줄과 같은 커밋 |
 | 2026-09-27 02:52 | 01 | E-DIST8 중간 결과: 01 행 | [R/dist8](../stage3/results/dist8.md), 이 줄과 같은 커밋 |
 | 2026-09-27 04:2x | 01·04·05 | E-PRIV8 결과(M1·M3·G-px 모두 NOT_ADOPT, MONOCULAR_LIMIT): 01 행, 04 경로 행, 05 GPU 행 | [R/priv8](../stage3/results/priv8.md), 이 줄과 같은 커밋 |
+| 2026-09-28 11:5x | 01 | E-OPRATIO8 결과(p=0, 자격 팔 없음; p75 재검증 제안): 01 행 | [R/opratio](../stage3/results/opratio.md), 이 줄과 같은 커밋 |
