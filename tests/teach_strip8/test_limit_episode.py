@@ -19,6 +19,18 @@ def test_light_corruption_applied():
     assert r["limits"]["n_corrupted_obs"] >= r["n_calls"] and r["success"], r["end_reason"]
 
 
+def test_parse_and_resolver_v2_episode():
+    from harvest.astra_solo import resolve as RS
+    from harvest.teach_strip8.run_limits import parse
+    assert parse("none") == (None, False, "v1") and parse("none:v2") == (None, False, "v2")
+    assert parse("hole:0.3:r") == (("hole", 0.3), True, "v1") and parse("light:dim_warm") == (("light", "dim_warm"), False, "v1")
+    rp0 = RS.resolve_point
+    r = run(resolver="v2")
+    assert RS.resolve_point is rp0  # restored after the episode
+    assert r["limits"]["resolver"] == "v2"
+    assert any((c.get("resolved") or {}).get("method", "").startswith("v2") for c in r["calls"])
+
+
 def test_hole_rescue_logged():
     on = run(corrupt=("hole", 0.6), rescue=True)
     assert on["limits"]["rescues"], "the rescue path must be used with 60 % holes"

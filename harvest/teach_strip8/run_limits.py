@@ -12,11 +12,14 @@ import time
 
 
 def parse(cond: str):
+    """-> (corrupt | None, rescue, resolver). Extras after the level: 'r' = rescue, 'v2' = resolver v2."""
     p = cond.split(":")
     if p[0] == "none":
-        return None, "r" in p[1:]
+        ex = p[1:]
+        return None, "r" in ex, "v2" if "v2" in ex else "v1"
     lv = p[1] if p[0] == "light" else float(p[1])
-    return (p[0], lv), "r" in p[2:]
+    ex = p[2:]
+    return (p[0], lv), "r" in ex, "v2" if "v2" in ex else "v1"
 
 
 def main(argv=None):
@@ -48,7 +51,7 @@ def main(argv=None):
         print("WORLD " + json.dumps({"table_z": world.table_z, "conds": a.conds}), flush=True)
         model = LocalVLM(a.qwen_url, a.qwen_name, "qwen8b")
         for cond in a.conds.split(","):
-            corrupt, rescue = parse(cond)
+            corrupt, rescue, resolver = parse(cond)
             arm = cond.replace(":", "_")
             for c in cfgs:
                 if c["task"] in X_STEPS:
@@ -60,7 +63,7 @@ def main(argv=None):
                 t0 = time.perf_counter()
                 ep = LimitEpisode(world, model, c["seed"], c["task"], od, video=True, variant=c["variant"],
                                   stop_calls=a.stop_calls, stop_motion_s=a.stop_motion, mem_points=True, fix_loop=True,
-                                  corrupt=corrupt, rescue=rescue)
+                                  corrupt=corrupt, rescue=rescue, resolver=resolver)
                 res = ep.run()
                 print("EP " + json.dumps({k: res.get(k) for k in (
                     "seed", "task", "success", "grasp_lift", "fail_stage", "end_reason", "n_calls")} | {

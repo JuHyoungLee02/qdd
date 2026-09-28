@@ -410,11 +410,13 @@ class LimitEpisode(PerturbEpisode):
     zed_mini x `level`; light = lighting level name; occl = grey box over `level` of the target's image box.
     rescue = the D depth rescue (limits.rescue_resolve) in the point resolver, a 'remeasure' target when all fails."""
 
-    def __init__(self, *a, corrupt=None, rescue: bool = False, **kw):
+    def __init__(self, *a, corrupt=None, rescue: bool = False, resolver: str = "v1", **kw):
         super().__init__(*a, **kw)
         if corrupt is not None and corrupt[0] not in CORRUPTS:
             raise ValueError(corrupt)
-        self.corrupt, self.rescue = corrupt, rescue
+        if resolver not in ("v1", "v2"):
+            raise ValueError(resolver)
+        self.corrupt, self.rescue, self.resolver = corrupt, rescue, resolver
         self.corrupt_log, self.rescue_log = [], []
 
     def _corrupt(self, obs):
@@ -444,17 +446,19 @@ class LimitEpisode(PerturbEpisode):
         return obs
 
     def run(self) -> dict:
-        if self.corrupt is None:
-            return super().run()
-        orig = self.w.observe
+        from . import limits as LM
+        orig, rp0 = self.w.observe, RS.resolve_point
 
         def observe(*a, **kw):
             return self._corrupt(orig(*a, **kw))
-        self.w.observe = observe
+        if self.corrupt is not None:
+            self.w.observe = observe
+        if self.resolver == "v2":  # every resolver call of this episode (live, memory, rescue) uses v2
+            RS.resolve_point = LM.resolve_point_v2
         try:
             return super().run()
         finally:
-            self.w.observe = orig
+            self.w.observe, RS.resolve_point = orig, rp0
 
     def resolve(self, cmd: dict, st: dict) -> dict:
         if not self.rescue or cmd.get("height") == "lift" or cmd.get("point_2d") is None or self.depth is None:
@@ -477,5 +481,6 @@ class LimitEpisode(PerturbEpisode):
 
     def _save(self, res):
         res["limits"] = {"corrupt": list(self.corrupt) if self.corrupt else None, "rescue": self.rescue,
+                         "resolver": self.resolver,
                          "n_corrupted_obs": len(self.corrupt_log), "rescues": self.rescue_log}
         super()._save(res)

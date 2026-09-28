@@ -91,6 +91,42 @@ def _nan_fill(z, iters):
     return z
 
 
+_RP0 = RS.resolve_point  # the original resolver (LimitEpisode may patch RS.resolve_point with v2)
+NEAR_PCT = 20  # real RB2 (작전T rb2_dtest3): near-depth 20th percentile inside the object mask
+CONT_DROP_M = 0.02  # a region whose centre is this much below its rim is a container (opening)
+
+
+def resolve_point_v2(cam, depth, prior_z, point_2d, tcp=None) -> dict:
+    """resolve.resolve_point with two changes (prereg_limits.md change 1): the object's (x, y) = the mask centroid
+    pixel back-projected at the NEAR_PCT-th percentile of the mask's z-depth (instead of the top-band mean), and a
+    container (centre > CONT_DROP_M below the rim) gets the opening centre (bbox centre of the rim band) with the rim
+    height as its top."""
+    from ..astra_motion.geometry import PIX_C
+    r = _RP0(cam, depth, prior_z, point_2d, tcp=tcp)
+    if r["kind"] != "object":
+        return dict(r, method="v2")
+    P = RS.depth_points(cam, depth)
+    plane = r["plane"]
+    hgt = P[..., 2] - plane
+    above = np.isfinite(hgt) & (hgt > RS.H_MIN) & ~RS.robot_mask(hgt, plane, tcp)
+    reg = RS._region(P, above, (r["seed"][1], r["seed"][0]))
+    top_h = float(np.percentile(hgt[reg], 95))
+    band = reg & (hgt >= top_h - RS.TOP_BAND_M)
+    bxy = P[band][:, :2]
+    c = (bxy.min(0) + bxy.max(0)) / 2
+    rad = float(np.linalg.norm(bxy.max(0) - bxy.min(0))) / 4
+    inner = np.isfinite(hgt) & (np.hypot(P[..., 0] - c[0], P[..., 1] - c[1]) < rad)  # floor may be below H_MIN
+    if inner.sum() >= MIN_OBJ_PX and float(np.median(hgt[inner])) < top_h - CONT_DROP_M:
+        return dict(r, xy=[round(float(c[0]), 4), round(float(c[1]), 4)], method="v2_container")
+    vv, uu = np.nonzero(reg)
+    z = np.asarray(depth, float)[reg]
+    z20 = float(np.percentile(z[np.isfinite(z) & (z > 0)], NEAR_PCT))
+    u, v = uu.mean() + PIX_C, vv.mean() + PIX_C
+    p = np.asarray(cam.R, float) @ np.array([(u - cam.cx) / cam.fx * z20, (v - cam.cy) / cam.fy * z20, z20]) \
+        + np.asarray(cam.t, float)
+    return dict(r, xy=[round(float(p[0]), 4), round(float(p[1]), 4)], method="v2_near20")
+
+
 def rescue_resolve(cam, depth, prior_z, point_2d, tcp=None, memory=None) -> dict:
     iu, iv = RS.to_pixel(point_2d, cam.W, cam.H)
     hf = _hole_frac(depth, iu, iv, WIN_PX)

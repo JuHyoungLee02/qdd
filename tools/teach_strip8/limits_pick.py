@@ -30,6 +30,18 @@ if sys.argv[1] == "map":
     for v, n in (("drx_tz0.980", 4), ("drx_tz0.740", 2)):
         eps = eligible(os.path.join(X, "ood_h"))
         print(" ".join([d for _, d in eps if os.path.basename(os.path.dirname(d)) == v][:n]))
+elif sys.argv[1] == "v2set":  # 30 dev_x: every container-place ('bin') task episode up to 15, others to 30, even
+    eps = eligible(os.path.join(X, "dev_x"))
+    task = {d: json.load(open(os.path.join(d, "scene.json")))["task"] for _, d in eps}
+    b = [d for _, d in eps if "bin" in task[d]]
+    o = [d for _, d in eps if "bin" not in task[d]]
+    nb = min(15, len(b))
+    pick = [b[int(i * len(b) / nb)] for i in range(nb)] + [o[int(i * len(o) / (30 - nb))] for i in range(30 - nb)]
+    g = defaultdict(list)
+    for d in pick:
+        g[os.path.dirname(d)].append(d)
+    for k2 in sorted(g):
+        print(" ".join(g[k2]))
 else:
     eps = eligible(os.path.join(X, sys.argv[2]))
     k = len(eps) / 30.0

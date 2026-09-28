@@ -52,6 +52,37 @@ def test_noise_light_occlusion():
     assert 0.4 < (box != 120).any(-1).mean() < 0.8
 
 
+def bin_scene(x0=0.40, x1=0.56, y0=-0.38, y1=-0.22, h=0.05, wall=0.01):
+    """Ray-cast an open box (floor at the table, 1 cm walls of height h) on the table."""
+    iu, iv = np.meshgrid(np.arange(CAM.W) + 0.5, np.arange(CAM.H) + 0.5)
+    d = np.stack([(iu - CAM.cx) / CAM.fx, (iv - CAM.cy) / CAM.fy, np.ones_like(iu)], -1)
+    dw = d @ np.asarray(CAM.R).T
+    t = np.asarray(CAM.t)
+    best = (TZ - t[2]) / dw[..., 2]
+    for zz in np.linspace(TZ + h, TZ, 40):  # first hit from above: rim / wall bands, else the floor
+        s = (zz - t[2]) / dw[..., 2]
+        p = t + dw * s[..., None]
+        inb = (p[..., 0] >= x0) & (p[..., 0] <= x1) & (p[..., 1] >= y0) & (p[..., 1] <= y1)
+        ring = inb & ~((p[..., 0] >= x0 + wall) & (p[..., 0] <= x1 - wall) & (p[..., 1] >= y0 + wall)
+                       & (p[..., 1] <= y1 - wall))
+        best = np.where(ring & (s < best), s, best)
+    return best
+
+
+def test_resolver_v2():
+    d = scene()
+    m = LM.object_mask(CAM, d, TZ, [0.435, -0.265], r=0.06)
+    ys, xs = np.nonzero(m)
+    pt = [xs.mean() / CAM.W * 1000, ys.mean() / CAM.H * 1000]
+    r = LM.resolve_point_v2(CAM, d, TZ, pt)
+    assert r["method"] == "v2_near20" and np.hypot(r["xy"][0] - 0.435, r["xy"][1] + 0.265) < 0.03
+    b = bin_scene()
+    u, v, _ = __import__("harvest.astra_motion.geometry", fromlist=["project"]).project(CAM, np.array([0.48, -0.23, TZ + 0.05]))
+    rb = LM.resolve_point_v2(CAM, b, TZ, [u / CAM.W * 1000, v / CAM.H * 1000])
+    assert rb["method"] == "v2_container", rb
+    assert np.hypot(rb["xy"][0] - 0.48, rb["xy"][1] + 0.30) < 0.02 and abs(rb["top"] - (TZ + 0.05)) < 0.01
+
+
 def test_rescue_steps():
     d = scene()
     m = LM.object_mask(CAM, d, TZ, [0.435, -0.265], r=0.06)
