@@ -1,0 +1,968 @@
+{
+ "source": "tools/l8x_assets/gate_articulated.py (Isaac: spawn stability, actuation, handle geometry)",
+ "assets": {
+  "Bathroom_Faucet_1": {
+   "package": "Bathroom_Faucet",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Bathroom_Faucet/Bathroom_Faucet_1/Bathroom_Faucet_1.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Bathroom_Faucet_1_sink_faucet_knob_1_joint_0",
+     "type": "revolute",
+     "moving": "Bathroom_Faucet_1_sink_faucet_knob_1",
+     "range": 0.7854,
+     "handle": "Bathroom_Faucet_1_sink_faucet_knob_1",
+     "handle_kind": "knob",
+     "handle_z": 0.191,
+     "task": "turn"
+    }
+   ],
+   "tasks": [
+    "turn"
+   ]
+  },
+  "Bathroom_Faucet_19": {
+   "package": "Bathroom_Faucet",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Bathroom_Faucet/Bathroom_Faucet_19/Bathroom_Faucet_19.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Bathroom_Faucet_19_sink_faucet_knob_19_joint_0",
+     "type": "revolute",
+     "moving": "Bathroom_Faucet_19_sink_faucet_knob_19",
+     "range": 0.7854,
+     "handle": "Bathroom_Faucet_19_sink_faucet_knob_19",
+     "handle_kind": "knob",
+     "handle_z": 0.095,
+     "task": "turn"
+    }
+   ],
+   "tasks": [
+    "turn"
+   ]
+  },
+  "Bathroom_Faucet_26": {
+   "package": "Bathroom_Faucet",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Bathroom_Faucet/Bathroom_Faucet_26/Bathroom_Faucet_26.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Bathroom_Faucet_26_sink_faucet_knob_26_joint_0",
+     "type": "revolute",
+     "moving": "Bathroom_Faucet_26_sink_faucet_knob_26",
+     "range": 0.7854,
+     "handle": "Bathroom_Faucet_26_sink_faucet_knob_26",
+     "handle_kind": "knob",
+     "handle_z": 0.217,
+     "task": "turn"
+    }
+   ],
+   "tasks": [
+    "turn"
+   ]
+  },
+  "Bathroom_Faucet_27": {
+   "package": "Bathroom_Faucet",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Bathroom_Faucet/Bathroom_Faucet_27/Bathroom_Faucet_27.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Bathroom_Faucet_27_sink_faucet_knob_19_joint_0",
+     "type": "revolute",
+     "moving": "Bathroom_Faucet_27_sink_faucet_knob_19",
+     "range": 0.7854,
+     "handle": "Bathroom_Faucet_27_sink_faucet_knob_19",
+     "handle_kind": "knob",
+     "handle_z": 0.095,
+     "task": "turn"
+    }
+   ],
+   "tasks": [
+    "turn"
+   ]
+  },
+  "Desk_306_1": {
+   "package": "Desk",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Desk/Desk_306_1/Desk_306_1.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "ood",
+   "joints": [
+    {
+     "joint": "Desk_306_1_joint",
+     "type": "prismatic",
+     "moving": "Desk_306_1_DrawerMesh_01",
+     "range": 0.402,
+     "handle": "Desk_306_1_desk_drawer_306_1_handle",
+     "handle_kind": "bar",
+     "handle_z": 0.746,
+     "task": "drawer"
+    }
+   ],
+   "tasks": [
+    "drawer"
+   ]
+  },
+  "Desk_308_2_1": {
+   "package": "Desk",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Desk/Desk_308_2_1/Desk_308_2_1.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Desk_308_2_1_joint",
+     "type": "prismatic",
+     "moving": "Desk_308_2_1_DrawerMesh_01",
+     "range": 0.305,
+     "handle": "Desk_308_2_1_handle_1_305mm_01",
+     "handle_kind": "bar",
+     "handle_z": 0.806,
+     "task": "drawer"
+    }
+   ],
+   "tasks": [
+    "drawer"
+   ]
+  },
+  "Desk_314_1": {
+   "package": "Desk",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Desk/Desk_314_1/Desk_314_1.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Desk_314_1_joint",
+     "type": "prismatic",
+     "moving": "Desk_314_1_DrawerMesh_01",
+     "range": 0.403,
+     "handle": "Desk_314_1_desk_drawer_314_1_handle",
+     "handle_kind": "bar",
+     "handle_z": 0.77,
+     "task": "drawer"
+    }
+   ],
+   "tasks": [
+    "drawer"
+   ]
+  },
+  "Desk_318_1": {
+   "package": "Desk",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Desk/Desk_318_1/Desk_318_1.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Desk_318_1_joint",
+     "type": "prismatic",
+     "moving": "Desk_318_1_DrawerMesh_00",
+     "range": 0.394,
+     "handle": "Desk_318_1_handle_2_305mm_00",
+     "handle_kind": "bar",
+     "handle_z": 0.626,
+     "task": "drawer"
+    }
+   ],
+   "tasks": [
+    "drawer"
+   ]
+  },
+  "Desk_323_1": {
+   "package": "Desk",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Desk/Desk_323_1/Desk_323_1.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Desk_323_1_joint",
+     "type": "prismatic",
+     "moving": "Desk_323_1_DrawerMesh_01",
+     "range": 0.3,
+     "handle": "Desk_323_1_desk_drawer_323_1_handle",
+     "handle_kind": "bar",
+     "handle_z": 0.747,
+     "task": "drawer"
+    }
+   ],
+   "tasks": [
+    "drawer"
+   ]
+  },
+  "Doorway_6": {
+   "package": "Doorway",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Doorway/Doorway_6/Doorway_6.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Doorway_6_doorway_handle_6_joint_0",
+     "type": "revolute",
+     "moving": "Doorway_6_doorway_handle_6",
+     "range": 1.5708,
+     "handle": "Doorway_6_doorway_handle_6",
+     "handle_kind": "knob",
+     "handle_z": 0.955,
+     "task": "turn"
+    }
+   ],
+   "tasks": [
+    "turn"
+   ]
+  },
+  "Dresser_217_1": {
+   "package": "Dresser",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Dresser/Dresser_217_1/Dresser_217_1.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Dresser_217_1_DrawerMesh_01__1",
+     "type": "prismatic",
+     "moving": "Dresser_217_1_DrawerMesh_01",
+     "range": 0.172,
+     "handle": "Dresser_217_1_handle_2_178mm_01",
+     "handle_kind": "bar",
+     "handle_z": 0.915,
+     "task": "drawer"
+    },
+    {
+     "joint": "Dresser_217_1_DrawerMesh_02__1",
+     "type": "prismatic",
+     "moving": "Dresser_217_1_DrawerMesh_02",
+     "range": 0.172,
+     "handle": "Dresser_217_1_handle_2_178mm_02",
+     "handle_kind": "bar",
+     "handle_z": 0.915,
+     "task": "drawer"
+    }
+   ],
+   "tasks": [
+    "drawer"
+   ]
+  },
+  "Dresser_219_1": {
+   "package": "Dresser",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Dresser/Dresser_219_1/Dresser_219_1.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Dresser_219_1_joint",
+     "type": "prismatic",
+     "moving": "Dresser_219_1_DrawerMesh_01",
+     "range": 0.17,
+     "handle": "Dresser_219_1_handle_1_305mm_000",
+     "handle_kind": "bar",
+     "handle_z": 1.028,
+     "task": "drawer"
+    },
+    {
+     "joint": "Dresser_219_1_DrawerMesh_02__1",
+     "type": "prismatic",
+     "moving": "Dresser_219_1_DrawerMesh_02",
+     "range": 0.17,
+     "handle": "Dresser_219_1_handle_1_305mm_01",
+     "handle_kind": "bar",
+     "handle_z": 1.028,
+     "task": "drawer"
+    },
+    {
+     "joint": "Dresser_219_1_DrawerMesh_03__1",
+     "type": "prismatic",
+     "moving": "Dresser_219_1_DrawerMesh_03",
+     "range": 0.17,
+     "handle": "Dresser_219_1_handle_1_305mm_03",
+     "handle_kind": "bar",
+     "handle_z": 1.028,
+     "task": "drawer"
+    },
+    {
+     "joint": "Dresser_219_1_DrawerMesh_04__1",
+     "type": "prismatic",
+     "moving": "Dresser_219_1_DrawerMesh_04",
+     "range": 0.17,
+     "handle": "Dresser_219_1_handle_1_305mm",
+     "handle_kind": "bar",
+     "handle_z": 1.028,
+     "task": "drawer"
+    }
+   ],
+   "tasks": [
+    "drawer"
+   ]
+  },
+  "Dresser_220_1": {
+   "package": "Dresser",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Dresser/Dresser_220_1/Dresser_220_1.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "ood",
+   "joints": [
+    {
+     "joint": "Dresser_220_1_joint",
+     "type": "prismatic",
+     "moving": "Dresser_220_1_DrawerMesh_01",
+     "range": 0.35,
+     "handle": "Dresser_220_1_handle_2_600mm_01",
+     "handle_kind": "bar",
+     "handle_z": 1.157,
+     "task": "drawer"
+    },
+    {
+     "joint": "Dresser_220_1_DrawerMesh_02__1",
+     "type": "prismatic",
+     "moving": "Dresser_220_1_DrawerMesh_02",
+     "range": 0.35,
+     "handle": "Dresser_220_1_handle_2_600mm_02",
+     "handle_kind": "bar",
+     "handle_z": 0.867,
+     "task": "drawer"
+    }
+   ],
+   "tasks": [
+    "drawer"
+   ]
+  },
+  "Dresser_224_1": {
+   "package": "Dresser",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Dresser/Dresser_224_1/Dresser_224_1.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "ood",
+   "joints": [
+    {
+     "joint": "Dresser_224_1_DrawerMesh_01__1",
+     "type": "prismatic",
+     "moving": "Dresser_224_1_DrawerMesh_01",
+     "range": 0.338,
+     "handle": "Dresser_224_1_dresser_drawer_224_1_handle",
+     "handle_kind": "bar",
+     "handle_z": 0.823,
+     "task": "drawer"
+    },
+    {
+     "joint": "Dresser_224_1_DrawerMesh_02__1",
+     "type": "prismatic",
+     "moving": "Dresser_224_1_DrawerMesh_02",
+     "range": 0.338,
+     "handle": "Dresser_224_1_dresser_drawer_224_2_handle",
+     "handle_kind": "bar",
+     "handle_z": 0.823,
+     "task": "drawer"
+    }
+   ],
+   "tasks": [
+    "drawer"
+   ]
+  },
+  "Dresser_318_1": {
+   "package": "Dresser",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Dresser/Dresser_318_1/Dresser_318_1.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Dresser_318_1_DrawerMesh_01__1",
+     "type": "prismatic",
+     "moving": "Dresser_318_1_DrawerMesh_01",
+     "range": 0.381,
+     "handle": "Dresser_318_1_handle_2_600mm_01",
+     "handle_kind": "bar",
+     "handle_z": 0.613,
+     "task": "drawer"
+    }
+   ],
+   "tasks": [
+    "drawer"
+   ]
+  },
+  "Dresser_318_2": {
+   "package": "Dresser",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Dresser/Dresser_318_2/Dresser_318_2.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Dresser_318_2_DrawerMesh_01__1",
+     "type": "prismatic",
+     "moving": "Dresser_318_2_DrawerMesh_01",
+     "range": 0.381,
+     "handle": "Dresser_318_2_handle_2_305mm_01",
+     "handle_kind": "bar",
+     "handle_z": 0.88,
+     "task": "drawer"
+    }
+   ],
+   "tasks": [
+    "drawer"
+   ]
+  },
+  "Fridge_26": {
+   "package": "Fridge_26",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Fridge_26/Fridge_26/Fridge_26.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Fridge_26_joint",
+     "type": "revolute",
+     "moving": "Fridge_26_Mesh_9c14908c",
+     "range": 1.5708,
+     "handle": "Fridge_26_fridge_freezerdoor_handle_a6_3e49bbc5",
+     "handle_kind": "bar",
+     "handle_z": 1.313,
+     "task": "fridge_door"
+    }
+   ],
+   "tasks": [
+    "fridge_door"
+   ]
+  },
+  "Side_Table_220_1": {
+   "package": "Side_Table_220",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Side_Table_220/Side_Table_220_1/Side_Table_220_1.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Side_Table_220_1_joint",
+     "type": "prismatic",
+     "moving": "Side_Table_220_1_DrawerMesh_00",
+     "range": 0.22,
+     "handle": "Side_Table_220_1_handle_1_305mm_00",
+     "handle_kind": "bar",
+     "handle_z": 0.698,
+     "task": "drawer"
+    }
+   ],
+   "tasks": [
+    "drawer"
+   ]
+  },
+  "StoveKnob1": {
+   "package": "StoveKnob",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_StoveKnob/StoveKnob1/StoveKnob1.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "StoveKnob1_StoveKnobTurn1_joint_0",
+     "type": "revolute",
+     "moving": "StoveKnob1_StoveKnobTurn1",
+     "range": 1.5708,
+     "handle": "StoveKnob1_StoveKnobTurn1",
+     "handle_kind": "knob",
+     "handle_z": 0.019,
+     "task": "turn"
+    }
+   ],
+   "tasks": [
+    "turn"
+   ]
+  },
+  "StoveKnob2": {
+   "package": "StoveKnob",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_StoveKnob/StoveKnob2/StoveKnob2.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "ood",
+   "joints": [
+    {
+     "joint": "tn__StoveKnob2_SafeDoor004_0_joint_0_nm0",
+     "type": "revolute",
+     "moving": "tn__StoveKnob2_SafeDoor004_0_ra0",
+     "range": 1.5708,
+     "handle": "tn__StoveKnob2_SafeDoor004_0_ra0",
+     "handle_kind": "knob",
+     "handle_z": 0.013,
+     "task": "turn"
+    }
+   ],
+   "tasks": [
+    "turn"
+   ]
+  },
+  "StoveKnob3": {
+   "package": "StoveKnob",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_StoveKnob/StoveKnob3/StoveKnob3.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "tn__StoveKnob3_OVENKNOB2001_joint_0_Zl0",
+     "type": "revolute",
+     "moving": "tn__StoveKnob3_OVENKNOB2001_dZ0",
+     "range": 1.5708,
+     "handle": "tn__StoveKnob3_OVENKNOB2001_dZ0",
+     "handle_kind": "knob",
+     "handle_z": 0.013,
+     "task": "turn"
+    }
+   ],
+   "tasks": [
+    "turn"
+   ]
+  },
+  "Toaster_1": {
+   "package": "Toaster_1",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_1/Toaster_1/Toaster_1.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Toaster_1_joint",
+     "type": "prismatic",
+     "moving": "Toaster_1_toaster_lever_1_6e668f0c",
+     "range": 0.1099,
+     "handle": "Toaster_1_toaster_lever_1_6e668f0c",
+     "handle_kind": "knob",
+     "handle_z": 0.166,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_10": {
+   "package": "Toaster_10",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_10/Toaster_10/Toaster_10.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Toaster_10_joint",
+     "type": "prismatic",
+     "moving": "Toaster_10_toaster_lever_10_c8bb68aa",
+     "range": 0.1183,
+     "handle": "Toaster_10_toaster_lever_10_c8bb68aa",
+     "handle_kind": "knob",
+     "handle_z": 0.177,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_12": {
+   "package": "Toaster_12",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_12/Toaster_12/Toaster_12.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Toaster_12_joint",
+     "type": "prismatic",
+     "moving": "Toaster_12_toaster_lever_12_f59de380",
+     "range": 0.0784,
+     "handle": "Toaster_12_toaster_lever_12_f59de380",
+     "handle_kind": "knob",
+     "handle_z": 0.172,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_13": {
+   "package": "Toaster_13",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_13/Toaster_13/Toaster_13.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Toaster_13_joint",
+     "type": "prismatic",
+     "moving": "Toaster_13_toaster_lever_13_51ce71e2",
+     "range": 0.1092,
+     "handle": "Toaster_13_toaster_lever_13_51ce71e2",
+     "handle_kind": "knob",
+     "handle_z": 0.166,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_14": {
+   "package": "Toaster_14",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_14/Toaster_14/Toaster_14.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Toaster_14_joint",
+     "type": "prismatic",
+     "moving": "Toaster_14_toaster_lever_14_57b3fb69",
+     "range": 0.1169,
+     "handle": "Toaster_14_toaster_lever_14_57b3fb69",
+     "handle_kind": "knob",
+     "handle_z": 0.175,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_16": {
+   "package": "Toaster_16",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_16/Toaster_16/Toaster_16.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Toaster_16_joint",
+     "type": "prismatic",
+     "moving": "Toaster_16_toaster_lever_16_2bf55063",
+     "range": 0.0784,
+     "handle": "Toaster_16_toaster_lever_16_2bf55063",
+     "handle_kind": "knob",
+     "handle_z": 0.172,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_17": {
+   "package": "Toaster_17",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_17/Toaster_17/Toaster_17.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "ood",
+   "joints": [
+    {
+     "joint": "Toaster_17_joint",
+     "type": "prismatic",
+     "moving": "Toaster_17_toaster_lever_17_298e3d43",
+     "range": 0.1085,
+     "handle": "Toaster_17_toaster_lever_17_298e3d43",
+     "handle_kind": "knob",
+     "handle_z": 0.166,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_18": {
+   "package": "Toaster_18",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_18/Toaster_18/Toaster_18.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "ood",
+   "joints": [
+    {
+     "joint": "Toaster_18_joint",
+     "type": "prismatic",
+     "moving": "Toaster_18_toaster_lever_18_bbdc366c",
+     "range": 0.1141,
+     "handle": "Toaster_18_toaster_lever_18_bbdc366c",
+     "handle_kind": "knob",
+     "handle_z": 0.176,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_2": {
+   "package": "Toaster_2",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_2/Toaster_2/Toaster_2.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Toaster_2_joint",
+     "type": "prismatic",
+     "moving": "Toaster_2_toaster_lever_2_eac422a5",
+     "range": 0.1169,
+     "handle": "Toaster_2_toaster_lever_2_eac422a5",
+     "handle_kind": "knob",
+     "handle_z": 0.171,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_20": {
+   "package": "Toaster_20",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_20/Toaster_20/Toaster_20.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Toaster_20_joint",
+     "type": "prismatic",
+     "moving": "Toaster_20_toaster_lever_20_457398cc",
+     "range": 0.077,
+     "handle": "Toaster_20_toaster_lever_20_457398cc",
+     "handle_kind": "knob",
+     "handle_z": 0.172,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_22": {
+   "package": "Toaster_22",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_22/Toaster_22/Toaster_22.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Toaster_22_joint",
+     "type": "prismatic",
+     "moving": "Toaster_22_toaster_lever_22_3826a729",
+     "range": 0.0749,
+     "handle": "Toaster_22_toaster_lever_22_3826a729",
+     "handle_kind": "knob",
+     "handle_z": 0.137,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_24": {
+   "package": "Toaster_24",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_24/Toaster_24/Toaster_24.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Toaster_24_joint",
+     "type": "prismatic",
+     "moving": "Toaster_24_toaster_lever_24_32663032",
+     "range": 0.0819,
+     "handle": "Toaster_24_toaster_lever_24_32663032",
+     "handle_kind": "knob",
+     "handle_z": 0.139,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_26": {
+   "package": "Toaster_26",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_26/Toaster_26/Toaster_26.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Toaster_26_joint",
+     "type": "prismatic",
+     "moving": "Toaster_26_toaster_lever_26_c7eabb4d",
+     "range": 0.0798,
+     "handle": "Toaster_26_toaster_lever_26_c7eabb4d",
+     "handle_kind": "knob",
+     "handle_z": 0.14,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_28": {
+   "package": "Toaster_28",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_28/Toaster_28/Toaster_28.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Toaster_28_joint",
+     "type": "prismatic",
+     "moving": "Toaster_28_toaster_lever_28_ef53947a",
+     "range": 0.0896,
+     "handle": "Toaster_28_toaster_lever_28_ef53947a",
+     "handle_kind": "knob",
+     "handle_z": 0.144,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_30": {
+   "package": "Toaster_30",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_30/Toaster_30/Toaster_30.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Toaster_30_joint",
+     "type": "prismatic",
+     "moving": "Toaster_30_toaster_lever_30_911bd28c",
+     "range": 0.0861,
+     "handle": "Toaster_30_toaster_lever_30_911bd28c",
+     "handle_kind": "knob",
+     "handle_z": 0.14,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_4": {
+   "package": "Toaster_4",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_4/Toaster_4/Toaster_4.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Toaster_4_joint",
+     "type": "prismatic",
+     "moving": "Toaster_4_toaster_lever_4_5cadeb5b",
+     "range": 0.0791,
+     "handle": "Toaster_4_toaster_lever_4_5cadeb5b",
+     "handle_kind": "knob",
+     "handle_z": 0.172,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_5": {
+   "package": "Toaster_5",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_5/Toaster_5/Toaster_5.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Toaster_5_joint",
+     "type": "prismatic",
+     "moving": "Toaster_5_toaster_lever_5_43225be7",
+     "range": 0.1099,
+     "handle": "Toaster_5_toaster_lever_5_43225be7",
+     "handle_kind": "knob",
+     "handle_z": 0.166,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_6": {
+   "package": "Toaster_6",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_6/Toaster_6/Toaster_6.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Toaster_6_joint",
+     "type": "prismatic",
+     "moving": "Toaster_6_toaster_lever_6_3fbbd051",
+     "range": 0.1113,
+     "handle": "Toaster_6_toaster_lever_6_3fbbd051",
+     "handle_kind": "knob",
+     "handle_z": 0.171,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_8": {
+   "package": "Toaster_8",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_8/Toaster_8/Toaster_8.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Toaster_8_joint",
+     "type": "prismatic",
+     "moving": "Toaster_8_toaster_lever_8_a66891b4",
+     "range": 0.0532,
+     "handle": "Toaster_8_toaster_lever_8_a66891b4",
+     "handle_kind": "knob",
+     "handle_z": 0.168,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  },
+  "Toaster_9": {
+   "package": "Toaster_9",
+   "usd": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Toaster_9/Toaster_9/Toaster_9.usda",
+   "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR assets)",
+   "split": "train",
+   "joints": [
+    {
+     "joint": "Toaster_9_joint",
+     "type": "prismatic",
+     "moving": "Toaster_9_toaster_lever_9_caf3a80c",
+     "range": 0.1078,
+     "handle": "Toaster_9_toaster_lever_9_caf3a80c",
+     "handle_kind": "knob",
+     "handle_z": 0.166,
+     "task": "press"
+    }
+   ],
+   "tasks": [
+    "press"
+   ]
+  }
+ },
+ "not_imported": {
+  "RoboCasa fixtures (cabinets, drawers, microwaves, fridges, doors)": {
+   "licence": "code MIT, assets and datasets CC BY 4.0 (robocasa README); the kitchen fixtures are the 'lightwheel fixtures' download -- confirm that bundle carries the same CC BY 4.0 before use",
+   "status": "not imported: MJCF (MuJoCo) articulations, need an MJCF -> USD conversion (Isaac MJCF importer) and a per-fixture joint check; about 10 GB with the other kitchen assets",
+   "consent_needed": false
+  },
+  "PartNet-Mobility (SAPIEN)": {
+   "licence": "SAPIEN / PartNet terms of use: registration and agreement, non-commercial research use",
+   "status": "listed only (consent needed, not downloaded)",
+   "consent_needed": true
+  },
+  "GAPartNet": {
+   "licence": "built on PartNet-Mobility / AKB-48 models: the upstream terms apply (registration, research use)",
+   "status": "listed only (consent needed, not downloaded)",
+   "consent_needed": true
+  }
+ },
+ "counts": {
+  "assets": 41,
+  "by_task": {
+   "turn": 8,
+   "drawer": 12,
+   "fridge_door": 1,
+   "press": 20
+  },
+  "by_package": {
+   "Bathroom_Faucet": 4,
+   "Desk": 5,
+   "Doorway": 1,
+   "Dresser": 6,
+   "Fridge": 1,
+   "Side_Table": 1,
+   "StoveKnob": 3,
+   "Toaster": 20
+  },
+  "by_split": {
+   "train": 35,
+   "ood": 6
+  },
+  "gate_tested": 246
+ },
+ "digest": "b7b895f027beee7f29f62677e81eaf8efe1ffdce300286af5779284cc87c1ad9"
+}
