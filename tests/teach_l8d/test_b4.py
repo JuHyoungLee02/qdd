@@ -188,3 +188,22 @@ def test_head_pose_change17():
     assert 0.12 <= len(r) / len(hs) <= 0.18
     assert all(h["tilt"] == 0.785 and h["pan"] == 0.0 for h in hs if not h["random"])
     assert all(abs(h["pan"]) <= CX.HEAD_PAN_MAX and abs(h["tilt"] - 0.785) <= CX.HEAD_TILT_MAX for h in r)
+
+
+def test_img_aug_change17(tmp_path):
+    import json
+    import numpy as np
+    from PIL import Image
+    from harvest.teach_l8d import img_aug as A
+    p = A.params("x:0")
+    assert p == A.params("x:0") and p != A.params("x:1")
+    assert A.GAIN[0] <= p["gain"] <= A.GAIN[1] and A.JPEG_Q[0] <= p["jpeg_q"] <= A.JPEG_Q[1]
+    im = Image.fromarray(np.full((20, 30, 3), 120, np.uint8))
+    out = A.augment(im, p)
+    assert out.size == im.size
+    src = tmp_path / "a.png"
+    im.save(src)
+    (tmp_path / "in.jsonl").write_text(json.dumps({"id": "r1", "images": [str(src)]}) + "\n")
+    A.aug_rows(str(tmp_path / "in.jsonl"), str(tmp_path / "out.jsonl"), str(tmp_path / "img"))
+    r = json.loads((tmp_path / "out.jsonl").read_text())
+    assert r["img_aug"] and r["images"][0].endswith(".jpg") and Image.open(r["images"][0]).size == (30, 20)
