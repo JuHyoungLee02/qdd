@@ -1,0 +1,2143 @@
+{
+ "cont_blender_jar_a": {
+  "role": "blender",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "gso_Folic_Acid",
+   "gsor_3D_Dollhouse_Sink",
+   "gsor_Jarrow_Glucosamine_Chondroitin_Combi",
+   "gsor_Office_Depot_Canon_PG21XL_Remanufact"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gso_Folic_Acid",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.0,
+     0.106
+    ],
+    "bottom": 0.105
+   },
+   {
+    "object": "gsor_3D_Dollhouse_Sink",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.0,
+     0.106
+    ],
+    "bottom": 0.105
+   },
+   {
+    "object": "gsor_Jarrow_Glucosamine_Chondroitin_Combi",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.0,
+     0.106
+    ],
+    "bottom": 0.105
+   },
+   {
+    "object": "gsor_Office_Depot_Canon_PG21XL_Remanufact",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.106
+    ],
+    "bottom": 0.105
+   }
+  ]
+ },
+ "cont_blender_jar_b": {
+  "role": "blender",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "prod_gso_CoQ10_wSSVoxVppVD",
+   "gsor_Pet_Dophilus_powder",
+   "prod_gso_Theanine",
+   "gsor_Office_Depot_Canon_PG21XL_Remanufact"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "prod_gso_CoQ10_wSSVoxVppVD",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.086
+    ],
+    "bottom": 0.085
+   },
+   {
+    "object": "gsor_Pet_Dophilus_powder",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.086
+    ],
+    "bottom": 0.085
+   },
+   {
+    "object": "prod_gso_Theanine",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.086
+    ],
+    "bottom": 0.085
+   },
+   {
+    "object": "gsor_Office_Depot_Canon_PG21XL_Remanufact",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.086
+    ],
+    "bottom": 0.085
+   }
+  ]
+ },
+ "cont_gso_BIA_Cordon_Bleu_White_Porcelain_Uten": {
+  "role": "pen_holder",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "item_thor_Pen_1",
+   "item_thor_Pen_2",
+   "item_thor_Pen_3",
+   "item_thor_Pen_4"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "item_thor_Pen_1",
+    "inside": true,
+    "rel": [
+     -0.008,
+     0.028,
+     0.09
+    ],
+    "bottom": null,
+    "tilt_deg": 20.7
+   },
+   {
+    "object": "item_thor_Pen_2",
+    "inside": true,
+    "rel": [
+     -0.003,
+     0.004,
+     0.093
+    ],
+    "bottom": null,
+    "tilt_deg": 3.4
+   },
+   {
+    "object": "item_thor_Pen_3",
+    "inside": true,
+    "rel": [
+     -0.003,
+     0.004,
+     0.093
+    ],
+    "bottom": null,
+    "tilt_deg": 3.4
+   },
+   {
+    "object": "item_thor_Pen_4",
+    "inside": true,
+    "rel": [
+     -0.003,
+     0.004,
+     0.093
+    ],
+    "bottom": null,
+    "tilt_deg": 3.4
+   }
+  ]
+ },
+ "cont_gso_Bradshaw_International_11642_7_Qt_MP": {
+  "role": "bowl",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "gsor_MINI_ROLLER",
+   "gsor_Office_Depot_Canon_CL_41_Remanufactu",
+   "gso_CoQ10_BjTLbuRVt1t",
+   "prod_gso_Nestle_Nesquik_Chocolate_Powder_Flav"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gsor_MINI_ROLLER",
+    "inside": true,
+    "rel": [
+     -0.0,
+     0.002,
+     0.006
+    ],
+    "bottom": 0.005
+   },
+   {
+    "object": "gsor_Office_Depot_Canon_CL_41_Remanufactu",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.006
+    ],
+    "bottom": 0.002
+   },
+   {
+    "object": "gso_CoQ10_BjTLbuRVt1t",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.0,
+     0.007
+    ],
+    "bottom": 0.002
+   },
+   {
+    "object": "prod_gso_Nestle_Nesquik_Chocolate_Powder_Flav",
+    "inside": true,
+    "rel": [
+     0.001,
+     0.003,
+     0.007
+    ],
+    "bottom": 0.001
+   }
+  ]
+ },
+ "cont_gso_Circo_Fish_Toothbrush_Holder_1499598": {
+  "role": "pen_holder",
+  "n": 0,
+  "inside": 0,
+  "pass": false,
+  "fits": [],
+  "container_drift_mm": null,
+  "trials": [],
+  "hung": true
+ },
+ "cont_gso_Cole_Hardware_Deep_Bowl_Good_Earth_1": {
+  "role": "bowl",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "gsor_Perricone_MD_Chia_Serum",
+   "gsor_PureCadence_2_Color_HiRskRedNghtlfeS",
+   "gsor_SUPERSTAR_CLR",
+   "gsor_Thomas_Friends_Wooden_Railway_Porter"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gsor_Perricone_MD_Chia_Serum",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.001,
+     0.01
+    ],
+    "bottom": 0.008
+   },
+   {
+    "object": "gsor_PureCadence_2_Color_HiRskRedNghtlfeS",
+    "inside": true,
+    "rel": [
+     0.003,
+     0.005,
+     0.034
+    ],
+    "bottom": 0.012
+   },
+   {
+    "object": "gsor_SUPERSTAR_CLR",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.003,
+     0.055
+    ],
+    "bottom": 0.054
+   },
+   {
+    "object": "gsor_Thomas_Friends_Wooden_Railway_Porter",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.01
+    ],
+    "bottom": 0.009
+   }
+  ]
+ },
+ "cont_gso_Cole_Hardware_Mug_Classic_Blue": {
+  "role": "pen_holder",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "item_thor_Pen_1",
+   "item_thor_Pen_2",
+   "item_thor_Pen_3",
+   "item_thor_Pen_4"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "item_thor_Pen_1",
+    "inside": true,
+    "rel": [
+     -0.055,
+     -0.013,
+     0.071
+    ],
+    "bottom": null,
+    "tilt_deg": 33.9
+   },
+   {
+    "object": "item_thor_Pen_2",
+    "inside": true,
+    "rel": [
+     0.006,
+     -0.026,
+     0.07
+    ],
+    "bottom": null,
+    "tilt_deg": 34.7
+   },
+   {
+    "object": "item_thor_Pen_3",
+    "inside": true,
+    "rel": [
+     0.014,
+     0.016,
+     0.071
+    ],
+    "bottom": null,
+    "tilt_deg": 33.9
+   },
+   {
+    "object": "item_thor_Pen_4",
+    "inside": true,
+    "rel": [
+     -0.017,
+     -0.035,
+     0.07
+    ],
+    "bottom": null,
+    "tilt_deg": 35.0
+   }
+  ]
+ },
+ "cont_gso_Room_Essentials_Bowl_Turquiose": {
+  "role": "bowl",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "prod_gso_Canon_Ink_Cartridge_Green_6",
+   "prod_gso_Perricone_MD_No_Lipstick_Lipstick",
+   "prod_gso_QAbsorb_CoQ10",
+   "gsor_Kotex_U_Barely_There_Liners_Thin_60_"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "prod_gso_Canon_Ink_Cartridge_Green_6",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.001,
+     0.012
+    ],
+    "bottom": 0.01
+   },
+   {
+    "object": "prod_gso_Perricone_MD_No_Lipstick_Lipstick",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.011
+    ],
+    "bottom": 0.01
+   },
+   {
+    "object": "prod_gso_QAbsorb_CoQ10",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.011
+    ],
+    "bottom": 0.01
+   },
+   {
+    "object": "gsor_Kotex_U_Barely_There_Liners_Thin_60_",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.011
+    ],
+    "bottom": 0.011
+   }
+  ]
+ },
+ "cont_gso_Room_Essentials_Mug_White_Yellow": {
+  "role": "pen_holder",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "item_thor_Pen_1",
+   "item_thor_Pen_2",
+   "item_thor_Pen_3",
+   "item_thor_Pen_4"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "item_thor_Pen_1",
+    "inside": true,
+    "rel": [
+     -0.009,
+     -0.03,
+     0.084
+    ],
+    "bottom": null,
+    "tilt_deg": 26.3
+   },
+   {
+    "object": "item_thor_Pen_2",
+    "inside": true,
+    "rel": [
+     -0.009,
+     -0.03,
+     0.084
+    ],
+    "bottom": null,
+    "tilt_deg": 26.4
+   },
+   {
+    "object": "item_thor_Pen_3",
+    "inside": true,
+    "rel": [
+     -0.006,
+     -0.03,
+     0.084
+    ],
+    "bottom": null,
+    "tilt_deg": 25.9
+   },
+   {
+    "object": "item_thor_Pen_4",
+    "inside": true,
+    "rel": [
+     -0.009,
+     -0.031,
+     0.084
+    ],
+    "bottom": null,
+    "tilt_deg": 25.5
+   }
+  ]
+ },
+ "cont_gso_Smith_Hawken_Woven_BasketTray_Organi": {
+  "role": "basket",
+  "n": 0,
+  "inside": 0,
+  "pass": false,
+  "fits": [],
+  "container_drift_mm": 0.0,
+  "trials": []
+ },
+ "cont_gso_Spritz_Easter_Basket_Plastic_Teal": {
+  "role": "basket",
+  "n": 4,
+  "inside": 3,
+  "pass": true,
+  "fits": [
+   "gso_CoQ10_BjTLbuRVt1t",
+   "prod_gso_Inositol",
+   "prod_gso_Perricone_MD_No_Foundation_Foundatio"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gso_CoQ10_BjTLbuRVt1t",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.005
+    ],
+    "bottom": 0.003
+   },
+   {
+    "object": "thor_Apple_19",
+    "inside": false,
+    "rel": [
+     -0.043,
+     0.003,
+     0.044
+    ],
+    "bottom": -0.022
+   },
+   {
+    "object": "prod_gso_Inositol",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.005
+    ],
+    "bottom": 0.003
+   },
+   {
+    "object": "prod_gso_Perricone_MD_No_Foundation_Foundatio",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.004
+    ],
+    "bottom": 0.003
+   }
+  ]
+ },
+ "cont_gso_Target_Basket_Medium": {
+  "role": "basket",
+  "n": 4,
+  "inside": 0,
+  "pass": false,
+  "fits": [],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gso_Mastic_Gum",
+    "inside": false,
+    "rel": [
+     0.0,
+     0.003,
+     0.017
+    ],
+    "bottom": 0.013
+   },
+   {
+    "object": "prod_gso_Quercetin_500",
+    "inside": false,
+    "rel": [
+     0.006,
+     0.002,
+     0.031
+    ],
+    "bottom": 0.002
+   },
+   {
+    "object": "gsor_Office_Depot_Canon_CL211XL_Remanufac",
+    "inside": false,
+    "rel": [
+     0.004,
+     0.011,
+     0.031
+    ],
+    "bottom": -0.001
+   },
+   {
+    "object": "gso_Android_Figure_Orange",
+    "inside": false,
+    "rel": [
+     0.012,
+     0.012,
+     0.036
+    ],
+    "bottom": -0.005
+   }
+  ]
+ },
+ "cont_gso_Threshold_Bead_Cereal_Bowl_White": {
+  "role": "bowl",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "gso_Beta_Glucan",
+   "gsor_Perricone_MD_Vitamin_C_Ester_15",
+   "gsor_Office_Depot_Dell_Series_9_Color_Ink",
+   "gsor_Pet_Dophilus_powder"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gso_Beta_Glucan",
+    "inside": true,
+    "rel": [
+     -0.0,
+     0.0,
+     0.009
+    ],
+    "bottom": 0.008
+   },
+   {
+    "object": "gsor_Perricone_MD_Vitamin_C_Ester_15",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.0,
+     0.01
+    ],
+    "bottom": 0.009
+   },
+   {
+    "object": "gsor_Office_Depot_Dell_Series_9_Color_Ink",
+    "inside": true,
+    "rel": [
+     -0.0,
+     0.0,
+     0.009
+    ],
+    "bottom": 0.009
+   },
+   {
+    "object": "gsor_Pet_Dophilus_powder",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.0,
+     0.009
+    ],
+    "bottom": 0.009
+   }
+  ]
+ },
+ "cont_gso_Threshold_Porcelain_Serving_Bowl_Cou": {
+  "role": "bowl",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "gso_BABY_CAR",
+   "gso_COAST_GUARD_BOAT",
+   "gsor_Office_Depot_Canon_PGI5BK_Remanufact",
+   "prod_gso_Kotex_U_Barely_There_Liners_Thin_60_"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gso_BABY_CAR",
+    "inside": true,
+    "rel": [
+     0.001,
+     -0.001,
+     0.011
+    ],
+    "bottom": 0.008
+   },
+   {
+    "object": "gso_COAST_GUARD_BOAT",
+    "inside": true,
+    "rel": [
+     0.001,
+     -0.002,
+     0.011
+    ],
+    "bottom": 0.01
+   },
+   {
+    "object": "gsor_Office_Depot_Canon_PGI5BK_Remanufact",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.0,
+     0.012
+    ],
+    "bottom": 0.012
+   },
+   {
+    "object": "prod_gso_Kotex_U_Barely_There_Liners_Thin_60_",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.0,
+     0.012
+    ],
+    "bottom": 0.01
+   }
+  ]
+ },
+ "cont_ph_cardboard_box_01": {
+  "role": "box",
+  "n": 4,
+  "inside": 0,
+  "pass": false,
+  "fits": [],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gsor_Womens_Multi_13",
+    "inside": false,
+    "rel": [
+     0.021,
+     -0.105,
+     0.331
+    ],
+    "bottom": 0.27
+   },
+   {
+    "object": "prod_gso_Pet_Dophilus_powder",
+    "inside": false,
+    "rel": [
+     0.019,
+     -0.117,
+     0.335
+    ],
+    "bottom": 0.268
+   },
+   {
+    "object": "gsor_Perricone_MD_No_Foundation_Foundatio",
+    "inside": false,
+    "rel": [
+     0.033,
+     -0.102,
+     0.333
+    ],
+    "bottom": 0.289
+   },
+   {
+    "object": "gso_AllergenFree_JarroDophilus",
+    "inside": false,
+    "rel": [
+     0.029,
+     -0.088,
+     0.337
+    ],
+    "bottom": 0.267
+   }
+  ]
+ },
+ "cont_ph_carved_wooden_plate": {
+  "role": "plate",
+  "n": 0,
+  "inside": 0,
+  "pass": false,
+  "fits": [],
+  "container_drift_mm": 0.0,
+  "trials": []
+ },
+ "cont_ph_plastic_crate_01": {
+  "role": "crate",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "gsor_SAMBA_HEMP",
+   "gsor_Jarrow_Formulas_Glucosamine_Hci_Mega",
+   "prod_gso_Perricone_MD_Face_Finishing_Moisturi",
+   "gsor_Reebok_FS_HI_INT_R12"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gsor_SAMBA_HEMP",
+    "inside": true,
+    "rel": [
+     -0.001,
+     -0.0,
+     0.005
+    ],
+    "bottom": 0.005
+   },
+   {
+    "object": "gsor_Jarrow_Formulas_Glucosamine_Hci_Mega",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.006
+    ],
+    "bottom": 0.006
+   },
+   {
+    "object": "prod_gso_Perricone_MD_Face_Finishing_Moisturi",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.0,
+     0.006
+    ],
+    "bottom": 0.005
+   },
+   {
+    "object": "gsor_Reebok_FS_HI_INT_R12",
+    "inside": true,
+    "rel": [
+     -0.001,
+     0.0,
+     0.006
+    ],
+    "bottom": 0.005
+   }
+  ]
+ },
+ "cont_ph_plastic_crate_02": {
+  "role": "crate",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "gsor_Reebok_CL_LTHR_R12",
+   "prod_gso_Office_Depot_HP_932XL_Ink_Cartridge_",
+   "prod_gso_Beta_Glucan",
+   "prod_gso_Crayola_Crayons_Washable_24_crayons"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gsor_Reebok_CL_LTHR_R12",
+    "inside": true,
+    "rel": [
+     -0.006,
+     0.008,
+     0.006
+    ],
+    "bottom": 0.003
+   },
+   {
+    "object": "prod_gso_Office_Depot_HP_932XL_Ink_Cartridge_",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.008
+    ],
+    "bottom": 0.008
+   },
+   {
+    "object": "prod_gso_Beta_Glucan",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.0,
+     0.008
+    ],
+    "bottom": 0.007
+   },
+   {
+    "object": "prod_gso_Crayola_Crayons_Washable_24_crayons",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.0,
+     0.008
+    ],
+    "bottom": 0.007
+   }
+  ]
+ },
+ "cont_ph_wicker_basket_01": {
+  "role": "basket",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "gso_Schleich_Hereford_Bull",
+   "prod_gso_MK7",
+   "prod_gso_JarroSil_Activated_Silicon",
+   "gsor_PureCadence_2_Color_HiRskRedNghtlfeS"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gso_Schleich_Hereford_Bull",
+    "inside": true,
+    "rel": [
+     -0.014,
+     0.001,
+     0.034
+    ],
+    "bottom": 0.012
+   },
+   {
+    "object": "prod_gso_MK7",
+    "inside": true,
+    "rel": [
+     -0.003,
+     -0.0,
+     0.014
+    ],
+    "bottom": 0.014
+   },
+   {
+    "object": "prod_gso_JarroSil_Activated_Silicon",
+    "inside": true,
+    "rel": [
+     -0.002,
+     0.0,
+     0.016
+    ],
+    "bottom": 0.011
+   },
+   {
+    "object": "gsor_PureCadence_2_Color_HiRskRedNghtlfeS",
+    "inside": true,
+    "rel": [
+     -0.002,
+     -0.002,
+     0.015
+    ],
+    "bottom": 0.013
+   }
+  ]
+ },
+ "cont_ph_wicker_basket_02": {
+  "role": "basket",
+  "n": 4,
+  "inside": 3,
+  "pass": true,
+  "fits": [
+   "gsor_Office_Depot_Canon_PGI22_Remanufactu",
+   "gsor_Office_Depot_Canon_PG21XL_Remanufact",
+   "gsor_FIRE_TRUCK"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gsor_Office_Depot_Canon_PGI22_Remanufactu",
+    "inside": true,
+    "rel": [
+     -0.071,
+     -0.028,
+     0.033
+    ],
+    "bottom": 0.019
+   },
+   {
+    "object": "gsor_Office_Depot_Canon_PG21XL_Remanufact",
+    "inside": true,
+    "rel": [
+     -0.07,
+     -0.019,
+     0.013
+    ],
+    "bottom": 0.013
+   },
+   {
+    "object": "gsor_FIRE_TRUCK",
+    "inside": true,
+    "rel": [
+     -0.07,
+     -0.014,
+     0.013
+    ],
+    "bottom": 0.011
+   },
+   {
+    "object": "gso_Great_Dinos_Triceratops_Toy",
+    "inside": false,
+    "rel": [
+     -0.07,
+     -0.033,
+     0.029
+    ],
+    "bottom": -0.012
+   }
+  ]
+ },
+ "cont_ph_wooden_bowl_01": {
+  "role": "bowl",
+  "n": 4,
+  "inside": 3,
+  "pass": true,
+  "fits": [
+   "gsor_Reebok_EASYTONE_CL_LEATHER",
+   "prod_gso_Nestle_Nesquik_Chocolate_Powder_Flav",
+   "prod_gso_Jarrow_Formulas_Glucosamine_Hci_Mega"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gsor_Chelsea_lo_fl_rdheel_nQ0LPNF1oMw",
+    "inside": false,
+    "rel": [
+     -0.407,
+     0.237,
+     0.037
+    ],
+    "bottom": -0.085
+   },
+   {
+    "object": "gsor_Reebok_EASYTONE_CL_LEATHER",
+    "inside": true,
+    "rel": [
+     -0.005,
+     -0.0,
+     0.02
+    ],
+    "bottom": 0.015
+   },
+   {
+    "object": "prod_gso_Nestle_Nesquik_Chocolate_Powder_Flav",
+    "inside": true,
+    "rel": [
+     -0.004,
+     -0.002,
+     0.02
+    ],
+    "bottom": 0.017
+   },
+   {
+    "object": "prod_gso_Jarrow_Formulas_Glucosamine_Hci_Mega",
+    "inside": true,
+    "rel": [
+     -0.003,
+     -0.002,
+     0.018
+    ],
+    "bottom": 0.018
+   }
+  ]
+ },
+ "cont_ph_wooden_bowl_02": {
+  "role": "bowl",
+  "n": 4,
+  "inside": 3,
+  "pass": true,
+  "fits": [
+   "gso_5_HTP",
+   "gsor_Saccharomyces_Boulardii_MOS_Value_Si",
+   "gsor_Perricoen_MD_No_Concealer_Concealer"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gso_5_HTP",
+    "inside": true,
+    "rel": [
+     -0.003,
+     0.0,
+     0.025
+    ],
+    "bottom": 0.007
+   },
+   {
+    "object": "prod_gso_Mastic_Gum",
+    "inside": false,
+    "rel": [
+     -0.001,
+     -0.002,
+     0.027
+    ],
+    "bottom": 0.003
+   },
+   {
+    "object": "gsor_Saccharomyces_Boulardii_MOS_Value_Si",
+    "inside": true,
+    "rel": [
+     -0.0,
+     0.001,
+     0.013
+    ],
+    "bottom": 0.013
+   },
+   {
+    "object": "gsor_Perricoen_MD_No_Concealer_Concealer",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.0,
+     0.014
+    ],
+    "bottom": 0.013
+   }
+  ]
+ },
+ "cont_ph_wooden_crate_01": {
+  "role": "crate",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "gso_Android_Figure_Orange",
+   "gsor_Brother_Printing_Cartridge_PC501",
+   "gsor_Philips_EcoVantage_43_W_Light_Bulbs_",
+   "prod_gso_Philips_EcoVantage_43_W_Light_Bulbs_"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gso_Android_Figure_Orange",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.045,
+     0.336
+    ],
+    "bottom": 0.333
+   },
+   {
+    "object": "gsor_Brother_Printing_Cartridge_PC501",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.045,
+     0.336
+    ],
+    "bottom": 0.336
+   },
+   {
+    "object": "gsor_Philips_EcoVantage_43_W_Light_Bulbs_",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.045,
+     0.336
+    ],
+    "bottom": 0.336
+   },
+   {
+    "object": "prod_gso_Philips_EcoVantage_43_W_Light_Bulbs_",
+    "inside": true,
+    "rel": [
+     -0.0,
+     0.045,
+     0.337
+    ],
+    "bottom": 0.336
+   }
+  ]
+ },
+ "cont_ph_wooden_cutting_board": {
+  "role": "cutting_board",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "gso_FIRE_ENGINE",
+   "gsor_Reebok_JR_ZIG_COOPERSTOWN_MR",
+   "gsor_Philips_EcoVantage_43_W_Light_Bulbs_",
+   "prod_gso_QHPomegranate"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gso_FIRE_ENGINE",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.015,
+     0.037
+    ],
+    "bottom": 0.035
+   },
+   {
+    "object": "gsor_Reebok_JR_ZIG_COOPERSTOWN_MR",
+    "inside": true,
+    "rel": [
+     0.001,
+     -0.016,
+     0.035
+    ],
+    "bottom": 0.032
+   },
+   {
+    "object": "gsor_Philips_EcoVantage_43_W_Light_Bulbs_",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.015,
+     0.037
+    ],
+    "bottom": 0.035
+   },
+   {
+    "object": "prod_gso_QHPomegranate",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.015,
+     0.037
+    ],
+    "bottom": 0.036
+   }
+  ]
+ },
+ "cont_thor_Bowl_1": {
+  "role": "bowl",
+  "n": 4,
+  "inside": 3,
+  "pass": true,
+  "fits": [
+   "gso_Schleich_Lion_Action_Figure",
+   "gso_Bifidus_Balance_FOS",
+   "prod_gso_Crayola_Crayons_24_count"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gso_Schleich_Lion_Action_Figure",
+    "inside": true,
+    "rel": [
+     0.001,
+     0.001,
+     0.005
+    ],
+    "bottom": 0.004
+   },
+   {
+    "object": "gso_Bifidus_Balance_FOS",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.0,
+     0.005
+    ],
+    "bottom": 0.005
+   },
+   {
+    "object": "prod_gso_Polar_Herring_Fillets_Smoked_Peppere",
+    "inside": false,
+    "rel": [
+     -0.003,
+     -0.0,
+     0.006
+    ],
+    "bottom": -0.011
+   },
+   {
+    "object": "prod_gso_Crayola_Crayons_24_count",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.0,
+     0.005
+    ],
+    "bottom": 0.004
+   }
+  ]
+ },
+ "cont_thor_Bowl_2": {
+  "role": "bowl",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "prod_gso_Nintendo_Yoshi_Action_Figure",
+   "gso_Perricone_MD_Face_Finishing_Moisturizer",
+   "prod_gso_Prostate_Optimizer",
+   "gso_Germanium_GE132"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "prod_gso_Nintendo_Yoshi_Action_Figure",
+    "inside": true,
+    "rel": [
+     -0.004,
+     0.008,
+     0.009
+    ],
+    "bottom": 0.008
+   },
+   {
+    "object": "gso_Perricone_MD_Face_Finishing_Moisturizer",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.0,
+     0.009
+    ],
+    "bottom": 0.009
+   },
+   {
+    "object": "prod_gso_Prostate_Optimizer",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.0,
+     0.01
+    ],
+    "bottom": 0.009
+   },
+   {
+    "object": "gso_Germanium_GE132",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.0,
+     0.009
+    ],
+    "bottom": 0.009
+   }
+  ]
+ },
+ "cont_thor_Bowl_3": {
+  "role": "bowl",
+  "n": 4,
+  "inside": 2,
+  "pass": false,
+  "fits": [
+   "gsor_Perricone_MD_Omega_3_Supplements",
+   "gso_Hyaluronic_Acid"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gsor_Nintendo_Mario_Action_Figure",
+    "inside": false,
+    "rel": [
+     -0.002,
+     -0.008,
+     0.015
+    ],
+    "bottom": -0.011
+   },
+   {
+    "object": "gsor_Perricone_MD_Omega_3_Supplements",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.0,
+     0.005
+    ],
+    "bottom": 0.005
+   },
+   {
+    "object": "gso_Hyaluronic_Acid",
+    "inside": true,
+    "rel": [
+     -0.0,
+     0.0,
+     0.005
+    ],
+    "bottom": 0.004
+   },
+   {
+    "object": "prod_gso_Office_Depot_Dell_Series_9_Ink_Cartr",
+    "inside": false,
+    "rel": [
+     -47.4,
+     -12.0,
+     0.0
+    ],
+    "bottom": -0.002
+   }
+  ]
+ },
+ "cont_thor_Bowl_4": {
+  "role": "bowl",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "gso_Schleich_Bald_Eagle",
+   "gsor_BUNNY_RATTLE",
+   "prod_gso_PhosphOmega",
+   "gsor_MINI_ROLLER"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gso_Schleich_Bald_Eagle",
+    "inside": true,
+    "rel": [
+     0.003,
+     -0.004,
+     0.003
+    ],
+    "bottom": 0.002
+   },
+   {
+    "object": "gsor_BUNNY_RATTLE",
+    "inside": true,
+    "rel": [
+     -0.004,
+     0.009,
+     0.003
+    ],
+    "bottom": 0.003
+   },
+   {
+    "object": "prod_gso_PhosphOmega",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.0,
+     0.003
+    ],
+    "bottom": 0.003
+   },
+   {
+    "object": "gsor_MINI_ROLLER",
+    "inside": true,
+    "rel": [
+     -0.001,
+     -0.0,
+     0.003
+    ],
+    "bottom": 0.002
+   }
+  ]
+ },
+ "cont_thor_Bowl_5": {
+  "role": "bowl",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "prod_gso_Womens_Multi_13",
+   "prod_gso_QAbsorb_CoQ10_53iUqjWjW3O",
+   "gsor_Teenage_Mutant_Ninja_Turtles_Rahzar_",
+   "prod_gso_Perricone_MD_No_Mascara_Mascara"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "prod_gso_Womens_Multi_13",
+    "inside": true,
+    "rel": [
+     -0.0,
+     0.0,
+     0.003
+    ],
+    "bottom": 0.003
+   },
+   {
+    "object": "prod_gso_QAbsorb_CoQ10_53iUqjWjW3O",
+    "inside": true,
+    "rel": [
+     -0.0,
+     0.0,
+     0.003
+    ],
+    "bottom": 0.001
+   },
+   {
+    "object": "gsor_Teenage_Mutant_Ninja_Turtles_Rahzar_",
+    "inside": true,
+    "rel": [
+     0.001,
+     -0.001,
+     0.003
+    ],
+    "bottom": 0.003
+   },
+   {
+    "object": "prod_gso_Perricone_MD_No_Mascara_Mascara",
+    "inside": true,
+    "rel": [
+     -0.0,
+     0.0,
+     0.004
+    ],
+    "bottom": 0.003
+   }
+  ]
+ },
+ "cont_thor_Bowl_6": {
+  "role": "bowl",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "prod_gso_Nestle_Nesquik_Chocolate_Powder_Flav",
+   "prod_gso_Perricone_MD_Photo_Plasma",
+   "prod_gso_NattoMax",
+   "prod_gso_Wilton_Pearlized_Sugar_Sprinkles_525"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "prod_gso_Nestle_Nesquik_Chocolate_Powder_Flav",
+    "inside": true,
+    "rel": [
+     -0.001,
+     -0.001,
+     0.013
+    ],
+    "bottom": 0.012
+   },
+   {
+    "object": "prod_gso_Perricone_MD_Photo_Plasma",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.0,
+     0.022
+    ],
+    "bottom": 0.017
+   },
+   {
+    "object": "prod_gso_NattoMax",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.0,
+     0.008
+    ],
+    "bottom": 0.007
+   },
+   {
+    "object": "prod_gso_Wilton_Pearlized_Sugar_Sprinkles_525",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.0,
+     0.008
+    ],
+    "bottom": 0.008
+   }
+  ]
+ },
+ "cont_thor_Cup_1": {
+  "role": "cup",
+  "n": 0,
+  "inside": 0,
+  "pass": false,
+  "fits": [],
+  "container_drift_mm": 0.0,
+  "trials": []
+ },
+ "cont_thor_Cup_2": {
+  "role": "cup",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "gsor_Perricone_MD_No_Foundation_Serum",
+   "gso_Germanium_GE132",
+   "gsor_JarroDophilusFOS_Value_Size",
+   "gsor_Perricone_MD_High_Potency_Evening_Re"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gsor_Perricone_MD_No_Foundation_Serum",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.016
+    ],
+    "bottom": 0.015
+   },
+   {
+    "object": "gso_Germanium_GE132",
+    "inside": true,
+    "rel": [
+     -0.0,
+     0.0,
+     0.016
+    ],
+    "bottom": 0.014
+   },
+   {
+    "object": "gsor_JarroDophilusFOS_Value_Size",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.0,
+     0.016
+    ],
+    "bottom": 0.015
+   },
+   {
+    "object": "gsor_Perricone_MD_High_Potency_Evening_Re",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.0,
+     0.016
+    ],
+    "bottom": 0.015
+   }
+  ]
+ },
+ "cont_thor_Mug_1": {
+  "role": "cup",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "gsor_Twinlab_Nitric_Fuel",
+   "prod_gso_Germanium_GE132",
+   "gsor_Perricoen_MD_No_Concealer_Concealer",
+   "gsor_PhosphOmega"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gsor_Twinlab_Nitric_Fuel",
+    "inside": true,
+    "rel": [
+     -0.013,
+     0.0,
+     0.012
+    ],
+    "bottom": 0.011
+   },
+   {
+    "object": "prod_gso_Germanium_GE132",
+    "inside": true,
+    "rel": [
+     -0.013,
+     -0.0,
+     0.012
+    ],
+    "bottom": 0.011
+   },
+   {
+    "object": "gsor_Perricoen_MD_No_Concealer_Concealer",
+    "inside": true,
+    "rel": [
+     -0.013,
+     -0.0,
+     0.012
+    ],
+    "bottom": 0.011
+   },
+   {
+    "object": "gsor_PhosphOmega",
+    "inside": true,
+    "rel": [
+     -0.013,
+     0.0,
+     0.012
+    ],
+    "bottom": 0.011
+   }
+  ]
+ },
+ "cont_thor_Mug_2": {
+  "role": "cup",
+  "n": 1,
+  "inside": 1,
+  "pass": true,
+  "fits": [
+   "prod_gso_YumYum_D3_Liquid"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "prod_gso_YumYum_D3_Liquid",
+    "inside": true,
+    "rel": [
+     -0.011,
+     -0.0,
+     0.012
+    ],
+    "bottom": 0.011
+   }
+  ]
+ },
+ "cont_thor_Plate_4": {
+  "role": "plate",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "gsor_Perricone_MD_Chia_Serum",
+   "gsor_Perricone_MD_No_Foundation_Serum",
+   "gsor_Perricoen_MD_No_Concealer_Concealer",
+   "prod_gso_YumYum_D3_Liquid"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gsor_Perricone_MD_Chia_Serum",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.005
+    ],
+    "bottom": 0.004
+   },
+   {
+    "object": "gsor_Perricone_MD_No_Foundation_Serum",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.0,
+     0.005
+    ],
+    "bottom": 0.005
+   },
+   {
+    "object": "gsor_Perricoen_MD_No_Concealer_Concealer",
+    "inside": true,
+    "rel": [
+     -0.0,
+     0.0,
+     0.005
+    ],
+    "bottom": 0.004
+   },
+   {
+    "object": "prod_gso_YumYum_D3_Liquid",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.005
+    ],
+    "bottom": 0.004
+   }
+  ]
+ },
+ "cont_thor_Pot_1": {
+  "role": "pot",
+  "n": 4,
+  "inside": 3,
+  "pass": true,
+  "fits": [
+   "gso_CoQ10_wSSVoxVppVD",
+   "gso_Phillips_Caplets_Size_24",
+   "prod_gso_Canon_Ink_Cartridge_Green_6"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gso_CoQ10_wSSVoxVppVD",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.105,
+     0.004
+    ],
+    "bottom": 0.004
+   },
+   {
+    "object": "gso_Phillips_Caplets_Size_24",
+    "inside": true,
+    "rel": [
+     0.005,
+     -0.098,
+     0.004
+    ],
+    "bottom": 0.004
+   },
+   {
+    "object": "prod_gso_Canon_Ink_Cartridge_Green_6",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.105,
+     0.004
+    ],
+    "bottom": 0.004
+   },
+   {
+    "object": "gsor_Olive_Kids_Robots_Pencil_Case",
+    "inside": false,
+    "rel": [
+     0.007,
+     -0.106,
+     0.02
+    ],
+    "bottom": -0.017
+   }
+  ]
+ },
+ "cont_thor_Sink_1": {
+  "role": "sink",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "gso_Mastic_Gum",
+   "gsor_Inositol",
+   "prod_gso_LTyrosine",
+   "prod_gso_QHPomegranate"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gso_Mastic_Gum",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.295,
+     1.038
+    ],
+    "bottom": 1.037
+   },
+   {
+    "object": "gsor_Inositol",
+    "inside": true,
+    "rel": [
+     -0.0,
+     0.295,
+     1.038
+    ],
+    "bottom": 1.038
+   },
+   {
+    "object": "prod_gso_LTyrosine",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.295,
+     1.038
+    ],
+    "bottom": 1.037
+   },
+   {
+    "object": "prod_gso_QHPomegranate",
+    "inside": true,
+    "rel": [
+     -0.0,
+     0.295,
+     1.038
+    ],
+    "bottom": 1.037
+   }
+  ]
+ },
+ "cont_thor_Sink_2": {
+  "role": "sink",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "gso_Lactoferrin",
+   "gso_FIRE_ENGINE",
+   "prod_gso_FemDophilus",
+   "gso_Perricone_MD_Face_Finishing_Moisturizer"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gso_Lactoferrin",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.07,
+     0.066
+    ],
+    "bottom": 0.065
+   },
+   {
+    "object": "gso_FIRE_ENGINE",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.071,
+     0.066
+    ],
+    "bottom": 0.065
+   },
+   {
+    "object": "prod_gso_FemDophilus",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.07,
+     0.066
+    ],
+    "bottom": 0.066
+   },
+   {
+    "object": "gso_Perricone_MD_Face_Finishing_Moisturizer",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.07,
+     0.066
+    ],
+    "bottom": 0.066
+   }
+  ]
+ },
+ "cont_thor_Sink_3": {
+  "role": "sink",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "gsor_Perricoen_MD_No_Concealer_Concealer",
+   "gsor_F10_TRX_FG_ssscuo9tGxb",
+   "gsor_Reebok_ULTIMATIC_2V",
+   "gsor_Cascadia_8_Color_AquariusHibscsBeari"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gsor_Perricoen_MD_No_Concealer_Concealer",
+    "inside": true,
+    "rel": [
+     -0.001,
+     -0.0,
+     0.009
+    ],
+    "bottom": 0.008
+   },
+   {
+    "object": "gsor_F10_TRX_FG_ssscuo9tGxb",
+    "inside": true,
+    "rel": [
+     0.001,
+     0.001,
+     0.013
+    ],
+    "bottom": 0.002
+   },
+   {
+    "object": "gsor_Reebok_ULTIMATIC_2V",
+    "inside": true,
+    "rel": [
+     0.002,
+     -0.009,
+     0.012
+    ],
+    "bottom": 0.006
+   },
+   {
+    "object": "gsor_Cascadia_8_Color_AquariusHibscsBeari",
+    "inside": true,
+    "rel": [
+     0.002,
+     -0.005,
+     0.01
+    ],
+    "bottom": 0.004
+   }
+  ]
+ },
+ "cont_thor_bin_1": {
+  "role": "trash_can",
+  "n": 4,
+  "inside": 2,
+  "pass": false,
+  "fits": [
+   "gsor_Perricone_MD_No_Bronzer_Bronzer",
+   "prod_gso_Office_Depot_HP_61Tricolor_Ink_Cartr"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gsor_Perricone_MD_No_Bronzer_Bronzer",
+    "inside": true,
+    "rel": [
+     -0.001,
+     -0.001,
+     0.136
+    ],
+    "bottom": 0.135
+   },
+   {
+    "object": "gsor_Glycerin_11_Color_AqrsDrsdnBluBlkSlv",
+    "inside": false,
+    "rel": [
+     -0.026,
+     0.014,
+     0.135
+    ],
+    "bottom": 0.133
+   },
+   {
+    "object": "prod_gso_Office_Depot_HP_61Tricolor_Ink_Cartr",
+    "inside": true,
+    "rel": [
+     0.0,
+     0.0,
+     0.136
+    ],
+    "bottom": 0.135
+   },
+   {
+    "object": "gsor_Office_Depot_HP_564XL_Ink_Cartridge_",
+    "inside": false,
+    "rel": [
+     -0.025,
+     0.019,
+     0.153
+    ],
+    "bottom": 0.118
+   }
+  ]
+ },
+ "cont_thor_bin_10": {
+  "role": "trash_can",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "prod_gso_Perricone_MD_High_Potency_Evening_Re",
+   "prod_gso_OXO_Soft_Works_Can_Opener_SnapLock",
+   "gsor_3D_Dollhouse_Sink",
+   "gsor_Brother_Printing_Cartridge_PC501"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "prod_gso_Perricone_MD_High_Potency_Evening_Re",
+    "inside": true,
+    "rel": [
+     0.001,
+     0.0,
+     0.238
+    ],
+    "bottom": 0.238
+   },
+   {
+    "object": "prod_gso_OXO_Soft_Works_Can_Opener_SnapLock",
+    "inside": true,
+    "rel": [
+     -0.014,
+     0.01,
+     0.237
+    ],
+    "bottom": 0.232
+   },
+   {
+    "object": "gsor_3D_Dollhouse_Sink",
+    "inside": true,
+    "rel": [
+     -0.0,
+     0.0,
+     0.238
+    ],
+    "bottom": 0.237
+   },
+   {
+    "object": "gsor_Brother_Printing_Cartridge_PC501",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.0,
+     0.237
+    ],
+    "bottom": 0.237
+   }
+  ]
+ },
+ "cont_thor_bin_12": {
+  "role": "trash_can",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "gsor_Perricone_MD_OVM",
+   "prod_gso_Office_Depot_HP_98_Remanufactured_In",
+   "gso_DIM_CDG",
+   "gso_Theanine"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "gsor_Perricone_MD_OVM",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.0,
+     0.13
+    ],
+    "bottom": 0.129
+   },
+   {
+    "object": "prod_gso_Office_Depot_HP_98_Remanufactured_In",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.0,
+     0.13
+    ],
+    "bottom": 0.129
+   },
+   {
+    "object": "gso_DIM_CDG",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.0,
+     0.13
+    ],
+    "bottom": 0.129
+   },
+   {
+    "object": "gso_Theanine",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.13
+    ],
+    "bottom": 0.129
+   }
+  ]
+ },
+ "cont_thor_bin_13": {
+  "role": "trash_can",
+  "n": 4,
+  "inside": 4,
+  "pass": true,
+  "fits": [
+   "prod_gso_Brother_LC_1053PKS_Ink_Cartridge_Cya",
+   "gso_NattoMax",
+   "prod_gso_AllergenFree_JarroDophilus",
+   "prod_gso_Womens_Multi_13"
+  ],
+  "container_drift_mm": 0.0,
+  "trials": [
+   {
+    "object": "prod_gso_Brother_LC_1053PKS_Ink_Cartridge_Cya",
+    "inside": true,
+    "rel": [
+     0.0,
+     -0.0,
+     0.129
+    ],
+    "bottom": 0.128
+   },
+   {
+    "object": "gso_NattoMax",
+    "inside": true,
+    "rel": [
+     -0.0,
+     -0.0,
+     0.129
+    ],
+    "bottom": 0.128
+   },
+   {
+    "object": "prod_gso_AllergenFree_JarroDophilus",
+    "inside": true,
+    "rel": [
+     -0.0,
+     0.0,
+     0.129
+    ],
+    "bottom": 0.129
+   },
+   {
+    "object": "prod_gso_Womens_Multi_13",
+    "inside": true,
+    "rel": [
+     -0.0,
+     0.0,
+     0.129
+    ],
+    "bottom": 0.129
+   }
+  ]
+ }
+}

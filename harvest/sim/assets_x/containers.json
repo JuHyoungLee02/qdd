@@ -1,0 +1,5959 @@
+{
+ "license": "CC BY 4.0 (GSO, THOR) / CC0 1.0 (Poly Haven) / ours (blender jars)",
+ "containers": {
+  "cont_gso_Target_Basket_Medium": {
+   "height": 0.2175,
+   "grasp_width": 0.268,
+   "length": 0.3593,
+   "grasp_yaw": 1.5708,
+   "boxiness": 0.067,
+   "caliper_centre": [
+    0.0003,
+    -0.0001
+   ],
+   "handle_ratio": 1.308,
+   "circularity": 0.644,
+   "sphericity": 0.0,
+   "footprint_r": 0.1904,
+   "centre_xy": [
+    0.0001,
+    0.0003
+   ],
+   "bottom_z": -0.0,
+   "source": "Google Scanned Objects",
+   "source_name": "Target_Basket_Medium",
+   "colour": null,
+   "noun": "basket",
+   "name_check": {
+    "claimed": "basket",
+    "noun": "basket",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/gso/models/Target_Basket_Medium/model_qdd_kin.usda",
+   "root_above_bottom": 0.0,
+   "category": "basket",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0001,
+    0.0003
+   ],
+   "half_extents": [
+    0.1352,
+    0.134,
+    0.1088
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)",
+   "id": "cont_gso_Target_Basket_Medium",
+   "role": "basket",
+   "kinematic": true,
+   "size": [
+    0.2705,
+    0.268,
+    0.2175
+   ],
+   "origin_from_root": [
+    0.0001,
+    0.0003,
+    0.1087
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0521,
+    "rim_z": 0.2118,
+    "inner_box": [
+     [
+      -0.07,
+      0.05
+     ],
+     [
+      -0.06,
+      0.05
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.1089,
+      0.1085
+     ],
+     [
+      -0.1084,
+      0.1137
+     ]
+    ],
+    "opening_min_side": 0.2174,
+    "depth": 0.1596
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.0521,
+   "inner_box": [
+    [
+     -0.0699,
+     0.0501
+    ],
+    [
+     -0.0597,
+     0.0503
+    ]
+   ],
+   "rim_z": 0.2118,
+   "opening_box": [
+    [
+     -0.1088,
+     0.1086
+    ],
+    [
+     -0.1081,
+     0.114
+    ]
+   ],
+   "gate_pass": false,
+   "gate_fits": [],
+   "gate_n": 4,
+   "gate_inside": 0,
+   "gate_hung": false
+  },
+  "cont_gso_Threshold_Basket_Natural_Finish_Fabr": {
+   "height": 0.1476,
+   "grasp_width": 0.1622,
+   "length": 0.2754,
+   "grasp_yaw": 1.5708,
+   "boxiness": 0.123,
+   "caliper_centre": [
+    0.0002,
+    -0.0001
+   ],
+   "handle_ratio": 1.362,
+   "circularity": 0.496,
+   "sphericity": 0.0,
+   "footprint_r": 0.1445,
+   "centre_xy": [
+    0.0001,
+    0.0002
+   ],
+   "bottom_z": -0.0,
+   "source": "Google Scanned Objects",
+   "source_name": "Threshold_Basket_Natural_Finish_Fabric_Liner_Small",
+   "colour": null,
+   "noun": "basket",
+   "name_check": {
+    "claimed": "basket",
+    "noun": "basket",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/gso/models/Threshold_Basket_Natural_Finish_Fabric_Liner_Small/model_qdd_kin.usda",
+   "root_above_bottom": 0.0,
+   "category": "basket",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0001,
+    0.0002
+   ],
+   "half_extents": [
+    0.1196,
+    0.0811,
+    0.0738
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)",
+   "id": "cont_gso_Threshold_Basket_Natural_Finish_Fabr",
+   "role": "basket",
+   "kinematic": true,
+   "size": [
+    0.2393,
+    0.1622,
+    0.1476
+   ],
+   "origin_from_root": [
+    0.0001,
+    0.0002,
+    0.0738
+   ],
+   "inside": null,
+   "place_kind": null,
+   "inner_floor_z": null,
+   "inner_box": null,
+   "rim_z": null,
+   "gate_pass": false,
+   "gate_fits": [],
+   "gate_n": 0,
+   "gate_inside": 0,
+   "gate_hung": false
+  },
+  "cont_gso_Spritz_Easter_Basket_Plastic_Teal": {
+   "height": 0.1289,
+   "grasp_width": 0.1815,
+   "length": 0.1982,
+   "grasp_yaw": 1.6406,
+   "boxiness": 0.236,
+   "caliper_centre": [
+    0.0004,
+    -0.0002
+   ],
+   "handle_ratio": 1.147,
+   "circularity": 0.765,
+   "sphericity": 0.0,
+   "footprint_r": 0.1322,
+   "centre_xy": [
+    0.0004,
+    0.0004
+   ],
+   "bottom_z": -0.0001,
+   "source": "Google Scanned Objects",
+   "source_name": "Spritz_Easter_Basket_Plastic_Teal",
+   "colour": null,
+   "noun": "basket",
+   "name_check": {
+    "claimed": "basket",
+    "noun": "basket",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/gso/models/Spritz_Easter_Basket_Plastic_Teal/model_qdd_kin.usda",
+   "root_above_bottom": 0.0001,
+   "category": "basket",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0004,
+    0.0004
+   ],
+   "half_extents": [
+    0.0956,
+    0.0913,
+    0.0645
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)",
+   "id": "cont_gso_Spritz_Easter_Basket_Plastic_Teal",
+   "role": "basket",
+   "kinematic": true,
+   "size": [
+    0.1913,
+    0.1826,
+    0.1289
+   ],
+   "origin_from_root": [
+    0.0004,
+    0.0004,
+    0.0644
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0042,
+    "rim_z": 0.1277,
+    "inner_box": [
+     [
+      -0.05,
+      0.05
+     ],
+     [
+      -0.06,
+      0.06
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.0924,
+      0.0931
+     ],
+     [
+      -0.0891,
+      0.0882
+     ]
+    ],
+    "opening_min_side": 0.1774,
+    "depth": 0.1235
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.0041,
+   "inner_box": [
+    [
+     -0.0496,
+     0.0504
+    ],
+    [
+     -0.0596,
+     0.0604
+    ]
+   ],
+   "rim_z": 0.1276,
+   "opening_box": [
+    [
+     -0.092,
+     0.0935
+    ],
+    [
+     -0.0887,
+     0.0886
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gso_CoQ10_BjTLbuRVt1t",
+    "prod_gso_Inositol",
+    "prod_gso_Perricone_MD_No_Foundation_Foundatio"
+   ],
+   "gate_n": 4,
+   "gate_inside": 3,
+   "gate_hung": false
+  },
+  "cont_gso_RJ_Rabbit_Easter_Basket_Blue": {
+   "height": 0.2352,
+   "grasp_width": 0.1636,
+   "length": 0.2098,
+   "grasp_yaw": 1.5708,
+   "boxiness": 0.092,
+   "caliper_centre": [
+    -0.0001,
+    0.0002
+   ],
+   "handle_ratio": 1.379,
+   "circularity": 0.585,
+   "sphericity": 0.0,
+   "footprint_r": 0.1321,
+   "centre_xy": [
+    -0.0002,
+    -0.0001
+   ],
+   "bottom_z": -0.0,
+   "source": "Google Scanned Objects",
+   "source_name": "RJ_Rabbit_Easter_Basket_Blue",
+   "colour": null,
+   "noun": "basket",
+   "name_check": {
+    "claimed": "basket",
+    "noun": "basket",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/gso/models/RJ_Rabbit_Easter_Basket_Blue/model_qdd_kin.usda",
+   "root_above_bottom": 0.0,
+   "category": "basket",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    -0.0002,
+    -0.0001
+   ],
+   "half_extents": [
+    0.1037,
+    0.0818,
+    0.1176
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)",
+   "id": "cont_gso_RJ_Rabbit_Easter_Basket_Blue",
+   "role": "basket",
+   "kinematic": true,
+   "size": [
+    0.2074,
+    0.1636,
+    0.2352
+   ],
+   "origin_from_root": [
+    -0.0002,
+    -0.0001,
+    0.1175
+   ],
+   "inside": null,
+   "place_kind": null,
+   "inner_floor_z": null,
+   "inner_box": null,
+   "rim_z": null,
+   "gate_pass": false,
+   "gate_fits": [],
+   "gate_n": 0,
+   "gate_inside": 0,
+   "gate_hung": false
+  },
+  "cont_gso_Smith_Hawken_Woven_BasketTray_Organi": {
+   "height": 0.2687,
+   "grasp_width": 0.2575,
+   "length": 0.3916,
+   "grasp_yaw": 1.5708,
+   "boxiness": 0.027,
+   "caliper_centre": [
+    -0.0021,
+    0.0
+   ],
+   "handle_ratio": 1.386,
+   "circularity": 0.212,
+   "sphericity": 0.0,
+   "footprint_r": 0.2216,
+   "centre_xy": [
+    -0.0,
+    -0.0021
+   ],
+   "bottom_z": 0.0001,
+   "source": "Google Scanned Objects",
+   "source_name": "Smith_Hawken_Woven_BasketTray_Organizer_with_3_Compartments_95_x_9_x_13",
+   "colour": null,
+   "noun": "basket",
+   "name_check": {
+    "claimed": "basket",
+    "noun": "basket",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/gso/models/Smith_Hawken_Woven_BasketTray_Organizer_with_3_Compartments_95_x_9_x_13/model_qdd_kin.usda",
+   "root_above_bottom": -0.0001,
+   "category": "basket",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    -0.0,
+    -0.0021
+   ],
+   "half_extents": [
+    0.1804,
+    0.1287,
+    0.1344
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)",
+   "id": "cont_gso_Smith_Hawken_Woven_BasketTray_Organi",
+   "role": "basket",
+   "kinematic": true,
+   "size": [
+    0.3607,
+    0.2575,
+    0.2687
+   ],
+   "origin_from_root": [
+    -0.0,
+    -0.0021,
+    0.1344
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.1017,
+    "rim_z": 0.2097,
+    "inner_box": [
+     [
+      -0.1,
+      0.14
+     ],
+     [
+      -0.02,
+      0.02
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.158,
+      0.1568
+     ],
+     [
+      -0.02,
+      0.0315
+     ]
+    ],
+    "opening_min_side": 0.0515,
+    "depth": 0.108
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.1018,
+   "inner_box": [
+    [
+     -0.1,
+     0.14
+    ],
+    [
+     -0.0221,
+     0.0179
+    ]
+   ],
+   "rim_z": 0.2098,
+   "opening_box": [
+    [
+     -0.158,
+     0.1568
+    ],
+    [
+     -0.0221,
+     0.0294
+    ]
+   ],
+   "gate_pass": false,
+   "gate_fits": [],
+   "gate_n": 0,
+   "gate_inside": 0,
+   "gate_hung": false
+  },
+  "cont_gso_BIA_Cordon_Bleu_White_Porcelain_Uten": {
+   "height": 0.1752,
+   "grasp_width": 0.1475,
+   "length": 0.1489,
+   "grasp_yaw": 0.0349,
+   "boxiness": 0.146,
+   "caliper_centre": [
+    0.0,
+    0.0001
+   ],
+   "handle_ratio": 1.064,
+   "circularity": 0.894,
+   "sphericity": 0.848,
+   "footprint_r": 0.1048,
+   "centre_xy": [
+    0.0,
+    0.0
+   ],
+   "bottom_z": -0.0001,
+   "source": "Google Scanned Objects",
+   "source_name": "BIA_Cordon_Bleu_White_Porcelain_Utensil_Holder_900028",
+   "colour": null,
+   "noun": "pen_holder",
+   "name_check": {
+    "claimed": "pen_holder",
+    "noun": "pen_holder",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/gso/models/BIA_Cordon_Bleu_White_Porcelain_Utensil_Holder_900028/model_qdd_kin.usda",
+   "root_above_bottom": 0.0001,
+   "category": "pen_holder",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    0.0
+   ],
+   "half_extents": [
+    0.0738,
+    0.0744,
+    0.0876
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)",
+   "id": "cont_gso_BIA_Cordon_Bleu_White_Porcelain_Uten",
+   "role": "pen_holder",
+   "kinematic": true,
+   "size": [
+    0.1476,
+    0.1488,
+    0.1752
+   ],
+   "origin_from_root": [
+    0.0,
+    0.0,
+    0.0875
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0102,
+    "rim_z": 0.1742,
+    "inner_box": [
+     [
+      -0.04,
+      0.05
+     ],
+     [
+      -0.04,
+      0.04
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.0636,
+      0.0638
+     ],
+     [
+      -0.0633,
+      0.0634
+     ]
+    ],
+    "opening_min_side": 0.1266,
+    "depth": 0.164
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.0101,
+   "inner_box": [
+    [
+     -0.04,
+     0.05
+    ],
+    [
+     -0.04,
+     0.04
+    ]
+   ],
+   "rim_z": 0.1741,
+   "opening_box": [
+    [
+     -0.0636,
+     0.0638
+    ],
+    [
+     -0.0633,
+     0.0634
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "item_thor_Pen_1",
+    "item_thor_Pen_2",
+    "item_thor_Pen_3",
+    "item_thor_Pen_4"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_gso_Circo_Fish_Toothbrush_Holder_1499598": {
+   "height": 0.1019,
+   "grasp_width": 0.1057,
+   "length": 0.155,
+   "grasp_yaw": 0.0349,
+   "boxiness": 0.116,
+   "caliper_centre": [
+    0.0015,
+    -0.0004
+   ],
+   "handle_ratio": 1.616,
+   "circularity": 0.399,
+   "sphericity": 0.0,
+   "footprint_r": 0.0937,
+   "centre_xy": [
+    0.0008,
+    -0.0002
+   ],
+   "bottom_z": -0.0,
+   "source": "Google Scanned Objects",
+   "source_name": "Circo_Fish_Toothbrush_Holder_14995988",
+   "colour": null,
+   "noun": "pen_holder",
+   "name_check": {
+    "claimed": "pen_holder",
+    "noun": "pen_holder",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/gso/models/Circo_Fish_Toothbrush_Holder_14995988/model_qdd_kin.usda",
+   "root_above_bottom": 0.0,
+   "category": "pen_holder",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0008,
+    -0.0002
+   ],
+   "half_extents": [
+    0.0529,
+    0.0773,
+    0.0509
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)",
+   "id": "cont_gso_Circo_Fish_Toothbrush_Holder_1499598",
+   "role": "pen_holder",
+   "kinematic": true,
+   "size": [
+    0.1058,
+    0.1547,
+    0.1019
+   ],
+   "origin_from_root": [
+    0.0008,
+    -0.0002,
+    0.0509
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0276,
+    "rim_z": 0.0904,
+    "inner_box": [
+     [
+      -0.02,
+      0.0
+     ],
+     [
+      0.01,
+      0.03
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.0226,
+      0.021
+     ],
+     [
+      0.0005,
+      0.0372
+     ]
+    ],
+    "opening_min_side": 0.0367,
+    "depth": 0.0628
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.0276,
+   "inner_box": [
+    [
+     -0.0192,
+     0.0008
+    ],
+    [
+     0.0098,
+     0.0298
+    ]
+   ],
+   "rim_z": 0.0904,
+   "opening_box": [
+    [
+     -0.0218,
+     0.0218
+    ],
+    [
+     0.0003,
+     0.037
+    ]
+   ],
+   "gate_pass": false,
+   "gate_fits": [],
+   "gate_n": 0,
+   "gate_inside": 0,
+   "gate_hung": true
+  },
+  "cont_gso_Cole_Hardware_Mug_Classic_Blue": {
+   "height": 0.0948,
+   "grasp_width": 0.1254,
+   "length": 0.1658,
+   "grasp_yaw": 1.4312,
+   "boxiness": 0.193,
+   "caliper_centre": [
+    -0.0049,
+    0.0005
+   ],
+   "handle_ratio": 1.391,
+   "circularity": 0.504,
+   "sphericity": 0.0,
+   "footprint_r": 0.1039,
+   "centre_xy": [
+    -0.0,
+    -0.0022
+   ],
+   "bottom_z": -0.0,
+   "source": "Google Scanned Objects",
+   "source_name": "Cole_Hardware_Mug_Classic_Blue",
+   "colour": null,
+   "noun": "pen_holder",
+   "name_check": {
+    "claimed": "pen_holder",
+    "noun": "pen_holder",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/gso/models/Cole_Hardware_Mug_Classic_Blue/model_qdd_kin.usda",
+   "root_above_bottom": 0.0,
+   "category": "pen_holder",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    -0.0,
+    -0.0022
+   ],
+   "half_extents": [
+    0.0828,
+    0.0628,
+    0.0474
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)",
+   "id": "cont_gso_Cole_Hardware_Mug_Classic_Blue",
+   "role": "pen_holder",
+   "kinematic": true,
+   "size": [
+    0.1657,
+    0.1255,
+    0.0948
+   ],
+   "origin_from_root": [
+    -0.0,
+    -0.0022,
+    0.0474
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0097,
+    "rim_z": 0.0945,
+    "inner_box": [
+     [
+      -0.05,
+      0.01
+     ],
+     [
+      -0.03,
+      0.03
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.0751,
+      0.0356
+     ],
+     [
+      -0.0545,
+      0.0542
+     ]
+    ],
+    "opening_min_side": 0.1087,
+    "depth": 0.0848
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.0097,
+   "inner_box": [
+    [
+     -0.05,
+     0.01
+    ],
+    [
+     -0.0322,
+     0.0278
+    ]
+   ],
+   "rim_z": 0.0945,
+   "opening_box": [
+    [
+     -0.0751,
+     0.0356
+    ],
+    [
+     -0.0567,
+     0.052
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "item_thor_Pen_1",
+    "item_thor_Pen_2",
+    "item_thor_Pen_3",
+    "item_thor_Pen_4"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_gso_Room_Essentials_Mug_White_Yellow": {
+   "height": 0.1048,
+   "grasp_width": 0.1019,
+   "length": 0.1383,
+   "grasp_yaw": 1.2915,
+   "boxiness": 0.159,
+   "caliper_centre": [
+    -0.0092,
+    0.0016
+   ],
+   "handle_ratio": 1.714,
+   "circularity": 0.353,
+   "sphericity": 0.756,
+   "footprint_r": 0.0854,
+   "centre_xy": [
+    -0.0002,
+    -0.0046
+   ],
+   "bottom_z": -0.0,
+   "source": "Google Scanned Objects",
+   "source_name": "Room_Essentials_Mug_White_Yellow",
+   "colour": null,
+   "noun": "pen_holder",
+   "name_check": {
+    "claimed": "pen_holder",
+    "noun": "pen_holder",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/gso/models/Room_Essentials_Mug_White_Yellow/model_qdd_kin.usda",
+   "root_above_bottom": 0.0,
+   "category": "pen_holder",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    -0.0002,
+    -0.0046
+   ],
+   "half_extents": [
+    0.0684,
+    0.0511,
+    0.0524
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)",
+   "id": "cont_gso_Room_Essentials_Mug_White_Yellow",
+   "role": "pen_holder",
+   "kinematic": true,
+   "size": [
+    0.1368,
+    0.1022,
+    0.1048
+   ],
+   "origin_from_root": [
+    -0.0002,
+    -0.0046,
+    0.0524
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0076,
+    "rim_z": 0.1036,
+    "inner_box": [
+     [
+      -0.04,
+      -0.0
+     ],
+     [
+      -0.02,
+      0.02
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.0584,
+      0.0244
+     ],
+     [
+      -0.0415,
+      0.0412
+     ]
+    ],
+    "opening_min_side": 0.0828,
+    "depth": 0.096
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.0076,
+   "inner_box": [
+    [
+     -0.0402,
+     -0.0002
+    ],
+    [
+     -0.0246,
+     0.0154
+    ]
+   ],
+   "rim_z": 0.1036,
+   "opening_box": [
+    [
+     -0.0586,
+     0.0242
+    ],
+    [
+     -0.0461,
+     0.0366
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "item_thor_Pen_1",
+    "item_thor_Pen_2",
+    "item_thor_Pen_3",
+    "item_thor_Pen_4"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_gso_Threshold_Porcelain_Serving_Bowl_Cou": {
+   "height": 0.0689,
+   "grasp_width": 0.2078,
+   "length": 0.2094,
+   "grasp_yaw": 0.3491,
+   "boxiness": 0.133,
+   "caliper_centre": [
+    -0.0002,
+    0.0001
+   ],
+   "handle_ratio": 1.105,
+   "circularity": 0.82,
+   "sphericity": 0.0,
+   "footprint_r": 0.1476,
+   "centre_xy": [
+    0.0,
+    -0.0001
+   ],
+   "bottom_z": -0.0001,
+   "source": "Google Scanned Objects",
+   "source_name": "Threshold_Porcelain_Serving_Bowl_Coupe_White",
+   "colour": null,
+   "noun": "bowl",
+   "name_check": {
+    "claimed": "bowl",
+    "noun": "bowl",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/gso/models/Threshold_Porcelain_Serving_Bowl_Coupe_White/model_qdd_kin.usda",
+   "root_above_bottom": 0.0001,
+   "category": "bowl",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    -0.0001
+   ],
+   "half_extents": [
+    0.1041,
+    0.1047,
+    0.0344
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)",
+   "id": "cont_gso_Threshold_Porcelain_Serving_Bowl_Cou",
+   "role": "bowl",
+   "kinematic": true,
+   "size": [
+    0.2082,
+    0.2093,
+    0.0689
+   ],
+   "origin_from_root": [
+    0.0,
+    -0.0001,
+    0.0344
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0128,
+    "rim_z": 0.0678,
+    "inner_box": [
+     [
+      -0.05,
+      0.05
+     ],
+     [
+      -0.05,
+      0.05
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.0956,
+      0.095
+     ],
+     [
+      -0.0953,
+      0.0952
+     ]
+    ],
+    "opening_min_side": 0.1905,
+    "depth": 0.055
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.0127,
+   "inner_box": [
+    [
+     -0.05,
+     0.05
+    ],
+    [
+     -0.0501,
+     0.0499
+    ]
+   ],
+   "rim_z": 0.0677,
+   "opening_box": [
+    [
+     -0.0956,
+     0.095
+    ],
+    [
+     -0.0954,
+     0.0951
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gso_BABY_CAR",
+    "gso_COAST_GUARD_BOAT",
+    "gsor_Office_Depot_Canon_PGI5BK_Remanufact",
+    "prod_gso_Kotex_U_Barely_There_Liners_Thin_60_"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_gso_Threshold_Bead_Cereal_Bowl_White": {
+   "height": 0.0707,
+   "grasp_width": 0.1663,
+   "length": 0.1698,
+   "grasp_yaw": 1.4312,
+   "boxiness": 0.152,
+   "caliper_centre": [
+    -0.0001,
+    0.0
+   ],
+   "handle_ratio": 1.122,
+   "circularity": 0.813,
+   "sphericity": 0.0,
+   "footprint_r": 0.1188,
+   "centre_xy": [
+    -0.0,
+    0.0
+   ],
+   "bottom_z": -0.0,
+   "source": "Google Scanned Objects",
+   "source_name": "Threshold_Bead_Cereal_Bowl_White",
+   "colour": null,
+   "noun": "bowl",
+   "name_check": {
+    "claimed": "bowl",
+    "noun": "bowl",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/gso/models/Threshold_Bead_Cereal_Bowl_White/model_qdd_kin.usda",
+   "root_above_bottom": 0.0,
+   "category": "bowl",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    -0.0,
+    0.0
+   ],
+   "half_extents": [
+    0.0849,
+    0.0832,
+    0.0354
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)",
+   "id": "cont_gso_Threshold_Bead_Cereal_Bowl_White",
+   "role": "bowl",
+   "kinematic": true,
+   "size": [
+    0.1698,
+    0.1663,
+    0.0707
+   ],
+   "origin_from_root": [
+    -0.0,
+    0.0,
+    0.0353
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0102,
+    "rim_z": 0.069,
+    "inner_box": [
+     [
+      -0.03,
+      0.03
+     ],
+     [
+      -0.03,
+      0.03
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.0767,
+      0.0769
+     ],
+     [
+      -0.0752,
+      0.0752
+     ]
+    ],
+    "opening_min_side": 0.1504,
+    "depth": 0.0589
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.0102,
+   "inner_box": [
+    [
+     -0.03,
+     0.03
+    ],
+    [
+     -0.03,
+     0.03
+    ]
+   ],
+   "rim_z": 0.069,
+   "opening_box": [
+    [
+     -0.0767,
+     0.0769
+    ],
+    [
+     -0.0752,
+     0.0752
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gso_Beta_Glucan",
+    "gsor_Perricone_MD_Vitamin_C_Ester_15",
+    "gsor_Office_Depot_Dell_Series_9_Color_Ink",
+    "gsor_Pet_Dophilus_powder"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_gso_Room_Essentials_Bowl_Turquiose": {
+   "height": 0.0826,
+   "grasp_width": 0.1564,
+   "length": 0.1579,
+   "grasp_yaw": 2.4086,
+   "boxiness": 0.135,
+   "caliper_centre": [
+    0.0001,
+    -0.0
+   ],
+   "handle_ratio": 1.178,
+   "circularity": 0.793,
+   "sphericity": 0.0,
+   "footprint_r": 0.1111,
+   "centre_xy": [
+    -0.0,
+    -0.0
+   ],
+   "bottom_z": 0.0,
+   "source": "Google Scanned Objects",
+   "source_name": "Room_Essentials_Bowl_Turquiose",
+   "colour": null,
+   "noun": "bowl",
+   "name_check": {
+    "claimed": "bowl",
+    "noun": "bowl",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/gso/models/Room_Essentials_Bowl_Turquiose/model_qdd_kin.usda",
+   "root_above_bottom": -0.0,
+   "category": "bowl",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    -0.0,
+    -0.0
+   ],
+   "half_extents": [
+    0.0784,
+    0.0786,
+    0.0413
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)",
+   "id": "cont_gso_Room_Essentials_Bowl_Turquiose",
+   "role": "bowl",
+   "kinematic": true,
+   "size": [
+    0.1569,
+    0.1572,
+    0.0826
+   ],
+   "origin_from_root": [
+    -0.0,
+    -0.0,
+    0.0413
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0102,
+    "rim_z": 0.0813,
+    "inner_box": [
+     [
+      -0.03,
+      0.03
+     ],
+     [
+      -0.03,
+      0.04
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.0653,
+      0.0655
+     ],
+     [
+      -0.0659,
+      0.0652
+     ]
+    ],
+    "opening_min_side": 0.1308,
+    "depth": 0.0711
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.0102,
+   "inner_box": [
+    [
+     -0.03,
+     0.03
+    ],
+    [
+     -0.03,
+     0.04
+    ]
+   ],
+   "rim_z": 0.0813,
+   "opening_box": [
+    [
+     -0.0653,
+     0.0655
+    ],
+    [
+     -0.0659,
+     0.0652
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "prod_gso_Canon_Ink_Cartridge_Green_6",
+    "prod_gso_Perricone_MD_No_Lipstick_Lipstick",
+    "prod_gso_QAbsorb_CoQ10",
+    "gsor_Kotex_U_Barely_There_Liners_Thin_60_"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_gso_Cole_Hardware_Deep_Bowl_Good_Earth_1": {
+   "height": 0.1318,
+   "grasp_width": 0.2828,
+   "length": 0.2855,
+   "grasp_yaw": 2.3038,
+   "boxiness": 0.131,
+   "caliper_centre": [
+    0.0001,
+    -0.0002
+   ],
+   "handle_ratio": 1.202,
+   "circularity": 0.754,
+   "sphericity": 0.0,
+   "footprint_r": 0.2008,
+   "centre_xy": [
+    0.0,
+    0.0
+   ],
+   "bottom_z": -0.0001,
+   "source": "Google Scanned Objects",
+   "source_name": "Cole_Hardware_Deep_Bowl_Good_Earth_1075",
+   "colour": null,
+   "noun": "bowl",
+   "name_check": {
+    "claimed": "bowl",
+    "noun": "bowl",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/gso/models/Cole_Hardware_Deep_Bowl_Good_Earth_1075/model_qdd_kin.usda",
+   "root_above_bottom": 0.0001,
+   "category": "bowl",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    0.0
+   ],
+   "half_extents": [
+    0.1419,
+    0.1421,
+    0.0659
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)",
+   "id": "cont_gso_Cole_Hardware_Deep_Bowl_Good_Earth_1",
+   "role": "bowl",
+   "kinematic": true,
+   "size": [
+    0.2837,
+    0.2843,
+    0.1318
+   ],
+   "origin_from_root": [
+    0.0,
+    0.0,
+    0.0658
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0102,
+    "rim_z": 0.1292,
+    "inner_box": [
+     [
+      -0.04,
+      0.0
+     ],
+     [
+      -0.05,
+      0.05
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.1304,
+      0.1301
+     ],
+     [
+      -0.1286,
+      0.1276
+     ]
+    ],
+    "opening_min_side": 0.2562,
+    "depth": 0.119
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.0101,
+   "inner_box": [
+    [
+     -0.04,
+     0.0
+    ],
+    [
+     -0.05,
+     0.05
+    ]
+   ],
+   "rim_z": 0.1291,
+   "opening_box": [
+    [
+     -0.1304,
+     0.1301
+    ],
+    [
+     -0.1286,
+     0.1276
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gsor_Perricone_MD_Chia_Serum",
+    "gsor_PureCadence_2_Color_HiRskRedNghtlfeS",
+    "gsor_SUPERSTAR_CLR",
+    "gsor_Thomas_Friends_Wooden_Railway_Porter"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_gso_Bradshaw_International_11642_7_Qt_MP": {
+   "height": 0.1545,
+   "grasp_width": 0.2825,
+   "length": 0.2853,
+   "grasp_yaw": 0.1047,
+   "boxiness": 0.066,
+   "caliper_centre": [
+    0.0,
+    -0.0001
+   ],
+   "handle_ratio": 1.131,
+   "circularity": 0.821,
+   "sphericity": 0.0,
+   "footprint_r": 0.2007,
+   "centre_xy": [
+    0.0001,
+    0.0
+   ],
+   "bottom_z": -0.0,
+   "source": "Google Scanned Objects",
+   "source_name": "Bradshaw_International_11642_7_Qt_MP_Plastic_Bowl",
+   "colour": null,
+   "noun": "bowl",
+   "name_check": {
+    "claimed": "bowl",
+    "noun": "bowl",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/gso/models/Bradshaw_International_11642_7_Qt_MP_Plastic_Bowl/model_qdd_kin.usda",
+   "root_above_bottom": 0.0,
+   "category": "bowl",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0001,
+    0.0
+   ],
+   "half_extents": [
+    0.1413,
+    0.1425,
+    0.0773
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)",
+   "id": "cont_gso_Bradshaw_International_11642_7_Qt_MP",
+   "role": "bowl",
+   "kinematic": true,
+   "size": [
+    0.2826,
+    0.2851,
+    0.1545
+   ],
+   "origin_from_root": [
+    0.0001,
+    0.0,
+    0.0772
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.006,
+    "rim_z": 0.1517,
+    "inner_box": [
+     [
+      -0.05,
+      0.06
+     ],
+     [
+      -0.05,
+      0.05
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.1331,
+      0.1332
+     ],
+     [
+      -0.1335,
+      0.1346
+     ]
+    ],
+    "opening_min_side": 0.2663,
+    "depth": 0.1457
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.006,
+   "inner_box": [
+    [
+     -0.0499,
+     0.0601
+    ],
+    [
+     -0.05,
+     0.05
+    ]
+   ],
+   "rim_z": 0.1517,
+   "opening_box": [
+    [
+     -0.1331,
+     0.1333
+    ],
+    [
+     -0.1335,
+     0.1346
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gsor_MINI_ROLLER",
+    "gsor_Office_Depot_Canon_CL_41_Remanufactu",
+    "gso_CoQ10_BjTLbuRVt1t",
+    "prod_gso_Nestle_Nesquik_Chocolate_Powder_Flav"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_gso_Hefty_Waste_Basket_Decorative_Bronze": {
+   "height": 0.3002,
+   "grasp_width": 0.2042,
+   "length": 0.2707,
+   "grasp_yaw": 1.5708,
+   "boxiness": 0.062,
+   "caliper_centre": [
+    0.0,
+    -0.0002
+   ],
+   "handle_ratio": 1.218,
+   "circularity": 0.646,
+   "sphericity": 0.0,
+   "footprint_r": 0.1695,
+   "centre_xy": [
+    0.0002,
+    0.0
+   ],
+   "bottom_z": 0.0,
+   "source": "Google Scanned Objects",
+   "source_name": "Hefty_Waste_Basket_Decorative_Bronze_85_liter",
+   "colour": null,
+   "noun": "trash_can",
+   "name_check": {
+    "claimed": "trash_can",
+    "noun": "trash_can",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/gso/models/Hefty_Waste_Basket_Decorative_Bronze_85_liter/model_qdd_kin.usda",
+   "root_above_bottom": -0.0,
+   "category": "trash_can",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0002,
+    0.0
+   ],
+   "half_extents": [
+    0.1353,
+    0.1021,
+    0.1501
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)",
+   "id": "cont_gso_Hefty_Waste_Basket_Decorative_Bronze",
+   "role": "trash_can",
+   "kinematic": true,
+   "size": [
+    0.2707,
+    0.2042,
+    0.3002
+   ],
+   "origin_from_root": [
+    0.0002,
+    0.0,
+    0.1501
+   ],
+   "inside": null,
+   "place_kind": null,
+   "inner_floor_z": null,
+   "inner_box": null,
+   "rim_z": null,
+   "gate_pass": false,
+   "gate_fits": [],
+   "gate_n": 0,
+   "gate_inside": 0,
+   "gate_hung": false
+  },
+  "cont_ph_wicker_basket_01": {
+   "height": 0.1174,
+   "grasp_width": 0.295,
+   "length": 0.4506,
+   "grasp_yaw": 1.5708,
+   "boxiness": 0.075,
+   "caliper_centre": [
+    0.0004,
+    0.0003
+   ],
+   "handle_ratio": 1.223,
+   "circularity": 0.604,
+   "sphericity": 0.0,
+   "footprint_r": 0.2418,
+   "centre_xy": [
+    -0.0003,
+    0.0004
+   ],
+   "bottom_z": -0.0009,
+   "source": "Poly Haven",
+   "source_name": "wicker_basket_01",
+   "colour": null,
+   "noun": "basket",
+   "name_check": {
+    "claimed": "basket",
+    "noun": "basket",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/polyhaven_models/wicker_basket_01/wicker_basket_01_kin.usda",
+   "root_above_bottom": 0.0009,
+   "category": "basket",
+   "pose": "lying",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    -0.0003,
+    0.0004
+   ],
+   "half_extents": [
+    0.1916,
+    0.1475,
+    0.0587
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Poly Haven (CC0)",
+   "id": "cont_ph_wicker_basket_01",
+   "role": "basket",
+   "kinematic": true,
+   "size": [
+    0.3832,
+    0.295,
+    0.1174
+   ],
+   "origin_from_root": [
+    -0.0003,
+    0.0004,
+    0.0578
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0111,
+    "rim_z": 0.1171,
+    "inner_box": [
+     [
+      -0.02,
+      0.02
+     ],
+     [
+      -0.03,
+      0.02
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.1754,
+      0.1711
+     ],
+     [
+      -0.1321,
+      0.1312
+     ]
+    ],
+    "opening_min_side": 0.2632,
+    "depth": 0.1061
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.0102,
+   "inner_box": [
+    [
+     -0.0203,
+     0.0197
+    ],
+    [
+     -0.0296,
+     0.0204
+    ]
+   ],
+   "rim_z": 0.1162,
+   "opening_box": [
+    [
+     -0.1757,
+     0.1708
+    ],
+    [
+     -0.1317,
+     0.1316
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gso_Schleich_Hereford_Bull",
+    "prod_gso_MK7",
+    "prod_gso_JarroSil_Activated_Silicon",
+    "gsor_PureCadence_2_Color_HiRskRedNghtlfeS"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_ph_wicker_basket_02": {
+   "height": 0.2005,
+   "grasp_width": 0.2304,
+   "length": 0.3478,
+   "grasp_yaw": 1.7802,
+   "boxiness": 0.025,
+   "caliper_centre": [
+    -0.0034,
+    -0.0609
+   ],
+   "handle_ratio": 1.368,
+   "circularity": 0.073,
+   "sphericity": 0.0,
+   "footprint_r": 0.2151,
+   "centre_xy": [
+    0.0659,
+    0.018
+   ],
+   "bottom_z": -0.0003,
+   "source": "Poly Haven",
+   "source_name": "wicker_basket_02",
+   "colour": null,
+   "noun": "basket",
+   "name_check": {
+    "claimed": "basket",
+    "noun": "basket",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/polyhaven_models/wicker_basket_02/wicker_basket_02_kin.usda",
+   "root_above_bottom": 0.0003,
+   "category": "basket",
+   "pose": "upright",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0659,
+    0.018
+   ],
+   "half_extents": [
+    0.1735,
+    0.1272,
+    0.1002
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Poly Haven (CC0)",
+   "id": "cont_ph_wicker_basket_02",
+   "role": "basket",
+   "kinematic": true,
+   "size": [
+    0.3469,
+    0.2545,
+    0.2005
+   ],
+   "origin_from_root": [
+    0.0659,
+    0.018,
+    0.0999
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0147,
+    "rim_z": 0.1959,
+    "inner_box": [
+     [
+      -0.11,
+      -0.02
+     ],
+     [
+      -0.07,
+      0.02
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.1539,
+      0.016
+     ],
+     [
+      -0.1058,
+      0.069
+     ]
+    ],
+    "opening_min_side": 0.1699,
+    "depth": 0.1812
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.0144,
+   "inner_box": [
+    [
+     -0.0441,
+     0.0459
+    ],
+    [
+     -0.052,
+     0.038
+    ]
+   ],
+   "rim_z": 0.1956,
+   "opening_box": [
+    [
+     -0.088,
+     0.0819
+    ],
+    [
+     -0.0878,
+     0.087
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gsor_Office_Depot_Canon_PGI22_Remanufactu",
+    "gsor_Office_Depot_Canon_PG21XL_Remanufact",
+    "gsor_FIRE_TRUCK"
+   ],
+   "gate_n": 4,
+   "gate_inside": 3,
+   "gate_hung": false
+  },
+  "cont_ph_wooden_bowl_01": {
+   "height": 0.0937,
+   "grasp_width": 0.3027,
+   "length": 0.315,
+   "grasp_yaw": 0.733,
+   "boxiness": 0.124,
+   "caliper_centre": [
+    -0.0025,
+    -0.008
+   ],
+   "handle_ratio": 1.484,
+   "circularity": 0.255,
+   "sphericity": 0.0,
+   "footprint_r": 0.22,
+   "centre_xy": [
+    -0.0003,
+    -0.0007
+   ],
+   "bottom_z": 0.0005,
+   "source": "Poly Haven",
+   "source_name": "wooden_bowl_01",
+   "colour": null,
+   "noun": "bowl",
+   "name_check": {
+    "claimed": "bowl",
+    "noun": "bowl",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/polyhaven_models/wooden_bowl_01/wooden_bowl_01_kin.usda",
+   "root_above_bottom": -0.0005,
+   "category": "bowl",
+   "pose": "lying",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    -0.0003,
+    -0.0007
+   ],
+   "half_extents": [
+    0.1565,
+    0.1546,
+    0.0468
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Poly Haven (CC0)",
+   "id": "cont_ph_wooden_bowl_01",
+   "role": "bowl",
+   "kinematic": true,
+   "size": [
+    0.3131,
+    0.3091,
+    0.0937
+   ],
+   "origin_from_root": [
+    -0.0003,
+    -0.0007,
+    0.0474
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0206,
+    "rim_z": 0.0727,
+    "inner_box": [
+     [
+      -0.05,
+      0.04
+     ],
+     [
+      -0.04,
+      0.05
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.1143,
+      0.1076
+     ],
+     [
+      -0.108,
+      0.1042
+     ]
+    ],
+    "opening_min_side": 0.2122,
+    "depth": 0.0521
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.0211,
+   "inner_box": [
+    [
+     -0.0503,
+     0.0397
+    ],
+    [
+     -0.0407,
+     0.0493
+    ]
+   ],
+   "rim_z": 0.0732,
+   "opening_box": [
+    [
+     -0.1146,
+     0.1073
+    ],
+    [
+     -0.1087,
+     0.1035
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gsor_Reebok_EASYTONE_CL_LEATHER",
+    "prod_gso_Nestle_Nesquik_Chocolate_Powder_Flav",
+    "prod_gso_Jarrow_Formulas_Glucosamine_Hci_Mega"
+   ],
+   "gate_n": 4,
+   "gate_inside": 3,
+   "gate_hung": false
+  },
+  "cont_ph_wooden_bowl_02": {
+   "height": 0.0731,
+   "grasp_width": 0.1244,
+   "length": 0.1308,
+   "grasp_yaw": 1.4312,
+   "boxiness": 0.164,
+   "caliper_centre": [
+    -0.0001,
+    -0.0003
+   ],
+   "handle_ratio": 1.128,
+   "circularity": 0.794,
+   "sphericity": 0.0,
+   "footprint_r": 0.0903,
+   "centre_xy": [
+    0.0004,
+    -0.0003
+   ],
+   "bottom_z": 0.0001,
+   "source": "Poly Haven",
+   "source_name": "wooden_bowl_02",
+   "colour": null,
+   "noun": "bowl",
+   "name_check": {
+    "claimed": "bowl",
+    "noun": "bowl",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/polyhaven_models/wooden_bowl_02/wooden_bowl_02_kin.usda",
+   "root_above_bottom": -0.0001,
+   "category": "bowl",
+   "pose": "lying",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0004,
+    -0.0003
+   ],
+   "half_extents": [
+    0.0654,
+    0.0623,
+    0.0365
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Poly Haven (CC0)",
+   "id": "cont_ph_wooden_bowl_02",
+   "role": "bowl",
+   "kinematic": true,
+   "size": [
+    0.1307,
+    0.1245,
+    0.0731
+   ],
+   "origin_from_root": [
+    0.0004,
+    -0.0003,
+    0.0366
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0142,
+    "rim_z": 0.0642,
+    "inner_box": [
+     [
+      -0.03,
+      0.03
+     ],
+     [
+      -0.03,
+      0.03
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.0566,
+      0.0574
+     ],
+     [
+      -0.0557,
+      0.0578
+     ]
+    ],
+    "opening_min_side": 0.1135,
+    "depth": 0.05
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.0143,
+   "inner_box": [
+    [
+     -0.0296,
+     0.0304
+    ],
+    [
+     -0.0303,
+     0.0297
+    ]
+   ],
+   "rim_z": 0.0643,
+   "opening_box": [
+    [
+     -0.0562,
+     0.0578
+    ],
+    [
+     -0.056,
+     0.0575
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gso_5_HTP",
+    "gsor_Saccharomyces_Boulardii_MOS_Value_Si",
+    "gsor_Perricoen_MD_No_Concealer_Concealer"
+   ],
+   "gate_n": 4,
+   "gate_inside": 3,
+   "gate_hung": false
+  },
+  "cont_ph_carved_wooden_plate": {
+   "height": 0.0381,
+   "grasp_width": 0.2642,
+   "length": 0.2772,
+   "grasp_yaw": 0.8727,
+   "boxiness": 0.207,
+   "caliper_centre": [
+    0.0049,
+    0.0058
+   ],
+   "handle_ratio": 1.479,
+   "circularity": 0.494,
+   "sphericity": 0.0,
+   "footprint_r": 0.1911,
+   "centre_xy": [
+    -0.0016,
+    0.0077
+   ],
+   "bottom_z": -0.0019,
+   "source": "Poly Haven",
+   "source_name": "carved_wooden_plate",
+   "colour": null,
+   "noun": "plate",
+   "name_check": {
+    "claimed": "plate",
+    "noun": "plate",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/polyhaven_models/carved_wooden_plate/carved_wooden_plate_kin.usda",
+   "root_above_bottom": 0.0019,
+   "category": "plate",
+   "pose": "lying",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    -0.0016,
+    0.0077
+   ],
+   "half_extents": [
+    0.1359,
+    0.1344,
+    0.0191
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Poly Haven (CC0)",
+   "id": "cont_ph_carved_wooden_plate",
+   "role": "plate",
+   "kinematic": true,
+   "size": [
+    0.2718,
+    0.2688,
+    0.0381
+   ],
+   "origin_from_root": [
+    -0.0016,
+    0.0077,
+    0.0172
+   ],
+   "inside": {
+    "place_kind": "onto",
+    "inner_floor_z": 0.0317,
+    "rim_z": null,
+    "inner_box": [
+     [
+      -0.06,
+      0.05
+     ],
+     [
+      0.09,
+      0.13
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.06,
+      0.05
+     ],
+     [
+      0.09,
+      0.13
+     ]
+    ],
+    "opening_min_side": 0.04,
+    "depth": 0.0
+   },
+   "place_kind": "onto",
+   "inner_floor_z": 0.0298,
+   "inner_box": [
+    [
+     -0.0616,
+     0.0484
+    ],
+    [
+     0.0977,
+     0.1377
+    ]
+   ],
+   "rim_z": null,
+   "opening_box": [
+    [
+     -0.0616,
+     0.0484
+    ],
+    [
+     0.0977,
+     0.1377
+    ]
+   ],
+   "gate_pass": false,
+   "gate_fits": [],
+   "gate_n": 0,
+   "gate_inside": 0,
+   "gate_hung": false
+  },
+  "cont_ph_wooden_cutting_board": {
+   "height": 0.0413,
+   "grasp_width": 0.2467,
+   "length": 0.4868,
+   "grasp_yaw": 1.5708,
+   "boxiness": 0.654,
+   "caliper_centre": [
+    -0.0,
+    -0.0007
+   ],
+   "handle_ratio": 1.209,
+   "circularity": 0.443,
+   "sphericity": 0.0,
+   "footprint_r": 0.2565,
+   "centre_xy": [
+    0.0007,
+    -0.0
+   ],
+   "bottom_z": 0.0001,
+   "source": "Poly Haven",
+   "source_name": "wooden_cutting_board",
+   "colour": null,
+   "noun": "cutting_board",
+   "name_check": {
+    "claimed": "cutting_board",
+    "noun": "cutting_board",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/polyhaven_models/wooden_cutting_board/wooden_cutting_board_kin.usda",
+   "root_above_bottom": -0.0001,
+   "category": "cutting_board",
+   "pose": "lying",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0007,
+    -0.0
+   ],
+   "half_extents": [
+    0.2249,
+    0.1233,
+    0.0206
+   ],
+   "body_rel": "",
+   "top_surface": {
+    "top_z": 0.0367,
+    "box": [
+     [
+      -0.12,
+      0.09
+     ],
+     [
+      -0.21,
+      0.21
+     ]
+    ],
+    "area": 0.0882
+   },
+   "mass": 0.5,
+   "attribution": "Poly Haven (CC0)",
+   "id": "cont_ph_wooden_cutting_board",
+   "role": "cutting_board",
+   "kinematic": true,
+   "size": [
+    0.4499,
+    0.2467,
+    0.0413
+   ],
+   "origin_from_root": [
+    0.0007,
+    -0.0,
+    0.0207
+   ],
+   "inside": {
+    "place_kind": "onto",
+    "inner_floor_z": 0.0368,
+    "rim_z": null,
+    "inner_box": [
+     [
+      -0.21,
+      0.21
+     ],
+     [
+      -0.12,
+      0.09
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.21,
+      0.21
+     ],
+     [
+      -0.12,
+      0.09
+     ]
+    ],
+    "opening_min_side": 0.21,
+    "depth": 0.0
+   },
+   "place_kind": "onto",
+   "inner_floor_z": 0.0369,
+   "inner_box": [
+    [
+     -0.2093,
+     0.2107
+    ],
+    [
+     -0.12,
+     0.09
+    ]
+   ],
+   "rim_z": null,
+   "opening_box": [
+    [
+     -0.2093,
+     0.2107
+    ],
+    [
+     -0.12,
+     0.09
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gso_FIRE_ENGINE",
+    "gsor_Reebok_JR_ZIG_COOPERSTOWN_MR",
+    "gsor_Philips_EcoVantage_43_W_Light_Bulbs_",
+    "prod_gso_QHPomegranate"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_ph_plastic_crate_01": {
+   "height": 0.2642,
+   "grasp_width": 0.298,
+   "length": 0.4831,
+   "grasp_yaw": 0.0,
+   "boxiness": 0.486,
+   "caliper_centre": [
+    0.0,
+    0.0
+   ],
+   "handle_ratio": 1.189,
+   "circularity": 0.574,
+   "sphericity": 0.0,
+   "footprint_r": 0.2526,
+   "centre_xy": [
+    0.0,
+    0.0
+   ],
+   "bottom_z": 0.0,
+   "source": "Poly Haven",
+   "source_name": "plastic_crate_01",
+   "colour": null,
+   "noun": "crate",
+   "name_check": {
+    "claimed": "crate",
+    "noun": "crate",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/polyhaven_models/plastic_crate_01/plastic_crate_01_kin.usda",
+   "root_above_bottom": -0.0,
+   "category": "crate",
+   "pose": "upright",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    0.0
+   ],
+   "half_extents": [
+    0.149,
+    0.204,
+    0.1321
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Poly Haven (CC0)",
+   "id": "cont_ph_plastic_crate_01",
+   "role": "crate",
+   "kinematic": true,
+   "size": [
+    0.298,
+    0.408,
+    0.2642
+   ],
+   "origin_from_root": [
+    0.0,
+    0.0,
+    0.1321
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0054,
+    "rim_z": 0.2642,
+    "inner_box": [
+     [
+      -0.14,
+      0.14
+     ],
+     [
+      -0.18,
+      0.18
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.141,
+      0.141
+     ],
+     [
+      -0.196,
+      0.196
+     ]
+    ],
+    "opening_min_side": 0.282,
+    "depth": 0.2588
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.0054,
+   "inner_box": [
+    [
+     -0.14,
+     0.14
+    ],
+    [
+     -0.18,
+     0.18
+    ]
+   ],
+   "rim_z": 0.2642,
+   "opening_box": [
+    [
+     -0.141,
+     0.141
+    ],
+    [
+     -0.196,
+     0.196
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gsor_SAMBA_HEMP",
+    "gsor_Jarrow_Formulas_Glucosamine_Hci_Mega",
+    "prod_gso_Perricone_MD_Face_Finishing_Moisturi",
+    "gsor_Reebok_FS_HI_INT_R12"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_ph_plastic_crate_02": {
+   "height": 0.2541,
+   "grasp_width": 0.4055,
+   "length": 0.6093,
+   "grasp_yaw": 1.5708,
+   "boxiness": 0.267,
+   "caliper_centre": [
+    0.0,
+    0.0
+   ],
+   "handle_ratio": 1.228,
+   "circularity": 0.633,
+   "sphericity": 0.0,
+   "footprint_r": 0.324,
+   "centre_xy": [
+    0.0,
+    0.0
+   ],
+   "bottom_z": -0.0,
+   "source": "Poly Haven",
+   "source_name": "plastic_crate_02",
+   "colour": null,
+   "noun": "crate",
+   "name_check": {
+    "claimed": "crate",
+    "noun": "crate",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/polyhaven_models/plastic_crate_02/plastic_crate_02_kin.usda",
+   "root_above_bottom": 0.0,
+   "category": "crate",
+   "pose": "lying",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    0.0
+   ],
+   "half_extents": [
+    0.2528,
+    0.2028,
+    0.127
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Poly Haven (CC0)",
+   "id": "cont_ph_plastic_crate_02",
+   "role": "crate",
+   "kinematic": true,
+   "size": [
+    0.5055,
+    0.4055,
+    0.2541
+   ],
+   "origin_from_root": [
+    0.0,
+    0.0,
+    0.127
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.008,
+    "rim_z": 0.2541,
+    "inner_box": [
+     [
+      -0.22,
+      0.22
+     ],
+     [
+      -0.18,
+      0.18
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.2389,
+      0.2389
+     ],
+     [
+      -0.18,
+      0.18
+     ]
+    ],
+    "opening_min_side": 0.36,
+    "depth": 0.2461
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.008,
+   "inner_box": [
+    [
+     -0.22,
+     0.22
+    ],
+    [
+     -0.18,
+     0.18
+    ]
+   ],
+   "rim_z": 0.2541,
+   "opening_box": [
+    [
+     -0.2389,
+     0.2389
+    ],
+    [
+     -0.18,
+     0.18
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gsor_Reebok_CL_LTHR_R12",
+    "prod_gso_Office_Depot_HP_932XL_Ink_Cartridge_",
+    "prod_gso_Beta_Glucan",
+    "prod_gso_Crayola_Crayons_Washable_24_crayons"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_ph_wooden_crate_01": {
+   "height": 0.3496,
+   "grasp_width": 0.409,
+   "length": 0.8362,
+   "grasp_yaw": 1.5708,
+   "boxiness": 0.101,
+   "caliper_centre": [
+    -0.0083,
+    0.0
+   ],
+   "handle_ratio": 1.195,
+   "circularity": 0.468,
+   "sphericity": 0.0,
+   "footprint_r": 0.4605,
+   "centre_xy": [
+    0.0,
+    -0.0083
+   ],
+   "bottom_z": -0.0079,
+   "source": "Poly Haven",
+   "source_name": "wooden_crate_01",
+   "colour": null,
+   "noun": "crate",
+   "name_check": {
+    "claimed": "crate",
+    "noun": "crate",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/polyhaven_models/wooden_crate_01/wooden_crate_01_kin.usda",
+   "root_above_bottom": 0.0079,
+   "category": "crate",
+   "pose": "upright",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    -0.0083
+   ],
+   "half_extents": [
+    0.4126,
+    0.2045,
+    0.1748
+   ],
+   "body_rel": "",
+   "top_surface": {
+    "top_z": 0.3389,
+    "box": [
+     [
+      -0.11,
+      0.2
+     ],
+     [
+      -0.35,
+      0.35
+     ]
+    ],
+    "area": 0.217
+   },
+   "mass": 0.5,
+   "attribution": "Poly Haven (CC0)",
+   "id": "cont_ph_wooden_crate_01",
+   "role": "crate",
+   "kinematic": true,
+   "size": [
+    0.8253,
+    0.409,
+    0.3496
+   ],
+   "origin_from_root": [
+    0.0,
+    -0.0083,
+    0.1669
+   ],
+   "inside": {
+    "place_kind": "onto",
+    "inner_floor_z": 0.3389,
+    "rim_z": null,
+    "inner_box": [
+     [
+      -0.35,
+      0.35
+     ],
+     [
+      -0.11,
+      0.2
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.35,
+      0.35
+     ],
+     [
+      -0.11,
+      0.2
+     ]
+    ],
+    "opening_min_side": 0.31,
+    "depth": 0.0
+   },
+   "place_kind": "onto",
+   "inner_floor_z": 0.331,
+   "inner_box": [
+    [
+     -0.35,
+     0.35
+    ],
+    [
+     -0.1183,
+     0.1917
+    ]
+   ],
+   "rim_z": null,
+   "opening_box": [
+    [
+     -0.35,
+     0.35
+    ],
+    [
+     -0.1183,
+     0.1917
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gso_Android_Figure_Orange",
+    "gsor_Brother_Printing_Cartridge_PC501",
+    "gsor_Philips_EcoVantage_43_W_Light_Bulbs_",
+    "prod_gso_Philips_EcoVantage_43_W_Light_Bulbs_"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_ph_cardboard_box_01": {
+   "height": 0.3418,
+   "grasp_width": 0.387,
+   "length": 0.6123,
+   "grasp_yaw": 0.0,
+   "boxiness": 0.11,
+   "caliper_centre": [
+    0.001,
+    -0.0329
+   ],
+   "handle_ratio": 1.171,
+   "circularity": 0.663,
+   "sphericity": 0.0,
+   "footprint_r": 0.3225,
+   "centre_xy": [
+    0.001,
+    -0.0329
+   ],
+   "bottom_z": -0.0068,
+   "source": "Poly Haven",
+   "source_name": "cardboard_box_01",
+   "colour": null,
+   "noun": "box",
+   "name_check": {
+    "claimed": "box",
+    "noun": "box",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/polyhaven_models/cardboard_box_01/cardboard_box_01_kin.usda",
+   "root_above_bottom": 0.0068,
+   "category": "box",
+   "pose": "upright",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.001,
+    -0.0329
+   ],
+   "half_extents": [
+    0.1935,
+    0.2579,
+    0.1709
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "Poly Haven (CC0)",
+   "id": "cont_ph_cardboard_box_01",
+   "role": "box",
+   "kinematic": true,
+   "size": [
+    0.387,
+    0.5159,
+    0.3418
+   ],
+   "origin_from_root": [
+    0.001,
+    -0.0329,
+    0.1641
+   ],
+   "inside": {
+    "place_kind": "onto",
+    "inner_floor_z": 0.3203,
+    "rim_z": null,
+    "inner_box": [
+     [
+      0.01,
+      0.11
+     ],
+     [
+      -0.21,
+      -0.03
+     ]
+    ],
+    "opening_box": [
+     [
+      0.01,
+      0.11
+     ],
+     [
+      -0.21,
+      -0.03
+     ]
+    ],
+    "opening_min_side": 0.1,
+    "depth": 0.0
+   },
+   "place_kind": "onto",
+   "inner_floor_z": 0.3135,
+   "inner_box": [
+    [
+     0.011,
+     0.111
+    ],
+    [
+     -0.2429,
+     -0.0629
+    ]
+   ],
+   "rim_z": null,
+   "opening_box": [
+    [
+     0.011,
+     0.111
+    ],
+    [
+     -0.2429,
+     -0.0629
+    ]
+   ],
+   "gate_pass": false,
+   "gate_fits": [],
+   "gate_n": 4,
+   "gate_inside": 0,
+   "gate_hung": false
+  },
+  "cont_blender_jar_a": {
+   "height": 0.282,
+   "grasp_width": 0.1692,
+   "length": 0.17,
+   "grasp_yaw": 0.4887,
+   "boxiness": 0.208,
+   "caliper_centre": [
+    0.0,
+    0.0
+   ],
+   "handle_ratio": 1.627,
+   "circularity": 0.111,
+   "sphericity": 0.0,
+   "footprint_r": 0.1202,
+   "centre_xy": [
+    0.0,
+    0.0
+   ],
+   "bottom_z": 0.0,
+   "source": "procedural",
+   "source_name": "blender_jar_a",
+   "colour": null,
+   "noun": "blender",
+   "name_check": {
+    "claimed": "blender",
+    "noun": "blender",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/blender_jars/blender_jar_a.usda",
+   "root_above_bottom": -0.0,
+   "category": "blender",
+   "pose": "upright",
+   "license": "ours (procedural geometry, tools/l8x_assets/import_task_assets.py)",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    0.0
+   ],
+   "half_extents": [
+    0.085,
+    0.085,
+    0.141
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "ours",
+   "id": "cont_blender_jar_a",
+   "role": "blender",
+   "kinematic": true,
+   "size": [
+    0.17,
+    0.17,
+    0.282
+   ],
+   "origin_from_root": [
+    0.0,
+    0.0,
+    0.141
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.106,
+    "rim_z": 0.282,
+    "opening_radius": 0.065,
+    "floor_radius": 0.045,
+    "inner_box": [
+     [
+      -0.03180212014134275,
+      0.03180212014134275
+     ],
+     [
+      -0.03180212014134275,
+      0.03180212014134275
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.065,
+      0.065
+     ],
+     [
+      -0.065,
+      0.065
+     ]
+    ],
+    "opening_min_side": 0.13,
+    "depth": 0.176
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.106,
+   "inner_box": [
+    [
+     -0.0318,
+     0.0318
+    ],
+    [
+     -0.0318,
+     0.0318
+    ]
+   ],
+   "rim_z": 0.282,
+   "opening_box": [
+    [
+     -0.065,
+     0.065
+    ],
+    [
+     -0.065,
+     0.065
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gso_Folic_Acid",
+    "gsor_3D_Dollhouse_Sink",
+    "gsor_Jarrow_Glucosamine_Chondroitin_Combi",
+    "gsor_Office_Depot_Canon_PG21XL_Remanufact"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_blender_jar_b": {
+   "height": 0.242,
+   "grasp_width": 0.1593,
+   "length": 0.16,
+   "grasp_yaw": 1.0821,
+   "boxiness": 0.202,
+   "caliper_centre": [
+    0.0,
+    0.0
+   ],
+   "handle_ratio": 1.486,
+   "circularity": 0.375,
+   "sphericity": 0.0,
+   "footprint_r": 0.1131,
+   "centre_xy": [
+    0.0,
+    0.0
+   ],
+   "bottom_z": 0.0,
+   "source": "procedural",
+   "source_name": "blender_jar_b",
+   "colour": null,
+   "noun": "blender",
+   "name_check": {
+    "claimed": "blender",
+    "noun": "blender",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/blender_jars/blender_jar_b.usda",
+   "root_above_bottom": -0.0,
+   "category": "blender",
+   "pose": "upright",
+   "license": "ours (procedural geometry, tools/l8x_assets/import_task_assets.py)",
+   "spawn_quat_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    0.0
+   ],
+   "half_extents": [
+    0.08,
+    0.08,
+    0.121
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "ours",
+   "id": "cont_blender_jar_b",
+   "role": "blender",
+   "kinematic": true,
+   "size": [
+    0.16,
+    0.16,
+    0.242
+   ],
+   "origin_from_root": [
+    0.0,
+    0.0,
+    0.121
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.086,
+    "rim_z": 0.242,
+    "opening_radius": 0.06,
+    "floor_radius": 0.05,
+    "inner_box": [
+     [
+      -0.0353356890459364,
+      0.0353356890459364
+     ],
+     [
+      -0.0353356890459364,
+      0.0353356890459364
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.06,
+      0.06
+     ],
+     [
+      -0.06,
+      0.06
+     ]
+    ],
+    "opening_min_side": 0.12,
+    "depth": 0.156
+   },
+   "place_kind": "into",
+   "inner_floor_z": 0.086,
+   "inner_box": [
+    [
+     -0.0353,
+     0.0353
+    ],
+    [
+     -0.0353,
+     0.0353
+    ]
+   ],
+   "rim_z": 0.242,
+   "opening_box": [
+    [
+     -0.06,
+     0.06
+    ],
+    [
+     -0.06,
+     0.06
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "prod_gso_CoQ10_wSSVoxVppVD",
+    "gsor_Pet_Dophilus_powder",
+    "prod_gso_Theanine",
+    "gsor_Office_Depot_Canon_PG21XL_Remanufact"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_thor_Bowl_1": {
+   "height": 0.0873,
+   "grasp_width": 0.1879,
+   "length": 0.1887,
+   "grasp_yaw": 2.6529,
+   "boxiness": 0.191,
+   "caliper_centre": [
+    -0.0,
+    0.0
+   ],
+   "handle_ratio": 1.098,
+   "circularity": 0.85,
+   "sphericity": 0.0,
+   "footprint_r": 0.1335,
+   "centre_xy": [
+    0.0,
+    -0.0
+   ],
+   "bottom_z": -0.0431,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Bowl_1",
+   "colour": null,
+   "noun": "bowl",
+   "name_check": {
+    "claimed": "bowl",
+    "noun": "bowl",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/Bowl_1_kin.usda",
+   "root_above_bottom": 0.0431,
+   "category": "bowl",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    -0.0
+   ],
+   "half_extents": [
+    0.0944,
+    0.0944,
+    0.0436
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_Bowl_1",
+   "role": "bowl",
+   "kinematic": true,
+   "size": [
+    0.1887,
+    0.1887,
+    0.0873
+   ],
+   "origin_from_root": [
+    0.0,
+    -0.0,
+    0.0006
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0075,
+    "rim_z": 0.0873,
+    "inner_box": [
+     [
+      -0.04,
+      0.04
+     ],
+     [
+      -0.04,
+      0.04
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.0907,
+      0.0907
+     ],
+     [
+      -0.0907,
+      0.0907
+     ]
+    ],
+    "opening_min_side": 0.1815,
+    "depth": 0.0798
+   },
+   "place_kind": "into",
+   "inner_floor_z": -0.0356,
+   "inner_box": [
+    [
+     -0.04,
+     0.04
+    ],
+    [
+     -0.04,
+     0.04
+    ]
+   ],
+   "rim_z": 0.0442,
+   "opening_box": [
+    [
+     -0.0907,
+     0.0907
+    ],
+    [
+     -0.0907,
+     0.0907
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gso_Schleich_Lion_Action_Figure",
+    "gso_Bifidus_Balance_FOS",
+    "prod_gso_Crayola_Crayons_24_count"
+   ],
+   "gate_n": 4,
+   "gate_inside": 3,
+   "gate_hung": false
+  },
+  "cont_thor_Bowl_2": {
+   "height": 0.1393,
+   "grasp_width": 0.1869,
+   "length": 0.2346,
+   "grasp_yaw": 0.0,
+   "boxiness": 0.157,
+   "caliper_centre": [
+    0.0011,
+    -0.0002
+   ],
+   "handle_ratio": 1.365,
+   "circularity": 0.648,
+   "sphericity": 0.0,
+   "footprint_r": 0.1347,
+   "centre_xy": [
+    0.0011,
+    -0.0002
+   ],
+   "bottom_z": -0.0705,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Bowl_2",
+   "colour": null,
+   "noun": "bowl",
+   "name_check": {
+    "claimed": "bowl",
+    "noun": "bowl",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/Bowl_2_kin.usda",
+   "root_above_bottom": 0.0705,
+   "category": "bowl",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0011,
+    -0.0002
+   ],
+   "half_extents": [
+    0.0935,
+    0.0969,
+    0.0697
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_Bowl_2",
+   "role": "bowl",
+   "kinematic": true,
+   "size": [
+    0.1869,
+    0.1939,
+    0.1393
+   ],
+   "origin_from_root": [
+    0.0011,
+    -0.0002,
+    -0.0009
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0073,
+    "rim_z": 0.1393,
+    "inner_box": [
+     [
+      -0.03,
+      0.03
+     ],
+     [
+      -0.04,
+      0.04
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.0818,
+      0.0818
+     ],
+     [
+      -0.0849,
+      0.0849
+     ]
+    ],
+    "opening_min_side": 0.1636,
+    "depth": 0.132
+   },
+   "place_kind": "into",
+   "inner_floor_z": -0.0632,
+   "inner_box": [
+    [
+     -0.0289,
+     0.0311
+    ],
+    [
+     -0.0402,
+     0.0398
+    ]
+   ],
+   "rim_z": 0.0688,
+   "opening_box": [
+    [
+     -0.0807,
+     0.0829
+    ],
+    [
+     -0.0851,
+     0.0847
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "prod_gso_Nintendo_Yoshi_Action_Figure",
+    "gso_Perricone_MD_Face_Finishing_Moisturizer",
+    "prod_gso_Prostate_Optimizer",
+    "gso_Germanium_GE132"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_thor_Bowl_3": {
+   "height": 0.0958,
+   "grasp_width": 0.1586,
+   "length": 0.1593,
+   "grasp_yaw": 1.0821,
+   "boxiness": 0.204,
+   "caliper_centre": [
+    -0.0002,
+    -0.0001
+   ],
+   "handle_ratio": 1.124,
+   "circularity": 0.829,
+   "sphericity": 0.0,
+   "footprint_r": 0.1126,
+   "centre_xy": [
+    0.0,
+    -0.0002
+   ],
+   "bottom_z": -0.046,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Bowl_3",
+   "colour": null,
+   "noun": "bowl",
+   "name_check": {
+    "claimed": "bowl",
+    "noun": "bowl",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/Bowl_3_kin.usda",
+   "root_above_bottom": 0.046,
+   "category": "bowl",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    -0.0002
+   ],
+   "half_extents": [
+    0.0797,
+    0.0797,
+    0.0479
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_Bowl_3",
+   "role": "bowl",
+   "kinematic": true,
+   "size": [
+    0.1593,
+    0.1593,
+    0.0958
+   ],
+   "origin_from_root": [
+    0.0,
+    -0.0002,
+    0.0019
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0083,
+    "rim_z": 0.0958,
+    "inner_box": [
+     [
+      -0.03,
+      0.03
+     ],
+     [
+      -0.04,
+      0.04
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.0765,
+      0.0765
+     ],
+     [
+      -0.0765,
+      0.0765
+     ]
+    ],
+    "opening_min_side": 0.1529,
+    "depth": 0.0875
+   },
+   "place_kind": "into",
+   "inner_floor_z": -0.0377,
+   "inner_box": [
+    [
+     -0.03,
+     0.03
+    ],
+    [
+     -0.0402,
+     0.0398
+    ]
+   ],
+   "rim_z": 0.0498,
+   "opening_box": [
+    [
+     -0.0765,
+     0.0765
+    ],
+    [
+     -0.0767,
+     0.0763
+    ]
+   ],
+   "gate_pass": false,
+   "gate_fits": [
+    "gsor_Perricone_MD_Omega_3_Supplements",
+    "gso_Hyaluronic_Acid"
+   ],
+   "gate_n": 4,
+   "gate_inside": 2,
+   "gate_hung": false
+  },
+  "cont_thor_Bowl_4": {
+   "height": 0.0614,
+   "grasp_width": 0.1942,
+   "length": 0.1951,
+   "grasp_yaw": 1.0821,
+   "boxiness": 0.204,
+   "caliper_centre": [
+    -0.0001,
+    -0.0001
+   ],
+   "handle_ratio": 1.1,
+   "circularity": 0.841,
+   "sphericity": 0.0,
+   "footprint_r": 0.1379,
+   "centre_xy": [
+    0.0,
+    -0.0001
+   ],
+   "bottom_z": -0.028,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Bowl_4",
+   "colour": null,
+   "noun": "bowl",
+   "name_check": {
+    "claimed": "bowl",
+    "noun": "bowl",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/Bowl_4_kin.usda",
+   "root_above_bottom": 0.028,
+   "category": "bowl",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    -0.0001
+   ],
+   "half_extents": [
+    0.0975,
+    0.0975,
+    0.0307
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_Bowl_4",
+   "role": "bowl",
+   "kinematic": true,
+   "size": [
+    0.1951,
+    0.1951,
+    0.0614
+   ],
+   "origin_from_root": [
+    0.0,
+    -0.0001,
+    0.0027
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0054,
+    "rim_z": 0.0614,
+    "inner_box": [
+     [
+      -0.04,
+      0.04
+     ],
+     [
+      -0.04,
+      0.04
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.092,
+      0.092
+     ],
+     [
+      -0.092,
+      0.092
+     ]
+    ],
+    "opening_min_side": 0.184,
+    "depth": 0.0561
+   },
+   "place_kind": "into",
+   "inner_floor_z": -0.0226,
+   "inner_box": [
+    [
+     -0.04,
+     0.04
+    ],
+    [
+     -0.0401,
+     0.0399
+    ]
+   ],
+   "rim_z": 0.0334,
+   "opening_box": [
+    [
+     -0.092,
+     0.092
+    ],
+    [
+     -0.0921,
+     0.0919
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gso_Schleich_Bald_Eagle",
+    "gsor_BUNNY_RATTLE",
+    "prod_gso_PhosphOmega",
+    "gsor_MINI_ROLLER"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_thor_Bowl_5": {
+   "height": 0.0725,
+   "grasp_width": 0.182,
+   "length": 0.1828,
+   "grasp_yaw": 2.6529,
+   "boxiness": 0.243,
+   "caliper_centre": [
+    -0.0003,
+    0.0004
+   ],
+   "handle_ratio": 1.095,
+   "circularity": 0.882,
+   "sphericity": 0.0,
+   "footprint_r": 0.1293,
+   "centre_xy": [
+    0.0001,
+    -0.0005
+   ],
+   "bottom_z": -0.0333,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Bowl_5",
+   "colour": null,
+   "noun": "bowl",
+   "name_check": {
+    "claimed": "bowl",
+    "noun": "bowl",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/Bowl_5_kin.usda",
+   "root_above_bottom": 0.0333,
+   "category": "bowl",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0001,
+    -0.0005
+   ],
+   "half_extents": [
+    0.0914,
+    0.0914,
+    0.0362
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_Bowl_5",
+   "role": "bowl",
+   "kinematic": true,
+   "size": [
+    0.1828,
+    0.1828,
+    0.0725
+   ],
+   "origin_from_root": [
+    0.0001,
+    -0.0005,
+    0.003
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0038,
+    "rim_z": 0.0725,
+    "inner_box": [
+     [
+      -0.04,
+      0.04
+     ],
+     [
+      -0.04,
+      0.04
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.0876,
+      0.0876
+     ],
+     [
+      -0.0876,
+      0.0876
+     ]
+    ],
+    "opening_min_side": 0.1751,
+    "depth": 0.0686
+   },
+   "place_kind": "into",
+   "inner_floor_z": -0.0295,
+   "inner_box": [
+    [
+     -0.0399,
+     0.0401
+    ],
+    [
+     -0.0405,
+     0.0395
+    ]
+   ],
+   "rim_z": 0.0392,
+   "opening_box": [
+    [
+     -0.0875,
+     0.0877
+    ],
+    [
+     -0.0881,
+     0.0871
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "prod_gso_Womens_Multi_13",
+    "prod_gso_QAbsorb_CoQ10_53iUqjWjW3O",
+    "gsor_Teenage_Mutant_Ninja_Turtles_Rahzar_",
+    "prod_gso_Perricone_MD_No_Mascara_Mascara"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_thor_Bowl_6": {
+   "height": 0.0824,
+   "grasp_width": 0.186,
+   "length": 0.1869,
+   "grasp_yaw": 0.4887,
+   "boxiness": 0.152,
+   "caliper_centre": [
+    -0.0,
+    -0.0
+   ],
+   "handle_ratio": 1.088,
+   "circularity": 0.817,
+   "sphericity": 0.0,
+   "footprint_r": 0.1321,
+   "centre_xy": [
+    0.0,
+    -0.0
+   ],
+   "bottom_z": -0.041,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Bowl_6",
+   "colour": null,
+   "noun": "bowl",
+   "name_check": {
+    "claimed": "bowl",
+    "noun": "bowl",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/Bowl_6_kin.usda",
+   "root_above_bottom": 0.041,
+   "category": "bowl",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    -0.0
+   ],
+   "half_extents": [
+    0.0934,
+    0.0934,
+    0.0412
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_Bowl_6",
+   "role": "bowl",
+   "kinematic": true,
+   "size": [
+    0.1869,
+    0.1869,
+    0.0824
+   ],
+   "origin_from_root": [
+    0.0,
+    -0.0,
+    0.0002
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0085,
+    "rim_z": 0.0824,
+    "inner_box": [
+     [
+      -0.03,
+      0.03
+     ],
+     [
+      -0.04,
+      0.04
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.0818,
+      0.0818
+     ],
+     [
+      -0.0818,
+      0.0818
+     ]
+    ],
+    "opening_min_side": 0.1636,
+    "depth": 0.0739
+   },
+   "place_kind": "into",
+   "inner_floor_z": -0.0325,
+   "inner_box": [
+    [
+     -0.03,
+     0.03
+    ],
+    [
+     -0.04,
+     0.04
+    ]
+   ],
+   "rim_z": 0.0414,
+   "opening_box": [
+    [
+     -0.0818,
+     0.0818
+    ],
+    [
+     -0.0818,
+     0.0818
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "prod_gso_Nestle_Nesquik_Chocolate_Powder_Flav",
+    "prod_gso_Perricone_MD_Photo_Plasma",
+    "prod_gso_NattoMax",
+    "prod_gso_Wilton_Pearlized_Sugar_Sprinkles_525"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_thor_Plate_1": {
+   "height": 0.0167,
+   "grasp_width": 0.2086,
+   "length": 0.2121,
+   "grasp_yaw": 0.0,
+   "boxiness": 0.738,
+   "caliper_centre": [
+    -0.0019,
+    -0.0013
+   ],
+   "handle_ratio": 1.173,
+   "circularity": 0.827,
+   "sphericity": 0.0,
+   "footprint_r": 0.1475,
+   "centre_xy": [
+    -0.0019,
+    -0.0013
+   ],
+   "bottom_z": -0.0112,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Plate_1",
+   "colour": null,
+   "noun": "plate",
+   "name_check": {
+    "claimed": "plate",
+    "noun": "plate",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/Plate_1_kin.usda",
+   "root_above_bottom": 0.0112,
+   "category": "plate",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    -0.0019,
+    -0.0013
+   ],
+   "half_extents": [
+    0.1043,
+    0.1043,
+    0.0083
+   ],
+   "body_rel": "",
+   "top_surface": {
+    "top_z": 0.0027,
+    "box": [
+     [
+      -0.05,
+      0.05
+     ],
+     [
+      -0.06,
+      0.06
+     ]
+    ],
+    "area": 0.012
+   },
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_Plate_1",
+   "role": "plate",
+   "kinematic": true,
+   "size": [
+    0.2086,
+    0.2086,
+    0.0167
+   ],
+   "origin_from_root": [
+    -0.0019,
+    -0.0013,
+    -0.0029
+   ],
+   "inside": null,
+   "place_kind": null,
+   "inner_floor_z": null,
+   "inner_box": null,
+   "rim_z": null,
+   "gate_pass": false,
+   "gate_fits": [],
+   "gate_n": 0,
+   "gate_inside": 0,
+   "gate_hung": false
+  },
+  "cont_thor_Plate_2": {
+   "height": 0.019,
+   "grasp_width": 0.2504,
+   "length": 0.2547,
+   "grasp_yaw": 0.0,
+   "boxiness": 0.691,
+   "caliper_centre": [
+    -0.0021,
+    -0.0015
+   ],
+   "handle_ratio": 1.197,
+   "circularity": 0.802,
+   "sphericity": 0.0,
+   "footprint_r": 0.177,
+   "centre_xy": [
+    -0.0021,
+    -0.0015
+   ],
+   "bottom_z": -0.0114,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Plate_2",
+   "colour": null,
+   "noun": "plate",
+   "name_check": {
+    "claimed": "plate",
+    "noun": "plate",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/Plate_2_kin.usda",
+   "root_above_bottom": 0.0114,
+   "category": "plate",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    -0.0021,
+    -0.0015
+   ],
+   "half_extents": [
+    0.1252,
+    0.1252,
+    0.0095
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_Plate_2",
+   "role": "plate",
+   "kinematic": true,
+   "size": [
+    0.2504,
+    0.2504,
+    0.019
+   ],
+   "origin_from_root": [
+    -0.0021,
+    -0.0015,
+    -0.0018
+   ],
+   "inside": null,
+   "place_kind": null,
+   "inner_floor_z": null,
+   "inner_box": null,
+   "rim_z": null,
+   "gate_pass": false,
+   "gate_fits": [],
+   "gate_n": 0,
+   "gate_inside": 0,
+   "gate_hung": false
+  },
+  "cont_thor_Plate_3": {
+   "height": 0.0239,
+   "grasp_width": 0.2935,
+   "length": 0.3006,
+   "grasp_yaw": 0.0,
+   "boxiness": 0.374,
+   "caliper_centre": [
+    0.0005,
+    -0.0007
+   ],
+   "handle_ratio": 1.111,
+   "circularity": 0.887,
+   "sphericity": 0.0,
+   "footprint_r": 0.2075,
+   "centre_xy": [
+    0.0005,
+    -0.0007
+   ],
+   "bottom_z": -0.013,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Plate_3",
+   "colour": null,
+   "noun": "plate",
+   "name_check": {
+    "claimed": "plate",
+    "noun": "plate",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/Plate_3_kin.usda",
+   "root_above_bottom": 0.013,
+   "category": "plate",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0005,
+    -0.0007
+   ],
+   "half_extents": [
+    0.1467,
+    0.1467,
+    0.012
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_Plate_3",
+   "role": "plate",
+   "kinematic": true,
+   "size": [
+    0.2935,
+    0.2935,
+    0.0239
+   ],
+   "origin_from_root": [
+    0.0005,
+    -0.0007,
+    -0.001
+   ],
+   "inside": null,
+   "place_kind": null,
+   "inner_floor_z": null,
+   "inner_box": null,
+   "rim_z": null,
+   "gate_pass": false,
+   "gate_fits": [],
+   "gate_n": 0,
+   "gate_inside": 0,
+   "gate_hung": false
+  },
+  "cont_thor_Plate_4": {
+   "height": 0.015,
+   "grasp_width": 0.197,
+   "length": 0.2095,
+   "grasp_yaw": 0.0,
+   "boxiness": 0.456,
+   "caliper_centre": [
+    -0.0005,
+    -0.0007
+   ],
+   "handle_ratio": 1.559,
+   "circularity": 0.048,
+   "sphericity": 0.0,
+   "footprint_r": 0.1393,
+   "centre_xy": [
+    -0.0005,
+    -0.0007
+   ],
+   "bottom_z": -0.0089,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Plate_4",
+   "colour": null,
+   "noun": "plate",
+   "name_check": {
+    "claimed": "plate",
+    "noun": "plate",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/Plate_4_kin.usda",
+   "root_above_bottom": 0.0089,
+   "category": "plate",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    -0.0005,
+    -0.0007
+   ],
+   "half_extents": [
+    0.0985,
+    0.0985,
+    0.0075
+   ],
+   "body_rel": "",
+   "top_surface": {
+    "top_z": 0.0051,
+    "box": [
+     [
+      -0.04,
+      0.04
+     ],
+     [
+      -0.07,
+      0.07
+     ]
+    ],
+    "area": 0.0112
+   },
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_Plate_4",
+   "role": "plate",
+   "kinematic": true,
+   "size": [
+    0.197,
+    0.197,
+    0.015
+   ],
+   "origin_from_root": [
+    -0.0005,
+    -0.0007,
+    -0.0014
+   ],
+   "inside": {
+    "place_kind": "onto",
+    "inner_floor_z": 0.0051,
+    "rim_z": null,
+    "inner_box": [
+     [
+      -0.04,
+      0.04
+     ],
+     [
+      -0.07,
+      0.07
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.04,
+      0.04
+     ],
+     [
+      -0.07,
+      0.07
+     ]
+    ],
+    "opening_min_side": 0.08,
+    "depth": 0.0
+   },
+   "place_kind": "onto",
+   "inner_floor_z": -0.0038,
+   "inner_box": [
+    [
+     -0.0405,
+     0.0395
+    ],
+    [
+     -0.0707,
+     0.0693
+    ]
+   ],
+   "rim_z": null,
+   "opening_box": [
+    [
+     -0.0405,
+     0.0395
+    ],
+    [
+     -0.0707,
+     0.0693
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gsor_Perricone_MD_Chia_Serum",
+    "gsor_Perricone_MD_No_Foundation_Serum",
+    "gsor_Perricoen_MD_No_Concealer_Concealer",
+    "prod_gso_YumYum_D3_Liquid"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_thor_Pot_1": {
+   "height": 0.1612,
+   "grasp_width": 0.2858,
+   "length": 0.5052,
+   "grasp_yaw": 0.0,
+   "boxiness": 0.108,
+   "caliper_centre": [
+    0.0,
+    -0.0011
+   ],
+   "handle_ratio": 1.272,
+   "circularity": 0.674,
+   "sphericity": 0.0,
+   "footprint_r": 0.2863,
+   "centre_xy": [
+    0.0,
+    -0.0011
+   ],
+   "bottom_z": -0.0826,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Pot_1",
+   "colour": null,
+   "noun": "pot",
+   "name_check": {
+    "claimed": "pot",
+    "noun": "pot",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/Pot_1_kin.usda",
+   "root_above_bottom": 0.0826,
+   "category": "pot",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    -0.0011
+   ],
+   "half_extents": [
+    0.1429,
+    0.2481,
+    0.0806
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_Pot_1",
+   "role": "pot",
+   "kinematic": true,
+   "size": [
+    0.2858,
+    0.4962,
+    0.1612
+   ],
+   "origin_from_root": [
+    0.0,
+    -0.0011,
+    -0.002
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0041,
+    "rim_z": 0.1475,
+    "inner_box": [
+     [
+      -0.07,
+      0.07
+     ],
+     [
+      -0.16,
+      -0.05
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.1305,
+      0.1305
+     ],
+     [
+      -0.2357,
+      0.0253
+     ]
+    ],
+    "opening_min_side": 0.261,
+    "depth": 0.1434
+   },
+   "place_kind": "into",
+   "inner_floor_z": -0.0785,
+   "inner_box": [
+    [
+     -0.07,
+     0.07
+    ],
+    [
+     -0.1611,
+     -0.0511
+    ]
+   ],
+   "rim_z": 0.0649,
+   "opening_box": [
+    [
+     -0.1305,
+     0.1305
+    ],
+    [
+     -0.2368,
+     0.0242
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gso_CoQ10_wSSVoxVppVD",
+    "gso_Phillips_Caplets_Size_24",
+    "prod_gso_Canon_Ink_Cartridge_Green_6"
+   ],
+   "gate_n": 4,
+   "gate_inside": 3,
+   "gate_hung": false
+  },
+  "cont_thor_Mug_1": {
+   "height": 0.1028,
+   "grasp_width": 0.0993,
+   "length": 0.1257,
+   "grasp_yaw": 1.1868,
+   "boxiness": 0.28,
+   "caliper_centre": [
+    0.0042,
+    -0.0217
+   ],
+   "handle_ratio": 1.302,
+   "circularity": 0.567,
+   "sphericity": 0.82,
+   "footprint_r": 0.0803,
+   "centre_xy": [
+    0.0243,
+    -0.0001
+   ],
+   "bottom_z": -0.0518,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Mug_1",
+   "colour": null,
+   "noun": "mug",
+   "name_check": {
+    "claimed": "cup",
+    "noun": "mug",
+    "renamed": true,
+    "reasons": [
+     "cup with a handle (handle ratio 1.30)"
+    ]
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/Mug_1_kin.usda",
+   "root_above_bottom": 0.0518,
+   "category": "cup",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0243,
+    -0.0001
+   ],
+   "half_extents": [
+    0.0628,
+    0.05,
+    0.0514
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_Mug_1",
+   "role": "cup",
+   "kinematic": true,
+   "size": [
+    0.1257,
+    0.1001,
+    0.1028
+   ],
+   "origin_from_root": [
+    0.0243,
+    -0.0001,
+    -0.0004
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0074,
+    "rim_z": 0.1028,
+    "inner_box": [
+     [
+      -0.04,
+      0.02
+     ],
+     [
+      -0.03,
+      0.03
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.0581,
+      0.0325
+     ],
+     [
+      -0.0438,
+      0.0438
+     ]
+    ],
+    "opening_min_side": 0.0875,
+    "depth": 0.0954
+   },
+   "place_kind": "into",
+   "inner_floor_z": -0.0444,
+   "inner_box": [
+    [
+     -0.0157,
+     0.0443
+    ],
+    [
+     -0.0301,
+     0.0299
+    ]
+   ],
+   "rim_z": 0.051,
+   "opening_box": [
+    [
+     -0.0338,
+     0.0568
+    ],
+    [
+     -0.0439,
+     0.0437
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gsor_Twinlab_Nitric_Fuel",
+    "prod_gso_Germanium_GE132",
+    "gsor_Perricoen_MD_No_Concealer_Concealer",
+    "gsor_PhosphOmega"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_thor_Mug_2": {
+   "height": 0.1031,
+   "grasp_width": 0.0886,
+   "length": 0.11,
+   "grasp_yaw": 0.9076,
+   "boxiness": 0.23,
+   "caliper_centre": [
+    0.0094,
+    -0.0167
+   ],
+   "handle_ratio": 1.409,
+   "circularity": 0.668,
+   "sphericity": 0.804,
+   "footprint_r": 0.0708,
+   "centre_xy": [
+    0.0258,
+    -0.0001
+   ],
+   "bottom_z": -0.0518,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Mug_2",
+   "colour": null,
+   "noun": "mug",
+   "name_check": {
+    "claimed": "cup",
+    "noun": "mug",
+    "renamed": true,
+    "reasons": [
+     "cup with a handle (handle ratio 1.41)"
+    ]
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/Mug_2_kin.usda",
+   "root_above_bottom": 0.0518,
+   "category": "cup",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0258,
+    -0.0001
+   ],
+   "half_extents": [
+    0.055,
+    0.0447,
+    0.0515
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_Mug_2",
+   "role": "cup",
+   "kinematic": true,
+   "size": [
+    0.11,
+    0.0893,
+    0.1031
+   ],
+   "origin_from_root": [
+    0.0258,
+    -0.0001,
+    -0.0003
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0057,
+    "rim_z": 0.1031,
+    "inner_box": [
+     [
+      -0.04,
+      0.01
+     ],
+     [
+      -0.02,
+      0.02
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.0506,
+      0.03
+     ],
+     [
+      -0.0389,
+      0.0389
+     ]
+    ],
+    "opening_min_side": 0.0779,
+    "depth": 0.0974
+   },
+   "place_kind": "into",
+   "inner_floor_z": -0.0461,
+   "inner_box": [
+    [
+     -0.0142,
+     0.0358
+    ],
+    [
+     -0.0201,
+     0.0199
+    ]
+   ],
+   "rim_z": 0.0513,
+   "opening_box": [
+    [
+     -0.0248,
+     0.0558
+    ],
+    [
+     -0.039,
+     0.0388
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "prod_gso_YumYum_D3_Liquid"
+   ],
+   "gate_n": 1,
+   "gate_inside": 1,
+   "gate_hung": false
+  },
+  "cont_thor_Cup_1": {
+   "height": 0.1419,
+   "grasp_width": 0.0835,
+   "length": 0.085,
+   "grasp_yaw": 1.4312,
+   "boxiness": 0.292,
+   "caliper_centre": [
+    -0.0004,
+    -0.0001
+   ],
+   "handle_ratio": 1.035,
+   "circularity": 0.853,
+   "sphericity": 0.0,
+   "footprint_r": 0.0598,
+   "centre_xy": [
+    0.0,
+    -0.0004
+   ],
+   "bottom_z": -0.0711,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Cup_1",
+   "colour": null,
+   "noun": "cup",
+   "name_check": {
+    "claimed": "cup",
+    "noun": "cup",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/Cup_1_kin.usda",
+   "root_above_bottom": 0.0711,
+   "category": "cup",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    -0.0004
+   ],
+   "half_extents": [
+    0.0425,
+    0.0421,
+    0.0709
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_Cup_1",
+   "role": "cup",
+   "kinematic": true,
+   "size": [
+    0.085,
+    0.0842,
+    0.1419
+   ],
+   "origin_from_root": [
+    0.0,
+    -0.0004,
+    -0.0002
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.019,
+    "rim_z": 0.1419,
+    "inner_box": [
+     [
+      -0.02,
+      0.02
+     ],
+     [
+      -0.02,
+      0.02
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.0326,
+      0.0326
+     ],
+     [
+      -0.0325,
+      0.0325
+     ]
+    ],
+    "opening_min_side": 0.065,
+    "depth": 0.1229
+   },
+   "place_kind": "into",
+   "inner_floor_z": -0.0521,
+   "inner_box": [
+    [
+     -0.02,
+     0.02
+    ],
+    [
+     -0.0204,
+     0.0196
+    ]
+   ],
+   "rim_z": 0.0708,
+   "opening_box": [
+    [
+     -0.0326,
+     0.0326
+    ],
+    [
+     -0.0329,
+     0.0321
+    ]
+   ],
+   "gate_pass": false,
+   "gate_fits": [],
+   "gate_n": 0,
+   "gate_inside": 0,
+   "gate_hung": false
+  },
+  "cont_thor_Cup_2": {
+   "height": 0.1273,
+   "grasp_width": 0.0975,
+   "length": 0.0993,
+   "grasp_yaw": 1.7104,
+   "boxiness": 0.149,
+   "caliper_centre": [
+    -0.0005,
+    0.0009
+   ],
+   "handle_ratio": 1.158,
+   "circularity": 0.779,
+   "sphericity": 0.786,
+   "footprint_r": 0.0699,
+   "centre_xy": [
+    -0.0008,
+    -0.0006
+   ],
+   "bottom_z": -0.0641,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Cup_2",
+   "colour": null,
+   "noun": "cup",
+   "name_check": {
+    "claimed": "cup",
+    "noun": "cup",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/Cup_2_kin.usda",
+   "root_above_bottom": 0.0641,
+   "category": "cup",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    -0.0008,
+    -0.0006
+   ],
+   "half_extents": [
+    0.0497,
+    0.0492,
+    0.0637
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_Cup_2",
+   "role": "cup",
+   "kinematic": true,
+   "size": [
+    0.0993,
+    0.0983,
+    0.1273
+   ],
+   "origin_from_root": [
+    -0.0008,
+    -0.0006,
+    -0.0004
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0146,
+    "rim_z": 0.1273,
+    "inner_box": [
+     [
+      -0.02,
+      0.02
+     ],
+     [
+      -0.02,
+      0.02
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.0431,
+      0.0431
+     ],
+     [
+      -0.0426,
+      0.0426
+     ]
+    ],
+    "opening_min_side": 0.0852,
+    "depth": 0.1127
+   },
+   "place_kind": "into",
+   "inner_floor_z": -0.0495,
+   "inner_box": [
+    [
+     -0.0208,
+     0.0192
+    ],
+    [
+     -0.0206,
+     0.0194
+    ]
+   ],
+   "rim_z": 0.0632,
+   "opening_box": [
+    [
+     -0.0439,
+     0.0423
+    ],
+    [
+     -0.0432,
+     0.042
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gsor_Perricone_MD_No_Foundation_Serum",
+    "gso_Germanium_GE132",
+    "gsor_JarroDophilusFOS_Value_Size",
+    "gsor_Perricone_MD_High_Potency_Evening_Re"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_thor_Sink_1": {
+   "height": 1.0459,
+   "grasp_width": 0.719,
+   "length": 0.9873,
+   "grasp_yaw": 0.0,
+   "boxiness": 0.125,
+   "caliper_centre": [
+    0.0006,
+    0.0008
+   ],
+   "handle_ratio": 1.135,
+   "circularity": 0.874,
+   "sphericity": 0.0,
+   "footprint_r": 0.5108,
+   "centre_xy": [
+    0.0006,
+    0.0008
+   ],
+   "bottom_z": -0.523,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Sink_1",
+   "colour": null,
+   "noun": "sink",
+   "name_check": {
+    "claimed": "sink",
+    "noun": "sink",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/Sink_1_kin.usda",
+   "root_above_bottom": 0.523,
+   "category": "sink",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0006,
+    0.0008
+   ],
+   "half_extents": [
+    0.3595,
+    0.3629,
+    0.523
+   ],
+   "body_rel": "",
+   "top_surface": {
+    "top_z": 1.0381,
+    "box": [
+     [
+      -0.34,
+      0.34
+     ],
+     [
+      0.24,
+      0.35
+     ]
+    ],
+    "area": 0.0748
+   },
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_Sink_1",
+   "role": "sink",
+   "kinematic": true,
+   "size": [
+    0.719,
+    0.7258,
+    1.0459
+   ],
+   "origin_from_root": [
+    0.0006,
+    0.0008,
+    0.0
+   ],
+   "inside": {
+    "place_kind": "onto",
+    "inner_floor_z": 1.0381,
+    "rim_z": null,
+    "inner_box": [
+     [
+      -0.34,
+      0.34
+     ],
+     [
+      0.24,
+      0.35
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.34,
+      0.34
+     ],
+     [
+      0.24,
+      0.35
+     ]
+    ],
+    "opening_min_side": 0.11,
+    "depth": 0.0
+   },
+   "place_kind": "onto",
+   "inner_floor_z": 0.5151,
+   "inner_box": [
+    [
+     -0.3394,
+     0.3406
+    ],
+    [
+     0.2408,
+     0.3508
+    ]
+   ],
+   "rim_z": null,
+   "opening_box": [
+    [
+     -0.3394,
+     0.3406
+    ],
+    [
+     0.2408,
+     0.3508
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gso_Mastic_Gum",
+    "gsor_Inositol",
+    "prod_gso_LTyrosine",
+    "prod_gso_QHPomegranate"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_thor_Sink_2": {
+   "height": 0.1439,
+   "grasp_width": 0.4025,
+   "length": 0.6976,
+   "grasp_yaw": 1.5708,
+   "boxiness": 0.64,
+   "caliper_centre": [
+    -0.0003,
+    -0.0
+   ],
+   "handle_ratio": 1.742,
+   "circularity": -0.078,
+   "sphericity": 0.0,
+   "footprint_r": 0.3524,
+   "centre_xy": [
+    0.0,
+    -0.0003
+   ],
+   "bottom_z": -0.0719,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Sink_2",
+   "colour": null,
+   "noun": "sink",
+   "name_check": {
+    "claimed": "sink",
+    "noun": "sink",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/Sink_2_kin.usda",
+   "root_above_bottom": 0.0719,
+   "category": "sink",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    -0.0003
+   ],
+   "half_extents": [
+    0.2893,
+    0.2013,
+    0.0719
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_Sink_2",
+   "role": "sink",
+   "kinematic": true,
+   "size": [
+    0.5786,
+    0.4025,
+    0.1439
+   ],
+   "origin_from_root": [
+    0.0,
+    -0.0003,
+    0.0001
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.058,
+    "rim_z": 0.1439,
+    "inner_box": [
+     [
+      -0.26,
+      -0.03
+     ],
+     [
+      -0.03,
+      0.17
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.2665,
+      0.2666
+     ],
+     [
+      -0.03,
+      0.17
+     ]
+    ],
+    "opening_min_side": 0.2,
+    "depth": 0.0859
+   },
+   "place_kind": "into",
+   "inner_floor_z": -0.0139,
+   "inner_box": [
+    [
+     -0.26,
+     -0.03
+    ],
+    [
+     -0.0303,
+     0.1697
+    ]
+   ],
+   "rim_z": 0.072,
+   "opening_box": [
+    [
+     -0.2665,
+     0.2666
+    ],
+    [
+     -0.0303,
+     0.1697
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gso_Lactoferrin",
+    "gso_FIRE_ENGINE",
+    "prod_gso_FemDophilus",
+    "gso_Perricone_MD_Face_Finishing_Moisturizer"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_thor_Sink_3": {
+   "height": 0.1533,
+   "grasp_width": 0.4386,
+   "length": 0.7843,
+   "grasp_yaw": 1.5708,
+   "boxiness": 0.17,
+   "caliper_centre": [
+    -0.0,
+    -0.0002
+   ],
+   "handle_ratio": 1.3,
+   "circularity": 0.585,
+   "sphericity": 0.0,
+   "footprint_r": 0.3961,
+   "centre_xy": [
+    0.0002,
+    -0.0
+   ],
+   "bottom_z": -0.0761,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Sink_3",
+   "colour": null,
+   "noun": "sink",
+   "name_check": {
+    "claimed": "sink",
+    "noun": "sink",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/Sink_3_kin.usda",
+   "root_above_bottom": 0.0761,
+   "category": "sink",
+   "pose": "lying",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0002,
+    -0.0
+   ],
+   "half_extents": [
+    0.3298,
+    0.2193,
+    0.0766
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_Sink_3",
+   "role": "sink",
+   "kinematic": true,
+   "size": [
+    0.6596,
+    0.4386,
+    0.1533
+   ],
+   "origin_from_root": [
+    0.0002,
+    -0.0,
+    0.0006
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.0101,
+    "rim_z": 0.1461,
+    "inner_box": [
+     [
+      -0.16,
+      0.16
+     ],
+     [
+      -0.16,
+      0.03
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.16,
+      0.16
+     ],
+     [
+      -0.2098,
+      0.2098
+     ]
+    ],
+    "opening_min_side": 0.32,
+    "depth": 0.1361
+   },
+   "place_kind": "into",
+   "inner_floor_z": -0.066,
+   "inner_box": [
+    [
+     -0.1598,
+     0.1602
+    ],
+    [
+     -0.16,
+     0.03
+    ]
+   ],
+   "rim_z": 0.07,
+   "opening_box": [
+    [
+     -0.1598,
+     0.1602
+    ],
+    [
+     -0.2098,
+     0.2098
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gsor_Perricoen_MD_No_Concealer_Concealer",
+    "gsor_F10_TRX_FG_ssscuo9tGxb",
+    "gsor_Reebok_ULTIMATIC_2V",
+    "gsor_Cascadia_8_Color_AquariusHibscsBeari"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_thor_bin_1": {
+   "height": 0.6003,
+   "grasp_width": 0.3397,
+   "length": 0.5451,
+   "grasp_yaw": 1.5708,
+   "boxiness": 0.055,
+   "caliper_centre": [
+    -0.0016,
+    0.0
+   ],
+   "handle_ratio": 1.34,
+   "circularity": 0.418,
+   "sphericity": 0.0,
+   "footprint_r": 0.3044,
+   "centre_xy": [
+    0.0,
+    -0.0016
+   ],
+   "bottom_z": -0.3527,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "bin_1",
+   "colour": null,
+   "noun": "trash_can",
+   "name_check": {
+    "claimed": "trash_can",
+    "noun": "trash_can",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/bin_1_kin.usda",
+   "root_above_bottom": 0.3527,
+   "category": "trash_can",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    -0.0016
+   ],
+   "half_extents": [
+    0.2526,
+    0.1699,
+    0.3002
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_bin_1",
+   "role": "trash_can",
+   "kinematic": true,
+   "size": [
+    0.5053,
+    0.3397,
+    0.6003
+   ],
+   "origin_from_root": [
+    0.0,
+    -0.0016,
+    -0.0525
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.1433,
+    "rim_z": 0.6003,
+    "inner_box": [
+     [
+      -0.16,
+      0.16
+     ],
+     [
+      -0.08,
+      0.08
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.16,
+      0.16
+     ],
+     [
+      -0.1162,
+      0.1167
+     ]
+    ],
+    "opening_min_side": 0.2329,
+    "depth": 0.4571
+   },
+   "place_kind": "into",
+   "inner_floor_z": -0.2094,
+   "inner_box": [
+    [
+     -0.16,
+     0.16
+    ],
+    [
+     -0.0816,
+     0.0784
+    ]
+   ],
+   "rim_z": 0.2476,
+   "opening_box": [
+    [
+     -0.16,
+     0.16
+    ],
+    [
+     -0.1178,
+     0.1151
+    ]
+   ],
+   "gate_pass": false,
+   "gate_fits": [
+    "gsor_Perricone_MD_No_Bronzer_Bronzer",
+    "prod_gso_Office_Depot_HP_61Tricolor_Ink_Cartr"
+   ],
+   "gate_n": 4,
+   "gate_inside": 2,
+   "gate_hung": false
+  },
+  "cont_thor_bin_10": {
+   "height": 0.6495,
+   "grasp_width": 0.3513,
+   "length": 0.532,
+   "grasp_yaw": 1.5708,
+   "boxiness": 0.04,
+   "caliper_centre": [
+    -0.0004,
+    0.0123
+   ],
+   "handle_ratio": 1.224,
+   "circularity": 0.523,
+   "sphericity": 0.0,
+   "footprint_r": 0.2949,
+   "centre_xy": [
+    -0.0123,
+    -0.0004
+   ],
+   "bottom_z": -0.3756,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "bin_10",
+   "colour": null,
+   "noun": "trash_can",
+   "name_check": {
+    "claimed": "trash_can",
+    "noun": "trash_can",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/bin_10_kin.usda",
+   "root_above_bottom": 0.3756,
+   "category": "trash_can",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    -0.0123,
+    -0.0004
+   ],
+   "half_extents": [
+    0.2369,
+    0.1757,
+    0.3247
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_bin_10",
+   "role": "trash_can",
+   "kinematic": true,
+   "size": [
+    0.4738,
+    0.3513,
+    0.6495
+   ],
+   "origin_from_root": [
+    -0.0123,
+    -0.0004,
+    -0.0508
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.2299,
+    "rim_z": 0.6495,
+    "inner_box": [
+     [
+      -0.19,
+      0.19
+     ],
+     [
+      -0.12,
+      0.12
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.19,
+      0.19
+     ],
+     [
+      -0.12,
+      0.12
+     ]
+    ],
+    "opening_min_side": 0.24,
+    "depth": 0.4196
+   },
+   "place_kind": "into",
+   "inner_floor_z": -0.1457,
+   "inner_box": [
+    [
+     -0.2023,
+     0.1777
+    ],
+    [
+     -0.1204,
+     0.1196
+    ]
+   ],
+   "rim_z": 0.2739,
+   "opening_box": [
+    [
+     -0.2023,
+     0.1777
+    ],
+    [
+     -0.1204,
+     0.1196
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "prod_gso_Perricone_MD_High_Potency_Evening_Re",
+    "prod_gso_OXO_Soft_Works_Can_Opener_SnapLock",
+    "gsor_3D_Dollhouse_Sink",
+    "gsor_Brother_Printing_Cartridge_PC501"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_thor_bin_12": {
+   "height": 0.6744,
+   "grasp_width": 0.3376,
+   "length": 0.4643,
+   "grasp_yaw": 1.5708,
+   "boxiness": 0.041,
+   "caliper_centre": [
+    -0.0024,
+    0.0044
+   ],
+   "handle_ratio": 1.315,
+   "circularity": 0.661,
+   "sphericity": 0.0,
+   "footprint_r": 0.2503,
+   "centre_xy": [
+    -0.0044,
+    -0.0024
+   ],
+   "bottom_z": -0.3884,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "bin_12",
+   "colour": null,
+   "noun": "trash_can",
+   "name_check": {
+    "claimed": "trash_can",
+    "noun": "trash_can",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/bin_12_kin.usda",
+   "root_above_bottom": 0.3884,
+   "category": "trash_can",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    -0.0044,
+    -0.0024
+   ],
+   "half_extents": [
+    0.1849,
+    0.1688,
+    0.3372
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_bin_12",
+   "role": "trash_can",
+   "kinematic": true,
+   "size": [
+    0.3697,
+    0.3376,
+    0.6744
+   ],
+   "origin_from_root": [
+    -0.0044,
+    -0.0024,
+    -0.0512
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.1176,
+    "rim_z": 0.6744,
+    "inner_box": [
+     [
+      -0.13,
+      0.13
+     ],
+     [
+      -0.08,
+      0.08
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.13,
+      0.13
+     ],
+     [
+      -0.08,
+      0.08
+     ]
+    ],
+    "opening_min_side": 0.16,
+    "depth": 0.5568
+   },
+   "place_kind": "into",
+   "inner_floor_z": -0.2708,
+   "inner_box": [
+    [
+     -0.1344,
+     0.1256
+    ],
+    [
+     -0.0824,
+     0.0776
+    ]
+   ],
+   "rim_z": 0.286,
+   "opening_box": [
+    [
+     -0.1344,
+     0.1256
+    ],
+    [
+     -0.0824,
+     0.0776
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "gsor_Perricone_MD_OVM",
+    "prod_gso_Office_Depot_HP_98_Remanufactured_In",
+    "gso_DIM_CDG",
+    "gso_Theanine"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  },
+  "cont_thor_bin_13": {
+   "height": 0.6744,
+   "grasp_width": 0.3644,
+   "length": 0.5607,
+   "grasp_yaw": 1.5708,
+   "boxiness": 0.042,
+   "caliper_centre": [
+    -0.0004,
+    -0.0018
+   ],
+   "handle_ratio": 1.392,
+   "circularity": 0.433,
+   "sphericity": 0.0,
+   "footprint_r": 0.3016,
+   "centre_xy": [
+    0.0018,
+    -0.0004
+   ],
+   "bottom_z": -0.3874,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "bin_13",
+   "colour": null,
+   "noun": "trash_can",
+   "name_check": {
+    "claimed": "trash_can",
+    "noun": "trash_can",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/task_containers/bin_13_kin.usda",
+   "root_above_bottom": 0.3874,
+   "category": "trash_can",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0018,
+    -0.0004
+   ],
+   "half_extents": [
+    0.2403,
+    0.1822,
+    0.3372
+   ],
+   "body_rel": "",
+   "top_surface": null,
+   "mass": 0.5,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "id": "cont_thor_bin_13",
+   "role": "trash_can",
+   "kinematic": true,
+   "size": [
+    0.4807,
+    0.3644,
+    0.6744
+   ],
+   "origin_from_root": [
+    0.0018,
+    -0.0004,
+    -0.0502
+   ],
+   "inside": {
+    "place_kind": "into",
+    "inner_floor_z": 0.1176,
+    "rim_z": 0.6744,
+    "inner_box": [
+     [
+      -0.13,
+      0.13
+     ],
+     [
+      -0.08,
+      0.08
+     ]
+    ],
+    "opening_box": [
+     [
+      -0.13,
+      0.13
+     ],
+     [
+      -0.08,
+      0.08
+     ]
+    ],
+    "opening_min_side": 0.16,
+    "depth": 0.5568
+   },
+   "place_kind": "into",
+   "inner_floor_z": -0.2698,
+   "inner_box": [
+    [
+     -0.1282,
+     0.1318
+    ],
+    [
+     -0.0804,
+     0.0796
+    ]
+   ],
+   "rim_z": 0.287,
+   "opening_box": [
+    [
+     -0.1282,
+     0.1318
+    ],
+    [
+     -0.0804,
+     0.0796
+    ]
+   ],
+   "gate_pass": true,
+   "gate_fits": [
+    "prod_gso_Brother_LC_1053PKS_Ink_Cartridge_Cya",
+    "gso_NattoMax",
+    "prod_gso_AllergenFree_JarroDophilus",
+    "prod_gso_Womens_Multi_13"
+   ],
+   "gate_n": 4,
+   "gate_inside": 4,
+   "gate_hung": false
+  }
+ },
+ "dropped": {}
+}

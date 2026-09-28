@@ -1,0 +1,1071 @@
+{
+ "license": "CC0 1.0 (Poly Haven fruit) / CC BY 4.0 (THOR pens)",
+ "objects": {
+  "item_ph_bananas": {
+   "height": 0.1788,
+   "grasp_width": 0.2301,
+   "length": 0.6104,
+   "grasp_yaw": 1.5359,
+   "boxiness": 0.027,
+   "caliper_centre": [
+    -0.005,
+    -0.0561
+   ],
+   "handle_ratio": 7.907,
+   "circularity": -4.458,
+   "sphericity": 0.0,
+   "footprint_r": 0.3262,
+   "centre_xy": [
+    0.0545,
+    -0.0082
+   ],
+   "bottom_z": -0.038,
+   "source": "Poly Haven",
+   "source_name": "bananas",
+   "colour": null,
+   "noun": "fruit",
+   "name_check": {
+    "claimed": "fruit",
+    "noun": "fruit",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/polyhaven_models/bananas/bananas_qdd.usda",
+   "root_above_bottom": 0.038,
+   "category": "fruit",
+   "pose": "lying",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "spawn_quat_wxyz": [
+    0.7193362,
+    0.0,
+    0.0,
+    -0.6946621
+   ],
+   "centre_from_root_xy": [
+    -0.005,
+    -0.0561
+   ],
+   "half_extents": [
+    0.115,
+    0.3052,
+    0.0894
+   ],
+   "body_rel": "geo",
+   "top_surface": null,
+   "mass": 3.0,
+   "attribution": "Poly Haven (CC0)",
+   "role": "fruit",
+   "size_word": null,
+   "task_name": "fruit",
+   "name": "fruit",
+   "uid": "item_ph_bananas",
+   "split": "train",
+   "stable": false,
+   "stable_rolling": false,
+   "settle": {
+    "dz_mm": -796.4,
+    "drift_mm": 505.8,
+    "tilt_deg": 2.6,
+    "category": "fruit",
+    "height": 0.1788,
+    "grasp_width": 0.2301,
+    "stable": false
+   }
+  },
+  "item_ph_food_apple_01": {
+   "height": 0.0854,
+   "grasp_width": 0.0952,
+   "length": 0.0982,
+   "grasp_yaw": 1.0472,
+   "boxiness": 0.268,
+   "caliper_centre": [
+    -0.0013,
+    -0.0017
+   ],
+   "handle_ratio": 1.06,
+   "circularity": 0.897,
+   "sphericity": 0.894,
+   "footprint_r": 0.0684,
+   "centre_xy": [
+    0.0004,
+    -0.0021
+   ],
+   "bottom_z": -0.0,
+   "source": "Poly Haven",
+   "source_name": "food_apple_01",
+   "colour": null,
+   "noun": "fruit",
+   "name_check": {
+    "claimed": "fruit",
+    "noun": "fruit",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/polyhaven_models/food_apple_01/food_apple_01_qdd.usda",
+   "root_above_bottom": 0.0,
+   "category": "fruit",
+   "pose": "upright",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "spawn_quat_wxyz": [
+    0.8660248,
+    0.0,
+    0.0,
+    -0.5000011
+   ],
+   "centre_from_root_xy": [
+    -0.0013,
+    -0.0017
+   ],
+   "half_extents": [
+    0.0476,
+    0.0491,
+    0.0427
+   ],
+   "body_rel": "geo",
+   "top_surface": null,
+   "mass": 0.192,
+   "attribution": "Poly Haven (CC0)",
+   "role": "fruit",
+   "size_word": null,
+   "task_name": "fruit",
+   "name": "fruit",
+   "uid": "item_ph_food_apple_01",
+   "split": "train",
+   "stable": false,
+   "stable_rolling": true,
+   "settle": {
+    "dz_mm": 34.2,
+    "drift_mm": 3.0,
+    "tilt_deg": 74.3,
+    "category": "fruit",
+    "height": 0.0854,
+    "grasp_width": 0.0952,
+    "stable": false
+   }
+  },
+  "item_ph_food_pears_asian_01": {
+   "height": 0.0712,
+   "grasp_width": 0.1142,
+   "length": 0.171,
+   "grasp_yaw": 0.5585,
+   "boxiness": 0.192,
+   "caliper_centre": [
+    -0.0196,
+    0.0147
+   ],
+   "handle_ratio": 1.772,
+   "circularity": 0.033,
+   "sphericity": 0.0,
+   "footprint_r": 0.1028,
+   "centre_xy": [
+    -0.0166,
+    0.0172
+   ],
+   "bottom_z": -0.0,
+   "source": "Poly Haven",
+   "source_name": "food_pears_asian_01",
+   "colour": null,
+   "noun": "fruit",
+   "name_check": {
+    "claimed": "fruit",
+    "noun": "fruit",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/polyhaven_models/food_pears_asian_01/food_pears_asian_01_qdd.usda",
+   "root_above_bottom": 0.0,
+   "category": "fruit",
+   "pose": "lying",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "spawn_quat_wxyz": [
+    0.9612624,
+    0.0,
+    0.0,
+    -0.2756348
+   ],
+   "centre_from_root_xy": [
+    -0.0196,
+    0.0147
+   ],
+   "half_extents": [
+    0.0571,
+    0.0855,
+    0.0356
+   ],
+   "body_rel": "geo",
+   "top_surface": null,
+   "mass": 0.334,
+   "attribution": "Poly Haven (CC0)",
+   "role": "fruit",
+   "size_word": null,
+   "task_name": "fruit",
+   "name": "fruit",
+   "uid": "item_ph_food_pears_asian_01",
+   "split": "ood",
+   "stable": true,
+   "stable_rolling": true,
+   "settle": {
+    "dz_mm": -0.1,
+    "drift_mm": 0.0,
+    "tilt_deg": 0.5,
+    "category": "fruit",
+    "height": 0.0712,
+    "grasp_width": 0.1142,
+    "stable": true
+   }
+  },
+  "item_ph_lemon": {
+   "height": 0.0954,
+   "grasp_width": 0.068,
+   "length": 0.0701,
+   "grasp_yaw": 0.1745,
+   "boxiness": 0.3,
+   "caliper_centre": [
+    -0.0018,
+    0.0007
+   ],
+   "handle_ratio": 1.081,
+   "circularity": 0.885,
+   "sphericity": 0.912,
+   "footprint_r": 0.0488,
+   "centre_xy": [
+    -0.0017,
+    0.0006
+   ],
+   "bottom_z": -0.0523,
+   "source": "Poly Haven",
+   "source_name": "lemon",
+   "colour": null,
+   "noun": "fruit",
+   "name_check": {
+    "claimed": "fruit",
+    "noun": "fruit",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/polyhaven_models/lemon/lemon_qdd.usda",
+   "root_above_bottom": 0.0523,
+   "category": "fruit",
+   "pose": "upright",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "spawn_quat_wxyz": [
+    0.9961961,
+    0.0,
+    0.0,
+    -0.0871393
+   ],
+   "centre_from_root_xy": [
+    -0.0018,
+    0.0007
+   ],
+   "half_extents": [
+    0.034,
+    0.035,
+    0.0477
+   ],
+   "body_rel": "geo",
+   "top_surface": null,
+   "mass": 0.109,
+   "attribution": "Poly Haven (CC0)",
+   "role": "fruit",
+   "size_word": null,
+   "task_name": "fruit",
+   "name": "fruit",
+   "uid": "item_ph_lemon",
+   "split": "train",
+   "stable": false,
+   "stable_rolling": false,
+   "settle": {
+    "dz_mm": -19.8,
+    "drift_mm": 56.5,
+    "tilt_deg": 72.4,
+    "category": "fruit",
+    "height": 0.0954,
+    "grasp_width": 0.068,
+    "stable": false
+   }
+  },
+  "item_thor_Pen_1": {
+   "height": 0.0112,
+   "grasp_width": 0.0089,
+   "length": 0.1908,
+   "grasp_yaw": 0.0,
+   "boxiness": 0.997,
+   "caliper_centre": [
+    0.0,
+    0.0129
+   ],
+   "handle_ratio": 1.929,
+   "circularity": -0.509,
+   "sphericity": 0.0,
+   "footprint_r": 0.0955,
+   "centre_xy": [
+    0.0,
+    0.0129
+   ],
+   "bottom_z": -0.005,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Pen_1",
+   "colour": null,
+   "noun": "pen",
+   "name_check": {
+    "claimed": "pen",
+    "noun": "pen",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Pen/Pen_1/Pen_1.usda",
+   "root_above_bottom": 0.005,
+   "category": "pen",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    0.0129
+   ],
+   "half_extents": [
+    0.0044,
+    0.0954,
+    0.0056
+   ],
+   "body_rel": "Geometry/Pen_1",
+   "top_surface": null,
+   "mass": 0.02,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "role": "pen",
+   "size_word": null,
+   "task_name": "pen",
+   "name": "pen",
+   "uid": "item_thor_Pen_1",
+   "split": "train",
+   "stable": false,
+   "stable_rolling": true,
+   "settle": {
+    "dz_mm": 0.6,
+    "drift_mm": 8.3,
+    "tilt_deg": 29.9,
+    "category": "pen",
+    "height": 0.0112,
+    "grasp_width": 0.0089,
+    "stable": false
+   }
+  },
+  "item_thor_Pen_2": {
+   "height": 0.0112,
+   "grasp_width": 0.0089,
+   "length": 0.1908,
+   "grasp_yaw": 0.0,
+   "boxiness": 0.997,
+   "caliper_centre": [
+    0.0,
+    0.0129
+   ],
+   "handle_ratio": 1.929,
+   "circularity": -0.509,
+   "sphericity": 0.0,
+   "footprint_r": 0.0955,
+   "centre_xy": [
+    0.0,
+    0.0129
+   ],
+   "bottom_z": -0.005,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Pen_2",
+   "colour": null,
+   "noun": "pen",
+   "name_check": {
+    "claimed": "pen",
+    "noun": "pen",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Pen/Pen_2/Pen_2.usda",
+   "root_above_bottom": 0.005,
+   "category": "pen",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    0.0129
+   ],
+   "half_extents": [
+    0.0044,
+    0.0954,
+    0.0056
+   ],
+   "body_rel": "Geometry/Pen_2",
+   "top_surface": null,
+   "mass": 0.02,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "role": "pen",
+   "size_word": null,
+   "task_name": "pen",
+   "name": "pen",
+   "uid": "item_thor_Pen_2",
+   "split": "train",
+   "stable": false,
+   "stable_rolling": true,
+   "settle": {
+    "dz_mm": 0.6,
+    "drift_mm": 1.6,
+    "tilt_deg": 16.0,
+    "category": "pen",
+    "height": 0.0112,
+    "grasp_width": 0.0089,
+    "stable": false
+   }
+  },
+  "item_thor_Pen_3": {
+   "height": 0.0112,
+   "grasp_width": 0.0089,
+   "length": 0.1908,
+   "grasp_yaw": 0.0,
+   "boxiness": 0.997,
+   "caliper_centre": [
+    0.0,
+    0.0129
+   ],
+   "handle_ratio": 1.96,
+   "circularity": -0.527,
+   "sphericity": 0.0,
+   "footprint_r": 0.0955,
+   "centre_xy": [
+    0.0,
+    0.0129
+   ],
+   "bottom_z": -0.005,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Pen_3",
+   "colour": null,
+   "noun": "pen",
+   "name_check": {
+    "claimed": "pen",
+    "noun": "pen",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Pen/Pen_3/Pen_3.usda",
+   "root_above_bottom": 0.005,
+   "category": "pen",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    0.0129
+   ],
+   "half_extents": [
+    0.0044,
+    0.0954,
+    0.0056
+   ],
+   "body_rel": "Geometry/Pen_3",
+   "top_surface": null,
+   "mass": 0.02,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "role": "pen",
+   "size_word": null,
+   "task_name": "pen",
+   "name": "pen",
+   "uid": "item_thor_Pen_3",
+   "split": "ood",
+   "stable": false,
+   "stable_rolling": true,
+   "settle": {
+    "dz_mm": 0.6,
+    "drift_mm": 17.5,
+    "tilt_deg": 176.9,
+    "category": "pen",
+    "height": 0.0112,
+    "grasp_width": 0.0089,
+    "stable": false
+   }
+  },
+  "item_thor_Pen_4": {
+   "height": 0.0112,
+   "grasp_width": 0.0089,
+   "length": 0.1908,
+   "grasp_yaw": 0.0,
+   "boxiness": 0.997,
+   "caliper_centre": [
+    0.0,
+    0.0129
+   ],
+   "handle_ratio": 1.929,
+   "circularity": -0.509,
+   "sphericity": 0.0,
+   "footprint_r": 0.0955,
+   "centre_xy": [
+    0.0,
+    0.0129
+   ],
+   "bottom_z": -0.005,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Pen_4",
+   "colour": null,
+   "noun": "pen",
+   "name_check": {
+    "claimed": "pen",
+    "noun": "pen",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Pen/Pen_4/Pen_4.usda",
+   "root_above_bottom": 0.005,
+   "category": "pen",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    0.0129
+   ],
+   "half_extents": [
+    0.0044,
+    0.0954,
+    0.0056
+   ],
+   "body_rel": "Geometry/Pen_4",
+   "top_surface": null,
+   "mass": 0.02,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "role": "pen",
+   "size_word": null,
+   "task_name": "pen",
+   "name": "pen",
+   "uid": "item_thor_Pen_4",
+   "split": "train",
+   "stable": true,
+   "stable_rolling": true,
+   "settle": {
+    "dz_mm": 0.6,
+    "drift_mm": 0.3,
+    "tilt_deg": 2.6,
+    "category": "pen",
+    "height": 0.0112,
+    "grasp_width": 0.0089,
+    "stable": true
+   }
+  },
+  "item_thor_Pencil_1": {
+   "height": 0.0069,
+   "grasp_width": 0.008,
+   "length": 0.1706,
+   "grasp_yaw": 0.0,
+   "boxiness": 1.0,
+   "caliper_centre": [
+    0.0,
+    0.0078
+   ],
+   "handle_ratio": 1.941,
+   "circularity": -0.582,
+   "sphericity": 0.0,
+   "footprint_r": 0.0854,
+   "centre_xy": [
+    0.0,
+    0.0078
+   ],
+   "bottom_z": -0.0035,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Pencil_1",
+   "colour": null,
+   "noun": "pen",
+   "name_check": {
+    "claimed": "pen",
+    "noun": "pen",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Pencil/Pencil_1/Pencil_1.usda",
+   "root_above_bottom": 0.0035,
+   "category": "pen",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    0.0078
+   ],
+   "half_extents": [
+    0.004,
+    0.0853,
+    0.0034
+   ],
+   "body_rel": "Geometry/Pencil_1",
+   "top_surface": null,
+   "mass": 0.02,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "role": "pen",
+   "size_word": null,
+   "task_name": "pen",
+   "name": "pen",
+   "uid": "item_thor_Pencil_1",
+   "split": "ood",
+   "stable": false,
+   "stable_rolling": true,
+   "settle": {
+    "dz_mm": 1.2,
+    "drift_mm": 11.7,
+    "tilt_deg": 140.8,
+    "category": "pen",
+    "height": 0.0069,
+    "grasp_width": 0.008,
+    "stable": false
+   }
+  },
+  "item_thor_Pencil_2": {
+   "height": 0.0069,
+   "grasp_width": 0.008,
+   "length": 0.1921,
+   "grasp_yaw": 0.0,
+   "boxiness": 1.0,
+   "caliper_centre": [
+    0.0,
+    0.0078
+   ],
+   "handle_ratio": 1.97,
+   "circularity": -0.595,
+   "sphericity": 0.0,
+   "footprint_r": 0.0961,
+   "centre_xy": [
+    0.0,
+    0.0078
+   ],
+   "bottom_z": -0.0035,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Pencil_2",
+   "colour": null,
+   "noun": "pen",
+   "name_check": {
+    "claimed": "pen",
+    "noun": "pen",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Pencil/Pencil_2/Pencil_2.usda",
+   "root_above_bottom": 0.0035,
+   "category": "pen",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    0.0078
+   ],
+   "half_extents": [
+    0.004,
+    0.096,
+    0.0034
+   ],
+   "body_rel": "Geometry/Pencil_2",
+   "top_surface": null,
+   "mass": 0.02,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "role": "pen",
+   "size_word": null,
+   "task_name": "pen",
+   "name": "pen",
+   "uid": "item_thor_Pencil_2",
+   "split": "train",
+   "stable": false,
+   "stable_rolling": true,
+   "settle": {
+    "dz_mm": 1.2,
+    "drift_mm": 2.0,
+    "tilt_deg": 23.1,
+    "category": "pen",
+    "height": 0.0069,
+    "grasp_width": 0.008,
+    "stable": false
+   }
+  },
+  "item_thor_Pencil_3": {
+   "height": 0.0069,
+   "grasp_width": 0.008,
+   "length": 0.1867,
+   "grasp_yaw": 0.0,
+   "boxiness": 1.0,
+   "caliper_centre": [
+    0.0,
+    0.0078
+   ],
+   "handle_ratio": 1.975,
+   "circularity": -0.602,
+   "sphericity": 0.0,
+   "footprint_r": 0.0934,
+   "centre_xy": [
+    0.0,
+    0.0078
+   ],
+   "bottom_z": -0.0035,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Pencil_3",
+   "colour": null,
+   "noun": "pen",
+   "name_check": {
+    "claimed": "pen",
+    "noun": "pen",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Pencil/Pencil_3/Pencil_3.usda",
+   "root_above_bottom": 0.0035,
+   "category": "pen",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    0.0078
+   ],
+   "half_extents": [
+    0.004,
+    0.0934,
+    0.0034
+   ],
+   "body_rel": "Geometry/Pencil_3",
+   "top_surface": null,
+   "mass": 0.02,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "role": "pen",
+   "size_word": null,
+   "task_name": "pen",
+   "name": "pen",
+   "uid": "item_thor_Pencil_3",
+   "split": "train",
+   "stable": false,
+   "stable_rolling": true,
+   "settle": {
+    "dz_mm": 1.2,
+    "drift_mm": 27.3,
+    "tilt_deg": 29.5,
+    "category": "pen",
+    "height": 0.0069,
+    "grasp_width": 0.008,
+    "stable": false
+   }
+  },
+  "item_thor_Pencil_4": {
+   "height": 0.0069,
+   "grasp_width": 0.008,
+   "length": 0.0855,
+   "grasp_yaw": 0.0,
+   "boxiness": 1.0,
+   "caliper_centre": [
+    0.0,
+    0.008
+   ],
+   "handle_ratio": 1.914,
+   "circularity": -0.485,
+   "sphericity": 0.0,
+   "footprint_r": 0.043,
+   "centre_xy": [
+    0.0,
+    0.008
+   ],
+   "bottom_z": -0.0035,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Pencil_4",
+   "colour": null,
+   "noun": "pen",
+   "name_check": {
+    "claimed": "pen",
+    "noun": "pen",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Pencil/Pencil_4/Pencil_4.usda",
+   "root_above_bottom": 0.0035,
+   "category": "pen",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    0.008
+   ],
+   "half_extents": [
+    0.004,
+    0.0428,
+    0.0034
+   ],
+   "body_rel": "Geometry/Pencil_4",
+   "top_surface": null,
+   "mass": 0.02,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "role": "pen",
+   "size_word": null,
+   "task_name": "pen",
+   "name": "pen",
+   "uid": "item_thor_Pencil_4",
+   "split": "train",
+   "stable": false,
+   "stable_rolling": true,
+   "settle": {
+    "dz_mm": 1.2,
+    "drift_mm": 12.5,
+    "tilt_deg": 151.0,
+    "category": "pen",
+    "height": 0.0069,
+    "grasp_width": 0.008,
+    "stable": false
+   }
+  },
+  "item_thor_Pencil_5": {
+   "height": 0.0069,
+   "grasp_width": 0.008,
+   "length": 0.1342,
+   "grasp_yaw": 0.0,
+   "boxiness": 1.0,
+   "caliper_centre": [
+    0.0,
+    0.0078
+   ],
+   "handle_ratio": 1.913,
+   "circularity": -0.559,
+   "sphericity": 0.0,
+   "footprint_r": 0.0672,
+   "centre_xy": [
+    0.0,
+    0.0078
+   ],
+   "bottom_z": -0.0035,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Pencil_5",
+   "colour": null,
+   "noun": "pen",
+   "name_check": {
+    "claimed": "pen",
+    "noun": "pen",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Pencil/Pencil_5/Pencil_5.usda",
+   "root_above_bottom": 0.0035,
+   "category": "pen",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    0.0078
+   ],
+   "half_extents": [
+    0.004,
+    0.0671,
+    0.0034
+   ],
+   "body_rel": "Geometry/Pencil_5",
+   "top_surface": null,
+   "mass": 0.02,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "role": "pen",
+   "size_word": null,
+   "task_name": "pen",
+   "name": "pen",
+   "uid": "item_thor_Pencil_5",
+   "split": "train",
+   "stable": true,
+   "stable_rolling": true,
+   "settle": {
+    "dz_mm": 1.2,
+    "drift_mm": 0.1,
+    "tilt_deg": 0.8,
+    "category": "pen",
+    "height": 0.0069,
+    "grasp_width": 0.008,
+    "stable": true
+   }
+  },
+  "item_thor_Pencil_6": {
+   "height": 0.0069,
+   "grasp_width": 0.008,
+   "length": 0.1826,
+   "grasp_yaw": 0.0,
+   "boxiness": 1.0,
+   "caliper_centre": [
+    0.0,
+    0.0003
+   ],
+   "handle_ratio": 1.956,
+   "circularity": -0.573,
+   "sphericity": 0.0,
+   "footprint_r": 0.0914,
+   "centre_xy": [
+    0.0,
+    0.0003
+   ],
+   "bottom_z": -0.0035,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Pencil_6",
+   "colour": null,
+   "noun": "pen",
+   "name_check": {
+    "claimed": "pen",
+    "noun": "pen",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Pencil/Pencil_6/Pencil_6.usda",
+   "root_above_bottom": 0.0035,
+   "category": "pen",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    0.0003
+   ],
+   "half_extents": [
+    0.004,
+    0.0913,
+    0.0034
+   ],
+   "body_rel": "Geometry/Pencil_6",
+   "top_surface": null,
+   "mass": 0.02,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "role": "pen",
+   "size_word": null,
+   "task_name": "pen",
+   "name": "pen",
+   "uid": "item_thor_Pencil_6",
+   "split": "train",
+   "stable": true,
+   "stable_rolling": true,
+   "settle": {
+    "dz_mm": 1.2,
+    "drift_mm": 0.8,
+    "tilt_deg": 10.0,
+    "category": "pen",
+    "height": 0.0069,
+    "grasp_width": 0.008,
+    "stable": true
+   }
+  },
+  "item_thor_Pencil_7": {
+   "height": 0.0069,
+   "grasp_width": 0.008,
+   "length": 0.1786,
+   "grasp_yaw": 0.0,
+   "boxiness": 1.0,
+   "caliper_centre": [
+    0.0,
+    0.0078
+   ],
+   "handle_ratio": 1.95,
+   "circularity": -0.584,
+   "sphericity": 0.0,
+   "footprint_r": 0.0894,
+   "centre_xy": [
+    0.0,
+    0.0078
+   ],
+   "bottom_z": -0.0035,
+   "source": "MolmoSpaces THOR (AI2-THOR assets)",
+   "source_name": "Pencil_7",
+   "colour": null,
+   "noun": "pen",
+   "name_check": {
+    "claimed": "pen",
+    "noun": "pen",
+    "renamed": false,
+    "reasons": []
+   },
+   "usd_physics": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Pencil/Pencil_7/Pencil_7.usda",
+   "root_above_bottom": 0.0035,
+   "category": "pen",
+   "pose": "upright",
+   "license": "CC BY 4.0",
+   "spawn_quat_wxyz": [
+    0.7071068,
+    0.7071068,
+    0.0,
+    0.0
+   ],
+   "centre_from_root_xy": [
+    0.0,
+    0.0078
+   ],
+   "half_extents": [
+    0.004,
+    0.0893,
+    0.0034
+   ],
+   "body_rel": "Geometry/Pencil_7",
+   "top_surface": null,
+   "mass": 0.02,
+   "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)",
+   "role": "pen",
+   "size_word": null,
+   "task_name": "pen",
+   "name": "pen",
+   "uid": "item_thor_Pencil_7",
+   "split": "train",
+   "stable": false,
+   "stable_rolling": true,
+   "settle": {
+    "dz_mm": 1.2,
+    "drift_mm": 1.3,
+    "tilt_deg": 15.0,
+    "category": "pen",
+    "height": 0.0069,
+    "grasp_width": 0.008,
+    "stable": false
+   }
+  }
+ },
+ "dropped": {}
+}
