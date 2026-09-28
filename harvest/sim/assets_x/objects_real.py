@@ -167,6 +167,18 @@ def size_words(objs: dict) -> dict:
     return out
 
 
+GROUP_MERGE = {"game cartridge": "cartridge", "medicine box": "box", "toy animal": "toy", "toy vehicle": "toy"}
+SOURCE_GROUP = {"Shoe": "shoe"}  # GSO category that overrides a noun misread from a product name (a "boat" shoe)
+
+
+def group_of(o: dict) -> str:
+    """Category group for per-category caps (b4, L8-D request C): the noun, with the GSO source category winning
+    where it is unambiguous (every GSO "Shoe" model is a shoe even when its name reads "boat" / "train") and
+    near-duplicate nouns merged. Row names / nouns / splits are not changed."""
+    g = SOURCE_GROUP.get(o.get("category_src") or "")
+    return g or GROUP_MERGE.get(o["noun"], o["noun"])
+
+
 def task_name(o: dict, size: str | None) -> str:
     return " ".join(w for w in (size, o.get("colour"), o["noun"]) if w)
 
