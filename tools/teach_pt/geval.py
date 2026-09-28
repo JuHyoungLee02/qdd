@@ -28,6 +28,17 @@ def parse_point(text):
     return [x, y]
 
 
+def mask_path(p):
+    """Where2Place ships its masks as .jpg (only 00-30 also have a .png copy): fall back to the other extension."""
+    if os.path.exists(p):
+        return p
+    b = p.rsplit(".", 1)[0]
+    for ext in (".jpg", ".png"):
+        if os.path.exists(b + ext):
+            return b + ext
+    return p
+
+
 def score_row(r, text):
     from PIL import Image
     p = parse_point(text)
@@ -38,9 +49,9 @@ def score_row(r, text):
     W, H = im.size
     u, v = p[0] / 1000 * W, p[1] / 1000 * H
     if r["score"] == "mask":
-        m = np.asarray(Image.open(r["mask"]).convert("L"))
+        m = np.asarray(Image.open(mask_path(r["mask"])).convert("L"))
         iu, iv = int(min(max(u, 0), m.shape[1] - 1)), int(min(max(v, 0), m.shape[0] - 1))
-        out["hit"] = bool(m[iv, iu] > 0)
+        out["hit"] = bool(m[iv, iu] > m.max() / 2) if m.max() > 0 else False  # JPEG masks (Where2Place) are not 0/255
     else:
         a = json.loads(r["answer"])
         t = a.get("point") or a.get("point_2d")

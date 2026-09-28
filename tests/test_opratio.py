@@ -32,5 +32,11 @@ def test_score(tmp_path):
     msk = {"id": "b", "gset": "w", "images": [str(img)], "mask": str(tmp_path / "m.png"), "score": "mask"}
     assert GE.score_row(msk, '{"point": [500, 500]}')["hit"]
     assert not GE.score_row(msk, '{"point": [100, 100]}')["hit"]
+    jm = mk.copy()
+    jm[jm > 0] = 200  # a JPEG-like soft mask with a .jpg file only
+    Image.fromarray(jm).save(tmp_path / "j.jpg", quality=90)
+    jr = dict(msk, mask=str(tmp_path / "j.png"))
+    assert GE.score_row(jr, '{"point": [500, 500]}')["hit"]
+    assert not GE.score_row(jr, '{"point": [100, 100]}')["hit"]
     summ = GE.summarize([GE.score_row(msk, '{"point": [500, 500]}'), GE.score_row(msk, "x")])
     assert summ["ALL"]["hit"] == 0.5 and summ["ALL"]["valid"] == 0.5
