@@ -117,7 +117,12 @@ def main(argv=None):
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--max-steps", type=int, default=0, help="stop after this many optimizer steps (smoke)")
     ap.add_argument("--limit", type=int, default=0, help="use only the first N rows (smoke)")
+    ap.add_argument("--save-every", type=int, default=0,
+                    help="full-state checkpoint (LoRA, optimizer, loop position, RNG) every N optimizer steps -> <out>/state")
+    ap.add_argument("--resume", action="store_true", help="continue from <out>/state (same layout required)")
+    ap.add_argument("--stop-after", type=int, default=0, help="test: exit right after the checkpoint at this step")
     a = ap.parse_args(argv)
+    from . import ckpt
 
     import torch
     from peft import LoraConfig, get_peft_model
@@ -153,19 +158,27 @@ def main(argv=None):
     pad = proc.tokenizer.pad_token_id if proc.tokenizer.pad_token_id is not None else 0
     log = open(os.path.join(a.out, "log.jsonl"), "a")
     step, tok, ans_tok, n_s, lsum, lcnt = 0, 0, 0, 0, 0.0, 0
+    ep0, k0 = 0, 0
+    layout = {"world": 1, "micro": a.micro, "accum": a.accum, "seed": a.seed, "epochs": a.epochs,
+              "max_steps": a.max_steps, "rows": len(rows)}
+    if a.resume and ckpt.exists(a.out):
+        pos = ckpt.load(a.out, model, opt, layout)
+        step, ep0, k0 = pos["step"], pos["epoch"], pos["next_k"]
+        print("RESUME " + json.dumps(pos), flush=True)
     t_win = time.time()
     t_train0 = time.time()
     epoch_times = []
     model.train()
     done = False
-    for ep in range(n_ep):
+    for ep in range(ep0, n_ep):
         te = time.time()
         mbs = micro_batches(lengths, a.micro, a.window, a.seed + ep)
         if a.epochs - ep < 1:
             mbs = mbs[:int(len(mbs) * (a.epochs - ep))]
-        loader = torch.utils.data.DataLoader(MBData(rows, mbs, enc, pad), batch_size=None, shuffle=False,
+        start = k0 if ep == ep0 else 0
+        loader = torch.utils.data.DataLoader(MBData(rows, mbs[start:], enc, pad), batch_size=None, shuffle=False,
                                              num_workers=a.workers, prefetch_factor=4 if a.workers else None)
-        for k, (bc, n_ans, n_items) in enumerate(loader):
+        for k, (bc, n_ans, n_items) in enumerate(loader, start):
             b = {kk: v.to("cuda", non_blocking=True) for kk, v in bc.items()}
             out = model(**b)
             (out.loss / a.accum).backward()
@@ -190,6 +203,11 @@ def main(argv=None):
                     log.flush()
                     print("LOG " + json.dumps(rec), flush=True)
                     tok, ans_tok, n_s, lsum, lcnt, t_win = 0, 0, 0, 0.0, 0, time.time()
+                if a.save_every and step % a.save_every == 0:
+                    ckpt.save(a.out, model, opt, {"step": step, "epoch": ep, "next_k": k + 1}, layout)
+                    if a.stop_after and step == a.stop_after:
+                        print(f"STOPPED_AT {step}", flush=True)
+                        return
                 if a.max_steps and step >= a.max_steps:
                     done = True
                     break

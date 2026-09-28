@@ -31,6 +31,7 @@ import math
 import os
 import time
 
+from ..teach_l8 import ckpt
 from ..teach_l8.train import mask_labels, micro_batches
 from .data import check_rows, messages, request_text
 
@@ -126,6 +127,10 @@ def main(argv=None):
     ap.add_argument("--max-steps", type=int, default=0, help="stop after this many optimizer steps (smoke)")
     ap.add_argument("--limit", type=int, default=0, help="use only the first N rows (smoke)")
     ap.add_argument("--save-every-epoch", type=int, default=1)
+    ap.add_argument("--save-every", type=int, default=0,
+                    help="full-state checkpoint (LoRA, optimizer, loop position, RNG) every N optimizer steps -> <out>/state")
+    ap.add_argument("--resume", action="store_true", help="continue from <out>/state (same layout required)")
+    ap.add_argument("--stop-after", type=int, default=0, help="test: exit right after the checkpoint at this step")
     ap.add_argument("--label-check", choices=("strict", "warn"), default="strict")
     ap.add_argument("--mem-frac", type=float, default=0.0, help="cap this process's GPU memory share (0 = no cap)")
     a = ap.parse_args(argv)
@@ -190,21 +195,30 @@ def main(argv=None):
 
     pad = proc.tokenizer.pad_token_id if proc.tokenizer.pad_token_id is not None else 0
     log = open(os.path.join(a.out, "log.jsonl"), "a") if main_rank else None
-    step = 0
+    step, ep0, k0 = 0, 0, 0
+    layout = {"world": world, "micro": a.micro, "accum": a.accum, "seed": a.seed, "epochs": a.epochs,
+              "max_steps": a.max_steps, "rows": len(rows)}
+    barrier = dist.barrier if world > 1 else None
+    if a.resume and ckpt.exists(a.out):
+        pos = ckpt.load(a.out, core, opt, layout, rank)
+        step, ep0, k0 = pos["step"], pos["epoch"], pos["next_k"]
+        if main_rank:
+            print("RESUME " + json.dumps(pos), flush=True)
     cnt = torch.zeros(5, dtype=torch.float64, device=dev)  # tokens, answer tokens, samples, loss sum, loss count
     t_win = t_train0 = time.time()
     epoch_times = []
     model.train()
     done = False
-    for ep in range(n_ep):
+    for ep in range(ep0, n_ep):
         te = time.time()
         mbs = micro_batches(lengths, a.micro, a.window, a.seed + ep)
         if a.epochs - ep < 1:
             mbs = mbs[:int(len(mbs) * (a.epochs - ep))]
         mine = shard(mbs, rank, world)
-        loader = torch.utils.data.DataLoader(MBData(rows, mine, enc, pad), batch_size=None, shuffle=False,
+        start = k0 if ep == ep0 else 0
+        loader = torch.utils.data.DataLoader(MBData(rows, mine[start:], enc, pad), batch_size=None, shuffle=False,
                                              num_workers=a.workers, prefetch_factor=4 if a.workers else None)
-        for k, (bc, n_ans, n_items) in enumerate(loader):
+        for k, (bc, n_ans, n_items) in enumerate(loader, start):
             b = {kk: v.to(dev, non_blocking=True) for kk, v in bc.items()}
             boundary = (k + 1) % a.accum == 0 or k + 1 == len(mine)
             if world > 1 and not boundary:
@@ -239,6 +253,14 @@ def main(argv=None):
                         print("LOG " + json.dumps(rec), flush=True)
                     cnt.zero_()
                     t_win = time.time()
+                if a.save_every and step % a.save_every == 0:
+                    ckpt.save(a.out, core, opt, {"step": step, "epoch": ep, "next_k": k + 1}, layout, rank, barrier)
+                    if a.stop_after and step == a.stop_after:
+                        if main_rank:
+                            print(f"STOPPED_AT {step}", flush=True)
+                        if world > 1:
+                            dist.destroy_process_group()
+                        return
                 if a.max_steps and step >= a.max_steps:
                     done = True
                     break
