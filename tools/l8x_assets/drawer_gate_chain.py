@@ -28,7 +28,7 @@ def main(argv=None):
         tasks = ",".join(t for t, _ in ts)
         seeds = ",".join(s for _, s in ts)
         lines.append(f"bash $I {code} {gpu} xn_dr{k} tools.l8x_assets.gate_drawer --piece-usd {usd_of(piece)} "
-                     f"--piece {piece} --tasks {tasks} --seeds {seeds} --out {out}")
+                     f"--piece {piece} --tasks {tasks} --seeds {seeds} --out {out} --approach front")  # change 10
     lines.append("echo CHAIN_DONE")
     open(chain, "w", newline="\n").write("\n".join(lines) + "\n")
     print(len(by), "pieces ->", chain)

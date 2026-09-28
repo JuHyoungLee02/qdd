@@ -58,6 +58,9 @@ def main(argv=None):
     ap.add_argument("--tasks", required=True)
     ap.add_argument("--seeds", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--diag", action="store_true", help="per-command reach / joint-limit lines + wrist frames")
+    ap.add_argument("--max-calls", type=int, default=MAX_CALLS)
+    ap.add_argument("--approach", choices=("top", "front"), default="top", help="change 10: front grasp")
     a = ap.parse_args(argv)
     code = 0
     try:
@@ -171,6 +174,11 @@ def main(argv=None):
             ji = jn.index(jname)
             from harvest.sim.planner import MAX_DQ_RAD, W_MAX, OraclePlanner, _slerp_step
             pl = OraclePlanner(env)
+            plan = XD.plan_drawer
+            if a.approach == "front":  # gripper axis +x (towards the piece), fingers closing vertically
+                pl.goal_quat = np.asarray(qmul((math.cos(-math.pi / 4), 0.0, math.sin(-math.pi / 4), 0.0),
+                                               (math.cos(math.pi / 4), 0.0, 0.0, math.sin(math.pi / 4))), float)
+                plan = XD.plan_drawer_front
             cmd_q = np.asarray(pl.cmd_quat, float)
             w_cmd = float(SC.GRIP_MAX_W)
             frames = []
@@ -191,9 +199,9 @@ def main(argv=None):
             info = {"pull_dir": [-1.0, 0.0, 0.0], "open_target": XD.OPEN_TARGET, "clear_z": clear_z}
             steps = []
             h_start = status()["handle"]
-            for call in range(MAX_CALLS):
+            for call in range(a.max_calls):
                 st = status()
-                step, cmd = XD.plan_drawer(st, info, float(SC.GRIP_MAX_W))
+                step, cmd = plan(st, info, float(SC.GRIP_MAX_W))
                 steps.append(step)
                 if cmd["mode"] == "stop":
                     break
@@ -213,6 +221,24 @@ def main(argv=None):
                             frames.append(env.camera_rgb("cam_head").copy())
                     for _ in range(HOLD):
                         tick(tgt)
+                    if a.diag:  # stall diagnosis: reached vs target, arm joints near limits
+                        jp = env.robot.data.joint_pos[0].cpu().numpy()
+                        lim = env.robot.data.soft_joint_pos_limits[0].cpu().numpy()
+                        near_lim = [f"{n}:{jp[i]:.2f}[{lim[i, 0]:.2f},{lim[i, 1]:.2f}]"
+                                    for i, n in enumerate(env.robot.joint_names)
+                                    if min(jp[i] - lim[i, 0], lim[i, 1] - jp[i]) < 0.05]
+                        env.env.sim.render()
+                        env.scene["cam_wrist_right"].update(0.0, force_recompute=True)
+                        _save(env.camera_rgb("cam_wrist_right").copy(),
+                              os.path.join(a.out, f"diag_{seed}_{call:02d}_{step}.png"))
+                        if call <= 3:  # gripper bodies (world) -> finger closing axis and housing size
+                            bpos = env.robot.data.body_pos_w[0].cpu().numpy()
+                            print("DR_BODIES", call, {n: [round(float(v), 3) for v in bpos[i]]
+                                                      for i, n in enumerate(env.robot.body_names)
+                                                      if "gripper_r" in n or n.startswith("arm_r_link")}, flush=True)
+                        print("DR_DIAG", call, step, "tgt", [round(float(v), 3) for v in tgt], "tcp",
+                              [round(float(v), 3) for v in status()["tcp"]], "w", round(float(env.gripper_width()), 4),
+                              "lim", near_lim, flush=True)
                 else:
                     for _ in range(15):
                         tick(st["tcp"])

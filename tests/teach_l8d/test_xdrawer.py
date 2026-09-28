@@ -17,6 +17,7 @@ def run(h0=(0.52, -0.22, 0.90), u=(-1.0, 0.0, 0.0), n=200, stick=True, clear_z=1
         h = h0 + u * q
         step, cmd = XD.plan_drawer({"tcp": tcp, "grip_w": w, "handle": h, "joint": q}, info, W_OPEN)
         steps.append(step)
+        assert not (cmd["mode"] == "eef" and cmd.get("gripper") == "close"), "closing while moving (change 9)"
         if cmd["mode"] == "stop":
             break
         if cmd.get("gripper") == "close":
@@ -61,3 +62,30 @@ def test_list_and_ids():
     assert XD.task_id(*lst[0][:2]) == "dr__Dresser_1__Dresser_1_drawer_1_handle"
     assert XD.gate_pick(lst, 35390) == lst[0]
     assert XD.texts("pull")[0] == "pull the drawer open"
+
+
+def test_front_plan_opens_the_drawer():
+    """change 10: front grasp; the TCP never goes past the grasp point towards the piece (+x here)."""
+    h0, u = np.array([0.50, -0.22, 0.94]), np.array([-1.0, 0.0, 0.0])
+    tcp, w, q, steps = np.array([0.34, -0.25, 1.17]), W_OPEN, 0.0, []
+    for _ in range(200):
+        h = h0 + u * q
+        step, cmd = XD.plan_drawer_front({"tcp": tcp, "grip_w": w, "handle": h, "joint": q},
+                                         {"pull_dir": u, "open_target": 0.20}, W_OPEN)
+        steps.append(step)
+        assert not (cmd["mode"] == "eef" and cmd.get("gripper") == "close")
+        if cmd["mode"] == "stop":
+            break
+        if cmd.get("gripper") == "close":
+            w = 0.01
+        elif cmd.get("gripper") == "open":
+            w = cmd.get("width_m", W_OPEN)
+        if cmd["mode"] == "eef":
+            assert cmd["orient"] == "front"
+            new = np.array(cmd["position_m"], float)
+            assert float((new - h) @ u) >= XD.FRONT_GRASP - 1e-3 - (XD.PULL_STEP if step == "pull" else 0)
+            if step == "pull":
+                q = max(q, float((new - h0) @ u) - XD.FRONT_GRASP)
+            tcp = new
+    assert steps[-1] == "done" and q >= 0.2 - XD.OPEN_TOL
+    assert [s for s in XD.STEPS_FRONT if s in steps] == list(XD.STEPS_FRONT)
