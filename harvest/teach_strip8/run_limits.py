@@ -22,6 +22,11 @@ def parse(cond: str):
     return (p[0], lv), "r" in ex, next((x for x in ("v2g", "v2") if x in ex), "v1")
 
 
+def nfix_of(cond: str) -> bool:
+    """Extra 'nf' = the change-3 noise fix (prereg_limits.md)."""
+    return "nf" in cond.split(":")[1:]
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--conds", required=True)
@@ -63,7 +68,7 @@ def main(argv=None):
                 t0 = time.perf_counter()
                 ep = LimitEpisode(world, model, c["seed"], c["task"], od, video=True, variant=c["variant"],
                                   stop_calls=a.stop_calls, stop_motion_s=a.stop_motion, mem_points=True, fix_loop=True,
-                                  corrupt=corrupt, rescue=rescue, resolver=resolver)
+                                  corrupt=corrupt, rescue=rescue, resolver=resolver, nfix=nfix_of(cond))
                 res = ep.run()
                 print("EP " + json.dumps({k: res.get(k) for k in (
                     "seed", "task", "success", "grasp_lift", "fail_stage", "end_reason", "n_calls")} | {

@@ -65,6 +65,8 @@ CHANGE_Q = 80
 WIN_PX = 50  # half size of the check window around the pointed pixel
 TCP_EXCL_M = 0.15  # live points this close to the TCP (gripper + held object) are not compared
 N_MIN = 50
+NOISE_Z = 2.0  # change 3 (1): per-pixel allowance = NOISE_Z * sqrt(2) * sigma_z(z) (live and memory both noisy)
+HELD_CYL = (0.07, 0.28, 0.03)  # change 3 (2): held-object cylinder around the TCP axis (radius, below, above) m
 
 
 def px_of(cam, p) -> list:
@@ -106,7 +108,7 @@ class PointMemory:
             D = np.where(hole, nb, D)
         return np.where(np.isfinite(D), D, np.nan)
 
-    def check(self, cam, live, px, tcp) -> tuple:
+    def check(self, cam, live, px, tcp, sigma=None, held=None) -> tuple:
         """-> (keep memory?, info). Compares the live depth with the re-rendered memory in a window around the
         pointed pixel, only where both are valid and the live point is neither the robot nor within TCP_EXCL_M of
         the TCP (gripper, held object). Too few pixels (< N_MIN) -> keep (unverified)."""
@@ -119,11 +121,57 @@ class PointMemory:
         near = np.linalg.norm(L - np.asarray(tcp, float), axis=-1) < TCP_EXCL_M
         rob = RS.robot_mask(L[..., 2] - self.plane, self.plane, tcp)
         m = np.isfinite(dl) & np.isfinite(dm) & np.isfinite(L).all(-1) & ~near & ~rob
+        extra = {}
+        if held is not None:  # change 3 (2): pixels whose ray meets the held-object cylinder are not compared
+            hm = held_rays(cam, sl, tcp, *held)
+            extra["n_held_px"] = int((m & hm).sum())
+            m &= ~hm
         n = int(m.sum())
         if n < N_MIN:
-            return True, {"n": n, "stat_mm": None, "unverified": True}
-        stat = float(np.percentile(np.abs(dl[m] - dm[m]), CHANGE_Q)) * 1e3
-        return stat <= CHANGE_MM, {"n": n, "stat_mm": round(stat, 1)}
+            return True, dict(extra, n=n, stat_mm=None, unverified=True)
+        diff = np.abs(dl[m] - dm[m])
+        if sigma is not None:  # change 3 (1): subtract the stereo-noise allowance at each pixel's depth
+            sz = np.asarray(dm[m], float) ** 2 * float(sigma[1]) / (float(cam.fx) * float(sigma[0]))
+            diff = np.maximum(diff - NOISE_Z * np.sqrt(2.0) * sz, 0.0)
+            extra["allow_mm"] = round(float(np.median(NOISE_Z * np.sqrt(2.0) * sz)) * 1e3, 1)
+        stat = float(np.percentile(diff, CHANGE_Q)) * 1e3
+        return stat <= CHANGE_MM, dict(extra, n=n, stat_mm=round(stat, 1))
+
+
+def held_rays(cam, sl, tcp, r: float, below: float, above: float) -> np.ndarray:
+    """Mask over the window `sl`: the pixel ray meets the vertical cylinder (axis through the TCP, radius r, from
+    TCP z - below to TCP z + above), i.e. the held object's projected region (change 3 (2))."""
+    from ..astra_motion.geometry import PIX_C
+    iu, iv = np.meshgrid(np.arange(cam.W) + PIX_C, np.arange(cam.H) + PIX_C)
+    d = np.stack([(iu - cam.cx) / cam.fx, (iv - cam.cy) / cam.fy, np.ones(iu.shape)], -1)[sl]
+    d = d @ np.asarray(cam.R, float).T
+    t, c = np.asarray(cam.t, float), np.asarray(tcp, float)
+    ox, oy = t[0] - c[0], t[1] - c[1]
+    a = np.maximum(d[..., 0] ** 2 + d[..., 1] ** 2, 1e-12)
+    b = 2 * (ox * d[..., 0] + oy * d[..., 1])
+    disc = b * b - 4 * a * (ox * ox + oy * oy - r * r)
+    ok = disc >= 0
+    sq = np.sqrt(np.where(ok, disc, 0.0))
+    s1, s2 = (-b - sq) / (2 * a), (-b + sq) / (2 * a)
+    dz = np.where(np.abs(d[..., 2]) > 1e-12, d[..., 2], 1e-12)
+    za, zb = (c[2] - below - t[2]) / dz, (c[2] + above - t[2]) / dz
+    lo, hi = np.maximum(np.minimum(za, zb), s1), np.minimum(np.maximum(za, zb), s2)
+    return ok & (hi >= np.maximum(lo, 0.0))
+
+
+class AboveSmoother:
+    """change 3 (3): the executed 'above' target = per-axis median of the last 3 'above' targets of the current holding
+    phase (keyed by call index, so the probe and the execution of one call count once)."""
+
+    def __init__(self, n: int = 3):
+        self.n, self.hold, self.hist = n, None, {}
+
+    def push(self, call: int, holding: bool, goal) -> list:
+        if holding != self.hold:
+            self.hold, self.hist = holding, {}
+        self.hist[call] = [float(v) for v in goal]
+        last = [self.hist[k] for k in sorted(self.hist)[-self.n:]]
+        return [round(float(v), 4) for v in np.median(np.asarray(last), 0)]
 
 
 DESC_XY_M = 0.02  # DescendGuard: the TCP is above the pointed object (xy)
@@ -234,7 +282,7 @@ class BoostEpisode(PtEpisode):
         if cmd.get("height") == "lift" or self.pmem.P is None:
             return PtEpisode.resolve(self, cmd, st)
         px = RS.to_pixel(cmd["point_2d"], self.head.W, self.head.H)
-        ok, info = self.pmem.check(self.head, self.depth, px, st["tcp"])
+        ok, info = self.pmem.check(self.head, self.depth, px, st["tcp"], **getattr(self, "check_kw", {}))
         self.mem_log.append(dict(info, call=len(self.calls), kept=ok))
         if not ok:
             self.pmem.P = None  # the scene changed: drop the memory, live depth from now on
@@ -410,7 +458,9 @@ class LimitEpisode(PerturbEpisode):
     zed_mini x `level`; light = lighting level name; occl = grey box over `level` of the target's image box.
     rescue = the D depth rescue (limits.rescue_resolve) in the point resolver, a 'remeasure' target when all fails."""
 
-    def __init__(self, *a, corrupt=None, rescue: bool = False, resolver: str = "v1", **kw):
+    def __init__(self, *a, corrupt=None, rescue: bool = False, resolver: str = "v1", nfix: bool = False, **kw):
+        """nfix (change 3): the noise fix = noise-scaled scene-change allowance (the sensor's calibrated noise: zed_mini
+        x the noise level, 0 without noise) + held-object cylinder excluded + 'above' 3-call median."""
         super().__init__(*a, **kw)
         if corrupt is not None and corrupt[0] not in CORRUPTS:
             raise ValueError(corrupt)
@@ -418,6 +468,12 @@ class LimitEpisode(PerturbEpisode):
             raise ValueError(resolver)
         self.corrupt, self.rescue, self.resolver = corrupt, rescue, resolver
         self.corrupt_log, self.rescue_log = [], []
+        self.nfix, self.smoother, self.smooth_log = nfix, AboveSmoother(), []
+        if nfix:
+            from ..teach_l8d.depth_noise import PRESETS
+            k = float(corrupt[1]) if corrupt is not None and corrupt[0] == "noise" else 0.0
+            self.check_kw = {"sigma": (PRESETS["zed_mini"]["baseline_m"], PRESETS["zed_mini"]["sigma_d_px"] * k),
+                             "held": HELD_CYL}
 
     def _corrupt(self, obs):
         from . import limits as LM
@@ -465,6 +521,15 @@ class LimitEpisode(PerturbEpisode):
             self.w.observe, RS.resolve_point = orig, rp0
 
     def resolve(self, cmd: dict, st: dict) -> dict:
+        res = self._resolve_limits(cmd, st)
+        if not self.nfix or cmd.get("height") != "above" or res.get("goal") is None:
+            return res
+        g = self.smoother.push(len(self.calls), self.holding(st), res["goal"])
+        if g != res["goal"]:
+            self.smooth_log.append({"call": len(self.calls), "raw": res["goal"], "used": g})
+        return dict(res, goal=g, goal_raw=res["goal"])
+
+    def _resolve_limits(self, cmd: dict, st: dict) -> dict:
         if not self.rescue or cmd.get("height") == "lift" or cmd.get("point_2d") is None or self.depth is None:
             return super().resolve(cmd, st)
         from . import limits as LM
@@ -485,6 +550,7 @@ class LimitEpisode(PerturbEpisode):
 
     def _save(self, res):
         res["limits"] = {"corrupt": list(self.corrupt) if self.corrupt else None, "rescue": self.rescue,
-                         "resolver": self.resolver,
+                         "resolver": self.resolver, "nfix": self.nfix,
+                         "above_smoothed": {str(d["call"]): d for d in self.smooth_log},
                          "n_corrupted_obs": len(self.corrupt_log), "rescues": self.rescue_log}
         super()._save(res)
