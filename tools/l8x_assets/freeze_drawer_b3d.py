@@ -2,7 +2,8 @@
 4 pieces), one piece held out as OOD (OOD_PIECE, never trained), handle_y (scene frame, the robot's left = +y) for the
 drawer wording, and the TRAIN plan: seeds 34652-34799 over the train handles, balanced (round-robin over a seeded
 shuffle). Plan rows are run_collect --plan rows (furniture "drawer", variant standard).
-usage: python tools/l8x_assets/freeze_drawer_b3d.py HANDLES.json docs/stage3/l8x_drawer_list.json OUT.json"""
+usage: python tools/l8x_assets/freeze_drawer_b3d.py HANDLES.json docs/stage3/l8x_drawer_list.json OUT.json
+(also writes OUT_plan.json = the plan list for run_collect --plan)"""
 from __future__ import annotations
 
 import hashlib
@@ -42,6 +43,7 @@ def main(argv=None):
     a = argv or sys.argv[1:]
     out = freeze(json.load(open(a[0])), json.load(open(a[1])))
     json.dump(out, open(a[2], "w", newline="\n"), indent=1)
+    json.dump(out["plan"], open(a[2].replace(".json", "_plan.json"), "w", newline="\n"))  # run_collect --plan
     from collections import Counter
     print(len(out["tasks"]), "handles;", dict(Counter(r["split"] for r in out["tasks"])), "plan", len(out["plan"]),
           dict(Counter(e["task"].split("__")[1] for e in out["plan"])))
