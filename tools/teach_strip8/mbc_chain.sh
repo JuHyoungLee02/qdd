@@ -9,7 +9,9 @@ P=/data/harvest/venv_train/bin/python
 mkdir -p $O
 cd $C; export PYTHONPATH=$C
 S="bash $C/tools/teach_strip8"
-until [ -s $CONF/train_pt.jsonl ] && ls $CONF/train_pt*counts.json > /dev/null 2>&1; do sleep 120; done
+T0=$(date +%s)  # conf1 must be rebuilt after this chain started (L8D chain_conf.log "CONF rebuilt"; change 2)
+until grep -q "CONF rebuilt" /data/harvest/logs/teach_l8d/chain_conf.log 2>/dev/null && [ -s $CONF/train_pt.jsonl ] \
+      && [ "$(stat -c %Y $CONF/train_pt.jsonl)" -gt "${CONF_AFTER:-$T0}" ]; do sleep 120; done
 until grep -q "^POOL" $L/refsp_pool.log; do sleep 60; done
 $S/py.sh train - ${A}_conv $C tools/teach_strip8/conv_dmin.py $CONF/train_pt.jsonl $O/data
 $S/py.sh train - ${A}_build $C tools/teach_strip8/build_mbc.py $O/data/train_d-min.jsonl /data/harvest/data/refspatial/pool.jsonl $O/data $SH

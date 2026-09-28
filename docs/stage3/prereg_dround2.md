@@ -64,3 +64,8 @@
   - **(c) 채택 규칙(결과 전 고정)**: Mbc − Mb의 접근 3D 짝 차가 **OOD-O와 dev_x 둘 다** 평균 ≤ 0 **그리고** 95 % 구간 상한 < +1 mm일 때만 채택한다. 둘 중 하나라도 평균이 0보다 크면(조금이라도 나빠지면) 버린다.
   - (b)의 판정은 원래 규칙을 Mb 대 Mobj에 적용한다.
   - GPU: Mb 학습 x2 GPU 0 → 폐루프 x2 GPU 1, Mbc 학습 메인 GPU 2 → 폐루프 메인 GPU 1.
+- **변경 2 (2026-09-28T09:3xZ, Mb·Mbc 답 전 — 학습 도중 멈춤)**:
+  - Mb·Mbc 첫 학습(07:57Z 시작)은 L8D conf1의 **실패한 첫 빌드**(train_pt.jsonl 1,225 상태·조종 1,966행, 16:55 KST 파일)를 썼다. L8D가 xnew 등록 버그(o12 KeyError)로 그 빌드를 무효로 알렸다.
+  - 그래서 두 학습을 멈추고 산출을 `out/strip8/{mb,mbc}_invalid_conf1a`로 옮겼다(평가·답 없음).
+  - 체인은 L8D `chain_conf.log`의 "CONF rebuilt" 뒤, 그리고 체인 시작 뒤에 쓰인 train_pt.jsonl만 받도록 고쳐 다시 띄운다. 조건(팔·비율·걸음 규칙·GPU·판정)은 그대로다.
+  - 재빌드는 150편(cf_mug_tray·cf_mug_marker·cf_mug_bin)이다(L8D).
