@@ -33,6 +33,8 @@ def clean_name(name: str | None) -> str | None:
         return None
     if n.split()[-1] in GENERIC | {"position", "goal"}:
         return None
+    if set(n.split()) & {"arm", "arms", "hand", "hands", "gripper", "grippers", "robot"}:  # the robot, not an object
+        return None
     return n
 
 
