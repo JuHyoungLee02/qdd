@@ -23,6 +23,15 @@ def ray(K, uv):
     return d
 
 
+THIN = {"wrench", "screwdriver", "brush", "tube", "pliers", "scissors", "handle", "pen", "marker"}
+HOLLOW = {"crate", "box", "basket", "bin", "bag", "container", "tray", "cup", "bowl"}
+
+
+def group_of(name):
+    w = set(name.split())
+    return "hollow_or_box" if w & HOLLOW else ("thin" if w & THIN else "compact")
+
+
 def plane_fit(P, it=200, tol=0.005, rng=np.random.default_rng(0)):
     best, bi = None, -1
     for _ in range(it):
@@ -45,6 +54,7 @@ def main(depth_dir, t4, rec, outp):
     Tbc = np.linalg.inv(E)
     seg = Sam31Image(thr=0.3)
     out = {k: [] for k in ("base", "base_same_rows", "med", "p20", "plane")}
+    dd, dn = {}, {}  # D-definition measures: resolver -> group -> xy / dz ; resolver -> name -> dz
     decomp = {"ray": [], "lat": [], "z": [], "no_mask": 0}
     by = {}
     for line in open(rec):
@@ -65,16 +75,25 @@ def main(depth_dir, t4, rec, outp):
         tgt_c = E[:3, :3] @ np.array(a["position_m"]) + E[:3, 3]  # target in camera frame
         rv = ray(K, uv)
 
-        def to_err(zv):
+        tgt_b = np.array(a["position_m"], float)
+        grp = group_of(name)
+
+        def to_err(zv, key=None):
             if zv is None or not np.isfinite(zv):
                 return None
             pc = rv * zv
+            if key:  # D definition: horizontal xy error vs the FK TCP, and the height offset (surface - TCP z)
+                xb = Tbc[:3, :3] @ pc + Tbc[:3, 3]
+                dd.setdefault(key, {}).setdefault(grp, {"xy": [], "dz": []})
+                dd[key][grp]["xy"].append(float(np.linalg.norm(xb[:2] - tgt_b[:2])))
+                dd[key][grp]["dz"].append(float(xb[2] - tgt_b[2]))
+                dn.setdefault(key, {}).setdefault(name, []).append(float(xb[2] - tgt_b[2]))
             return float(np.linalg.norm(pc - tgt_c)), pc
 
         u, v = int(round(uv[0])), int(round(uv[1]))
         patch = d[max(0, v - 2):v + 3, max(0, u - 2):u + 3]
         zb = float(np.nanmedian(patch)) if np.isfinite(patch).any() else None
-        e = to_err(zb)
+        e = to_err(zb, "base")
         e_base = e[0] if e else None
         by.setdefault(name, {k: [] for k in out})
         if e:
@@ -100,8 +119,9 @@ def main(depth_dir, t4, rec, outp):
             continue
         if e_base is not None:  # the current resolver on exactly the rows the mask resolvers see
             out["base_same_rows"].append(e_base)
+            to_err(zb, "base_same_rows")
         for k, zv in (("med", float(np.median(vals))), ("p20", float(np.percentile(vals, 20)))):
-            e = to_err(zv)
+            e = to_err(zv, k)
             if e:
                 out[k].append(e[0])
                 by[name][k].append(e[0])
@@ -116,7 +136,7 @@ def main(depth_dir, t4, rec, outp):
             den = rv @ n
             if abs(den) > 1e-6:
                 t = (p0 @ n) / den
-                e = to_err(t)
+                e = to_err(t, "plane")
                 if e:
                     out["plane"].append(e[0])
                     by[name]["plane"].append(e[0])
@@ -135,8 +155,18 @@ def main(depth_dir, t4, rec, outp):
                              "camera_5px_cm": round(float(np.median(5 * z / K[0, 0])) * 100, 2),
                              "no_mask": decomp["no_mask"]},
            "by_name": {k: {kk: st(vv) for kk, vv in v.items()} for k, v in by.items()}}
+    def dstat(v):
+        xy, dz = np.asarray(v["xy"]), np.asarray(v["dz"])
+        return {"n": int(len(xy)), "xy_median_cm": round(float(np.median(xy)) * 100, 2),
+                "xy_le2cm": round(float((xy <= 0.02).mean()), 3), "dz_median_cm": round(float(np.median(dz)) * 100, 2),
+                "dz_iqr_cm": round(float(np.subtract(*np.percentile(dz, [75, 25]))) * 100, 2),
+                "dz_std_cm": round(float(np.std(dz)) * 100, 2)}
+    res["d_definition"] = {k: {g: dstat(v) for g, v in gs.items()} for k, gs in dd.items()}
+    res["dz_by_name"] = {k: {n: {"n": len(v), "median_cm": round(float(np.median(v)) * 100, 2),
+                                 "iqr_cm": round(float(np.subtract(*np.percentile(v, [75, 25]))) * 100, 2)}
+                             for n, v in ns.items()} for k, ns in dn.items()}
     json.dump(res, open(outp, "w"), indent=1)
-    print(json.dumps({k: res[k] for k in ("resolvers", "decomposition")}, indent=1))
+    print(json.dumps({k: res[k] for k in ("resolvers", "d_definition")}, indent=1))
 
 
 if __name__ == "__main__":
