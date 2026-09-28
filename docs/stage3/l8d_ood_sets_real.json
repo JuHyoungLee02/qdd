@@ -1,0 +1,1144 @@
+{
+"schema": "qdd.l8d.ood_sets/v1",
+"note": "OOD-O real-object extension (prereg_l8d change 11): ood_o-split real objects (helper objects_real.json, never trained) that passed the object gate (>= 2 of 3 clean truth ov_tray, GATE 35070-35072) x ov_tray x 10, table 0.85 standard, protected 70160-; frozen before any real-object training episode.",
+"gate": {
+"n_objects": 103,
+"n_pass": 70,
+"pass_ood_o": [
+"gso_3D_Dollhouse_Happy_Brother",
+"gso_Android_Figure_Chrome",
+"gso_Android_Figure_Orange",
+"gso_Android_Figure_Panda",
+"gso_Dino_4",
+"gso_Great_Dinos_Triceratops_Toy",
+"gso_Guardians_of_the_Galaxy_Galactic_Battler",
+"gso_JBL_Charge_Speaker_portable_wireless_wir",
+"gso_Phillips_Caplets_Size_24",
+"gso_Phillips_Stool_Softener_Liquid_Gels_30_l",
+"gso_Schleich_Bald_Eagle",
+"gso_Schleich_Hereford_Bull",
+"gso_Schleich_Lion_Action_Figure"
+],
+"pass_train": [
+"gso_5_HTP",
+"gso_AllergenFree_JarroDophilus",
+"gso_Azure_Snake_Tieks_Leather_Snake_Print_Ba",
+"gso_BABY_CAR",
+"gso_Beta_Glucan",
+"gso_Bifidus_Balance_FOS",
+"gso_Blackcurrant_Lutein",
+"gso_COAST_GUARD_BOAT",
+"gso_California_Navy_Tieks_Italian_Leather_Ba",
+"gso_CoQ10",
+"gso_CoQ10_BjTLbuRVt1t",
+"gso_CoQ10_wSSVoxVppVD",
+"gso_Cream_Tieks_Italian_Leather_Ballet_Flats",
+"gso_DIM_CDG",
+"gso_Epson_T5803_Ink_Cartridge_Magenta_1pack",
+"gso_FIRE_ENGINE",
+"gso_Folic_Acid",
+"gso_Germanium_GE132",
+"gso_Hyaluronic_Acid",
+"gso_JarroSil_Activated_Silicon_5exdZHIeLAp",
+"gso_Krill_Oil",
+"gso_Lactoferrin",
+"gso_Lavender_Snake_Tieks_Snake_Print_Ballet_",
+"gso_Lovestruck_Tieks_Glittery_Rose_Gold_Ital",
+"gso_Lutein",
+"gso_MK7",
+"gso_Mastic_Gum",
+"gso_Matte_Black_Tieks_Italian_Leather_Ballet",
+"gso_Metallic_Gold_Tieks_Italian_Leather_Ball",
+"gso_Metallic_Pewter_Tieks_Italian_Leather_Ba",
+"gso_NattoMax",
+"gso_Nikon_1_AW1_w11275mm_Lens_Silver",
+"gso_Perricone_MD_Blue_Plasma_Orbital",
+"gso_Perricone_MD_Face_Finishing_Moisturizer",
+"gso_Perricone_MD_No_Lipstick_Lipstick",
+"gso_Polar_Herring_Fillets_Smoked_Peppered_70",
+"gso_QAbsorb_CoQ10",
+"gso_QAbsorb_CoQ10_53iUqjWjW3O",
+"gso_QHPomegranate",
+"gso_Reebok_BREAKPOINT_LO_2V",
+"gso_Reebok_CLASSIC_JOGGER",
+"gso_Reebok_RETRO_RUSH_2V",
+"gso_Romantic_Blush_Tieks_Metallic_Italian_Le",
+"gso_Sienna_Brown_Croc_Tieks_Patent_Leather_C",
+"gso_Starstruck_Tieks_Glittery_Gold_Italian_L",
+"gso_Theanine",
+"gso_Tiek_Blue_Patent_Tieks_Italian_Leather_B",
+"gso_Tieks_Ballet_Flats_Diamond_White_Croc",
+"gso_Tieks_Ballet_Flats_Electric_Snake",
+"gso_Unmellow_Yellow_Tieks_Neon_Patent_Leathe",
+"gso_Wild_Copper_Tieks_Metallic_Italian_Leath",
+"gso_Womens_Audrey_Slip_On_Boat_Shoe_in_Graph",
+"thor_Apple_19",
+"thor_Potato_13",
+"thor_Potato_2",
+"thor_Potato_25",
+"thor_Potato_30"
+]
+},
+"counts": {
+"ood_o_real": 130
+},
+"by_task_variant_height": {
+"ood_o_real": {
+"ov_tray__gso_3D_Dollhouse_Happy_Brother|standard|0.850": 10,
+"ov_tray__gso_Android_Figure_Chrome|standard|0.850": 10,
+"ov_tray__gso_Android_Figure_Orange|standard|0.850": 10,
+"ov_tray__gso_Android_Figure_Panda|standard|0.850": 10,
+"ov_tray__gso_Dino_4|standard|0.850": 10,
+"ov_tray__gso_Great_Dinos_Triceratops_Toy|standard|0.850": 10,
+"ov_tray__gso_Guardians_of_the_Galaxy_Galactic_Battler|standard|0.850": 10,
+"ov_tray__gso_JBL_Charge_Speaker_portable_wireless_wir|standard|0.850": 10,
+"ov_tray__gso_Phillips_Caplets_Size_24|standard|0.850": 10,
+"ov_tray__gso_Phillips_Stool_Softener_Liquid_Gels_30_l|standard|0.850": 10,
+"ov_tray__gso_Schleich_Bald_Eagle|standard|0.850": 10,
+"ov_tray__gso_Schleich_Hereford_Bull|standard|0.850": 10,
+"ov_tray__gso_Schleich_Lion_Action_Figure|standard|0.850": 10
+}
+},
+"episodes": [
+{
+"seed": 70160,
+"split": "ood_o",
+"task": "ov_tray__gso_3D_Dollhouse_Happy_Brother",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70161,
+"split": "ood_o",
+"task": "ov_tray__gso_3D_Dollhouse_Happy_Brother",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70162,
+"split": "ood_o",
+"task": "ov_tray__gso_3D_Dollhouse_Happy_Brother",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70163,
+"split": "ood_o",
+"task": "ov_tray__gso_3D_Dollhouse_Happy_Brother",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70164,
+"split": "ood_o",
+"task": "ov_tray__gso_3D_Dollhouse_Happy_Brother",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70165,
+"split": "ood_o",
+"task": "ov_tray__gso_3D_Dollhouse_Happy_Brother",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70166,
+"split": "ood_o",
+"task": "ov_tray__gso_3D_Dollhouse_Happy_Brother",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70167,
+"split": "ood_o",
+"task": "ov_tray__gso_3D_Dollhouse_Happy_Brother",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70168,
+"split": "ood_o",
+"task": "ov_tray__gso_3D_Dollhouse_Happy_Brother",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70169,
+"split": "ood_o",
+"task": "ov_tray__gso_3D_Dollhouse_Happy_Brother",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70170,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Chrome",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70171,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Chrome",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70172,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Chrome",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70173,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Chrome",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70174,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Chrome",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70175,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Chrome",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70176,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Chrome",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70177,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Chrome",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70178,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Chrome",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70179,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Chrome",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70180,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Orange",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70181,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Orange",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70182,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Orange",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70183,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Orange",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70184,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Orange",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70185,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Orange",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70186,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Orange",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70187,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Orange",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70188,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Orange",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70189,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Orange",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70190,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Panda",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70191,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Panda",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70192,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Panda",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70193,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Panda",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70194,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Panda",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70195,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Panda",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70196,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Panda",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70197,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Panda",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70198,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Panda",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70199,
+"split": "ood_o",
+"task": "ov_tray__gso_Android_Figure_Panda",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70200,
+"split": "ood_o",
+"task": "ov_tray__gso_Dino_4",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70201,
+"split": "ood_o",
+"task": "ov_tray__gso_Dino_4",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70202,
+"split": "ood_o",
+"task": "ov_tray__gso_Dino_4",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70203,
+"split": "ood_o",
+"task": "ov_tray__gso_Dino_4",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70204,
+"split": "ood_o",
+"task": "ov_tray__gso_Dino_4",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70205,
+"split": "ood_o",
+"task": "ov_tray__gso_Dino_4",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70206,
+"split": "ood_o",
+"task": "ov_tray__gso_Dino_4",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70207,
+"split": "ood_o",
+"task": "ov_tray__gso_Dino_4",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70208,
+"split": "ood_o",
+"task": "ov_tray__gso_Dino_4",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70209,
+"split": "ood_o",
+"task": "ov_tray__gso_Dino_4",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70210,
+"split": "ood_o",
+"task": "ov_tray__gso_Great_Dinos_Triceratops_Toy",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70211,
+"split": "ood_o",
+"task": "ov_tray__gso_Great_Dinos_Triceratops_Toy",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70212,
+"split": "ood_o",
+"task": "ov_tray__gso_Great_Dinos_Triceratops_Toy",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70213,
+"split": "ood_o",
+"task": "ov_tray__gso_Great_Dinos_Triceratops_Toy",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70214,
+"split": "ood_o",
+"task": "ov_tray__gso_Great_Dinos_Triceratops_Toy",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70215,
+"split": "ood_o",
+"task": "ov_tray__gso_Great_Dinos_Triceratops_Toy",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70216,
+"split": "ood_o",
+"task": "ov_tray__gso_Great_Dinos_Triceratops_Toy",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70217,
+"split": "ood_o",
+"task": "ov_tray__gso_Great_Dinos_Triceratops_Toy",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70218,
+"split": "ood_o",
+"task": "ov_tray__gso_Great_Dinos_Triceratops_Toy",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70219,
+"split": "ood_o",
+"task": "ov_tray__gso_Great_Dinos_Triceratops_Toy",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70220,
+"split": "ood_o",
+"task": "ov_tray__gso_Guardians_of_the_Galaxy_Galactic_Battler",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70221,
+"split": "ood_o",
+"task": "ov_tray__gso_Guardians_of_the_Galaxy_Galactic_Battler",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70222,
+"split": "ood_o",
+"task": "ov_tray__gso_Guardians_of_the_Galaxy_Galactic_Battler",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70223,
+"split": "ood_o",
+"task": "ov_tray__gso_Guardians_of_the_Galaxy_Galactic_Battler",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70224,
+"split": "ood_o",
+"task": "ov_tray__gso_Guardians_of_the_Galaxy_Galactic_Battler",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70225,
+"split": "ood_o",
+"task": "ov_tray__gso_Guardians_of_the_Galaxy_Galactic_Battler",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70226,
+"split": "ood_o",
+"task": "ov_tray__gso_Guardians_of_the_Galaxy_Galactic_Battler",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70227,
+"split": "ood_o",
+"task": "ov_tray__gso_Guardians_of_the_Galaxy_Galactic_Battler",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70228,
+"split": "ood_o",
+"task": "ov_tray__gso_Guardians_of_the_Galaxy_Galactic_Battler",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70229,
+"split": "ood_o",
+"task": "ov_tray__gso_Guardians_of_the_Galaxy_Galactic_Battler",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70230,
+"split": "ood_o",
+"task": "ov_tray__gso_JBL_Charge_Speaker_portable_wireless_wir",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70231,
+"split": "ood_o",
+"task": "ov_tray__gso_JBL_Charge_Speaker_portable_wireless_wir",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70232,
+"split": "ood_o",
+"task": "ov_tray__gso_JBL_Charge_Speaker_portable_wireless_wir",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70233,
+"split": "ood_o",
+"task": "ov_tray__gso_JBL_Charge_Speaker_portable_wireless_wir",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70234,
+"split": "ood_o",
+"task": "ov_tray__gso_JBL_Charge_Speaker_portable_wireless_wir",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70235,
+"split": "ood_o",
+"task": "ov_tray__gso_JBL_Charge_Speaker_portable_wireless_wir",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70236,
+"split": "ood_o",
+"task": "ov_tray__gso_JBL_Charge_Speaker_portable_wireless_wir",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70237,
+"split": "ood_o",
+"task": "ov_tray__gso_JBL_Charge_Speaker_portable_wireless_wir",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70238,
+"split": "ood_o",
+"task": "ov_tray__gso_JBL_Charge_Speaker_portable_wireless_wir",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70239,
+"split": "ood_o",
+"task": "ov_tray__gso_JBL_Charge_Speaker_portable_wireless_wir",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70240,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Caplets_Size_24",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70241,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Caplets_Size_24",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70242,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Caplets_Size_24",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70243,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Caplets_Size_24",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70244,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Caplets_Size_24",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70245,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Caplets_Size_24",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70246,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Caplets_Size_24",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70247,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Caplets_Size_24",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70248,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Caplets_Size_24",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70249,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Caplets_Size_24",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70250,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Stool_Softener_Liquid_Gels_30_l",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70251,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Stool_Softener_Liquid_Gels_30_l",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70252,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Stool_Softener_Liquid_Gels_30_l",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70253,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Stool_Softener_Liquid_Gels_30_l",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70254,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Stool_Softener_Liquid_Gels_30_l",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70255,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Stool_Softener_Liquid_Gels_30_l",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70256,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Stool_Softener_Liquid_Gels_30_l",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70257,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Stool_Softener_Liquid_Gels_30_l",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70258,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Stool_Softener_Liquid_Gels_30_l",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70259,
+"split": "ood_o",
+"task": "ov_tray__gso_Phillips_Stool_Softener_Liquid_Gels_30_l",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70260,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Bald_Eagle",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70261,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Bald_Eagle",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70262,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Bald_Eagle",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70263,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Bald_Eagle",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70264,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Bald_Eagle",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70265,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Bald_Eagle",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70266,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Bald_Eagle",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70267,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Bald_Eagle",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70268,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Bald_Eagle",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70269,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Bald_Eagle",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70270,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Hereford_Bull",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70271,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Hereford_Bull",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70272,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Hereford_Bull",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70273,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Hereford_Bull",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70274,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Hereford_Bull",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70275,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Hereford_Bull",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70276,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Hereford_Bull",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70277,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Hereford_Bull",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70278,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Hereford_Bull",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70279,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Hereford_Bull",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70280,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Lion_Action_Figure",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70281,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Lion_Action_Figure",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70282,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Lion_Action_Figure",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70283,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Lion_Action_Figure",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70284,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Lion_Action_Figure",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70285,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Lion_Action_Figure",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70286,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Lion_Action_Figure",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70287,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Lion_Action_Figure",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70288,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Lion_Action_Figure",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+},
+{
+"seed": 70289,
+"split": "ood_o",
+"task": "ov_tray__gso_Schleich_Lion_Action_Figure",
+"variant": "standard",
+"table_z": 0.85,
+"objset": "x"
+}
+]
+}
