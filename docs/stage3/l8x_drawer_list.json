@@ -1,0 +1,206 @@
+{
+ "tasks": [
+  {
+   "task": "dr__Desk_306_1__Desk_306_1_desk_drawer_306_1_handle",
+   "piece": "Desk_306_1",
+   "handle_body": "Desk_306_1_desk_drawer_306_1_handle",
+   "handle_top_z": 0.751,
+   "split": "ood"
+  },
+  {
+   "task": "dr__Dresser_205_1__Dresser_205_1_handle_1_305mm_0",
+   "piece": "Dresser_205_1",
+   "handle_body": "Dresser_205_1_handle_1_305mm_0",
+   "handle_top_z": 0.601,
+   "split": "train"
+  },
+  {
+   "task": "dr__Dresser_205_1__Dresser_205_1_handle_1_305mm_3",
+   "piece": "Dresser_205_1",
+   "handle_body": "Dresser_205_1_handle_1_305mm_3",
+   "handle_top_z": 0.601,
+   "split": "train"
+  },
+  {
+   "task": "dr__Dresser_209_1__Dresser_209_1_handle_1_600mm_00",
+   "piece": "Dresser_209_1",
+   "handle_body": "Dresser_209_1_handle_1_600mm_00",
+   "handle_top_z": 0.588,
+   "split": "train"
+  },
+  {
+   "task": "dr__Dresser_209_1__Dresser_209_1_handle_1_600mm_01",
+   "piece": "Dresser_209_1",
+   "handle_body": "Dresser_209_1_handle_1_600mm_01",
+   "handle_top_z": 0.584,
+   "split": "train"
+  },
+  {
+   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_01",
+   "piece": "Dresser_210_1_1",
+   "handle_body": "Dresser_210_1_1_handle_1_178mm_01",
+   "handle_top_z": 0.944,
+   "split": "train"
+  },
+  {
+   "task": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_03",
+   "piece": "Dresser_210_1_1",
+   "handle_body": "Dresser_210_1_1_handle_1_178mm_03",
+   "handle_top_z": 0.944,
+   "split": "train"
+  },
+  {
+   "task": "dr__Dresser_210_2_1__Dresser_210_2_1_handle_2_305mm_00",
+   "piece": "Dresser_210_2_1",
+   "handle_body": "Dresser_210_2_1_handle_2_305mm_00",
+   "handle_top_z": 0.727,
+   "split": "train"
+  },
+  {
+   "task": "dr__Dresser_210_2_1__Dresser_210_2_1_handle_2_305mm_01",
+   "piece": "Dresser_210_2_1",
+   "handle_body": "Dresser_210_2_1_handle_2_305mm_01",
+   "handle_top_z": 0.727,
+   "split": "train"
+  },
+  {
+   "task": "dr__Dresser_218_1__Dresser_218_1_handle_3_178mm_00",
+   "piece": "Dresser_218_1",
+   "handle_body": "Dresser_218_1_handle_3_178mm_00",
+   "handle_top_z": 0.84,
+   "split": "ood"
+  },
+  {
+   "task": "dr__Dresser_218_1__Dresser_218_1_handle_3_178mm_01",
+   "piece": "Dresser_218_1",
+   "handle_body": "Dresser_218_1_handle_3_178mm_01",
+   "handle_top_z": 0.84,
+   "split": "ood"
+  },
+  {
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm",
+   "piece": "Dresser_219_1",
+   "handle_body": "Dresser_219_1_handle_1_305mm",
+   "handle_top_z": 1.033,
+   "split": "train"
+  },
+  {
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm_000",
+   "piece": "Dresser_219_1",
+   "handle_body": "Dresser_219_1_handle_1_305mm_000",
+   "handle_top_z": 1.033,
+   "split": "train"
+  },
+  {
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm_01",
+   "piece": "Dresser_219_1",
+   "handle_body": "Dresser_219_1_handle_1_305mm_01",
+   "handle_top_z": 1.033,
+   "split": "train"
+  },
+  {
+   "task": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm_03",
+   "piece": "Dresser_219_1",
+   "handle_body": "Dresser_219_1_handle_1_305mm_03",
+   "handle_top_z": 1.033,
+   "split": "train"
+  },
+  {
+   "task": "dr__Dresser_220_1__Dresser_220_1_handle_2_600mm_01",
+   "piece": "Dresser_220_1",
+   "handle_body": "Dresser_220_1_handle_2_600mm_01",
+   "handle_top_z": 1.163,
+   "split": "train"
+  },
+  {
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_1_handle",
+   "piece": "Dresser_224_1",
+   "handle_body": "Dresser_224_1_dresser_drawer_224_1_handle",
+   "handle_top_z": 0.829,
+   "split": "ood"
+  },
+  {
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_2_handle",
+   "piece": "Dresser_224_1",
+   "handle_body": "Dresser_224_1_dresser_drawer_224_2_handle",
+   "handle_top_z": 0.829,
+   "split": "ood"
+  },
+  {
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_3_handle",
+   "piece": "Dresser_224_1",
+   "handle_body": "Dresser_224_1_dresser_drawer_224_3_handle",
+   "handle_top_z": 0.829,
+   "split": "ood"
+  },
+  {
+   "task": "dr__Dresser_224_1__Dresser_224_1_dresser_drawer_224_4_handle",
+   "piece": "Dresser_224_1",
+   "handle_body": "Dresser_224_1_dresser_drawer_224_4_handle",
+   "handle_top_z": 0.829,
+   "split": "ood"
+  },
+  {
+   "task": "dr__Dresser_229_1__Dresser_229_1_handle_3_178mm_01",
+   "piece": "Dresser_229_1",
+   "handle_body": "Dresser_229_1_handle_3_178mm_01",
+   "handle_top_z": 0.602,
+   "split": "ood"
+  },
+  {
+   "task": "dr__Dresser_229_1__Dresser_229_1_handle_3_178mm_02",
+   "piece": "Dresser_229_1",
+   "handle_body": "Dresser_229_1_handle_3_178mm_02",
+   "handle_top_z": 0.602,
+   "split": "ood"
+  },
+  {
+   "task": "dr__Dresser_323_1__Dresser_323_1_handle_3_178mm_01",
+   "piece": "Dresser_323_1",
+   "handle_body": "Dresser_323_1_handle_3_178mm_01",
+   "handle_top_z": 1.118,
+   "split": "train"
+  },
+  {
+   "task": "dr__Dresser_413_1__Dresser_413_1_handle_3_178mm_01",
+   "piece": "Dresser_413_1",
+   "handle_body": "Dresser_413_1_handle_3_178mm_01",
+   "handle_top_z": 1.041,
+   "split": "ood"
+  },
+  {
+   "task": "dr__Side_Table_306_2__Side_Table_306_2_handle_3_178mm_00",
+   "piece": "Side_Table_306_2",
+   "handle_body": "Side_Table_306_2_handle_3_178mm_00",
+   "handle_top_z": 0.437,
+   "split": "train"
+  },
+  {
+   "task": "dr__Side_Table_311_2_1__Side_Table_311_2_1_handle_2_305mm_00",
+   "piece": "Side_Table_311_2_1",
+   "handle_body": "Side_Table_311_2_1_handle_2_305mm_00",
+   "handle_top_z": 0.684,
+   "split": "train"
+  },
+  {
+   "task": "dr__Side_Table_329_1__Side_Table_329_1_handle_3_178mm_00",
+   "piece": "Side_Table_329_1",
+   "handle_body": "Side_Table_329_1_handle_3_178mm_00",
+   "handle_top_z": 0.556,
+   "split": "train"
+  }
+ ],
+ "gate": {
+  "35390": "dr__Dresser_205_1__Dresser_205_1_handle_1_305mm_3",
+  "35391": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm",
+  "35392": "dr__Dresser_323_1__Dresser_323_1_handle_3_178mm_01",
+  "35393": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm_03",
+  "35394": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm_01",
+  "35395": "dr__Dresser_210_1_1__Dresser_210_1_1_handle_1_178mm_01",
+  "35396": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm_01",
+  "35397": "dr__Side_Table_329_1__Side_Table_329_1_handle_3_178mm_00",
+  "35398": "dr__Side_Table_329_1__Side_Table_329_1_handle_3_178mm_00",
+  "35399": "dr__Dresser_219_1__Dresser_219_1_handle_1_305mm_01"
+ },
+ "digest": "9158a487d2f4184328a061f5bca37dc267c1ddfb961ea75986a01d7ad9ba59dd"
+}
