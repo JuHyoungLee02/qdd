@@ -40,7 +40,7 @@ def _shelf_good(r: dict) -> bool:
     return r.get("pose") == "upright" and r["footprint_r"] <= 0.05
 
 
-P_DISPLAY, P_STACK = 0.75, 0.75  # b4 rich arrangement (user-log 175): most episodes get a display row and / or a stack
+P_DISPLAY, P_STACK = 0.85, 0.85  # b4 rich arrangement (user-log 175): most episodes get a display row and / or a stack
 DISPLAY_N = (3, 6)
 DISPLAY_GAP = 0.012
 
@@ -68,21 +68,27 @@ def _display_row(rng, pool: dict, box, keep, h_max: float) -> list:
     want = int(rng.integers(DISPLAY_N[0], DISPLAY_N[1] + 1))
     pick = [ids[int(i)] for i in rng.permutation(len(ids))]
     rmax = max(pool[k]["footprint_r"] for k in pick)
-    x = x1 - rmax - 0.01
-    y = y0 + 0.01 + float(rng.uniform(0.0, 0.05))
     out, discs = [], []
-    for k in pick:
-        if len(out) >= want:
+    # the far edge first (a shop row facing the robot), then the left / right edges (rows along x) on small tops
+    rows_ = [("y", x1, -1, y0, y1), ("x", y1, -1, x0, x1), ("x", y0, 1, x0, x1)]  # (row axis, edge, inward, span)
+    for axis, e, sgn, a0, a1 in rows_:
+        if len(out) >= DISPLAY_N[0]:
             break
-        r = pool[k]["footprint_r"]
-        while y + 2 * r <= y1 - 0.01:  # slide along the row past blocked spots
-            yc = y + r
-            if _clear(x, yc, r, discs, keep):
-                out.append({"id": k, "x": round(x, 4), "y": round(yc, 4), "yaw": 0.0, "r": r, "arr": "display"})
-                discs.append((x, yc, r))
-                y = yc + r + DISPLAY_GAP
-                break
-            y += 0.02
+        t = a0 + 0.01 + float(rng.uniform(0.0, 0.03))
+        for k in pick:
+            if len(out) >= want or k in {p["id"] for p in out}:
+                continue
+            r = pool[k]["footprint_r"]
+            c = e + sgn * (r + 0.01)  # each product hugs the edge
+            while t + 2 * r <= a1 - 0.01:  # slide along the row past blocked spots
+                tc = t + r
+                x, y = (c, tc) if axis == "y" else (tc, c)
+                if _clear(x, y, r, discs, keep):
+                    out.append({"id": k, "x": round(x, 4), "y": round(y, 4), "yaw": 0.0, "r": r, "arr": "display"})
+                    discs.append((x, y, r))
+                    t = tc + r + DISPLAY_GAP
+                    break
+                t += 0.02
     return out
 
 
@@ -97,8 +103,10 @@ def _stack_on(rng, pool: dict, placed: list, used: set, box, keep, h_room: float
     out = []
     discs = [(p["x"], p["y"], p["r"]) for p in placed]
     by_id = {p["id"]: p for p in placed}
-    for i in rng.permutation(len(pairs)):
-        if len(out) >= int(rng.integers(1, 3)):
+    n_want = int(rng.integers(1, 3))
+    order = sorted(range(len(pairs)), key=lambda i: (pool[pairs[i][0]]["footprint_r"], float(rng.random())))
+    for i in order:  # small bases first: they still fit on small furniture tops
+        if sum(p["arr"] == "stack" for p in out) >= n_want:
             break
         b, t = pairs[int(i)]
         if t in used or (b in used and b not in by_id):
@@ -148,14 +156,16 @@ def add_clutter(layout: dict, seed: int, pool: dict, ws, fr: dict, n_range=(5, 1
         rng = np.random.default_rng([int(seed), 97, 301])
         cov = s.get("covered_above")
         h_max = min(MAX_H, (cov - s["top_z"] - 0.05) if cov is not None else MAX_H)
-        if rng.random() < P_DISPLAY:
-            extra = _display_row(rng, {k: r for k, r in pool.items() if k not in used}, s["xy_box"], keep, h_max)
-            used |= {p["id"] for p in extra}
-            keep = keep + [((p["x"] - p["r"], p["x"] + p["r"]), (p["y"] - p["r"], p["y"] + p["r"])) for p in extra]
-        if rng.random() < P_STACK:  # before the random clutter: a base needs a free spot
+        do_display, do_stack = rng.random() < P_DISPLAY, rng.random() < P_STACK
+        if do_stack:  # first: a base needs a free spot (small bases first), then the display row, then random clutter
             st = _stack_on(rng, pool, extra, used, s["xy_box"], keep, (cov - s["top_z"]) if cov is not None else 1.0)
             extra = extra + st
             keep = keep + [((p["x"] - p["r"], p["x"] + p["r"]), (p["y"] - p["r"], p["y"] + p["r"])) for p in st]
+        if do_display:
+            row = _display_row(rng, {k: r for k, r in pool.items() if k not in used}, s["xy_box"], keep, h_max)
+            used |= {p["id"] for p in row}
+            extra = extra + row
+            keep = keep + [((p["x"] - p["r"], p["x"] + p["r"]), (p["y"] - p["r"], p["y"] + p["r"])) for p in row]
     res = sample_clutter(scene, {k: r for k, r in pool.items() if k not in used}, seed, n_range=n_range,
                          keep_free=keep)
     placed = extra + list(res["placements"])
