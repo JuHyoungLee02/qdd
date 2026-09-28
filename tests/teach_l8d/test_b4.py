@@ -52,3 +52,9 @@ def test_clutter_on_a_furniture_surface():
 def test_drf_rows_allowed_in_train():
     from harvest.teach_l8d import dataset as D
     D.check_row({"seed": 36900, "variant": "drf", "task": "mug_tray"}, "train")
+
+
+def test_b4_seed_block():
+    from harvest.teach_l8d import spec as S
+    assert S.check_seed(40000, "train") == 40000 and S.is_train_seed(44999) and not S.is_train_seed(45000)
+    assert not S.is_train_seed(39999)
