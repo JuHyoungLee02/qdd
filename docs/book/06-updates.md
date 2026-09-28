@@ -138,3 +138,4 @@
 | 2026-09-28 11:5x | 01 | E-OPRATIO8 결과(p=0, 자격 팔 없음; p75 재검증 제안): 01 행 | [R/opratio](../stage3/results/opratio.md), 이 줄과 같은 커밋 |
 | 2026-09-28 16:2x | 01 | E-OPRATIO8-S1 결과(p=0, OOD-T·OOD-H-lift 비열등 미증명): 01 행 | [R/opratio](../stage3/results/opratio.md), 이 줄과 같은 커밋 |
 | 2026-09-28 18:5x | 01·04 | E-VIEW8 결과(A1·A2 REJECT, A/A 잡음 검사): 01 행, 04 없음 | [R/view8](../stage3/results/view8.md), 이 줄과 같은 커밋 |
+| 2026-09-28 19:0x | 01 | E-STAGE8 결과(S REJECT, M 유지): 01 행 | [R/stage8](../stage3/results/stage8.md), 이 줄과 같은 커밋 |
