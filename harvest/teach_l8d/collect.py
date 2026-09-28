@@ -47,6 +47,8 @@ class _XLabels(LC.Collector):
             self.rows.append(row)
             return Rep(json.dumps({"assessment": LC._stub(), "command": {"mode": "stop"}, "reason": "tipped"}))
         row.update(step=lab["step"], phase=lab["phase"], status=lab["status"], answer=lab["answer"])
+        if info.get("kind") == "push":
+            row["held"] = st["pred"].get(f"holding({info['tgt']})") is True  # new-task judges (xnew)
         H = XL.heights(info, w.table_z)
         # behaviour perturbations are relative to the pick surface (= the table on one-table tasks)
         c = B.Ctx(state=st, info=info, table_z=H["sup_tgt"], step=lab["step"], label_cmd=lab["command"])
@@ -119,6 +121,20 @@ def collect_episode(world, seed: int, task: str, variant: str, split: str, out_d
     rng = np.random.default_rng([int(seed), 8, LC.VARIANT_CODE.get(variant, 9)])
     from ..sim.tasks import X_STEPS
     from .multistep import XEpisode
+    from . import xnew
+    if xnew.is_new_task(task):  # judge-stage name gate + the per-seed phrasing (prereg_l8x_tasks 2.5 / 2.1-2.2)
+        import dataclasses
+
+        from ..astra_motion.prompts import OBJ_NAME
+        from ..sim import tasks as T
+        from .fx import SkipScene
+        rows = xnew.load_real_rows()
+        others = [OBJ_NAME.get(k, k) for k in ("o3",) + tuple(T.TASKS[task].extras)]
+        why = xnew.name_gate(task, rows, others)
+        if why:
+            raise SkipScene(why)
+        txt = xnew.instruction(task, rows, xnew.text_index(task, seed, ood=split.startswith("ood")))
+        T.TASKS[task] = T.X_TASKS[task] = dataclasses.replace(T.TASKS[task], instruction=txt)
     coll = XCollector(world, rng, p, max_perturb)
     kw = dict(variant=variant, stop_calls=stop_calls, stop_motion_s=stop_motion_s, allow_eef=True, save_v2=True,
               save_nd=True, video=video)
@@ -130,6 +146,9 @@ def collect_episode(world, seed: int, task: str, variant: str, split: str, out_d
         ep = PtEpisode(world, coll, seed, task, out_dir, **kw)
     coll.ep = ep
     res = ep.run()
+    judge = None
+    if xnew.is_new_task(task):  # prereg_l8x_tasks 2: the new-task judge on top of success_now
+        judge = xnew.success_push(coll.rows) if task.startswith("pu__") else xnew.success_stack(coll.rows)
     os.makedirs(out_dir, exist_ok=True)
     scene = scene_record(world, seed, task, variant, split, style)
     with open(os.path.join(out_dir, "scene.json"), "w") as f:
@@ -143,6 +162,8 @@ def collect_episode(world, seed: int, task: str, variant: str, split: str, out_d
             "style": style, "success": bool(res.get("success")), "end_reason": res.get("end_reason"),
             "n_calls": res["n_calls"], "n_rows": len(coll.rows), "n_perturb": coll.n_pert, "sim_t": res.get("sim_t"),
             "wall_s": res.get("wall_s"), "n_pt_labels": sum(r.get("pt_answer") is not None for r in coll.rows)}
+    if judge is not None:  # new tasks only (old tasks: meta byte-identical)
+        meta["judge"], meta["success"] = judge, meta["success"] and judge
     with open(os.path.join(out_dir, "meta.json"), "w") as f:
         json.dump(meta, f)
     return meta

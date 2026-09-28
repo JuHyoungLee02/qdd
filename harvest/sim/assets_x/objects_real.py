@@ -20,6 +20,7 @@ NOUNS = [  # (keywords in the source name, noun) -- first match wins; name token
     (("scissors", "screwdriver", "knife", "blade", "razor"), "SKIP"),  # sharp: never a task object
     (("mug",), "mug"), (("cup", "tumbler"), "cup"), (("bowl", "ramekin"), "bowl"), (("plate", "dish", "saucer"), "plate"),
     (("planter", "plant"), "planter"), (("can",), "can"), (("bottle", "jug"), "bottle"), (("jar",), "jar"),
+    (("shoe", "sneaker", "ballet", "flats", "loafer", "slipper", "sandal", "boot", "moccasin", "clog"), "shoe"),
     (("moisturizer", "cream", "lipstick", "bronzer", "serum", "lotion"), "cosmetic"),
     (("caplets", "gels", "tablets", "vitamin", "capsules"), "medicine box"),
     (("cartridge",), "cartridge"), (("nintendo",), "game cartridge"),
@@ -99,6 +100,7 @@ def descriptors(V: np.ndarray) -> dict:
     box = float(near.mean())
     return {"height": round(h, 4), "grasp_width": round(w, 4), "length": round(L, 4), "grasp_yaw": round(ang, 4),
             "boxiness": round(box, 3),
+            "caliper_centre": [round(float((u.min() + u.max()) / 2), 4), round(float((v.min() + v.max()) / 2), 4)],
             "handle_ratio": round(handle, 3), "circularity": round(circ, 3), "sphericity": round(sph, 3),
             "footprint_r": round(float(math.hypot(w, L) / 2), 4), "centre_xy": [round(float(v), 4) for v in c],
             "bottom_z": round(float(lo[2]), 4)}
@@ -183,3 +185,32 @@ def sample_surface(V, F, n: int = 20000, seed: int = 0) -> np.ndarray:
     flip = u + v > 1
     u[flip], v[flip] = 1 - u[flip], 1 - v[flip]
     return np.concatenate([V, a[t] + u[:, None] * (b[t] - a[t]) + v[:, None] * (c[t] - a[t])])
+
+
+def canonical(V, d: dict):
+    """Vertices in the canonical frame: turned by -grasp_yaw about the root z axis (the narrow side along x), the
+    caliper box centre at x = y = 0 and the bottom at z = 0 (= objv canonical pose: the upright bbox centre, x narrow)."""
+    a = d["grasp_yaw"]
+    c, s = math.cos(a), math.sin(a)
+    V = np.asarray(V, float)
+    u = V[:, 0] * c + V[:, 1] * s
+    v = -V[:, 0] * s + V[:, 1] * c
+    uc, vc = d["caliper_centre"]
+    return np.stack([u - uc, v - vc, V[:, 2] - d["bottom_z"]], 1)
+
+
+def top_surface(Vc, F, d: dict):
+    """The open support surface at the top of the object (canonical frame) or None: its box and height, for
+    stacking something on it (top within 1.5 cm of the object height, at least 5 x 5 cm)."""
+    from .surfaces import mesh_support_surfaces
+    try:
+        S = mesh_support_surfaces(Vc, F, min_area=0.0025, min_side=0.05)
+    except Exception:  # noqa: BLE001
+        return None
+    top = [s for s in S if s["covered_above"] is None and s["top_z"] >= d["height"] - 0.015]
+    if not top:
+        return None
+    s = max(top, key=lambda q: q["area"])
+    return {"top_z": round(float(s["top_z"]), 4), "box": [[round(float(x), 4) for x in s["xy_box"][0]],
+                                                          [round(float(x), 4) for x in s["xy_box"][1]]],
+            "area": round(float(s["area"]), 4)}

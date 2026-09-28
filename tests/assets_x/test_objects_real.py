@@ -64,3 +64,18 @@ def test_boxiness_and_shape_fallback():
     assert db["boxiness"] >= 0.85 and dc["boxiness"] < 0.85
     assert OR.name_check(None, db)["noun"] == "box"
     assert OR.claimed_noun("Scissors_Red") == "SKIP" and OR.claimed_noun("Womens_Boat_Shoe", "Bottles and Cans") == "shoe"
+
+
+def test_canonical_frame_and_top_surface():
+    from harvest.sim.assets_x import surfaces as S
+    P, F = S.box_mesh((0.0, 0.0, 0.0), (0.06, 0.12, 0.05))
+    th = 0.7
+    R = np.array([[math.cos(th), -math.sin(th), 0], [math.sin(th), math.cos(th), 0], [0, 0, 1]])
+    V = P @ R.T + np.array([0.3, -0.1, 0.0])
+    d = OR.descriptors(OR.sample_surface(V, F))
+    Vc = OR.canonical(V, d)
+    ext = Vc.max(0) - Vc.min(0)
+    assert abs(ext[0] - 0.06) < 0.003 and abs(ext[1] - 0.12) < 0.003 and abs(Vc[:, 2].min()) < 1e-9
+    assert np.allclose((Vc.max(0) + Vc.min(0))[:2] / 2, 0.0, atol=0.003)
+    t = OR.top_surface(Vc, F, d)
+    assert t is not None and abs(t["top_z"] - 0.05) < 1e-6 and t["area"] > 0.005

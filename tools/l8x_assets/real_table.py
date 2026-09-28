@@ -11,6 +11,7 @@ usage: python tools/l8x_assets/real_table.py --gso DIR --thor DIR --out real_obj
 from __future__ import annotations
 
 import argparse
+import math
 import hashlib
 import json
 import os
@@ -113,12 +114,29 @@ def gate(d):
     return why
 
 
-def row(src, name, d, colour, claim, usd, quat, extra):
+def row(src, name, d, colour, claim, usd, quat, extra, V=None, F=None, body_rel=""):
+    """Table row; also the objv-compatible canonical fields (prereg_l8x_tasks 1): the caliper yaw folded into the
+    spawn quaternion (narrow side along canonical x), the caliper box centre as centre_from_root_xy, half extents
+    (width, length, height) / 2, body_rel, and the top support surface (stacking base) in the canonical frame."""
     nc = OR.name_check(claim, d)
+    a = d["grasp_yaw"]
+    qz = (math.cos(-a / 2), 0.0, 0.0, math.sin(-a / 2))
+    canon = {"spawn_quat_wxyz": [round(float(v), 7) for v in _qmul(qz, quat)],
+             "centre_from_root_xy": d["caliper_centre"],
+             "half_extents": [round(d["grasp_width"] / 2, 4), round(d["length"] / 2, 4), round(d["height"] / 2, 4)],
+             "body_rel": body_rel,
+             "top_surface": OR.top_surface(OR.canonical(V, d), F, d) if V is not None and F is not None else None}
     return dict(d, source=src, source_name=name, colour=colour, noun=nc["noun"], name_check=nc, usd_physics=usd,
-                spawn_quat_wxyz=quat, root_above_bottom=round(-d["bottom_z"], 4), centre_from_root_xy=d["centre_xy"],
-                category=nc["noun"],
-                pose="upright" if d["height"] >= 0.8 * d["grasp_width"] else "lying", license=LICENSE, **extra)
+                root_above_bottom=round(-d["bottom_z"], 4), category=nc["noun"],
+                pose="upright" if d["height"] >= 0.8 * d["grasp_width"] else "lying", license=LICENSE, **canon,
+                **extra)
+
+
+def _qmul(a, b):
+    w1, x1, y1, z1 = a
+    w2, x2, y2, z2 = b
+    return (w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2, w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2,
+            w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2, w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2)
 
 
 def main(argv=None):
@@ -151,7 +169,8 @@ def main(argv=None):
                 out["gso_" + name[:40]] = row("Google Scanned Objects (Gazebo Fuel GoogleResearch)", name, d, colour,
                                               OR.claimed_noun(name, cats.get(name, "")), usd, [1.0, 0.0, 0.0, 0.0],
                                               {"mass": round(mass, 3), "category_src": cats.get(name, ""),
-                                               "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"})
+                                               "attribution": "Google LLC, Google Scanned Objects (CC BY 4.0)"},
+                                              V=V, F=F, body_rel="")
             except Exception as e:  # noqa: BLE001
                 drop["gso:" + name] = f"{type(e).__name__}: {e}"[:100]
     if a.thor:
@@ -180,13 +199,15 @@ def main(argv=None):
                                              OR.claimed_noun(var), usd, [0.7071068, 0.7071068, 0.0, 0.0],
                                              {"mass": round(float(np.clip(d["height"] * d["grasp_width"] * d["length"]
                                                                           * 0.4 * 600, 0.05, 1.0)), 3), "category_src": pkg,
-                                              "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)"})
+                                              "attribution": "AI2-THOR / MolmoSpaces (CC BY 4.0)"},
+                                             V=V, F=Fm, body_rel="Geometry/" + var)
                 except Exception as e:  # noqa: BLE001
                     drop["thor:" + var] = f"{type(e).__name__}: {e}"[:100]
     sw = OR.size_words(out)
     for k, o in out.items():
         o["size_word"] = sw.get(k)
         o["task_name"] = OR.task_name(o, sw.get(k))
+        o["name"], o["uid"] = o["task_name"], k  # objv.register fields
         o["split"] = split_of(o["noun"])
     res = {"license": LICENSE, "gates": {"height_max": H_MAX, "grasp_width": W_RANGE, "length_max": L_MAX},
            "objects": out, "dropped": drop}

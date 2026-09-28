@@ -69,7 +69,8 @@ def grasp_yaw_of(g) -> float:
 
 def geom(row: dict) -> dict:
     he = [float(v) for v in row["half_extents"]]
-    return {"shape": "mesh", "usd": row["usd_physics"], "body_rel": f"Geometry/obja_{row['uid']}",
+    return {"shape": "mesh", "usd": row["usd_physics"],
+            "body_rel": row.get("body_rel", f"Geometry/obja_{row['uid']}"),  # real objects (L8X-assets) give theirs
             "spawn_quat_wxyz": [float(v) for v in row["spawn_quat_wxyz"]],
             "root_above_bottom": float(row["root_above_bottom"]),
             "centre_from_root_xy": [float(v) for v in row["centre_from_root_xy"]],
@@ -118,13 +119,15 @@ def register_for_tasks(tasks, rows: dict | None = None) -> list:
     """Register the mesh objects (and their ov_* tasks) that the given task names use ('ov_<kind>__<id>');
     -> the ids. Used by the runner (before make_env) and by the dataset builder (prompt names / sizes)."""
     from .tasks import register_objv_tasks
+    from ..teach_l8d.xnew import is_new_task, register_new_tasks  # L8-X st__ / pu__ tasks (real objects)
+    new = register_new_tasks([t for t in tasks if is_new_task(t)]) if any(is_new_task(t) for t in tasks) else []
     ids = sorted({t.split("__", 1)[1] for t in tasks if str(t).startswith("ov_")})
     if not ids:
-        return []
+        return new
     rows = rows or load_rows()
     register({k: rows[k] for k in ids})
     register_objv_tasks(ids, {k: prompt_name(rows[k]) for k in ids})
-    return ids
+    return sorted(set(ids) | set(new))
 
 
 MIN_H, MAX_H = 0.07, 0.10  # prereg_l8d change 8: the truth held 0/9 gated objects under 7 cm (3/5 at 8 cm)

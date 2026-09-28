@@ -212,6 +212,9 @@ def x_task_layout(seed: int, task: str, ws=None) -> dict:
     the invisible spot 10 cm to its left / right both inside the box, the mug >= 12 cm from the spot; extras by the
     task_layout rule (p = 1/2 each, the red mug always present)."""
     wx, wy = check_ws(ws) or (WS_X, WS_Y)
+    if str(task).startswith("pu__"):  # L8-X push (teach_l8d.xnew, prereg_l8x_tasks 2.2): its own layout rule
+        from ..teach_l8d.xnew import push_layout
+        return push_layout(seed, task, (wx, wy), _fr)
     s = TASKS[task]
     rng = np.random.default_rng([int(seed), 11, X_TASK_CODE[task]])
     out: dict = {}

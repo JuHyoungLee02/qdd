@@ -27,6 +27,9 @@ def heights(info: dict, table_z: float) -> dict:
 
 
 def plan(st: dict, info: dict, table_z: float, w_open: float):
+    if info.get("kind") == "push":  # L8-X new task (prereg_l8x_tasks 2.2): its own truth plan
+        from .xnew import plan_push
+        return plan_push(st, info, table_z, w_open)
     tg, pl = info["tgt"], info["place"]
     H = heights(info, table_z)
     pred = st["pred"]
@@ -71,7 +74,11 @@ def label(st: dict, info: dict, table_z: float, w_open: float, first: bool, last
     if cmd is None:
         return None
     tn, pn = OBJ_NAME.get(info["tgt"], info["tgt"]), OBJ_NAME.get(info["place"], info["place"])
-    doing, remaining, done = L._texts(step, tn, pn)
+    if info.get("kind") == "push":
+        from .xnew import texts
+        doing, remaining, done = texts(step, tn, pn)
+    else:
+        doing, remaining, done = L._texts(step, tn, pn)
     status = L.status_of(step, first, last_line, prev_failed)
     ans = {"assessment": {"task_progress": {"verified_completed": done, "currently_attempting": doing,
                                             "remaining": remaining},
@@ -86,6 +93,8 @@ def x_info(env, info: dict) -> dict:
     one-table task (no extra keys -> the L8 plan)."""
     from ..sim.scene import OBJ_GEOM, SUPPORT_TOP, X_VISUAL_ONLY, base_z
     from ..sim.tasks import X_TASKS
+    if str(env.task).startswith("pu__"):  # L8-X push (xnew): the push plan; support height of the pick surface
+        return dict(info, kind="push", sup_tgt=base_z(info["tgt"], env.layout, float(env.table_top_z)))
     if env.task not in X_TASKS:
         return info
     tz, lay = float(env.table_top_z), env.layout
