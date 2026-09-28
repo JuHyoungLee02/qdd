@@ -136,8 +136,9 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                 # realistic scenes: no primitive extras (red mug / bottle / box) besides the task's own objects
                 lay = {k: v for k, v in lay.items() if k in keep or k in SC.VIRTUAL_PLACES or k in SC.OBJV_IDS}
                 fr = {k: SC.OBJ_GEOM[k]["footprint_r"] for k in lay}
-                lay, placed = add_clutter(lay, seed, clutter_pool, env.ws, fr, surface=surf)
-                self.clutter_scene = {"n": len(placed), "ids": [p["id"] for p in placed]}
+                lay, placed = add_clutter(lay, seed, clutter_pool, env.ws, fr, surface=surf, arrange=True)
+                self.clutter_scene = {"n": len(placed), "ids": [p["id"] for p in placed],
+                                      "arr": {a: sum(p.get("arr") == a for p in placed) for a in ("display", "stack")}}
             env.layout = lay
             SC._LAYOUT["layout"] = lay
             self.furniture_scene = fx.summary(sc, surf, region, dropped)
@@ -262,7 +263,7 @@ def main(argv=None):
             from ..sim.objv import register
             from .clutter_x import load_real, pool_for
             key = f"{a.variant}|{a.table_z:.3f}|{a.lift}" + (f"|{a.furniture}" if a.furniture else "")
-            pool = pool_for(load_real(), key, n=a.clutter)
+            pool = pool_for(load_real(), key, n=a.clutter, n_base=12 if a.furniture else 0)
             register(pool)
         if a.furniture and a.variant not in ("standard", "drf"):
             raise ValueError("furniture scenes: variant standard or drf (drx: the table material / pool distractors "

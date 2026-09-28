@@ -56,5 +56,31 @@ def test_drf_rows_allowed_in_train():
 
 def test_b4_seed_block():
     from harvest.teach_l8d import spec as S
-    assert S.check_seed(40000, "train") == 40000 and S.is_train_seed(44999) and not S.is_train_seed(45000)
+    assert S.check_seed(40000, "train") == 40000 and S.is_train_seed(47999) and not S.is_train_seed(48000)
     assert not S.is_train_seed(39999)
+
+
+def test_rich_arrangement_display_and_stack():
+    from harvest.teach_l8d import xnew as XN
+    rows = CX.load_real()
+    pool = CX.pool_for(rows, "drf|0.000|thor_low_table", n=40, n_base=12)
+    assert sum(1 for r in pool.values() if r.get("top_surface")) >= 12
+    surf = {"id": "s1", "top_z": 0.46, "xy_box": [[0.30, 0.75], [-0.55, 0.20]]}
+    ws = ((0.38, 0.52), (-0.40, -0.10))
+    lay = {"o5": (0.48, -0.33, 0.0)}
+    fr = {"o5": 0.114}
+    rich = 0
+    for seed in range(40000, 40040):
+        out, placed = CX.add_clutter(dict(lay), seed, pool, ws, fr, surface=surf, arrange=True)
+        kinds = {p.get("arr") for p in placed}
+        rich += bool(kinds & {"display", "stack"})
+        for p in placed:
+            if p.get("arr") == "stack":
+                base = out[p["id"]][3]
+                assert base in out and XN.base_ok(rows[base], rows[p["id"]]) and XN.stack_top_ok(rows[p["id"]])
+                assert out[p["id"]][:2] == out[base][:2]
+            else:
+                r = pool[p["id"]]["footprint_r"]
+                assert 0.30 + r <= p["x"] <= 0.75 - r and -0.55 + r <= p["y"] <= 0.20 - r
+                assert not (0.34 - r < p["x"] < 0.56 + r and -0.44 - r < p["y"] < -0.06 + r)
+    assert rich >= 30  # most episodes (user-log 175)
