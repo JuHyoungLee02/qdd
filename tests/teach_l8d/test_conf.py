@@ -63,3 +63,10 @@ def test_seed_block_and_train_rows():
     D.check_row({"seed": 36010, "variant": "drx", "task": "cf_mug_tray"}, "train")
     with pytest.raises(ValueError):
         D.check_row({"seed": 34900, "variant": "drx", "task": "cf_mug_tray"}, "train")
+
+
+def test_bundle_groups():
+    ok = S.bundle_task_ok
+    assert ok("mug_tray", ["all"]) and ok("ov_tray__objv_0100598f46bd", ["all"]) and ok("mug_to_upper", ["all"])
+    assert ok("clear_to_bin", ["all"]) and not ok("cf_mug_tray", ["all"]) and ok("cf_mug_tray", ["conf"])
+    assert not ok("smallcup_tray", ["all"]) and not ok("bluemug_bin", ["all"]) and not ok("ov_tray__x", ["phase1"])

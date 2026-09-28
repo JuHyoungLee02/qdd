@@ -1,6 +1,6 @@
 """Freeze an L8-D / L8-X bundle: the finished episodes (meta.json present) of <root> (= collect/<split>) whose task is in
 the allowed set, optionally without lift / furniture episodes -> a manifest (relative episode paths + counts).
-usage: python freeze.py <collect root>/<split> <manifest.json> <tasks: phase1|x|multi|all[,..]> [--no-lift]
+usage: python freeze.py <collect root>/<split> <manifest.json> <tasks: phase1|x|multi|furniture|objv|conf|all[,..]> [--no-lift]
   [--no-furniture] [--name NAME]
 The builder then reads only these episodes (tools/teach_l8d/build.py --manifest), so later episodes never leak into
 a frozen bundle."""
@@ -15,15 +15,12 @@ from harvest.teach_l8d import spec as S
 
 root, out, tasks = sys.argv[1], sys.argv[2], sys.argv[3]
 name = sys.argv[sys.argv.index("--name") + 1] if "--name" in sys.argv else os.path.basename(out)
-allow = set()
-for t in tasks.split(","):
-    allow |= {"phase1": set(S.PHASE1_TASKS), "x": set(S.X_TRAIN_TASKS), "multi": set(S.X_MULTI_TASKS),
-              "all": set(S.PHASE1_TASKS) | set(S.X_TRAIN_TASKS) | set(S.X_MULTI_TASKS) | set(S.X_FURNITURE_ONLY)}[t]
+groups = tasks.split(",")
 eps = []
 for m in sorted(glob.glob(os.path.join(root, "*", "*", "meta.json"))):
     ep = os.path.dirname(m)
     sc = json.load(open(os.path.join(ep, "scene.json")))
-    if sc["task"] not in allow:
+    if not S.bundle_task_ok(sc["task"], groups):
         continue
     if "--no-lift" in sys.argv and sc.get("lift") is not None:
         continue

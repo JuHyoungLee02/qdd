@@ -57,6 +57,18 @@ def _r(v, n=3):
     return round(float(v), n)
 
 
+def bundle_task_ok(task: str, groups) -> bool:
+    """Task groups of a frozen bundle (tools/teach_l8d/freeze.py). all = phase1 + x + multi + furniture + objv
+    (b2); conf (change 10) is its own bundle and never in all."""
+    t = str(task)
+    g = set(groups)
+    if "all" in g:
+        g |= {"phase1", "x", "multi", "furniture", "objv"}
+    return ((("phase1" in g) and t in PHASE1_TASKS) or (("x" in g) and t in X_TRAIN_TASKS)
+            or (("multi" in g) and t in X_MULTI_TASKS) or (("furniture" in g) and t in X_FURNITURE_ONLY)
+            or (("objv" in g) and t.startswith("ov_")) or (("conf" in g) and t in CONF_TASKS))
+
+
 def is_train_seed(seed: int) -> bool:
     s = int(seed)
     return (s in TRAIN_SEEDS and s not in DEV_X) or s in TRAIN_SEEDS_2
