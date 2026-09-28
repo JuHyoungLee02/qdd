@@ -3,9 +3,9 @@
 # of <plan file> (one Isaac process per line, all episodes of a line share one world config).
 # usage: b1b_lane.sh <code dir> <gpu> <port> <plan file> <tag>
 C=$1; G=$2; PORT=$3; PLAN=$4; T=$5
-L=/data/harvest/logs/strip8; O=/data/harvest/out/strip8/boost1b
+L=/data/harvest/logs/strip8; O=${B1B_OUT:-/data/harvest/out/strip8/boost1b}; MODEL=${B1B_MODEL:-/data/harvest/out/dist8/merged_b_d-min}
 cd $C; export PYTHONPATH=$C
-(bash $C/tools/teach_strip8/vllm.sh $G /data/harvest/out/dist8/merged_b_d-min b1b_$T $PORT 0.30 &)
+(bash $C/tools/teach_strip8/vllm.sh $G $MODEL b1b_$T $PORT 0.30 &)
 for i in $(seq 120); do curl -s -m 5 http://127.0.0.1:$PORT/v1/models | grep -q '"id"' && break; sleep 10; done
 k=0
 while read -r combos eps; do

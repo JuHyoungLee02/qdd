@@ -41,9 +41,10 @@ def main(argv=None):
         print("WORLD " + json.dumps({"table_z": world.table_z, "fix": a.fix, "combos": a.combos}), flush=True)
         model = LocalVLM(a.qwen_url, a.qwen_name, "qwen8b")
         if a.combos:
-            combos = [tuple(x.split(":")) for x in a.combos.split(",")]
-            runs = [(f"{m}_{p}", dict(fix_mem=m == "img", mem_points=m == "pts", fix_loop=True,
-                                     perturb=None if p == "none" else p)) for m, p in combos]
+            combos = [(x.split(":") + [""])[:3] for x in a.combos.split(",")]  # mem:perturb[:extras a/d]
+            runs = [(f"{m}_{p}" + (f"_{e}" if e else ""),
+                     dict(fix_mem=m == "img", mem_points=m == "pts", fix_loop=True, perturb=None if p == "none" else p,
+                          recheck="a" in e, fix_descend="d" in e)) for m, p, e in combos]
         else:
             on = a.fix == "on"
             runs = [(a.arm, dict(fix_mem=on, fix_loop=on, perturb=None))]
