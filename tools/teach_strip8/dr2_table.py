@@ -8,7 +8,7 @@ from collections import Counter
 
 for spec in sys.argv[1:]:
     arm, root = spec.split("=", 1)
-    for s in ("ood_o", "ood_h"):
+    for s in sorted(os.listdir(root)) if os.path.isdir(root) else []:
         rs = [json.load(open(p)) for p in sorted(glob.glob(os.path.join(root, s, "*", "s*", "result.json")))]
         if not rs:
             continue
