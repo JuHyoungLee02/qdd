@@ -66,7 +66,8 @@ def bundle_task_ok(task: str, groups) -> bool:
         g |= {"phase1", "x", "multi", "furniture", "objv"}
     return ((("phase1" in g) and t in PHASE1_TASKS) or (("x" in g) and t in X_TRAIN_TASKS)
             or (("multi" in g) and t in X_MULTI_TASKS) or (("furniture" in g) and t in X_FURNITURE_ONLY)
-            or (("objv" in g) and t.startswith("ov_")) or (("conf" in g) and t in CONF_TASKS))
+            or (("objv" in g) and t.startswith("ov_")) or (("conf" in g) and t in CONF_TASKS)
+            or (("drawer" in g) and t.startswith("dr__")))  # b3d (L8-X drawer, +x2 prompt): never in all
 
 
 def is_train_seed(seed: int) -> bool:

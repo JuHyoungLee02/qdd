@@ -188,6 +188,10 @@ def select_plan(plan: list, variant: str, table_z: float, split: str, objset=Non
     return out
 
 
+class _DrawerDone(Exception):
+    """The dr__ path finished (run_drawer printed RUN_DONE)."""
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", required=True)
@@ -211,6 +215,8 @@ def main(argv=None):
     ap.add_argument("--max-perturb", type=int, default=4)
     ap.add_argument("--stop-calls", type=int, default=30)
     ap.add_argument("--stop-motion", type=float, default=120.0)
+    ap.add_argument("--drawer-list", default=None, help="dr__ tasks (L8-X drawer, xdrawer_ep): the frozen list")
+    ap.add_argument("--piece", default=None, help="dr__ tasks: this process's piece (one articulated scene)")
     a = ap.parse_args(argv)
     code = 0
     try:
@@ -235,6 +241,11 @@ def main(argv=None):
             if a.task:
                 e["task"] = a.task
         vids = {int(v) for v in a.video_seeds.split(",") if v.strip()}
+        from .xdrawer_ep import is_drawer_run
+        if is_drawer_run(eps):  # L8-X drawer (prereg_l8x_tasks change 12): its own world / episode, dr__ only
+            from .xdrawer_ep import run_drawer
+            run_drawer(a, eps, vids)
+            raise _DrawerDone
         from ..sim.objv import register_for_tasks  # L8-X mesh objects used by this process (before make_env)
         objv_ids = register_for_tasks([e["task"] for e in eps])
         pool = None
@@ -276,6 +287,8 @@ def main(argv=None):
                 continue
             print("EP " + json.dumps(dict(meta, wall_total_s=round(time.perf_counter() - t0, 1))), flush=True)
         print("RUN_DONE", flush=True)
+    except _DrawerDone:
+        pass
     except BaseException:  # noqa: BLE001
         import traceback
         traceback.print_exc()

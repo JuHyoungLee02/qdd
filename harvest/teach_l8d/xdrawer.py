@@ -77,7 +77,9 @@ FRONT_GRASP = 0.012  # pad centre this far in front of the bar centre (fingertip
 FRONT_W = 0.040  # change 11: front pre-shape (fingers vertical; 2.5 cm let the IK z sag of ~1 cm hit the bar)
 FRONT_PULL = 0.010  # change 11: 1 cm per pull command, the TCP lead over the grasp point capped at 1 cm
 FRONT_LEAD = 0.010
+FRONT_RETREAT = 0.035  # change 12: back off 3.5 cm from the released handle (was FRONT_BACK 10 cm)
 STEPS_FRONT = ("preshape", "front_of_handle", "insert", "close", "pull", "release", "retreat")
+STEPS_FRONT_ALL = STEPS_FRONT + ("reopen", "done")
 
 
 def plan_drawer_front(st: dict, info: dict, w_open: float):
@@ -103,8 +105,8 @@ def plan_drawer_front(st: dict, info: dict, w_open: float):
     if q >= target - OPEN_TOL:
         if w < FRONT_W - 0.006:
             return "release", {"mode": "gripper", "gripper": "open", "width_m": FRONT_W}
-        if float((tcp - g) @ u) < FRONT_BACK - 0.02:
-            return eef("retreat", tcp + u * (FRONT_BACK - float((tcp - g) @ u)))
+        if float((tcp - g) @ u) < FRONT_RETREAT - 0.01:  # change 12: short retreat (the x >= 0.25 m box)
+            return eef("retreat", tcp + u * (FRONT_RETREAT - float((tcp - g) @ u)))
         return "done", {"mode": "stop"}
     if w < HELD_W and near:
         # from the TCP (it can stop short of g) along the pull line, the lead capped so the TCP never runs away
@@ -112,12 +114,29 @@ def plan_drawer_front(st: dict, info: dict, w_open: float):
     if near and w >= FRONT_W - 0.006:
         return "close", {"mode": "gripper", "gripper": "close"}
     if w < FRONT_W - 0.006:
-        return "release", {"mode": "gripper", "gripper": "open", "width_m": FRONT_W}
+        return "reopen", {"mode": "gripper", "gripper": "open", "width_m": FRONT_W}  # change 12: the close missed
     if w > FRONT_W + 0.010:
         return "preshape", {"mode": "gripper", "gripper": "open", "width_m": FRONT_W}
     if np.linalg.norm(side) <= NEAR_XY and float((tcp - g) @ u) <= FRONT_BACK + NEAR_XY:
         return eef("insert", g)
     return eef("front_of_handle", pre)
+
+
+def texts_front(step: str, pn: str = "drawer"):
+    """change 12: assessment texts of the front plan (doing, remaining, done)."""
+    fr, ins = f"move the open fingers in front of the {pn} handle", "move the fingers forward around the handle bar"
+    close, pull, rel, back = "close the fingers on the handle", f"pull the {pn} open", "release the handle", \
+        "move the gripper back from the handle"
+    table = {"preshape": ("open the fingers just wider than the handle bar", [fr, ins, close, pull, rel, back], []),
+             "front_of_handle": (fr, [ins, close, pull, rel, back], []),
+             "insert": (ins, [close, pull, rel, back], [fr]),
+             "close": (close, [pull, rel, back], [ins]),
+             "reopen": ("reopen the fingers: the close missed the handle", [fr, ins, close, pull, rel, back], []),
+             "pull": (pull, [rel, back], ["grasp the handle"]),
+             "release": (rel, [back], [pull]),
+             "retreat": (back, [], [pull, rel]),
+             "done": ("nothing: the task is complete", [], [pull, rel, back])}
+    return table[step]
 
 
 def texts(step: str, pn: str = "drawer"):
