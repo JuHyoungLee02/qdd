@@ -32,6 +32,8 @@ PERTURB_M = (0.01, 0.03)  # offset length range of a behaviour perturbation (y /
 MAX_CALLS, MOTION_LIMIT_S = 40, 180.0  # the prompt's stated limits (= astra_solo.episode)
 HANDLE_X, HANDLE_Y = (0.50, 0.54), (-0.28, -0.16)  # change 12: seeded handle position (retreat stays in x >= 0.25)
 LIFT_JITTER = 0.02
+DR_STOP_CALLS = MAX_CALLS  # change 13: 20 cm in 1 cm pulls + approach / release needs ~25-32 calls; the runner cap 30
+# ended 7/13 Dresser_224_1 episodes at 0.19-0.20 m unreleased (b3d first pass); the prompt limit (40) is unchanged
 REL_Z = 0.95
 
 
@@ -416,6 +418,6 @@ def run_drawer(a, eps: list, vids: set) -> None:
         style = "clean" if a.clean else style_of(s, S.CLEAN_SHARE)
         t0 = time.perf_counter()
         meta = collect_drawer_episode(world, s, task, a.variant, a.split, od, 0.0 if style == "clean" else a.p,
-                                      a.max_perturb, a.stop_calls, a.stop_motion, style, video=s in a.video_ids)
+                                      a.max_perturb, DR_STOP_CALLS, a.stop_motion, style, video=s in a.video_ids)
         print("EP " + json.dumps(dict(meta, wall_total_s=round(time.perf_counter() - t0, 1))), flush=True)
     print("RUN_DONE", flush=True)

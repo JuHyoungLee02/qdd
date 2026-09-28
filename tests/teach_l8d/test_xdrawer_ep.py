@@ -56,10 +56,12 @@ class FakeWorld:
             self.q = max(self.q, float(self.h0[0] + self.grab[0] - self.tcp[0]))
 
     def observe(self, depth=False):
-        cam = Cam("head", 64, 48, 50.0, 50.0, 32.0, 24.0, R_HEAD, np.array([0.0, 0.0, 1.4]))
+        cam = Cam("head", 320, 240, 400.0, 400.0, 160.0, 120.0, R_HEAD, np.array([0.0, -0.22, 0.94]))
         wr = Cam("wrist", 32, 24, 30.0, 30.0, 16.0, 12.0, R_HEAD, self.tcp.copy())
-        rgb = {"head": np.zeros((48, 64, 3), np.uint8), "wrist": np.zeros((24, 32, 3), np.uint8)}
-        return Obs(self.t, rgb, {"head": np.ones((48, 64), np.float32)}, {"head": cam, "wrist": wr}, self.tcp.copy(),
+        rgb = {"head": np.zeros((240, 320, 3), np.uint8), "wrist": np.zeros((24, 32, 3), np.uint8)}
+        face_x = float(self.h0[0] - self.q - 0.005)  # a wall at the handle front face (z-depth along +x)
+        return Obs(self.t, rgb, {"head": np.full((240, 320), face_x, np.float32)}, {"head": cam, "wrist": wr},
+                   self.tcp.copy(),
                    self.w)
 
     def frame(self):
@@ -126,3 +128,23 @@ def test_bundle_group_drawer_is_separate():
     for t in ("mug_tray", "mug_stand", "ov_x", "cf_mug_tray"):
         assert not S.bundle_task_ok(t, ["drawer"])
     assert S.bundle_task_ok("mug_tray", ["all"]) and S.bundle_task_ok("cf_mug_tray", ["conf"])
+
+
+def test_d_format_labels_resolve_back_to_the_truth(tmp_path):
+    from harvest.teach_l8d import xdrawer_d as XDD
+    root = tmp_path / "b3d"
+    out = str(root / "train" / "standard_dr_Dresser_219_1" / f"{TASK}_s34652")
+    XE.collect_drawer_episode(FakeWorld(), 34652, TASK, "standard", "train", out, 0.0, style="clean")
+    c = XDD.build(str(root), str(tmp_path / "data"), "train")
+    assert c["labels"].get("missing", 0) == 0 and c["rows"] > 0 and c["prompt_id"] == XDD.PROMPT_ID
+    rows = [json.loads(x) for x in open(tmp_path / "data" / "train_d-min_x2.jsonl")]
+    steps = {r["step"] for r in rows}
+    assert {"front_of_handle", "insert", "pull", "close"} <= steps
+    for r in rows:
+        cmd = json.loads(r["answer"])["command"]
+        assert cmd["mode"] != "eef"
+        if r["step"] in ("front_of_handle", "insert"):
+            assert cmd["mode"] == "point" and cmd["point_2d"] is not None and r["pt_meta"]["err_mm"] <= 10
+        t = open(r["prompt_path"], encoding="utf-8").read()
+        assert XDD.POINT_BULLET in t and '"intent"' in t and "- eef:" not in t
+    assert XDD.PROMPT_ID not in (XP.PROMPT_ID, V2.PROMPT_ID, *NP.PROMPT_IDS.values())
