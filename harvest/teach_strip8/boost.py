@@ -397,3 +397,85 @@ class PerturbEpisode(BoostEpisode):
             self.perturb_log = dict(p, call=len(self.calls), t=round(self._t(), 2))
             return super()._check()
         return r
+
+
+CORRUPTS = ("hole", "noise", "light", "occl")
+OBJ_R = {"tgt": 0.06, "place": 0.12}
+REMEASURE_DXYZ = (-0.03, 0.0, 0.05)  # re-observe: back 3 cm and up 5 cm
+
+
+class LimitEpisode(PerturbEpisode):
+    """user-log 171 (prereg_limits.md). corrupt = (kind, level) applied to every head observation of the episode
+    (seeded by the episode seed): hole = object regions (target + place) depth 0 for a fraction `level`; noise =
+    zed_mini x `level`; light = lighting level name; occl = grey box over `level` of the target's image box.
+    rescue = the D depth rescue (limits.rescue_resolve) in the point resolver, a 'remeasure' target when all fails."""
+
+    def __init__(self, *a, corrupt=None, rescue: bool = False, **kw):
+        super().__init__(*a, **kw)
+        if corrupt is not None and corrupt[0] not in CORRUPTS:
+            raise ValueError(corrupt)
+        self.corrupt, self.rescue = corrupt, rescue
+        self.corrupt_log, self.rescue_log = [], []
+
+    def _corrupt(self, obs):
+        from . import limits as LM
+        kind, lv = self.corrupt
+        cam = obs.cams["head"]
+        d = (obs.depth or {}).get("head")
+        rgb = obs.rgb["head"]
+        st = self.w.status()
+        s = int(self.seed)
+        if kind in ("hole", "occl") and d is not None:
+            masks = {k: LM.object_mask(cam, d, self.w.table_z, st["obj"][self.info[k]][:2], OBJ_R[k])
+                     for k in ("tgt", "place")}
+        if kind == "hole" and d is not None:
+            for k, m in masks.items():
+                d = LM.depth_holes(d, m, float(lv), seed=s + (k == "place"))
+        elif kind == "noise" and d is not None:
+            d = LM.depth_noise(d, rgb, float(cam.fx), float(lv), seed=s * 1000 + len(self.corrupt_log))
+        elif kind == "light":
+            rgb = LM.lighting(rgb, lv, seed=s)
+        elif kind == "occl" and d is not None:
+            rgb = LM.occlude(rgb, masks["tgt"], float(lv), seed=s)
+        if d is not None:
+            obs.depth["head"] = d
+        obs.rgb["head"] = rgb
+        self.corrupt_log.append(len(self.calls))
+        return obs
+
+    def run(self) -> dict:
+        if self.corrupt is None:
+            return super().run()
+        orig = self.w.observe
+
+        def observe(*a, **kw):
+            return self._corrupt(orig(*a, **kw))
+        self.w.observe = observe
+        try:
+            return super().run()
+        finally:
+            self.w.observe = orig
+
+    def resolve(self, cmd: dict, st: dict) -> dict:
+        if not self.rescue or cmd.get("height") == "lift" or cmd.get("point_2d") is None or self.depth is None:
+            return super().resolve(cmd, st)
+        from . import limits as LM
+        mem = self.pmem.render(self.head) if self.pmem.P is not None else None
+        r = LM.rescue_resolve(self.head, self.depth, self.w.table_z, cmd["point_2d"], tcp=st["tcp"], memory=mem)
+        if r["rescue"] == "none":
+            return super().resolve(cmd, st)
+        hold = self.holding(st)
+        self.rescue_log.append({"call": len(self.calls), "step": r["rescue"], "hole_frac": r["hole_frac"]})
+        if r["kind"] == "remeasure":
+            g = np.asarray(st["tcp"], float) + np.asarray(REMEASURE_DXYZ)
+            return {"kind": "remeasure", "goal": [round(float(v), 4) for v in g], "holding": hold, "rescue": "remeasure"}
+        if self.mem_points and not hold:
+            self.pmem.capture(self.head, self.depth, st["tcp"], self.plane if self.plane is not None else self.w.table_z)
+        goal, notes = RS.target_of(cmd["height"], r, r["plane"], st["tcp"], hold, self.grip_offset)
+        return dict(r, goal=[round(float(v), 4) for v in goal], holding=hold, notes=notes,
+                    grip_offset=None if self.grip_offset is None else round(self.grip_offset, 4))
+
+    def _save(self, res):
+        res["limits"] = {"corrupt": list(self.corrupt) if self.corrupt else None, "rescue": self.rescue,
+                         "n_corrupted_obs": len(self.corrupt_log), "rescues": self.rescue_log}
+        super()._save(res)
