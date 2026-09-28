@@ -25,13 +25,14 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
     from ..sim.scene import GRIP_MAX_W, make_env
     from .xlabels import x_info
     mesh = None
+    l8s = variant == "drf"  # L8S render rules (changes 17-18): head, exposure, materials, HDRIs, gated pieces
     if furniture is not None:  # L8-X furniture: no L8 table, furniture slots (helper L8X-assets, 85a37da)
         from ..sim.assets_x import isaac as FX
         from . import fx as _fx
         if _fx.is_mesh_kind(furniture):  # licensed mesh pieces (THOR / cyclo_lab): only this kind's pieces
             d = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sim", "assets_x")
             mesh = _fx.mesh_subset(_fx.load_mesh_assets(d), furniture, mesh_split)
-            if clutter_pool:  # L8S (change 17): only the pieces that passed the helper's per-piece gate
+            if l8s:  # L8S (change 17): only the pieces that passed the helper's per-piece gate
                 mesh = _fx.passed_pieces(mesh)
             if not mesh:
                 raise ValueError(f"no {mesh_split} mesh pieces for {furniture}")
@@ -54,7 +55,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             self.w_open = float(GRIP_MAX_W)
             self._st = None
             self.last_obs = None
-            if clutter_pool and furniture is not None:  # L8S: head pitch 0.785 (+10 deg) above the URDF's 0.6951
+            if l8s and furniture is not None:  # L8S: head pitch 0.785 (+10 deg) above the URDF's 0.6951
                 self._head_limit()
 
         def _head_limit(self, upper: float = 1.0):
@@ -128,7 +129,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             else:
                 surf, region = fx.choose_surface(sc)
             env.ws = fx.ws_from_region(region)
-            if clutter_pool and env.ws[0][1] - env.ws[0][0] >= 0.16:  # audit P5: not at the image's bottom edge
+            if l8s and env.ws[0][1] - env.ws[0][0] >= 0.16:  # audit P5: not at the image's bottom edge
                 env.ws = ((env.ws[0][0] + 0.04, env.ws[0][1]), env.ws[1])
             tz = float(surf["top_z"])
             env.table_top_z, self.table_z = tz, tz
@@ -142,7 +143,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             rob.cfg.init_state.joint_pos["lift_joint"] = env.lift
             head = None
             from .clutter_x import HEAD_TILT0
-            if clutter_pool:  # L8S change 17: head 0.785 rad (45 deg, the real robot); ~15 % get a small pan / tilt
+            if l8s:  # L8S change 17: head 0.785 rad (45 deg, the real robot); ~15 % get a small pan / tilt
                 from .clutter_x import head_pose
                 head = head_pose(seed)
                 for jn, v in (("head_joint1", head["tilt"]), ("head_joint2", head["pan"])):
@@ -150,16 +151,16 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                         rob.data.default_joint_pos[0, rob.joint_names.index(jn)] = v
                         rob.cfg.init_state.joint_pos[jn] = v
             FX.author_scene(env, sc, mesh, rooms)
-            if clutter_pool and os.environ.get("L8S_ISO"):  # calibration runs only: the tonemapper's film ISO
+            if l8s and os.environ.get("L8S_ISO"):  # calibration runs only: the tonemapper's film ISO
                 import carb
                 carb.settings.get_settings().set("/rtx/post/tonemap/filmIso", float(os.environ["L8S_ISO"]))
-            if clutter_pool:
+            if l8s:
                 self._retexture(seed, sc)
             try:
                 env.set_seed(seed, task)
             except RuntimeError as ex:  # task_layout found no layout in this box
                 raise fx.SkipScene(f"layout: {ex}") from ex
-            if clutter_pool and getattr(self, "_hdr", None) and env.randomization.get("hdr"):
+            if l8s and getattr(self, "_hdr", None) and env.randomization.get("hdr"):
                 env.randomization["hdr"].update(file=self._hdr, name=os.path.basename(self._hdr))
             from ..sim.tasks import X_BETWEEN, X_REL
             keep = {TASKS[task].target, TASKS[task].place} | {o for st in X_STEPS.get(task, ()) for o in st[:2]}
@@ -200,7 +201,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             perturb(env, "P0", seed)
             for _ in range(PRE_RENDER):
                 env.env.sim.render()
-            if clutter_pool:  # audit P1: auto exposure (film ISO), an episode still > 10 % saturated is skipped
+            if l8s:  # audit P1: auto exposure (film ISO), an episode still > 10 % saturated is skipped
                 self.furniture_scene["iso"] = self._auto_exposure()
             if head is not None and head["random"] and not self._head_sees(lay, task, tz, upper):
                 # change 17: a random head pose is used only when the object and its destination stay in view
