@@ -40,12 +40,14 @@ def pool(out):
         if r["id"] not in seen:
             seen.add(r["id"])
             uniq.append(dict(r, kind="aux", aux_kind="open_" + r.get("qa_kind", "qa")))
+    uniq, g_rows = GS.split(uniq)  # records_verified.jsonl also holds verified G rows: drop them, then guard
     GS.guard(uniq, "opratio pool")
+    counts["g_dropped"] = len(g_rows)
     os.makedirs(out, exist_ok=True)
     with open(os.path.join(out, "pool.jsonl"), "w", encoding="utf-8", newline="\n") as f:
         for r in uniq:
             f.write(json.dumps(r) + "\n")
-    counts.update(pool_unique=len(uniq), g_rows=0)
+    counts.update(pool_unique=len(uniq), g_rows_left=0)
     json.dump(counts, open(os.path.join(out, "pool.counts.json"), "w"), indent=1)
     print(json.dumps(counts))
 
