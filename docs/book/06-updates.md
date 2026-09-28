@@ -137,3 +137,4 @@
 | 2026-09-27 04:2x | 01·04·05 | E-PRIV8 결과(M1·M3·G-px 모두 NOT_ADOPT, MONOCULAR_LIMIT): 01 행, 04 경로 행, 05 GPU 행 | [R/priv8](../stage3/results/priv8.md), 이 줄과 같은 커밋 |
 | 2026-09-28 11:5x | 01 | E-OPRATIO8 결과(p=0, 자격 팔 없음; p75 재검증 제안): 01 행 | [R/opratio](../stage3/results/opratio.md), 이 줄과 같은 커밋 |
 | 2026-09-28 16:2x | 01 | E-OPRATIO8-S1 결과(p=0, OOD-T·OOD-H-lift 비열등 미증명): 01 행 | [R/opratio](../stage3/results/opratio.md), 이 줄과 같은 커밋 |
+| 2026-09-28 18:5x | 01·04 | E-VIEW8 결과(A1·A2 REJECT, A/A 잡음 검사): 01 행, 04 없음 | [R/view8](../stage3/results/view8.md), 이 줄과 같은 커밋 |
