@@ -1,0 +1,441 @@
+{
+ "rule": "tools/l8x_assets/gate_pieces.py: 4 clean truth episodes per piece (35060 / 35061 mug_tray, 35063 bottle_tray, 35064 mug_marker), pass >= 3; a skipped scene (no usable surface) = failure",
+ "pieces": {
+  "Cabinet_Corner_02": {
+   "kind": "thor_counter",
+   "family": "Cabinet_Corner",
+   "k": 0,
+   "n": 4,
+   "pass": false
+  },
+  "Cabinet_Straight_02": {
+   "kind": "thor_counter",
+   "family": "Cabinet_Straight",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "Cabinet_Straight_03": {
+   "kind": "thor_counter",
+   "family": "Cabinet_Straight",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "Coffee_Table_204_1": {
+   "kind": "thor_low_table",
+   "family": "Coffee_Table",
+   "k": 4,
+   "n": 4,
+   "pass": true
+  },
+  "Coffee_Table_207_1": {
+   "kind": "thor_low_table",
+   "family": "Coffee_Table",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "Coffee_Table_213_1": {
+   "kind": "thor_low_table",
+   "family": "Coffee_Table",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "Coffee_Table_222_1": {
+   "kind": "thor_low_table",
+   "family": "Coffee_Table",
+   "k": 4,
+   "n": 4,
+   "pass": true
+  },
+  "Coffee_Table_229_1": {
+   "kind": "thor_low_table",
+   "family": "Coffee_Table",
+   "k": 4,
+   "n": 4,
+   "pass": true
+  },
+  "Countertop_C_10x10": {
+   "kind": "thor_counter",
+   "family": "Countertop_C_10x10",
+   "k": 0,
+   "n": 4,
+   "pass": false
+  },
+  "Countertop_C_10x4": {
+   "kind": "thor_counter",
+   "family": "Countertop_C_10x4",
+   "k": 0,
+   "n": 4,
+   "pass": false
+  },
+  "Countertop_C_8x6": {
+   "kind": "thor_counter",
+   "family": "Countertop_C_8x6",
+   "k": 0,
+   "n": 4,
+   "pass": false
+  },
+  "Countertop_I_2x2": {
+   "kind": "thor_counter",
+   "family": "Countertop_I_2x2",
+   "k": 4,
+   "n": 4,
+   "pass": true
+  },
+  "Countertop_I_6x2": {
+   "kind": "thor_counter",
+   "family": "Countertop_I_6x2",
+   "k": 4,
+   "n": 4,
+   "pass": true
+  },
+  "Countertop_L_10x4": {
+   "kind": "thor_counter",
+   "family": "Countertop_L_10x4",
+   "k": 0,
+   "n": 4,
+   "pass": false
+  },
+  "Countertop_L_10x6": {
+   "kind": "thor_counter",
+   "family": "Countertop_L_10x6",
+   "k": 0,
+   "n": 4,
+   "pass": false
+  },
+  "Countertop_L_6x4": {
+   "kind": "thor_counter",
+   "family": "Countertop_L_6x4",
+   "k": 0,
+   "n": 4,
+   "pass": false
+  },
+  "Countertop_L_8x4": {
+   "kind": "thor_counter",
+   "family": "Countertop_L_8x4",
+   "k": 0,
+   "n": 4,
+   "pass": false
+  },
+  "Desk_204_1": {
+   "kind": "thor_table",
+   "family": "Desk",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "Desk_229_1": {
+   "kind": "thor_table",
+   "family": "Desk",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "Desk_301_1": {
+   "kind": "thor_table",
+   "family": "Desk",
+   "k": 0,
+   "n": 4,
+   "pass": false
+  },
+  "Desk_305_1": {
+   "kind": "thor_table",
+   "family": "Desk",
+   "k": 1,
+   "n": 4,
+   "pass": false
+  },
+  "Desk_306_1": {
+   "kind": "thor_table",
+   "family": "Desk",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "Desk_315_1": {
+   "kind": "thor_table",
+   "family": "Desk",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "Desk_320_2_1": {
+   "kind": "thor_table",
+   "family": "Desk",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "Desk_329_1": {
+   "kind": "thor_table",
+   "family": "Desk",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "Dining_Table_16_1": {
+   "kind": "thor_table",
+   "family": "Dining_Table",
+   "k": 2,
+   "n": 4,
+   "pass": false
+  },
+  "Dining_Table_201_1": {
+   "kind": "thor_table",
+   "family": "Dining_Table",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "Dining_Table_208_1": {
+   "kind": "thor_table",
+   "family": "Dining_Table",
+   "k": 4,
+   "n": 4,
+   "pass": true
+  },
+  "Dining_Table_21_1": {
+   "kind": "thor_table",
+   "family": "Dining_Table",
+   "k": 4,
+   "n": 4,
+   "pass": true
+  },
+  "Dining_Table_227_1": {
+   "kind": "thor_table",
+   "family": "Dining_Table",
+   "k": 4,
+   "n": 4,
+   "pass": true
+  },
+  "Dining_Table_23_1": {
+   "kind": "thor_table",
+   "family": "Dining_Table",
+   "k": 4,
+   "n": 4,
+   "pass": true
+  },
+  "Dining_Table_27_1": {
+   "kind": "thor_table",
+   "family": "Dining_Table",
+   "k": 4,
+   "n": 4,
+   "pass": true
+  },
+  "Dining_Table_9_1": {
+   "kind": "thor_table",
+   "family": "Dining_Table",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "Dresser_209_1": {
+   "kind": "thor_shelf",
+   "family": "Dresser",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "Dresser_210_1_1": {
+   "kind": "thor_shelf",
+   "family": "Dresser",
+   "k": 0,
+   "n": 4,
+   "pass": false
+  },
+  "Dresser_219_1": {
+   "kind": "thor_shelf",
+   "family": "Dresser",
+   "k": 0,
+   "n": 4,
+   "pass": false
+  },
+  "Dresser_220_1": {
+   "kind": "thor_shelf",
+   "family": "Dresser",
+   "k": 0,
+   "n": 4,
+   "pass": false
+  },
+  "Dresser_229_1": {
+   "kind": "thor_shelf",
+   "family": "Dresser",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "Dresser_301_1": {
+   "kind": "thor_shelf",
+   "family": "Dresser",
+   "k": 0,
+   "n": 4,
+   "pass": false
+  },
+  "Dresser_315_2": {
+   "kind": "thor_shelf",
+   "family": "Dresser",
+   "k": 4,
+   "n": 4,
+   "pass": true
+  },
+  "Dresser_318_2": {
+   "kind": "thor_shelf",
+   "family": "Dresser",
+   "k": 4,
+   "n": 4,
+   "pass": true
+  },
+  "IKEACabinet_1": {
+   "kind": "thor_counter",
+   "family": "IKEACabinet",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "Shelving_Unit_001_1": {
+   "kind": "thor_shelf",
+   "family": "Shelving_Unit",
+   "k": 0,
+   "n": 4,
+   "pass": false
+  },
+  "Shelving_Unit_206_1": {
+   "kind": "thor_shelf",
+   "family": "Shelving_Unit",
+   "k": 0,
+   "n": 4,
+   "pass": false
+  },
+  "Shelving_Unit_303_1": {
+   "kind": "thor_shelf",
+   "family": "Shelving_Unit",
+   "k": 1,
+   "n": 4,
+   "pass": false
+  },
+  "Shelving_Unit_307_1": {
+   "kind": "thor_shelf",
+   "family": "Shelving_Unit",
+   "k": 0,
+   "n": 4,
+   "pass": false
+  },
+  "Shelving_Unit_313_1": {
+   "kind": "thor_shelf",
+   "family": "Shelving_Unit",
+   "k": 0,
+   "n": 4,
+   "pass": false
+  },
+  "Shelving_Unit_324_1": {
+   "kind": "thor_shelf",
+   "family": "Shelving_Unit",
+   "k": 0,
+   "n": 4,
+   "pass": false
+  },
+  "Side_Table_201_1_1": {
+   "kind": "thor_side_table",
+   "family": "Side_Table",
+   "k": 1,
+   "n": 4,
+   "pass": false
+  },
+  "Side_Table_216_2_1": {
+   "kind": "thor_side_table",
+   "family": "Side_Table",
+   "k": 4,
+   "n": 4,
+   "pass": true
+  },
+  "Side_Table_302_1_7": {
+   "kind": "thor_side_table",
+   "family": "Side_Table",
+   "k": 4,
+   "n": 4,
+   "pass": true
+  },
+  "Side_Table_306_1": {
+   "kind": "thor_side_table",
+   "family": "Side_Table",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "Side_Table_3_1": {
+   "kind": "thor_side_table",
+   "family": "Side_Table",
+   "k": 4,
+   "n": 4,
+   "pass": true
+  },
+  "Side_Table_401_1": {
+   "kind": "thor_side_table",
+   "family": "Side_Table",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "TV_Stand_204_1": {
+   "kind": "thor_shelf",
+   "family": "TV_Stand",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "TV_Stand_206_3": {
+   "kind": "thor_shelf",
+   "family": "TV_Stand",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  },
+  "TV_Stand_222_1": {
+   "kind": "thor_shelf",
+   "family": "TV_Stand",
+   "k": 3,
+   "n": 4,
+   "pass": true
+  }
+ },
+ "pass": [
+  "Cabinet_Straight_02",
+  "Cabinet_Straight_03",
+  "Coffee_Table_204_1",
+  "Coffee_Table_207_1",
+  "Coffee_Table_213_1",
+  "Coffee_Table_222_1",
+  "Coffee_Table_229_1",
+  "Countertop_I_2x2",
+  "Countertop_I_6x2",
+  "Desk_204_1",
+  "Desk_229_1",
+  "Desk_306_1",
+  "Desk_315_1",
+  "Desk_320_2_1",
+  "Desk_329_1",
+  "Dining_Table_201_1",
+  "Dining_Table_208_1",
+  "Dining_Table_21_1",
+  "Dining_Table_227_1",
+  "Dining_Table_23_1",
+  "Dining_Table_27_1",
+  "Dining_Table_9_1",
+  "Dresser_209_1",
+  "Dresser_229_1",
+  "Dresser_315_2",
+  "Dresser_318_2",
+  "IKEACabinet_1",
+  "Side_Table_216_2_1",
+  "Side_Table_302_1_7",
+  "Side_Table_306_1",
+  "Side_Table_3_1",
+  "Side_Table_401_1",
+  "TV_Stand_204_1",
+  "TV_Stand_206_3",
+  "TV_Stand_222_1"
+ ]
+}

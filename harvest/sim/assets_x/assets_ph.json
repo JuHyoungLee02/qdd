@@ -1,0 +1,5478 @@
+{
+ "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+ "source": "Poly Haven models (api.polyhaven.com)",
+ "assets": {
+  "CoffeeCart_01": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/CoffeeCart_01/CoffeeCart_01_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/CoffeeCart_01/CoffeeCart_01_1k.usdc",
+   "collider_size": [
+    2.1676,
+    1.0733,
+    1.7177
+   ],
+   "render_size": [
+    2.1676,
+    1.0733,
+    1.7177
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 3,
+   "surfaces": [
+    {
+     "top_z": 0.2242,
+     "free_box": [
+      [
+       0.51,
+       0.74
+      ],
+      [
+       -0.31000000000000005,
+       -0.09000000000000002
+      ]
+     ],
+     "xy_box": [
+      [
+       0.51,
+       0.74
+      ],
+      [
+       -0.31000000000000005,
+       -0.09000000000000002
+      ]
+     ],
+     "area": 0.0506,
+     "covered_above": 0.585,
+     "clearance": 0.3609,
+     "rim_z": 1.1236,
+     "container": true,
+     "n_free_cells": 3201
+    },
+    {
+     "top_z": 0.6024,
+     "free_box": [
+      [
+       0.52,
+       0.9299999999999999
+      ],
+      [
+       -0.45000000000000007,
+       0.15999999999999992
+      ]
+     ],
+     "xy_box": [
+      [
+       0.52,
+       0.9299999999999999
+      ],
+      [
+       -0.45000000000000007,
+       0.15999999999999992
+      ]
+     ],
+     "area": 0.2501,
+     "covered_above": 0.6146,
+     "clearance": 0.0122,
+     "rim_z": 1.1365,
+     "container": true,
+     "n_free_cells": 6317
+    },
+    {
+     "top_z": 0.6024,
+     "free_box": [
+      [
+       -0.010000000000000009,
+       0.3599999999999999
+      ],
+      [
+       -0.09000000000000002,
+       0.15999999999999992
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.010000000000000009,
+       0.3599999999999999
+      ],
+      [
+       -0.09000000000000002,
+       0.15999999999999992
+      ]
+     ],
+     "area": 0.0925,
+     "covered_above": 0.7654,
+     "clearance": 0.163,
+     "rim_z": 1.0523,
+     "container": true,
+     "n_free_cells": 6317
+    },
+    {
+     "top_z": 0.6024,
+     "free_box": [
+      [
+       0.04999999999999982,
+       0.30999999999999983
+      ],
+      [
+       -0.45000000000000007,
+       -0.3400000000000001
+      ]
+     ],
+     "xy_box": [
+      [
+       0.04999999999999982,
+       0.30999999999999983
+      ],
+      [
+       -0.45000000000000007,
+       -0.3400000000000001
+      ]
+     ],
+     "area": 0.0286,
+     "covered_above": 1.0294,
+     "clearance": 0.427,
+     "rim_z": 1.0523,
+     "container": true,
+     "n_free_cells": 6317
+    },
+    {
+     "top_z": 0.6024,
+     "free_box": [
+      [
+       0.3599999999999999,
+       0.52
+      ],
+      [
+       0.029999999999999916,
+       0.15999999999999992
+      ]
+     ],
+     "xy_box": [
+      [
+       0.3599999999999999,
+       0.52
+      ],
+      [
+       0.029999999999999916,
+       0.15999999999999992
+      ]
+     ],
+     "area": 0.0208,
+     "covered_above": 0.8022,
+     "clearance": 0.1998,
+     "rim_z": 1.2715,
+     "container": true,
+     "n_free_cells": 6317
+    },
+    {
+     "top_z": 0.7351,
+     "free_box": [
+      [
+       0.33999999999999986,
+       0.49
+      ],
+      [
+       -0.4,
+       -0.25000000000000006
+      ]
+     ],
+     "xy_box": [
+      [
+       0.33999999999999986,
+       0.49
+      ],
+      [
+       -0.4,
+       -0.25000000000000006
+      ]
+     ],
+     "area": 0.0225,
+     "covered_above": 1.0294,
+     "clearance": 0.2942,
+     "rim_z": 1.0523,
+     "container": true,
+     "n_free_cells": 287
+    },
+    {
+     "top_z": 0.7906,
+     "free_box": [
+      [
+       -0.28,
+       -0.16000000000000003
+      ],
+      [
+       -0.4,
+       -0.2700000000000001
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.28,
+       -0.16000000000000003
+      ],
+      [
+       -0.4,
+       -0.2700000000000001
+      ]
+     ],
+     "area": 0.0156,
+     "covered_above": 1.0294,
+     "clearance": 0.2388,
+     "rim_z": 1.6259,
+     "container": true,
+     "n_free_cells": 459
+    },
+    {
+     "top_z": 0.7906,
+     "free_box": [
+      [
+       -0.10000000000000009,
+       0.030000000000000027
+      ],
+      [
+       -0.4,
+       -0.28
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.10000000000000009,
+       0.030000000000000027
+      ],
+      [
+       -0.4,
+       -0.28
+      ]
+     ],
+     "area": 0.0156,
+     "covered_above": 1.0294,
+     "clearance": 0.2388,
+     "rim_z": 1.5958,
+     "container": true,
+     "n_free_cells": 459
+    },
+    {
+     "top_z": 0.8515,
+     "free_box": [
+      [
+       0.1399999999999999,
+       0.28
+      ],
+      [
+       -0.28,
+       -0.14000000000000007
+      ]
+     ],
+     "xy_box": [
+      [
+       0.1399999999999999,
+       0.28
+      ],
+      [
+       -0.28,
+       -0.14000000000000007
+      ]
+     ],
+     "area": 0.0196,
+     "covered_above": 1.0294,
+     "clearance": 0.1779,
+     "rim_z": 1.227,
+     "container": true,
+     "n_free_cells": 308
+    },
+    {
+     "top_z": 1.0515,
+     "free_box": [
+      [
+       0.33999999999999986,
+       0.51
+      ],
+      [
+       -0.49000000000000005,
+       -0.21000000000000002
+      ]
+     ],
+     "xy_box": [
+      [
+       0.33999999999999986,
+       0.51
+      ],
+      [
+       -0.49000000000000005,
+       -0.21000000000000002
+      ]
+     ],
+     "area": 0.0476,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 2977
+    },
+    {
+     "top_z": 1.0515,
+     "free_box": [
+      [
+       0.74,
+       0.9399999999999997
+      ],
+      [
+       -0.49000000000000005,
+       -0.28
+      ]
+     ],
+     "xy_box": [
+      [
+       0.74,
+       0.9399999999999997
+      ],
+      [
+       -0.49000000000000005,
+       -0.28
+      ]
+     ],
+     "area": 0.042,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 2977
+    },
+    {
+     "top_z": 1.0515,
+     "free_box": [
+      [
+       0.51,
+       0.5899999999999999
+      ],
+      [
+       -0.49000000000000005,
+       -0.32000000000000006
+      ]
+     ],
+     "xy_box": [
+      [
+       0.51,
+       0.5899999999999999
+      ],
+      [
+       -0.49000000000000005,
+       -0.32000000000000006
+      ]
+     ],
+     "area": 0.0136,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 2977
+    },
+    {
+     "top_z": 1.0515,
+     "free_box": [
+      [
+       0.6299999999999999,
+       0.73
+      ],
+      [
+       -0.33000000000000007,
+       -0.20000000000000007
+      ]
+     ],
+     "xy_box": [
+      [
+       0.6299999999999999,
+       0.73
+      ],
+      [
+       -0.33000000000000007,
+       -0.20000000000000007
+      ]
+     ],
+     "area": 0.013,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": 1.1236,
+     "container": true,
+     "n_free_cells": 2977
+    },
+    {
+     "top_z": 1.1043,
+     "free_box": [
+      [
+       -0.2600000000000001,
+       0.040000000000000036
+      ],
+      [
+       -0.11000000000000004,
+       0.14
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.2600000000000001,
+       0.040000000000000036
+      ],
+      [
+       -0.11000000000000004,
+       0.14
+      ]
+     ],
+     "area": 0.075,
+     "covered_above": 1.1129,
+     "clearance": 0.0087,
+     "rim_z": 1.6483,
+     "container": true,
+     "n_free_cells": 1370
+    },
+    {
+     "top_z": 1.1221,
+     "free_box": [
+      [
+       0.74,
+       0.8799999999999999
+      ],
+      [
+       -0.23000000000000004,
+       -0.10000000000000003
+      ]
+     ],
+     "xy_box": [
+      [
+       0.74,
+       0.8799999999999999
+      ],
+      [
+       -0.23000000000000004,
+       -0.10000000000000003
+      ]
+     ],
+     "area": 0.0182,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 292
+    },
+    {
+     "top_z": 1.2417,
+     "free_box": [
+      [
+       0.6499999999999999,
+       0.77
+      ],
+      [
+       -0.010000000000000009,
+       0.12
+      ]
+     ],
+     "xy_box": [
+      [
+       0.6499999999999999,
+       0.77
+      ],
+      [
+       -0.010000000000000009,
+       0.12
+      ]
+     ],
+     "area": 0.0156,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 469
+    },
+    {
+     "top_z": 1.2417,
+     "free_box": [
+      [
+       0.4099999999999999,
+       0.52
+      ],
+      [
+       -0.19000000000000006,
+       -0.050000000000000044
+      ]
+     ],
+     "xy_box": [
+      [
+       0.4099999999999999,
+       0.52
+      ],
+      [
+       -0.19000000000000006,
+       -0.050000000000000044
+      ]
+     ],
+     "area": 0.0154,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 469
+    },
+    {
+     "top_z": 1.2714,
+     "free_box": [
+      [
+       0.43999999999999995,
+       0.5899999999999999
+      ],
+      [
+       -0.010000000000000009,
+       0.13
+      ]
+     ],
+     "xy_box": [
+      [
+       0.43999999999999995,
+       0.5899999999999999
+      ],
+      [
+       -0.010000000000000009,
+       0.13
+      ]
+     ],
+     "area": 0.021,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 306
+    },
+    {
+     "top_z": 1.6483,
+     "free_box": [
+      [
+       -0.29000000000000004,
+       0.020000000000000018
+      ],
+      [
+       -0.39,
+       -0.23000000000000004
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.29000000000000004,
+       0.020000000000000018
+      ],
+      [
+       -0.39,
+       -0.23000000000000004
+      ]
+     ],
+     "area": 0.0496,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 683
+    },
+    {
+     "top_z": 1.6986,
+     "free_box": [
+      [
+       -0.2500000000000001,
+       0.010000000000000009
+      ],
+      [
+       -0.21000000000000002,
+       -0.09000000000000002
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.2500000000000001,
+       0.010000000000000009
+      ],
+      [
+       -0.21000000000000002,
+       -0.09000000000000002
+      ]
+     ],
+     "area": 0.0312,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 566
+    },
+    {
+     "top_z": 1.7075,
+     "free_box": [
+      [
+       -0.17000000000000004,
+       -0.06000000000000005
+      ],
+      [
+       -0.030000000000000027,
+       0.06999999999999995
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.17000000000000004,
+       -0.06000000000000005
+      ],
+      [
+       -0.030000000000000027,
+       0.06999999999999995
+      ]
+     ],
+     "area": 0.011,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 167
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/CoffeeCart_01",
+   "authors": [
+    "Joe Seabuhr"
+   ]
+  },
+  "GothicCabinet_01": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/GothicCabinet_01/GothicCabinet_01_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/GothicCabinet_01/GothicCabinet_01_1k.usdc",
+   "collider_size": [
+    1.7191,
+    1.1165,
+    2.3609
+   ],
+   "render_size": [
+    1.7191,
+    1.1287,
+    2.3609
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 12.1,
+   "n_colliders": 5,
+   "surfaces": [
+    {
+     "top_z": 0.3221,
+     "free_box": [
+      [
+       -0.76,
+       0.7600000000000001
+      ],
+      [
+       -0.2900000000000001,
+       0.5
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.76,
+       0.7600000000000001
+      ],
+      [
+       -0.2900000000000001,
+       0.5
+      ]
+     ],
+     "area": 1.2008,
+     "covered_above": 1.2799,
+     "clearance": 0.9577,
+     "rim_z": 2.3609,
+     "container": true,
+     "n_free_cells": 12295
+    },
+    {
+     "top_z": 1.318,
+     "free_box": [
+      [
+       -0.77,
+       0.7700000000000001
+      ],
+      [
+       -0.2900000000000001,
+       0.49
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.77,
+       0.7700000000000001
+      ],
+      [
+       -0.2900000000000001,
+       0.49
+      ]
+     ],
+     "area": 1.2012,
+     "covered_above": 1.341,
+     "clearance": 0.023,
+     "rim_z": 2.3609,
+     "container": true,
+     "n_free_cells": 12740
+    },
+    {
+     "top_z": 2.3609,
+     "free_box": [
+      [
+       -0.8200000000000001,
+       0.82
+      ],
+      [
+       -0.3600000000000001,
+       0.56
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.8200000000000001,
+       0.82
+      ],
+      [
+       -0.3600000000000001,
+       0.56
+      ]
+     ],
+     "area": 1.5088,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 15088
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/GothicCabinet_01",
+   "authors": [
+    "Kirill Sannikov"
+   ]
+  },
+  "GothicCommode_01": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/GothicCommode_01/GothicCommode_01_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/GothicCommode_01/GothicCommode_01_1k.usdc",
+   "collider_size": [
+    1.2014,
+    0.5807,
+    1.212
+   ],
+   "render_size": [
+    1.2014,
+    0.5807,
+    1.212
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 4,
+   "surfaces": [
+    {
+     "top_z": 0.2123,
+     "free_box": [
+      [
+       -0.48,
+       0.4800000000000001
+      ],
+      [
+       -0.21000000000000002,
+       0.25000000000000006
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.48,
+       0.4800000000000001
+      ],
+      [
+       -0.21000000000000002,
+       0.25000000000000006
+      ]
+     ],
+     "area": 0.4416,
+     "covered_above": 0.2193,
+     "clearance": 0.007,
+     "rim_z": 1.212,
+     "container": true,
+     "n_free_cells": 5002
+    },
+    {
+     "top_z": 0.2736,
+     "free_box": [
+      [
+       -0.45999999999999996,
+       0.45000000000000007
+      ],
+      [
+       -0.2,
+       0.25000000000000006
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.45999999999999996,
+       0.45000000000000007
+      ],
+      [
+       -0.2,
+       0.25000000000000006
+      ]
+     ],
+     "area": 0.4095,
+     "covered_above": 0.2781,
+     "clearance": 0.0046,
+     "rim_z": 1.212,
+     "container": true,
+     "n_free_cells": 4178
+    },
+    {
+     "top_z": 0.5812,
+     "free_box": [
+      [
+       -0.45999999999999996,
+       0.4600000000000001
+      ],
+      [
+       -0.18,
+       0.25999999999999995
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.45999999999999996,
+       0.4600000000000001
+      ],
+      [
+       -0.18,
+       0.25999999999999995
+      ]
+     ],
+     "area": 0.4048,
+     "covered_above": 0.5902,
+     "clearance": 0.009,
+     "rim_z": 1.212,
+     "container": true,
+     "n_free_cells": 4131
+    },
+    {
+     "top_z": 0.8991,
+     "free_box": [
+      [
+       -0.45999999999999996,
+       0.4600000000000001
+      ],
+      [
+       -0.2,
+       0.25000000000000006
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.45999999999999996,
+       0.4600000000000001
+      ],
+      [
+       -0.2,
+       0.25000000000000006
+      ]
+     ],
+     "area": 0.414,
+     "covered_above": 0.9041,
+     "clearance": 0.005,
+     "rim_z": 1.212,
+     "container": true,
+     "n_free_cells": 4140
+    },
+    {
+     "top_z": 1.212,
+     "free_box": [
+      [
+       -0.58,
+       0.58
+      ],
+      [
+       -0.27,
+       0.29
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.58,
+       0.58
+      ],
+      [
+       -0.27,
+       0.29
+      ]
+     ],
+     "area": 0.6496,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 6496
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/GothicCommode_01",
+   "authors": [
+    "Kirill Sannikov"
+   ]
+  },
+  "Shelf_01": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/Shelf_01/Shelf_01_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/Shelf_01/Shelf_01_1k.usdc",
+   "collider_size": [
+    1.0034,
+    0.257,
+    2.0803
+   ],
+   "render_size": [
+    1.0034,
+    0.257,
+    2.0803
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 1,
+   "surfaces": [
+    {
+     "top_z": 0.1397,
+     "free_box": [
+      [
+       -0.43000000000000005,
+       0.42999999999999994
+      ],
+      [
+       -0.09999999999999999,
+       0.09
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.43000000000000005,
+       0.42999999999999994
+      ],
+      [
+       -0.09999999999999999,
+       0.09
+      ]
+     ],
+     "area": 0.1634,
+     "covered_above": 0.3475,
+     "clearance": 0.2078,
+     "rim_z": 2.0803,
+     "container": true,
+     "n_free_cells": 1719
+    },
+    {
+     "top_z": 0.3794,
+     "free_box": [
+      [
+       -0.43000000000000005,
+       0.42999999999999994
+      ],
+      [
+       -0.09999999999999999,
+       0.09
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.43000000000000005,
+       0.42999999999999994
+      ],
+      [
+       -0.09999999999999999,
+       0.09
+      ]
+     ],
+     "area": 0.1634,
+     "covered_above": 0.629,
+     "clearance": 0.2496,
+     "rim_z": 2.0803,
+     "container": true,
+     "n_free_cells": 1634
+    },
+    {
+     "top_z": 0.6608,
+     "free_box": [
+      [
+       -0.43000000000000005,
+       0.42999999999999994
+      ],
+      [
+       -0.09999999999999999,
+       0.09
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.43000000000000005,
+       0.42999999999999994
+      ],
+      [
+       -0.09999999999999999,
+       0.09
+      ]
+     ],
+     "area": 0.1634,
+     "covered_above": 0.9104,
+     "clearance": 0.2496,
+     "rim_z": 2.0803,
+     "container": true,
+     "n_free_cells": 1634
+    },
+    {
+     "top_z": 0.9423,
+     "free_box": [
+      [
+       -0.43000000000000005,
+       0.42999999999999994
+      ],
+      [
+       -0.09999999999999999,
+       0.09
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.43000000000000005,
+       0.42999999999999994
+      ],
+      [
+       -0.09999999999999999,
+       0.09
+      ]
+     ],
+     "area": 0.1634,
+     "covered_above": 1.1919,
+     "clearance": 0.2496,
+     "rim_z": 2.0803,
+     "container": true,
+     "n_free_cells": 1634
+    },
+    {
+     "top_z": 1.2237,
+     "free_box": [
+      [
+       -0.43000000000000005,
+       0.42999999999999994
+      ],
+      [
+       -0.09999999999999999,
+       0.09
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.43000000000000005,
+       0.42999999999999994
+      ],
+      [
+       -0.09999999999999999,
+       0.09
+      ]
+     ],
+     "area": 0.1634,
+     "covered_above": 1.4733,
+     "clearance": 0.2496,
+     "rim_z": 2.0803,
+     "container": true,
+     "n_free_cells": 1634
+    },
+    {
+     "top_z": 1.5052,
+     "free_box": [
+      [
+       -0.42000000000000004,
+       0.42000000000000004
+      ],
+      [
+       -0.09999999999999999,
+       0.09
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.42000000000000004,
+       0.42000000000000004
+      ],
+      [
+       -0.09999999999999999,
+       0.09
+      ]
+     ],
+     "area": 0.1596,
+     "covered_above": 1.7621,
+     "clearance": 0.257,
+     "rim_z": 2.0803,
+     "container": true,
+     "n_free_cells": 1632
+    },
+    {
+     "top_z": 1.7866,
+     "free_box": [
+      [
+       -0.43000000000000005,
+       0.42999999999999994
+      ],
+      [
+       -0.09999999999999999,
+       0.09
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.43000000000000005,
+       0.42999999999999994
+      ],
+      [
+       -0.09999999999999999,
+       0.09
+      ]
+     ],
+     "area": 0.1634,
+     "covered_above": 2.0191,
+     "clearance": 0.2325,
+     "rim_z": 2.0803,
+     "container": true,
+     "n_free_cells": 1634
+    },
+    {
+     "top_z": 2.0803,
+     "free_box": [
+      [
+       -0.5,
+       0.5
+      ],
+      [
+       -0.13,
+       0.13000000000000003
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.5,
+       0.5
+      ],
+      [
+       -0.13,
+       0.13000000000000003
+      ]
+     ],
+     "area": 0.26,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 2600
+    }
+   ],
+   "split": "ood",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/Shelf_01",
+   "authors": [
+    "Gabriel Radi\u0107"
+   ]
+  },
+  "WoodenTable_03": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/WoodenTable_03/WoodenTable_03_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/WoodenTable_03/WoodenTable_03_1k.usdc",
+   "collider_size": [
+    1.3269,
+    0.5617,
+    0.8301
+   ],
+   "render_size": [
+    1.3269,
+    0.5617,
+    0.8301
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 6,
+   "surfaces": [
+    {
+     "top_z": 0.078,
+     "free_box": [
+      [
+       -0.6000000000000001,
+       -0.22000000000000003
+      ],
+      [
+       -0.24,
+       0.16999999999999998
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.6000000000000001,
+       -0.22000000000000003
+      ],
+      [
+       -0.24,
+       0.16999999999999998
+      ]
+     ],
+     "area": 0.1558,
+     "covered_above": 0.0952,
+     "clearance": 0.0171,
+     "rim_z": 0.8301,
+     "container": true,
+     "n_free_cells": 2198
+    },
+    {
+     "top_z": 0.0988,
+     "free_box": [
+      [
+       -0.17000000000000004,
+       0.58
+      ],
+      [
+       -0.22999999999999998,
+       0.15000000000000002
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.17000000000000004,
+       0.58
+      ],
+      [
+       -0.22999999999999998,
+       0.15000000000000002
+      ]
+     ],
+     "area": 0.285,
+     "covered_above": 0.2913,
+     "clearance": 0.1926,
+     "rim_z": 0.8301,
+     "container": true,
+     "n_free_cells": 2971
+    },
+    {
+     "top_z": 0.2908,
+     "free_box": [
+      [
+       -0.6000000000000001,
+       -0.22000000000000003
+      ],
+      [
+       -0.22,
+       0.16999999999999998
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.6000000000000001,
+       -0.22000000000000003
+      ],
+      [
+       -0.22,
+       0.16999999999999998
+      ]
+     ],
+     "area": 0.1482,
+     "covered_above": 0.2967,
+     "clearance": 0.0059,
+     "rim_z": 0.8301,
+     "container": true,
+     "n_free_cells": 1493
+    },
+    {
+     "top_z": 0.3366,
+     "free_box": [
+      [
+       -0.17000000000000004,
+       0.58
+      ],
+      [
+       -0.22999999999999998,
+       0.15000000000000002
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.17000000000000004,
+       0.58
+      ],
+      [
+       -0.22999999999999998,
+       0.15000000000000002
+      ]
+     ],
+     "area": 0.285,
+     "covered_above": 0.5328,
+     "clearance": 0.1961,
+     "rim_z": 0.8301,
+     "container": true,
+     "n_free_cells": 2850
+    },
+    {
+     "top_z": 0.578,
+     "free_box": [
+      [
+       -0.17000000000000004,
+       0.16999999999999993
+      ],
+      [
+       -0.22999999999999998,
+       0.15000000000000002
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.17000000000000004,
+       0.16999999999999993
+      ],
+      [
+       -0.22999999999999998,
+       0.15000000000000002
+      ]
+     ],
+     "area": 0.1292,
+     "covered_above": 0.7811,
+     "clearance": 0.2031,
+     "rim_z": 0.8301,
+     "container": true,
+     "n_free_cells": 2584
+    },
+    {
+     "top_z": 0.578,
+     "free_box": [
+      [
+       0.24,
+       0.58
+      ],
+      [
+       -0.22999999999999998,
+       0.15000000000000002
+      ]
+     ],
+     "xy_box": [
+      [
+       0.24,
+       0.58
+      ],
+      [
+       -0.22999999999999998,
+       0.15000000000000002
+      ]
+     ],
+     "area": 0.1292,
+     "covered_above": 0.7811,
+     "clearance": 0.2031,
+     "rim_z": 0.8301,
+     "container": true,
+     "n_free_cells": 2584
+    },
+    {
+     "top_z": 0.8301,
+     "free_box": [
+      [
+       -0.66,
+       0.66
+      ],
+      [
+       -0.26,
+       0.26000000000000006
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.66,
+       0.66
+      ],
+      [
+       -0.26,
+       0.26000000000000006
+      ]
+     ],
+     "area": 0.6864,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 6864
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/WoodenTable_03",
+   "authors": [
+    "Gabriel Radi\u0107"
+   ]
+  },
+  "chinese_cabinet": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/chinese_cabinet/chinese_cabinet_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/chinese_cabinet/chinese_cabinet_1k.usdc",
+   "collider_size": [
+    1.2625,
+    0.5452,
+    2.8721
+   ],
+   "render_size": [
+    1.2625,
+    0.5452,
+    2.8721
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 5,
+   "surfaces": [
+    {
+     "top_z": 0.3139,
+     "free_box": [
+      [
+       -0.54,
+       0.5399999999999999
+      ],
+      [
+       -0.15000000000000005,
+       0.22999999999999998
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.54,
+       0.5399999999999999
+      ],
+      [
+       -0.15000000000000005,
+       0.22999999999999998
+      ]
+     ],
+     "area": 0.4104,
+     "covered_above": 1.3047,
+     "clearance": 0.9908,
+     "rim_z": 2.8719,
+     "container": true,
+     "n_free_cells": 4931
+    },
+    {
+     "top_z": 1.3051,
+     "free_box": [
+      [
+       0.040000000000000036,
+       0.5299999999999999
+      ],
+      [
+       -0.15000000000000005,
+       0.18999999999999995
+      ]
+     ],
+     "xy_box": [
+      [
+       0.040000000000000036,
+       0.5299999999999999
+      ],
+      [
+       -0.15000000000000005,
+       0.18999999999999995
+      ]
+     ],
+     "area": 0.1666,
+     "covered_above": 1.4638,
+     "clearance": 0.1587,
+     "rim_z": 2.8654,
+     "container": true,
+     "n_free_cells": 3738
+    },
+    {
+     "top_z": 1.3051,
+     "free_box": [
+      [
+       -0.53,
+       -0.040000000000000036
+      ],
+      [
+       -0.15000000000000005,
+       0.17999999999999994
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.53,
+       -0.040000000000000036
+      ],
+      [
+       -0.15000000000000005,
+       0.17999999999999994
+      ]
+     ],
+     "area": 0.1617,
+     "covered_above": 1.4733,
+     "clearance": 0.1682,
+     "rim_z": 2.8654,
+     "container": true,
+     "n_free_cells": 3738
+    },
+    {
+     "top_z": 1.4925,
+     "free_box": [
+      [
+       -0.5700000000000001,
+       0.57
+      ],
+      [
+       -0.23000000000000004,
+       0.21999999999999997
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.5700000000000001,
+       0.57
+      ],
+      [
+       -0.23000000000000004,
+       0.21999999999999997
+      ]
+     ],
+     "area": 0.513,
+     "covered_above": 1.6516,
+     "clearance": 0.159,
+     "rim_z": 2.8644,
+     "container": true,
+     "n_free_cells": 5822
+    },
+    {
+     "top_z": 2.1502,
+     "free_box": [
+      [
+       -0.55,
+       0.5499999999999999
+      ],
+      [
+       -0.16000000000000003,
+       0.19999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.55,
+       0.5499999999999999
+      ],
+      [
+       -0.16000000000000003,
+       0.19999999999999996
+      ]
+     ],
+     "area": 0.396,
+     "covered_above": 2.8267,
+     "clearance": 0.6765,
+     "rim_z": 2.8719,
+     "container": true,
+     "n_free_cells": 4008
+    },
+    {
+     "top_z": 2.8654,
+     "free_box": [
+      [
+       -0.56,
+       0.5599999999999999
+      ],
+      [
+       -0.16000000000000003,
+       0.19999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.56,
+       0.5599999999999999
+      ],
+      [
+       -0.16000000000000003,
+       0.19999999999999996
+      ]
+     ],
+     "area": 0.4032,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 4032
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/chinese_cabinet",
+   "authors": [
+    "Kirill Sannikov"
+   ]
+  },
+  "chinese_commode": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/chinese_commode/chinese_commode_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/chinese_commode/chinese_commode_1k.usdc",
+   "collider_size": [
+    4.4905,
+    1.1699,
+    2.0199
+   ],
+   "render_size": [
+    4.4905,
+    1.1699,
+    2.0199
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 4,
+   "surfaces": [
+    {
+     "top_z": 1.4812,
+     "free_box": [
+      [
+       -1.46,
+       -0.6199999999999999
+      ],
+      [
+       -0.52,
+       -0.43
+      ]
+     ],
+     "xy_box": [
+      [
+       -1.46,
+       -0.6199999999999999
+      ],
+      [
+       -0.52,
+       -0.43
+      ]
+     ],
+     "area": 0.0756,
+     "covered_above": 1.4875,
+     "clearance": 0.0063,
+     "rim_z": 1.9559,
+     "container": true,
+     "n_free_cells": 2315
+    },
+    {
+     "top_z": 1.4812,
+     "free_box": [
+      [
+       0.6200000000000001,
+       1.46
+      ],
+      [
+       -0.52,
+       -0.43
+      ]
+     ],
+     "xy_box": [
+      [
+       0.6200000000000001,
+       1.46
+      ],
+      [
+       -0.52,
+       -0.43
+      ]
+     ],
+     "area": 0.0756,
+     "covered_above": 1.4875,
+     "clearance": 0.0063,
+     "rim_z": 1.9559,
+     "container": true,
+     "n_free_cells": 2315
+    },
+    {
+     "top_z": 1.4945,
+     "free_box": [
+      [
+       0.5800000000000001,
+       1.4
+      ],
+      [
+       -0.49,
+       0.35
+      ]
+     ],
+     "xy_box": [
+      [
+       0.5800000000000001,
+       1.4
+      ],
+      [
+       -0.49,
+       0.35
+      ]
+     ],
+     "area": 0.6888,
+     "covered_above": 1.8699,
+     "clearance": 0.3754,
+     "rim_z": 1.9559,
+     "container": true,
+     "n_free_cells": 20412
+    },
+    {
+     "top_z": 1.4945,
+     "free_box": [
+      [
+       -1.4,
+       -0.5900000000000001
+      ],
+      [
+       -0.49,
+       0.35
+      ]
+     ],
+     "xy_box": [
+      [
+       -1.4,
+       -0.5900000000000001
+      ],
+      [
+       -0.49,
+       0.35
+      ]
+     ],
+     "area": 0.6804,
+     "covered_above": 1.8699,
+     "clearance": 0.3754,
+     "rim_z": 1.9559,
+     "container": true,
+     "n_free_cells": 20412
+    },
+    {
+     "top_z": 1.4945,
+     "free_box": [
+      [
+       -0.3999999999999999,
+       0.3999999999999999
+      ],
+      [
+       -0.49,
+       0.35
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.3999999999999999,
+       0.3999999999999999
+      ],
+      [
+       -0.49,
+       0.35
+      ]
+     ],
+     "area": 0.672,
+     "covered_above": 1.8699,
+     "clearance": 0.3754,
+     "rim_z": 1.9559,
+     "container": true,
+     "n_free_cells": 20412
+    },
+    {
+     "top_z": 1.9559,
+     "free_box": [
+      [
+       -2.15,
+       2.15
+      ],
+      [
+       -0.58,
+       0.58
+      ]
+     ],
+     "xy_box": [
+      [
+       -2.15,
+       2.15
+      ],
+      [
+       -0.58,
+       0.58
+      ]
+     ],
+     "area": 4.988,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 49880
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/chinese_commode",
+   "authors": [
+    "Kirill Sannikov"
+   ]
+  },
+  "drawer_cabinet": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/drawer_cabinet/drawer_cabinet_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/drawer_cabinet/drawer_cabinet_1k.usdc",
+   "collider_size": [
+    1.1411,
+    0.4881,
+    1.8813
+   ],
+   "render_size": [
+    1.1411,
+    0.4881,
+    1.8813
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 5,
+   "surfaces": [
+    {
+     "top_z": 0.4114,
+     "free_box": [
+      [
+       -0.53,
+       0.5300000000000001
+      ],
+      [
+       -0.21000000000000002,
+       0.24
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.53,
+       0.5300000000000001
+      ],
+      [
+       -0.21000000000000002,
+       0.24
+      ]
+     ],
+     "area": 0.477,
+     "covered_above": 0.4155,
+     "clearance": 0.0041,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 5048
+    },
+    {
+     "top_z": 0.4882,
+     "free_box": [
+      [
+       -0.5,
+       0.4900000000000001
+      ],
+      [
+       -0.2,
+       0.16999999999999998
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.5,
+       0.4900000000000001
+      ],
+      [
+       -0.2,
+       0.16999999999999998
+      ]
+     ],
+     "area": 0.3663,
+     "covered_above": 0.6045,
+     "clearance": 0.1163,
+     "rim_z": 1.7555,
+     "container": true,
+     "n_free_cells": 3690
+    },
+    {
+     "top_z": 0.6631,
+     "free_box": [
+      [
+       -0.5,
+       0.4900000000000001
+      ],
+      [
+       -0.2,
+       0.16999999999999998
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.5,
+       0.4900000000000001
+      ],
+      [
+       -0.2,
+       0.16999999999999998
+      ]
+     ],
+     "area": 0.3663,
+     "covered_above": 0.7794,
+     "clearance": 0.1163,
+     "rim_z": 1.7555,
+     "container": true,
+     "n_free_cells": 3690
+    },
+    {
+     "top_z": 0.8381,
+     "free_box": [
+      [
+       -0.5,
+       0.4900000000000001
+      ],
+      [
+       -0.2,
+       0.16999999999999998
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.5,
+       0.4900000000000001
+      ],
+      [
+       -0.2,
+       0.16999999999999998
+      ]
+     ],
+     "area": 0.3663,
+     "covered_above": 0.9544,
+     "clearance": 0.1163,
+     "rim_z": 1.7555,
+     "container": true,
+     "n_free_cells": 3690
+    },
+    {
+     "top_z": 1.013,
+     "free_box": [
+      [
+       -0.5,
+       0.4900000000000001
+      ],
+      [
+       -0.2,
+       0.16999999999999998
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.5,
+       0.4900000000000001
+      ],
+      [
+       -0.2,
+       0.16999999999999998
+      ]
+     ],
+     "area": 0.3663,
+     "covered_above": 1.1232,
+     "clearance": 0.1102,
+     "rim_z": 1.7555,
+     "container": true,
+     "n_free_cells": 3673
+    },
+    {
+     "top_z": 1.1303,
+     "free_box": [
+      [
+       -0.54,
+       0.5300000000000001
+      ],
+      [
+       -0.21000000000000002,
+       0.2
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.54,
+       0.5300000000000001
+      ],
+      [
+       -0.21000000000000002,
+       0.2
+      ]
+     ],
+     "area": 0.4387,
+     "covered_above": 1.4304,
+     "clearance": 0.3,
+     "rim_z": 1.8742,
+     "container": true,
+     "n_free_cells": 4403
+    },
+    {
+     "top_z": 1.4519,
+     "free_box": [
+      [
+       -0.54,
+       0.5300000000000001
+      ],
+      [
+       -0.21000000000000002,
+       0.2
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.54,
+       0.5300000000000001
+      ],
+      [
+       -0.21000000000000002,
+       0.2
+      ]
+     ],
+     "area": 0.4387,
+     "covered_above": 1.7349,
+     "clearance": 0.283,
+     "rim_z": 1.8742,
+     "container": true,
+     "n_free_cells": 4500
+    },
+    {
+     "top_z": 1.7565,
+     "free_box": [
+      [
+       -0.53,
+       0.5300000000000001
+      ],
+      [
+       -0.21000000000000002,
+       0.2
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.53,
+       0.5300000000000001
+      ],
+      [
+       -0.21000000000000002,
+       0.2
+      ]
+     ],
+     "area": 0.4346,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 4349
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/drawer_cabinet",
+   "authors": [
+    "Ulan Cabanilla"
+   ]
+  },
+  "modern_wooden_cabinet": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/modern_wooden_cabinet/modern_wooden_cabinet_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/modern_wooden_cabinet/modern_wooden_cabinet_1k.usdc",
+   "collider_size": [
+    2.44,
+    0.52,
+    0.6801
+   ],
+   "render_size": [
+    2.44,
+    0.52,
+    0.6801
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 3,
+   "surfaces": [
+    {
+     "top_z": 0.1733,
+     "free_box": [
+      [
+       -1.21,
+       -0.75
+      ],
+      [
+       -0.23000000000000004,
+       0.20999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       -1.21,
+       -0.75
+      ],
+      [
+       -0.23000000000000004,
+       0.20999999999999996
+      ]
+     ],
+     "area": 0.2024,
+     "covered_above": 0.2243,
+     "clearance": 0.051,
+     "rim_z": 0.6801,
+     "container": true,
+     "n_free_cells": 10397
+    },
+    {
+     "top_z": 0.1733,
+     "free_box": [
+      [
+       0.75,
+       1.21
+      ],
+      [
+       -0.23000000000000004,
+       0.20999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       0.75,
+       1.21
+      ],
+      [
+       -0.23000000000000004,
+       0.20999999999999996
+      ]
+     ],
+     "area": 0.2024,
+     "covered_above": 0.2209,
+     "clearance": 0.0476,
+     "rim_z": 0.6801,
+     "container": true,
+     "n_free_cells": 10397
+    },
+    {
+     "top_z": 0.1733,
+     "free_box": [
+      [
+       -0.73,
+       -0.28
+      ],
+      [
+       -0.23000000000000004,
+       0.20999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.73,
+       -0.28
+      ],
+      [
+       -0.23000000000000004,
+       0.20999999999999996
+      ]
+     ],
+     "area": 0.198,
+     "covered_above": 0.1853,
+     "clearance": 0.012,
+     "rim_z": 0.6801,
+     "container": true,
+     "n_free_cells": 10397
+    },
+    {
+     "top_z": 0.1733,
+     "free_box": [
+      [
+       0.28,
+       0.73
+      ],
+      [
+       -0.23000000000000004,
+       0.20999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       0.28,
+       0.73
+      ],
+      [
+       -0.23000000000000004,
+       0.20999999999999996
+      ]
+     ],
+     "area": 0.198,
+     "covered_above": 0.1853,
+     "clearance": 0.012,
+     "rim_z": 0.6801,
+     "container": true,
+     "n_free_cells": 10397
+    },
+    {
+     "top_z": 0.404,
+     "free_box": [
+      [
+       -1.2,
+       -0.75
+      ],
+      [
+       -0.22000000000000003,
+       0.19999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       -1.2,
+       -0.75
+      ],
+      [
+       -0.22000000000000003,
+       0.19999999999999996
+      ]
+     ],
+     "area": 0.189,
+     "covered_above": 0.6401,
+     "clearance": 0.2362,
+     "rim_z": 0.6801,
+     "container": true,
+     "n_free_cells": 9152
+    },
+    {
+     "top_z": 0.404,
+     "free_box": [
+      [
+       -0.73,
+       -0.28
+      ],
+      [
+       -0.22000000000000003,
+       0.19999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.73,
+       -0.28
+      ],
+      [
+       -0.22000000000000003,
+       0.19999999999999996
+      ]
+     ],
+     "area": 0.189,
+     "covered_above": 0.4136,
+     "clearance": 0.0096,
+     "rim_z": 0.6801,
+     "container": true,
+     "n_free_cells": 9152
+    },
+    {
+     "top_z": 0.404,
+     "free_box": [
+      [
+       0.75,
+       1.2000000000000002
+      ],
+      [
+       -0.22000000000000003,
+       0.19999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       0.75,
+       1.2000000000000002
+      ],
+      [
+       -0.22000000000000003,
+       0.19999999999999996
+      ]
+     ],
+     "area": 0.189,
+     "covered_above": 0.5948,
+     "clearance": 0.1908,
+     "rim_z": 0.6801,
+     "container": true,
+     "n_free_cells": 9152
+    },
+    {
+     "top_z": 0.404,
+     "free_box": [
+      [
+       0.28,
+       0.72
+      ],
+      [
+       -0.22000000000000003,
+       0.19999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       0.28,
+       0.72
+      ],
+      [
+       -0.22000000000000003,
+       0.19999999999999996
+      ]
+     ],
+     "area": 0.1848,
+     "covered_above": 0.6401,
+     "clearance": 0.2362,
+     "rim_z": 0.6801,
+     "container": true,
+     "n_free_cells": 9152
+    },
+    {
+     "top_z": 0.6801,
+     "free_box": [
+      [
+       -1.22,
+       1.2200000000000002
+      ],
+      [
+       -0.26,
+       0.26
+      ]
+     ],
+     "xy_box": [
+      [
+       -1.22,
+       1.2200000000000002
+      ],
+      [
+       -0.26,
+       0.26
+      ]
+     ],
+     "area": 1.2688,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 12688
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/modern_wooden_cabinet",
+   "authors": [
+    "Patrik Pangerl"
+   ]
+  },
+  "painted_wooden_cabinet": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/painted_wooden_cabinet/painted_wooden_cabinet_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/painted_wooden_cabinet/painted_wooden_cabinet_1k.usdc",
+   "collider_size": [
+    1.1947,
+    0.6166,
+    1.1819
+   ],
+   "render_size": [
+    1.1947,
+    0.6166,
+    1.1819
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 5,
+   "surfaces": [
+    {
+     "top_z": 0.1691,
+     "free_box": [
+      [
+       -0.54,
+       -0.020000000000000018
+      ],
+      [
+       -0.18000000000000002,
+       0.26999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.54,
+       -0.020000000000000018
+      ],
+      [
+       -0.18000000000000002,
+       0.26999999999999996
+      ]
+     ],
+     "area": 0.234,
+     "covered_above": 0.8809,
+     "clearance": 0.7118,
+     "rim_z": 1.1819,
+     "container": true,
+     "n_free_cells": 4680
+    },
+    {
+     "top_z": 0.1691,
+     "free_box": [
+      [
+       0.010000000000000009,
+       0.5300000000000001
+      ],
+      [
+       -0.18000000000000002,
+       0.26999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       0.010000000000000009,
+       0.5300000000000001
+      ],
+      [
+       -0.18000000000000002,
+       0.26999999999999996
+      ]
+     ],
+     "area": 0.234,
+     "covered_above": 0.8809,
+     "clearance": 0.7118,
+     "rim_z": 1.1819,
+     "container": true,
+     "n_free_cells": 4680
+    },
+    {
+     "top_z": 0.9153,
+     "free_box": [
+      [
+       0.040000000000000036,
+       0.5000000000000001
+      ],
+      [
+       -0.19,
+       0.14999999999999997
+      ]
+     ],
+     "xy_box": [
+      [
+       0.040000000000000036,
+       0.5000000000000001
+      ],
+      [
+       -0.19,
+       0.14999999999999997
+      ]
+     ],
+     "area": 0.1564,
+     "covered_above": 0.9228,
+     "clearance": 0.0075,
+     "rim_z": 1.1819,
+     "container": true,
+     "n_free_cells": 4501
+    },
+    {
+     "top_z": 0.9153,
+     "free_box": [
+      [
+       -0.51,
+       -0.04999999999999993
+      ],
+      [
+       -0.24000000000000002,
+       0.08999999999999997
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.51,
+       -0.04999999999999993
+      ],
+      [
+       -0.24000000000000002,
+       0.08999999999999997
+      ]
+     ],
+     "area": 0.1518,
+     "covered_above": 1.1423,
+     "clearance": 0.227,
+     "rim_z": 1.1318,
+     "container": true,
+     "n_free_cells": 4501
+    },
+    {
+     "top_z": 0.9153,
+     "free_box": [
+      [
+       -0.54,
+       -0.020000000000000018
+      ],
+      [
+       0.10999999999999999,
+       0.26999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.54,
+       -0.020000000000000018
+      ],
+      [
+       0.10999999999999999,
+       0.26999999999999996
+      ]
+     ],
+     "area": 0.0832,
+     "covered_above": 1.1423,
+     "clearance": 0.227,
+     "rim_z": 1.1819,
+     "container": true,
+     "n_free_cells": 4501
+    },
+    {
+     "top_z": 0.9153,
+     "free_box": [
+      [
+       0.010000000000000009,
+       0.5300000000000001
+      ],
+      [
+       0.16999999999999998,
+       0.26999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       0.010000000000000009,
+       0.5300000000000001
+      ],
+      [
+       0.16999999999999998,
+       0.26999999999999996
+      ]
+     ],
+     "area": 0.052,
+     "covered_above": 1.1423,
+     "clearance": 0.227,
+     "rim_z": 1.1819,
+     "container": true,
+     "n_free_cells": 4501
+    },
+    {
+     "top_z": 1.1818,
+     "free_box": [
+      [
+       -0.59,
+       0.59
+      ],
+      [
+       -0.23,
+       0.31
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.59,
+       0.59
+      ],
+      [
+       -0.23,
+       0.31
+      ]
+     ],
+     "area": 0.6372,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 6500
+    }
+   ],
+   "split": "ood",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/painted_wooden_cabinet",
+   "authors": [
+    "Kirill Sannikov"
+   ]
+  },
+  "painted_wooden_cabinet_02": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/painted_wooden_cabinet_02/painted_wooden_cabinet_02_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/painted_wooden_cabinet_02/painted_wooden_cabinet_02_1k.usdc",
+   "collider_size": [
+    0.9969,
+    0.7223,
+    2.5686
+   ],
+   "render_size": [
+    0.9969,
+    0.7294,
+    2.5686
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 7.1,
+   "n_colliders": 3,
+   "surfaces": [
+    {
+     "top_z": 0.4793,
+     "free_box": [
+      [
+       -0.47000000000000003,
+       0.47
+      ],
+      [
+       -0.21000000000000002,
+       0.30000000000000004
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.47000000000000003,
+       0.47
+      ],
+      [
+       -0.21000000000000002,
+       0.30000000000000004
+      ]
+     ],
+     "area": 0.4794,
+     "covered_above": 0.4932,
+     "clearance": 0.0139,
+     "rim_z": 1.1671,
+     "container": true,
+     "n_free_cells": 4794
+    },
+    {
+     "top_z": 0.9045,
+     "free_box": [
+      [
+       -0.46,
+       0.45999999999999996
+      ],
+      [
+       -0.28,
+       0.32999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.46,
+       0.45999999999999996
+      ],
+      [
+       -0.28,
+       0.32999999999999996
+      ]
+     ],
+     "area": 0.5612,
+     "covered_above": 0.9093,
+     "clearance": 0.0049,
+     "rim_z": 1.1282,
+     "container": true,
+     "n_free_cells": 5614
+    },
+    {
+     "top_z": 0.9212,
+     "free_box": [
+      [
+       -0.44,
+       0.43999999999999995
+      ],
+      [
+       -0.28,
+       0.17000000000000004
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.44,
+       0.43999999999999995
+      ],
+      [
+       -0.28,
+       0.17000000000000004
+      ]
+     ],
+     "area": 0.396,
+     "covered_above": 1.1392,
+     "clearance": 0.218,
+     "rim_z": 1.1282,
+     "container": true,
+     "n_free_cells": 3960
+    },
+    {
+     "top_z": 1.1671,
+     "free_box": [
+      [
+       -0.5,
+       0.5
+      ],
+      [
+       -0.28,
+       -0.030000000000000027
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.5,
+       0.5
+      ],
+      [
+       -0.28,
+       -0.030000000000000027
+      ]
+     ],
+     "area": 0.25,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 2500
+    },
+    {
+     "top_z": 1.1671,
+     "free_box": [
+      [
+       -0.47000000000000003,
+       0.47
+      ],
+      [
+       0.010000000000000009,
+       0.31999999999999995
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.47000000000000003,
+       0.47
+      ],
+      [
+       0.010000000000000009,
+       0.31999999999999995
+      ]
+     ],
+     "area": 0.2914,
+     "covered_above": 1.235,
+     "clearance": 0.0679,
+     "rim_z": 2.453,
+     "container": true,
+     "n_free_cells": 3310
+    },
+    {
+     "top_z": 1.5802,
+     "free_box": [
+      [
+       -0.47000000000000003,
+       0.47
+      ],
+      [
+       0.03999999999999998,
+       0.31999999999999995
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.47000000000000003,
+       0.47
+      ],
+      [
+       0.03999999999999998,
+       0.31999999999999995
+      ]
+     ],
+     "area": 0.2632,
+     "covered_above": 1.5936,
+     "clearance": 0.0134,
+     "rim_z": 2.453,
+     "container": true,
+     "n_free_cells": 2704
+    },
+    {
+     "top_z": 1.8942,
+     "free_box": [
+      [
+       -0.47000000000000003,
+       0.47
+      ],
+      [
+       0.03999999999999998,
+       0.31999999999999995
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.47000000000000003,
+       0.47
+      ],
+      [
+       0.03999999999999998,
+       0.31999999999999995
+      ]
+     ],
+     "area": 0.2632,
+     "covered_above": 1.9136,
+     "clearance": 0.0194,
+     "rim_z": 2.453,
+     "container": true,
+     "n_free_cells": 2706
+    },
+    {
+     "top_z": 2.189,
+     "free_box": [
+      [
+       -0.47000000000000003,
+       0.47
+      ],
+      [
+       0.03999999999999998,
+       0.31999999999999995
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.47000000000000003,
+       0.47
+      ],
+      [
+       0.03999999999999998,
+       0.31999999999999995
+      ]
+     ],
+     "area": 0.2632,
+     "covered_above": 2.2286,
+     "clearance": 0.0396,
+     "rim_z": 2.453,
+     "container": true,
+     "n_free_cells": 2708
+    },
+    {
+     "top_z": 2.453,
+     "free_box": [
+      [
+       -0.47000000000000003,
+       0.47
+      ],
+      [
+       0.010000000000000009,
+       0.36
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.47000000000000003,
+       0.47
+      ],
+      [
+       0.010000000000000009,
+       0.36
+      ]
+     ],
+     "area": 0.329,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 3290
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/painted_wooden_cabinet_02",
+   "authors": [
+    "Kirill Sannikov"
+   ]
+  },
+  "painted_wooden_shelves": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/painted_wooden_shelves/painted_wooden_shelves_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/painted_wooden_shelves/painted_wooden_shelves_1k.usdc",
+   "collider_size": [
+    0.5111,
+    0.3671,
+    1.1251
+   ],
+   "render_size": [
+    0.5111,
+    0.3671,
+    1.1251
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 1,
+   "surfaces": [
+    {
+     "top_z": 0.4614,
+     "free_box": [
+      [
+       -0.22000000000000003,
+       0.21999999999999997
+      ],
+      [
+       0.0,
+       0.17
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.22000000000000003,
+       0.21999999999999997
+      ],
+      [
+       0.0,
+       0.17
+      ]
+     ],
+     "area": 0.0748,
+     "covered_above": 0.7034,
+     "clearance": 0.242,
+     "rim_z": 0.7381,
+     "container": true,
+     "n_free_cells": 862
+    },
+    {
+     "top_z": 0.7379,
+     "free_box": [
+      [
+       -0.22000000000000003,
+       0.21999999999999997
+      ],
+      [
+       0.0,
+       0.17
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.22000000000000003,
+       0.21999999999999997
+      ],
+      [
+       0.0,
+       0.17
+      ]
+     ],
+     "area": 0.0748,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 852
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/painted_wooden_shelves",
+   "authors": [
+    "Kirill Sannikov"
+   ]
+  },
+  "side_table_01": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/side_table_01/side_table_01_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/side_table_01/side_table_01_1k.usdc",
+   "collider_size": [
+    0.55,
+    0.45,
+    0.5507
+   ],
+   "render_size": [
+    0.55,
+    0.45,
+    0.5507
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 1,
+   "surfaces": [
+    {
+     "top_z": 0.0529,
+     "free_box": [
+      [
+       -0.22000000000000003,
+       0.21999999999999997
+      ],
+      [
+       -0.22,
+       0.22000000000000003
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.22000000000000003,
+       0.21999999999999997
+      ],
+      [
+       -0.22,
+       0.22000000000000003
+      ]
+     ],
+     "area": 0.1936,
+     "covered_above": 0.3081,
+     "clearance": 0.2553,
+     "rim_z": 0.5506,
+     "container": true,
+     "n_free_cells": 2291
+    },
+    {
+     "top_z": 0.3528,
+     "free_box": [
+      [
+       -0.22000000000000003,
+       0.21999999999999997
+      ],
+      [
+       -0.22,
+       0.22000000000000003
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.22000000000000003,
+       0.21999999999999997
+      ],
+      [
+       -0.22,
+       0.22000000000000003
+      ]
+     ],
+     "area": 0.1936,
+     "covered_above": 0.4744,
+     "clearance": 0.1216,
+     "rim_z": 0.5506,
+     "container": true,
+     "n_free_cells": 2304
+    },
+    {
+     "top_z": 0.5507,
+     "free_box": [
+      [
+       -0.27,
+       0.27
+      ],
+      [
+       -0.22,
+       0.22000000000000003
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.27,
+       0.27
+      ],
+      [
+       -0.22,
+       0.22000000000000003
+      ]
+     ],
+     "area": 0.2376,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 2376
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/side_table_01",
+   "authors": [
+    "James Ray Cock"
+   ]
+  },
+  "steel_frame_shelves_01": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/steel_frame_shelves_01/steel_frame_shelves_01_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/steel_frame_shelves_01/steel_frame_shelves_01_1k.usdc",
+   "collider_size": [
+    1.0974,
+    0.5021,
+    2.1405
+   ],
+   "render_size": [
+    1.0974,
+    0.5021,
+    2.1405
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 1,
+   "surfaces": [
+    {
+     "top_z": 0.134,
+     "free_box": [
+      [
+       -0.52,
+       0.52
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.52,
+       0.52
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "area": 0.52,
+     "covered_above": 0.5889,
+     "clearance": 0.4549,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 5200
+    },
+    {
+     "top_z": 0.6397,
+     "free_box": [
+      [
+       -0.52,
+       0.52
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.52,
+       0.52
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "area": 0.52,
+     "covered_above": 1.0951,
+     "clearance": 0.4554,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 5200
+    },
+    {
+     "top_z": 1.146,
+     "free_box": [
+      [
+       -0.52,
+       0.52
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.52,
+       0.52
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "area": 0.52,
+     "covered_above": 1.6021,
+     "clearance": 0.456,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 5200
+    },
+    {
+     "top_z": 1.6522,
+     "free_box": [
+      [
+       -0.51,
+       0.51
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.51,
+       0.51
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "area": 0.51,
+     "covered_above": 2.086,
+     "clearance": 0.4337,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 5196
+    },
+    {
+     "top_z": 2.131,
+     "free_box": [
+      [
+       -0.51,
+       0.51
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.51,
+       0.51
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "area": 0.51,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 5100
+    }
+   ],
+   "split": "ood",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/steel_frame_shelves_01",
+   "authors": [
+    "James Ray Cock"
+   ]
+  },
+  "steel_frame_shelves_02": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/steel_frame_shelves_02/steel_frame_shelves_02_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/steel_frame_shelves_02/steel_frame_shelves_02_1k.usdc",
+   "collider_size": [
+    0.5933,
+    0.5024,
+    2.1416
+   ],
+   "render_size": [
+    0.5933,
+    0.5024,
+    2.1416
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 1,
+   "surfaces": [
+    {
+     "top_z": 0.134,
+     "free_box": [
+      [
+       -0.26,
+       0.25999999999999995
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.26,
+       0.25999999999999995
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "area": 0.26,
+     "covered_above": 0.5956,
+     "clearance": 0.4615,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 2600
+    },
+    {
+     "top_z": 0.64,
+     "free_box": [
+      [
+       -0.26,
+       0.25999999999999995
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.26,
+       0.25999999999999995
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "area": 0.26,
+     "covered_above": 1.1023,
+     "clearance": 0.4623,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 2600
+    },
+    {
+     "top_z": 1.1466,
+     "free_box": [
+      [
+       -0.26,
+       0.25999999999999995
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.26,
+       0.25999999999999995
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "area": 0.26,
+     "covered_above": 1.6087,
+     "clearance": 0.462,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 2600
+    },
+    {
+     "top_z": 1.6531,
+     "free_box": [
+      [
+       -0.26,
+       0.25999999999999995
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.26,
+       0.25999999999999995
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "area": 0.26,
+     "covered_above": 2.0871,
+     "clearance": 0.434,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 2600
+    },
+    {
+     "top_z": 2.1321,
+     "free_box": [
+      [
+       -0.26,
+       0.25999999999999995
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.26,
+       0.25999999999999995
+      ],
+      [
+       -0.25,
+       0.25
+      ]
+     ],
+     "area": 0.26,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 2600
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/steel_frame_shelves_02",
+   "authors": [
+    "James Ray Cock"
+   ]
+  },
+  "steel_frame_shelves_03": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/steel_frame_shelves_03/steel_frame_shelves_03_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/steel_frame_shelves_03/steel_frame_shelves_03_1k.usdc",
+   "collider_size": [
+    2.3511,
+    0.7212,
+    2.3118
+   ],
+   "render_size": [
+    2.3511,
+    0.7212,
+    2.3118
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 4,
+   "surfaces": [
+    {
+     "top_z": 0.2808,
+     "free_box": [
+      [
+       -1.1199999999999999,
+       -0.16999999999999993
+      ],
+      [
+       -0.03999999999999998,
+       0.04999999999999999
+      ]
+     ],
+     "xy_box": [
+      [
+       -1.1199999999999999,
+       -0.16999999999999993
+      ],
+      [
+       -0.03999999999999998,
+       0.04999999999999999
+      ]
+     ],
+     "area": 0.0855,
+     "covered_above": 0.3012,
+     "clearance": 0.0204,
+     "rim_z": 2.3017,
+     "container": true,
+     "n_free_cells": 1081
+    },
+    {
+     "top_z": 0.3113,
+     "free_box": [
+      [
+       -1.0999999999999999,
+       -0.18999999999999995
+      ],
+      [
+       -0.28,
+       0.26
+      ]
+     ],
+     "xy_box": [
+      [
+       -1.0999999999999999,
+       -0.18999999999999995
+      ],
+      [
+       -0.28,
+       0.26
+      ]
+     ],
+     "area": 0.4914,
+     "covered_above": 0.4186,
+     "clearance": 0.1073,
+     "rim_z": 2.3017,
+     "container": true,
+     "n_free_cells": 4914
+    },
+    {
+     "top_z": 0.4288,
+     "free_box": [
+      [
+       -1.0999999999999999,
+       -0.18999999999999995
+      ],
+      [
+       -0.28,
+       0.26
+      ]
+     ],
+     "xy_box": [
+      [
+       -1.0999999999999999,
+       -0.18999999999999995
+      ],
+      [
+       -0.28,
+       0.26
+      ]
+     ],
+     "area": 0.4914,
+     "covered_above": 0.5348,
+     "clearance": 0.106,
+     "rim_z": 2.3017,
+     "container": true,
+     "n_free_cells": 4914
+    },
+    {
+     "top_z": 0.5449,
+     "free_box": [
+      [
+       -1.0999999999999999,
+       -0.18999999999999995
+      ],
+      [
+       -0.28,
+       0.26
+      ]
+     ],
+     "xy_box": [
+      [
+       -1.0999999999999999,
+       -0.18999999999999995
+      ],
+      [
+       -0.28,
+       0.26
+      ]
+     ],
+     "area": 0.4914,
+     "covered_above": 0.6363,
+     "clearance": 0.0913,
+     "rim_z": 2.3017,
+     "container": true,
+     "n_free_cells": 4914
+    },
+    {
+     "top_z": 0.6577,
+     "free_box": [
+      [
+       -1.17,
+       1.16
+      ],
+      [
+       -0.22,
+       0.31999999999999995
+      ]
+     ],
+     "xy_box": [
+      [
+       -1.17,
+       1.16
+      ],
+      [
+       -0.22,
+       0.31999999999999995
+      ]
+     ],
+     "area": 1.2582,
+     "covered_above": 1.066,
+     "clearance": 0.4083,
+     "rim_z": 1.3175,
+     "container": true,
+     "n_free_cells": 14905
+    },
+    {
+     "top_z": 0.6577,
+     "free_box": [
+      [
+       -0.1299999999999999,
+       1.16
+      ],
+      [
+       -0.32,
+       -0.22
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.1299999999999999,
+       1.16
+      ],
+      [
+       -0.32,
+       -0.22
+      ]
+     ],
+     "area": 0.129,
+     "covered_above": 1.066,
+     "clearance": 0.4083,
+     "rim_z": 2.2876,
+     "container": true,
+     "n_free_cells": 14905
+    },
+    {
+     "top_z": 0.6577,
+     "free_box": [
+      [
+       -1.17,
+       -0.1399999999999999
+      ],
+      [
+       -0.32,
+       -0.22
+      ]
+     ],
+     "xy_box": [
+      [
+       -1.17,
+       -0.1399999999999999
+      ],
+      [
+       -0.32,
+       -0.22
+      ]
+     ],
+     "area": 0.103,
+     "covered_above": 1.2827,
+     "clearance": 0.625,
+     "rim_z": 1.3175,
+     "container": true,
+     "n_free_cells": 14905
+    },
+    {
+     "top_z": 1.0873,
+     "free_box": [
+      [
+       -0.09999999999999987,
+       1.1199999999999999
+      ],
+      [
+       -0.33,
+       0.32999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.09999999999999987,
+       1.1199999999999999
+      ],
+      [
+       -0.33,
+       0.32999999999999996
+      ]
+     ],
+     "area": 0.8052,
+     "covered_above": 1.7315,
+     "clearance": 0.6442,
+     "rim_z": 2.3017,
+     "container": true,
+     "n_free_cells": 8052
+    },
+    {
+     "top_z": 1.3175,
+     "free_box": [
+      [
+       -1.17,
+       -0.09999999999999987
+      ],
+      [
+       -0.32,
+       0.31999999999999995
+      ]
+     ],
+     "xy_box": [
+      [
+       -1.17,
+       -0.09999999999999987
+      ],
+      [
+       -0.32,
+       0.31999999999999995
+      ]
+     ],
+     "area": 0.6848,
+     "covered_above": 1.7315,
+     "clearance": 0.414,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 6848
+    },
+    {
+     "top_z": 1.7529,
+     "free_box": [
+      [
+       -0.09999999999999987,
+       1.1199999999999999
+      ],
+      [
+       -0.33,
+       0.32999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.09999999999999987,
+       1.1199999999999999
+      ],
+      [
+       -0.33,
+       0.32999999999999996
+      ]
+     ],
+     "area": 0.8052,
+     "covered_above": 2.255,
+     "clearance": 0.5021,
+     "rim_z": 2.3017,
+     "container": true,
+     "n_free_cells": 8052
+    },
+    {
+     "top_z": 2.3017,
+     "free_box": [
+      [
+       -1.13,
+       1.1300000000000001
+      ],
+      [
+       -0.35000000000000003,
+       0.35
+      ]
+     ],
+     "xy_box": [
+      [
+       -1.13,
+       1.1300000000000001
+      ],
+      [
+       -0.35000000000000003,
+       0.35
+      ]
+     ],
+     "area": 1.582,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 16204
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/steel_frame_shelves_03",
+   "authors": [
+    "Ulan Cabanilla"
+   ]
+  },
+  "tool_cart": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/tool_cart/tool_cart_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/tool_cart/tool_cart_1k.usdc",
+   "collider_size": [
+    1.2734,
+    0.7536,
+    0.9646
+   ],
+   "render_size": [
+    1.2734,
+    0.7536,
+    0.9646
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 1,
+   "surfaces": [
+    {
+     "top_z": 0.2019,
+     "free_box": [
+      [
+       -0.55,
+       0.5499999999999999
+      ],
+      [
+       -0.34,
+       0.36
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.55,
+       0.5499999999999999
+      ],
+      [
+       -0.34,
+       0.36
+      ]
+     ],
+     "area": 0.77,
+     "covered_above": 0.2074,
+     "clearance": 0.0055,
+     "rim_z": 0.9646,
+     "container": true,
+     "n_free_cells": 7997
+    },
+    {
+     "top_z": 0.9001,
+     "free_box": [
+      [
+       -0.55,
+       0.5499999999999999
+      ],
+      [
+       -0.33,
+       0.36
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.55,
+       0.5499999999999999
+      ],
+      [
+       -0.33,
+       0.36
+      ]
+     ],
+     "area": 0.759,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": 0.9646,
+     "container": true,
+     "n_free_cells": 7826
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/tool_cart",
+   "authors": [
+    "Savva Zakharov"
+   ]
+  },
+  "vintage_cabinet_01": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/vintage_cabinet_01/vintage_cabinet_01_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/vintage_cabinet_01/vintage_cabinet_01_1k.usdc",
+   "collider_size": [
+    2.0218,
+    0.6698,
+    2.2351
+   ],
+   "render_size": [
+    2.0218,
+    0.6698,
+    2.2351
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 8,
+   "surfaces": [
+    {
+     "top_z": 0.1025,
+     "free_box": [
+      [
+       -0.9500000000000001,
+       0.95
+      ],
+      [
+       -0.26,
+       0.3
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.9500000000000001,
+       0.95
+      ],
+      [
+       -0.26,
+       0.3
+      ]
+     ],
+     "area": 1.064,
+     "covered_above": 0.3339,
+     "clearance": 0.2315,
+     "rim_z": 0.9119,
+     "container": true,
+     "n_free_cells": 11482
+    },
+    {
+     "top_z": 0.3684,
+     "free_box": [
+      [
+       -0.9500000000000001,
+       0.94
+      ],
+      [
+       -0.26,
+       0.3
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.9500000000000001,
+       0.94
+      ],
+      [
+       -0.26,
+       0.3
+      ]
+     ],
+     "area": 1.0584,
+     "covered_above": 0.5996,
+     "clearance": 0.2313,
+     "rim_z": 0.9119,
+     "container": true,
+     "n_free_cells": 10718
+    },
+    {
+     "top_z": 0.6341,
+     "free_box": [
+      [
+       -0.9400000000000001,
+       0.94
+      ],
+      [
+       -0.26,
+       0.3
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.9400000000000001,
+       0.94
+      ],
+      [
+       -0.26,
+       0.3
+      ]
+     ],
+     "area": 1.0528,
+     "covered_above": 0.8811,
+     "clearance": 0.2471,
+     "rim_z": 0.9119,
+     "container": true,
+     "n_free_cells": 10528
+    },
+    {
+     "top_z": 0.9115,
+     "free_box": [
+      [
+       -0.99,
+       0.9900000000000002
+      ],
+      [
+       -0.29000000000000004,
+       -0.11000000000000004
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.99,
+       0.9900000000000002
+      ],
+      [
+       -0.29000000000000004,
+       -0.11000000000000004
+      ]
+     ],
+     "area": 0.3564,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 4154
+    },
+    {
+     "top_z": 0.9115,
+     "free_box": [
+      [
+       -0.88,
+       0.8799999999999999
+      ],
+      [
+       -0.08000000000000002,
+       0.3
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.88,
+       0.8799999999999999
+      ],
+      [
+       -0.08000000000000002,
+       0.3
+      ]
+     ],
+     "area": 0.6688,
+     "covered_above": 1.2173,
+     "clearance": 0.3058,
+     "rim_z": 1.6519,
+     "container": true,
+     "n_free_cells": 7922
+    },
+    {
+     "top_z": 1.3716,
+     "free_box": [
+      [
+       -0.9400000000000001,
+       0.94
+      ],
+      [
+       -0.030000000000000027,
+       0.31
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.9400000000000001,
+       0.94
+      ],
+      [
+       -0.030000000000000027,
+       0.31
+      ]
+     ],
+     "area": 0.6392,
+     "covered_above": 1.5619,
+     "clearance": 0.1903,
+     "rim_z": 1.8431,
+     "container": true,
+     "n_free_cells": 6626
+    },
+    {
+     "top_z": 1.5963,
+     "free_box": [
+      [
+       -0.9400000000000001,
+       0.94
+      ],
+      [
+       -0.030000000000000027,
+       0.31
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.9400000000000001,
+       0.94
+      ],
+      [
+       -0.030000000000000027,
+       0.31
+      ]
+     ],
+     "area": 0.6392,
+     "covered_above": 1.7727,
+     "clearance": 0.1764,
+     "rim_z": 1.8431,
+     "container": true,
+     "n_free_cells": 6392
+    },
+    {
+     "top_z": 1.8164,
+     "free_box": [
+      [
+       -0.77,
+       0.77
+      ],
+      [
+       -0.030000000000000027,
+       0.31
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.77,
+       0.77
+      ],
+      [
+       -0.030000000000000027,
+       0.31
+      ]
+     ],
+     "area": 0.5236,
+     "covered_above": 1.8212,
+     "clearance": 0.0047,
+     "rim_z": 1.924,
+     "container": true,
+     "n_free_cells": 5238
+    },
+    {
+     "top_z": 1.9983,
+     "free_box": [
+      [
+       -0.53,
+       0.53
+      ],
+      [
+       -0.030000000000000027,
+       0.31
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.53,
+       0.53
+      ],
+      [
+       -0.030000000000000027,
+       0.31
+      ]
+     ],
+     "area": 0.3604,
+     "covered_above": 2.0074,
+     "clearance": 0.009,
+     "rim_z": 2.1018,
+     "container": true,
+     "n_free_cells": 3605
+    },
+    {
+     "top_z": 2.2254,
+     "free_box": [
+      [
+       -0.26,
+       -0.10999999999999999
+      ],
+      [
+       -0.06000000000000005,
+       0.33
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.26,
+       -0.10999999999999999
+      ],
+      [
+       -0.06000000000000005,
+       0.33
+      ]
+     ],
+     "area": 0.0585,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 1227
+    },
+    {
+     "top_z": 2.2254,
+     "free_box": [
+      [
+       0.1100000000000001,
+       0.26
+      ],
+      [
+       -0.06000000000000005,
+       0.33
+      ]
+     ],
+     "xy_box": [
+      [
+       0.1100000000000001,
+       0.26
+      ],
+      [
+       -0.06000000000000005,
+       0.33
+      ]
+     ],
+     "area": 0.0585,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 1227
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/vintage_cabinet_01",
+   "authors": [
+    "Rico Cilliers"
+   ]
+  },
+  "vintage_wooden_drawer_01": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/vintage_wooden_drawer_01/vintage_wooden_drawer_01_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/vintage_wooden_drawer_01/vintage_wooden_drawer_01_1k.usdc",
+   "collider_size": [
+    0.8576,
+    0.4574,
+    0.5454
+   ],
+   "render_size": [
+    0.8576,
+    0.4574,
+    0.5454
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 7,
+   "surfaces": [
+    {
+     "top_z": 0.066,
+     "free_box": [
+      [
+       -0.12,
+       0.13999999999999996
+      ],
+      [
+       -0.19,
+       0.2
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.12,
+       0.13999999999999996
+      ],
+      [
+       -0.19,
+       0.2
+      ]
+     ],
+     "area": 0.1014,
+     "covered_above": 0.0713,
+     "clearance": 0.0053,
+     "rim_z": 0.5415,
+     "container": true,
+     "n_free_cells": 3034
+    },
+    {
+     "top_z": 0.066,
+     "free_box": [
+      [
+       -0.39,
+       -0.16000000000000003
+      ],
+      [
+       -0.19,
+       0.2
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.39,
+       -0.16000000000000003
+      ],
+      [
+       -0.19,
+       0.2
+      ]
+     ],
+     "area": 0.0897,
+     "covered_above": 0.0734,
+     "clearance": 0.0074,
+     "rim_z": 0.5415,
+     "container": true,
+     "n_free_cells": 3034
+    },
+    {
+     "top_z": 0.066,
+     "free_box": [
+      [
+       0.15999999999999998,
+       0.38999999999999996
+      ],
+      [
+       -0.19,
+       0.2
+      ]
+     ],
+     "xy_box": [
+      [
+       0.15999999999999998,
+       0.38999999999999996
+      ],
+      [
+       -0.19,
+       0.2
+      ]
+     ],
+     "area": 0.0897,
+     "covered_above": 0.0734,
+     "clearance": 0.0074,
+     "rim_z": 0.5415,
+     "container": true,
+     "n_free_cells": 3034
+    },
+    {
+     "top_z": 0.0808,
+     "free_box": [
+      [
+       -0.39,
+       -0.16999999999999998
+      ],
+      [
+       -0.19,
+       0.2
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.39,
+       -0.16999999999999998
+      ],
+      [
+       -0.19,
+       0.2
+      ]
+     ],
+     "area": 0.0858,
+     "covered_above": 0.2884,
+     "clearance": 0.2076,
+     "rim_z": 0.5415,
+     "container": true,
+     "n_free_cells": 2574
+    },
+    {
+     "top_z": 0.0808,
+     "free_box": [
+      [
+       -0.10999999999999999,
+       0.11000000000000004
+      ],
+      [
+       -0.19,
+       0.2
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.10999999999999999,
+       0.11000000000000004
+      ],
+      [
+       -0.19,
+       0.2
+      ]
+     ],
+     "area": 0.0858,
+     "covered_above": 0.2881,
+     "clearance": 0.2073,
+     "rim_z": 0.5415,
+     "container": true,
+     "n_free_cells": 2574
+    },
+    {
+     "top_z": 0.0808,
+     "free_box": [
+      [
+       0.16999999999999998,
+       0.38999999999999996
+      ],
+      [
+       -0.19,
+       0.2
+      ]
+     ],
+     "xy_box": [
+      [
+       0.16999999999999998,
+       0.38999999999999996
+      ],
+      [
+       -0.19,
+       0.2
+      ]
+     ],
+     "area": 0.0858,
+     "covered_above": 0.288,
+     "clearance": 0.2072,
+     "rim_z": 0.5415,
+     "container": true,
+     "n_free_cells": 2574
+    },
+    {
+     "top_z": 0.2956,
+     "free_box": [
+      [
+       -0.39,
+       -0.16999999999999998
+      ],
+      [
+       -0.19,
+       0.2
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.39,
+       -0.16999999999999998
+      ],
+      [
+       -0.19,
+       0.2
+      ]
+     ],
+     "area": 0.0858,
+     "covered_above": 0.496,
+     "clearance": 0.2004,
+     "rim_z": 0.5415,
+     "container": true,
+     "n_free_cells": 2574
+    },
+    {
+     "top_z": 0.2956,
+     "free_box": [
+      [
+       -0.10999999999999999,
+       0.11000000000000004
+      ],
+      [
+       -0.19,
+       0.2
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.10999999999999999,
+       0.11000000000000004
+      ],
+      [
+       -0.19,
+       0.2
+      ]
+     ],
+     "area": 0.0858,
+     "covered_above": 0.496,
+     "clearance": 0.2004,
+     "rim_z": 0.5415,
+     "container": true,
+     "n_free_cells": 2574
+    },
+    {
+     "top_z": 0.2956,
+     "free_box": [
+      [
+       0.16999999999999998,
+       0.38999999999999996
+      ],
+      [
+       -0.19,
+       0.2
+      ]
+     ],
+     "xy_box": [
+      [
+       0.16999999999999998,
+       0.38999999999999996
+      ],
+      [
+       -0.19,
+       0.2
+      ]
+     ],
+     "area": 0.0858,
+     "covered_above": 0.496,
+     "clearance": 0.2004,
+     "rim_z": 0.5415,
+     "container": true,
+     "n_free_cells": 2574
+    },
+    {
+     "top_z": 0.5444,
+     "free_box": [
+      [
+       -0.4,
+       0.39999999999999997
+      ],
+      [
+       -0.2,
+       0.22000000000000003
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.4,
+       0.39999999999999997
+      ],
+      [
+       -0.2,
+       0.22000000000000003
+      ]
+     ],
+     "area": 0.336,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 3468
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/vintage_wooden_drawer_01",
+   "authors": [
+    "James Ray Cock"
+   ]
+  },
+  "wooden_bookshelf_worn": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/wooden_bookshelf_worn/wooden_bookshelf_worn_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/wooden_bookshelf_worn/wooden_bookshelf_worn_1k.usdc",
+   "collider_size": [
+    1.374,
+    0.5813,
+    2.0634
+   ],
+   "render_size": [
+    1.374,
+    0.5813,
+    2.0634
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 1,
+   "surfaces": [
+    {
+     "top_z": 0.1076,
+     "free_box": [
+      [
+       -0.6100000000000001,
+       0.61
+      ],
+      [
+       -0.28,
+       0.26999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.6100000000000001,
+       0.61
+      ],
+      [
+       -0.28,
+       0.26999999999999996
+      ]
+     ],
+     "area": 0.671,
+     "covered_above": 0.3478,
+     "clearance": 0.2402,
+     "rim_z": 2.0634,
+     "container": true,
+     "n_free_cells": 6710
+    },
+    {
+     "top_z": 0.3919,
+     "free_box": [
+      [
+       -0.6100000000000001,
+       0.61
+      ],
+      [
+       -0.28,
+       0.26999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.6100000000000001,
+       0.61
+      ],
+      [
+       -0.28,
+       0.26999999999999996
+      ]
+     ],
+     "area": 0.671,
+     "covered_above": 0.6275,
+     "clearance": 0.2357,
+     "rim_z": 2.0634,
+     "container": true,
+     "n_free_cells": 6710
+    },
+    {
+     "top_z": 0.6715,
+     "free_box": [
+      [
+       -0.6100000000000001,
+       0.61
+      ],
+      [
+       -0.28,
+       0.26999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.6100000000000001,
+       0.61
+      ],
+      [
+       -0.28,
+       0.26999999999999996
+      ]
+     ],
+     "area": 0.671,
+     "covered_above": 0.9165,
+     "clearance": 0.2449,
+     "rim_z": 2.0634,
+     "container": true,
+     "n_free_cells": 6710
+    },
+    {
+     "top_z": 0.9605,
+     "free_box": [
+      [
+       -0.6100000000000001,
+       0.61
+      ],
+      [
+       -0.28,
+       0.26999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.6100000000000001,
+       0.61
+      ],
+      [
+       -0.28,
+       0.26999999999999996
+      ]
+     ],
+     "area": 0.671,
+     "covered_above": 1.2325,
+     "clearance": 0.272,
+     "rim_z": 2.0634,
+     "container": true,
+     "n_free_cells": 6710
+    },
+    {
+     "top_z": 1.2765,
+     "free_box": [
+      [
+       -0.6100000000000001,
+       0.61
+      ],
+      [
+       -0.28,
+       0.26999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.6100000000000001,
+       0.61
+      ],
+      [
+       -0.28,
+       0.26999999999999996
+      ]
+     ],
+     "area": 0.671,
+     "covered_above": 1.6194,
+     "clearance": 0.3429,
+     "rim_z": 2.0634,
+     "container": true,
+     "n_free_cells": 6710
+    },
+    {
+     "top_z": 1.6634,
+     "free_box": [
+      [
+       -0.6100000000000001,
+       0.61
+      ],
+      [
+       -0.28,
+       0.26999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.6100000000000001,
+       0.61
+      ],
+      [
+       -0.28,
+       0.26999999999999996
+      ]
+     ],
+     "area": 0.671,
+     "covered_above": 2.0161,
+     "clearance": 0.3527,
+     "rim_z": 2.0634,
+     "container": true,
+     "n_free_cells": 6710
+    },
+    {
+     "top_z": 2.0634,
+     "free_box": [
+      [
+       -0.66,
+       0.66
+      ],
+      [
+       -0.28,
+       0.26999999999999996
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.66,
+       0.66
+      ],
+      [
+       -0.28,
+       0.26999999999999996
+      ]
+     ],
+     "area": 0.726,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 7284
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/wooden_bookshelf_worn",
+   "authors": [
+    "Ulan Cabanilla"
+   ]
+  },
+  "wooden_display_shelves_01": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/wooden_display_shelves_01/wooden_display_shelves_01_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/wooden_display_shelves_01/wooden_display_shelves_01_1k.usdc",
+   "collider_size": [
+    1.0778,
+    0.3715,
+    1.5562
+   ],
+   "render_size": [
+    1.0778,
+    0.3715,
+    1.5562
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 4,
+   "surfaces": [
+    {
+     "top_z": 0.0508,
+     "free_box": [
+      [
+       0.20999999999999996,
+       0.5
+      ],
+      [
+       -0.15,
+       0.15
+      ]
+     ],
+     "xy_box": [
+      [
+       0.20999999999999996,
+       0.5
+      ],
+      [
+       -0.15,
+       0.15
+      ]
+     ],
+     "area": 0.087,
+     "covered_above": 0.1208,
+     "clearance": 0.07,
+     "rim_z": 1.542,
+     "container": true,
+     "n_free_cells": 2560
+    },
+    {
+     "top_z": 0.0508,
+     "free_box": [
+      [
+       -0.49000000000000005,
+       -0.21000000000000002
+      ],
+      [
+       -0.15,
+       0.15
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.49000000000000005,
+       -0.21000000000000002
+      ],
+      [
+       -0.15,
+       0.15
+      ]
+     ],
+     "area": 0.084,
+     "covered_above": 0.3926,
+     "clearance": 0.3418,
+     "rim_z": 1.542,
+     "container": true,
+     "n_free_cells": 2560
+    },
+    {
+     "top_z": 0.0508,
+     "free_box": [
+      [
+       -0.14000000000000007,
+       0.14
+      ],
+      [
+       -0.15,
+       0.15
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.14000000000000007,
+       0.14
+      ],
+      [
+       -0.15,
+       0.15
+      ]
+     ],
+     "area": 0.084,
+     "covered_above": 0.3926,
+     "clearance": 0.3418,
+     "rim_z": 1.542,
+     "container": true,
+     "n_free_cells": 2560
+    },
+    {
+     "top_z": 0.4135,
+     "free_box": [
+      [
+       -0.51,
+       -0.19000000000000006
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.51,
+       -0.19000000000000006
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "area": 0.1088,
+     "covered_above": 0.7688,
+     "clearance": 0.3554,
+     "rim_z": 1.5412,
+     "container": true,
+     "n_free_cells": 3316
+    },
+    {
+     "top_z": 0.4135,
+     "free_box": [
+      [
+       -0.16000000000000003,
+       0.15999999999999992
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.16000000000000003,
+       0.15999999999999992
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "area": 0.1088,
+     "covered_above": 0.7688,
+     "clearance": 0.3554,
+     "rim_z": 1.5412,
+     "container": true,
+     "n_free_cells": 3316
+    },
+    {
+     "top_z": 0.4135,
+     "free_box": [
+      [
+       0.18999999999999995,
+       0.51
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "xy_box": [
+      [
+       0.18999999999999995,
+       0.51
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "area": 0.1088,
+     "covered_above": 0.7688,
+     "clearance": 0.3554,
+     "rim_z": 1.5412,
+     "container": true,
+     "n_free_cells": 3316
+    },
+    {
+     "top_z": 0.7897,
+     "free_box": [
+      [
+       -0.51,
+       -0.19000000000000006
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.51,
+       -0.19000000000000006
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "area": 0.1088,
+     "covered_above": 1.1438,
+     "clearance": 0.3541,
+     "rim_z": 1.5412,
+     "container": true,
+     "n_free_cells": 3316
+    },
+    {
+     "top_z": 0.7897,
+     "free_box": [
+      [
+       -0.16000000000000003,
+       0.15999999999999992
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.16000000000000003,
+       0.15999999999999992
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "area": 0.1088,
+     "covered_above": 1.1438,
+     "clearance": 0.3541,
+     "rim_z": 1.5412,
+     "container": true,
+     "n_free_cells": 3316
+    },
+    {
+     "top_z": 0.7897,
+     "free_box": [
+      [
+       0.18999999999999995,
+       0.51
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "xy_box": [
+      [
+       0.18999999999999995,
+       0.51
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "area": 0.1088,
+     "covered_above": 1.1438,
+     "clearance": 0.3541,
+     "rim_z": 1.5412,
+     "container": true,
+     "n_free_cells": 3316
+    },
+    {
+     "top_z": 1.1646,
+     "free_box": [
+      [
+       -0.51,
+       -0.19000000000000006
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.51,
+       -0.19000000000000006
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "area": 0.1088,
+     "covered_above": 1.5211,
+     "clearance": 0.3565,
+     "rim_z": 1.5412,
+     "container": true,
+     "n_free_cells": 3316
+    },
+    {
+     "top_z": 1.1646,
+     "free_box": [
+      [
+       -0.16000000000000003,
+       0.15999999999999992
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.16000000000000003,
+       0.15999999999999992
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "area": 0.1088,
+     "covered_above": 1.5211,
+     "clearance": 0.3565,
+     "rim_z": 1.5412,
+     "container": true,
+     "n_free_cells": 3316
+    },
+    {
+     "top_z": 1.1646,
+     "free_box": [
+      [
+       0.18999999999999995,
+       0.51
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "xy_box": [
+      [
+       0.18999999999999995,
+       0.51
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "area": 0.1088,
+     "covered_above": 1.5211,
+     "clearance": 0.3565,
+     "rim_z": 1.5412,
+     "container": true,
+     "n_free_cells": 3316
+    },
+    {
+     "top_z": 1.542,
+     "free_box": [
+      [
+       -0.51,
+       0.51
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.51,
+       0.51
+      ],
+      [
+       -0.16999999999999998,
+       0.17
+      ]
+     ],
+     "area": 0.3468,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 3468
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/wooden_display_shelves_01",
+   "authors": [
+    "James Ray Cock"
+   ]
+  },
+  "worn_metal_rack": {
+   "tag": "ph",
+   "category": "shelf",
+   "top_kind": "shelf",
+   "yaw": -1.5707963267948966,
+   "dst": "/data/harvest/assets_x/polyhaven_models/worn_metal_rack/worn_metal_rack_col_static.usda",
+   "src": "/data/harvest/assets_x/polyhaven_models/worn_metal_rack/worn_metal_rack_1k.usdc",
+   "collider_size": [
+    0.9154,
+    0.6,
+    1.9
+   ],
+   "render_size": [
+    0.9154,
+    0.6,
+    1.9
+   ],
+   "origin_offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "render_vs_collider_mm": 0.0,
+   "n_colliders": 1,
+   "surfaces": [
+    {
+     "top_z": 0.4303,
+     "free_box": [
+      [
+       -0.44000000000000006,
+       0.44
+      ],
+      [
+       -0.30000000000000004,
+       0.3
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.44000000000000006,
+       0.44
+      ],
+      [
+       -0.30000000000000004,
+       0.3
+      ]
+     ],
+     "area": 0.528,
+     "covered_above": 0.8902,
+     "clearance": 0.4599,
+     "rim_z": 1.9,
+     "container": true,
+     "n_free_cells": 5280
+    },
+    {
+     "top_z": 0.9202,
+     "free_box": [
+      [
+       -0.44000000000000006,
+       0.44
+      ],
+      [
+       -0.30000000000000004,
+       0.3
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.44000000000000006,
+       0.44
+      ],
+      [
+       -0.30000000000000004,
+       0.3
+      ]
+     ],
+     "area": 0.528,
+     "covered_above": 1.3801,
+     "clearance": 0.4599,
+     "rim_z": 1.9,
+     "container": true,
+     "n_free_cells": 5280
+    },
+    {
+     "top_z": 1.4101,
+     "free_box": [
+      [
+       -0.43000000000000005,
+       0.43
+      ],
+      [
+       -0.30000000000000004,
+       0.3
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.43000000000000005,
+       0.43
+      ],
+      [
+       -0.30000000000000004,
+       0.3
+      ]
+     ],
+     "area": 0.516,
+     "covered_above": 1.87,
+     "clearance": 0.4599,
+     "rim_z": 1.9,
+     "container": true,
+     "n_free_cells": 5276
+    },
+    {
+     "top_z": 1.8992,
+     "free_box": [
+      [
+       -0.44000000000000006,
+       0.44
+      ],
+      [
+       -0.30000000000000004,
+       0.3
+      ]
+     ],
+     "xy_box": [
+      [
+       -0.44000000000000006,
+       0.44
+      ],
+      [
+       -0.30000000000000004,
+       0.3
+      ]
+     ],
+     "area": 0.528,
+     "covered_above": null,
+     "clearance": null,
+     "rim_z": null,
+     "container": false,
+     "n_free_cells": 5348
+    }
+   ],
+   "split": "train",
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/worn_metal_rack",
+   "authors": [
+    "Luca B"
+   ]
+  }
+ },
+ "dropped": {
+  "ph:Barrel_01": "size h 0.880 w 0.560 l 0.564",
+  "ph:Barrel_02": "size h 0.880 w 0.485 l 0.488",
+  "ph:antique_ceramic_vase_01": "size h 0.440 w 0.255 l 0.255",
+  "ph:barrel_03": "size h 0.930 w 0.634 l 0.639",
+  "ph:barrel_stove": "size h 0.856 w 0.592 l 0.593",
+  "ph:brass_goblets": "size h 0.273 w 0.298 l 0.453",
+  "ph:brass_pan_01": "size h 0.052 w 0.191 l 0.450",
+  "ph:brass_pot_01": "size h 0.291 w 0.301 l 0.302",
+  "ph:brass_pot_02": "size h 0.108 w 0.302 l 0.367",
+  "ph:cardboard_box_01": "size h 0.342 w 0.387 l 0.612",
+  "ph:ceramic_pot": "size h 0.372 w 0.498 l 0.656",
+  "ph:ceramic_vase_01": "size h 0.401 w 0.205 l 0.206",
+  "ph:ceramic_vase_03": "size h 0.414 w 0.112 l 0.151",
+  "ph:compost_bag_02": "size h 0.434 w 0.466 l 0.539",
+  "ph:hamburger_buns": "size h 0.063 w 0.114 l 0.397",
+  "ph:industrial_pastic_container": "size h 0.419 w 0.457 l 0.779",
+  "ph:long_life_food": "size h 0.238 w 0.113 l 0.527",
+  "ph:medical_box": "size h 0.098 w 0.350 l 0.585",
+  "ph:metal_jerrycan": "size h 0.455 w 0.172 l 0.381",
+  "ph:metal_jerrycan_green": "size h 0.500 w 0.171 l 0.370",
+  "ph:metal_trash_can": "size h 0.906 w 0.556 l 1.782",
+  "ph:old_military_crate": "size h 0.301 w 0.953 l 2.027",
+  "ph:planter_box_01": "size h 0.425 w 0.414 l 0.989",
+  "ph:planter_box_02": "size h 0.453 w 0.467 l 1.326",
+  "ph:planter_box_03": "size h 0.855 w 0.655 l 1.110",
+  "ph:plastic_container": "size h 0.430 w 0.626 l 1.030",
+  "ph:plastic_crate_01": "size h 0.264 w 0.298 l 0.483",
+  "ph:plastic_crate_02": "size h 0.254 w 0.406 l 0.609",
+  "ph:plastic_crate_03": "size h 0.266 w 0.265 l 0.548",
+  "ph:plastic_jerrycan": "size h 0.318 w 0.268 l 0.384",
+  "ph:portable_welding_cart": "size h 1.563 w 0.655 l 0.902",
+  "ph:seeding_tray_01": "size h 0.061 w 0.220 l 0.301",
+  "ph:tea_set_01": "size h 0.165 w 0.482 l 0.947",
+  "ph:treasure_chest": "size h 0.619 w 0.523 l 1.029",
+  "ph:wicker_basket_01": "size h 0.117 w 0.295 l 0.451",
+  "ph:wicker_basket_02": "size h 0.201 w 0.230 l 0.348",
+  "ph:wine_barrel_01": "size h 0.871 w 0.740 l 0.758",
+  "ph:wine_bottles_01": "size h 0.331 w 0.081 l 0.676",
+  "ph:wooden_barrels_01": "size h 0.957 w 3.345 l 4.604",
+  "ph:wooden_bowl_01": "size h 0.094 w 0.303 l 0.315",
+  "ph:wooden_bucket_01": "size h 0.550 w 0.340 l 0.367",
+  "ph:wooden_bucket_02": "size h 0.350 w 0.615 l 0.617",
+  "ph:wooden_crate_01": "size h 0.350 w 0.409 l 0.836",
+  "ph:wooden_crate_02": "size h 0.464 w 0.529 l 1.166",
+  "ph:wooden_cutting_board": "size h 0.041 w 0.247 l 0.487",
+  "ph:wooden_military_crate": "size h 0.465 w 0.520 l 1.295"
+ }
+}

@@ -1,0 +1,3164 @@
+{
+ "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+ "source": "Poly Haven API",
+ "groups": {
+  "wood": "furniture",
+  "floor": "floor",
+  "wall": "wall",
+  "tiles": "floor",
+  "fabric": "fabric",
+  "indoor": "env"
+ },
+ "materials": {
+  "diagonal_parquet": {
+   "id": "diagonal_parquet",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Diagonal Parquet",
+   "authors": [
+    "Jenelle van Heerden",
+    "Sergej Majboroda"
+   ],
+   "categories": [
+    "floor",
+    "man made",
+    "wood",
+    "indoor"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/diagonal_parquet",
+   "files": {
+    "diff": "textures/diagonal_parquet/diagonal_parquet_diff_1k.jpg",
+    "nor_gl": "textures/diagonal_parquet/diagonal_parquet_nor_gl_1k.jpg",
+    "rough": "textures/diagonal_parquet/diagonal_parquet_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "weathered_brown_planks": {
+   "id": "weathered_brown_planks",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Weathered Brown Planks",
+   "authors": [
+    "Dimitrios Savva",
+    "Rico Cilliers"
+   ],
+   "categories": [
+    "man made",
+    "wood",
+    "dirty",
+    "wall",
+    "outdoor",
+    "floor"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/weathered_brown_planks",
+   "files": {
+    "diff": "textures/weathered_brown_planks/weathered_brown_planks_diff_1k.jpg",
+    "nor_gl": "textures/weathered_brown_planks/weathered_brown_planks_nor_gl_1k.jpg",
+    "rough": "textures/weathered_brown_planks/weathered_brown_planks_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "wood_planks_dirt": {
+   "id": "wood_planks_dirt",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Wood Planks Dirt",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "wood",
+    "wall",
+    "man made",
+    "outdoor",
+    "indoor",
+    "clean"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/wood_planks_dirt",
+   "files": {
+    "diff": "textures/wood_planks_dirt/wood_planks_dirt_diff_1k.jpg",
+    "nor_gl": "textures/wood_planks_dirt/wood_planks_dirt_nor_gl_1k.jpg",
+    "rough": "textures/wood_planks_dirt/wood_planks_dirt_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "herringbone_parquet": {
+   "id": "herringbone_parquet",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Herringbone Parquet",
+   "authors": [
+    "Jenelle van Heerden",
+    "Sergej Majboroda"
+   ],
+   "categories": [
+    "man made",
+    "floor",
+    "wood"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/herringbone_parquet",
+   "files": {
+    "diff": "textures/herringbone_parquet/herringbone_parquet_diff_1k.jpg",
+    "nor_gl": "textures/herringbone_parquet/herringbone_parquet_nor_gl_1k.jpg",
+    "rough": "textures/herringbone_parquet/herringbone_parquet_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "synthetic_wood": {
+   "id": "synthetic_wood",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Synthetic Wood",
+   "authors": [
+    "Charlotte Baglioni",
+    "Dario Barresi"
+   ],
+   "categories": [
+    "man made",
+    "wall",
+    "wood",
+    "outdoor"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/synthetic_wood",
+   "files": {
+    "diff": "textures/synthetic_wood/synthetic_wood_diff_1k.jpg",
+    "nor_gl": "textures/synthetic_wood/synthetic_wood_nor_gl_1k.jpg",
+    "rough": "textures/synthetic_wood/synthetic_wood_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "plank_flooring": {
+   "id": "plank_flooring",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Plank Flooring",
+   "authors": [
+    "Dario Barresi",
+    "Dimitrios Savva",
+    "Rico Cilliers"
+   ],
+   "categories": [
+    "floor",
+    "wood",
+    "indoor"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/plank_flooring",
+   "files": {
+    "diff": "textures/plank_flooring/plank_flooring_diff_1k.jpg",
+    "nor_gl": "textures/plank_flooring/plank_flooring_nor_gl_1k.jpg",
+    "rough": "textures/plank_flooring/plank_flooring_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "raw_plank_wall": {
+   "id": "raw_plank_wall",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Raw Plank Wall",
+   "authors": [
+    "Dimitrios Savva"
+   ],
+   "categories": [
+    "wall",
+    "man made",
+    "raw wood",
+    "wood"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/raw_plank_wall",
+   "files": {
+    "diff": "textures/raw_plank_wall/raw_plank_wall_diff_1k.jpg",
+    "nor_gl": "textures/raw_plank_wall/raw_plank_wall_nor_gl_1k.jpg",
+    "rough": "textures/raw_plank_wall/raw_plank_wall_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "dark_wooden_planks": {
+   "id": "dark_wooden_planks",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Dark Wooden Planks",
+   "authors": [
+    "Amal Kumar"
+   ],
+   "categories": [
+    "floor",
+    "man made",
+    "indoor",
+    "wood",
+    "raw wood"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/dark_wooden_planks",
+   "files": {
+    "diff": "textures/dark_wooden_planks/dark_wooden_planks_diff_1k.jpg",
+    "nor_gl": "textures/dark_wooden_planks/dark_wooden_planks_nor_gl_1k.jpg",
+    "rough": "textures/dark_wooden_planks/dark_wooden_planks_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "brown_planks_03": {
+   "id": "brown_planks_03",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Brown Planks 03",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "wood",
+    "man made",
+    "indoor",
+    "outdoor",
+    "clean",
+    "wall"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/brown_planks_03",
+   "files": {
+    "diff": "textures/brown_planks_03/brown_planks_03_diff_1k.jpg",
+    "nor_gl": "textures/brown_planks_03/brown_planks_03_nor_gl_1k.jpg",
+    "rough": "textures/brown_planks_03/brown_planks_03_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "wooden_rough_planks": {
+   "id": "wooden_rough_planks",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Wooden Rough Planks",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "wood",
+    "wall",
+    "man made",
+    "outdoor"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/wooden_rough_planks",
+   "files": {
+    "diff": "textures/wooden_rough_planks/wooden_rough_planks_diff_1k.jpg",
+    "nor_gl": "textures/wooden_rough_planks/wooden_rough_planks_nor_gl_1k.jpg",
+    "rough": "textures/wooden_rough_planks/wooden_rough_planks_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "wood_trunk_wall": {
+   "id": "wood_trunk_wall",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Wood Trunk Wall",
+   "authors": [
+    "Amal Kumar"
+   ],
+   "categories": [
+    "outdoor",
+    "wall",
+    "wood",
+    "man made"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/wood_trunk_wall",
+   "files": {
+    "diff": "textures/wood_trunk_wall/wood_trunk_wall_diff_1k.jpg",
+    "nor_gl": "textures/wood_trunk_wall/wood_trunk_wall_nor_gl_1k.jpg",
+    "rough": "textures/wood_trunk_wall/wood_trunk_wall_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "laminate_floor": {
+   "id": "laminate_floor",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Laminate Floor",
+   "authors": [
+    "Dario Barresi",
+    "Dimitrios Savva"
+   ],
+   "categories": [
+    "floor",
+    "man made",
+    "wood"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/laminate_floor",
+   "files": {
+    "diff": "textures/laminate_floor/laminate_floor_diff_1k.jpg",
+    "nor_gl": "textures/laminate_floor/laminate_floor_nor_gl_1k.jpg",
+    "rough": "textures/laminate_floor/laminate_floor_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "rectangular_parquet": {
+   "id": "rectangular_parquet",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Rectangular Parquet",
+   "authors": [
+    "Jenelle van Heerden",
+    "Sergej Majboroda"
+   ],
+   "categories": [
+    "floor",
+    "wood",
+    "indoor",
+    "man made"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/rectangular_parquet",
+   "files": {
+    "diff": "textures/rectangular_parquet/rectangular_parquet_diff_1k.jpg",
+    "nor_gl": "textures/rectangular_parquet/rectangular_parquet_nor_gl_1k.jpg",
+    "rough": "textures/rectangular_parquet/rectangular_parquet_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "brown_planks_07": {
+   "id": "brown_planks_07",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Brown Planks 07",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "wood",
+    "outdoor",
+    "indoor",
+    "clean",
+    "wall",
+    "man made"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/brown_planks_07",
+   "files": {
+    "diff": "textures/brown_planks_07/brown_planks_07_diff_1k.jpg",
+    "nor_gl": "textures/brown_planks_07/brown_planks_07_nor_gl_1k.jpg",
+    "rough": "textures/brown_planks_07/brown_planks_07_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "dark_wood": {
+   "id": "dark_wood",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Dark Wood",
+   "authors": [
+    "Dario Barresi",
+    "Dimitrios Savva",
+    "Rico Cilliers"
+   ],
+   "categories": [
+    "wood",
+    "indoor"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/dark_wood",
+   "files": {
+    "diff": "textures/dark_wood/dark_wood_diff_1k.jpg",
+    "nor_gl": "textures/dark_wood/dark_wood_nor_gl_1k.jpg",
+    "rough": "textures/dark_wood/dark_wood_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "fine_grained_wood": {
+   "id": "fine_grained_wood",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Fine Grained Wood",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "wood",
+    "man made",
+    "dirty",
+    "raw wood"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/fine_grained_wood",
+   "files": {
+    "diff": "textures/fine_grained_wood/fine_grained_wood_col_1k.jpg",
+    "nor_gl": "textures/fine_grained_wood/fine_grained_wood_nor_gl_1k.jpg",
+    "rough": "textures/fine_grained_wood/fine_grained_wood_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "wooden_garage_door": {
+   "id": "wooden_garage_door",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Wooden Garage Door",
+   "authors": [
+    "Dimitrios Savva"
+   ],
+   "categories": [
+    "man made",
+    "outdoor",
+    "wood"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/wooden_garage_door",
+   "files": {
+    "diff": "textures/wooden_garage_door/wooden_garage_door_diff_1k.jpg",
+    "nor_gl": "textures/wooden_garage_door/wooden_garage_door_nor_gl_1k.jpg",
+    "rough": "textures/wooden_garage_door/wooden_garage_door_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "moss_wood": {
+   "id": "moss_wood",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Moss Wood",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "wood",
+    "wall",
+    "floor",
+    "man made",
+    "outdoor"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/moss_wood",
+   "files": {
+    "diff": "textures/moss_wood/moss_wood_diff_1k.jpg",
+    "nor_gl": "textures/moss_wood/moss_wood_nor_gl_1k.jpg",
+    "rough": "textures/moss_wood/moss_wood_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "laminate_floor_02": {
+   "id": "laminate_floor_02",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Laminate Floor 02",
+   "authors": [
+    "Charlotte Baglioni",
+    "Dario Barresi"
+   ],
+   "categories": [
+    "floor",
+    "man made",
+    "indoor",
+    "clean",
+    "wood"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/laminate_floor_02",
+   "files": {
+    "diff": "textures/laminate_floor_02/laminate_floor_02_diff_1k.jpg",
+    "nor_gl": "textures/laminate_floor_02/laminate_floor_02_nor_gl_1k.jpg",
+    "rough": "textures/laminate_floor_02/laminate_floor_02_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "wooden_gate": {
+   "id": "wooden_gate",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Wooden Gate",
+   "authors": [
+    "Amal Kumar"
+   ],
+   "categories": [
+    "man made",
+    "wood"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/wooden_gate",
+   "files": {
+    "diff": "textures/wooden_gate/wooden_gate_diff_1k.jpg",
+    "nor_gl": "textures/wooden_gate/wooden_gate_nor_gl_1k.jpg",
+    "rough": "textures/wooden_gate/wooden_gate_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "wood_cabinet_worn_long": {
+   "id": "wood_cabinet_worn_long",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Wood Cabinet Worn Long",
+   "authors": [
+    "Dimitrios Savva",
+    "Rico Cilliers"
+   ],
+   "categories": [
+    "man made",
+    "wood",
+    "indoor",
+    "wall",
+    "floor"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/wood_cabinet_worn_long",
+   "files": {
+    "diff": "textures/wood_cabinet_worn_long/wood_cabinet_worn_long_diff_1k.jpg",
+    "nor_gl": "textures/wood_cabinet_worn_long/wood_cabinet_worn_long_nor_gl_1k.jpg",
+    "rough": "textures/wood_cabinet_worn_long/wood_cabinet_worn_long_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "wood_table_worn": {
+   "id": "wood_table_worn",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Wood Table Worn",
+   "authors": [
+    "Dimitrios Savva",
+    "Rico Cilliers"
+   ],
+   "categories": [
+    "man made",
+    "wood",
+    "dirty",
+    "raw wood"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/wood_table_worn",
+   "files": {
+    "diff": "textures/wood_table_worn/wood_table_worn_diff_1k.jpg",
+    "nor_gl": "textures/wood_table_worn/wood_table_worn_nor_gl_1k.jpg",
+    "rough": "textures/wood_table_worn/wood_table_worn_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "wood_peeling_paint_weathered": {
+   "id": "wood_peeling_paint_weathered",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Wood Peeling Paint Weathered",
+   "authors": [
+    "Dimitrios Savva",
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "outdoor",
+    "man made",
+    "wall",
+    "wood",
+    "dirty"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/wood_peeling_paint_weathered",
+   "files": {
+    "diff": "textures/wood_peeling_paint_weathered/wood_peeling_paint_weathered_diff_1k.jpg",
+    "nor_gl": "textures/wood_peeling_paint_weathered/wood_peeling_paint_weathered_nor_gl_1k.jpg",
+    "rough": "textures/wood_peeling_paint_weathered/wood_peeling_paint_weathered_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "weathered_peeling_timber": {
+   "id": "weathered_peeling_timber",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Weathered Peeling Timber",
+   "authors": [
+    "Dimitrios Savva"
+   ],
+   "categories": [
+    "outdoor",
+    "wood",
+    "man made"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/weathered_peeling_timber",
+   "files": {
+    "diff": "textures/weathered_peeling_timber/weathered_peeling_timber_diff_1k.jpg",
+    "nor_gl": "textures/weathered_peeling_timber/weathered_peeling_timber_nor_gl_1k.jpg",
+    "rough": "textures/weathered_peeling_timber/weathered_peeling_timber_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "plywood": {
+   "id": "plywood",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Plywood",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "wood",
+    "clean",
+    "man made",
+    "natural",
+    "raw wood"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/plywood",
+   "files": {
+    "diff": "textures/plywood/plywood_diff_1k.jpg",
+    "nor_gl": "textures/plywood/plywood_nor_gl_1k.jpg",
+    "rough": "textures/plywood/plywood_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "green_rough_planks": {
+   "id": "green_rough_planks",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Green Rough Planks",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "wood",
+    "outdoor",
+    "man made",
+    "dirty",
+    "wall"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/green_rough_planks",
+   "files": {
+    "diff": "textures/green_rough_planks/green_rough_planks_diff_1k.jpg",
+    "nor_gl": "textures/green_rough_planks/green_rough_planks_nor_gl_1k.jpg",
+    "rough": "textures/green_rough_planks/green_rough_planks_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "brown_planks_04": {
+   "id": "brown_planks_04",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Brown Planks 04",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "wood",
+    "man made",
+    "indoor",
+    "outdoor",
+    "clean",
+    "wall"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/brown_planks_04",
+   "files": {
+    "diff": "textures/brown_planks_04/brown_planks_04_diff_1k.jpg",
+    "nor_gl": "textures/brown_planks_04/brown_planks_04_nor_gl_1k.jpg",
+    "rough": "textures/brown_planks_04/brown_planks_04_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "brown_planks_09": {
+   "id": "brown_planks_09",
+   "group": "wood",
+   "role": "furniture",
+   "type": "textures",
+   "name": "Brown Planks 09",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "wood",
+    "outdoor",
+    "indoor",
+    "clean",
+    "wall",
+    "man made"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/brown_planks_09",
+   "files": {
+    "diff": "textures/brown_planks_09/brown_planks_09_diff_1k.jpg",
+    "nor_gl": "textures/brown_planks_09/brown_planks_09_nor_gl_1k.jpg",
+    "rough": "textures/brown_planks_09/brown_planks_09_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "patio_tiles": {
+   "id": "patio_tiles",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Patio Tiles",
+   "authors": [
+    "Dario Barresi"
+   ],
+   "categories": [
+    "man made",
+    "floor",
+    "clean",
+    "indoor",
+    "outdoor"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/patio_tiles",
+   "files": {
+    "diff": "textures/patio_tiles/patio_tiles_diff_1k.jpg",
+    "nor_gl": "textures/patio_tiles/patio_tiles_nor_gl_1k.jpg",
+    "rough": "textures/patio_tiles/patio_tiles_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "slate_floor_03": {
+   "id": "slate_floor_03",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Slate Floor 03",
+   "authors": [
+    "Dimitrios Savva"
+   ],
+   "categories": [
+    "floor",
+    "man made",
+    "indoor"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/slate_floor_03",
+   "files": {
+    "diff": "textures/slate_floor_03/slate_floor_03_diff_1k.jpg",
+    "nor_gl": "textures/slate_floor_03/slate_floor_03_nor_gl_1k.jpg",
+    "rough": "textures/slate_floor_03/slate_floor_03_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "hangar_concrete_floor": {
+   "id": "hangar_concrete_floor",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Hangar Concrete Floor",
+   "authors": [
+    "Dimitrios Savva"
+   ],
+   "categories": [
+    "floor",
+    "man made",
+    "concrete",
+    "indoor",
+    "plaster-concrete"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/hangar_concrete_floor",
+   "files": {
+    "diff": "textures/hangar_concrete_floor/hangar_concrete_floor_diff_1k.jpg",
+    "nor_gl": "textures/hangar_concrete_floor/hangar_concrete_floor_nor_gl_1k.jpg",
+    "rough": "textures/hangar_concrete_floor/hangar_concrete_floor_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "floor_tiles_02": {
+   "id": "floor_tiles_02",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Floor Tiles 02",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "floor",
+    "wall",
+    "outdoor",
+    "indoor",
+    "clean",
+    "man made"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/floor_tiles_02",
+   "files": {
+    "diff": "textures/floor_tiles_02/floor_tiles_02_diff_1k.jpg",
+    "nor_gl": "textures/floor_tiles_02/floor_tiles_02_nor_gl_1k.jpg",
+    "rough": "textures/floor_tiles_02/floor_tiles_02_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "running_track": {
+   "id": "running_track",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Running Track",
+   "authors": [
+    "Dimitrios Savva",
+    "Rico Cilliers"
+   ],
+   "categories": [
+    "man made",
+    "floor",
+    "outdoor",
+    "indoor"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/running_track",
+   "files": {
+    "diff": "textures/running_track/running_track_diff_1k.jpg",
+    "nor_gl": "textures/running_track/running_track_nor_gl_1k.jpg",
+    "rough": "textures/running_track/running_track_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "smooth_concrete_floor": {
+   "id": "smooth_concrete_floor",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Smooth Concrete Floor",
+   "authors": [
+    "Dimitrios Savva"
+   ],
+   "categories": [
+    "floor",
+    "indoor",
+    "concrete",
+    "plaster-concrete"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/smooth_concrete_floor",
+   "files": {
+    "diff": "textures/smooth_concrete_floor/smooth_concrete_floor_diff_1k.jpg",
+    "nor_gl": "textures/smooth_concrete_floor/smooth_concrete_floor_nor_gl_1k.jpg",
+    "rough": "textures/smooth_concrete_floor/smooth_concrete_floor_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "scuffed_cement": {
+   "id": "scuffed_cement",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Scuffed Cement",
+   "authors": [
+    "Dario Barresi",
+    "Dimitrios Savva"
+   ],
+   "categories": [
+    "man made",
+    "floor",
+    "indoor",
+    "plaster-concrete",
+    "concrete"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/scuffed_cement",
+   "files": {
+    "diff": "textures/scuffed_cement/scuffed_cement_diff_1k.jpg",
+    "nor_gl": "textures/scuffed_cement/scuffed_cement_nor_gl_1k.jpg",
+    "rough": "textures/scuffed_cement/scuffed_cement_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "grey_plaster_02": {
+   "id": "grey_plaster_02",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Grey Plaster 02",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "plaster",
+    "outdoor",
+    "indoor",
+    "man made",
+    "dirty",
+    "wall",
+    "floor",
+    "plaster-concrete",
+    "collection: the_shed"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/grey_plaster_02",
+   "files": {
+    "diff": "textures/grey_plaster_02/grey_plaster_02_diff_1k.jpg",
+    "nor_gl": "textures/grey_plaster_02/grey_plaster_02_nor_gl_1k.jpg",
+    "rough": "textures/grey_plaster_02/grey_plaster_02_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "garage_floor": {
+   "id": "garage_floor",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Garage Floor",
+   "authors": [
+    "Jenelle van Heerden"
+   ],
+   "categories": [
+    "man made",
+    "plaster-concrete",
+    "indoor",
+    "floor",
+    "concrete"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/garage_floor",
+   "files": {
+    "diff": "textures/garage_floor/garage_floor_diff_1k.jpg",
+    "nor_gl": "textures/garage_floor/garage_floor_nor_gl_1k.jpg",
+    "rough": "textures/garage_floor/garage_floor_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "grey_plaster": {
+   "id": "grey_plaster",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Grey Plaster",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "plaster",
+    "outdoor",
+    "indoor",
+    "man made",
+    "wall",
+    "floor",
+    "plaster-concrete"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/grey_plaster",
+   "files": {
+    "diff": "textures/grey_plaster/grey_plaster_diff_1k.jpg",
+    "nor_gl": "textures/grey_plaster/grey_plaster_nor_gl_1k.jpg",
+    "rough": "textures/grey_plaster/grey_plaster_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "stone_tiles": {
+   "id": "stone_tiles",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Stone Tiles",
+   "authors": [
+    "Christopher Melani"
+   ],
+   "categories": [
+    "man made",
+    "wall",
+    "floor",
+    "indoor",
+    "outdoor"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/stone_tiles",
+   "files": {
+    "diff": "textures/stone_tiles/stone_tiles_diff_1k.jpg",
+    "nor_gl": "textures/stone_tiles/stone_tiles_nor_gl_1k.jpg",
+    "rough": "textures/stone_tiles/stone_tiles_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "floor_tiles_04": {
+   "id": "floor_tiles_04",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Floor Tiles 04",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "floor",
+    "wall",
+    "outdoor",
+    "indoor",
+    "clean",
+    "man made"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/floor_tiles_04",
+   "files": {
+    "diff": "textures/floor_tiles_04/floor_tiles_04_diff_1k.jpg",
+    "nor_gl": "textures/floor_tiles_04/floor_tiles_04_nor_gl_1k.jpg",
+    "rough": "textures/floor_tiles_04/floor_tiles_04_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "concrete_floor_02": {
+   "id": "concrete_floor_02",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Concrete Floor 02",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "concrete",
+    "plaster-concrete",
+    "dirty",
+    "man made",
+    "outdoor",
+    "indoor",
+    "wall",
+    "floor"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/concrete_floor_02",
+   "files": {
+    "diff": "textures/concrete_floor_02/concrete_floor_02_diff_1k.jpg",
+    "nor_gl": "textures/concrete_floor_02/concrete_floor_02_nor_gl_1k.jpg",
+    "rough": "textures/concrete_floor_02/concrete_floor_02_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "concrete_floor_worn_001": {
+   "id": "concrete_floor_worn_001",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Concrete Floor Worn 001",
+   "authors": [
+    "Dimitrios Savva",
+    "Rico Cilliers"
+   ],
+   "categories": [
+    "floor",
+    "man made",
+    "indoor",
+    "dirty",
+    "concrete",
+    "plaster-concrete"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/concrete_floor_worn_001",
+   "files": {
+    "diff": "textures/concrete_floor_worn_001/concrete_floor_worn_001_diff_1k.jpg",
+    "nor_gl": "textures/concrete_floor_worn_001/concrete_floor_worn_001_nor_gl_1k.jpg",
+    "rough": "textures/concrete_floor_worn_001/concrete_floor_worn_001_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "metal_plate": {
+   "id": "metal_plate",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Metal Plate",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "metal",
+    "floor",
+    "man made",
+    "indoor",
+    "outdoor",
+    "dirty"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/metal_plate",
+   "files": {
+    "diff": "textures/metal_plate/metal_plate_diff_1k.jpg",
+    "nor_gl": "textures/metal_plate/metal_plate_nor_gl_1k.jpg",
+    "rough": "textures/metal_plate/metal_plate_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "brick_floor_003": {
+   "id": "brick_floor_003",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Brick Floor 003",
+   "authors": [
+    "Dimitrios Savva",
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "floor",
+    "brick",
+    "man made",
+    "outdoor",
+    "indoor",
+    "clean",
+    "wall"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/brick_floor_003",
+   "files": {
+    "diff": "textures/brick_floor_003/brick_floor_003_diffuse_1k.jpg",
+    "nor_gl": "textures/brick_floor_003/brick_floor_003_nor_gl_1k.jpg",
+    "rough": "textures/brick_floor_003/brick_floor_003_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "floor_tiles_06": {
+   "id": "floor_tiles_06",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Floor Tiles 06",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "floor",
+    "indoor",
+    "clean",
+    "man made"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/floor_tiles_06",
+   "files": {
+    "diff": "textures/floor_tiles_06/floor_tiles_06_diff_1k.jpg",
+    "nor_gl": "textures/floor_tiles_06/floor_tiles_06_nor_gl_1k.jpg",
+    "rough": "textures/floor_tiles_06/floor_tiles_06_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "marble_01": {
+   "id": "marble_01",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Marble 01",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "floor",
+    "man made",
+    "indoor",
+    "clean",
+    "wall"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/marble_01",
+   "files": {
+    "diff": "textures/marble_01/marble_01_diff_1k.jpg",
+    "nor_gl": "textures/marble_01/marble_01_nor_gl_1k.jpg",
+    "rough": "textures/marble_01/marble_01_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "square_tiles": {
+   "id": "square_tiles",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Square Tiles",
+   "authors": [
+    "Charlotte Baglioni"
+   ],
+   "categories": [
+    "floor",
+    "man made",
+    "outdoor",
+    "indoor",
+    "dirty"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/square_tiles",
+   "files": {
+    "diff": "textures/square_tiles/square_tiles_diff_1k.jpg",
+    "nor_gl": "textures/square_tiles/square_tiles_nor_gl_1k.jpg",
+    "rough": "textures/square_tiles/square_tiles_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "painted_concrete": {
+   "id": "painted_concrete",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Painted Concrete",
+   "authors": [
+    "Dario Barresi",
+    "Dimitrios Savva"
+   ],
+   "categories": [
+    "floor",
+    "indoor",
+    "plaster-concrete",
+    "concrete"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/painted_concrete",
+   "files": {
+    "diff": "textures/painted_concrete/painted_concrete_diff_1k.jpg",
+    "nor_gl": "textures/painted_concrete/painted_concrete_nor_gl_1k.jpg",
+    "rough": "textures/painted_concrete/painted_concrete_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "tiled_floor_001": {
+   "id": "tiled_floor_001",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Tiled Floor 001",
+   "authors": [
+    "Dimitrios Savva",
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "floor",
+    "indoor",
+    "man made",
+    "outdoor",
+    "clean",
+    "wall"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/tiled_floor_001",
+   "files": {
+    "diff": "textures/tiled_floor_001/tiled_floor_001_diffuse_1k.jpg",
+    "nor_gl": "textures/tiled_floor_001/tiled_floor_001_nor_gl_1k.jpg",
+    "rough": "textures/tiled_floor_001/tiled_floor_001_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "white_plaster_02": {
+   "id": "white_plaster_02",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "White Plaster 02",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "plaster-concrete",
+    "wall",
+    "man made",
+    "outdoor",
+    "indoor",
+    "clean",
+    "floor"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/white_plaster_02",
+   "files": {
+    "diff": "textures/white_plaster_02/white_plaster_02_diff_1k.jpg",
+    "nor_gl": "textures/white_plaster_02/white_plaster_02_nor_gl_1k.jpg",
+    "rough": "textures/white_plaster_02/white_plaster_02_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "slab_tiles": {
+   "id": "slab_tiles",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Slab Tiles",
+   "authors": [
+    "Dario Barresi",
+    "Dimitrios Savva"
+   ],
+   "categories": [
+    "floor",
+    "man made",
+    "rock",
+    "indoor"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/slab_tiles",
+   "files": {
+    "diff": "textures/slab_tiles/slab_tiles_diff_1k.jpg",
+    "nor_gl": "textures/slab_tiles/slab_tiles_nor_gl_1k.jpg",
+    "rough": "textures/slab_tiles/slab_tiles_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "plank_flooring_02": {
+   "id": "plank_flooring_02",
+   "group": "floor",
+   "role": "floor",
+   "type": "textures",
+   "name": "Plank Flooring 02",
+   "authors": [
+    "Dario Barresi",
+    "Dimitrios Savva"
+   ],
+   "categories": [
+    "floor",
+    "wood",
+    "indoor"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/plank_flooring_02",
+   "files": {
+    "diff": "textures/plank_flooring_02/plank_flooring_02_diff_1k.jpg",
+    "nor_gl": "textures/plank_flooring_02/plank_flooring_02_nor_gl_1k.jpg",
+    "rough": "textures/plank_flooring_02/plank_flooring_02_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "castle_wall_varriation": {
+   "id": "castle_wall_varriation",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Castle Wall Variation",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "rock",
+    "wall",
+    "outdoor",
+    "clean",
+    "man made"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/castle_wall_varriation",
+   "files": {
+    "diff": "textures/castle_wall_varriation/castle_wall_varriation_diff_1k.jpg",
+    "nor_gl": "textures/castle_wall_varriation/castle_wall_varriation_nor_gl_1k.jpg",
+    "rough": "textures/castle_wall_varriation/castle_wall_varriation_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "climbing_wall_base": {
+   "id": "climbing_wall_base",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Climbing Wall Base",
+   "authors": [
+    "Dimitrios Savva"
+   ],
+   "categories": [
+    "wall",
+    "man made",
+    "indoor"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/climbing_wall_base",
+   "files": {
+    "diff": "textures/climbing_wall_base/climbing_wall_base_diff_1k.jpg",
+    "nor_gl": "textures/climbing_wall_base/climbing_wall_base_nor_gl_1k.jpg",
+    "rough": "textures/climbing_wall_base/climbing_wall_base_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "white_sandstone_bricks_03": {
+   "id": "white_sandstone_bricks_03",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "White Sandstone Bricks 03",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "brick",
+    "man made",
+    "outdoor",
+    "wall",
+    "clean"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/white_sandstone_bricks_03",
+   "files": {
+    "diff": "textures/white_sandstone_bricks_03/white_sandstone_bricks_03_diff_1k.jpg",
+    "nor_gl": "textures/white_sandstone_bricks_03/white_sandstone_bricks_03_nor_gl_1k.jpg",
+    "rough": "textures/white_sandstone_bricks_03/white_sandstone_bricks_03_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "coral_fort_wall_02": {
+   "id": "coral_fort_wall_02",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Coral Fort Wall 02",
+   "authors": [
+    "Dimitrios Savva"
+   ],
+   "categories": [
+    "wall",
+    "man made",
+    "outdoor",
+    "dirty",
+    "plaster-concrete",
+    "concrete",
+    "plaster"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/coral_fort_wall_02",
+   "files": {
+    "diff": "textures/coral_fort_wall_02/coral_fort_wall_02_diff_1k.jpg",
+    "nor_gl": "textures/coral_fort_wall_02/coral_fort_wall_02_nor_gl_1k.jpg",
+    "rough": "textures/coral_fort_wall_02/coral_fort_wall_02_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "castle_brick_broken_06": {
+   "id": "castle_brick_broken_06",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Castle Brick Broken 06",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "brick",
+    "outdoor",
+    "man made",
+    "indoor",
+    "wall"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/castle_brick_broken_06",
+   "files": {
+    "diff": "textures/castle_brick_broken_06/castle_brick_broken_06_diff_1k.jpg",
+    "nor_gl": "textures/castle_brick_broken_06/castle_brick_broken_06_nor_gl_1k.jpg",
+    "rough": "textures/castle_brick_broken_06/castle_brick_broken_06_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "concrete_wall_001": {
+   "id": "concrete_wall_001",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Concrete Wall 001",
+   "authors": [
+    "Dimitrios Savva",
+    "Rico Cilliers"
+   ],
+   "categories": [
+    "outdoor",
+    "man made",
+    "wall",
+    "plaster",
+    "concrete",
+    "plaster-concrete",
+    "collection: the_shed"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/concrete_wall_001",
+   "files": {
+    "diff": "textures/concrete_wall_001/concrete_wall_001_diff_1k.jpg",
+    "nor_gl": "textures/concrete_wall_001/concrete_wall_001_nor_gl_1k.jpg",
+    "rough": "textures/concrete_wall_001/concrete_wall_001_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "broken_wall": {
+   "id": "broken_wall",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Broken Wall",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "rock",
+    "outdoor",
+    "indoor",
+    "wall",
+    "man made"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/broken_wall",
+   "files": {
+    "diff": "textures/broken_wall/broken_wall_diff_1k.jpg",
+    "nor_gl": "textures/broken_wall/broken_wall_nor_gl_1k.jpg",
+    "rough": "textures/broken_wall/broken_wall_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "red_brick_03": {
+   "id": "red_brick_03",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Red Brick 03",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "outdoor",
+    "wall",
+    "clean",
+    "man made",
+    "brick"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/red_brick_03",
+   "files": {
+    "diff": "textures/red_brick_03/red_brick_03_diff_1k.jpg",
+    "nor_gl": "textures/red_brick_03/red_brick_03_nor_gl_1k.jpg",
+    "rough": "textures/red_brick_03/red_brick_03_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "castle_brick_07": {
+   "id": "castle_brick_07",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Castle Brick 07",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "brick",
+    "outdoor",
+    "man made",
+    "indoor",
+    "wall",
+    "dirty"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/castle_brick_07",
+   "files": {
+    "diff": "textures/castle_brick_07/castle_brick_07_diff_1k.jpg",
+    "nor_gl": "textures/castle_brick_07/castle_brick_07_nor_gl_1k.jpg",
+    "rough": "textures/castle_brick_07/castle_brick_07_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "brown_brick_02": {
+   "id": "brown_brick_02",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Brown Brick 02",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "brick",
+    "wall",
+    "outdoor",
+    "indoor",
+    "clean",
+    "man made"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/brown_brick_02",
+   "files": {
+    "diff": "textures/brown_brick_02/brown_brick_02_diff_1k.jpg",
+    "nor_gl": "textures/brown_brick_02/brown_brick_02_nor_gl_1k.jpg",
+    "rough": "textures/brown_brick_02/brown_brick_02_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "painted_brick": {
+   "id": "painted_brick",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Painted Brick",
+   "authors": [
+    "Amal Kumar"
+   ],
+   "categories": [
+    "wall",
+    "brick",
+    "plaster",
+    "man made",
+    "outdoor",
+    "indoor"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/painted_brick",
+   "files": {
+    "diff": "textures/painted_brick/painted_brick_diff_1k.jpg",
+    "nor_gl": "textures/painted_brick/painted_brick_nor_gl_1k.jpg",
+    "rough": "textures/painted_brick/painted_brick_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "worn_plaster_wall": {
+   "id": "worn_plaster_wall",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Worn Plaster Wall",
+   "authors": [
+    "Dimitrios Savva"
+   ],
+   "categories": [
+    "wall",
+    "concrete",
+    "plaster-concrete",
+    "plaster"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/worn_plaster_wall",
+   "files": {
+    "diff": "textures/worn_plaster_wall/worn_plaster_wall_diff_1k.jpg",
+    "nor_gl": "textures/worn_plaster_wall/worn_plaster_wall_nor_gl_1k.jpg",
+    "rough": "textures/worn_plaster_wall/worn_plaster_wall_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "plaster_brick_pattern": {
+   "id": "plaster_brick_pattern",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Plaster Brick Pattern",
+   "authors": [
+    "Amal Kumar"
+   ],
+   "categories": [
+    "wall",
+    "man made",
+    "plaster",
+    "brick",
+    "plaster-concrete"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/plaster_brick_pattern",
+   "files": {
+    "diff": "textures/plaster_brick_pattern/plaster_brick_pattern_diff_1k.jpg",
+    "nor_gl": "textures/plaster_brick_pattern/plaster_brick_pattern_nor_gl_1k.jpg",
+    "rough": "textures/plaster_brick_pattern/plaster_brick_pattern_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "medieval_wall_01": {
+   "id": "medieval_wall_01",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Medieval Wall 01",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "plaster-concrete",
+    "wall",
+    "man made",
+    "outdoor",
+    "indoor",
+    "dirty"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/medieval_wall_01",
+   "files": {
+    "diff": "textures/medieval_wall_01/medieval_wall_01_diff_1k.jpg",
+    "nor_gl": "textures/medieval_wall_01/medieval_wall_01_nor_gl_1k.jpg",
+    "rough": "textures/medieval_wall_01/medieval_wall_01_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "plastered_wall_05": {
+   "id": "plastered_wall_05",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Plastered Wall 05",
+   "authors": [
+    "Charlotte Baglioni"
+   ],
+   "categories": [
+    "wall",
+    "man made",
+    "outdoor",
+    "plaster",
+    "plaster-concrete"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/plastered_wall_05",
+   "files": {
+    "diff": "textures/plastered_wall_05/plastered_wall_05_diff_1k.jpg",
+    "nor_gl": "textures/plastered_wall_05/plastered_wall_05_nor_gl_1k.jpg",
+    "rough": "textures/plastered_wall_05/plastered_wall_05_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "factory_wall": {
+   "id": "factory_wall",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Factory Wall",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "metal",
+    "outdoor",
+    "wall",
+    "clean",
+    "roofing",
+    "man made"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/factory_wall",
+   "files": {
+    "diff": "textures/factory_wall/factory_wall_diff_1k.jpg",
+    "nor_gl": "textures/factory_wall/factory_wall_nor_gl_1k.jpg",
+    "rough": "textures/factory_wall/factory_wall_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "castle_wall_slates": {
+   "id": "castle_wall_slates",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Castle Wall Slates",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "rock",
+    "outdoor",
+    "wall",
+    "clean",
+    "man made"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/castle_wall_slates",
+   "files": {
+    "diff": "textures/castle_wall_slates/castle_wall_slates_diff_1k.jpg",
+    "nor_gl": "textures/castle_wall_slates/castle_wall_slates_nor_gl_1k.jpg",
+    "rough": "textures/castle_wall_slates/castle_wall_slates_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "brick_wall_003": {
+   "id": "brick_wall_003",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Brick Wall 003",
+   "authors": [
+    "Dimitrios Savva",
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "brick",
+    "wall",
+    "man made",
+    "outdoor",
+    "indoor",
+    "clean"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/brick_wall_003",
+   "files": {
+    "diff": "textures/brick_wall_003/brick_wall_003_diffuse_1k.jpg",
+    "nor_gl": "textures/brick_wall_003/brick_wall_003_nor_gl_1k.jpg",
+    "rough": "textures/brick_wall_003/brick_wall_003_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "medieval_blocks_03": {
+   "id": "medieval_blocks_03",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Medieval Blocks 03",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "wall",
+    "brick",
+    "man made",
+    "outdoor",
+    "indoor",
+    "clean"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/medieval_blocks_03",
+   "files": {
+    "diff": "textures/medieval_blocks_03/medieval_blocks_03_diff_1k.jpg",
+    "nor_gl": "textures/medieval_blocks_03/medieval_blocks_03_nor_gl_1k.jpg",
+    "rough": "textures/medieval_blocks_03/medieval_blocks_03_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "patterned_plaster_wall": {
+   "id": "patterned_plaster_wall",
+   "group": "wall",
+   "role": "wall",
+   "type": "textures",
+   "name": "Patterned Plaster Wall",
+   "authors": [
+    "Amal Kumar"
+   ],
+   "categories": [
+    "wall",
+    "plaster"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/patterned_plaster_wall",
+   "files": {
+    "diff": "textures/patterned_plaster_wall/patterned_plaster_wall_diff_1k.jpg",
+    "nor_gl": "textures/patterned_plaster_wall/patterned_plaster_wall_nor_gl_1k.jpg",
+    "rough": "textures/patterned_plaster_wall/patterned_plaster_wall_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "dirty_tiles": {
+   "id": "dirty_tiles",
+   "group": "tiles",
+   "role": "floor",
+   "type": "textures",
+   "name": "Dirty Tiles",
+   "authors": [
+    "Jenelle van Heerden",
+    "Matterfield"
+   ],
+   "categories": [
+    "floor",
+    "tiles"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/dirty_tiles",
+   "files": {
+    "diff": "textures/dirty_tiles/dirty_tiles_diff_1k.jpg",
+    "nor_gl": "textures/dirty_tiles/dirty_tiles_nor_gl_1k.jpg",
+    "rough": "textures/dirty_tiles/dirty_tiles_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "rectangular_facade_tiles_02": {
+   "id": "rectangular_facade_tiles_02",
+   "group": "tiles",
+   "role": "floor",
+   "type": "textures",
+   "name": "Rectangular Facade Tiles 02",
+   "authors": [
+    "Charlotte Baglioni"
+   ],
+   "categories": [
+    "wall",
+    "tiles"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/rectangular_facade_tiles_02",
+   "files": {
+    "diff": "textures/rectangular_facade_tiles_02/rectangular_facade_tiles_02_diff_1k.jpg",
+    "nor_gl": "textures/rectangular_facade_tiles_02/rectangular_facade_tiles_02_nor_gl_1k.jpg",
+    "rough": "textures/rectangular_facade_tiles_02/rectangular_facade_tiles_02_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "checkered_pavement_tiles": {
+   "id": "checkered_pavement_tiles",
+   "group": "tiles",
+   "role": "floor",
+   "type": "textures",
+   "name": "Checkered Pavement Tiles",
+   "authors": [
+    "Amal Kumar"
+   ],
+   "categories": [
+    "floor",
+    "man made",
+    "tiles"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/checkered_pavement_tiles",
+   "files": {
+    "diff": "textures/checkered_pavement_tiles/checkered_pavement_tiles_diff_1k.jpg",
+    "nor_gl": "textures/checkered_pavement_tiles/checkered_pavement_tiles_nor_gl_1k.jpg",
+    "rough": "textures/checkered_pavement_tiles/checkered_pavement_tiles_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "terrazzo_tiles": {
+   "id": "terrazzo_tiles",
+   "group": "tiles",
+   "role": "floor",
+   "type": "textures",
+   "name": "Terrazzo Tiles",
+   "authors": [
+    "Amal Kumar"
+   ],
+   "categories": [
+    "tiles"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/terrazzo_tiles",
+   "files": {
+    "diff": "textures/terrazzo_tiles/terrazzo_tiles_diff_1k.jpg",
+    "nor_gl": "textures/terrazzo_tiles/terrazzo_tiles_nor_gl_1k.jpg",
+    "rough": "textures/terrazzo_tiles/terrazzo_tiles_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "worn_tile_floor": {
+   "id": "worn_tile_floor",
+   "group": "tiles",
+   "role": "floor",
+   "type": "textures",
+   "name": "Worn Tile Floor",
+   "authors": [
+    "Dimitrios Savva"
+   ],
+   "categories": [
+    "floor",
+    "man made",
+    "tiles"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/worn_tile_floor",
+   "files": {
+    "diff": "textures/worn_tile_floor/worn_tile_floor_diff_1k.jpg",
+    "nor_gl": "textures/worn_tile_floor/worn_tile_floor_nor_gl_1k.jpg",
+    "rough": "textures/worn_tile_floor/worn_tile_floor_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "terracotta_floor_tiles": {
+   "id": "terracotta_floor_tiles",
+   "group": "tiles",
+   "role": "floor",
+   "type": "textures",
+   "name": "Terracotta Floor Tiles",
+   "authors": [
+    "Dimitrios Savva"
+   ],
+   "categories": [
+    "man made",
+    "indoor",
+    "tiles"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/terracotta_floor_tiles",
+   "files": {
+    "diff": "textures/terracotta_floor_tiles/terracotta_floor_tiles_diff_1k.jpg",
+    "nor_gl": "textures/terracotta_floor_tiles/terracotta_floor_tiles_nor_gl_1k.jpg",
+    "rough": "textures/terracotta_floor_tiles/terracotta_floor_tiles_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "granite_tile_03": {
+   "id": "granite_tile_03",
+   "group": "tiles",
+   "role": "floor",
+   "type": "textures",
+   "name": "Granite Tile 03",
+   "authors": [
+    "Charlotte Baglioni"
+   ],
+   "categories": [
+    "wall",
+    "tiles"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/granite_tile_03",
+   "files": {
+    "diff": "textures/granite_tile_03/granite_tile_03_diff_1k.jpg",
+    "nor_gl": "textures/granite_tile_03/granite_tile_03_nor_gl_1k.jpg",
+    "rough": "textures/granite_tile_03/granite_tile_03_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "interior_tiles": {
+   "id": "interior_tiles",
+   "group": "tiles",
+   "role": "floor",
+   "type": "textures",
+   "name": "Interior Tiles",
+   "authors": [
+    "Charlotte Baglioni"
+   ],
+   "categories": [
+    "floor",
+    "man made",
+    "tiles"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/interior_tiles",
+   "files": {
+    "diff": "textures/interior_tiles/interior_tiles_diff_1k.jpg",
+    "nor_gl": "textures/interior_tiles/interior_tiles_nor_gl_1k.jpg",
+    "rough": "textures/interior_tiles/interior_tiles_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "waffle_pique_cotton": {
+   "id": "waffle_pique_cotton",
+   "group": "fabric",
+   "role": "fabric",
+   "type": "textures",
+   "name": "Waffle Pique Cotton",
+   "authors": [
+    "Rico Cilliers",
+    "colormass"
+   ],
+   "categories": [
+    "fabric",
+    "cotton"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/waffle_pique_cotton",
+   "files": {
+    "diff": "textures/waffle_pique_cotton/waffle_pique_cotton_diff_1k.jpg",
+    "nor_gl": "textures/waffle_pique_cotton/waffle_pique_cotton_nor_gl_1k.jpg",
+    "rough": "textures/waffle_pique_cotton/waffle_pique_cotton_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "fabric_pattern_07": {
+   "id": "fabric_pattern_07",
+   "group": "fabric",
+   "role": "fabric",
+   "type": "textures",
+   "name": "Fabric Pattern 07",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "fabric",
+    "cotton"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/fabric_pattern_07",
+   "files": {
+    "nor_gl": "textures/fabric_pattern_07/fabric_pattern_07_nor_gl_1k.jpg",
+    "rough": "textures/fabric_pattern_07/fabric_pattern_07_rough_1k.jpg"
+   },
+   "complete": false
+  },
+  "caban": {
+   "id": "caban",
+   "group": "fabric",
+   "role": "fabric",
+   "type": "textures",
+   "name": "Caban",
+   "authors": [
+    "Rico Cilliers",
+    "colormass"
+   ],
+   "categories": [
+    "fabric",
+    "wool",
+    "fleece"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/caban",
+   "files": {
+    "diff": "textures/caban/caban_diff_1k.jpg",
+    "nor_gl": "textures/caban/caban_nor_gl_1k.jpg",
+    "rough": "textures/caban/caban_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "hessian_380": {
+   "id": "hessian_380",
+   "group": "fabric",
+   "role": "fabric",
+   "type": "textures",
+   "name": "Hessian 380",
+   "authors": [
+    "Rico Cilliers",
+    "colormass"
+   ],
+   "categories": [
+    "fabric",
+    "hessian"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/hessian_380",
+   "files": {
+    "diff": "textures/hessian_380/hessian_380_diff_1k.jpg",
+    "nor_gl": "textures/hessian_380/hessian_380_nor_gl_1k.jpg",
+    "rough": "textures/hessian_380/hessian_380_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "denim_fabric_03": {
+   "id": "denim_fabric_03",
+   "group": "fabric",
+   "role": "fabric",
+   "type": "textures",
+   "name": "Denim Fabric 03",
+   "authors": [
+    "Rico Cilliers",
+    "colormass"
+   ],
+   "categories": [
+    "fabric",
+    "denim"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/denim_fabric_03",
+   "files": {
+    "diff": "textures/denim_fabric_03/denim_fabric_03_diff_1k.jpg",
+    "nor_gl": "textures/denim_fabric_03/denim_fabric_03_nor_gl_1k.jpg",
+    "rough": "textures/denim_fabric_03/denim_fabric_03_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "fabric_pattern_05": {
+   "id": "fabric_pattern_05",
+   "group": "fabric",
+   "role": "fabric",
+   "type": "textures",
+   "name": "Fabric Pattern 05",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "fabric",
+    "cotton"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/fabric_pattern_05",
+   "files": {
+    "nor_gl": "textures/fabric_pattern_05/fabric_pattern_05_nor_gl_1k.jpg",
+    "rough": "textures/fabric_pattern_05/fabric_pattern_05_rough_1k.jpg"
+   },
+   "complete": false
+  },
+  "brown_leather": {
+   "id": "brown_leather",
+   "group": "fabric",
+   "role": "fabric",
+   "type": "textures",
+   "name": "Brown Leather",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "fabric",
+    "leather"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/brown_leather",
+   "files": {
+    "diff": "textures/brown_leather/brown_leather_albedo_1k.jpg",
+    "nor_gl": "textures/brown_leather/brown_leather_nor_gl_1k.jpg",
+    "rough": "textures/brown_leather/brown_leather_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "poly_wool_herringbone": {
+   "id": "poly_wool_herringbone",
+   "group": "fabric",
+   "role": "fabric",
+   "type": "textures",
+   "name": "Poly Wool Herringbone",
+   "authors": [
+    "Rico Cilliers",
+    "colormass"
+   ],
+   "categories": [
+    "fabric",
+    "wool"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/poly_wool_herringbone",
+   "files": {
+    "diff": "textures/poly_wool_herringbone/poly_wool_herringbone_diff_1k.jpg",
+    "nor_gl": "textures/poly_wool_herringbone/poly_wool_herringbone_nor_gl_1k.jpg",
+    "rough": "textures/poly_wool_herringbone/poly_wool_herringbone_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "fabric_leather_02": {
+   "id": "fabric_leather_02",
+   "group": "fabric",
+   "role": "fabric",
+   "type": "textures",
+   "name": "Fabric Leather 02",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "categories": [
+    "fabric",
+    "leather"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/fabric_leather_02",
+   "files": {
+    "diff": "textures/fabric_leather_02/fabric_leather_02_diff_1k.jpg",
+    "nor_gl": "textures/fabric_leather_02/fabric_leather_02_nor_gl_1k.jpg",
+    "rough": "textures/fabric_leather_02/fabric_leather_02_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "velour_velvet": {
+   "id": "velour_velvet",
+   "group": "fabric",
+   "role": "fabric",
+   "type": "textures",
+   "name": "Velour Velvet",
+   "authors": [
+    "Rico Cilliers",
+    "colormass"
+   ],
+   "categories": [
+    "fabric",
+    "velvet"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/velour_velvet",
+   "files": {
+    "diff": "textures/velour_velvet/velour_velvet_diff_1k.jpg",
+    "nor_gl": "textures/velour_velvet/velour_velvet_nor_gl_1k.jpg",
+    "rough": "textures/velour_velvet/velour_velvet_rough_1k.jpg"
+   },
+   "complete": true
+  },
+  "studio_wizja_01": {
+   "id": "studio_wizja_01",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Studio Wizja 01",
+   "authors": [
+    "Grzegorz Wronkowski"
+   ],
+   "categories": [
+    "studio",
+    "artificial light",
+    "urban",
+    "indoor",
+    "medium contrast"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/studio_wizja_01",
+   "files": {
+    "hdr": "hdris/studio_wizja_01/studio_wizja_01_2k.hdr"
+   },
+   "complete": true
+  },
+  "crossfit_gym": {
+   "id": "crossfit_gym",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Crossfit Gym",
+   "authors": [
+    "Dimitrios Savva",
+    "Jarod Guest"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "artificial light",
+    "medium contrast"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/crossfit_gym",
+   "files": {
+    "hdr": "hdris/crossfit_gym/crossfit_gym_2k.hdr"
+   },
+   "complete": true
+  },
+  "hangar_interior": {
+   "id": "hangar_interior",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Hangar Interior",
+   "authors": [
+    "Dimitrios Savva",
+    "Jarod Guest"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "natural light",
+    "medium contrast",
+    "midday"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/hangar_interior",
+   "files": {
+    "hdr": "hdris/hangar_interior/hangar_interior_2k.hdr"
+   },
+   "complete": true
+  },
+  "ballroom": {
+   "id": "ballroom",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Ballroom",
+   "authors": [
+    "Sergej Majboroda"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "medium contrast",
+    "artificial light",
+    "natural light"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/ballroom",
+   "files": {
+    "hdr": "hdris/ballroom/ballroom_2k.hdr"
+   },
+   "complete": true
+  },
+  "blinds": {
+   "id": "blinds",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Blinds",
+   "authors": [
+    "Greg Zaal"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "morning-afternoon",
+    "medium contrast",
+    "natural light"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/blinds",
+   "files": {
+    "hdr": "hdris/blinds/blinds_2k.hdr"
+   },
+   "complete": true
+  },
+  "abandoned_tiled_room": {
+   "id": "abandoned_tiled_room",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Abandoned Tiled Room",
+   "authors": [
+    "Sergej Majboroda"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "natural light",
+    "medium contrast",
+    "sunrise-sunset"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/abandoned_tiled_room",
+   "files": {
+    "hdr": "hdris/abandoned_tiled_room/abandoned_tiled_room_2k.hdr"
+   },
+   "complete": true
+  },
+  "monochrome_studio_03": {
+   "id": "monochrome_studio_03",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Monochrome Studio 03",
+   "authors": [
+    "Grzegorz Wronkowski"
+   ],
+   "categories": [
+    "studio",
+    "indoor",
+    "artificial light",
+    "urban",
+    "low contrast"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/monochrome_studio_03",
+   "files": {
+    "hdr": "hdris/monochrome_studio_03/monochrome_studio_03_2k.hdr"
+   },
+   "complete": true
+  },
+  "small_cave": {
+   "id": "small_cave",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Small Cave",
+   "authors": [
+    "Andreas Mischok"
+   ],
+   "categories": [
+    "indoor",
+    "nature",
+    "morning-afternoon",
+    "medium contrast",
+    "natural light"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/small_cave",
+   "files": {
+    "hdr": "hdris/small_cave/small_cave_2k.hdr"
+   },
+   "complete": true
+  },
+  "historic_cloister_passage": {
+   "id": "historic_cloister_passage",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Historic Cloister Passage",
+   "authors": [
+    "Elvis Posa"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "natural light",
+    "medium contrast",
+    "midday"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/historic_cloister_passage",
+   "files": {
+    "hdr": "hdris/historic_cloister_passage/historic_cloister_passage_2k.hdr"
+   },
+   "complete": true
+  },
+  "industrial_pipe_and_valve_01": {
+   "id": "industrial_pipe_and_valve_01",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Industrial Pipe & Valve 01",
+   "authors": [
+    "Philip Modin"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "high contrast",
+    "artificial light"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/industrial_pipe_and_valve_01",
+   "files": {
+    "hdr": "hdris/industrial_pipe_and_valve_01/industrial_pipe_and_valve_01_2k.hdr"
+   },
+   "complete": true
+  },
+  "mirrored_hall": {
+   "id": "mirrored_hall",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Mirrored Hall",
+   "authors": [
+    "Grzegorz Wronkowski"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "medium contrast",
+    "natural light",
+    "midday"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/mirrored_hall",
+   "files": {
+    "hdr": "hdris/mirrored_hall/mirrored_hall_2k.hdr"
+   },
+   "complete": true
+  },
+  "burnt_warehouse": {
+   "id": "burnt_warehouse",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Burnt Warehouse",
+   "authors": [
+    "Sergej Majboroda"
+   ],
+   "categories": [
+    "natural light",
+    "indoor",
+    "urban",
+    "medium contrast"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/burnt_warehouse",
+   "files": {
+    "hdr": "hdris/burnt_warehouse/burnt_warehouse_2k.hdr"
+   },
+   "complete": true
+  },
+  "bell_tower": {
+   "id": "bell_tower",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Bell Tower",
+   "authors": [
+    "Dario Barresi"
+   ],
+   "categories": [
+    "indoor",
+    "natural light",
+    "urban",
+    "medium contrast",
+    "morning-afternoon"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/bell_tower",
+   "files": {
+    "hdr": "hdris/bell_tower/bell_tower_2k.hdr"
+   },
+   "complete": true
+  },
+  "metro_noord": {
+   "id": "metro_noord",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Metro: Noord",
+   "authors": [
+    "Greg Zaal"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "artificial light",
+    "night",
+    "medium contrast"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/metro_noord",
+   "files": {
+    "hdr": "hdris/metro_noord/metro_noord_2k.hdr"
+   },
+   "complete": true
+  },
+  "anniversary_lounge": {
+   "id": "anniversary_lounge",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Anniversary Lounge",
+   "authors": [
+    "Greg Zaal"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "medium contrast",
+    "natural light",
+    "artificial light"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/anniversary_lounge",
+   "files": {
+    "hdr": "hdris/anniversary_lounge/anniversary_lounge_2k.hdr"
+   },
+   "complete": true
+  },
+  "ferndale_studio_02": {
+   "id": "ferndale_studio_02",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Ferndale Studio 02",
+   "authors": [
+    "Dimitrios Savva",
+    "Greg Zaal"
+   ],
+   "categories": [
+    "studio",
+    "indoor",
+    "artificial light",
+    "urban",
+    "high contrast"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/ferndale_studio_02",
+   "files": {
+    "hdr": "hdris/ferndale_studio_02/ferndale_studio_02_2k.hdr"
+   },
+   "complete": true
+  },
+  "cowboy_town_saloon": {
+   "id": "cowboy_town_saloon",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Cowboy Town Saloon",
+   "authors": [
+    "Dimitrios Savva",
+    "Jarod Guest"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "artificial light",
+    "natural light",
+    "medium contrast",
+    "morning-afternoon"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/cowboy_town_saloon",
+   "files": {
+    "hdr": "hdris/cowboy_town_saloon/cowboy_town_saloon_2k.hdr"
+   },
+   "complete": true
+  },
+  "creepy_bathroom": {
+   "id": "creepy_bathroom",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Creepy Bathroom",
+   "authors": [
+    "Greg Zaal"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "artificial light",
+    "night",
+    "low contrast"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/creepy_bathroom",
+   "files": {
+    "hdr": "hdris/creepy_bathroom/creepy_bathroom_2k.hdr"
+   },
+   "complete": true
+  },
+  "combination_room": {
+   "id": "combination_room",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Combination Room",
+   "authors": [
+    "Sergej Majboroda"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "medium contrast",
+    "natural light",
+    "artificial light"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/combination_room",
+   "files": {
+    "hdr": "hdris/combination_room/combination_room_2k.hdr"
+   },
+   "complete": true
+  },
+  "blocky_photo_studio": {
+   "id": "blocky_photo_studio",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Blocky Photo Studio",
+   "authors": [
+    "Sergej Majboroda"
+   ],
+   "categories": [
+    "urban",
+    "indoor",
+    "studio",
+    "artificial light",
+    "natural light",
+    "low contrast"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/blocky_photo_studio",
+   "files": {
+    "hdr": "hdris/blocky_photo_studio/blocky_photo_studio_2k.hdr"
+   },
+   "complete": true
+  },
+  "warm_reception_dinner": {
+   "id": "warm_reception_dinner",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Warm Reception Dinner",
+   "authors": [
+    "Dimitrios Savva",
+    "Jarod Guest"
+   ],
+   "categories": [
+    "indoor",
+    "artificial light",
+    "urban",
+    "medium contrast",
+    "morning-afternoon"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/warm_reception_dinner",
+   "files": {
+    "hdr": "hdris/warm_reception_dinner/warm_reception_dinner_2k.hdr"
+   },
+   "complete": true
+  },
+  "chapel_day": {
+   "id": "chapel_day",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Chapel Day",
+   "authors": [
+    "Dimitrios Savva",
+    "Jarod Guest"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "artificial light",
+    "natural light",
+    "low contrast",
+    "midday"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/chapel_day",
+   "files": {
+    "hdr": "hdris/chapel_day/chapel_day_2k.hdr"
+   },
+   "complete": true
+  },
+  "storeroom": {
+   "id": "storeroom",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Storeroom",
+   "authors": [
+    "Greg Zaal"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "high contrast",
+    "artificial light"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/storeroom",
+   "files": {
+    "hdr": "hdris/storeroom/storeroom_2k.hdr"
+   },
+   "complete": true
+  },
+  "wooden_lounge": {
+   "id": "wooden_lounge",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Wooden Lounge",
+   "authors": [
+    "Greg Zaal"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "high contrast",
+    "artificial light"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/wooden_lounge",
+   "files": {
+    "hdr": "hdris/wooden_lounge/wooden_lounge_2k.hdr"
+   },
+   "complete": true
+  },
+  "white_studio_04": {
+   "id": "white_studio_04",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "White Studio 04",
+   "authors": [
+    "Grzegorz Wronkowski"
+   ],
+   "categories": [
+    "studio",
+    "indoor",
+    "artificial light",
+    "urban",
+    "low contrast"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/white_studio_04",
+   "files": {
+    "hdr": "hdris/white_studio_04/white_studio_04_2k.hdr"
+   },
+   "complete": true
+  },
+  "sundowner_deck": {
+   "id": "sundowner_deck",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Sundowner Deck",
+   "authors": [
+    "Dario Barresi"
+   ],
+   "categories": [
+    "indoor",
+    "outdoor",
+    "natural light",
+    "medium contrast",
+    "morning-afternoon"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/sundowner_deck",
+   "files": {
+    "hdr": "hdris/sundowner_deck/sundowner_deck_2k.hdr"
+   },
+   "complete": true
+  },
+  "story_studio_03": {
+   "id": "story_studio_03",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Story Studio 03",
+   "authors": [
+    "Grzegorz Wronkowski"
+   ],
+   "categories": [
+    "studio",
+    "indoor",
+    "artificial light",
+    "urban",
+    "medium contrast"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/story_studio_03",
+   "files": {
+    "hdr": "hdris/story_studio_03/story_studio_03_2k.hdr"
+   },
+   "complete": true
+  },
+  "workshop": {
+   "id": "workshop",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Workshop",
+   "authors": [
+    "Dimitrios Savva",
+    "Jarod Guest"
+   ],
+   "categories": [
+    "indoor",
+    "high contrast",
+    "artificial light",
+    "urban"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/workshop",
+   "files": {
+    "hdr": "hdris/workshop/workshop_2k.hdr"
+   },
+   "complete": true
+  },
+  "solitude_interior": {
+   "id": "solitude_interior",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Solitude Interior",
+   "authors": [
+    "Andreas Mischok"
+   ],
+   "categories": [
+    "indoor",
+    "medium contrast",
+    "urban",
+    "natural light",
+    "morning-afternoon"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/solitude_interior",
+   "files": {
+    "hdr": "hdris/solitude_interior/solitude_interior_2k.hdr"
+   },
+   "complete": true
+  },
+  "brown_photostudio_02": {
+   "id": "brown_photostudio_02",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Brown Photostudio 02",
+   "authors": [
+    "Sergej Majboroda"
+   ],
+   "categories": [
+    "urban",
+    "studio",
+    "indoor",
+    "artificial light",
+    "natural light",
+    "medium contrast"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/brown_photostudio_02",
+   "files": {
+    "hdr": "hdris/brown_photostudio_02/brown_photostudio_02_2k.hdr"
+   },
+   "complete": true
+  },
+  "theater_02": {
+   "id": "theater_02",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Theater 02",
+   "authors": [
+    "Oliksiy Yakovlyev"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "medium contrast",
+    "artificial light"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/theater_02",
+   "files": {
+    "hdr": "hdris/theater_02/theater_02_2k.hdr"
+   },
+   "complete": true
+  },
+  "parking_garage": {
+   "id": "parking_garage",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Parking Garage",
+   "authors": [
+    "Greg Zaal",
+    "Rico Cilliers"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "natural light",
+    "high contrast"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/parking_garage",
+   "files": {
+    "hdr": "hdris/parking_garage/parking_garage_2k.hdr"
+   },
+   "complete": true
+  },
+  "small_hangar_02": {
+   "id": "small_hangar_02",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Small Hangar 02",
+   "authors": [
+    "Sergej Majboroda"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "morning-afternoon",
+    "medium contrast",
+    "natural light"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/small_hangar_02",
+   "files": {
+    "hdr": "hdris/small_hangar_02/small_hangar_02_2k.hdr"
+   },
+   "complete": true
+  },
+  "poly_haven_studio": {
+   "id": "poly_haven_studio",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Poly Haven Studio",
+   "authors": [
+    "Greg Zaal"
+   ],
+   "categories": [
+    "low contrast",
+    "indoor",
+    "urban",
+    "artificial light",
+    "natural light",
+    "midday"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/poly_haven_studio",
+   "files": {
+    "hdr": "hdris/poly_haven_studio/poly_haven_studio_2k.hdr"
+   },
+   "complete": true
+  },
+  "tv_studio": {
+   "id": "tv_studio",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "TV Studio",
+   "authors": [
+    "Sergej Majboroda"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "high contrast",
+    "artificial light"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/tv_studio",
+   "files": {
+    "hdr": "hdris/tv_studio/tv_studio_2k.hdr"
+   },
+   "complete": true
+  },
+  "photo_studio_01": {
+   "id": "photo_studio_01",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Photo Studio 01",
+   "authors": [
+    "Sergej Majboroda"
+   ],
+   "categories": [
+    "indoor",
+    "studio",
+    "urban",
+    "medium contrast",
+    "artificial light"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/photo_studio_01",
+   "files": {
+    "hdr": "hdris/photo_studio_01/photo_studio_01_2k.hdr"
+   },
+   "complete": true
+  },
+  "large_corridor": {
+   "id": "large_corridor",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Large Corridor",
+   "authors": [
+    "Sergej Majboroda"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "morning-afternoon",
+    "medium contrast",
+    "natural light"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/large_corridor",
+   "files": {
+    "hdr": "hdris/large_corridor/large_corridor_2k.hdr"
+   },
+   "complete": true
+  },
+  "blender_institute": {
+   "id": "blender_institute",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Blender Institute",
+   "authors": [
+    "Greg Zaal"
+   ],
+   "categories": [
+    "indoor",
+    "urban",
+    "low contrast",
+    "artificial light"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/blender_institute",
+   "files": {
+    "hdr": "hdris/blender_institute/blender_institute_2k.hdr"
+   },
+   "complete": true
+  },
+  "ferndale_studio_12": {
+   "id": "ferndale_studio_12",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Ferndale Studio 12",
+   "authors": [
+    "Dimitrios Savva",
+    "Greg Zaal"
+   ],
+   "categories": [
+    "studio",
+    "indoor",
+    "artificial light",
+    "urban",
+    "medium contrast"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/ferndale_studio_12",
+   "files": {
+    "hdr": "hdris/ferndale_studio_12/ferndale_studio_12_2k.hdr"
+   },
+   "complete": true
+  },
+  "christmas_photo_studio_03": {
+   "id": "christmas_photo_studio_03",
+   "group": "indoor",
+   "role": "env",
+   "type": "hdris",
+   "name": "Christmas Photo Studio 03",
+   "authors": [
+    "Sergej Majboroda"
+   ],
+   "categories": [
+    "indoor",
+    "studio",
+    "urban",
+    "artificial light",
+    "medium contrast",
+    "night"
+   ],
+   "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
+   "source": "https://polyhaven.com/a/christmas_photo_studio_03",
+   "files": {
+    "hdr": "hdris/christmas_photo_studio_03/christmas_photo_studio_03_2k.hdr"
+   },
+   "complete": true
+  }
+ }
+}
