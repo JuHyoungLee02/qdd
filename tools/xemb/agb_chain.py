@@ -113,11 +113,17 @@ def _need(st):
 
 def stage_range(st, kind, name, want_fn):
     need = _need(st)
+    seen = st.setdefault(f"seen_{kind}", {})  # tar -> episodes already looked for in it
+    if f"found_{kind}" not in st:  # episodes already extracted by earlier runs (e.g. the task-327 sample)
+        kd = os.path.join(KEEP, kind)
+        st[f"found_{kind}"] = sorted({int(d) for _, ds, _ in os.walk(kd) for d in ds if d.isdigit() and int(d) > 100000})
+    found_all = set(st[f"found_{kind}"])
     for tar, size in sorted(listing(name)):
-        if tar in st["done"]:
-            continue
         a, b = rng(tar)
-        cover = [e for e in need if a <= e <= b]
+        # a range tar is (re)visited only for kept episodes in its range not yet found and not yet looked for in it
+        # (ranges overlap, so an episode missing from one tar may sit in another)
+        done = set(seen.get(tar, []))
+        cover = [e for e in need if a <= e <= b and e not in found_all and e not in done]
         if not cover:
             continue
         local = fetch(tar, size)
@@ -126,11 +132,12 @@ def stage_range(st, kind, name, want_fn):
         cs = set(cover)
         got = extract(local, lambda n: want_fn(n, cs), os.path.join(KEEP, kind))
         found = {int(x) for p in got for x in p.split(os.sep) if x.isdigit() and int(x) in cs}
-        ok = len(found) > 0
-        AF.release_tar(local, verified=ok)
-        st["done"].append(tar)
+        AF.release_tar(local, verified=True)  # the tar was read to the end; members written and size-checked
+        seen[tar] = sorted(done | cs)
+        found_all |= found
+        st[f"found_{kind}"] = sorted(found_all)
         save_state(st)
-        log(f"{kind.upper()} tar {tar} covered {len(cover)} found {len(found)} files {len(got)} verified={ok}")
+        log(f"{kind.upper()} tar {tar} covered {len(cover)} found {len(found)} files {len(got)}")
     return True
 
 
