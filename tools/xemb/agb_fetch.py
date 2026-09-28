@@ -55,6 +55,9 @@ def get(path, subdir="raw", size=None):
         _log(f"STOP_DISK used={used} need={size} path={path}")
         open(os.path.join(ROOT, "STOP_DISK"), "w").write(f"used {used} + {size} > {STOP_AT}\n")
         return None
+    if used + size > 2.0e12 and not os.path.exists(os.path.join(ROOT, "NOTIFY_2TB")):  # notify only, keep going
+        _log(f"NOTIFY_2TB used={used}")
+        open(os.path.join(ROOT, "NOTIFY_2TB"), "w").write(f"{used}\n")
     from huggingface_hub import hf_hub_download
     dst = hf_hub_download(REPO, path, repo_type="dataset", local_dir=os.path.join(ROOT, subdir),
                           token=open("/data/.hf_token").read().strip())

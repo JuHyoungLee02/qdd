@@ -9,6 +9,9 @@ if [ "$USED" -ge 2700000000000 ]; then
   echo "$(date -u +%FT%TZ) STOP_DISK used=$USED before stream $P" >> $ROOT/disk.log
   touch $ROOT/STOP_DISK; exit 3
 fi
+if [ "$USED" -ge 2000000000000 ] && [ ! -f $ROOT/NOTIFY_2TB ]; then  # over 2 TB: tell the coordinator, keep going
+  echo "$(date -u +%FT%TZ) NOTIFY_2TB used=$USED" >> $ROOT/disk.log; touch $ROOT/NOTIFY_2TB
+fi
 OUT=$ROOT/extract/$SUB; mkdir -p $OUT
 PAT=(); for e in "$@"; do PAT+=("*$e*"); done
 HF=/data/harvest/data/agibot/.hf_hdr  # token via a header file (mode 600): never in argv / ps
