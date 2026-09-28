@@ -189,7 +189,15 @@ def _target_yaw(k: str, rng) -> float:
 
 
 OBJV_TASK_KINDS = {"tray": ("o5", "Put the {n} on the blue tray.", ()),
-                   "bin": ("o15", "Put the {n} in the grey bin.", ("o8",))}
+                   "bin": ("o15", "Put the {n} in the grey bin.", ("o8",)),
+                   # change 14: into a furniture basket (virtual place o20 = the cyclo_lab basket floor; --furniture)
+                   "basket": ("o20", "Put the {n} into the basket.", ()),
+                   # change 15: relational placement next to the green bottle (spots o17 / o18, X_REL)
+                   "left": ("o17", "Put the {n} to the left of the green bottle.", ()),
+                   "right": ("o18", "Put the {n} to the right of the green bottle.", ()),
+                   # change 15: onto another furniture surface (virtual place o19 = a higher usable surface)
+                   "upper": ("o19", "Put the {n} on the higher surface.", ())}
+OBJV_REL = {"left": ("o8", "o17", 0.10), "right": ("o8", "o18", -0.10)}
 
 
 def objv_task_id(kind: str, obj: str) -> str:
@@ -209,6 +217,8 @@ def register_objv_tasks(ids, names: dict) -> list:
                 TASKS[t] = X_TASKS[t] = Task(t, k, pl, text.format(n=n),
                                              {"S1": f"pick up {n} {k}", "S2": f"place {n} {k} on {pl}"}, extras=extras)
                 X_TASK_CODE[t] = 5000 + int(hashlib.sha256(t.encode()).hexdigest()[:6], 16) % 100000
+                if kind in OBJV_REL:
+                    X_REL[t] = OBJV_REL[kind]
             out.append(t)
     return out
 
@@ -264,7 +274,7 @@ def x_task_layout(seed: int, task: str, ws=None) -> dict:
             b = (rng.uniform(wx[0] + 0.02, wx[1]), rng.uniform(wy[0] + 0.03, wy[1] - 0.03))
             sp = (b[0], b[1] + dy)
             m = (rng.uniform(*wx), rng.uniform(*wy))
-            if (wy[0] + 0.03 <= sp[1] <= wy[1] - 0.03 and math.dist(m, b) >= _fr("o3") + _fr(ref) + 0.05
+            if (wy[0] + 0.03 <= sp[1] <= wy[1] - 0.03 and math.dist(m, b) >= _fr(s.target) + _fr(ref) + 0.05
                     and math.dist(m, sp) >= 0.12):
                 break
         else:  # pragma: no cover

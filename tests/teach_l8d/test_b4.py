@@ -56,7 +56,7 @@ def test_drf_rows_allowed_in_train():
 
 def test_b4_seed_block():
     from harvest.teach_l8d import spec as S
-    assert S.check_seed(40000, "train") == 40000 and S.is_train_seed(47999) and not S.is_train_seed(48000)
+    assert S.check_seed(40000, "train") == 40000 and S.is_train_seed(49999) and not S.is_train_seed(50000)
     assert not S.is_train_seed(39999)
 
 
@@ -84,3 +84,70 @@ def test_rich_arrangement_display_and_stack():
                 assert 0.30 + r <= p["x"] <= 0.75 - r and -0.55 + r <= p["y"] <= 0.20 - r
                 assert not (0.34 - r < p["x"] < 0.56 + r and -0.44 - r < p["y"] < -0.06 + r)
     assert rich >= 30  # most episodes (user-log 175)
+
+
+def test_drf_lighting_range_change14():
+    lay = layout_for(40001, "mug_tray", "task")
+    ms = [R.sample_randomization(s, "drf", lay) for s in range(40000, 40200)]
+    ex = [m["lighting"]["exposure"] for m in ms]
+    assert min(ex) >= R.DRF_EXPOSURE[0] - 1e-9 and max(ex) <= R.DRF_EXPOSURE[1] + 1e-9 and max(ex) - min(ex) > 0.4
+    n = [1 + len(m["lighting"]["fills"]) for m in ms]
+    assert set(n) == {1, 2, 3}
+    assert 0.05 < sum(any(f["tinted"] for f in m["lighting"]["fills"]) or m["lighting"]["key_tint"] is not None for m in ms) / 200 < 0.5
+    for m in ms:
+        assert R.DRF_SOFT[0] - 1e-9 <= m["lighting"]["key_radius_scale"] <= R.DRF_SOFT[1] + 1e-9
+        for f in m["lighting"]["fills"]:
+            assert 0 < f["intensity"] <= m["light"]["intensity"] + 1e-6 and len(f["pos"]) == 3 and len(f["color"]) == 3
+        assert not R.validate_meta(m)
+    assert R.sample_randomization(40000, "drf", lay) == ms[0]
+
+
+def test_exposure_frame_stats():
+    import importlib.util
+    import numpy as np
+    sp = importlib.util.spec_from_file_location("exposure", "tools/teach_l8d/exposure.py")
+    E = importlib.util.module_from_spec(sp)
+    sp.loader.exec_module(E)
+    white = np.full((10, 10, 3), 255)
+    dark = np.full((10, 10, 3), 20)
+    mid = np.full((10, 10, 3), 128)
+    assert E.frame_stats(white)["over"] and not E.frame_stats(white)["dark"]
+    assert E.frame_stats(dark)["dark"] and not E.frame_stats(mid)["over"] and not E.frame_stats(mid)["dark"]
+
+
+def test_basket_task_change14():
+    from harvest.sim import objv as OV
+    from harvest.sim import tasks as T
+    k = sorted(k for k, r in CX.load_real().items() if r["split"] == "train" and r.get("task_target_ok"))[0]
+    OV.register_for_tasks([f"ov_basket__{k}"])
+    s = T.TASKS[f"ov_basket__{k}"]
+    assert s.target == k and s.place == "o20" and "basket" in s.instruction
+
+
+def test_relational_real_tasks_change15():
+    from harvest.sim import objv as OV
+    from harvest.sim import tasks as T
+    k = sorted(k for k, r in CX.load_real().items() if r["split"] == "train" and r.get("task_target_ok"))[3]
+    OV.register_for_tasks([f"ov_left__{k}"])
+    t = f"ov_left__{k}"
+    assert T.TASKS[t].place == "o17" and T.X_REL[t] == ("o8", "o17", 0.10)
+    for seed in range(40000, 40010):
+        lay = T.x_task_layout(seed, t, ws=((0.37, 0.52), (-0.40, -0.06)))
+        assert {k, "o8", "o17"} <= set(lay) and abs(lay["o17"][1] - lay["o8"][1] - 0.10) < 1e-9
+
+
+def test_confusers_change16():
+    rows = CX.load_real()
+    tgt = next(k for k, r in sorted(rows.items()) if r["split"] == "train" and r.get("task_target_ok") and CX.confuser_ids(rows, k))
+    cids = CX.confuser_ids(rows, tgt)
+    assert all(rows[c]["colour"] == rows[tgt]["colour"] for c in cids)
+    pool = {k: rows[k] for k in cids + [tgt]}
+    lay = {tgt: (0.45, -0.20, 0.0), "o5": (0.45, -0.38, 0.0)}
+    hits = 0
+    for seed in range(40000, 40200):
+        out, ids = CX.add_confusers(dict(lay), seed, tgt, "o5", pool, {tgt: rows[tgt]["footprint_r"], "o5": 0.114}, [[0.30, 0.70], [-0.55, 0.15]])
+        hits += bool(ids)
+        import math
+        for k in ids:
+            assert rows[k]["footprint_r"] + rows[tgt]["footprint_r"] + 0.02 - 1e-9 <= math.dist(out[k][:2], lay[tgt][:2]) <= 0.08 + max(0.08, rows[k]["footprint_r"] + rows[tgt]["footprint_r"] + 0.02) + 1e-9
+    assert 0.1 <= hits / 200 <= 0.3

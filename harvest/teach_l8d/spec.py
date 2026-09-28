@@ -18,7 +18,7 @@ import numpy as np
 
 TRAIN_SEEDS = range(30000, 35000)
 TRAIN_SEEDS_2 = range(36000, 38000)  # second TRAIN block (change 10: confuser scenes 36000-; 30000-34999 is full)
-TRAIN_SEEDS_3 = range(40000, 48000)  # third TRAIN block (change 12: b4 realistic scenes; 13: 40000-46999)
+TRAIN_SEEDS_3 = range(40000, 50000)  # third TRAIN block (b4: 12-13 40000-46999, 16 simple 47000-47999, basket 48000-48999)
 GATE_SEEDS = range(35000, 35500)  # 35200-35299: L8-X new-task gates (prereg_l8x_tasks change 1); 35300-35399: b3 (change 11); 35400-35499: b4 (change 12)
 OOD_SEEDS = range(70000, 71000)
 OOD_SETS = {"ood_h": range(70000, 70100), "ood_o": range(70100, 70300), "ood_d": range(70300, 70500),

@@ -62,7 +62,7 @@ def test_register_tasks_and_eligibility(rows):
         assert S.OBJ_GEOM[k]["shape"] == "mesh" and k in S.OBJV_IDS and k in OBJ_NAME and k in OBJ_DESC
         assert T.close_width(k) == pytest.approx(max(0.0, S.OBJ_GEOM[k]["grasp_width"] - T.GRIP_SQUEEZE_M))
     tids = T.register_objv_tasks(ids, {k: OV.prompt_name(rows[k]) for k in ids})
-    assert len(tids) == 2 * len(ids) and len(set(T.X_TASK_CODE[t] for t in tids)) == len(tids)
+    assert len(tids) == len(T.OBJV_TASK_KINDS) * len(ids) and len(set(T.X_TASK_CODE[t] for t in tids)) == len(tids)
     ws = ((0.37, 0.52), (-0.40, -0.06))
     for t in tids:
         s = T.TASKS[t]

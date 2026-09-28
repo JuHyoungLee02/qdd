@@ -103,7 +103,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             from ..sim.tasks import X_FURNITURE_TASKS
             sc = FU.sample_scene(furniture, seed, reach=self._rm, mesh_assets=mesh, split=mesh_split, rooms=rooms)
             upper, vid = None, TASKS[task].place
-            if task in X_FURNITURE_TASKS:  # cross-surface: o19 = a higher surface, o20 = a container's floor
+            if task in X_FURNITURE_TASKS or vid in SC.VIRTUAL_PLACES:  # cross-surface: o19 = a higher surface, o20 = a container's floor
                 pick = fx.choose_container if vid == "o20" else fx.choose_two_surfaces
                 surf, region, upper, uregion = pick(sc)
                 if float(upper["top_z"]) < float(surf["top_z"]) + 0.02 - 0.03:  # executor box: z >= table + 2.5 cm
@@ -127,7 +127,10 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                 env.set_seed(seed, task)
             except RuntimeError as ex:  # task_layout found no layout in this box
                 raise fx.SkipScene(f"layout: {ex}") from ex
+            from ..sim.tasks import X_REL
             keep = {TASKS[task].target, TASKS[task].place} | {o for st in X_STEPS.get(task, ()) for o in st[:2]}
+            if task in X_REL:  # relational placement: keep its reference object (and its spot)
+                keep |= {X_REL[task][0], X_REL[task][1]}
             lay, dropped = fx.filter_layout(env.layout, surf, keep)
             if upper is not None:  # the place surface centre (its region, not the layout box)
                 lay[vid] = ((uregion[0][0] + uregion[0][1]) / 2, (uregion[1][0] + uregion[1][1]) / 2, 0.0)
@@ -135,9 +138,14 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                 from .clutter_x import add_clutter
                 # realistic scenes: no primitive extras (red mug / bottle / box) besides the task's own objects
                 lay = {k: v for k, v in lay.items() if k in keep or k in SC.VIRTUAL_PLACES or k in SC.OBJV_IDS}
+                from .clutter_x import add_confusers
+                fr = {k: SC.OBJ_GEOM[k]["footprint_r"] for k in lay}
+                # change 16: ~20 % of episodes get look-alikes of the target (same colour, similar size) near it
+                lay, conf = add_confusers(lay, seed, TASKS[task].target, TASKS[task].place, clutter_pool, fr,
+                                          surf["xy_box"])
                 fr = {k: SC.OBJ_GEOM[k]["footprint_r"] for k in lay}
                 lay, placed = add_clutter(lay, seed, clutter_pool, env.ws, fr, surface=surf, arrange=True)
-                self.clutter_scene = {"n": len(placed), "ids": [p["id"] for p in placed],
+                self.clutter_scene = {"n": len(placed), "ids": [p["id"] for p in placed], "confusers": conf,
                                       "arr": {a: sum(p.get("arr") == a for p in placed) for a in ("display", "stack")}}
             env.layout = lay
             SC._LAYOUT["layout"] = lay
@@ -263,7 +271,15 @@ def main(argv=None):
             from ..sim.objv import register
             from .clutter_x import load_real, pool_for
             key = f"{a.variant}|{a.table_z:.3f}|{a.lift}" + (f"|{a.furniture}" if a.furniture else "")
-            pool = pool_for(load_real(), key, n=a.clutter, n_base=12 if a.furniture else 0)
+            rows_real = load_real()
+            pool = pool_for(rows_real, key, n=a.clutter, n_base=12 if a.furniture else 0)
+            if a.furniture:  # change 16: the look-alikes of this process's real targets join the pool
+                from ..sim.tasks import TASKS as _T
+                from .clutter_x import confuser_ids
+                for e in eps:
+                    t = _T.get(e["task"])
+                    if t is not None and t.target in rows_real:
+                        pool.update({k: rows_real[k] for k in confuser_ids(rows_real, t.target)})
             register(pool)
         if a.furniture and a.variant not in ("standard", "drf"):
             raise ValueError("furniture scenes: variant standard or drf (drx: the table material / pool distractors "

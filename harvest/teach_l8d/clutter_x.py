@@ -174,3 +174,49 @@ def add_clutter(layout: dict, seed: int, pool: dict, ws, fr: dict, n_range=(5, 1
         out[p["id"]] = ((float(p["x"]), float(p["y"]), float(p["yaw"]), p["on"]) if p.get("arr") == "stack"
                         else (float(p["x"]), float(p["y"]), float(p["yaw"])))
     return out, placed
+
+
+P_CONFUSE = 0.20  # change 16 (user-log 180): ~20 % of b4 episodes get look-alike distractors next to the target
+
+
+def confuser_ids(rows: dict, target: str, n: int = 2, split: str = "train") -> list:
+    """Real objects that look like the target: same colour word, height within 3 cm, footprint within 35 %."""
+    t = rows.get(target)
+    if not t or not t.get("colour"):
+        return []
+    c = [k for k, r in rows.items() if k != target and r.get("split") == split and r.get("stable")
+         and r.get("colour") == t["colour"] and abs(r["height"] - t["height"]) <= 0.03
+         and abs(r["footprint_r"] - t["footprint_r"]) <= 0.35 * t["footprint_r"] and r["height"] <= MAX_H + 1e-9]
+    c.sort(key=lambda k: (abs(rows[k]["footprint_r"] - t["footprint_r"]), k))
+    return c[:n]
+
+
+def add_confusers(layout: dict, seed: int, target: str, place: str, pool: dict, fr: dict, box) -> tuple:
+    """With p = P_CONFUSE (seeded): 1-2 look-alikes of the target (confuser_ids, registered in the pool) 8-16 cm from
+    it, inside the surface box, clear of every layout object and of the place. -> (layout, ids)."""
+    import math
+
+    import numpy as np
+    rng = np.random.default_rng([int(seed), 97, 302])
+    if rng.random() >= P_CONFUSE or target not in layout:
+        return layout, []
+    cand = [k for k in confuser_ids(pool, target) if k in pool and k not in layout]
+    (x0, x1), (y0, y1) = box
+    out, ids = dict(layout), []
+    m = layout[target]
+    for k in cand[:int(rng.integers(1, 3))]:
+        r = pool[k]["footprint_r"]
+        d0 = max(0.08, r + fr.get(target, 0.05) + 0.02)  # the ring starts where the two footprints clear
+        for _ in range(2000):
+            a, d = float(rng.uniform(-math.pi, math.pi)), float(rng.uniform(d0, d0 + 0.08))
+            q = (m[0] + d * math.cos(a), m[1] + d * math.sin(a))
+            if not (x0 + r <= q[0] <= x1 - r and y0 + r <= q[1] <= y1 - r):
+                continue
+            if place in out and math.dist(q, out[place][:2]) < r + fr.get(place, 0.1) + 0.04:
+                continue
+            if all(math.dist(q, v[:2]) >= r + fr.get(j, pool.get(j, {}).get("footprint_r", 0.05)) + 0.02
+                   for j, v in out.items() if j != place):
+                out[k] = (q[0], q[1], float(rng.uniform(-math.pi, math.pi)))
+                ids.append(k)
+                break
+    return out, ids

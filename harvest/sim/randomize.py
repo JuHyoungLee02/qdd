@@ -40,6 +40,44 @@ LIGHT_GAIN = {"drf": 0.45}  # b4 gate: iTHOR rooms + the lab dome / key levels o
 
 def _gain(variant: str) -> float:
     return LIGHT_GAIN.get(variant, 1.0)
+
+
+# drf lighting range (prereg_l8d change 14, user-log 178): its own RNG stream (axis "lighting"), so the HDR / key
+# light draws above are unchanged; exposure scales the dome and every light (dark .. bright, no overexposure: the
+# upper end is the change-12 level that the gate frames showed as already bright)
+DRF_EXPOSURE = (0.35, 1.05)
+DRF_FILLS = (0, 2)  # extra fill lights -> 1-3 lights
+DRF_SOFT = (0.3, 3.0)  # key light size scale: hard (sharp shadows) .. soft
+DRF_TINT_P = 0.12  # chance of a coloured tint per light
+FILL_N = 2
+
+
+def _tint(rng) -> list:
+    h = float(rng.uniform(0.0, 2 * math.pi))
+    s = float(rng.uniform(0.10, 0.30))  # mild saturation
+    return [_r(1.0 - s * (0.5 + 0.5 * math.cos(h + k * 2.094)), 3) for k in range(3)]
+
+
+def _drf_lighting(seed: int, variant: str, meta: dict, c: dict, tgt) -> dict:
+    rng = np.random.default_rng([int(seed), _VCODE[variant], 6])
+    e = float(rng.uniform(*DRF_EXPOSURE))
+    meta["hdr"]["intensity"] = _r(meta["hdr"]["intensity"] * e, 2)
+    meta["light"]["intensity"] = _r(meta["light"]["intensity"] * e, 2)
+    key_tint = _tint(rng) if rng.random() < DRF_TINT_P else None
+    fills = []
+    for _ in range(int(rng.integers(DRF_FILLS[0], DRF_FILLS[1] + 1))):
+        az, el = float(rng.uniform(-180.0, 180.0)), float(rng.uniform(15.0, 80.0))
+        dist = float(rng.uniform(*c["light_distance_m"]))
+        ca, sa, ce, se = (math.cos(math.radians(az)), math.sin(math.radians(az)), math.cos(math.radians(el)),
+                          math.sin(math.radians(el)))
+        pos = np.asarray(tgt, float) + dist * np.array([ce * ca, ce * sa, se])
+        tinted = bool(rng.random() < DRF_TINT_P)
+        fills.append({"pos": [_r(v) for v in pos], "azimuth_deg": _r(az, 3), "elevation_deg": _r(el, 3),
+                      "intensity": _r(meta["light"]["intensity"] * float(rng.uniform(0.15, 0.6)), 2),
+                      "radius": _r(float(rng.uniform(0.05, 0.4))), "tinted": tinted,
+                      "color": _tint(rng) if tinted else [1.0, 1.0, 1.0]})
+    return {"exposure": _r(e), "key_tint": key_tint, "key_radius_scale": _r(float(rng.uniform(*DRF_SOFT))),
+            "fills": fills}
 _POOLS_CACHE: dict = {}
 
 
@@ -234,6 +272,7 @@ def sample_randomization(seed: int, variant: str, layout: dict | None = None, po
 
     if variant in LOOK_ONLY_VARIANTS:
         meta["distractors"] = []
+        meta["lighting"] = _drf_lighting(seed, variant, meta, c, tgt)
         return meta
     rng = _rng(seed, variant, "distractors")
     dists = pool["distractors"]
@@ -534,6 +573,11 @@ def setup_visuals(env) -> dict:
         UsdLux.LightAPI(lt).CreateIntensityAttr(0.0)  # off = intensity 0 (visibility toggles are not rendered
         # reliably: a light made invisible and visible again stopped lighting on the pod, dbg 2026-09-24 UTC)
         _set_pose(lt.GetPrim(), (0.0, 0.0, 3.0), (1.0, 0.0, 0.0, 0.0))
+    for i in range(FILL_N):  # drf fill lights (change 14): off unless the episode's lighting names them
+        lt = UsdLux.SphereLight.Define(stage, f"{ROOT}/Fill_{i}")
+        lt.CreateRadiusAttr(0.1)
+        UsdLux.LightAPI(lt).CreateIntensityAttr(0.0)
+        _set_pose(lt.GetPrim(), (0.0, 0.0, 3.0), (1.0, 0.0, 0.0, 0.0))
     return {"root": ROOT}
 
 
@@ -571,6 +615,28 @@ def apply_visuals(env, meta: dict) -> None:
         api.CreateEnableColorTemperatureAttr().Set(True)
         api.CreateColorTemperatureAttr().Set(float(L["color_temperature_k"]))
         _set_pose(prim, L["pos"], L["quat_wxyz"])
+        lg = meta.get("lighting")
+        if lg is not None:  # drf (change 14): key tint + size (shadow softness)
+            api.CreateColorAttr().Set(Gf.Vec3f(*(lg["key_tint"] or (1.0, 1.0, 1.0))))
+            sc = float(lg["key_radius_scale"])
+            for a_name, v in L["shape"].items():
+                attr = prim.GetAttribute("inputs:" + a_name) or prim.GetAttribute(a_name)
+                if attr and attr.IsValid() and isinstance(v, (int, float)):
+                    attr.Set(float(v) * sc)
+    lg = meta.get("lighting")
+    for i in range(FILL_N):
+        prim = stage.GetPrimAtPath(f"{ROOT}/Fill_{i}")
+        if not prim.IsValid():
+            continue
+        api = UsdLux.LightAPI(prim)
+        f = lg["fills"][i] if lg is not None and i < len(lg["fills"]) else None
+        if f is None:
+            api.GetIntensityAttr().Set(0.0)
+            continue
+        api.GetIntensityAttr().Set(float(f["intensity"]))
+        api.CreateColorAttr().Set(Gf.Vec3f(*f["color"]))
+        UsdLux.SphereLight(prim).GetRadiusAttr().Set(float(f["radius"]))
+        _set_pose(prim, f["pos"], (1.0, 0.0, 0.0, 0.0))
 
 
 def write_distractor_poses(env, env_ids, meta) -> None:
