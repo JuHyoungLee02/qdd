@@ -221,5 +221,17 @@
   \item \textbf{해 봄:} 사전 등록 b602b1a(+ 변경, 판정은 2 에폭 기준): Qwen3.5-35B-A3B LoRA, L8-X b2 + 같은 공개 점 팩(물체 지시·T1+T4 각 12.5 \%), D 104,993행·H 115,902행, 전역 배치 24. 판정 = clean 세트 하나라도 H가 D에 비열등(여유 2 mm)이 아니면 D. 폐루프는 boost1 규칙 켬, L8-X 8편.
   \item \textbf{결과:} 4f68c06(\texttt{results/\allowbreak{}final35.\allowbreak{}md}): 접근 3D 중앙 D 대 H --- dev\_x 4.4 / 4.3, OOD-H 4.0 / 3.9, HL 4.2 / 3.7, OOD-D 3.6 / 3.5, OOD-T 3.8 / 3.7(같음), OOD-O(새 물체) 4.0 / 83.7 mm(H 비열등 아님, 구간 [$-$4.8, 17.7]). 깊이 뺀 H는 OOD-H·D·T에서 D보다 BETTER. 폐루프 D 6/8(OOD-H 4/4·OOD-O 2/4) 대 H 4/8(OOD-O 0/4). 8B는 OOD-O 64.6--96.9 mm, 폐루프 4/8.
   \item \textbf{그래서(결정):} 판정 D\_ADOPT(등록 규칙). 35B D가 8B에서 못 풀던 새 물체를 4.0 mm로 풀었다. 논문 5절에 결과표(표 최종 35B)와 D 채택, 초록에 한 문단.
-  \item \textbf{진행 중·대기:} \tentative{확인할 것: 공개 점 팩을 뺀 D-nopub 1 에폭 OOD-O 85.6 mm $\rightarrow$ 개선이 공개 물체 지시 팩 덕인지 2 에폭 결과로; H의 OOD-O 1 에폭 7.1 $\rightarrow$ 2 에폭 83.7 mm 급변(과적합 추정) 재확인; H+C$'$ 2 에폭 진행 중.}
+  \item \textbf{참고:} 확인 결과는 B23 --- D-nopub 2 에폭으로 공개 점 효과 확인, H 급변은 두 봉우리 분포, H·H+C$'$는 중단(기록).
+\end{itemize}
+
+\paragraph{B23. 최종 방식 D 확정 --- 새 물체를 살린 것은 공개 점 팩}
+{\small 09-28 13:xx -- 14:5x KST}
+\begin{itemize}
+  \item \textbf{해 봄:} H 2 에폭 OOD-O 급변(7.1 $\rightarrow$ 83.7 mm) 분해(CPU): 스냅숏별 오차 분포와 답 종류를 1 에폭·2 에폭·D로 비교.
+  \item \textbf{결과:} 4c4b2cd: 세 판 모두 오차가 두 봉우리(> 20 mm 비율 D 40 \%·H 1 에폭 48 \%·H 2 에폭 56 \%)라 중앙값이 뒤집힌 것. 1 $\rightarrow$ 2 에폭에 늘어난 오류는 내려가야 할 때 `above'로 답함(+11)과 다른 물체 가리킴(+8). 판정 D\_ADOPT는 그대로.
+  \item \textbf{사용자} (ul 159, 14:0x KST): \intent{그냥 D로 하는게 맞을 것 같아 D로 한다했을때 지금 앞으로 해야하는 남은거 뭐가 남아있어? 지금은 소규모로만 한거지?}
+  \item \textbf{그래서(결정):} 정본 §98 보충 3: 상위 방식은 D(점 + 센서 깊이 $\rightarrow$ 코드가 xyz)로 확정. H·H+C$'$는 기록으로 남기고 더 돌리지 않음. C$'$(xyz 명령)는 D에서 쓸 수 없으므로 공개 데이터는 점 라벨로만 늘림.
+  \item \textbf{결과:} 1c23733(\texttt{results/\allowbreak{}final35.\allowbreak{}md} D 대 D-nopub, 2 에폭): OOD-O D 4.0 대 D-nopub 85.3 mm, 짝 차 [$-$25.6, $-$8.0] BETTER(잡음 판 9.0 대 83.4도 BETTER); 폐루프 D 6/8 대 2/8. dev\_x·OOD-H는 중앙 같고 꼬리만 D가 조금 나쁨(평균 차 WORSE), HL·D·S·T SAME.
+  \item \textbf{사용자} (ul 162, 14:5x KST): \intent{사용동의 저 공개점 효과있었다 이것도 기록 논문에 적어둬}
+  \item \textbf{그래서(결정):} 공개 점 팩(물체 지시·T1+T4 픽셀)이 35B에서 새 물체 식별을 살린다 --- 본 논문 5절 결과표에 D-nopub 줄과 문단으로 확정 기록. 게이트 데이터 사용 동의는 E20.
 \end{itemize}

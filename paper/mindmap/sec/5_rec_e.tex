@@ -174,3 +174,16 @@
   \item \textbf{사실 확인:} 자원: 09-27부터 e9f3·fe08 노드 파드를 더해 병렬 레인(E-H2H-T2, boost1b, L8-D 분할)을 늘림. fe08 GPU3 Isaac 기동 DEVICE\_LOST라 GPU4·5 사용(41ada79).
   \item \textbf{진행 중·대기:} \tentative{D 대 H 최종 35B 학습 전 --- 팩 효과는 E-DIST8 C 수준·최종 학습에서.}
 \end{itemize}
+
+\paragraph{E20. L8-X 3차 --- 실제 생활 물체·어지러운 장면·옮기기 외 과제, 게이트 데이터 동의}
+{\small 09-28 14:1x -- 14:5x KST}
+\begin{itemize}
+  \item \textbf{사용자} (ul 160, 14:1x KST): \intent{근데 나는 이 L8X자체가 저런 기본 도형도 뭐 좋긴한데 실제 저런 컵이나 신발 이나 이런걸 잡는것들도 계속 해봤으면 좋겠어. 그리고 제대로 했는지 판단 이런건 지금 계속 하고 있는거 잖아 그치? L8X가 더 다양한 물첼르 잡고 장애물도 많고 옮기는 테스ㅡ 말고 다른 테스크도 많았으면 좋겠고 하는게 내 마음이야}
+  \item \textbf{해 봄:} 8c59ff6(L8X-assets): Google Scanned Objects 1,033(모두 CC BY 4.0) + MolmoSpaces THOR 소품에서 크기 관문(높이 $\leq$ 10.5 cm, 잡기 폭 1.6--9 cm, 길이 $\leq$ 30 cm) 통과 237, Isaac 정착 안정 229(서거나 누움), 과제 대상 224. OOD는 명사 해시(학습 200 / OOD-O 29). GSO OBJ $\rightarrow$ USD(볼록 껍질 충돌체 + 스캔 질감), 어지러운 장면 샘플러.
+  \item \textbf{결과:} 이름 검사를 판정 단계에 추가(objects\_real.name\_check): 과제 문장의 명사와 모양(손잡이·둥근·상자·구), 질감의 색, 명사 부피 3분위로 small / large를 대조; 이름 없는 물체는 방해물로만. 과제 문장과 실제 모양이 어긋나는 문제(`small cup'이 원통으로 보임)를 막는다.
+  \item \textbf{사용자} (ul 161, 14:3x KST): \intent{승인}
+  \item \textbf{그래서(결정):} 새 과제 설계(\texttt{research/\allowbreak{}l8x\_\allowbreak{}new\_\allowbreak{}tasks\_\allowbreak{}design}: 쌓기 $\rightarrow$ 밀기 $\rightarrow$ 관절 자산 시험 $\rightarrow$ 서랍 열기) 구현과, 실물 229·어지러운 장면·새 과제를 담은 L8-X 3차 묶음(b3) 생성 시작. 새 과제는 명령 어휘 확장이 필요해 학습 반영 시점은 한계 지도와 함께 정함.
+  \item \textbf{사용자} (ul 162, 14:5x KST): \intent{사용동의 저 공개점 효과있었다 이것도 기록 논문에 적어둬}
+  \item \textbf{그래서(결정):} 게이트 공개 데이터(AgiBot World, RH20T 등) 사용 동의. 약관 수락은 사용자 계정으로, 비상업 조건은 연구 한정·Astra 전송 금지 유지. 공개 점 효과 기록은 B23.
+  \item \textbf{진행 중·대기:} \tentative{b3 생성과 새 과제 구현 진행 중.}
+\end{itemize}
