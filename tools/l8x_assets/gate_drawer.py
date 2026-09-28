@@ -124,9 +124,16 @@ def main(argv=None):
                 res[str(seed)] = r
                 print("DR " + json.dumps(r), flush=True)
                 continue
+            hi_ = bn.index(handle)
             if placed != handle:  # move the piece: handle centre at (HANDLE_X, HANDLE_Y), bottom on the floor
+                if placed is not None:  # USD poses are only consistent with physics before the first move
+                    raise RuntimeError("one handle per process (the USD bbox goes stale after a root move)")
                 lo, hi = world_bbox(handle)
                 hc = (lo + hi) / 2
+                # the handle bar centre in the handle body's frame (physics pose and USD agree before any move)
+                bq = art.data.body_quat_w[0, hi_].cpu().numpy()
+                from harvest.sim.objv import qinv, qrot
+                hoff_local = qrot(qinv(tuple(bq)), hc - art.data.body_pos_w[0, hi_].cpu().numpy())
                 plo, _ = world_bbox()
                 dpos = np.array([HANDLE_X - hc[0], HANDLE_Y - hc[1], -plo[2]])
                 p0 = art.data.default_root_state[0, :3].cpu().numpy()
@@ -140,9 +147,6 @@ def main(argv=None):
                 env.robot.data.default_joint_pos[0, li] = lift
                 placed = handle
             env.reset(settle_s=0.5)
-            hi_ = bn.index(handle)
-            lo, hi = world_bbox(handle)
-            hoff = (lo + hi) / 2 - art.data.body_pos_w[0, hi_].cpu().numpy()
             ji = jn.index(jname)
             from harvest.sim.planner import MAX_DQ_RAD, W_MAX, OraclePlanner, _slerp_step
             pl = OraclePlanner(env)
@@ -153,7 +157,8 @@ def main(argv=None):
 
             def status():
                 return {"tcp": np.asarray(pl.tcp_pose()[0], float), "grip_w": float(env.gripper_width()),
-                        "handle": art.data.body_pos_w[0, hi_].cpu().numpy() + hoff,
+                        "handle": art.data.body_pos_w[0, hi_].cpu().numpy()
+                        + qrot(tuple(art.data.body_quat_w[0, hi_].cpu().numpy()), hoff_local),
                         "joint": float(art.data.joint_pos[0, ji])}
 
             def tick(p):
@@ -164,6 +169,7 @@ def main(argv=None):
 
             info = {"pull_dir": [-1.0, 0.0, 0.0], "open_target": XD.OPEN_TARGET}
             steps = []
+            h_start = status()["handle"]
             for call in range(MAX_CALLS):
                 st = status()
                 step, cmd = XD.plan_drawer(st, info, float(SC.GRIP_MAX_W))
@@ -193,6 +199,7 @@ def main(argv=None):
             move = float(np.linalg.norm(art.data.root_pos_w[0].cpu().numpy() - root0))
             ok = XD.success_drawer(st["joint"], st["grip_w"], float(SC.GRIP_MAX_W), move)
             r.update(success=bool(ok), joint_end=round(st["joint"], 4), grip_end=round(st["grip_w"], 4),
+                     handle_start=[round(float(v), 3) for v in h_start], tcp_end=[round(float(v), 3) for v in st["tcp"]],
                      root_move_m=round(move, 4), n_calls=len(steps), steps=steps,
                      lift=round(float(env.robot.data.joint_pos[0, env.robot.joint_names.index("lift_joint")]), 4))
             res[str(seed)] = r
