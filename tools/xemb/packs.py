@@ -20,6 +20,8 @@ import sys
 
 import numpy as np
 
+from . import gsplit as GS
+
 _SIZE = re.compile(r"(\d+)x(\d+) px")
 N1000 = ("\nAnswer in 0-1000 normalised image coordinates (x to the right, y down). If it is not visible, answer "
          "{\"visible\": false}.\nReturn JSON only.")
@@ -64,6 +66,8 @@ def _rows(path, kinds=None):
         if kinds and (r.get("qa_kind") or r["kind"]) not in kinds:
             continue
         r["images"] = [p if os.path.isabs(p) else os.path.join(base, p) for p in r.get("images", [])]
+        if GS.in_g(r):  # user-log 166: the G evaluation split never enters a training pack
+            continue
         if all(os.path.exists(p) for p in r["images"]):
             out.append(r)
     return out

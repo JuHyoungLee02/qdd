@@ -14,6 +14,7 @@ import os
 import re
 import sys
 
+from . import gsplit as GS
 from . import pointlab as PL
 
 _WH = re.compile(r"(\d+)x(\d+) px")
@@ -99,12 +100,14 @@ def build(X, src):
 
 def main(X, out, srcs):
     for s in srcs:
-        rows = build(X, s)
+        rows, g_rows = GS.split(build(X, s))  # user-log 166: G rows go to their own file, never to training
         d = os.path.join(out, s)
         os.makedirs(d, exist_ok=True)
         with open(os.path.join(d, "records.jsonl"), "w") as f:
             f.writelines(json.dumps(r) + "\n" for r in rows)
-        rep = {"rows": len(rows), "by_kind": {}, "names": {}}
+        with open(os.path.join(d, "records_G.jsonl"), "w") as f:
+            f.writelines(json.dumps(r) + "\n" for r in g_rows)
+        rep = {"rows": len(rows), "g_rows": len(g_rows), "by_kind": {}, "names": {}}
         for r in rows:
             rep["by_kind"][r["qa_kind"]] = rep["by_kind"].get(r["qa_kind"], 0) + 1
             if r.get("name"):
