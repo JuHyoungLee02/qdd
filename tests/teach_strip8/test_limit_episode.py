@@ -31,6 +31,16 @@ def test_parse_and_resolver_v2_episode():
     assert any((c.get("resolved") or {}).get("method", "").startswith("v2") for c in r["calls"])
 
 
+def test_v2g_uses_v2_only_before_the_grasp():
+    from harvest.teach_strip8.run_limits import parse
+    assert parse("none:v2g") == (None, False, "v2g")
+    r = run(resolver="v2g")
+    m = [((c.get("resolved") or {}).get("method"), (c.get("resolved") or {}).get("holding")) for c in r["calls"]
+         if (c.get("resolved") or {}).get("kind") == "object"]
+    assert any(meth and meth.startswith("v2") and not h for meth, h in m)
+    assert all(not (meth or "").startswith("v2") for meth, h in m if h)
+
+
 def test_hole_rescue_logged():
     on = run(corrupt=("hole", 0.6), rescue=True)
     assert on["limits"]["rescues"], "the rescue path must be used with 60 % holes"

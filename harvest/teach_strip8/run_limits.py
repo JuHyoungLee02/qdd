@@ -12,14 +12,14 @@ import time
 
 
 def parse(cond: str):
-    """-> (corrupt | None, rescue, resolver). Extras after the level: 'r' = rescue, 'v2' = resolver v2."""
+    """-> (corrupt | None, rescue, resolver). Extras: r = rescue, v2 / v2g = resolver (v2g = v2 before the grasp, v1 while holding)."""
     p = cond.split(":")
     if p[0] == "none":
         ex = p[1:]
-        return None, "r" in ex, "v2" if "v2" in ex else "v1"
+        return None, "r" in ex, next((x for x in ("v2g", "v2") if x in ex), "v1")
     lv = p[1] if p[0] == "light" else float(p[1])
     ex = p[2:]
-    return (p[0], lv), "r" in ex, "v2" if "v2" in ex else "v1"
+    return (p[0], lv), "r" in ex, next((x for x in ("v2g", "v2") if x in ex), "v1")
 
 
 def main(argv=None):

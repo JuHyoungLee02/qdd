@@ -414,7 +414,7 @@ class LimitEpisode(PerturbEpisode):
         super().__init__(*a, **kw)
         if corrupt is not None and corrupt[0] not in CORRUPTS:
             raise ValueError(corrupt)
-        if resolver not in ("v1", "v2"):
+        if resolver not in ("v1", "v2", "v2g"):
             raise ValueError(resolver)
         self.corrupt, self.rescue, self.resolver = corrupt, rescue, resolver
         self.corrupt_log, self.rescue_log = [], []
@@ -455,6 +455,10 @@ class LimitEpisode(PerturbEpisode):
             self.w.observe = observe
         if self.resolver == "v2":  # every resolver call of this episode (live, memory, rescue) uses v2
             RS.resolve_point = LM.resolve_point_v2
+        elif self.resolver == "v2g":  # v2 before the grasp (grasp points), v1 while holding (place targets)
+            def _v2g(*a, **kw):
+                return (rp0 if self.holding(self.w.status()) else LM.resolve_point_v2)(*a, **kw)
+            RS.resolve_point = _v2g
         try:
             return super().run()
         finally:
