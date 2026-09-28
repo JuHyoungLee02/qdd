@@ -66,7 +66,8 @@
     "dz_mm": -20.1,
     "drift_mm": 4.6,
     "tilt_deg": 27.3
-   }
+   },
+   "stable": false
   },
   "objv_008228835cd6": {
    "uid": "008228835cd6473a870fb342de14d17f",
@@ -132,7 +133,8 @@
     "dz_mm": -21.9,
     "drift_mm": 43.9,
     "tilt_deg": 90.0
-   }
+   },
+   "stable": false
   },
   "objv_0098150095bb": {
    "uid": "0098150095bb4b0f80a7dce8764ed392",
@@ -198,7 +200,8 @@
     "dz_mm": -2.0,
     "drift_mm": 27.1,
     "tilt_deg": 37.3
-   }
+   },
+   "stable": false
   },
   "objv_00bb01fb715a": {
    "uid": "00bb01fb715a444aac4acd5d1a60be79",
@@ -264,7 +267,8 @@
     "dz_mm": -6.4,
     "drift_mm": 12.4,
     "tilt_deg": 30.5
-   }
+   },
+   "stable": false
   },
   "objv_0100598f46bd": {
    "uid": "0100598f46bd410dbf4fa739332cf5ab",
@@ -330,7 +334,8 @@
     "dz_mm": -0.0,
     "drift_mm": 0.9,
     "tilt_deg": 1.2
-   }
+   },
+   "stable": true
   },
   "objv_0152582550bb": {
    "uid": "0152582550bb4fa4a42a07ffb815d841",
@@ -396,7 +401,8 @@
     "dz_mm": -0.4,
     "drift_mm": 1.8,
     "tilt_deg": 2.4
-   }
+   },
+   "stable": true
   },
   "objv_0154510fa66a": {
    "uid": "0154510fa66a4d30b944009c772efea2",
@@ -462,7 +468,8 @@
     "dz_mm": -19.7,
     "drift_mm": 10.0,
     "tilt_deg": 31.7
-   }
+   },
+   "stable": false
   },
   "objv_0176be079c24": {
    "uid": "0176be079c2449e7aaebfb652910a854",
@@ -528,7 +535,8 @@
     "dz_mm": -1.9,
     "drift_mm": 8.6,
     "tilt_deg": 12.8
-   }
+   },
+   "stable": false
   },
   "objv_0183c187acf8": {
    "uid": "0183c187acf8471ca43722acbffb5029",
@@ -594,7 +602,8 @@
     "dz_mm": -7.0,
     "drift_mm": 12.4,
     "tilt_deg": 33.3
-   }
+   },
+   "stable": false
   },
   "objv_01929eb3cf7f": {
    "uid": "01929eb3cf7f467ab1a02f2c78a145c3",
@@ -660,7 +669,8 @@
     "dz_mm": -3.2,
     "drift_mm": 20.4,
     "tilt_deg": 50.2
-   }
+   },
+   "stable": false
   },
   "objv_01994d08f483": {
    "uid": "01994d08f4834acd9734f1a4281570d8",
@@ -726,7 +736,8 @@
     "dz_mm": -1.4,
     "drift_mm": 5.7,
     "tilt_deg": 7.8
-   }
+   },
+   "stable": true
   },
   "objv_01c0ca3437d7": {
    "uid": "01c0ca3437d7442caf63cc6cd1e4fee0",
@@ -792,7 +803,8 @@
     "dz_mm": -25.5,
     "drift_mm": 50.8,
     "tilt_deg": 64.3
-   }
+   },
+   "stable": false
   },
   "objv_01cf51582696": {
    "uid": "01cf51582696428d8de8f22ce51d8028",
@@ -858,7 +870,8 @@
     "dz_mm": -0.5,
     "drift_mm": 4.4,
     "tilt_deg": 9.4
-   }
+   },
+   "stable": true
   },
   "objv_01e091402997": {
    "uid": "01e09140299743c7a7a478522e41db5a",
@@ -924,7 +937,8 @@
     "dz_mm": 0.4,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_01e9b3bcc925": {
    "uid": "01e9b3bcc92545f1a2fd713c11cbc4c9",
@@ -990,7 +1004,8 @@
     "dz_mm": -17.9,
     "drift_mm": 105.3,
     "tilt_deg": 122.3
-   }
+   },
+   "stable": false
   },
   "objv_0231b3f6d916": {
    "uid": "0231b3f6d9164c38b072d691bc1ea95b",
@@ -1056,7 +1071,8 @@
     "dz_mm": -3.7,
     "drift_mm": 37.4,
     "tilt_deg": 54.9
-   }
+   },
+   "stable": false
   },
   "objv_0238adfcca3e": {
    "uid": "0238adfcca3e4727b9c36eba3a9eb7cb",
@@ -1122,7 +1138,8 @@
     "dz_mm": -17.5,
     "drift_mm": 34.6,
     "tilt_deg": 107.9
-   }
+   },
+   "stable": false
   },
   "objv_0289474b7e6c": {
    "uid": "0289474b7e6c4f0882275bc1ccde6b5c",
@@ -1188,7 +1205,8 @@
     "dz_mm": -4.9,
     "drift_mm": 52.6,
     "tilt_deg": 83.6
-   }
+   },
+   "stable": false
   },
   "objv_0293a20f632a": {
    "uid": "0293a20f632a44ca9554eed7e4228031",
@@ -1254,7 +1272,8 @@
     "dz_mm": 0.7,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_02a86f92fd82": {
    "uid": "02a86f92fd824f5fa9da13ff1075c17f",
@@ -1320,7 +1339,8 @@
     "dz_mm": -6.0,
     "drift_mm": 10.6,
     "tilt_deg": 16.5
-   }
+   },
+   "stable": false
   },
   "objv_02be3f8c371d": {
    "uid": "02be3f8c371d48f39104d0dd4db36442",
@@ -1386,7 +1406,8 @@
     "dz_mm": -19.1,
     "drift_mm": 18.0,
     "tilt_deg": 76.5
-   }
+   },
+   "stable": false
   },
   "objv_02f82d698719": {
    "uid": "02f82d69871941859c7cd594bb3fc0b4",
@@ -1452,7 +1473,8 @@
     "dz_mm": 0.2,
     "drift_mm": 1.0,
     "tilt_deg": 2.8
-   }
+   },
+   "stable": true
   },
   "objv_02fa22079559": {
    "uid": "02fa220795594ecb85284ec1dfc41a4c",
@@ -1518,7 +1540,8 @@
     "dz_mm": -16.7,
     "drift_mm": 111.4,
     "tilt_deg": 111.1
-   }
+   },
+   "stable": false
   },
   "objv_03355bebc7cd": {
    "uid": "03355bebc7cd47c8980e88c155b38426",
@@ -1584,7 +1607,8 @@
     "dz_mm": -11.5,
     "drift_mm": 10.1,
     "tilt_deg": 26.0
-   }
+   },
+   "stable": false
   },
   "objv_03a56feb31ed": {
    "uid": "03a56feb31ed48439a93f4ad7490a77a",
@@ -1650,7 +1674,8 @@
     "dz_mm": -2.4,
     "drift_mm": 6.2,
     "tilt_deg": 15.6
-   }
+   },
+   "stable": false
   },
   "objv_03c6cfba0c13": {
    "uid": "03c6cfba0c13448faef5a7149bf7be86",
@@ -1716,7 +1741,8 @@
     "dz_mm": -0.1,
     "drift_mm": 0.1,
     "tilt_deg": 0.1
-   }
+   },
+   "stable": true
   },
   "objv_03cf05c8693b": {
    "uid": "03cf05c8693b4cb181ac2d32d5e33d11",
@@ -1782,7 +1808,8 @@
     "dz_mm": -13.3,
     "drift_mm": 8.5,
     "tilt_deg": 24.2
-   }
+   },
+   "stable": false
   },
   "objv_04068d3f9026": {
    "uid": "04068d3f90264d809594a569753d92e0",
@@ -1848,7 +1875,8 @@
     "dz_mm": -0.4,
     "drift_mm": 5.8,
     "tilt_deg": 13.3
-   }
+   },
+   "stable": false
   },
   "objv_040ab0458dd5": {
    "uid": "040ab0458dd54b1bb0fecb37a5a662e4",
@@ -1914,7 +1942,8 @@
     "dz_mm": 0.6,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_045138f1d8bf": {
    "uid": "045138f1d8bf4efd904b518796f87abb",
@@ -1980,7 +2009,8 @@
     "dz_mm": -13.3,
     "drift_mm": 12.0,
     "tilt_deg": 39.7
-   }
+   },
+   "stable": false
   },
   "objv_049df1e62c06": {
    "uid": "049df1e62c064b31ba6df5a0b8c6a562",
@@ -2046,7 +2076,8 @@
     "dz_mm": 0.3,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_04a8b22011c8": {
    "uid": "04a8b22011c8466dada8deca1fd56ae3",
@@ -2112,7 +2143,8 @@
     "dz_mm": -31.7,
     "drift_mm": 48.0,
     "tilt_deg": 89.4
-   }
+   },
+   "stable": false
   },
   "objv_04e3f80a4f1c": {
    "uid": "04e3f80a4f1c4c888060fa5c5a53a188",
@@ -2178,7 +2210,8 @@
     "dz_mm": -1.7,
     "drift_mm": 3.4,
     "tilt_deg": 8.4
-   }
+   },
+   "stable": true
   },
   "objv_0503854981b4": {
    "uid": "0503854981b44725b6dc998fbe2859b3",
@@ -2244,7 +2277,8 @@
     "dz_mm": 0.4,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_056e01405bac": {
    "uid": "056e01405bac46b181ddb7df0b25cda1",
@@ -2310,7 +2344,8 @@
     "dz_mm": 0.1,
     "drift_mm": 2.3,
     "tilt_deg": 5.4
-   }
+   },
+   "stable": true
   },
   "objv_057b9f1ddbf3": {
    "uid": "057b9f1ddbf34ab198ddbf7f033c6bab",
@@ -2376,7 +2411,8 @@
     "dz_mm": 0.6,
     "drift_mm": 0.5,
     "tilt_deg": 1.0
-   }
+   },
+   "stable": true
   },
   "objv_05926054dd8e": {
    "uid": "05926054dd8e4b1ca5eea8c1e7b63c6c",
@@ -2442,7 +2478,8 @@
     "dz_mm": -16.1,
     "drift_mm": 22.4,
     "tilt_deg": 72.0
-   }
+   },
+   "stable": false
   },
   "objv_05d96b692c5a": {
    "uid": "05d96b692c5a412c996236496a08517c",
@@ -2508,7 +2545,8 @@
     "dz_mm": 0.2,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_05ff58cabc05": {
    "uid": "05ff58cabc054c45a7df8442d59d0e13",
@@ -2574,7 +2612,8 @@
     "dz_mm": -3.4,
     "drift_mm": 18.9,
     "tilt_deg": 27.4
-   }
+   },
+   "stable": false
   },
   "objv_06d315f97f67": {
    "uid": "06d315f97f674d2db3b5acd1d19ec2d1",
@@ -2640,7 +2679,8 @@
     "dz_mm": -3.2,
     "drift_mm": 12.7,
     "tilt_deg": 30.3
-   }
+   },
+   "stable": false
   },
   "objv_0701a4213dad": {
    "uid": "0701a4213dad42c1a3c2947a0cf92abf",
@@ -2706,7 +2746,8 @@
     "dz_mm": -1.2,
     "drift_mm": 6.4,
     "tilt_deg": 9.2
-   }
+   },
+   "stable": true
   },
   "objv_0702225ca7e4": {
    "uid": "0702225ca7e449c9ba85f3a142c65bee",
@@ -2772,7 +2813,8 @@
     "dz_mm": 0.4,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_071ec02b9bb4": {
    "uid": "071ec02b9bb44125b7a0ffe9db9f23c3",
@@ -2838,7 +2880,8 @@
     "dz_mm": -14.1,
     "drift_mm": 5.8,
     "tilt_deg": 21.9
-   }
+   },
+   "stable": false
   },
   "objv_078a33c56b6e": {
    "uid": "078a33c56b6e480fab14b494eb347980",
@@ -2904,7 +2947,8 @@
     "dz_mm": -11.1,
     "drift_mm": 21.2,
     "tilt_deg": 45.0
-   }
+   },
+   "stable": false
   },
   "objv_07c07356429a": {
    "uid": "07c07356429a4e788e7e7e9391368d36",
@@ -2970,7 +3014,8 @@
     "dz_mm": 0.3,
     "drift_mm": 0.6,
     "tilt_deg": 1.5
-   }
+   },
+   "stable": true
   },
   "objv_080e950f184b": {
    "uid": "080e950f184b4bf1a6b0e21c873eec69",
@@ -3036,7 +3081,8 @@
     "dz_mm": -15.6,
     "drift_mm": 8.3,
     "tilt_deg": 29.6
-   }
+   },
+   "stable": false
   },
   "objv_081ab230ad9c": {
    "uid": "081ab230ad9c406a956150c779de59a6",
@@ -3102,7 +3148,8 @@
     "dz_mm": -0.8,
     "drift_mm": 8.2,
     "tilt_deg": 22.5
-   }
+   },
+   "stable": false
   },
   "objv_0834e19f99f5": {
    "uid": "0834e19f99f54b87ac2f92119e30f828",
@@ -3168,7 +3215,8 @@
     "dz_mm": 0.3,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_087f3cacc617": {
    "uid": "087f3cacc61747efaab6df962ef9549e",
@@ -3234,7 +3282,8 @@
     "dz_mm": -5.1,
     "drift_mm": 27.3,
     "tilt_deg": 72.1
-   }
+   },
+   "stable": false
   },
   "objv_08bb78e6d734": {
    "uid": "08bb78e6d7344a5cbf339123bd138966",
@@ -3300,7 +3349,8 @@
     "dz_mm": -1.0,
     "drift_mm": 1.7,
     "tilt_deg": 3.8
-   }
+   },
+   "stable": true
   },
   "objv_08bcfcb1b6b7": {
    "uid": "08bcfcb1b6b7498eb8185d2e00f0d4c5",
@@ -3366,7 +3416,8 @@
     "dz_mm": -0.0,
     "drift_mm": 1.1,
     "tilt_deg": 0.9
-   }
+   },
+   "stable": true
   },
   "objv_09095656ad62": {
    "uid": "09095656ad6243c08d4efdf20e43de8d",
@@ -3432,7 +3483,8 @@
     "dz_mm": -14.8,
     "drift_mm": 35.1,
     "tilt_deg": 95.2
-   }
+   },
+   "stable": false
   },
   "objv_091266c9940c": {
    "uid": "091266c9940c4027a844d253503f2fcc",
@@ -3498,7 +3550,8 @@
     "dz_mm": -4.5,
     "drift_mm": 17.8,
     "tilt_deg": 41.4
-   }
+   },
+   "stable": false
   },
   "objv_0922028a5697": {
    "uid": "0922028a56974bea839fa52e79c7fbe8",
@@ -3564,7 +3617,8 @@
     "dz_mm": -15.2,
     "drift_mm": 4.8,
     "tilt_deg": 19.3
-   }
+   },
+   "stable": false
   },
   "objv_093bf4e9d750": {
    "uid": "093bf4e9d7504c70b91210ed1799b855",
@@ -3630,7 +3684,8 @@
     "dz_mm": -21.1,
     "drift_mm": 41.9,
     "tilt_deg": 92.8
-   }
+   },
+   "stable": false
   },
   "objv_09420bbfb888": {
    "uid": "09420bbfb8884f6cba0f89c107ed7712",
@@ -3696,7 +3751,8 @@
     "dz_mm": 0.4,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_0949edc313e1": {
    "uid": "0949edc313e14f7c8984249291ead708",
@@ -3762,7 +3818,8 @@
     "dz_mm": -4.7,
     "drift_mm": 4.8,
     "tilt_deg": 13.5
-   }
+   },
+   "stable": false
   },
   "objv_095e63399008": {
    "uid": "095e633990084e8b812fc7270c47010c",
@@ -3828,7 +3885,8 @@
     "dz_mm": -6.8,
     "drift_mm": 10.3,
     "tilt_deg": 24.5
-   }
+   },
+   "stable": false
   },
   "objv_09a425963fe8": {
    "uid": "09a425963fe84282a7e498ee9bc534e8",
@@ -3894,7 +3952,8 @@
     "dz_mm": 0.7,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_09a43312e714": {
    "uid": "09a43312e7144017be13593b2e98637c",
@@ -3960,7 +4019,8 @@
     "dz_mm": -2.8,
     "drift_mm": 22.4,
     "tilt_deg": 61.9
-   }
+   },
+   "stable": false
   },
   "objv_09c34c4f5a75": {
    "uid": "09c34c4f5a7547878fa85661cfa04402",
@@ -4026,7 +4086,8 @@
     "dz_mm": -34.0,
     "drift_mm": 58.0,
     "tilt_deg": 75.9
-   }
+   },
+   "stable": false
   },
   "objv_0a51815f3c09": {
    "uid": "0a51815f3c0941ae8312fc6917173ed6",
@@ -4092,7 +4153,8 @@
     "dz_mm": -25.1,
     "drift_mm": 27.7,
     "tilt_deg": 72.1
-   }
+   },
+   "stable": false
   },
   "objv_0ab534c493e1": {
    "uid": "0ab534c493e14f67bac01ee94f20e43f",
@@ -4158,7 +4220,8 @@
     "dz_mm": -3.9,
     "drift_mm": 10.4,
     "tilt_deg": 28.0
-   }
+   },
+   "stable": false
   },
   "objv_0b57e80bcfc8": {
    "uid": "0b57e80bcfc847099f89132e1e652368",
@@ -4224,7 +4287,8 @@
     "dz_mm": -4.2,
     "drift_mm": 6.2,
     "tilt_deg": 7.5
-   }
+   },
+   "stable": true
   },
   "objv_0b5e10dc958d": {
    "uid": "0b5e10dc958d4c9b986d2944084d648c",
@@ -4290,7 +4354,8 @@
     "dz_mm": -34.4,
     "drift_mm": 54.8,
     "tilt_deg": 89.3
-   }
+   },
+   "stable": false
   },
   "objv_0ba46093caff": {
    "uid": "0ba46093caff4ef7b415279e4a28e3cc",
@@ -4356,7 +4421,8 @@
     "dz_mm": -10.8,
     "drift_mm": 28.4,
     "tilt_deg": 43.1
-   }
+   },
+   "stable": false
   },
   "objv_0c1f40bf836f": {
    "uid": "0c1f40bf836f420c8c902c71e909b982",
@@ -4422,7 +4488,8 @@
     "dz_mm": -17.9,
     "drift_mm": 16.0,
     "tilt_deg": 85.0
-   }
+   },
+   "stable": false
   },
   "objv_0c32da5cd1b0": {
    "uid": "0c32da5cd1b047ce9d8ca045fae2e6c2",
@@ -4488,7 +4555,8 @@
     "dz_mm": 0.7,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_0c957895e0fa": {
    "uid": "0c957895e0fa44598d8b1678f75912b1",
@@ -4554,7 +4622,8 @@
     "dz_mm": -13.3,
     "drift_mm": 10.4,
     "tilt_deg": 43.5
-   }
+   },
+   "stable": false
   },
   "objv_0cf999d93639": {
    "uid": "0cf999d9363940c2b149dcd80c448554",
@@ -4620,7 +4689,8 @@
     "dz_mm": 0.7,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_0cfb2214cffd": {
    "uid": "0cfb2214cffd4512a288dc72e4a08b32",
@@ -4686,7 +4756,8 @@
     "dz_mm": 0.8,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_0d6f1b3b0717": {
    "uid": "0d6f1b3b07174a169d518ad12f6e2c0b",
@@ -4752,7 +4823,8 @@
     "dz_mm": -10.2,
     "drift_mm": 48.3,
     "tilt_deg": 99.7
-   }
+   },
+   "stable": false
   },
   "objv_0da480196d6e": {
    "uid": "0da480196d6e498f97eccd6425ed1e10",
@@ -4818,7 +4890,8 @@
     "dz_mm": -1.3,
     "drift_mm": 21.2,
     "tilt_deg": 50.3
-   }
+   },
+   "stable": false
   },
   "objv_0de678b8af63": {
    "uid": "0de678b8af634e859334f024d0f40b28",
@@ -4884,7 +4957,8 @@
     "dz_mm": -2.9,
     "drift_mm": 5.1,
     "tilt_deg": 11.3
-   }
+   },
+   "stable": false
   },
   "objv_0df75b1ee68f": {
    "uid": "0df75b1ee68f42a49fa8bce6bbe6f063",
@@ -4950,7 +5024,8 @@
     "dz_mm": -19.5,
     "drift_mm": 5.1,
     "tilt_deg": 29.7
-   }
+   },
+   "stable": false
   },
   "objv_0e10d4ac0831": {
    "uid": "0e10d4ac083141f7acc40aae5a8e0996",
@@ -5016,7 +5091,8 @@
     "dz_mm": -0.0,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_0e342ea75d97": {
    "uid": "0e342ea75d9745fdb213658856d69dab",
@@ -5082,7 +5158,8 @@
     "dz_mm": -4.1,
     "drift_mm": 2.1,
     "tilt_deg": 3.8
-   }
+   },
+   "stable": true
   },
   "objv_0e8911067327": {
    "uid": "0e89110673274bb2bc64ef9331b00e07",
@@ -5148,7 +5225,8 @@
     "dz_mm": 0.5,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_0ecc98014d68": {
    "uid": "0ecc98014d684f548032eed7e89079b0",
@@ -5214,7 +5292,8 @@
     "dz_mm": -2.2,
     "drift_mm": 7.0,
     "tilt_deg": 12.4
-   }
+   },
+   "stable": false
   },
   "objv_0ed722224e9c": {
    "uid": "0ed722224e9c456c9dca616fb90dcccd",
@@ -5280,7 +5359,8 @@
     "dz_mm": -22.2,
     "drift_mm": 13.1,
     "tilt_deg": 28.9
-   }
+   },
+   "stable": false
   },
   "objv_0edaebc77032": {
    "uid": "0edaebc770324830b41ba526998554bf",
@@ -5346,7 +5426,8 @@
     "dz_mm": -1.2,
     "drift_mm": 2.0,
     "tilt_deg": 4.6
-   }
+   },
+   "stable": true
   },
   "objv_0eead9cbb740": {
    "uid": "0eead9cbb7404633953889a9b0b67c0b",
@@ -5412,7 +5493,8 @@
     "dz_mm": -8.1,
     "drift_mm": 8.9,
     "tilt_deg": 22.3
-   }
+   },
+   "stable": false
   },
   "objv_0f07b43af2ec": {
    "uid": "0f07b43af2ec4d60ad94115da8d21c42",
@@ -5478,7 +5560,8 @@
     "dz_mm": -0.6,
     "drift_mm": 1.1,
     "tilt_deg": 2.5
-   }
+   },
+   "stable": true
   },
   "objv_0f522839601c": {
    "uid": "0f522839601c44e898c97c79e2e1a2b5",
@@ -5544,7 +5627,8 @@
     "dz_mm": 0.7,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_0f5f943348a4": {
    "uid": "0f5f943348a44039bdafe002db4f85e0",
@@ -5610,7 +5694,8 @@
     "dz_mm": -30.0,
     "drift_mm": 49.0,
     "tilt_deg": 90.0
-   }
+   },
+   "stable": false
   },
   "objv_0fbb92a3b336": {
    "uid": "0fbb92a3b336469583be0cf2f48530c3",
@@ -5676,7 +5761,8 @@
     "dz_mm": -1.6,
     "drift_mm": 8.9,
     "tilt_deg": 21.0
-   }
+   },
+   "stable": false
   },
   "objv_0fd2b99f34d7": {
    "uid": "0fd2b99f34d74792b0d4e3e2dc494679",
@@ -5742,7 +5828,8 @@
     "dz_mm": -5.3,
     "drift_mm": 16.3,
     "tilt_deg": 44.0
-   }
+   },
+   "stable": false
   },
   "objv_100bc3e746f6": {
    "uid": "100bc3e746f6490cb17be5a1cd1f3d6f",
@@ -5808,7 +5895,8 @@
     "dz_mm": -10.7,
     "drift_mm": 21.4,
     "tilt_deg": 62.6
-   }
+   },
+   "stable": false
   },
   "objv_11307d06bb25": {
    "uid": "11307d06bb254318b95021d68c6fa12f",
@@ -5874,7 +5962,8 @@
     "dz_mm": -0.6,
     "drift_mm": 1.0,
     "tilt_deg": 2.0
-   }
+   },
+   "stable": true
   },
   "objv_1155cb43f950": {
    "uid": "1155cb43f9504c41bbb954d01632638f",
@@ -5940,7 +6029,8 @@
     "dz_mm": -14.2,
     "drift_mm": 7.2,
     "tilt_deg": 28.3
-   }
+   },
+   "stable": false
   },
   "objv_117dc663a237": {
    "uid": "117dc663a23744dbb3bfe76c383a403d",
@@ -6006,7 +6096,8 @@
     "dz_mm": -0.8,
     "drift_mm": 2.2,
     "tilt_deg": 5.5
-   }
+   },
+   "stable": true
   },
   "objv_1193505c8d1d": {
    "uid": "1193505c8d1d4dcea1d7243d48939956",
@@ -6072,7 +6163,8 @@
     "dz_mm": -1.3,
     "drift_mm": 24.5,
     "tilt_deg": 34.0
-   }
+   },
+   "stable": false
   },
   "objv_11b544d801f9": {
    "uid": "11b544d801f94119aae4ca5089b20914",
@@ -6138,7 +6230,8 @@
     "dz_mm": 0.3,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_11e572d8b421": {
    "uid": "11e572d8b4214f02955ed4f97dfe2afc",
@@ -6204,7 +6297,8 @@
     "dz_mm": -3.2,
     "drift_mm": 18.4,
     "tilt_deg": 33.3
-   }
+   },
+   "stable": false
   },
   "objv_1235bb871a86": {
    "uid": "1235bb871a8649a49c4361eefc1637ad",
@@ -6270,7 +6364,8 @@
     "dz_mm": -0.8,
     "drift_mm": 9.6,
     "tilt_deg": 22.8
-   }
+   },
+   "stable": false
   },
   "objv_123a688bd370": {
    "uid": "123a688bd3704085b8b42a1296702842",
@@ -6336,7 +6431,8 @@
     "dz_mm": -0.6,
     "drift_mm": 1.2,
     "tilt_deg": 2.9
-   }
+   },
+   "stable": true
   },
   "objv_1244ce8a0233": {
    "uid": "1244ce8a02334e9c81cc06a19c210ae5",
@@ -6402,7 +6498,8 @@
     "dz_mm": 0.5,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_126e34029fc1": {
    "uid": "126e34029fc149c98b509ff8ef6359ce",
@@ -6468,7 +6565,8 @@
     "dz_mm": -1.6,
     "drift_mm": 2.4,
     "tilt_deg": 5.1
-   }
+   },
+   "stable": true
   },
   "objv_13080e8a2b1e": {
    "uid": "13080e8a2b1e461b93a60b6502dc9625",
@@ -6534,7 +6632,8 @@
     "dz_mm": -3.2,
     "drift_mm": 4.8,
     "tilt_deg": 11.3
-   }
+   },
+   "stable": false
   },
   "objv_134f666a4803": {
    "uid": "134f666a480347b8a1be2867e17fcdf5",
@@ -6600,7 +6699,8 @@
     "dz_mm": -0.5,
     "drift_mm": 4.5,
     "tilt_deg": 7.4
-   }
+   },
+   "stable": true
   },
   "objv_13be089b4e3c": {
    "uid": "13be089b4e3c45cab10898a50803517d",
@@ -6666,7 +6766,8 @@
     "dz_mm": -5.5,
     "drift_mm": 15.5,
     "tilt_deg": 26.9
-   }
+   },
+   "stable": false
   },
   "objv_13e31a9fcd18": {
    "uid": "13e31a9fcd184badb8c23e2554195400",
@@ -6732,7 +6833,8 @@
     "dz_mm": -1.8,
     "drift_mm": 4.5,
     "tilt_deg": 10.9
-   }
+   },
+   "stable": false
   },
   "objv_14a7c067deec": {
    "uid": "14a7c067deec4920bf94b61f67126f31",
@@ -6798,7 +6900,8 @@
     "dz_mm": -18.9,
     "drift_mm": 1.9,
     "tilt_deg": 27.2
-   }
+   },
+   "stable": false
   },
   "objv_15185d8f0294": {
    "uid": "15185d8f02944be2b1b2389c6aeda2d6",
@@ -6864,7 +6967,8 @@
     "dz_mm": 0.7,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_1606b7eea2b7": {
    "uid": "1606b7eea2b74b82a5a5d72fd44cb304",
@@ -6930,7 +7034,8 @@
     "dz_mm": -10.0,
     "drift_mm": 11.3,
     "tilt_deg": 39.6
-   }
+   },
+   "stable": false
   },
   "objv_1608fc992434": {
    "uid": "1608fc9924344b529d71a66f2560fcd3",
@@ -6996,7 +7101,8 @@
     "dz_mm": -10.7,
     "drift_mm": 12.1,
     "tilt_deg": 28.5
-   }
+   },
+   "stable": false
   },
   "objv_161cd9949bc9": {
    "uid": "161cd9949bc94e299b5ad1f2fa03a574",
@@ -7062,7 +7168,8 @@
     "dz_mm": -2.1,
     "drift_mm": 14.3,
     "tilt_deg": 20.8
-   }
+   },
+   "stable": false
   },
   "objv_1658ffe50e15": {
    "uid": "1658ffe50e154dd8b830412a6f845b37",
@@ -7128,7 +7235,8 @@
     "dz_mm": -0.8,
     "drift_mm": 0.1,
     "tilt_deg": 0.1
-   }
+   },
+   "stable": true
   },
   "objv_16b29dee40bb": {
    "uid": "16b29dee40bb41b49c87aacdb000c798",
@@ -7194,7 +7302,8 @@
     "dz_mm": -12.0,
     "drift_mm": 8.9,
     "tilt_deg": 25.9
-   }
+   },
+   "stable": false
   },
   "objv_1714a1a292ee": {
    "uid": "1714a1a292ee4bf19b2d1b64bf3ba33b",
@@ -7260,7 +7369,8 @@
     "dz_mm": -3.7,
     "drift_mm": 6.1,
     "tilt_deg": 9.3
-   }
+   },
+   "stable": true
   },
   "objv_1725fb3aeb8a": {
    "uid": "1725fb3aeb8a4b55b58fbab0e025535f",
@@ -7326,7 +7436,8 @@
     "dz_mm": -10.1,
     "drift_mm": 6.6,
     "tilt_deg": 17.3
-   }
+   },
+   "stable": false
   },
   "objv_175e4e432e6f": {
    "uid": "175e4e432e6f4304af73c7fff56be773",
@@ -7392,7 +7503,8 @@
     "dz_mm": -10.0,
     "drift_mm": 19.8,
     "tilt_deg": 50.6
-   }
+   },
+   "stable": false
   },
   "objv_17e070256cba": {
    "uid": "17e070256cba409b96b4d7c152b317a6",
@@ -7458,7 +7570,8 @@
     "dz_mm": -2.3,
     "drift_mm": 10.6,
     "tilt_deg": 24.9
-   }
+   },
+   "stable": false
   },
   "objv_17e370afb119": {
    "uid": "17e370afb1194097887e01fcebf50408",
@@ -7524,7 +7637,8 @@
     "dz_mm": -35.3,
     "drift_mm": 66.6,
     "tilt_deg": 92.6
-   }
+   },
+   "stable": false
   },
   "objv_18915d2f17a2": {
    "uid": "18915d2f17a2431fbefeb3eaf4411f16",
@@ -7590,7 +7704,8 @@
     "dz_mm": -2.7,
     "drift_mm": 7.4,
     "tilt_deg": 14.9
-   }
+   },
+   "stable": false
   },
   "objv_18a54bade1da": {
    "uid": "18a54bade1da430bb8797c4a02a4ae34",
@@ -7656,7 +7771,8 @@
     "dz_mm": -1.0,
     "drift_mm": 1.7,
     "tilt_deg": 5.3
-   }
+   },
+   "stable": true
   },
   "objv_18b7b7595762": {
    "uid": "18b7b75957624920a9418dea1c5569b9",
@@ -7722,7 +7838,8 @@
     "dz_mm": 0.5,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_18ea3eb36871": {
    "uid": "18ea3eb36871416eaffcc7c207b12269",
@@ -7788,7 +7905,8 @@
     "dz_mm": -2.6,
     "drift_mm": 32.5,
     "tilt_deg": 54.2
-   }
+   },
+   "stable": false
   },
   "objv_1a4eb7ec11bf": {
    "uid": "1a4eb7ec11bf44358f5cfe2577a0fa49",
@@ -7854,7 +7972,8 @@
     "dz_mm": -10.3,
     "drift_mm": 51.1,
     "tilt_deg": 109.5
-   }
+   },
+   "stable": false
   },
   "objv_1a7346e05751": {
    "uid": "1a7346e0575149abab9fac3184dc94c3",
@@ -7920,7 +8039,8 @@
     "dz_mm": -2.5,
     "drift_mm": 22.2,
     "tilt_deg": 38.8
-   }
+   },
+   "stable": false
   },
   "objv_1baef42131d7": {
    "uid": "1baef42131d742d996afdebc9f94c860",
@@ -7986,7 +8106,8 @@
     "dz_mm": -6.1,
     "drift_mm": 2.2,
     "tilt_deg": 5.8
-   }
+   },
+   "stable": false
   },
   "objv_1be8932143bc": {
    "uid": "1be8932143bc4215b4826c25d0480507",
@@ -8052,7 +8173,8 @@
     "dz_mm": -3.9,
     "drift_mm": 19.1,
     "tilt_deg": 47.3
-   }
+   },
+   "stable": false
   },
   "objv_1c2a3e938080": {
    "uid": "1c2a3e9380804d56989f68de77ea4b8a",
@@ -8118,7 +8240,8 @@
     "dz_mm": -3.7,
     "drift_mm": 9.1,
     "tilt_deg": 20.4
-   }
+   },
+   "stable": false
   },
   "objv_1c809c3aa856": {
    "uid": "1c809c3aa8564665beaab1d1950cb3c7",
@@ -8184,7 +8307,8 @@
     "dz_mm": 0.7,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_1d1deedefdfe": {
    "uid": "1d1deedefdfe47e9835f0703957e576e",
@@ -8250,7 +8374,8 @@
     "dz_mm": -3.6,
     "drift_mm": 16.5,
     "tilt_deg": 28.7
-   }
+   },
+   "stable": false
   },
   "objv_1d5dfdde51a2": {
    "uid": "1d5dfdde51a24e589ce50d93d6cc974a",
@@ -8316,7 +8441,8 @@
     "dz_mm": -1.4,
     "drift_mm": 0.8,
     "tilt_deg": 2.2
-   }
+   },
+   "stable": true
   },
   "objv_1d9046c623d4": {
    "uid": "1d9046c623d44337a2a826797b0e7e97",
@@ -8382,7 +8508,8 @@
     "dz_mm": 0.7,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_1db7a081c365": {
    "uid": "1db7a081c3654e1dbb1a1448da054e03",
@@ -8448,7 +8575,8 @@
     "dz_mm": -16.3,
     "drift_mm": 25.3,
     "tilt_deg": 76.5
-   }
+   },
+   "stable": false
   },
   "objv_1dbb7462a3e0": {
    "uid": "1dbb7462a3e04e918023f6fec7743ee2",
@@ -8514,7 +8642,8 @@
     "dz_mm": -4.6,
     "drift_mm": 7.9,
     "tilt_deg": 20.2
-   }
+   },
+   "stable": false
   },
   "objv_1ddbbe6f0ff8": {
    "uid": "1ddbbe6f0ff84226a9d4d75a64b7fbeb",
@@ -8580,7 +8709,8 @@
     "dz_mm": -18.3,
     "drift_mm": 19.7,
     "tilt_deg": 69.8
-   }
+   },
+   "stable": false
   },
   "objv_1e56e6c0ad7e": {
    "uid": "1e56e6c0ad7e4ac8bdb2a8dece6225a0",
@@ -8646,7 +8776,8 @@
     "dz_mm": -0.2,
     "drift_mm": 0.5,
     "tilt_deg": 1.0
-   }
+   },
+   "stable": true
   },
   "objv_1e6a7476f88c": {
    "uid": "1e6a7476f88c475ab5d86d8ac11e1752",
@@ -8712,7 +8843,8 @@
     "dz_mm": -0.0,
     "drift_mm": 0.1,
     "tilt_deg": 0.3
-   }
+   },
+   "stable": true
   },
   "objv_1e6a9d26bf46": {
    "uid": "1e6a9d26bf464c06a7017911e518c7d9",
@@ -8778,7 +8910,8 @@
     "dz_mm": -0.2,
     "drift_mm": 0.1,
     "tilt_deg": 0.3
-   }
+   },
+   "stable": true
   },
   "objv_1e97d7a16805": {
    "uid": "1e97d7a168054eaaa634797150838a03",
@@ -8844,7 +8977,8 @@
     "dz_mm": -1.5,
     "drift_mm": 7.9,
     "tilt_deg": 19.4
-   }
+   },
+   "stable": false
   },
   "objv_1ef4bb90026d": {
    "uid": "1ef4bb90026d431da3966041b6aa985e",
@@ -8910,7 +9044,8 @@
     "dz_mm": -11.6,
     "drift_mm": 4.9,
     "tilt_deg": 19.5
-   }
+   },
+   "stable": false
   },
   "objv_1f2ebfe2dee8": {
    "uid": "1f2ebfe2dee842b589f3837389b83543",
@@ -8976,7 +9111,8 @@
     "dz_mm": -0.7,
     "drift_mm": 1.5,
     "tilt_deg": 3.2
-   }
+   },
+   "stable": true
   },
   "objv_1fad12825a2d": {
    "uid": "1fad12825a2d483182f86869d2ad111b",
@@ -9042,7 +9178,8 @@
     "dz_mm": -2.0,
     "drift_mm": 8.3,
     "tilt_deg": 12.0
-   }
+   },
+   "stable": false
   },
   "objv_201d42a9e5e5": {
    "uid": "201d42a9e5e54f1b836eff39a892ed88",
@@ -9108,7 +9245,8 @@
     "dz_mm": -13.3,
     "drift_mm": 82.9,
     "tilt_deg": 121.7
-   }
+   },
+   "stable": false
   },
   "objv_201f895c7e96": {
    "uid": "201f895c7e9640bd88295bd90075e493",
@@ -9174,7 +9312,8 @@
     "dz_mm": -11.6,
     "drift_mm": 6.5,
     "tilt_deg": 19.0
-   }
+   },
+   "stable": false
   },
   "objv_208c66798195": {
    "uid": "208c66798195487bac272feb280cbc5d",
@@ -9240,7 +9379,8 @@
     "dz_mm": 0.3,
     "drift_mm": 2.1,
     "tilt_deg": 3.0
-   }
+   },
+   "stable": true
   },
   "objv_20ea40d2c373": {
    "uid": "20ea40d2c37347e8831af61307c1f508",
@@ -9306,7 +9446,8 @@
     "dz_mm": -2.3,
     "drift_mm": 4.0,
     "tilt_deg": 9.8
-   }
+   },
+   "stable": true
   },
   "objv_2149cf8d6bf2": {
    "uid": "2149cf8d6bf240fdb9778875de650582",
@@ -9372,7 +9513,8 @@
     "dz_mm": -4.2,
     "drift_mm": 22.1,
     "tilt_deg": 46.8
-   }
+   },
+   "stable": false
   },
   "objv_215fc86186fe": {
    "uid": "215fc86186fe4ff3aad485e13546db0b",
@@ -9438,7 +9580,8 @@
     "dz_mm": -1.1,
     "drift_mm": 0.6,
     "tilt_deg": 1.4
-   }
+   },
+   "stable": true
   },
   "objv_217f532899b0": {
    "uid": "217f532899b04ad9bef0a59e9d36d1f1",
@@ -9504,7 +9647,8 @@
     "dz_mm": -20.7,
     "drift_mm": 15.2,
     "tilt_deg": 60.4
-   }
+   },
+   "stable": false
   },
   "objv_21cb4aa7a9fd": {
    "uid": "21cb4aa7a9fd472ca1de878ecd00563e",
@@ -9570,7 +9714,8 @@
     "dz_mm": -15.1,
     "drift_mm": 10.3,
     "tilt_deg": 38.0
-   }
+   },
+   "stable": false
   },
   "objv_21fcf49addd9": {
    "uid": "21fcf49addd9466ab14091c0c56e397a",
@@ -9636,7 +9781,8 @@
     "dz_mm": -20.6,
     "drift_mm": 15.5,
     "tilt_deg": 38.9
-   }
+   },
+   "stable": false
   },
   "objv_230029e008dd": {
    "uid": "230029e008dd478bb77c81bdef330db1",
@@ -9702,7 +9848,8 @@
     "dz_mm": 0.3,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_233ab4b716ef": {
    "uid": "233ab4b716ef4d14a03148f50868a01b",
@@ -9768,7 +9915,8 @@
     "dz_mm": 0.2,
     "drift_mm": 6.3,
     "tilt_deg": 9.0
-   }
+   },
+   "stable": true
   },
   "objv_237717103395": {
    "uid": "2377171033954324b1505f9757887ac7",
@@ -9834,7 +9982,8 @@
     "dz_mm": -10.2,
     "drift_mm": 25.3,
     "tilt_deg": 69.5
-   }
+   },
+   "stable": false
   },
   "objv_23c52a986489": {
    "uid": "23c52a98648948738a11cf7421ae1b03",
@@ -9900,7 +10049,8 @@
     "dz_mm": -7.7,
     "drift_mm": 29.6,
     "tilt_deg": 45.7
-   }
+   },
+   "stable": false
   },
   "objv_24852a60448f": {
    "uid": "24852a60448f43cdb1852d4fd2a95a3e",
@@ -9966,7 +10116,8 @@
     "dz_mm": -10.3,
     "drift_mm": 29.3,
     "tilt_deg": 137.5
-   }
+   },
+   "stable": false
   },
   "objv_248f4cb5b324": {
    "uid": "248f4cb5b324497888b97e4fe7f84964",
@@ -10032,7 +10183,8 @@
     "dz_mm": -12.0,
     "drift_mm": 7.3,
     "tilt_deg": 15.0
-   }
+   },
+   "stable": false
   },
   "objv_2501aa6e7504": {
    "uid": "2501aa6e75044e339b8024b08b023d56",
@@ -10098,7 +10250,8 @@
     "dz_mm": 0.4,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_2607bd6a7583": {
    "uid": "2607bd6a758347e3b6f689fffee93b23",
@@ -10164,7 +10317,8 @@
     "dz_mm": 0.5,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_261885776f59": {
    "uid": "261885776f5946cc8f8bf444a5bb0945",
@@ -10230,7 +10384,8 @@
     "dz_mm": -17.2,
     "drift_mm": 12.8,
     "tilt_deg": 71.1
-   }
+   },
+   "stable": false
   },
   "objv_2696c895e65a": {
    "uid": "2696c895e65a4343871e59d9fbaf121d",
@@ -10296,7 +10451,8 @@
     "dz_mm": -3.7,
     "drift_mm": 2.8,
     "tilt_deg": 7.8
-   }
+   },
+   "stable": true
   },
   "objv_26be8762c0f4": {
    "uid": "26be8762c0f4476aa5e5449722468ae1",
@@ -10362,7 +10518,8 @@
     "dz_mm": 0.5,
     "drift_mm": 7.7,
     "tilt_deg": 12.5
-   }
+   },
+   "stable": false
   },
   "objv_274466ce34cd": {
    "uid": "274466ce34cd4ef9b6a238affc9f9976",
@@ -10428,7 +10585,8 @@
     "dz_mm": -1.7,
     "drift_mm": 8.1,
     "tilt_deg": 16.0
-   }
+   },
+   "stable": false
   },
   "objv_277bb8afe481": {
    "uid": "277bb8afe48149699141f05a733c2daf",
@@ -10494,7 +10652,8 @@
     "dz_mm": -1.4,
     "drift_mm": 3.5,
     "tilt_deg": 5.1
-   }
+   },
+   "stable": true
   },
   "objv_27d03b6a571f": {
    "uid": "27d03b6a571f4b509cd44a4fced77dd7",
@@ -10560,7 +10719,8 @@
     "dz_mm": 0.2,
     "drift_mm": 1.8,
     "tilt_deg": 2.9
-   }
+   },
+   "stable": true
   },
   "objv_27e73fa52499": {
    "uid": "27e73fa524994bc595384fc369c47c66",
@@ -10626,7 +10786,8 @@
     "dz_mm": 0.3,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_28655fabb954": {
    "uid": "28655fabb9544684b1c14f087ac21cf0",
@@ -10692,7 +10853,8 @@
     "dz_mm": -8.6,
     "drift_mm": 38.0,
     "tilt_deg": 106.3
-   }
+   },
+   "stable": false
   },
   "objv_28bda2657502": {
    "uid": "28bda26575024a38bfe1464c40e0e2e8",
@@ -10758,7 +10920,8 @@
     "dz_mm": -23.6,
     "drift_mm": 21.1,
     "tilt_deg": 73.7
-   }
+   },
+   "stable": false
   },
   "objv_29622b577d8e": {
    "uid": "29622b577d8e4e6dbd9fa40454f18118",
@@ -10824,7 +10987,8 @@
     "dz_mm": -6.1,
     "drift_mm": 16.4,
     "tilt_deg": 29.8
-   }
+   },
+   "stable": false
   },
   "objv_2995a3f4774e": {
    "uid": "2995a3f4774e4c75bace39b06f9ac64a",
@@ -10890,7 +11054,8 @@
     "dz_mm": 0.5,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_29998bf1c01e": {
    "uid": "29998bf1c01e4368b0fb6fb70639b1b4",
@@ -10956,7 +11121,8 @@
     "dz_mm": -4.4,
     "drift_mm": 16.1,
     "tilt_deg": 41.7
-   }
+   },
+   "stable": false
   },
   "objv_29df5aa46d04": {
    "uid": "29df5aa46d044b289b24846c22e9baa2",
@@ -11022,7 +11188,8 @@
     "dz_mm": -7.1,
     "drift_mm": 12.4,
     "tilt_deg": 33.3
-   }
+   },
+   "stable": false
   },
   "objv_29e6d55b9321": {
    "uid": "29e6d55b93214a818a4f6fd0a44350af",
@@ -11088,7 +11255,8 @@
     "dz_mm": -11.5,
     "drift_mm": 20.2,
     "tilt_deg": 41.7
-   }
+   },
+   "stable": false
   },
   "objv_2a09a3dc7536": {
    "uid": "2a09a3dc75364c8c84b25d2cc235cb9b",
@@ -11154,7 +11322,8 @@
     "dz_mm": -2.4,
     "drift_mm": 4.8,
     "tilt_deg": 7.3
-   }
+   },
+   "stable": true
   },
   "objv_2a3f3d26e23c": {
    "uid": "2a3f3d26e23c425cba959bcdc649d338",
@@ -11220,7 +11389,8 @@
     "dz_mm": 0.8,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_2a6d35f129b6": {
    "uid": "2a6d35f129b6484eb6fd401de8fefa0c",
@@ -11286,7 +11456,8 @@
     "dz_mm": -20.4,
     "drift_mm": 12.7,
     "tilt_deg": 40.4
-   }
+   },
+   "stable": false
   },
   "objv_2a7ccd62d0db": {
    "uid": "2a7ccd62d0db4b138a0d56d579e2ca22",
@@ -11352,7 +11523,8 @@
     "dz_mm": -12.3,
     "drift_mm": 18.6,
     "tilt_deg": 87.6
-   }
+   },
+   "stable": false
   },
   "objv_2a8a00dfd3bd": {
    "uid": "2a8a00dfd3bd4eb4a9b700254b023024",
@@ -11418,7 +11590,8 @@
     "dz_mm": -9.6,
     "drift_mm": 73.8,
     "tilt_deg": 126.4
-   }
+   },
+   "stable": false
   },
   "objv_2bc3c080990c": {
    "uid": "2bc3c080990c4ad3a479b850bf4d9831",
@@ -11484,7 +11657,8 @@
     "dz_mm": -0.0,
     "drift_mm": 0.6,
     "tilt_deg": 1.1
-   }
+   },
+   "stable": true
   },
   "objv_2bdcf86ea9df": {
    "uid": "2bdcf86ea9df4d04a45e6a5324c5616f",
@@ -11550,7 +11724,8 @@
     "dz_mm": 0.0,
     "drift_mm": 0.9,
     "tilt_deg": 1.9
-   }
+   },
+   "stable": true
   },
   "objv_2bfb9eed00f6": {
    "uid": "2bfb9eed00f64d05afa14ceafb4e2e83",
@@ -11616,7 +11791,8 @@
     "dz_mm": -21.3,
     "drift_mm": 25.1,
     "tilt_deg": 80.1
-   }
+   },
+   "stable": false
   },
   "objv_2c1063b865cb": {
    "uid": "2c1063b865cb4e35b9de90dfc11c8a65",
@@ -11682,7 +11858,8 @@
     "dz_mm": -5.0,
     "drift_mm": 6.4,
     "tilt_deg": 16.2
-   }
+   },
+   "stable": false
   },
   "objv_2c1a74122f91": {
    "uid": "2c1a74122f91433cb42055e811ce3c69",
@@ -11748,7 +11925,8 @@
     "dz_mm": -8.2,
     "drift_mm": 40.0,
     "tilt_deg": 124.8
-   }
+   },
+   "stable": false
   },
   "objv_2d5107a9476d": {
    "uid": "2d5107a9476d47a0b27c17f589836133",
@@ -11814,7 +11992,8 @@
     "dz_mm": 0.7,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_2db7e238fad6": {
    "uid": "2db7e238fad644719a7d2d6237f4b177",
@@ -11880,7 +12059,8 @@
     "dz_mm": -16.5,
     "drift_mm": 8.9,
     "tilt_deg": 29.6
-   }
+   },
+   "stable": false
   },
   "objv_2dd8a5fb4c37": {
    "uid": "2dd8a5fb4c37487b995d3455f5ad9543",
@@ -11946,7 +12126,8 @@
     "dz_mm": 0.5,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_2e7a4fd41a08": {
    "uid": "2e7a4fd41a0847d7a98f9c0ab55e8652",
@@ -12012,7 +12193,8 @@
     "dz_mm": 0.7,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_2eb8f4cb2f29": {
    "uid": "2eb8f4cb2f294cee858696c3c59a4ecf",
@@ -12078,7 +12260,8 @@
     "dz_mm": -10.7,
     "drift_mm": 31.9,
     "tilt_deg": 88.1
-   }
+   },
+   "stable": false
   },
   "objv_2ecb104cc728": {
    "uid": "2ecb104cc7284c62bb92d4d8068ce160",
@@ -12144,7 +12327,8 @@
     "dz_mm": -5.6,
     "drift_mm": 16.2,
     "tilt_deg": 47.7
-   }
+   },
+   "stable": false
   },
   "objv_2f8c479805f3": {
    "uid": "2f8c479805f3427d9592185a16de8f9c",
@@ -12210,7 +12394,8 @@
     "dz_mm": -4.3,
     "drift_mm": 1.5,
     "tilt_deg": 3.7
-   }
+   },
+   "stable": true
   },
   "objv_2fa3a51c6b75": {
    "uid": "2fa3a51c6b7543fcb09a64d43d1a0dba",
@@ -12276,7 +12461,8 @@
     "dz_mm": 0.4,
     "drift_mm": 0.1,
     "tilt_deg": 0.3
-   }
+   },
+   "stable": true
   },
   "objv_2fca26cdf847": {
    "uid": "2fca26cdf8474bcfa32a3e1b78fe88cd",
@@ -12342,7 +12528,8 @@
     "dz_mm": 0.8,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_3019fe19701b": {
    "uid": "3019fe19701b44f18f6c49603b4b89f9",
@@ -12408,7 +12595,8 @@
     "dz_mm": -1.8,
     "drift_mm": 6.5,
     "tilt_deg": 15.3
-   }
+   },
+   "stable": false
   },
   "objv_3021a8a2f1e2": {
    "uid": "3021a8a2f1e24a7fb9cc27a7561d45f0",
@@ -12474,7 +12662,8 @@
     "dz_mm": -2.7,
     "drift_mm": 1.6,
     "tilt_deg": 5.2
-   }
+   },
+   "stable": true
   },
   "objv_302286c578e1": {
    "uid": "302286c578e146d9a0823426e5ab5a8f",
@@ -12540,7 +12729,8 @@
     "dz_mm": -21.6,
     "drift_mm": 18.8,
     "tilt_deg": 35.7
-   }
+   },
+   "stable": false
   },
   "objv_304f656a07d7": {
    "uid": "304f656a07d741caabdf36d58b9eb471",
@@ -12606,7 +12796,8 @@
     "dz_mm": -2.4,
     "drift_mm": 1.1,
     "tilt_deg": 1.7
-   }
+   },
+   "stable": true
   },
   "objv_306c0031ba84": {
    "uid": "306c0031ba8445a79897fa060791758a",
@@ -12672,7 +12863,8 @@
     "dz_mm": 0.3,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_3071830f2d3e": {
    "uid": "3071830f2d3e4b57a59976719298c808",
@@ -12738,7 +12930,8 @@
     "dz_mm": 0.5,
     "drift_mm": 0.0,
     "tilt_deg": 0.1
-   }
+   },
+   "stable": true
   },
   "objv_30840102853f": {
    "uid": "30840102853f494eb5193ea86fb6db97",
@@ -12804,7 +12997,8 @@
     "dz_mm": -27.4,
     "drift_mm": 43.7,
     "tilt_deg": 73.9
-   }
+   },
+   "stable": false
   },
   "objv_30937c9a9a54": {
    "uid": "30937c9a9a54454d8390b050122b14c5",
@@ -12870,7 +13064,8 @@
     "dz_mm": -20.8,
     "drift_mm": 5.1,
     "tilt_deg": 31.3
-   }
+   },
+   "stable": false
   },
   "objv_3099379d7156": {
    "uid": "3099379d71564f0a8e357157afc0cb19",
@@ -12936,7 +13131,8 @@
     "dz_mm": -1.5,
     "drift_mm": 2.9,
     "tilt_deg": 6.9
-   }
+   },
+   "stable": true
   },
   "objv_31a6cc90b568": {
    "uid": "31a6cc90b5684603a52d679592e3d00f",
@@ -13002,7 +13198,8 @@
     "dz_mm": -11.3,
     "drift_mm": 20.4,
     "tilt_deg": 55.2
-   }
+   },
+   "stable": false
   },
   "objv_337bb3f78267": {
    "uid": "337bb3f78267422cbfdf91ced8dbab22",
@@ -13068,7 +13265,8 @@
     "dz_mm": -0.7,
     "drift_mm": 2.8,
     "tilt_deg": 4.4
-   }
+   },
+   "stable": true
   },
   "objv_33d4e944f6da": {
    "uid": "33d4e944f6da47a6b9beee6edd0e420c",
@@ -13134,7 +13332,8 @@
     "dz_mm": -1.8,
     "drift_mm": 6.8,
     "tilt_deg": 16.0
-   }
+   },
+   "stable": false
   },
   "objv_353b0eb49009": {
    "uid": "353b0eb4900944afa1790acee22e511b",
@@ -13200,7 +13399,8 @@
     "dz_mm": -2.7,
     "drift_mm": 3.7,
     "tilt_deg": 8.0
-   }
+   },
+   "stable": true
   },
   "objv_35c858609a25": {
    "uid": "35c858609a254716ac65b9d9788bd48c",
@@ -13266,7 +13466,8 @@
     "dz_mm": -16.4,
     "drift_mm": 22.5,
     "tilt_deg": 41.2
-   }
+   },
+   "stable": false
   },
   "objv_35cb3f748d40": {
    "uid": "35cb3f748d404b8692c93dd168f9973b",
@@ -13332,7 +13533,8 @@
     "dz_mm": -3.3,
     "drift_mm": 25.4,
     "tilt_deg": 62.0
-   }
+   },
+   "stable": false
   },
   "objv_3603c7eb432a": {
    "uid": "3603c7eb432a4ad1ba91d9bef6ab8c3c",
@@ -13398,7 +13600,8 @@
     "dz_mm": -0.4,
     "drift_mm": 0.1,
     "tilt_deg": 0.3
-   }
+   },
+   "stable": true
   },
   "objv_363c5f8cd06c": {
    "uid": "363c5f8cd06c4b11b6b050e8e2c76966",
@@ -13464,7 +13667,8 @@
     "dz_mm": -5.4,
     "drift_mm": 3.8,
     "tilt_deg": 10.6
-   }
+   },
+   "stable": false
   },
   "objv_371bc8ded342": {
    "uid": "371bc8ded342446d87f975c3df8e0d4f",
@@ -13530,7 +13734,8 @@
     "dz_mm": -6.8,
     "drift_mm": 1.9,
     "tilt_deg": 6.2
-   }
+   },
+   "stable": false
   },
   "objv_380ac75004db": {
    "uid": "380ac75004db490db8a0fa9b777d4188",
@@ -13596,7 +13801,8 @@
     "dz_mm": -10.4,
     "drift_mm": 21.4,
     "tilt_deg": 79.9
-   }
+   },
+   "stable": false
   },
   "objv_38d600a17ea4": {
    "uid": "38d600a17ea44e74b1e5c478a7fcda70",
@@ -13662,7 +13868,8 @@
     "dz_mm": 0.1,
     "drift_mm": 0.5,
     "tilt_deg": 0.9
-   }
+   },
+   "stable": true
   },
   "objv_3a40810c85cd": {
    "uid": "3a40810c85cd4576af04b66e5a18e6a0",
@@ -13728,7 +13935,8 @@
     "dz_mm": 0.6,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_3ad27db07fb5": {
    "uid": "3ad27db07fb5463ca06576c5a5b28c85",
@@ -13794,7 +14002,8 @@
     "dz_mm": -25.8,
     "drift_mm": 18.0,
     "tilt_deg": 35.2
-   }
+   },
+   "stable": false
   },
   "objv_3ae9a778fc79": {
    "uid": "3ae9a778fc794cb2817492379a62b767",
@@ -13860,7 +14069,8 @@
     "dz_mm": -21.2,
     "drift_mm": 44.9,
     "tilt_deg": 77.1
-   }
+   },
+   "stable": false
   },
   "objv_3aef56cfd8f6": {
    "uid": "3aef56cfd8f64b1b88933dbf651ce9af",
@@ -13926,7 +14136,8 @@
     "dz_mm": -6.3,
     "drift_mm": 4.8,
     "tilt_deg": 15.2
-   }
+   },
+   "stable": false
   },
   "objv_3bca05ca8986": {
    "uid": "3bca05ca89864c199bc52ca3a7a8df84",
@@ -13992,7 +14203,8 @@
     "dz_mm": -8.8,
     "drift_mm": 7.9,
     "tilt_deg": 19.3
-   }
+   },
+   "stable": false
   },
   "objv_3bfe6dee7eeb": {
    "uid": "3bfe6dee7eeb4ed5bbfaf2baf1672ee3",
@@ -14058,7 +14270,8 @@
     "dz_mm": -5.9,
     "drift_mm": 2.1,
     "tilt_deg": 10.0
-   }
+   },
+   "stable": false
   },
   "objv_3c2361779cbe": {
    "uid": "3c2361779cbe443b8c3b37c81c9e0442",
@@ -14124,7 +14337,8 @@
     "dz_mm": -2.9,
     "drift_mm": 17.0,
     "tilt_deg": 28.6
-   }
+   },
+   "stable": false
   },
   "objv_3c8aee2219d3": {
    "uid": "3c8aee2219d3478c877857da97042133",
@@ -14190,7 +14404,8 @@
     "dz_mm": -6.9,
     "drift_mm": 6.4,
     "tilt_deg": 16.2
-   }
+   },
+   "stable": false
   },
   "objv_3cb18b0abc31": {
    "uid": "3cb18b0abc31414d99b9439009e14549",
@@ -14256,7 +14471,8 @@
     "dz_mm": -22.5,
     "drift_mm": 13.3,
     "tilt_deg": 44.5
-   }
+   },
+   "stable": false
   },
   "objv_3ceece9eb4c3": {
    "uid": "3ceece9eb4c3405ba28948529c24aea4",
@@ -14322,7 +14538,8 @@
     "dz_mm": -16.3,
     "drift_mm": 29.7,
     "tilt_deg": 85.5
-   }
+   },
+   "stable": false
   },
   "objv_3d4a89ce1540": {
    "uid": "3d4a89ce154044859ad796d1b5c50e42",
@@ -14388,7 +14605,8 @@
     "dz_mm": -2.0,
     "drift_mm": 0.4,
     "tilt_deg": 0.7
-   }
+   },
+   "stable": true
   },
   "objv_3d68dd5d6077": {
    "uid": "3d68dd5d6077494ea6312b959a6fcba6",
@@ -14454,7 +14672,8 @@
     "dz_mm": -3.7,
     "drift_mm": 2.0,
     "tilt_deg": 4.7
-   }
+   },
+   "stable": true
   },
   "objv_3db1f4b37cf2": {
    "uid": "3db1f4b37cf24982a353e52bb330f534",
@@ -14520,7 +14739,8 @@
     "dz_mm": 0.8,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_3dc73f460ff4": {
    "uid": "3dc73f460ff44f9591ee0694ce100240",
@@ -14586,7 +14806,8 @@
     "dz_mm": -8.4,
     "drift_mm": 13.4,
     "tilt_deg": 19.4
-   }
+   },
+   "stable": false
   },
   "objv_3de5c4867763": {
    "uid": "3de5c486776341928fdbb469ee800608",
@@ -14652,7 +14873,8 @@
     "dz_mm": -16.7,
     "drift_mm": 33.1,
     "tilt_deg": 93.1
-   }
+   },
+   "stable": false
   },
   "objv_3de9f91f950b": {
    "uid": "3de9f91f950b4a408a1d94d76200e6bf",
@@ -14718,7 +14940,8 @@
     "dz_mm": -0.5,
     "drift_mm": 1.3,
     "tilt_deg": 1.9
-   }
+   },
+   "stable": true
   },
   "objv_3df5e2b8077b": {
    "uid": "3df5e2b8077b47b6b42d9dec1e4a3a03",
@@ -14784,7 +15007,8 @@
     "dz_mm": -2.0,
     "drift_mm": 1.5,
     "tilt_deg": 3.7
-   }
+   },
+   "stable": true
   },
   "objv_3e5513894205": {
    "uid": "3e55138942054890820bf3abaac481ff",
@@ -14850,7 +15074,8 @@
     "dz_mm": -4.1,
     "drift_mm": 9.9,
     "tilt_deg": 13.6
-   }
+   },
+   "stable": false
   },
   "objv_3ec24add819f": {
    "uid": "3ec24add819f4128a64d4fdb43391edc",
@@ -14916,7 +15141,8 @@
     "dz_mm": -0.6,
     "drift_mm": 0.5,
     "tilt_deg": 1.1
-   }
+   },
+   "stable": true
   },
   "objv_3feb051092c6": {
    "uid": "3feb051092c64c43b4ff80f37a262a21",
@@ -14982,7 +15208,8 @@
     "dz_mm": 0.6,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_3ff314a82d41": {
    "uid": "3ff314a82d41478382e322798739dde7",
@@ -15048,7 +15275,8 @@
     "dz_mm": -13.0,
     "drift_mm": 7.4,
     "tilt_deg": 34.2
-   }
+   },
+   "stable": false
   },
   "objv_401e139881b0": {
    "uid": "401e139881b040438041193a0180a4be",
@@ -15114,7 +15342,8 @@
     "dz_mm": -12.9,
     "drift_mm": 18.9,
     "tilt_deg": 49.9
-   }
+   },
+   "stable": false
   },
   "objv_413e20559a1a": {
    "uid": "413e20559a1a45e7bc2e873946b78d22",
@@ -15180,7 +15409,8 @@
     "dz_mm": 1.0,
     "drift_mm": 31.2,
     "tilt_deg": 44.1
-   }
+   },
+   "stable": false
   },
   "objv_41679310739b": {
    "uid": "41679310739b46d6b7697e4983e2f660",
@@ -15246,7 +15476,8 @@
     "dz_mm": -15.3,
     "drift_mm": 28.7,
     "tilt_deg": 121.4
-   }
+   },
+   "stable": false
   },
   "objv_42a41fbdb344": {
    "uid": "42a41fbdb34449ffb79c805c87d2b437",
@@ -15312,7 +15543,8 @@
     "dz_mm": -11.3,
     "drift_mm": 34.0,
     "tilt_deg": 89.0
-   }
+   },
+   "stable": false
   },
   "objv_42ef95c94508": {
    "uid": "42ef95c945084551b92ae7f63ef34f4c",
@@ -15378,7 +15610,8 @@
     "dz_mm": 0.0,
     "drift_mm": 0.1,
     "tilt_deg": 0.9
-   }
+   },
+   "stable": true
   },
   "objv_4309f0b07f4c": {
    "uid": "4309f0b07f4c45a4bdea87dbedf1a03a",
@@ -15444,7 +15677,8 @@
     "dz_mm": 0.6,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_431b06547643": {
    "uid": "431b06547643435ca7f6c01e5beae772",
@@ -15510,7 +15744,8 @@
     "dz_mm": -4.0,
     "drift_mm": 1.6,
     "tilt_deg": 3.9
-   }
+   },
+   "stable": true
   },
   "objv_436df6a44ce5": {
    "uid": "436df6a44ce549dba3953bdc4edd05b3",
@@ -15576,7 +15811,8 @@
     "dz_mm": -1.1,
     "drift_mm": 5.2,
     "tilt_deg": 8.7
-   }
+   },
+   "stable": true
   },
   "objv_43a04dca4006": {
    "uid": "43a04dca40064ae9b0de4b11eb3026d7",
@@ -15642,7 +15878,8 @@
     "dz_mm": -18.0,
     "drift_mm": 13.8,
     "tilt_deg": 44.5
-   }
+   },
+   "stable": false
   },
   "objv_43aff23afc95": {
    "uid": "43aff23afc954f9886753660424a3061",
@@ -15708,7 +15945,8 @@
     "dz_mm": 0.5,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_43d82abf4826": {
    "uid": "43d82abf482649ac98a51a05c6c95737",
@@ -15774,7 +16012,8 @@
     "dz_mm": -3.3,
     "drift_mm": 1.2,
     "tilt_deg": 2.0
-   }
+   },
+   "stable": true
   },
   "objv_43e04121c6ef": {
    "uid": "43e04121c6ef48ac89a0952bf7775c47",
@@ -15840,7 +16079,8 @@
     "dz_mm": -34.9,
     "drift_mm": 32.6,
     "tilt_deg": 65.2
-   }
+   },
+   "stable": false
   },
   "objv_43e7ebcba346": {
    "uid": "43e7ebcba34645448a997c3d03054d33",
@@ -15906,7 +16146,8 @@
     "dz_mm": -0.3,
     "drift_mm": 6.5,
     "tilt_deg": 15.2
-   }
+   },
+   "stable": false
   },
   "objv_44220af4c25d": {
    "uid": "44220af4c25d48dab1fc052a0e478e69",
@@ -15972,7 +16213,8 @@
     "dz_mm": -17.1,
     "drift_mm": 22.7,
     "tilt_deg": 92.4
-   }
+   },
+   "stable": false
   },
   "objv_448f98647008": {
    "uid": "448f986470084d40a6510ccdcfa34852",
@@ -16038,7 +16280,8 @@
     "dz_mm": -4.8,
     "drift_mm": 7.9,
     "tilt_deg": 20.1
-   }
+   },
+   "stable": false
   },
   "objv_449da1ea8230": {
    "uid": "449da1ea82304ef39b7a12e57b8827a9",
@@ -16104,7 +16347,8 @@
     "dz_mm": 0.4,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_4517ba111d64": {
    "uid": "4517ba111d644ea9aae1d591fe4bda5d",
@@ -16170,7 +16414,8 @@
     "dz_mm": -0.5,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_45303cf9d859": {
    "uid": "45303cf9d85943e6bfcd256731cc771a",
@@ -16236,7 +16481,8 @@
     "dz_mm": -14.5,
     "drift_mm": 20.6,
     "tilt_deg": 61.6
-   }
+   },
+   "stable": false
   },
   "objv_45539fcd778e": {
    "uid": "45539fcd778e4de9bef329430a611f72",
@@ -16302,7 +16548,8 @@
     "dz_mm": -16.2,
     "drift_mm": 30.5,
     "tilt_deg": 86.1
-   }
+   },
+   "stable": false
   },
   "objv_45bb1e9b8130": {
    "uid": "45bb1e9b81304b869ab52e8b7028ffb3",
@@ -16368,7 +16615,8 @@
     "dz_mm": -0.8,
     "drift_mm": 0.5,
     "tilt_deg": 1.1
-   }
+   },
+   "stable": true
   },
   "objv_46145e0221e9": {
    "uid": "46145e0221e94a3185b215c07d0f4340",
@@ -16434,7 +16682,8 @@
     "dz_mm": -1.7,
     "drift_mm": 7.6,
     "tilt_deg": 11.0
-   }
+   },
+   "stable": false
   },
   "objv_467bae23060a": {
    "uid": "467bae23060a475888d10a4d987c2d02",
@@ -16500,7 +16749,8 @@
     "dz_mm": -1.3,
     "drift_mm": 4.0,
     "tilt_deg": 4.6
-   }
+   },
+   "stable": true
   },
   "objv_4736c5abd66e": {
    "uid": "4736c5abd66e4f24bf41a82f88794fbb",
@@ -16566,7 +16816,8 @@
     "dz_mm": 0.5,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_473ef24b7979": {
    "uid": "473ef24b79794444916296e13b8537f4",
@@ -16632,7 +16883,8 @@
     "dz_mm": -28.5,
     "drift_mm": 47.5,
     "tilt_deg": 104.3
-   }
+   },
+   "stable": false
   },
   "objv_47feb02b3b2b": {
    "uid": "47feb02b3b2b4f2e8c7154d3682817a2",
@@ -16698,7 +16950,8 @@
     "dz_mm": 0.5,
     "drift_mm": 0.1,
     "tilt_deg": 0.1
-   }
+   },
+   "stable": true
   },
   "objv_4813ef6ab834": {
    "uid": "4813ef6ab83448eeb6ae03a6e5189317",
@@ -16764,7 +17017,8 @@
     "dz_mm": -16.6,
     "drift_mm": 21.2,
     "tilt_deg": 57.5
-   }
+   },
+   "stable": false
   },
   "objv_488e79f990a0": {
    "uid": "488e79f990a04bb39daa5675b7004965",
@@ -16830,7 +17084,8 @@
     "dz_mm": -0.4,
     "drift_mm": 2.5,
     "tilt_deg": 3.6
-   }
+   },
+   "stable": true
   },
   "objv_48b073d405e5": {
    "uid": "48b073d405e5472d9fd7e0dbe45c973e",
@@ -16896,7 +17151,8 @@
     "dz_mm": 0.3,
     "drift_mm": 0.3,
     "tilt_deg": 0.7
-   }
+   },
+   "stable": true
   },
   "objv_48d3e1ba9b40": {
    "uid": "48d3e1ba9b4040dc9b10ff68b53a6234",
@@ -16962,7 +17218,8 @@
     "dz_mm": -16.9,
     "drift_mm": 4.6,
     "tilt_deg": 15.2
-   }
+   },
+   "stable": false
   },
   "objv_49c3625f6cea": {
    "uid": "49c3625f6cea48f68af314ecbcb25b54",
@@ -17028,7 +17285,8 @@
     "dz_mm": -4.4,
     "drift_mm": 8.4,
     "tilt_deg": 12.6
-   }
+   },
+   "stable": false
   },
   "objv_4a7138b7a305": {
    "uid": "4a7138b7a3054d83ab47eedd89d9952e",
@@ -17094,7 +17352,8 @@
     "dz_mm": -42.9,
     "drift_mm": 25.8,
     "tilt_deg": 50.0
-   }
+   },
+   "stable": false
   },
   "objv_4a80c6930693": {
    "uid": "4a80c69306934bb39902451651d837d8",
@@ -17160,7 +17419,8 @@
     "dz_mm": -16.8,
     "drift_mm": 30.0,
     "tilt_deg": 90.6
-   }
+   },
+   "stable": false
   },
   "objv_4abb06a66fc1": {
    "uid": "4abb06a66fc14582ad0e0ec3951fcdd3",
@@ -17226,7 +17486,8 @@
     "dz_mm": 0.1,
     "drift_mm": 1.3,
     "tilt_deg": 1.8
-   }
+   },
+   "stable": true
   },
   "objv_4b24f522db52": {
    "uid": "4b24f522db524b96a5378be4d52909f8",
@@ -17292,7 +17553,8 @@
     "dz_mm": -1.7,
     "drift_mm": 1.4,
     "tilt_deg": 2.0
-   }
+   },
+   "stable": true
   },
   "objv_4cd546842426": {
    "uid": "4cd546842426435dadd1cc019b33853e",
@@ -17358,7 +17620,8 @@
     "dz_mm": -24.3,
     "drift_mm": 8.9,
     "tilt_deg": 38.2
-   }
+   },
+   "stable": false
   },
   "objv_4cfd22261c18": {
    "uid": "4cfd22261c1848bf923a16d2947568b0",
@@ -17424,7 +17687,8 @@
     "dz_mm": 0.6,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_4da974219b8b": {
    "uid": "4da974219b8b4e15b4f957f590653430",
@@ -17490,7 +17754,8 @@
     "dz_mm": -6.7,
     "drift_mm": 5.6,
     "tilt_deg": 15.3
-   }
+   },
+   "stable": false
   },
   "objv_4dd64ee00ff9": {
    "uid": "4dd64ee00ff94f7488ff7793c74a8cdf",
@@ -17556,7 +17821,8 @@
     "dz_mm": 0.7,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_4df010e80cef": {
    "uid": "4df010e80cef40f7b7680961773e8c1b",
@@ -17622,7 +17888,8 @@
     "dz_mm": -3.0,
     "drift_mm": 12.1,
     "tilt_deg": 14.5
-   }
+   },
+   "stable": false
   },
   "objv_4e3ba986844b": {
    "uid": "4e3ba986844b4ba6a264c87d82903f2b",
@@ -17688,7 +17955,8 @@
     "dz_mm": -21.7,
     "drift_mm": 18.8,
     "tilt_deg": 63.3
-   }
+   },
+   "stable": false
   },
   "objv_4ed5173b1e77": {
    "uid": "4ed5173b1e774f198514ccedfffafa36",
@@ -17754,7 +18022,8 @@
     "dz_mm": -19.1,
     "drift_mm": 9.4,
     "tilt_deg": 32.8
-   }
+   },
+   "stable": false
   },
   "objv_4faddcf2b8df": {
    "uid": "4faddcf2b8df434dbd159d30e69d2983",
@@ -17820,7 +18089,8 @@
     "dz_mm": -20.3,
     "drift_mm": 83.5,
     "tilt_deg": 119.8
-   }
+   },
+   "stable": false
   },
   "objv_5032d3085b56": {
    "uid": "5032d3085b56484a858c53c1be8d9c6a",
@@ -17886,7 +18156,8 @@
     "dz_mm": 0.8,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_50efe77ec5bb": {
    "uid": "50efe77ec5bb404192069f2f6d647425",
@@ -17952,7 +18223,8 @@
     "dz_mm": -3.4,
     "drift_mm": 11.7,
     "tilt_deg": 38.8
-   }
+   },
+   "stable": false
   },
   "objv_50f90d63ea6e": {
    "uid": "50f90d63ea6e451a9c5867d5371c80b5",
@@ -18018,7 +18290,8 @@
     "dz_mm": 0.5,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_51a7c2245eca": {
    "uid": "51a7c2245eca475a82f9e88e6fa995ca",
@@ -18084,7 +18357,8 @@
     "dz_mm": 0.9,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_51f63167c849": {
    "uid": "51f63167c849450a89b65fcd7d81e8f7",
@@ -18150,7 +18424,8 @@
     "dz_mm": -21.3,
     "drift_mm": 19.6,
     "tilt_deg": 72.3
-   }
+   },
+   "stable": false
   },
   "objv_5341adb1410f": {
    "uid": "5341adb1410f44dc82c45dba49dc5db8",
@@ -18216,7 +18491,8 @@
     "dz_mm": -3.5,
     "drift_mm": 16.7,
     "tilt_deg": 43.2
-   }
+   },
+   "stable": false
   },
   "objv_544884225bb7": {
    "uid": "544884225bb7436c9c101308bca49ff1",
@@ -18282,7 +18558,8 @@
     "dz_mm": -0.6,
     "drift_mm": 0.9,
     "tilt_deg": 2.2
-   }
+   },
+   "stable": true
   },
   "objv_54adb6dd50ef": {
    "uid": "54adb6dd50ef44bbbe0338b7ab8c3b79",
@@ -18348,7 +18625,8 @@
     "dz_mm": -0.5,
     "drift_mm": 0.7,
     "tilt_deg": 1.1
-   }
+   },
+   "stable": true
   },
   "objv_559ae91218c6": {
    "uid": "559ae91218c641a88f57ccd6d9522ae4",
@@ -18414,7 +18692,8 @@
     "dz_mm": -1.6,
     "drift_mm": 2.0,
     "tilt_deg": 4.7
-   }
+   },
+   "stable": true
   },
   "objv_561bb06b3b08": {
    "uid": "561bb06b3b084b84978163906de1c2b5",
@@ -18480,7 +18759,8 @@
     "dz_mm": -14.9,
     "drift_mm": 22.2,
     "tilt_deg": 64.2
-   }
+   },
+   "stable": false
   },
   "objv_569da0456354": {
    "uid": "569da04563544734bd90630d57fc7be2",
@@ -18546,7 +18826,8 @@
     "dz_mm": 0.5,
     "drift_mm": 0.1,
     "tilt_deg": 0.2
-   }
+   },
+   "stable": true
   },
   "objv_5767681c189f": {
    "uid": "5767681c189f4e7e90a55b8d23f155d3",
@@ -18612,7 +18893,8 @@
     "dz_mm": -12.2,
     "drift_mm": 4.5,
     "tilt_deg": 23.8
-   }
+   },
+   "stable": false
   },
   "objv_57f321abb2e1": {
    "uid": "57f321abb2e1472d8295ef6bb2aff341",
@@ -18678,7 +18960,8 @@
     "dz_mm": 0.6,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_581eea647f8f": {
    "uid": "581eea647f8f491caf4a30d8082f8942",
@@ -18744,7 +19027,8 @@
     "dz_mm": 0.6,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_5870455b0df0": {
    "uid": "5870455b0df04fedabea7d4ded20a948",
@@ -18810,7 +19094,8 @@
     "dz_mm": 0.6,
     "drift_mm": 1.7,
     "tilt_deg": 4.1
-   }
+   },
+   "stable": true
   },
   "objv_58a50d12190a": {
    "uid": "58a50d12190a4248ba4bbd1f29b8053d",
@@ -18876,7 +19161,8 @@
     "dz_mm": -17.5,
     "drift_mm": 29.9,
     "tilt_deg": 92.6
-   }
+   },
+   "stable": false
   },
   "objv_59a4d5ccb6cb": {
    "uid": "59a4d5ccb6cb449ab0b2c6ab2be80d2e",
@@ -18942,7 +19228,8 @@
     "dz_mm": 6.1,
     "drift_mm": 6.8,
     "tilt_deg": 13.6
-   }
+   },
+   "stable": false
   },
   "objv_59b3f6b32ed8": {
    "uid": "59b3f6b32ed84ee693fd57981f03095e",
@@ -19008,7 +19295,8 @@
     "dz_mm": -1.3,
     "drift_mm": 2.2,
     "tilt_deg": 3.3
-   }
+   },
+   "stable": true
   },
   "objv_5a61a0e07c58": {
    "uid": "5a61a0e07c584f00ab1891d57f06d083",
@@ -19074,7 +19362,8 @@
     "dz_mm": -4.3,
     "drift_mm": 14.0,
     "tilt_deg": 29.5
-   }
+   },
+   "stable": false
   },
   "objv_5ad826e38b15": {
    "uid": "5ad826e38b154c41a1528e4449c79f45",
@@ -19140,7 +19429,8 @@
     "dz_mm": 0.5,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_5add79e9473a": {
    "uid": "5add79e9473a48b98390768020b2f3ea",
@@ -19206,7 +19496,8 @@
     "dz_mm": -0.2,
     "drift_mm": 2.5,
     "tilt_deg": 2.9
-   }
+   },
+   "stable": true
   },
   "objv_5b8095131eca": {
    "uid": "5b8095131eca4914b6dce4e96b290a3f",
@@ -19272,7 +19563,8 @@
     "dz_mm": -27.9,
     "drift_mm": 49.8,
     "tilt_deg": 84.1
-   }
+   },
+   "stable": false
   },
   "objv_5c13f8762200": {
    "uid": "5c13f87622004dddaf2c3ba784522d45",
@@ -19338,7 +19630,8 @@
     "dz_mm": -31.9,
     "drift_mm": 34.6,
     "tilt_deg": 69.9
-   }
+   },
+   "stable": false
   },
   "objv_5c8cd9f1fdb7": {
    "uid": "5c8cd9f1fdb7476d9528bdbc0e7a318c",
@@ -19404,7 +19697,8 @@
     "dz_mm": -8.0,
     "drift_mm": 76.7,
     "tilt_deg": 101.1
-   }
+   },
+   "stable": false
   },
   "objv_5ceecc4773b8": {
    "uid": "5ceecc4773b845a5b9addfa0f324f159",
@@ -19470,7 +19764,8 @@
     "dz_mm": 0.5,
     "drift_mm": 0.1,
     "tilt_deg": 0.2
-   }
+   },
+   "stable": true
   },
   "objv_5d89c32cb3a3": {
    "uid": "5d89c32cb3a34bb29b1b444ed553ce28",
@@ -19536,7 +19831,8 @@
     "dz_mm": -23.4,
     "drift_mm": 40.0,
     "tilt_deg": 57.9
-   }
+   },
+   "stable": false
   },
   "objv_5df52b78e98c": {
    "uid": "5df52b78e98c4885bf45a4c6fd76cfd6",
@@ -19602,7 +19898,8 @@
     "dz_mm": -0.7,
     "drift_mm": 0.6,
     "tilt_deg": 1.6
-   }
+   },
+   "stable": true
   },
   "objv_5e74c784c5c6": {
    "uid": "5e74c784c5c6464981a5b9b11cf735c3",
@@ -19668,7 +19965,8 @@
     "dz_mm": -14.9,
     "drift_mm": 19.9,
     "tilt_deg": 50.8
-   }
+   },
+   "stable": false
   },
   "objv_5f007aed96f5": {
    "uid": "5f007aed96f546d3b1b4b2ab732d4d63",
@@ -19734,7 +20032,8 @@
     "dz_mm": 0.7,
     "drift_mm": 0.8,
     "tilt_deg": 1.8
-   }
+   },
+   "stable": true
   },
   "objv_5f1746d9036d": {
    "uid": "5f1746d9036d4675acce0e4f85a3bac5",
@@ -19800,7 +20099,8 @@
     "dz_mm": -16.1,
     "drift_mm": 32.5,
     "tilt_deg": 88.4
-   }
+   },
+   "stable": false
   },
   "objv_5f2729cabd0a": {
    "uid": "5f2729cabd0a41aeb8f163473dba7560",
@@ -19866,7 +20166,8 @@
     "dz_mm": -0.5,
     "drift_mm": 0.1,
     "tilt_deg": 0.3
-   }
+   },
+   "stable": true
   },
   "objv_5f65ad99a550": {
    "uid": "5f65ad99a5504b0595c785ed7ded3fbe",
@@ -19932,7 +20233,8 @@
     "dz_mm": -20.5,
     "drift_mm": 22.2,
     "tilt_deg": 72.9
-   }
+   },
+   "stable": false
   },
   "objv_613758aabb88": {
    "uid": "613758aabb884971a9d8213ebea64fce",
@@ -19998,7 +20300,8 @@
     "dz_mm": -0.1,
     "drift_mm": 0.8,
     "tilt_deg": 1.9
-   }
+   },
+   "stable": true
   },
   "objv_618281bafead": {
    "uid": "618281bafead4ce29c81d63e5af8e3fd",
@@ -20064,7 +20367,8 @@
     "dz_mm": -11.3,
     "drift_mm": 5.2,
     "tilt_deg": 18.0
-   }
+   },
+   "stable": false
   },
   "objv_620556e44eec": {
    "uid": "620556e44eec4e2690f7f7b4cda78ead",
@@ -20130,7 +20434,8 @@
     "dz_mm": -0.9,
     "drift_mm": 1.6,
     "tilt_deg": 3.0
-   }
+   },
+   "stable": true
   },
   "objv_62175b5f1d27": {
    "uid": "62175b5f1d274108a93bf6c1ade59695",
@@ -20196,7 +20501,8 @@
     "dz_mm": -28.5,
     "drift_mm": 49.9,
     "tilt_deg": 121.7
-   }
+   },
+   "stable": false
   },
   "objv_6290a1bbfd7c": {
    "uid": "6290a1bbfd7c4daa91a3930f29991d56",
@@ -20262,7 +20568,8 @@
     "dz_mm": -17.5,
     "drift_mm": 5.3,
     "tilt_deg": 28.5
-   }
+   },
+   "stable": false
   },
   "objv_62914420b5b0": {
    "uid": "62914420b5b04fe6b28e0bf9b9706058",
@@ -20328,7 +20635,8 @@
     "dz_mm": -1.4,
     "drift_mm": 0.6,
     "tilt_deg": 1.5
-   }
+   },
+   "stable": true
   },
   "objv_65288223f448": {
    "uid": "65288223f44841428dd5a2c914f83ce8",
@@ -20394,7 +20702,8 @@
     "dz_mm": -9.9,
     "drift_mm": 13.8,
     "tilt_deg": 39.3
-   }
+   },
+   "stable": false
   },
   "objv_655649308d56": {
    "uid": "655649308d564d8a9d35ca5714c313e9",
@@ -20460,7 +20769,8 @@
     "dz_mm": -12.9,
     "drift_mm": 48.5,
     "tilt_deg": 80.2
-   }
+   },
+   "stable": false
   },
   "objv_65696a9b7e94": {
    "uid": "65696a9b7e94459885cc611e92632822",
@@ -20526,7 +20836,8 @@
     "dz_mm": -15.1,
     "drift_mm": 37.9,
     "tilt_deg": 58.6
-   }
+   },
+   "stable": false
   },
   "objv_65d84a0af6e8": {
    "uid": "65d84a0af6e84b739e994d8df1b43138",
@@ -20592,7 +20903,8 @@
     "dz_mm": -15.7,
     "drift_mm": 29.1,
     "tilt_deg": 96.6
-   }
+   },
+   "stable": false
   },
   "objv_6655a2fa5e98": {
    "uid": "6655a2fa5e984c9cab631a7f94fba275",
@@ -20658,7 +20970,8 @@
     "dz_mm": -19.5,
     "drift_mm": 9.7,
     "tilt_deg": 46.1
-   }
+   },
+   "stable": false
   },
   "objv_66c50252239b": {
    "uid": "66c50252239b4b8186c627acdf3d32c7",
@@ -20724,7 +21037,8 @@
     "dz_mm": -12.5,
     "drift_mm": 20.6,
     "tilt_deg": 70.7
-   }
+   },
+   "stable": false
   },
   "objv_66f0c47f1539": {
    "uid": "66f0c47f15394b558d64857c200c6710",
@@ -20790,7 +21104,8 @@
     "dz_mm": -22.9,
     "drift_mm": 19.2,
     "tilt_deg": 74.5
-   }
+   },
+   "stable": false
   },
   "objv_6727d5933a6f": {
    "uid": "6727d5933a6f4097a678f6ee8b3d1de0",
@@ -20856,7 +21171,8 @@
     "dz_mm": -21.2,
     "drift_mm": 23.1,
     "tilt_deg": 82.4
-   }
+   },
+   "stable": false
   },
   "objv_678cf422bc45": {
    "uid": "678cf422bc4547db87ab3cc02f9a032d",
@@ -20922,7 +21238,8 @@
     "dz_mm": -11.4,
     "drift_mm": 31.0,
     "tilt_deg": 87.4
-   }
+   },
+   "stable": false
   },
   "objv_679c3932c375": {
    "uid": "679c3932c3754c7b8f1d53147895c171",
@@ -20988,7 +21305,8 @@
     "dz_mm": 0.6,
     "drift_mm": 1.1,
     "tilt_deg": 2.0
-   }
+   },
+   "stable": true
   },
   "objv_680ce33ad16b": {
    "uid": "680ce33ad16b401188cd687939ad4bf2",
@@ -21054,7 +21372,8 @@
     "dz_mm": -23.0,
     "drift_mm": 18.6,
     "tilt_deg": 64.5
-   }
+   },
+   "stable": false
   },
   "objv_690b6b84d42e": {
    "uid": "690b6b84d42e43c6ac495534eeded0e2",
@@ -21120,7 +21439,8 @@
     "dz_mm": -15.2,
     "drift_mm": 19.5,
     "tilt_deg": 54.3
-   }
+   },
+   "stable": false
   },
   "objv_6a60dc28c0b1": {
    "uid": "6a60dc28c0b14b91b88dd30c49e34832",
@@ -21186,7 +21506,8 @@
     "dz_mm": -5.3,
     "drift_mm": 37.9,
     "tilt_deg": 99.5
-   }
+   },
+   "stable": false
   },
   "objv_6b76052db32b": {
    "uid": "6b76052db32b4a6a96b36567bd481e2c",
@@ -21252,7 +21573,8 @@
     "dz_mm": -12.7,
     "drift_mm": 8.9,
     "tilt_deg": 35.0
-   }
+   },
+   "stable": false
   },
   "objv_6b98ff028e98": {
    "uid": "6b98ff028e984cbe821d8c6e58fb632b",
@@ -21318,7 +21640,8 @@
     "dz_mm": -3.2,
     "drift_mm": 15.0,
     "tilt_deg": 22.2
-   }
+   },
+   "stable": false
   },
   "objv_6c692bbf5736": {
    "uid": "6c692bbf57364804a68d4a6477e788fa",
@@ -21384,7 +21707,8 @@
     "dz_mm": -24.8,
     "drift_mm": 5.6,
     "tilt_deg": 27.3
-   }
+   },
+   "stable": false
   },
   "objv_6d463b31314a": {
    "uid": "6d463b31314a4101a3d3480f6bcac6c1",
@@ -21450,7 +21774,8 @@
     "dz_mm": -14.3,
     "drift_mm": 31.4,
     "tilt_deg": 110.1
-   }
+   },
+   "stable": false
   },
   "objv_6d6d826caa96": {
    "uid": "6d6d826caa964ae89438294dcd7a3fc4",
@@ -21516,7 +21841,8 @@
     "dz_mm": -0.6,
     "drift_mm": 0.3,
     "tilt_deg": 0.5
-   }
+   },
+   "stable": true
   },
   "objv_707f9dc60531": {
    "uid": "707f9dc6053148d29ff0eb44a4be8a91",
@@ -21582,7 +21908,8 @@
     "dz_mm": 0.6,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_70e820521b06": {
    "uid": "70e820521b064ebf89a62b195ba93677",
@@ -21648,7 +21975,8 @@
     "dz_mm": -17.7,
     "drift_mm": 30.9,
     "tilt_deg": 106.7
-   }
+   },
+   "stable": false
   },
   "objv_716562285387": {
    "uid": "71656228538740be8a9d8779eb109c49",
@@ -21714,7 +22042,8 @@
     "dz_mm": -0.5,
     "drift_mm": 0.1,
     "tilt_deg": 0.2
-   }
+   },
+   "stable": true
   },
   "objv_7225c90e2721": {
    "uid": "7225c90e27214880975ca6560f6610b6",
@@ -21780,7 +22109,8 @@
     "dz_mm": -9.1,
     "drift_mm": 3.7,
     "tilt_deg": 10.5
-   }
+   },
+   "stable": false
   },
   "objv_72cf930dd894": {
    "uid": "72cf930dd8944d2b87e6229a26dea2f6",
@@ -21846,7 +22176,8 @@
     "dz_mm": -15.7,
     "drift_mm": 8.8,
     "tilt_deg": 33.2
-   }
+   },
+   "stable": false
   },
   "objv_72dcc52efa4c": {
    "uid": "72dcc52efa4c4810afd1e8750c02ad74",
@@ -21912,7 +22243,8 @@
     "dz_mm": 0.3,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_72fde976e8ce": {
    "uid": "72fde976e8ce4ebabd7231661ba957fa",
@@ -21978,7 +22310,8 @@
     "dz_mm": -8.3,
     "drift_mm": 47.7,
     "tilt_deg": 102.1
-   }
+   },
+   "stable": false
   },
   "objv_72ff2e37b502": {
    "uid": "72ff2e37b5024370b374d6200408e5db",
@@ -22044,7 +22377,8 @@
     "dz_mm": -6.5,
     "drift_mm": 14.9,
     "tilt_deg": 43.0
-   }
+   },
+   "stable": false
   },
   "objv_7397d8f6c69b": {
    "uid": "7397d8f6c69b4cc7882488107b89db28",
@@ -22110,7 +22444,8 @@
     "dz_mm": -18.3,
     "drift_mm": 4.5,
     "tilt_deg": 28.3
-   }
+   },
+   "stable": false
   },
   "objv_73bcfe4acece": {
    "uid": "73bcfe4acece4cd3aac78fd43a65f7e9",
@@ -22176,7 +22511,8 @@
     "dz_mm": -21.4,
     "drift_mm": 20.7,
     "tilt_deg": 69.4
-   }
+   },
+   "stable": false
   },
   "objv_74aa04de731f": {
    "uid": "74aa04de731f4b0a9c8dda34e07e1266",
@@ -22242,7 +22578,8 @@
     "dz_mm": -27.7,
     "drift_mm": 45.6,
     "tilt_deg": 90.0
-   }
+   },
+   "stable": false
   },
   "objv_74d08c7da869": {
    "uid": "74d08c7da86943e19fe4667bf039bf03",
@@ -22308,7 +22645,8 @@
     "dz_mm": -0.4,
     "drift_mm": 2.4,
     "tilt_deg": 5.4
-   }
+   },
+   "stable": true
   },
   "objv_76b43343e280": {
    "uid": "76b43343e280494aa581ca01a138f4c8",
@@ -22374,7 +22712,8 @@
     "dz_mm": -3.2,
     "drift_mm": 6.7,
     "tilt_deg": 17.2
-   }
+   },
+   "stable": false
   },
   "objv_76d9d05e3094": {
    "uid": "76d9d05e309440409c76e89b7dcb485a",
@@ -22440,7 +22779,8 @@
     "dz_mm": -8.6,
     "drift_mm": 49.9,
     "tilt_deg": 140.5
-   }
+   },
+   "stable": false
   },
   "objv_778048a40c79": {
    "uid": "778048a40c79493baf711b80ee1f37f6",
@@ -22506,7 +22846,8 @@
     "dz_mm": -6.4,
     "drift_mm": 36.5,
     "tilt_deg": 96.6
-   }
+   },
+   "stable": false
   },
   "objv_77c2e06d0bc8": {
    "uid": "77c2e06d0bc84b6891f1d7dfaa22f81a",
@@ -22572,7 +22913,8 @@
     "dz_mm": -1.2,
     "drift_mm": 7.8,
     "tilt_deg": 10.9
-   }
+   },
+   "stable": false
   },
   "objv_77db12d18850": {
    "uid": "77db12d188504505a9209de1bef076ab",
@@ -22638,7 +22980,8 @@
     "dz_mm": -18.1,
     "drift_mm": 7.4,
     "tilt_deg": 36.5
-   }
+   },
+   "stable": false
   },
   "objv_789e15b7cf23": {
    "uid": "789e15b7cf234d59bc53cd81ef0f9d11",
@@ -22704,7 +23047,8 @@
     "dz_mm": -1.3,
     "drift_mm": 4.4,
     "tilt_deg": 8.2
-   }
+   },
+   "stable": true
   },
   "objv_78be76eb9e5f": {
    "uid": "78be76eb9e5f472ca0a0705c45745371",
@@ -22770,7 +23114,8 @@
     "dz_mm": -10.0,
     "drift_mm": 11.2,
     "tilt_deg": 32.0
-   }
+   },
+   "stable": false
   },
   "objv_796476d4f101": {
    "uid": "796476d4f1014b9faff45b3be3c958fc",
@@ -22836,7 +23181,8 @@
     "dz_mm": -6.5,
     "drift_mm": 32.4,
     "tilt_deg": 90.5
-   }
+   },
+   "stable": false
   },
   "objv_7a10e763cd93": {
    "uid": "7a10e763cd93474699e6bfd18a7dd3a9",
@@ -22902,7 +23248,8 @@
     "dz_mm": 0.4,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_7a4030f6e52c": {
    "uid": "7a4030f6e52c4ef6b24dec1ebf36f978",
@@ -22968,7 +23315,8 @@
     "dz_mm": -23.4,
     "drift_mm": 3.6,
     "tilt_deg": 31.2
-   }
+   },
+   "stable": false
   },
   "objv_7a7c73653eaa": {
    "uid": "7a7c73653eaa4bc38bfd1a70542f118a",
@@ -23034,7 +23382,8 @@
     "dz_mm": -0.5,
     "drift_mm": 1.6,
     "tilt_deg": 3.7
-   }
+   },
+   "stable": true
   },
   "objv_7b70b2914c21": {
    "uid": "7b70b2914c21459681f06f2b88bd2be6",
@@ -23100,7 +23449,8 @@
     "dz_mm": -23.3,
     "drift_mm": 23.3,
     "tilt_deg": 70.0
-   }
+   },
+   "stable": false
   },
   "objv_7bebc9a86ec2": {
    "uid": "7bebc9a86ec24adfb0b109875f23842c",
@@ -23166,7 +23516,8 @@
     "dz_mm": 0.9,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_7c5a069cf385": {
    "uid": "7c5a069cf3854e0fa995972384356dfd",
@@ -23232,7 +23583,8 @@
     "dz_mm": -12.3,
     "drift_mm": 30.9,
     "tilt_deg": 124.4
-   }
+   },
+   "stable": false
   },
   "objv_7c5f400773d9": {
    "uid": "7c5f400773d940cdb2bc6884c990e888",
@@ -23298,7 +23650,8 @@
     "dz_mm": 0.7,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_7d7e291de2ab": {
    "uid": "7d7e291de2ab43c8a6999b866eac2c1a",
@@ -23364,7 +23717,8 @@
     "dz_mm": -6.1,
     "drift_mm": 2.5,
     "tilt_deg": 4.7
-   }
+   },
+   "stable": false
   },
   "objv_7d8ff9f1cf27": {
    "uid": "7d8ff9f1cf27474492d6d7302bfc067f",
@@ -23430,7 +23784,8 @@
     "dz_mm": 0.3,
     "drift_mm": 1.8,
     "tilt_deg": 2.1
-   }
+   },
+   "stable": true
   },
   "objv_7e2fa860ab92": {
    "uid": "7e2fa860ab9247f983657aa39a658726",
@@ -23496,7 +23851,8 @@
     "dz_mm": -10.0,
     "drift_mm": 35.0,
     "tilt_deg": 105.5
-   }
+   },
+   "stable": false
   },
   "objv_7f19504fdb2e": {
    "uid": "7f19504fdb2e477998ed871275f43b06",
@@ -23562,7 +23918,8 @@
     "dz_mm": -0.1,
     "drift_mm": 0.3,
     "tilt_deg": 0.7
-   }
+   },
+   "stable": true
   },
   "objv_7fa1820d2c5c": {
    "uid": "7fa1820d2c5c42c19ad05d814e950cf2",
@@ -23628,7 +23985,8 @@
     "dz_mm": 0.1,
     "drift_mm": 1.4,
     "tilt_deg": 3.3
-   }
+   },
+   "stable": true
   },
   "objv_81869f346cac": {
    "uid": "81869f346cac4b9c8615371cbd811228",
@@ -23694,7 +24052,8 @@
     "dz_mm": -0.1,
     "drift_mm": 0.2,
     "tilt_deg": 0.5
-   }
+   },
+   "stable": true
   },
   "objv_82251a953fa1": {
    "uid": "82251a953fa14b6fae0f1cffc672f16b",
@@ -23760,7 +24119,8 @@
     "dz_mm": -31.7,
     "drift_mm": 53.9,
     "tilt_deg": 84.3
-   }
+   },
+   "stable": false
   },
   "objv_82eb357bcfc4": {
    "uid": "82eb357bcfc44ad39e4ea6e56c96a22d",
@@ -23826,7 +24186,8 @@
     "dz_mm": -15.3,
     "drift_mm": 8.0,
     "tilt_deg": 40.6
-   }
+   },
+   "stable": false
   },
   "objv_832e6fddc610": {
    "uid": "832e6fddc6104248bdc37545c7b506b6",
@@ -23892,7 +24253,8 @@
     "dz_mm": 0.4,
     "drift_mm": 0.2,
     "tilt_deg": 0.4
-   }
+   },
+   "stable": true
   },
   "objv_8443411f882f": {
    "uid": "8443411f882f41bfbde99785b22c9503",
@@ -23958,7 +24320,8 @@
     "dz_mm": -20.9,
     "drift_mm": 12.2,
     "tilt_deg": 60.5
-   }
+   },
+   "stable": false
   },
   "objv_8587d39f1c40": {
    "uid": "8587d39f1c404c039eb8df77ef1b8114",
@@ -24024,7 +24387,8 @@
     "dz_mm": -1.1,
     "drift_mm": 2.7,
     "tilt_deg": 4.1
-   }
+   },
+   "stable": true
   },
   "objv_85a22bf6e147": {
    "uid": "85a22bf6e1474b56bd578d6780be8298",
@@ -24090,7 +24454,8 @@
     "dz_mm": -24.2,
     "drift_mm": 32.6,
     "tilt_deg": 73.6
-   }
+   },
+   "stable": false
   },
   "objv_868ca42e1885": {
    "uid": "868ca42e18854499aea5f8e1b4864781",
@@ -24156,7 +24521,8 @@
     "dz_mm": -30.6,
     "drift_mm": 38.0,
     "tilt_deg": 76.2
-   }
+   },
+   "stable": false
   },
   "objv_86c1a93316e7": {
    "uid": "86c1a93316e74e79b53a3385eac5012e",
@@ -24222,7 +24588,8 @@
     "dz_mm": -18.1,
     "drift_mm": 2.8,
     "tilt_deg": 30.9
-   }
+   },
+   "stable": false
   },
   "objv_86d4826deafa": {
    "uid": "86d4826deafa48ed87f3ba9393d79463",
@@ -24288,7 +24655,8 @@
     "dz_mm": -0.4,
     "drift_mm": 3.2,
     "tilt_deg": 7.1
-   }
+   },
+   "stable": true
   },
   "objv_8746a243213e": {
    "uid": "8746a243213e4b0ca1657d198a7b645d",
@@ -24354,7 +24722,8 @@
     "dz_mm": -5.9,
     "drift_mm": 4.2,
     "tilt_deg": 13.0
-   }
+   },
+   "stable": false
   },
   "objv_877cba1b5635": {
    "uid": "877cba1b56354608b7471f8bb3203932",
@@ -24420,7 +24789,8 @@
     "dz_mm": -4.6,
     "drift_mm": 1.8,
     "tilt_deg": 4.5
-   }
+   },
+   "stable": true
   },
   "objv_8792496206dd": {
    "uid": "8792496206dd418bbaf97c664cacf130",
@@ -24486,7 +24856,8 @@
     "dz_mm": -2.3,
     "drift_mm": 19.2,
     "tilt_deg": 45.4
-   }
+   },
+   "stable": false
   },
   "objv_884ce6c06847": {
    "uid": "884ce6c0684741cd91fc4bbd87310049",
@@ -24552,7 +24923,8 @@
     "dz_mm": -0.3,
     "drift_mm": 0.0,
     "tilt_deg": 0.0
-   }
+   },
+   "stable": true
   },
   "objv_887407a8e0d5": {
    "uid": "887407a8e0d541408cfa76d8596fda90",
@@ -24618,7 +24990,8 @@
     "dz_mm": 0.4,
     "drift_mm": 1.8,
     "tilt_deg": 2.5
-   }
+   },
+   "stable": true
   },
   "objv_88cdb737c612": {
    "uid": "88cdb737c6124ee589adad741213bd0c",
@@ -24684,7 +25057,8 @@
     "dz_mm": -0.6,
     "drift_mm": 42.1,
     "tilt_deg": 88.3
-   }
+   },
+   "stable": false
   },
   "objv_8a23391ced41": {
    "uid": "8a23391ced414743a9b0d15f59715ffe",
@@ -24750,7 +25124,8 @@
     "dz_mm": -9.9,
     "drift_mm": 4.9,
     "tilt_deg": 14.3
-   }
+   },
+   "stable": false
   },
   "objv_8a2447d3a573": {
    "uid": "8a2447d3a57348c99c5d48bd02bd9f26",
@@ -24816,7 +25191,8 @@
     "dz_mm": -16.6,
     "drift_mm": 9.5,
     "tilt_deg": 31.3
-   }
+   },
+   "stable": false
   },
   "objv_8af738784559": {
    "uid": "8af73878455949a58846d55c8f5bff91",
@@ -24882,7 +25258,8 @@
     "dz_mm": -13.4,
     "drift_mm": 20.4,
     "tilt_deg": 59.7
-   }
+   },
+   "stable": false
   },
   "objv_8c016bc68027": {
    "uid": "8c016bc680274db492da5f68581a3f09",
@@ -24948,7 +25325,8 @@
     "dz_mm": -2.2,
     "drift_mm": 6.1,
     "tilt_deg": 14.2
-   }
+   },
+   "stable": false
   }
  },
  "dropped": {

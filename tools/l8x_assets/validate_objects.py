@@ -28,10 +28,18 @@ def qmul(a, b):
             w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2, w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2)
 
 
-def tilt_deg(q):
-    """Angle between the object's up axis (local +y for Y-up MolmoSpaces geometry) and world z."""
+def qmat(q):
     w, x, y, z = q
-    return math.degrees(math.acos(max(-1.0, min(1.0, 2 * (y * z + w * x)))))  # R[2][1] = 2(yz + wx)
+    return np.array([[1 - 2 * (y * y + z * z), 2 * (x * y - w * z), 2 * (x * z + w * y)],
+                     [2 * (x * y + w * z), 1 - 2 * (x * x + z * z), 2 * (y * z - w * x)],
+                     [2 * (x * z - w * y), 2 * (y * z + w * x), 1 - 2 * (x * x + y * y)]])
+
+
+def tilt_deg(q, q0):
+    """Angle the object turned away from its placed upright: the local axis that pointed up at placement (q0)
+    against world z after the settle (q). Works for Y-up (MolmoSpaces) and z-up (GSO) geometry alike."""
+    up_local = qmat(q0).T @ np.array([0.0, 0.0, 1.0])
+    return math.degrees(math.acos(float(np.clip((qmat(q) @ up_local)[2], -1.0, 1.0))))
 
 
 def main(argv=None):
@@ -51,6 +59,7 @@ def main(argv=None):
         from tools.l8x_assets.validate import _save, _video
 
         objs = json.load(open(a.table))["objects"]
+        objs = {k: o for k, o in objs.items() if o.get("usd_physics")}
         names = sorted(objs)
         rng = np.random.default_rng([a.seed, 5])
         pick = [names[i] for i in sorted(rng.choice(len(names), size=min(a.n, len(names)), replace=False))]
@@ -115,7 +124,7 @@ def main(argv=None):
                 qq = d.root_quat_w[0].cpu().numpy()
                 dz = p[2] - (z - 0.005)
                 res[n] = {"dz_mm": _r(dz * 1e3, 1), "drift_mm": _r(math.hypot(p[0] - rx, p[1] - ry) * 1e3, 1),
-                          "tilt_deg": _r(tilt_deg(qq), 1), "category": objs[n]["category"],
+                          "tilt_deg": _r(tilt_deg(qq, q), 1), "category": objs[n]["category"],
                           "height": objs[n]["height"], "grasp_width": objs[n]["grasp_width"]}
                 res[n]["stable"] = bool(abs(dz) <= 0.005 and res[n]["tilt_deg"] <= 10 and res[n]["drift_mm"] <= 20)
                 env.scene["ob_" + n].write_root_pose_to_sim(env.torch.tensor(

@@ -18,6 +18,9 @@ def main(argv=None):
     for name, o in t["objects"].items():
         c = chk.get(name)
         o["stable_upright"] = None if c is None else bool(c["stable"])
+        o["stable"] = o["stable_upright"]  # in its checked resting pose (upright or lying: see "pose" when present)
+        if "noun" in o:  # judge-stage name gate: only name-checked nouns become task targets (others = clutter)
+            o["task_target_ok"] = bool(o["stable"]) and o["noun"] not in ("object", "SKIP")
         o["settle"] = None if c is None else {k: c[k] for k in ("dz_mm", "drift_mm", "tilt_deg")}
         n[o["stable_upright"]] += 1
     t["stable_rule"] = ("Isaac settle on a table (validate_objects): |bottom - top| <= 5 mm, tilt <= 10 deg, "
