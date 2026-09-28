@@ -36,6 +36,12 @@ MARKER = "o11"
 MIN_H, MAX_H, MIN_W, MAX_W = 0.07, 0.10, 0.025, 0.085  # = objv.eligible (truth: prereg_l8d change 8)
 BASE_H = (0.03, 0.10)
 BASE_TOP_SHARE = 0.60
+BASE_MARGIN = 0.03  # gate 35200: a 5 cm candle on a 6 cm jar top fell off; +1 cm was too tight
+ROLLING_NOUNS = ("egg", "apple", "potato", "tomato", "ball")  # gate 35203/35205/35207/35209: eggs rolled off
+# primitive stacking base (scene o12, the white stand 12 x 12 x 8 cm): every stack top also gets it as a base
+PRIMITIVE_BASES = {"o12": {"task_name": "white stand", "noun": "stand", "colour": "white", "height": 0.08,
+                           "half_extents": [0.06, 0.06, 0.04], "task_target_ok": True,
+                           "name_check": {"claimed": "stand", "noun": "stand", "renamed": False, "reasons": []}}}
 PUSH_STEPS = ("above_start", "lower_behind", "push", "lift_away")
 PUSH_BACKOFF = 0.035  # start this far behind the object's edge
 PUSH_TCP_DZ = 0.045  # TCP (pad centre) above the support while pushing: pads span ~2.5-6.5 cm, objects 7-10 cm
@@ -70,7 +76,8 @@ def base_ok(r: dict, top: dict, split: str = "train") -> bool:
     wt, lt = 2 * top["half_extents"][0], 2 * top["half_extents"][1]  # canonical: narrow x (both laid out narrow-x)
     # the top object stands narrow side along x on the base centre: both base top sides >= its width + 1 cm (its
     # centre and most of its footprint on the flat top; on() checks the centre inside the base box)
-    return (t["area"] >= BASE_TOP_SHARE * box_area and x1 - x0 >= wt + 0.01 and y1 - y0 >= max(wt, 0.6 * lt) + 0.01
+    return (t["area"] >= BASE_TOP_SHARE * box_area and x1 - x0 >= wt + BASE_MARGIN
+            and y1 - y0 >= max(wt, 0.6 * lt) + BASE_MARGIN
             and r.get("task_name") != top.get("task_name"))
 
 
@@ -80,14 +87,23 @@ def push_ok(r: dict, split: str = "train") -> bool:
             and (r.get("circularity", 0.0) >= 0.88 or r.get("boxiness", 0.0) >= 0.5))
 
 
+def stack_top_ok(r: dict, split: str = "train") -> bool:
+    """Stack top: a target that does not roll off (no egg / fruit / ball, sphericity < 0.6)."""
+    return target_ok(r, split) and r.get("noun") not in ROLLING_NOUNS and r.get("sphericity", 0.0) < 0.6
+
+
+def _row(rows: dict, k: str) -> dict:
+    return PRIMITIVE_BASES[k] if k in PRIMITIVE_BASES else rows[k]
+
+
 def stack_pairs(rows: dict, split: str = "train", per_top: int = 3) -> list:
     """Frozen (top, base) pairs: for each eligible top, up to per_top bases by a stable hash order."""
-    tops = sorted(k for k, r in rows.items() if target_ok(r, split))
+    tops = sorted(k for k, r in rows.items() if stack_top_ok(r, split))
     out = []
     for a in tops:
         bases = sorted((k for k, r in rows.items() if k != a and base_ok(r, rows[a], split)),
                        key=lambda k: _h(f"st:{a}:{k}"))
-        out += [(a, b) for b in bases[:per_top]]
+        out += [(a, b) for b in bases[:per_top]] + [(a, p) for p in sorted(PRIMITIVE_BASES)]
     return out
 
 
@@ -123,7 +139,7 @@ def text_index(t: str, seed: int, ood: bool = False) -> int:
 def instruction(t: str, rows: dict, idx: int = 0) -> str:
     kind, ids = parse(t)
     if kind == "st":
-        return STACK_TEXTS[idx].format(a=rows[ids[0]]["task_name"], b=rows[ids[1]]["task_name"])
+        return STACK_TEXTS[idx].format(a=rows[ids[0]]["task_name"], b=_row(rows, ids[1])["task_name"])
     return PUSH_TEXTS[idx].format(a=rows[ids[0]]["task_name"])
 
 
@@ -137,7 +153,7 @@ def register_new_tasks(tasks, rows: dict | None = None) -> list:
         return []
     rows = rows or load_real_rows()
     ids = sorted({k for t in new for k in parse(t)[1]})
-    objv.register({k: rows[k] for k in ids})
+    objv.register({k: rows[k] for k in ids if k not in PRIMITIVE_BASES})
     for t in new:
         if t in T.TASKS:
             continue
@@ -146,7 +162,7 @@ def register_new_tasks(tasks, rows: dict | None = None) -> list:
             a, b = obj
             spec = T.Task(t, a, b, instruction(t, rows),
                           {"S1": f"pick up {rows[a]['task_name']} {a}",
-                           "S2": f"place {rows[a]['task_name']} {a} on {rows[b]['task_name']} {b}"})
+                           "S2": f"place {rows[a]['task_name']} {a} on {_row(rows, b)['task_name']} {b}"})
             code = 6000
         else:
             a = obj[0]
@@ -163,9 +179,9 @@ def name_gate(t: str, rows: dict, present_names=()) -> str | None:
     shape-checked noun (not the fallback 'object'), differ from each other and from every other object present,
     and a colour word in the name must be the object's measured colour."""
     _, ids = parse(t)
-    names = [rows[k]["task_name"] for k in ids]
+    names = [_row(rows, k)["task_name"] for k in ids]
     for k in ids:
-        r = rows[k]
+        r = _row(rows, k)
         if r.get("noun") in (None, "object", "SKIP") or not r.get("name_check"):
             return f"name check: {k} has no checked noun"
         if r.get("colour") and r["colour"] not in r["task_name"].split():
@@ -238,8 +254,6 @@ def plan_push(st: dict, info: dict, table_z: float, w_open: float):
         return "done", {"mode": "stop"}
     if pred.get(f"upright({info['tgt']})") is False:
         return "tipped", None
-    if float(st["grip_w"]) > 0.03 + 1e-9 and tcp[2] > z_push + 0.03:
-        return "above_start", {"mode": "eef", "position_m": _r([start[0], start[1], z_above]), "gripper": "close"}
     # pushing when the fingers are low, behind the object and on its line
     rel = tcp[:2] - c[:2]
     along = float(rel @ u)

@@ -29,7 +29,11 @@ ROWS = {"gso_cup": row("gso_cup", "red cup", colour="red"),
 def test_eligibility_and_frozen_lists():
     assert XN.target_ok(ROWS["gso_cup"]) and not XN.target_ok(ROWS["gso_ood"])
     assert XN.base_ok(ROWS["gso_box"], ROWS["gso_cup"]) and not XN.base_ok(ROWS["gso_cup"], ROWS["gso_box"])
-    assert XN.stack_pairs(ROWS) == [("gso_cup", "gso_box")]
+    assert XN.stack_pairs(ROWS) == [("gso_cup", "gso_box"), ("gso_cup", "o12")]
+    egg = dict(ROWS["gso_cup"], noun="egg")
+    assert XN.target_ok(egg) and not XN.stack_top_ok(egg)
+    assert XN.instruction(XN.stack_task_id("gso_cup", "o12"), ROWS, 0) == "Put the red cup on the white stand."
+    assert XN.name_gate(XN.stack_task_id("gso_cup", "o12"), ROWS) is None
     assert "gso_cup" in XN.push_objects(ROWS) and "gso_ood" not in XN.push_objects(ROWS)
     assert XN.push_objects(ROWS, "ood_o") == ["gso_ood"]
 
@@ -83,7 +87,7 @@ def _sim_push(start_obj, marker, n=80):
             break
         new = np.array(cmd["position_m"], float)
         if cmd["gripper"] == "close":
-            grip = 0.01
+            grip = 0.033  # the executor closes to the object's close width, not shut (gate 35211: stuck at 3.3 cm)
         if new[2] <= 0.85 + 0.07:  # low: push the object if the path enters its disc
             d = new[:2] - obj[:2]
             if np.linalg.norm(d) < r:

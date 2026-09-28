@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 
 from harvest.teach_l8d import xnew as XN  # noqa: E402
 
-GATE = {"stack": range(35200, 35210), "push": range(35210, 35220)}
+GATE = {"stack": range(35280, 35290), "push": range(35290, 35300)}  # gate 2 (prereg change 2); gate 1 = 35200-35219
 
 
 def main(argv=None):
