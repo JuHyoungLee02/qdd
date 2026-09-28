@@ -70,8 +70,15 @@ X_OBJ_GEOM = {
     # (Env.set_virtual_surface); contact = the object's bottom on its top inside its box (tasks.surface_contacts)
     "o19": dict(shape="surface", size=(0.10, 0.10, 0.002), invisible=True),
     "o20": dict(shape="surface", size=(0.10, 0.10, 0.002), invisible=True),  # a furniture container's floor
+    # confusers (prereg_l8d change 10): the target's exact colour, another shape / size (never like the OOD-O cup o14)
+    "o21": dict(shape="cuboid", size=(0.07, 0.05, 0.06), mass=0.20, friction=(1.0, 1.0), color=(0.80, 0.08, 0.08)),
+    "o22": dict(shape="cylinder", radius=0.04, height=0.02, mass=0.10, friction=(1.0, 1.0), color=(0.80, 0.08, 0.08)),
+    "o23": dict(shape="cylinder", radius=0.018, height=0.12, mass=0.10, friction=(1.0, 1.0), color=(0.80, 0.08, 0.08)),
+    "o24": dict(shape="cylinder", radius=0.035, height=0.055, mass=0.10, friction=(1.0, 1.0), color=(0.10, 0.65, 0.20)),
+    "o25": dict(shape="cuboid", size=(0.06, 0.06, 0.05), mass=0.20, friction=(1.0, 1.0), color=(0.10, 0.65, 0.20)),
+    "o26": dict(shape="cuboid", size=(0.07, 0.05, 0.06), mass=0.20, friction=(1.0, 1.0), color=(0.15, 0.35, 0.95)),
 }
-X_RIGID = ("o12", "o13", "o14", "o15")
+X_RIGID = ("o12", "o13", "o14", "o15", "o21", "o22", "o23", "o24", "o25", "o26")
 X_VISUAL_ONLY = ("o17", "o18", "o19", "o20")
 VIRTUAL_PLACES = ("o19", "o20")  # furniture surfaces as place objects (set per episode, Env.set_virtual_surface)
 SUPPORT_TOP = {"o15": 0.008}  # place surface above the object's bottom when it is not its top (bin floor)
@@ -95,7 +102,9 @@ DISTRACTOR_X = (0.34, 0.56)
 DISTRACTOR_Y = (-0.46, 0.08)
 PARK_XY = {"o8": (-3.0, 3.0), "o9": (-3.3, 3.0), "o10": (-3.6, 3.0),  # parked behind the robot (out of the head view)
            "o11": (-3.0, -3.0),
-           "o12": (-3.0, 4.2), "o13": (-3.3, 4.2), "o14": (-3.6, 4.2), "o15": (-3.9, 4.2)}  # L8-X objects
+           "o12": (-3.0, 4.2), "o13": (-3.3, 4.2), "o14": (-3.6, 4.2), "o15": (-3.9, 4.2),  # L8-X objects
+           "o21": (-3.0, 4.6), "o22": (-3.3, 4.6), "o23": (-3.6, 4.6), "o24": (-3.9, 4.6), "o25": (-4.2, 4.6),
+           "o26": (-4.5, 4.6)}  # confusers
 
 # RH-P12-RN: gripper_r_joint1 (0 = open, 1.1 = closed; joints 2-4 mimic). Inner pad gap measured in sim
 # (probe2, 2026-09-24): finger link2 origin distance minus 7.7 mm (pad inner faces from the USD bbox).

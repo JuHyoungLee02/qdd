@@ -38,6 +38,13 @@ OBJ_DESC.update({"o12": "box 12 x 12 cm, 8 cm high (a raised stand)",
                         "centre (nothing is drawn there)",
                  "o19": "the flat top of the higher piece of furniture next to the object (nothing is drawn there)",
                  "o20": "an open box that is part of the furniture (put things inside, on its floor)"})
+# confusers (scene.py o21-o26, prereg_l8d change 10): the target's colour, another shape
+OBJ_NAME.update({"o21": "red box", "o22": "red disc", "o23": "tall red cylinder", "o24": "green cup",
+                 "o25": "green box", "o26": "blue box"})
+OBJ_DESC.update({"o21": "box 7 x 5 cm, 6 cm high", "o22": "flat cylinder, diameter 8.0 cm, height 2.0 cm",
+                 "o23": "thin cylinder, diameter 3.6 cm, height 12.0 cm",
+                 "o24": "cylinder, diameter 7.0 cm, height 5.5 cm",
+                 "o25": "box 6 x 6 cm, 5 cm high", "o26": "box 7 x 5 cm, 6 cm high"})
 
 STATIC = """You control the right arm of a humanoid robot (ROBOTIS AI Worker FFW-SG2) at a table, in simulation, by looking at its cameras and giving short end-effector commands.
 

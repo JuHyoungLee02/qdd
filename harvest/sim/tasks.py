@@ -109,10 +109,18 @@ X_FURNITURE_TASKS = ("mug_to_upper", "mug_to_container")  # need a furniture sce
 X_STEPS = {"mug_tray_bottle_marker": (("o3", "o5", None), ("o8", "o11", None)),
            "clear_to_bin": (("o3", "o15", (0.0, 0.04)), ("o8", "o15", (0.0, -0.04))),
            "mug_tray_bluemug_marker": (("o3", "o5", None), ("o13", "o11", None))}
+# confuser tasks (prereg_l8d change 10): the base task + 1-2 same-colour, different-shape objects 8-16 cm from the
+# target (CONF_POOL; the OOD-O small red cup o14 is never one). Appended last, so older layout streams are unchanged.
+CONF_POOL = {"o3": ("o21", "o22", "o23"), "o8": ("o24", "o25"), "o13": ("o26",)}
+CONF_TASKS = {f"cf_{b}": b for b in ("mug_tray", "bottle_tray", "mug_marker", "bluemug_tray", "mug_bin")}
+for _t, _b in CONF_TASKS.items():
+    _s = TASKS.get(_b) or X_TASKS[_b]
+    X_TASKS[_t] = Task(_t, _s.target, _s.place, _s.instruction, dict(_s.stage_text), _s.extras)
 X_TASK_IDS = tuple(X_TASKS)
 X_TASK_CODE = {t: 100 + i for i, t in enumerate(X_TASK_IDS)}  # layout RNG stream ids (fixed; append new ones)
 X_SUPPORT = {"stand_mug_tray": ("o12", "o3")}  # (support object, object standing on it)
-X_CONFUSER = {"bluemug_tray": "o3", "smallcup_tray": "o3", "bluemug_bin": "o3"}  # attribute twin, always 8-14 cm from the target
+X_CONFUSER = {"bluemug_tray": "o3", "smallcup_tray": "o3", "bluemug_bin": "o3",  # attribute twin, always 8-14 cm from the target
+              "cf_bluemug_tray": "o3"}
 X_REL = {"mug_left_of_bottle": ("o8", "o17", 0.10), "mug_right_of_bottle": ("o8", "o18", -0.10)}  # ref, spot, dy
 TASKS.update(X_TASKS)
 
@@ -291,6 +299,22 @@ def x_task_layout(seed: int, task: str, ws=None) -> dict:
                     break
             else:  # pragma: no cover
                 raise RuntimeError("confuser")
+        if task in CONF_TASKS:  # 1-2 same-colour confusers 8-16 cm from the target, clear of everything placed
+            pool = CONF_POOL[s.target]
+            n = min(len(pool), 1 + int(rng.integers(2)))
+            for k in [pool[i] for i in rng.permutation(len(pool))[:n]]:
+                for _ in range(100000):
+                    a, r = rng.uniform(-math.pi, math.pi), rng.uniform(0.08, 0.16)
+                    q = (m[0] + r * math.cos(a), m[1] + r * math.sin(a))
+                    if (DISTRACTOR_X[0] <= q[0] <= DISTRACTOR_X[1] and DISTRACTOR_Y[0] <= q[1] <= DISTRACTOR_Y[1]
+                            and math.dist(q, p) >= _fr(k) + _fr(s.place) + 0.04
+                            and all(math.dist(q, v[:2]) >= _fr(k) + _fr(j) + 0.02 for j, v in out.items()
+                                    if j != s.place)):
+                        yaw = float(rng.uniform(-math.pi, math.pi)) if OBJ_GEOM[k]["shape"] == "cuboid" else 0.0
+                        out[k] = (float(q[0]), float(q[1]), yaw)
+                        break
+                else:  # pragma: no cover
+                    raise RuntimeError("confuser")
     extra = ([] if "o3" in out else ["o3"]) + [k for k in s.extras if rng.random() < 0.5 and k not in out]
     for k in extra:
         for _ in range(10000):

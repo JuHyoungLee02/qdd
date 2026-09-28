@@ -17,7 +17,9 @@ def test_registry_has_mug_tray_and_two_more_tasks_with_distinct_goals():
     assert T.TASKS["mug_tray"].target == "o3" and T.TASKS["mug_tray"].place == "o5"
     assert T.TASKS["mug_tray"].instruction == "Put the red mug on the blue tray."
     assert len({(T.TASKS[t].target, T.TASKS[t].place) for t in T.TASK_IDS}) == len(T.TASK_IDS)
-    assert len({T.TASKS[t].instruction for t in T.TASKS}) == len(T.TASKS)
+    own = [t for t in T.TASKS if t not in T.CONF_TASKS]  # confuser tasks reuse their base task's instruction
+    assert len({T.TASKS[t].instruction for t in own}) == len(own)
+    assert all(T.TASKS[t].instruction == T.TASKS[b].instruction for t, b in T.CONF_TASKS.items())
     assert not set(T.EXPERIMENTAL_TASKS) & set(T.TASK_IDS)
     for t in T.TASKS:
         s = T.TASKS[t]
