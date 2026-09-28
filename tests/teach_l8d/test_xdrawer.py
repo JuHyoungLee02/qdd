@@ -49,9 +49,9 @@ def test_slipping_handle_reopens_and_regrasps():
 
 
 def test_list_and_ids():
-    js = {"Dresser_1": {"handles": [{"prim": "Dresser_1_drawer_1_handle_PrimitiveCollider_2", "ok": True, "top_z": 0.8,
+    js = {"Dresser_1": {"handles": [{"prim": "Dresser_1_drawer_1_handle_PrimitiveCollider_2", "ok": True, "top_z": 0.8, "size": [0.01, 0.3, 0.01],
                                      "standoff_m": 0.03},
-                                    {"prim": "Dresser_1_drawer_1_handle_PrimitiveCollider_3", "ok": True, "top_z": 0.8,
+                                    {"prim": "Dresser_1_drawer_1_handle_PrimitiveCollider_3", "ok": True, "top_z": 0.8, "size": [0.01, 0.3, 0.01],
                                      "standoff_m": 0.03},
                                     {"prim": "Dresser_1_drawer_3_handle_PrimitiveCollider_1", "ok": True,
                                      "top_z": 0.7, "standoff_m": 0.015},  # too close to the front (change 7)
@@ -83,7 +83,7 @@ def test_front_plan_opens_the_drawer():
         if cmd["mode"] == "eef":
             assert cmd["orient"] == "front"
             new = np.array(cmd["position_m"], float)
-            assert float((new - h) @ u) >= XD.FRONT_GRASP - 1e-3 - (XD.PULL_STEP if step == "pull" else 0)
+            assert float((new - h) @ u) >= XD.FRONT_GRASP - 1e-3  # never deeper than the grasp point
             if step == "pull":
                 q = max(q, float((new - h0) @ u) - XD.FRONT_GRASP)
             tcp = new

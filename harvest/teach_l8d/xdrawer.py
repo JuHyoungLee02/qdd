@@ -74,6 +74,9 @@ def plan_drawer(st: dict, info: dict, w_open: float):
 
 FRONT_BACK = 0.10  # change 10: pre-grasp point this far in front of the bar (towards the robot, along pull_dir)
 FRONT_GRASP = 0.012  # pad centre this far in front of the bar centre (fingertips stay out of the drawer front)
+FRONT_W = 0.040  # change 11: front pre-shape (fingers vertical; 2.5 cm let the IK z sag of ~1 cm hit the bar)
+FRONT_PULL = 0.010  # change 11: 1 cm per pull command, the TCP lead over the grasp point capped at 1 cm
+FRONT_LEAD = 0.010
 STEPS_FRONT = ("preshape", "front_of_handle", "insert", "close", "pull", "release", "retreat")
 
 
@@ -90,27 +93,28 @@ def plan_drawer_front(st: dict, info: dict, w_open: float):
     w = float(st["grip_w"])
     g = h + u * FRONT_GRASP
     pre = g + u * FRONT_BACK
-    near = np.linalg.norm(tcp - g) <= NEAR_Z
-    side = tcp - g - u * float((tcp - g) @ u)  # offset across the approach line
+    along = float((tcp - g) @ u)  # > 0: the TCP is in front of the grasp point (short of it / leading the pull)
+    side = tcp - g - u * along  # offset across the approach line
+    near = np.linalg.norm(side) <= NEAR_XY and -0.005 <= along <= NEAR_Z  # change 11: across and along apart
 
     def eef(step, p):
         return step, {"mode": "eef", "position_m": _r(p), "gripper": "keep", "orient": "front"}
 
     if q >= target - OPEN_TOL:
-        if w < PRESHAPE_W - 0.006:
-            return "release", {"mode": "gripper", "gripper": "open", "width_m": PRESHAPE_W}
+        if w < FRONT_W - 0.006:
+            return "release", {"mode": "gripper", "gripper": "open", "width_m": FRONT_W}
         if float((tcp - g) @ u) < FRONT_BACK - 0.02:
             return eef("retreat", tcp + u * (FRONT_BACK - float((tcp - g) @ u)))
         return "done", {"mode": "stop"}
     if w < HELD_W and near:
-        # from where the TCP is along the pull line (it can stop short of g), 5 mm further towards the robot
-        return eef("pull", g + u * (max(0.0, float((tcp - g) @ u)) + min(PULL_STEP, target - q)))
-    if near and w >= PRESHAPE_W - 0.006:
+        # from the TCP (it can stop short of g) along the pull line, the lead capped so the TCP never runs away
+        return eef("pull", g + u * (min(max(along, 0.0), FRONT_LEAD) + min(FRONT_PULL, target - q)))
+    if near and w >= FRONT_W - 0.006:
         return "close", {"mode": "gripper", "gripper": "close"}
-    if w < PRESHAPE_W - 0.006:
-        return "release", {"mode": "gripper", "gripper": "open", "width_m": PRESHAPE_W}
-    if w > PRESHAPE_W + 0.010:
-        return "preshape", {"mode": "gripper", "gripper": "open", "width_m": PRESHAPE_W}
+    if w < FRONT_W - 0.006:
+        return "release", {"mode": "gripper", "gripper": "open", "width_m": FRONT_W}
+    if w > FRONT_W + 0.010:
+        return "preshape", {"mode": "gripper", "gripper": "open", "width_m": FRONT_W}
     if np.linalg.norm(side) <= NEAR_XY and float((tcp - g) @ u) <= FRONT_BACK + NEAR_XY:
         return eef("insert", g)
     return eef("front_of_handle", pre)
@@ -143,14 +147,22 @@ def handle_body(collider_prim: str) -> str:
     return collider_prim.split("_PrimitiveCollider")[0]
 
 
+BAR_MIN = 0.008  # change 11: the pinched bar (the body's longest collider) is >= 8 mm in both cross dimensions
+REACH_MIN_Z = 0.50  # change 11: lower handles need the lift below its -0.5 limit (Side_Table_306_2 at 0.44 m)
+
+
 def drawer_list(handles_json: dict) -> list:
-    """[(piece, handle body, handle top z)] of the top-down graspable handles, one per handle body, sorted."""
-    out = {}
+    """[(piece, handle body, handle top z)] of the graspable handles, one per handle body, sorted."""
+    out, bars = {}, {}
     for piece, r in handles_json.items():
         for hd in r.get("handles", []):
-            if hd.get("ok") and hd.get("standoff_m", 1.0) >= STANDOFF_MIN:
-                out.setdefault((piece, handle_body(hd["prim"])), hd["top_z"])
-    return sorted((p, b, z) for (p, b), z in out.items())
+            key, size = (piece, handle_body(hd["prim"])), hd.get("size", [1.0, 1.0, 1.0])
+            if key not in bars or size[1] > bars[key][1]:
+                bars[key] = size
+            if hd.get("ok") and hd.get("standoff_m", 1.0) >= STANDOFF_MIN and hd.get("front_ok", True) \
+                    and hd["top_z"] >= REACH_MIN_Z:  # change 11
+                out.setdefault(key, hd["top_z"])
+    return sorted((p, b, z) for (p, b), z in out.items() if min(bars[(p, b)][0], bars[(p, b)][2]) >= BAR_MIN)
 
 
 def task_id(piece: str, body: str) -> str:

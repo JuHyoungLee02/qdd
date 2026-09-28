@@ -23,11 +23,17 @@ from harvest.sim.assets_x.usd_import import collider_boxes  # noqa: E402
 FINGER_X = 0.02  # the pads' reach in front of / behind the handle along the closing axis
 FINGER_Y = 0.015
 STANDOFF_MIN = 0.012
+FRONT_X, FRONT_Z = 0.03, 0.02  # change 11: the front-grasp finger sweep around the bar
 YAW = -math.pi / 2
 
 
 def main(argv=None):
-    from pxr import Usd
+    try:
+        from pxr import Usd
+    except ImportError:  # Isaac python: pxr comes with the kit app
+        from isaacsim import SimulationApp
+        SimulationApp({"headless": True})
+        from pxr import Usd
     ap = argparse.ArgumentParser()
     ap.add_argument("table")
     ap.add_argument("names", nargs="+")
@@ -55,10 +61,18 @@ def main(argv=None):
             behind = [l2[0] - hi[0] for q, l2, h2 in ext if q != p and l2[0] >= hi[0] - 0.002
                       and l2[1] < hi[1] and h2[1] > lo[1] and l2[2] < hi[2] and h2[2] > lo[2]]
             standoff = min(behind) if behind else 1.0
+            # change 11: front access for vertical fingers -- no other collider (drawer front of a recessed handle,
+            # slot walls) in the zone the fingers sweep: 3 cm in front of the bar to its back, 2 cm above / below it,
+            # the bar middle (2 cm in from its ends, clear of the mounting posts)
+            body = p.rsplit("/", 1)[-1].split("_PrimitiveCollider")[0]
+            blk = [q for q, l2, h2 in ext if body not in q.rsplit("/", 1)[-1] and l2[0] < hi[0] + 0.002
+                   and h2[0] > lo[0] - FRONT_X and l2[1] < hi[1] - 0.02 and h2[1] > lo[1] + 0.02
+                   and l2[2] < hi[2] + FRONT_Z and h2[2] > lo[2] - FRONT_Z]
             hs.append({"prim": p.rsplit("/", 1)[-1], "top_z": round(float(hi[2]), 3),
                        "centre": [round(float(v), 3) for v in (lo + hi) / 2],
                        "size": [round(float(v), 3) for v in hi - lo], "open_above": bool(not above),
-                       "standoff_m": round(float(standoff), 3),
+                       "standoff_m": round(float(standoff), 3), "front_ok": bool(not blk),
+                       "front_block": [q.rsplit("/", 1)[-1] for q in blk][:3],
                        "ok": bool((not above) and standoff >= STANDOFF_MIN)})
         out[n] = {"handles": hs, "n_ok": sum(h["ok"] for h in hs), "height": r["collider_size"][2]}
         print(n, "handles", len(hs), "top-down ok", out[n]["n_ok"],

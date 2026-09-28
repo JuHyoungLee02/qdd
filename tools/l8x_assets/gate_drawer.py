@@ -151,8 +151,8 @@ def main(argv=None):
                 if placed is not None:  # USD poses are only consistent with physics before the first move
                     raise RuntimeError("one handle per process (the USD bbox goes stale after a root move)")
                 lo, hi = bar_bbox(handle)
-                print("DR_BAR", handle, [round(float(v), 3) for v in lo], [round(float(v), 3) for v in hi], flush=True)
                 hc = (lo + hi) / 2
+                print("DR_BAR", handle, [round(float(v), 3) for v in lo], [round(float(v), 3) for v in hi], flush=True)
                 # the handle bar centre in the handle body's frame (physics pose and USD agree before any move)
                 bq = art.data.body_quat_w[0, hi_].cpu().numpy()
                 from harvest.sim.objv import qinv, qrot
@@ -196,7 +196,9 @@ def main(argv=None):
                 q = pl._ik(np.asarray(p, float), cmd_q, MAX_DQ_RAD)
                 env.step(np.concatenate([q, [w_cmd]]).astype(np.float32))
 
-            info = {"pull_dir": [-1.0, 0.0, 0.0], "open_target": XD.OPEN_TARGET, "clear_z": clear_z}
+            upper = float(art.data.soft_joint_pos_limits[0, ji, 1])  # change 11: shallow drawers (0.17 m travel)
+            open_target = min(XD.OPEN_TARGET, round(0.9 * upper, 3))
+            info = {"pull_dir": [-1.0, 0.0, 0.0], "open_target": open_target, "clear_z": clear_z}
             steps = []
             h_start = status()["handle"]
             for call in range(a.max_calls):
@@ -244,8 +246,9 @@ def main(argv=None):
                         tick(st["tcp"])
             st = status()
             move = float(np.linalg.norm(art.data.root_pos_w[0].cpu().numpy() - root0))
-            ok = XD.success_drawer(st["joint"], st["grip_w"], float(SC.GRIP_MAX_W), move)
-            r.update(success=bool(ok), joint_end=round(st["joint"], 4), grip_end=round(st["grip_w"], 4),
+            ok = XD.success_drawer(st["joint"], st["grip_w"], float(SC.GRIP_MAX_W), move, open_target)
+            r.update(success=bool(ok), open_target=open_target, joint_end=round(st["joint"], 4),
+                     grip_end=round(st["grip_w"], 4),
                      handle_start=[round(float(v), 3) for v in h_start], tcp_end=[round(float(v), 3) for v in st["tcp"]],
                      root_move_m=round(move, 4), n_calls=len(steps), steps=steps,
                      lift=round(float(env.robot.data.joint_pos[0, env.robot.joint_names.index("lift_joint")]), 4))
