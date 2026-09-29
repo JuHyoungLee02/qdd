@@ -208,9 +208,14 @@ def collect_episode(world, seed: int, task: str, variant: str, split: str, out_d
         q = np.asarray(jl, np.float32)
         bl = getattr(world, "_blog", None) or []
         al = getattr(world, "_alog", None) or []
-        world._alog = []
+        tl = getattr(world, "_tlog", None) or []
+        world._alog, world._tlog = [], []
         np.savez_compressed(os.path.join(out_dir, "joints.npz"), q=q, base=np.asarray(bl, np.float32),
                             arm_cmd_offset_ik=np.asarray(al, np.float32), arm_ids=np.asarray([int(i) for i in world.env.arm_ids]),
+                            arm_target_torque_vel=np.asarray(tl, np.float32),
+                            arm_kd_effort=np.asarray([getattr(world.env.robot.data, k)[0, world.env.arm_ids].cpu().numpy()
+                                                      for k in ("joint_stiffness", "joint_damping", "joint_effort_limits")
+                                                      if hasattr(world.env.robot.data, k)], np.float32),
                             names=np.asarray(world.env.robot.joint_names), dt=float(world.dt))
         world._blog = []
 

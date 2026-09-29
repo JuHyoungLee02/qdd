@@ -106,7 +106,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                     raise
                 self._qcmd = None  # change 25: the arm command restarts from the measured pose
                 self._preroll_arm()  # change 21: the right arm starts above, out of the head view
-                self._jlog, self._blog, self._alog = [], [], []
+                self._jlog, self._blog, self._alog, self._tlog = [], [], [], []
                 occ = self._first_occlusion(task)
                 self.furniture_scene["occlusion"] = {"try": k, **occ}
                 if max(occ.values()) < OCC_MAX:
@@ -409,6 +409,13 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                 if not hasattr(self, "_jlog"):
                     self._jlog = []
                 self._jlog.append(self.env.robot.data.joint_pos[0].cpu().numpy().copy())
+                d, ids = self.env.robot.data, self.env.arm_ids  # change 26: PD target, torque, velocity after the step
+                if not hasattr(self, "_tlog"):
+                    self._tlog = []
+                self._tlog.append(np.concatenate([d.joint_pos_target[0, ids].cpu().numpy(),
+                                                  d.applied_torque[0, ids].cpu().numpy(),
+                                                  d.computed_torque[0, ids].cpu().numpy(),
+                                                  d.joint_vel[0, ids].cpu().numpy()]).astype(np.float32))
                 d = self.env.robot.data  # change 24: base pose per step (x, y, z, yaw) for the jump diagnosis
                 w, x, y, z = (float(v) for v in d.root_quat_w[0].cpu().numpy())
                 if not hasattr(self, "_blog"):
