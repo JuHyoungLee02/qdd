@@ -31,6 +31,8 @@ def main():
     ap.add_argument("--probe", type=int, default=None)
     ap.add_argument("--effort", type=float, default=None)
     ap.add_argument("--list", action="store_true")
+    ap.add_argument("--stiff", type=float, default=None)
+    ap.add_argument("--nograv", action="store_true")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     import numpy as np
@@ -126,6 +128,18 @@ def main():
         qh = q_all[a.hold, ids]
         if a.effort is not None:  # diagnosis only: how much joint1 torque holding this pose needs
             rob.write_joint_effort_limit_to_sim(a.effort, joint_ids=[ids[0]])
+        if a.stiff is not None:  # drift ~ 1 / K means a force pushes joint1; unchanged means a position constraint
+            rob.write_joint_stiffness_to_sim(a.stiff, joint_ids=[ids[0]])
+        if a.nograv:
+            import carb
+            from pxr import Gf, UsdPhysics
+            import omni.usd
+            st = omni.usd.get_context().get_stage()
+            for p in st.Traverse():
+                if p.IsA(UsdPhysics.Scene):
+                    UsdPhysics.Scene(p).CreateGravityMagnitudeAttr(0.0)
+                    print("ARM_HOLD gravity off at", p.GetPath(), flush=True)
+            env.env.sim.physics_sim_view.set_gravity(carb.Float3(0.0, 0.0, 0.0))
         q0[0, ids] = torch.as_tensor(qh, device=q0.device)
         rob.write_joint_state_to_sim(q0, torch.zeros_like(q0))
         for k in range(40):
