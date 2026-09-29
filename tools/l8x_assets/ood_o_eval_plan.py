@@ -3,7 +3,7 @@ list (prereg_l8d change 11: ood_o-split objects by name hash, passed the object 
 plan4/plan_ood_real_b4.json), rendered with the L8S rules (drf, rooms, clutter 40, thor_low_table). Takes the first K
 seeds per object, checks that no object appears in the L8S training plan / targets and that no seed overlaps the
 existing OOD-O closed-loop episodes (smallcup_tray 70100-70139), writes the plan and a list.
-usage: python tools/l8x_assets/ood_o_eval_plan.py PLAN_OOD.json TRAIN_PLAN.json TRAIN_TARGETS.json OUT_PLAN.json K"""
+usage: python tools/l8x_assets/ood_o_eval_plan.py PLAN_OOD.json TRAIN_PLAN.json TRAIN_TARGETS.json OUT_PLAN.json K [START] [OBJ:K,...]"""
 from __future__ import annotations
 
 import json
@@ -16,6 +16,8 @@ def main(argv=None):
     a = argv or sys.argv[1:]
     ood, train, targets = (json.load(open(p)) for p in a[:3])
     out, k = a[3], int(a[4])
+    start = int(a[5]) if len(a) > 5 else 0  # top-up rounds: seeds after the first `start` per object
+    heavy = dict(x.split(":") for x in a[6].split(",")) if len(a) > 6 else {}  # object:K overrides
     obj = lambda t: t.split("__", 1)[1]  # noqa: E731  ov_tray__<id>
     seen = {obj(r["task"]) for r in train if "__" in r["task"]}
     seen_txt = json.dumps(train) + json.dumps(targets)
@@ -26,7 +28,7 @@ def main(argv=None):
     bad = sorted(o for o in by if o in seen or o in seen_txt)
     if bad:
         raise SystemExit(f"objects in the training pool: {bad}")
-    plan = [r for o in sorted(by) for r in by[o][:k]]
+    plan = [r for o in sorted(by) for r in by[o][start:start + int(heavy.get(o, k))]]
     json.dump(plan, open(out, "w"), indent=0)
     lst = {"n": len(plan), "n_objects": len(by), "per_object": k, "seeds": [r["seed"] for r in plan],
            "objects": sorted(by), "old_ood_o_overlap": [], "train_overlap": bad}
