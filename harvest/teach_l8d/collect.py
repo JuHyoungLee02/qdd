@@ -155,6 +155,36 @@ def _steps(task: str):
     return [list(s[:2]) for s in X_STEPS[task]] if task in X_STEPS else None
 
 
+def save_joints(world, out_dir: str, meta: dict) -> None:
+    """L8S joints.npz + meta max_dq_rad / max_dq_finger_rad from world._jlog (change 20; change 30: shared with
+    the drawer runner). No-op without a joint log."""
+    import numpy as np
+
+    jl = getattr(world, "_jlog", None)
+    if jl:  # change 20 (audit 2): every physics step's joint angles (jump check <= 0.04 rad / frame)
+        q = np.asarray(jl, np.float32)
+        bl = getattr(world, "_blog", None) or []
+        al = getattr(world, "_alog", None) or []
+        tl = getattr(world, "_tlog", None) or []
+        world._alog, world._tlog = [], []
+        np.savez_compressed(os.path.join(out_dir, "joints.npz"), q=q, base=np.asarray(bl, np.float32),
+                            arm_cmd_offset_ik=np.asarray(al, np.float32), arm_ids=np.asarray([int(i) for i in world.env.arm_ids]),
+                            arm_target_torque_vel=np.asarray(tl, np.float32),
+                            arm_kd_effort=np.asarray([getattr(world.env.robot.data, k)[0, world.env.arm_ids].cpu().numpy()
+                                                      for k in ("joint_stiffness", "joint_damping", "joint_effort_limits")
+                                                      if hasattr(world.env.robot.data, k)], np.float32),
+                            names=np.asarray(world.env.robot.joint_names), dt=float(world.dt))
+        world._blog = []
+
+        names = list(world.env.robot.joint_names)
+        d = np.abs(np.diff(q, axis=0)) if len(q) > 1 else np.zeros((1, len(names)))
+        arm = [i for i, n in enumerate(names) if n.startswith("arm_r_joint")]
+        fing = [i for i, n in enumerate(names) if n.startswith("gripper_r")]
+        meta["max_dq_rad"] = round(float(d[:, arm].max()) if arm else float(d.max()), 4)  # right arm (<= 0.04)
+        meta["max_dq_finger_rad"] = round(float(d[:, fing].max()), 4) if fing else None  # fingers: excluded
+        world._jlog = []
+
+
 def collect_episode(world, seed: int, task: str, variant: str, split: str, out_dir: str, p: float,
                     max_perturb: int = 4, stop_calls: int | None = 30, stop_motion_s: float | None = 120.0,
                     style: str = "", video: bool = False) -> dict:
@@ -206,29 +236,7 @@ def collect_episode(world, seed: int, task: str, variant: str, split: str, out_d
             "wall_s": res.get("wall_s"), "n_pt_labels": sum(r.get("pt_answer") is not None for r in coll.rows)}
     if judge is not None:  # new tasks only (old tasks: meta byte-identical)
         meta["judge"], meta["success"] = judge, meta["success"] and judge
-    jl = getattr(world, "_jlog", None)
-    if jl:  # change 20 (audit 2): every physics step's joint angles (jump check <= 0.04 rad / frame)
-        q = np.asarray(jl, np.float32)
-        bl = getattr(world, "_blog", None) or []
-        al = getattr(world, "_alog", None) or []
-        tl = getattr(world, "_tlog", None) or []
-        world._alog, world._tlog = [], []
-        np.savez_compressed(os.path.join(out_dir, "joints.npz"), q=q, base=np.asarray(bl, np.float32),
-                            arm_cmd_offset_ik=np.asarray(al, np.float32), arm_ids=np.asarray([int(i) for i in world.env.arm_ids]),
-                            arm_target_torque_vel=np.asarray(tl, np.float32),
-                            arm_kd_effort=np.asarray([getattr(world.env.robot.data, k)[0, world.env.arm_ids].cpu().numpy()
-                                                      for k in ("joint_stiffness", "joint_damping", "joint_effort_limits")
-                                                      if hasattr(world.env.robot.data, k)], np.float32),
-                            names=np.asarray(world.env.robot.joint_names), dt=float(world.dt))
-        world._blog = []
-
-        names = list(world.env.robot.joint_names)
-        d = np.abs(np.diff(q, axis=0)) if len(q) > 1 else np.zeros((1, len(names)))
-        arm = [i for i, n in enumerate(names) if n.startswith("arm_r_joint")]
-        fing = [i for i, n in enumerate(names) if n.startswith("gripper_r")]
-        meta["max_dq_rad"] = round(float(d[:, arm].max()) if arm else float(d.max()), 4)  # right arm (<= 0.04)
-        meta["max_dq_finger_rad"] = round(float(d[:, fing].max()), 4) if fing else None  # fingers: excluded
-        world._jlog = []
+    save_joints(world, out_dir, meta)
     sats = [r.get("sat") for r in coll.rows if r.get("sat") is not None]
     if sats:  # change 22: the brightest call (every call is checked)
         meta["max_sat"] = max(sats)

@@ -200,7 +200,9 @@ def collect_drawer_episode(world, seed: int, task: str, variant: str, split: str
              "lift": sp.get("lift"), "lift_joint_measured": sp.get("lift_measured"), "ws": None, "layout": {},
              "randomization": None, "rand_settle": None, "steps": None, "clutter": None, "surface": "drawer",
              "furniture": {"piece": sp["piece"], "handle": sp["handle"], "handle_xyz": sp.get("handle_xyz"),
-                           "open_target": sp["open_target"], "pull_dir": _l(sp["pull_dir"]), "layout": sp.get("layout")},
+                           "open_target": sp["open_target"], "pull_dir": _l(sp["pull_dir"]), "layout": sp.get("layout"),
+                           **{k: sp[k] for k in ("room", "room_skip", "hdr", "iso", "arm_start", "head",
+                                                 "grid_hidden") if k in sp}},
              "distractors": {"n": 0, "layout_objects": [], "pool_distractors": []}}
     with open(os.path.join(out_dir, "scene.json"), "w") as f:
         json.dump(scene, f)
@@ -223,6 +225,8 @@ def collect_drawer_episode(world, seed: int, task: str, variant: str, split: str
             "success": res["success"], "end_reason": res["end_reason"], "n_calls": res["n_calls"],
             "n_rows": len(ep.rows), "n_perturb": ep.n_pert, "sim_t": res["sim_t"], "wall_s": res["wall_s"],
             "n_pt_labels": 0, "judge": ep.judge, "prompt_id": XP.PROMPT_ID, "prompt_version": XP.VERSION}
+    from .collect import save_joints
+    save_joints(world, out_dir, meta)  # change 30: joints.npz + max_dq_rad (<= 0.04 build rule)
     with open(os.path.join(out_dir, "meta.json"), "w") as f:
         json.dump(meta, f)
     return meta
@@ -238,7 +242,7 @@ def usd_of(piece: str) -> str:
     return f"{U_THOR}/{pkg}/{piece}/{piece}.usda"
 
 
-def make_drawer_world(piece: str, handles: dict):
+def make_drawer_world(piece: str, handles: dict, rooms: dict | None = None):
     """One articulated THOR piece per process (= tools/l8x_assets/gate_drawer.py, gate 6 ff577d8): fixed root, drawer
     links 1 kg, damped; Y-up fix + yaw -90 deg (front towards the robot). handles: {handle body: words dict}. The
     bar centres are measured once before any root move (USD poses go stale after one), in each handle body's frame."""
@@ -246,6 +250,7 @@ def make_drawer_world(piece: str, handles: dict):
     from ..sim import scene as SC
     from ..sim.objv import qinv, qmul, qrot
     from tools.l8x_assets.gate_drawer import drawer_joint_of, joints_all
+    from .xart import auto_exposure, drf_dome, hide_ground_grid, l8s_step_band, place_room, preroll_arm, room_cfgs
 
     usd = usd_of(piece)
     orig = SC._build_cfg
@@ -259,6 +264,7 @@ def make_drawer_world(piece: str, handles: dict):
         from isaaclab.assets import ArticulationCfg
         cfg, layout = orig(*x, **k)
         cfg.scene.table = None
+        room_cfgs(cfg, rooms)  # change 30: L8S room backgrounds (render only, parked)
         cfg.scene.art = ArticulationCfg(
             prim_path="{ENV_REGEX_NS}/ART",
             spawn=sim_utils.UsdFileCfg(usd_path=usd, mass_props=sim_utils.MassPropertiesCfg(mass=1.0),
@@ -316,6 +322,13 @@ def make_drawer_world(piece: str, handles: dict):
                               "open_target": min(XD.OPEN_TARGET, round(0.9 * upper, 3))}
             self.p0 = self.art.data.default_root_state[0, :3].cpu().numpy().copy()
             self.plo_z = float(plo[2])
+            self.pxy = ((float(plo[0]), float(phi[0])), (float(plo[1]), float(phi[1])))  # piece xy box at p0
+            for p in Usd.PrimRange(stage.GetPrimAtPath("/World/envs/env_0/Robot")):  # L8S head 0.785 (+10 deg)
+                if p.GetName() == "head_joint1":
+                    a = p.GetAttribute("physics:upperLimit")
+                    if a and a.Get() is not None and a.Get() < 57.0:
+                        a.Set(57.0)
+            self.grid_hidden = hide_ground_grid()  # change 30: no grid floor (room floor or the HDRI instead)
             fq = qmul((math.cos(-math.pi / 4), 0.0, math.sin(-math.pi / 4), 0.0),
                       (math.cos(math.pi / 4), 0.0, 0.0, math.sin(math.pi / 4)))
             self.quats = {"down": None, "front": np.asarray(fq, float)}
@@ -338,9 +351,20 @@ def make_drawer_world(piece: str, handles: dict):
             li = rob.joint_names.index("lift_joint")
             rob.cfg.init_state.joint_pos["lift_joint"] = lift
             rob.data.default_joint_pos[0, li] = lift
+            from .clutter_x import HEAD_TILT0
+            for jn, v in (("head_joint1", HEAD_TILT0), ("head_joint2", 0.0)):  # change 30: L8S head pose
+                rob.cfg.init_state.joint_pos[jn] = v
+                rob.data.default_joint_pos[0, rob.joint_names.index(jn)] = v
+            dx, dy = float(newp[0] - self.p0[0]), float(newp[1] - self.p0[1])
+            (x0, x1), (y0, y1) = self.pxy
+            try:  # change 30: an L8S room around the piece when its xy box fits rooms.ZONE (USD pose, hard reset)
+                room, room_skip = place_room(rooms, seed, [((x0 + dx, x1 + dx), (y0 + dy, y1 + dy))]), None
+            except ValueError as ex:
+                room, room_skip = None, str(ex)[:120]
             env.reset(settle_s=0.5)
             for _ in range(PRE_RENDER):
                 env.env.sim.render()
+            self.hdr = drf_dome(self, seed, "drawer")  # change 30: drf lighting + HDRI
             self.pl = OraclePlanner(env)
             self.quats["down"] = np.asarray(self.pl.goal_quat, float)
             self.cmd_quat = np.asarray(self.pl.cmd_quat, float)
@@ -349,10 +373,23 @@ def make_drawer_world(piece: str, handles: dict):
             self._st = None
             st = self.status()
             self.table_z = float(st["handle"][2]) - 0.15  # executor box: handle - 12.5 cm .. + 25 cm
+            self._qcmd = None  # change 26: the arm command restarts from the measured pose
+            arm_start = preroll_arm(self)  # changes 21 / 27: arm inertia, the right TCP to ARM_START
+            self._jlog = []  # joints.npz from here (collect_drawer_episode -> collect.save_joints)
+            for _ in range(PRE_RENDER):
+                env.env.sim.render()
+            self.iso = auto_exposure(self)
+            self._st = None
+            st = self.status()
             words = dict(h["words"])
             return {"words": words, "open_target": h["open_target"], "pull_dir": [-1.0, 0.0, 0.0], "piece": piece,
                     "handle": hb, "handle_xyz": _l(st["handle"]), "lift": lift, "layout": lay,
-                    "lift_measured": round(float(rob.data.joint_pos[0, li]), 4)}
+                    "lift_measured": round(float(rob.data.joint_pos[0, li]), 4),
+                    "room": room, "room_skip": room_skip, "hdr": self.hdr, "iso": self.iso, "arm_start": arm_start,
+                    "head": {"tilt": HEAD_TILT0, "pan": 0.0}, "grid_hidden": self.grid_hidden}
+
+        def step(self, cmd_pos, width: float, quat=None) -> None:
+            l8s_step_band(self, cmd_pos, width, quat)  # changes 25-26 + joint log
 
         def status(self):
             if self._st is None:
@@ -405,7 +442,12 @@ def run_drawer(a, eps: list, vids: set) -> None:
     same = [r for r in drawer_list["tasks"] if r["piece"] == piece]
     same.sort(key=lambda r: -float(r["handle_y"]))
     words = {r["handle_body"]: (same.index(r), len(same)) for r in same}
-    world = make_drawer_world(piece, {hb: None for hb in handles})
+    rooms = None
+    if getattr(a, "rooms", False):  # change 30: L8S room backgrounds (train-split iTHOR rooms)
+        from .fx import rooms_of
+        rooms = rooms_of(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sim", "assets_x"),
+                         "train")
+    world = make_drawer_world(piece, {hb: None for hb in handles}, rooms)
     print("WORLD " + json.dumps({"piece": piece, "handles": sorted(handles), "n": len(eps)}), flush=True)
     for e in eps:
         s, task = e["seed"], e["task"]

@@ -260,6 +260,88 @@ def l8s_step(world, cmd_pos, width: float, quat=None) -> None:
         world._jlog.append(world.env.robot.data.joint_pos[0].cpu().numpy().copy())
 
 
+def l8s_step_band(world, cmd_pos, width: float, quat=None) -> None:
+    """= L8DWorld.step / _arm_cmd (changes 25-26): the arm command (without the gravity offset) moves <= ARM_DQ per step
+    towards the unclamped IK solution and stays within ARM_BAND of the measured joints; the offset is added for the
+    PD. Joint angles logged per step (joints.npz). world._qcmd = None restarts it from the measured pose."""
+    from ..sim.planner import W_MAX, _slerp_step
+    from .clutter_x import ARM_BAND, ARM_DQ
+    goal = world.pl.goal_quat if quat is None else np.asarray(quat, float)
+    world.cmd_quat = _slerp_step(world.cmd_quat, goal, W_MAX * world.dt)
+    rob, ids = world.env.robot, world.env.arm_ids
+    g = world.pl._gravity_offset()[0].cpu().numpy()
+    qd = world.pl._ik(np.asarray(cmd_pos, float), world.cmd_quat, 10.0) - g
+    qm = rob.data.joint_pos[0, ids].cpu().numpy()
+    if getattr(world, "_qcmd", None) is None:
+        world._qcmd = qm.copy()
+    world._qcmd = np.clip(world._qcmd + np.clip(qd - world._qcmd, -ARM_DQ, ARM_DQ), qm - ARM_BAND, qm + ARM_BAND)
+    world.env.step(np.concatenate([world._qcmd + g, [float(width)]]).astype(np.float32))
+    world._st = None
+    if hasattr(world, "_jlog"):
+        world._jlog.append(rob.data.joint_pos[0].cpu().numpy().copy())
+
+
+def drf_dome(world, seed: int, tag: str) -> str:
+    """= ArtWorld._dome: drf lighting (randomize.sample_randomization 'drf') + a train-split CC0 HDRI on the dome.
+    -> the HDRI name (world.env.randomization set)."""
+    from ..sim import randomize as R
+    from ..sim.assets_x import materials as M
+    from .clutter_x import material_ok
+    if not hasattr(world, "_hdrs"):
+        cat = {k: r for k, r in M.usable(M.load()).items() if material_ok(k, r)}
+        world._hdrs = [k for k, r in sorted(cat.items()) if r["role"] == "env" and M.split_of(k) == "train"]
+        world._cat = cat
+        R.setup_visuals(world.env)
+    k = world._hdrs[int(hashlib.sha256(f"{tag}-hdr:{int(seed)}".encode()).hexdigest()[:8], 16) % len(world._hdrs)]
+    m = R.sample_randomization(seed, "drf", world.env.layout)
+    m["distractors"] = []
+    if m.get("hdr"):
+        m["hdr"]["file"] = os.path.join(M.ROOT, world._cat[k]["files"]["hdr"])
+        m["hdr"]["name"] = k
+    R.apply_visuals(world.env, m)
+    world.env.randomization = m
+    return k
+
+
+def auto_exposure(world) -> dict:
+    """= ArtWorld._auto_exposure: the head frame's film ISO (saturation <= SAT_MAX, mean >= DARK_MEAN)."""
+    import carb
+
+    from ..astra_motion.world_isaac import PRE_RENDER
+    from .clutter_x import DARK_MEAN, ISO0, SAT_MAX
+    st = carb.settings.get_settings()
+    iso = ISO0 * float(((world.env.randomization or {}).get("lighting") or {}).get("exposure", 1.0))
+    for k in range(6):
+        st.set("/rtx/post/tonemap/filmIso", iso)
+        for _ in range(PRE_RENDER):
+            world.env.env.sim.render()
+        world.env.scene["cam_head"].update(0.0, force_recompute=True)
+        rgb = world.env.scene["cam_head"].data.output["rgb"][0].cpu().numpy()[..., :3].astype(float)
+        sat, mean = float((rgb.max(axis=2) >= 250).mean()), float(rgb.mean())
+        if sat > SAT_MAX:
+            iso *= 0.6
+        elif mean < DARK_MEAN:
+            iso *= 1.6
+        else:
+            return {"iso": round(iso, 2), "sat": round(sat, 4), "mean": round(mean, 1), "tries": k + 1}
+    return {"iso": round(iso, 2), "sat": round(sat, 4), "mean": round(mean, 1), "tries": 6, "overexposed": sat > SAT_MAX}
+
+
+def hide_ground_grid() -> int:
+    """change 30: make the grid ground plane's visual meshes invisible (physics untouched), for scenes without a room
+    floor over it (the HDRI dome shows instead). -> prims hidden."""
+    import omni.usd
+    from pxr import UsdGeom
+    stage = omni.usd.get_context().get_stage()
+    n = 0
+    for p in stage.Traverse():
+        s = str(p.GetPath())
+        if "GroundPlane" in s and p.IsA(UsdGeom.Mesh):
+            UsdGeom.Imageable(p).MakeInvisible()
+            n += 1
+    return n
+
+
 def make_art_world(kind: str, fixture: str, rec: dict, objs: dict, rooms: dict | None = None):
     from ..astra_motion.world_isaac import CAMS, NO_RENDER, PRE_RENDER, IsaacWorld
     from ..sim import scene as SC
