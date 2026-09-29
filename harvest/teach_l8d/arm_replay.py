@@ -71,15 +71,24 @@ def main():
         base = drift()
         print("ARM_PROBE base drift", round(base, 3), "colliders", len(cols))
         out = {"probe": a.probe, "base": base, "bodies": {}}
+        scene_cols = [p for p in stage.Traverse() if p.HasAPI(UsdPhysics.CollisionAPI)
+                      and not str(p.GetPath()).startswith("/World/envs/env_0/Robot")]
+        for tag, group in (("ALL_ROBOT", cols), ("ALL_SCENE", scene_cols)):
+            for p in group:
+                UsdPhysics.CollisionAPI(p).CreateCollisionEnabledAttr(False)
+            out[tag] = round(drift(), 4)
+            for p in group:
+                UsdPhysics.CollisionAPI(p).CreateCollisionEnabledAttr(True)
+            print("ARM_PROBE", tag, len(group), out[tag], flush=True)
         for b in rob.body_names:
             mine = [p for p in cols if f"/{b}/" in str(p.GetPath()) + "/"]
             if not mine:
                 continue
             for p in mine:
-                UsdPhysics.CollisionAPI(p).GetCollisionEnabledAttr().Set(False)
+                UsdPhysics.CollisionAPI(p).CreateCollisionEnabledAttr(False)
             d = drift()
             for p in mine:
-                UsdPhysics.CollisionAPI(p).GetCollisionEnabledAttr().Set(True)
+                UsdPhysics.CollisionAPI(p).CreateCollisionEnabledAttr(True)
             out["bodies"][b] = round(d, 4)
             print("ARM_PROBE", b, len(mine), round(d, 3), flush=True)
         json.dump(out, open(a.out, "w"), indent=0)
