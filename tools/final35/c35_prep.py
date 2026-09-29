@@ -8,8 +8,10 @@
                                     with AgiBot v3 final in place of agibot_p0), G rows removed, 3 % of rows by
                                     sha256("c35|<id>") % 100 < 3 held out -> <out>/pool_src/<src>.jsonl (train part)
                                     + <out>/val_open.jsonl (geval format, gset val_<src>)
-  mix    <base jsonl> <out dir> <out jsonl> [repeat guard 3.0]
-                                 -> tools/final35/open_pool.main over <out>/pool_src (open = 0.75 x base, repeat guard 3.0)"""
+  subset <out dir>               -> arm a (change 2): <out>/pool_src_a = the rows of <out>/pool_src with
+                                    sha256("c35a|<id>") % 3 == 0 (one third of the pool)
+  mix    <base jsonl> <src dir> <out jsonl> [repeat guard 3.0]
+                                 -> tools/final35/open_pool.main over <src dir>/*.jsonl (open = 0.75 x base)"""
 import glob
 import hashlib
 import json
@@ -92,15 +94,33 @@ def pool(verdict_p, out):
     print(json.dumps(counts))
 
 
-def mix(base, out, out_jsonl, cap=3.0):
-    """open rows = 0.75 x base rows exactly (user-log 195, prereg_c35 change 1); the repeat cap is only a guard (3.0)
+def subset(out):
+    d, a = os.path.join(out, "pool_src"), os.path.join(out, "pool_src_a")
+    os.makedirs(a, exist_ok=True)
+    counts = {}
+    for p in sorted(glob.glob(os.path.join(d, "*.jsonl"))):
+        n = k = 0
+        with open(os.path.join(a, os.path.basename(p)), "w", encoding="utf-8", newline="\n") as f:
+            for line in open(p, encoding="utf-8"):
+                n += 1
+                if int(hashlib.sha256(("c35a|" + json.loads(line)["id"]).encode()).hexdigest(), 16) % 3 == 0:
+                    k += 1
+                    f.write(line)
+        counts[os.path.basename(p)[:-6]] = {"pool": n, "subset": k}
+    json.dump(counts, open(os.path.join(out, "subset_a_counts.json"), "w"), indent=1)
+    print(json.dumps(counts))
+
+
+def mix(base, srcdir, out_jsonl, cap=3.0):
+    """open rows = 0.75 x base rows exactly (user-log 195, prereg_c35 change 1); the repeat cap is only a guard
     -- the build log / .counts.json records the repeat actually used."""
     import open_pool as OP
-    OP.SOURCES = {os.path.basename(p)[:-6]: p for p in sorted(glob.glob(os.path.join(out, "pool_src", "*.jsonl")))}
+    OP.SOURCES = {os.path.basename(p)[:-6]: p for p in sorted(glob.glob(os.path.join(srcdir, "*.jsonl")))}
     OP.main(base, out_jsonl, 0.75, cap)
 
 
 if __name__ == "__main__":
     c, a = sys.argv[1], sys.argv[2:]
     {"ood58": lambda: ood58(a[0]), "l8s": lambda: l8s(int(a[0]), a[1]), "pool": lambda: pool(a[0], a[1]),
+     "subset": lambda: subset(a[0]),
      "mix": lambda: mix(a[0], a[1], a[2], float(a[3]) if len(a) > 3 else 3.0)}[c]()
