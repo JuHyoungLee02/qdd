@@ -207,3 +207,21 @@ def test_img_aug_change17(tmp_path):
     A.aug_rows(str(tmp_path / "in.jsonl"), str(tmp_path / "out.jsonl"), str(tmp_path / "img"))
     r = json.loads((tmp_path / "out.jsonl").read_text())
     assert r["img_aug"] and r["images"][0].endswith(".jpg") and Image.open(r["images"][0]).size == (30, 20)
+
+
+def test_into_container_tasks():
+    from harvest.sim import objv as OV
+    from harvest.sim import scene as SC
+    from harvest.sim import tasks as T
+    rows = CX.load_real()
+    conts = OV.load_containers()
+    c = sorted(conts)[0]
+    t = next(k for k in sorted(rows) if rows[k]["split"] == "train" and rows[k].get("task_target_ok") and OV.into_fits(rows[k], conts[c]))
+    task = f"ov_into__{t}__{c}"
+    OV.register_for_tasks([task])
+    s = T.TASKS[task]
+    assert s.target == t and s.place == c and SC.OBJ_GEOM[c]["kinematic"] and c in SC.SUPPORT_TOP
+    lay = T.x_task_layout(40001, task, ws=((0.37, 0.55), (-0.42, -0.04)))
+    assert t in lay and c in lay
+    from harvest.astra_motion.prompts import place_rule
+    assert place_rule(c, "bowl").startswith(("inside", "on"))

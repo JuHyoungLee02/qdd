@@ -232,6 +232,17 @@ def register_objv_tasks(ids, names: dict) -> list:
     return out
 
 
+def register_into_task(t: str, obj: str, cont: str, name: str, cname: str, kind: str) -> str:
+    """L8S: put a real object into (or onto) a container (objv.register_containers); layout stream 8000 + hash."""
+    import hashlib
+    if t not in TASKS:
+        text = f"Put the {name} into the {cname}." if kind == "into" else f"Put the {name} on the {cname}."
+        TASKS[t] = X_TASKS[t] = Task(t, obj, cont, text, {"S1": f"pick up {name} {obj}",
+                                                          "S2": f"place {name} {obj} in {cname} {cont}"})
+        X_TASK_CODE[t] = 8000 + int(hashlib.sha256(t.encode()).hexdigest()[:6], 16) % 100000
+    return t
+
+
 def x_task_layout(seed: int, task: str, ws=None) -> dict:
     """L8-X task layouts (own RNG stream X_TASK_CODE). Target / place (or stand / relational reference) inside the
     workspace box by the task_layout rules; stand_mug_tray: the stand at the pick spot, the mug on it

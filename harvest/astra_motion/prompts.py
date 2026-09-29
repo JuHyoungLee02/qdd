@@ -157,6 +157,12 @@ PROMPT_ID = hashlib.sha256("\n".join(TEMPLATES[k] for k in sorted(TEMPLATES)).en
 
 
 def place_rule(place: str, place_name: str) -> str:
+    from ..sim.scene import OBJ_GEOM
+    pk = OBJ_GEOM.get(place, {}).get("place_kind")
+    if pk == "into":  # L8S containers (objv.register_containers)
+        return f"inside the {place_name} (standing on its inner floor, within its rim)"
+    if pk == "onto":
+        return f"on the {place_name} (standing on it, fully inside its edges)"
     if place == "o11":
         return (f"on the {place_name} (its centre within 4 cm of the marker centre, standing on the table inside the "
                 f"marker)")

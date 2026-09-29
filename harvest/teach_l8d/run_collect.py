@@ -121,6 +121,13 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                 self._rm = ReachModel.load(reach_path)
             from ..sim.tasks import X_FURNITURE_TASKS
             sc = FU.sample_scene(furniture, seed, reach=self._rm, mesh_assets=mesh, split=mesh_split, rooms=rooms)
+            for k in range(1, 6 if (l8s and rooms) else 1):  # L8S: every episode has a room (pilot: 10/88 had none)
+                if sc.get("room") is not None:
+                    break
+                sc = FU.sample_scene(furniture, seed + 100003 * k, reach=self._rm, mesh_assets=mesh, split=mesh_split,
+                                     rooms=rooms)
+            if l8s and rooms and sc.get("room") is None:
+                raise fx.SkipScene(f"no room fits: {sc.get('room_skip')}")
             upper, vid = None, TASKS[task].place
             if task in X_FURNITURE_TASKS or vid in SC.VIRTUAL_PLACES:  # cross-surface: o19 = a higher surface, o20 = a container's floor
                 pick = fx.choose_container if vid == "o20" else fx.choose_two_surfaces
@@ -232,7 +239,8 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             from ..sim.assets_x import isaac as FX
             from ..sim.assets_x import materials as M
             stage = omni.usd.get_context().get_stage()
-            cat = M.usable(M.load())
+            from .clutter_x import material_ok
+            cat = {k: r for k, r in M.usable(M.load()).items() if material_ok(k, r)}  # no moss / grass (pilot)
             first = M.pick(cat, "furniture", 0)
             paths = {}
             prims = [FX._mesh_path(n) for n in sorted(mesh or {})] + [FX._slot_path(i) for i in range(FX.N_SLOTS)]

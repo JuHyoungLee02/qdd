@@ -320,7 +320,8 @@ def _place_layout_event(env, env_ids):
         p = torch.tensor([[*pos, *quat]], dtype=torch.float32, device=env.device)
         p[:, :3] += env.scene.env_origins[env_ids]
         o.write_root_pose_to_sim(p, env_ids=env_ids)
-        o.write_root_velocity_to_sim(torch.zeros((len(env_ids), 6), device=env.device), env_ids=env_ids)
+        if not OBJ_GEOM[k].get("kinematic"):  # L8S containers are kinematic: a velocity write is a PhysX error
+            o.write_root_velocity_to_sim(torch.zeros((len(env_ids), 6), device=env.device), env_ids=env_ids)
     if _LAYOUT.get("rand"):  # variant random / dr: this seed's tabletop distractors (randomize.py)
         from .randomize import write_distractor_poses
         write_distractor_poses(env, env_ids, _LAYOUT["rand"])

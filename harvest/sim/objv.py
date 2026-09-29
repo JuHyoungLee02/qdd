@@ -121,6 +121,14 @@ def register_for_tasks(tasks, rows: dict | None = None) -> list:
     from .tasks import register_objv_tasks
     from ..teach_l8d.xnew import is_new_task, register_new_tasks  # L8-X st__ / pu__ tasks (real objects)
     new = register_new_tasks([t for t in tasks if is_new_task(t)]) if any(is_new_task(t) for t in tasks) else []
+    into = [t for t in tasks if str(t).startswith("ov_into__")]
+    if into:  # L8S: ov_into__<object>__<container> (containers.json, into / onto)
+        from .tasks import register_into_task
+        conts = load_containers(usable_only=False)
+        cids = sorted({t.rsplit("__", 1)[1] for t in into})
+        register_containers({c: conts[c] for c in cids})
+        tasks = [t for t in tasks if t not in into] + [f"ov_tray__{t[len('ov_into__'):].rsplit('__', 1)[0]}"
+                                                       for t in into]
     ids = sorted({t.split("__", 1)[1] for t in tasks if str(t).startswith("ov_")})
     if not ids:
         return new
@@ -130,6 +138,11 @@ def register_for_tasks(tasks, rows: dict | None = None) -> list:
         rows = {**load_real(), **rows}
     register({k: rows[k] for k in ids})
     register_objv_tasks(ids, {k: prompt_name(rows[k]) for k in ids})
+    if into:
+        for t in into:
+            a, c = t[len("ov_into__"):].rsplit("__", 1)
+            register_into_task(t, a, c, prompt_name(rows[a]), prompt_name(conts[c]), conts[c]["inside"]["place_kind"])
+        ids = sorted(set(ids) | set(cids))
     return sorted(set(ids) | set(new))
 
 
@@ -143,3 +156,38 @@ def eligible(rows: dict, split: str = "train", need_stable: bool = True) -> dict
     return {k: r for k, r in rows.items() if r["split"] == split and (r.get("stable_upright") is True or not need_stable)
             and MIN_H - 1e-9 <= r["height"] <= MAX_H + 1e-9
             and MIN_GRASP_W - 1e-9 <= r["grasp_width"] <= MAX_GRASP_W + 1e-9}
+
+
+CONTAINERS = "assets_x/containers.json"  # helper L8X-assets 2a8f3e3: into / onto places (kinematic)
+RIM_MAX = 0.12  # m above the bottom: the carry height (support + 22 cm, xlabels) clears the rim with the object
+
+
+def load_containers(path: str | None = None, usable_only: bool = True) -> dict:
+    """Container rows (gate_pass, rim <= RIM_MAX) as objv rows (name = noun, split train)."""
+    import json
+    import os
+    p = path or os.path.join(os.path.dirname(os.path.abspath(__file__)), CONTAINERS)
+    out = {}
+    for k, r in json.load(open(p))["containers"].items():
+        i = r["inside"]
+        if usable_only and not (r.get("gate_pass") and (i.get("rim_z") or i["inner_floor_z"]) <= RIM_MAX + 1e-9):
+            continue
+        out[k] = dict(r, name=r.get("name") or r["noun"].replace("_", " "), split=r.get("split") or "train",
+                      uid=r.get("uid") or k)
+    return out
+
+
+def register_containers(rows: dict) -> list:
+    """Register containers as kinematic mesh objects whose place surface is their inner floor (SUPPORT_TOP)."""
+    from . import scene as S
+    ids = register(rows)
+    for k in ids:
+        i = rows[k]["inside"]
+        S.OBJ_GEOM[k].update(kinematic=True, place_kind=i["place_kind"], opening=float(i.get("opening_min_side", 0)))
+        S.SUPPORT_TOP[k] = float(i["inner_floor_z"]) - float(rows[k].get("root_above_bottom", 0.0))
+    return ids
+
+
+def into_fits(obj: dict, cont: dict) -> bool:
+    """The object passes the container's opening with 1 cm each side (2 x footprint_r <= opening - 2 cm)."""
+    return 2 * float(obj["footprint_r"]) <= float(cont["inside"].get("opening_min_side", 0)) - 0.02
