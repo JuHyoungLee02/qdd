@@ -39,7 +39,8 @@ pbuild() {  # <collect root> <manifest> <out dir> <k>   (resumable: finished par
 }
 mixlog() { tr -d ' \n' < $1 | grep -o '"pool":[0-9]*\|"open_over_base":[0-9.]*,"open_share_of_file":[0-9.]*,"repeat":[0-9.]*' | tr '\n' ' '; }
 if [ ! -f $D/train_c35_a.jsonl ]; then
-  $P tools/final35/c35_prep.py strat $N $O/man >> $L/prep.log 2>&1 || { log PREP_FAIL_strat; exit 1; }
+  # the selection is frozen once written (a restart must not re-draw it: new episodes change the draw)
+  [ -f $O/man/main_train.json ] || $P tools/final35/c35_prep.py strat $N $O/man >> $L/prep.log 2>&1 || { log PREP_FAIL_strat; exit 1; }
   for r in main; do  # change 6: ring V excluded (KeyError rp_ring); every build step's exit code is checked
     R=$T8/l8s_prod
     pbuild $R $O/man/${r}_train.json $D/b_$r 32 || { log "PREP_FAIL build $r"; exit 1; }
