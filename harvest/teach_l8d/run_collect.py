@@ -515,6 +515,9 @@ def main(argv=None):
             run_drawer(a, eps, vids)
             raise _DrawerDone
         from ..sim.objv import register_for_tasks  # L8-X mesh objects used by this process (before make_env)
+        if a.variant == "drf":  # L8S change 22: primitive cylinders are "cylinders" (before real refs override)
+            from ..sim.tasks import use_shape_names
+            use_shape_names()
         objv_ids = register_for_tasks([e["task"] for e in eps])
         pool = None
         if a.clutter:  # b3 clutter objects of this process (prims before make_env), change 11

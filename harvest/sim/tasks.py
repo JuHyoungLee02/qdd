@@ -543,3 +543,29 @@ def marker_contacts(pos: dict, bottom: dict, marker: str, on_r: float = MARKER_O
         if bottom[a] <= table_tol and math.hypot(pa[0] - c[0], pa[1] - c[1]) <= on_r:
             out.add(frozenset({a, marker}))
     return out
+
+
+SHAPE_NAMES = {"o3": "red cylinder", "o13": "blue cylinder", "o8": "green cylinder"}  # change 22 (audit 3)
+_SHAPE_WORDS = (("red mug", "red cylinder"), ("blue mug", "blue cylinder"), ("green bottle", "green cylinder"))
+
+
+def use_shape_names() -> None:
+    """L8S: the primitive cylinders are called cylinders (mug / bottle names are kept for real meshes): object
+    names, task instructions / stage texts and the relational reference name."""
+    from ..astra_motion import prompts as P
+    P.OBJ_NAME.update(SHAPE_NAMES)
+    P.REL_NAMES["bottle"] = SHAPE_NAMES["o8"]
+    for k in ("o17", "o18", "o27", "o28", "o29"):
+        if k in P.OBJ_NAME:
+            for a, b in _SHAPE_WORDS:
+                P.OBJ_NAME[k] = P.OBJ_NAME[k].replace(a, b)
+    for t, s in list(TASKS.items()):
+        if t.startswith(("ov_", "st__", "pu__", "dr", "ai__")):
+            continue
+        ins, st = s.instruction, dict(s.stage_text)
+        for a, b in _SHAPE_WORDS:
+            ins = ins.replace(a, b)
+            st = {k: v.replace(a.split()[1], b.split()[1]) for k, v in st.items()}
+        TASKS[t] = s.__class__(s.id, s.target, s.place, ins, st, s.extras)
+        if t in X_TASKS:
+            X_TASKS[t] = TASKS[t]

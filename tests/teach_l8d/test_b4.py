@@ -291,3 +291,16 @@ def test_shrink_ws_change21():
     assert fx.shrink_ws(((0.30, 0.60), (-0.50, 0.00)), surf, [0.05]) == ((0.36, 0.54), (-0.44, -0.06))
     assert fx.shrink_ws(((0.40, 0.48), (-0.30, -0.20)), surf, [0.05]) == ((0.40, 0.48), (-0.30, -0.20))
     assert fx.shrink_ws(((0.30, 0.40), (-0.50, -0.40)), surf, [0.06]) == ((0.30, 0.40), (-0.50, -0.40))
+
+
+def test_shape_names_change22():
+    from harvest.sim import tasks as T
+    from harvest.astra_motion.prompts import OBJ_NAME
+    import copy
+    from harvest.astra_motion import prompts as P
+    saved = (copy.copy(T.TASKS), copy.copy(T.X_TASKS), dict(P.OBJ_NAME), dict(P.REL_NAMES))
+    T.use_shape_names()
+    assert T.TASKS["mug_tray"].instruction == "Put the red cylinder on the blue tray." and OBJ_NAME["o3"] == "red cylinder"
+    assert "green cylinder" in T.TASKS["bottle_tray"].instruction
+    T.TASKS.clear(); T.TASKS.update(saved[0]); T.X_TASKS.clear(); T.X_TASKS.update(saved[1])
+    P.OBJ_NAME.clear(); P.OBJ_NAME.update(saved[2]); P.REL_NAMES.clear(); P.REL_NAMES.update(saved[3])

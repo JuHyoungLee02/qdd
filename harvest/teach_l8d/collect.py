@@ -19,6 +19,17 @@ SCENE_SCHEMA = "qdd.l8d.scene/v1"
 
 
 _OCC_MAX = 0.5
+_SAT_MAX = 0.10
+
+
+def _sat(w):
+    """Saturated share of this call's head frame (max channel >= 250); None without an RGB head frame."""
+    obs = getattr(w, "last_obs", None)
+    rgb = getattr(obs, "rgb", None) if obs is not None else None
+    if not rgb or "head" not in rgb:
+        return None
+    a = np.asarray(rgb["head"])[..., :3]
+    return round(float((a.max(axis=2) >= 250).mean()), 4)
 
 
 def _occ(w, st, info, lab):
@@ -60,12 +71,15 @@ class _XLabels(LC.Collector):
         occ = _occ(w, st, info, lab)
         if drop is None and occ is not None and occ >= _OCC_MAX:  # change 20: the step's point is hidden
             drop = "occluded"
+        sat = _sat(w)
+        if drop is None and sat is not None and sat > _SAT_MAX:  # change 22 (audit 3): exposure on every call
+            drop = "overexposed"
         row = {"call": meta["call"], "site": meta["site"], "prev_kind": self.prev_kind, "drop": drop,
                "gt": {"tgt": LC._l(tgt), "place": LC._l(st["obj"][info["place"]]), "tcp": LC._l(st["tcp"]),
                       "grip_w": round(float(st["grip_w"]), 4),
                       "others": {k: LC._l(v) for k, v in st["obj"].items() if k not in (info["tgt"], info["place"])}},
                "ex_target": LC._l(ep.ex.target), "drawn": list(getattr(ep, "drawn", [])),
-               "tgt": info["tgt"], "place": info["place"], "occ": occ}
+               "tgt": info["tgt"], "place": info["place"], "occ": occ, "sat": sat}
         if lab is None:
             row.update(step="tipped", phase="tipped", status=None, answer=None, exec_kind="stop")
             self.rows.append(row)
@@ -201,6 +215,9 @@ def collect_episode(world, seed: int, task: str, variant: str, split: str, out_d
         meta["max_dq_rad"] = round(float(d[:, arm].max()) if arm else float(d.max()), 4)  # right arm (<= 0.04)
         meta["max_dq_finger_rad"] = round(float(d[:, fing].max()), 4) if fing else None  # fingers: excluded
         world._jlog = []
+    sats = [r.get("sat") for r in coll.rows if r.get("sat") is not None]
+    if sats:  # change 22: the brightest call (every call is checked)
+        meta["max_sat"] = max(sats)
     with open(os.path.join(out_dir, "meta.json"), "w") as f:
         json.dump(meta, f)
     return meta
