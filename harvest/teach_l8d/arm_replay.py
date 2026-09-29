@@ -35,6 +35,7 @@ def main():
     ap.add_argument("--nograv", action="store_true")
     ap.add_argument("--gprobe", action="store_true")
     ap.add_argument("--spec-inertia", action="store_true")
+    ap.add_argument("--grip-close", type=float, default=None)
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     import numpy as np
@@ -175,8 +176,13 @@ def main():
             env.env.sim.physics_sim_view.set_gravity(carb.Float3(0.0, 0.0, 0.0))
         q0[0, ids] = torch.as_tensor(qh, device=q0.device)
         rob.write_joint_state_to_sim(q0, torch.zeros_like(q0))
+        gids = [rob.joint_names.index(f"gripper_r_joint{i}") for i in range(1, 5)]
         for k in range(40):
-            env.step(np.concatenate([qh, [GRIP_MAX_W]]))
+            w = GRIP_MAX_W if a.grip_close is None or k < 5 else a.grip_close  # close on nothing after 5 steps
+            env.step(np.concatenate([qh, [w]]))
+            if a.grip_close is not None:
+                print("ARM_GRIP", k, np.round(rob.data.joint_pos[0, gids].cpu().numpy(), 3).tolist(),
+                      "j7", round(float(rob.data.joint_pos[0, ids[6]]), 3), flush=True)
             c = view.get_gravity_compensation_forces()[0, ids].cpu().numpy()
             q = rob.data.joint_pos[0, ids].cpu().numpy()
             rows.append({"t": k, "q": [round(float(v), 4) for v in q], "rec_q": [round(float(v), 4) for v in qh],
@@ -185,6 +191,7 @@ def main():
         print("ARM_HOLD", a.hold, "q-qh", np.round(q - qh, 3).tolist(), "tau", rows[-1]["tau"], "grav", rows[-1]["grav"])
         print("ARM_HOLD limits", np.round(rob.data.joint_pos_limits[0, ids].cpu().numpy(), 3).tolist())
         print("ARM_HOLD physx limits", np.round(view.get_dof_limits()[0, ids].cpu().numpy(), 3).tolist())
+        print("ARM_HOLD grip limits", np.round(view.get_dof_limits()[0, gids].cpu().numpy(), 3).tolist(), "stiff", np.round(view.get_dof_stiffnesses()[0, gids].cpu().numpy(), 1).tolist(), "maxF", np.round(view.get_dof_max_forces()[0, gids].cpu().numpy(), 1).tolist(), flush=True)
         print("ARM_HOLD physx max force", np.round(view.get_dof_max_forces()[0, ids].cpu().numpy(), 1).tolist(),
               "stiff", np.round(view.get_dof_stiffnesses()[0, ids].cpu().numpy(), 1).tolist(),
               "armature", np.round(view.get_dof_armatures()[0, ids].cpu().numpy(), 3).tolist(),
