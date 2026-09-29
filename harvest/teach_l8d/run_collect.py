@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import time
 
@@ -104,7 +105,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                         continue
                     raise
                 self._preroll_arm()  # change 21: the right arm starts above, out of the head view
-                self._jlog = []
+                self._jlog, self._blog = [], []
                 occ = self._first_occlusion(task)
                 self.furniture_scene["occlusion"] = {"try": k, **occ}
                 if max(occ.values()) < OCC_MAX:
@@ -373,6 +374,12 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                 if not hasattr(self, "_jlog"):
                     self._jlog = []
                 self._jlog.append(self.env.robot.data.joint_pos[0].cpu().numpy().copy())
+                d = self.env.robot.data  # change 24: base pose per step (x, y, z, yaw) for the jump diagnosis
+                w, x, y, z = (float(v) for v in d.root_quat_w[0].cpu().numpy())
+                if not hasattr(self, "_blog"):
+                    self._blog = []
+                self._blog.append([*(float(v) for v in d.root_pos_w[0].cpu().numpy()),
+                                   math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z))])
 
         def _first_occlusion(self, task) -> dict:
             """Occluded share of the target's and the destination's top face in the current head frame (depth)."""

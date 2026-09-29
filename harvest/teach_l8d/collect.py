@@ -206,8 +206,11 @@ def collect_episode(world, seed: int, task: str, variant: str, split: str, out_d
     jl = getattr(world, "_jlog", None)
     if jl:  # change 20 (audit 2): every physics step's joint angles (jump check <= 0.04 rad / frame)
         q = np.asarray(jl, np.float32)
-        np.savez_compressed(os.path.join(out_dir, "joints.npz"), q=q,
+        bl = getattr(world, "_blog", None) or []
+        np.savez_compressed(os.path.join(out_dir, "joints.npz"), q=q, base=np.asarray(bl, np.float32),
                             names=np.asarray(world.env.robot.joint_names), dt=float(world.dt))
+        world._blog = []
+
         names = list(world.env.robot.joint_names)
         d = np.abs(np.diff(q, axis=0)) if len(q) > 1 else np.zeros((1, len(names)))
         arm = [i for i, n in enumerate(names) if n.startswith("arm_r_joint")]
