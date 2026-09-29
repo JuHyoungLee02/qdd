@@ -104,6 +104,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                         last = ex
                         continue
                     raise
+                self._arm_vel_limit()  # change 24: no momentum jumps past the 0.035 rad step
                 self._preroll_arm()  # change 21: the right arm starts above, out of the head view
                 self._jlog, self._blog = [], []
                 occ = self._first_occlusion(task)
@@ -112,6 +113,21 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                     return
                 last = _fx.SkipScene(f"target / destination occluded in the first head frame after 8 layouts: {occ}")
             raise last
+
+        def _arm_vel_limit(self):
+            """change 24: PhysX max joint velocity of the right arm = ARM_VMAX_STEP / dt. The pilot-4 jumps
+            (0.05-0.14 rad / step) came with a still base (l8s_diag_jump: base xyz / yaw steps 0.0): the PD target
+            moves <= 0.035 rad / step but the arm carried momentum past it. The hard reset re-reads the USD, so this
+            is written after every reset."""
+            import torch
+
+            from .clutter_x import ARM_VMAX_STEP
+            rob = self.env.robot
+            ids = [i for i, n in enumerate(rob.joint_names) if n.startswith("arm_r_joint")]
+            v = torch.full((1, len(ids)), ARM_VMAX_STEP / float(self.dt), device=rob.device)
+            fn = getattr(rob, "write_joint_velocity_limit_to_sim", None)
+            if fn is not None:
+                fn(v, joint_ids=ids)
 
         def _preroll_arm(self, steps: int = 200):
             """Move the right TCP to ARM_START (table frame offset, main35_recipe.md) before the episode, joint steps
