@@ -270,7 +270,8 @@ def make_art_world(kind: str, fixture: str, rec: dict, objs: dict):
             self.pl = OraclePlanner(env)
             self.cmd_quat = np.asarray(self.pl.cmd_quat, float)
             self.quat0 = np.asarray(self.pl.goal_quat, float)
-            self.w_close = 0.0
+            from ..sim.tasks import close_width
+            self.w_close = float(close_width(oid))  # object width - 14 mm (L8 squeeze); 0 threw objects (pilots)
             self._st = None
             self.furniture_scene = {"kind": f"art_{kind}", "fixture": fixture, "layout": lay, "iso": self.iso,
                                     "hdr": self.hdr, "room": None, "room_skip": "articulated scenes: no iTHOR room "
