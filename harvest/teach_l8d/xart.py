@@ -126,9 +126,10 @@ def layout(kind: str, rec: dict, obj: dict, seed: int) -> dict:
     if carry > work + BOX_UP - 0.005:
         raise ValueError(f"carry height {carry:.3f} above the executor box ({work:.3f} + {BOX_UP})")
     place_tcp = floor + h - TCP_BELOW_TOP + 0.004
-    # the lift centres the used TCP band (place .. carry) where L8 works at the default lift (table 0.85 + 7-24 cm)
-    lift = float(np.clip(LIFT0 + (0.5 * (place_tcp + carry) - (REL_TABLE + 0.155)) + rng.uniform(-0.02, 0.02),
-                         -0.5, 0.0))
+    # the lift centres the used TCP band (place .. carry) where L8 works at the default lift (table 0.85 + 7-24 cm);
+    # C (pilot 5): the carry over the flaps (table + 37 cm) was out of reach there -> the band top goes to the carry
+    mid = 0.5 * (place_tcp + carry) if kind == "A" else carry - 0.085
+    lift = float(np.clip(LIFT0 + (mid - (REL_TABLE + 0.155)) + rng.uniform(-0.02, 0.02), -0.5, 0.0))
     return {"pos": [round(v, 4) for v in pos], "place_box": [[round(v, 4) for v in b] for b in box],
             "place_xy": [round((box[0][0] + box[0][1]) / 2, 4), round((box[1][0] + box[1][1]) / 2, 4)],
             "floor": round(floor, 4), "rim": None if rim is None else round(rim, 4), "obj_xy": [round(ox, 4),
