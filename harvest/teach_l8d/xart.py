@@ -155,7 +155,9 @@ def preds(obj_c, obj_bottom, obj_tilt, tcp, grip_w, w_open, lay, reach: float = 
     hold = HOLD_GAP < grip_w < top and float(np.linalg.norm(obj_c - tcp)) < reach
     (x0, x1), (y0, y1) = lay["place_box"]
     inside = x0 <= obj_c[0] <= x1 and y0 <= obj_c[1] <= y1
-    on = (not hold) and inside and abs(obj_bottom - lay["floor"]) <= FLOOR_TOL
+    # L8-D change 19 (into): inside the opening box, bottom from the inside floor - 1 cm up to the rim; after release
+    rim = lay.get("rim") if lay.get("rim") is not None else lay["floor"] + 0.10
+    on = (not hold) and inside and lay["floor"] - 0.01 <= obj_bottom <= rim
     return {"holding(t)": hold, "on(t,p)": on, "upright(t)": obj_tilt <= TILT_UP,
             "lifted(t)": obj_bottom > lay["obj_z"] + 0.02}
 

@@ -1,0 +1,2072 @@
+{
+ "Box_1_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_1/Box_1/Box_1.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_1/Box_1/Box_1_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_1/Box_1/Box_1_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_1/Box_1/Box_1_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   0.001,
+   -0.0138,
+   -0.162
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "collider_size": [
+   0.257,
+   0.3847,
+   0.223
+  ],
+  "render_size": [
+   0.2559,
+   0.3836,
+   0.2236
+  ],
+  "render_vs_collider_mm": 1.1,
+  "surfaces": [
+   {
+    "top_z": 0.0072,
+    "free_box": [
+     [
+      -0.12,
+      0.12000000000000002
+     ],
+     [
+      -0.18,
+      0.18000000000000002
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.12,
+      0.12000000000000002
+     ],
+     [
+      -0.18,
+      0.18000000000000002
+     ]
+    ],
+    "area": 0.0864,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.223,
+    "container": true,
+    "n_free_cells": 864
+   }
+  ],
+  "joints": {},
+  "ok": false,
+  "why": "rim 0.223 m",
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_10_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_10/Box_10/Box_10.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_10/Box_10/Box_10_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_10/Box_10/Box_10_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_10/Box_10/Box_10_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   -0.0019,
+   -0.0004,
+   -0.1909
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.2683,
+   0.2566,
+   0.3284
+  ],
+  "render_size": [
+   0.2663,
+   0.2564,
+   0.3236
+  ],
+  "render_vs_collider_mm": 4.9,
+  "surfaces": [
+   {
+    "top_z": 0.0117,
+    "free_box": [
+     [
+      -0.12,
+      0.12000000000000002
+     ],
+     [
+      -0.12,
+      0.12000000000000002
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.12,
+      0.12000000000000002
+     ],
+     [
+      -0.12,
+      0.12000000000000002
+     ]
+    ],
+    "area": 0.0576,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.3284,
+    "container": true,
+    "n_free_cells": 576
+   }
+  ],
+  "joints": {},
+  "ok": false,
+  "why": "rim 0.328 m",
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_11_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_11/Box_11/Box_11.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_11/Box_11/Box_11_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_11/Box_11/Box_11_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_11/Box_11/Box_11_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   -0.0148,
+   -0.0001,
+   -0.0858
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "collider_size": [
+   0.3082,
+   0.3027,
+   0.1138
+  ],
+  "render_size": [
+   0.3084,
+   0.3021,
+   0.1104
+  ],
+  "render_vs_collider_mm": 3.4,
+  "surfaces": [
+   {
+    "top_z": 0.0054,
+    "free_box": [
+     [
+      -0.13999999999999999,
+      0.14
+     ],
+     [
+      -0.13999999999999999,
+      0.14
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.13999999999999999,
+      0.14
+     ],
+     [
+      -0.13999999999999999,
+      0.14
+     ]
+    ],
+    "area": 0.0784,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.1138,
+    "container": true,
+    "n_free_cells": 784
+   }
+  ],
+  "joints": {},
+  "ok": true,
+  "why": null,
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_12_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_12/Box_12/Box_12.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_12/Box_12/Box_12_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_12/Box_12/Box_12_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_12/Box_12/Box_12_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   -0.0141,
+   0.0007,
+   -0.1616
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.2272,
+   0.3166,
+   0.2694
+  ],
+  "render_size": [
+   0.2261,
+   0.3149,
+   0.2699
+  ],
+  "render_vs_collider_mm": 1.6,
+  "surfaces": [
+   {
+    "top_z": 0.0091,
+    "free_box": [
+     [
+      -0.09999999999999998,
+      0.1
+     ],
+     [
+      -0.15,
+      0.15000000000000002
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.09999999999999998,
+      0.1
+     ],
+     [
+      -0.15,
+      0.15000000000000002
+     ]
+    ],
+    "area": 0.06,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.2692,
+    "container": true,
+    "n_free_cells": 600
+   }
+  ],
+  "joints": {},
+  "ok": false,
+  "why": "rim 0.269 m",
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_13_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_13/Box_13/Box_13.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_13/Box_13/Box_13_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_13/Box_13/Box_13_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_13/Box_13/Box_13_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   -0.0084,
+   0.0001,
+   -0.1566
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.1795,
+   0.2397,
+   0.2732
+  ],
+  "render_size": [
+   0.1804,
+   0.2398,
+   0.2729
+  ],
+  "render_vs_collider_mm": 0.9,
+  "surfaces": [
+   {
+    "top_z": 0.0089,
+    "free_box": [
+     [
+      -0.08,
+      0.08
+     ],
+     [
+      -0.10999999999999999,
+      0.11000000000000001
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.08,
+      0.08
+     ],
+     [
+      -0.10999999999999999,
+      0.11000000000000001
+     ]
+    ],
+    "area": 0.0352,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.2729,
+    "container": true,
+    "n_free_cells": 352
+   }
+  ],
+  "joints": {},
+  "ok": false,
+  "why": "rim 0.273 m",
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_14_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_14/Box_14/Box_14.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_14/Box_14/Box_14_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_14/Box_14/Box_14_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_14/Box_14/Box_14_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   -0.0226,
+   0.0001,
+   -0.1058
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.2409,
+   0.3113,
+   0.149
+  ],
+  "render_size": [
+   0.2406,
+   0.3115,
+   0.1489
+  ],
+  "render_vs_collider_mm": 0.3,
+  "surfaces": [
+   {
+    "top_z": 0.0048,
+    "free_box": [
+     [
+      -0.10999999999999999,
+      0.11000000000000001
+     ],
+     [
+      -0.15,
+      0.15000000000000002
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.10999999999999999,
+      0.11000000000000001
+     ],
+     [
+      -0.15,
+      0.15000000000000002
+     ]
+    ],
+    "area": 0.066,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.1486,
+    "container": true,
+    "n_free_cells": 660
+   }
+  ],
+  "joints": {},
+  "ok": true,
+  "why": null,
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_15_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_15/Box_15/Box_15.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_15/Box_15/Box_15_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_15/Box_15/Box_15_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_15/Box_15/Box_15_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   -0.0191,
+   0.0002,
+   -0.1269
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "collider_size": [
+   0.2441,
+   0.3926,
+   0.1894
+  ],
+  "render_size": [
+   0.2431,
+   0.3914,
+   0.1874
+  ],
+  "render_vs_collider_mm": 1.9,
+  "surfaces": [
+   {
+    "top_z": 0.0086,
+    "free_box": [
+     [
+      -0.10999999999999999,
+      0.11000000000000001
+     ],
+     [
+      -0.19,
+      0.19000000000000003
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.10999999999999999,
+      0.11000000000000001
+     ],
+     [
+      -0.19,
+      0.19000000000000003
+     ]
+    ],
+    "area": 0.0836,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.1894,
+    "container": true,
+    "n_free_cells": 836
+   }
+  ],
+  "joints": {},
+  "ok": true,
+  "why": null,
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_16_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_16/Box_16/Box_16.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_16/Box_16/Box_16_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_16/Box_16/Box_16_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_16/Box_16/Box_16_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   -0.0026,
+   0.0026,
+   -0.1588
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.3369,
+   0.2579,
+   0.274
+  ],
+  "render_size": [
+   0.3351,
+   0.2585,
+   0.2711
+  ],
+  "render_vs_collider_mm": 2.9,
+  "surfaces": [
+   {
+    "top_z": 0.0107,
+    "free_box": [
+     [
+      -0.16,
+      0.16000000000000003
+     ],
+     [
+      -0.12,
+      0.12000000000000002
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.16,
+      0.16000000000000003
+     ],
+     [
+      -0.12,
+      0.12000000000000002
+     ]
+    ],
+    "area": 0.0768,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.2738,
+    "container": true,
+    "n_free_cells": 768
+   }
+  ],
+  "joints": {},
+  "ok": false,
+  "why": "rim 0.274 m",
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_17_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_17/Box_17/Box_17.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_17/Box_17/Box_17_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_17/Box_17/Box_17_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_17/Box_17/Box_17_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   -0.0015,
+   0.0005,
+   -0.137
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.2573,
+   0.1803,
+   0.2533
+  ],
+  "render_size": [
+   0.2551,
+   0.1804,
+   0.2531
+  ],
+  "render_vs_collider_mm": 2.2,
+  "surfaces": [
+   {
+    "top_z": 0.0085,
+    "free_box": [
+     [
+      -0.12,
+      0.12000000000000002
+     ],
+     [
+      -0.08000000000000002,
+      0.08
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.12,
+      0.12000000000000002
+     ],
+     [
+      -0.08000000000000002,
+      0.08
+     ]
+    ],
+    "area": 0.0384,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.2533,
+    "container": true,
+    "n_free_cells": 384
+   }
+  ],
+  "joints": {},
+  "ok": false,
+  "why": "rim 0.253 m",
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_18_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_18/Box_18/Box_18.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_18/Box_18/Box_18_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_18/Box_18/Box_18_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_18/Box_18/Box_18_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   -0.0059,
+   0.0012,
+   -0.1288
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.2168,
+   0.2024,
+   0.2207
+  ],
+  "render_size": [
+   0.2137,
+   0.2017,
+   0.2199
+  ],
+  "render_vs_collider_mm": 3.0,
+  "surfaces": [
+   {
+    "top_z": 0.0071,
+    "free_box": [
+     [
+      -0.1,
+      0.1
+     ],
+     [
+      -0.09,
+      0.09
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.1,
+      0.1
+     ],
+     [
+      -0.09,
+      0.09
+     ]
+    ],
+    "area": 0.036,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.2207,
+    "container": true,
+    "n_free_cells": 360
+   }
+  ],
+  "joints": {},
+  "ok": false,
+  "why": "rim 0.221 m",
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_19_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_19/Box_19/Box_19.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_19/Box_19/Box_19_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_19/Box_19/Box_19_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_19/Box_19/Box_19_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   0.0013,
+   -0.0043,
+   -0.1506
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.2364,
+   0.1654,
+   0.254
+  ],
+  "render_size": [
+   0.2345,
+   0.1655,
+   0.252
+  ],
+  "render_vs_collider_mm": 2.0,
+  "surfaces": [
+   {
+    "top_z": 0.0088,
+    "free_box": [
+     [
+      -0.10999999999999999,
+      0.11000000000000001
+     ],
+     [
+      -0.07,
+      0.06999999999999999
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.10999999999999999,
+      0.11000000000000001
+     ],
+     [
+      -0.07,
+      0.06999999999999999
+     ]
+    ],
+    "area": 0.0308,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.254,
+    "container": true,
+    "n_free_cells": 308
+   }
+  ],
+  "joints": {},
+  "ok": false,
+  "why": "rim 0.254 m",
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_2_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_2/Box_2/Box_2.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_2/Box_2/Box_2_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_2/Box_2/Box_2_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_2/Box_2/Box_2_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   0.0056,
+   0.0014,
+   -0.1408
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.3136,
+   0.3559,
+   0.216
+  ],
+  "render_size": [
+   0.3125,
+   0.3553,
+   0.2099
+  ],
+  "render_vs_collider_mm": 6.1,
+  "surfaces": [
+   {
+    "top_z": 0.0111,
+    "free_box": [
+     [
+      -0.13999999999999999,
+      0.14
+     ],
+     [
+      -0.16999999999999998,
+      0.17
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.13999999999999999,
+      0.14
+     ],
+     [
+      -0.16999999999999998,
+      0.17
+     ]
+    ],
+    "area": 0.0952,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.216,
+    "container": true,
+    "n_free_cells": 954
+   }
+  ],
+  "joints": {},
+  "ok": true,
+  "why": null,
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_20_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_20/Box_20/Box_20.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_20/Box_20/Box_20_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_20/Box_20/Box_20_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_20/Box_20/Box_20_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   0.0016,
+   0.0052,
+   -0.1393
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.2577,
+   0.2411,
+   0.2252
+  ],
+  "render_size": [
+   0.2562,
+   0.2401,
+   0.2234
+  ],
+  "render_vs_collider_mm": 1.8,
+  "surfaces": [
+   {
+    "top_z": 0.009,
+    "free_box": [
+     [
+      -0.12,
+      0.12000000000000002
+     ],
+     [
+      -0.10999999999999999,
+      0.11000000000000001
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.12,
+      0.12000000000000002
+     ],
+     [
+      -0.10999999999999999,
+      0.11000000000000001
+     ]
+    ],
+    "area": 0.0528,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.2252,
+    "container": true,
+    "n_free_cells": 528
+   }
+  ],
+  "joints": {},
+  "ok": false,
+  "why": "rim 0.225 m",
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_21_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_21/Box_21/Box_21.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_21/Box_21/Box_21_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_21/Box_21/Box_21_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_21/Box_21/Box_21_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   0.0434,
+   0.0065,
+   -0.1731
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "collider_size": [
+   0.3352,
+   0.342,
+   0.1827
+  ],
+  "render_size": [
+   0.3352,
+   0.3416,
+   0.1818
+  ],
+  "render_vs_collider_mm": 1.0,
+  "surfaces": [
+   {
+    "top_z": 0.0077,
+    "free_box": [
+     [
+      -0.16,
+      0.15000000000000002
+     ],
+     [
+      -0.15999999999999998,
+      0.16
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.16,
+      0.15000000000000002
+     ],
+     [
+      -0.15999999999999998,
+      0.16
+     ]
+    ],
+    "area": 0.0992,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.1827,
+    "container": true,
+    "n_free_cells": 993
+   }
+  ],
+  "joints": {},
+  "ok": true,
+  "why": null,
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_22_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_22/Box_22/Box_22.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_22/Box_22/Box_22_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_22/Box_22/Box_22_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_22/Box_22/Box_22_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   0.0068,
+   0.0003,
+   -0.1709
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   -0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.319,
+   0.2673,
+   0.2103
+  ],
+  "render_size": [
+   0.3168,
+   0.2663,
+   0.2089
+  ],
+  "render_vs_collider_mm": 2.2,
+  "surfaces": [
+   {
+    "top_z": 0.0088,
+    "free_box": [
+     [
+      -0.15,
+      0.15000000000000002
+     ],
+     [
+      -0.12,
+      0.12000000000000002
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.15,
+      0.15000000000000002
+     ],
+     [
+      -0.12,
+      0.12000000000000002
+     ]
+    ],
+    "area": 0.072,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.2103,
+    "container": true,
+    "n_free_cells": 720
+   }
+  ],
+  "joints": {},
+  "ok": true,
+  "why": null,
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_23_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_23/Box_23/Box_23.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_23/Box_23/Box_23_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_23/Box_23/Box_23_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_23/Box_23/Box_23_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   0.0044,
+   0.0075,
+   -0.1343
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.4355,
+   0.2403,
+   0.1792
+  ],
+  "render_size": [
+   0.4316,
+   0.239,
+   0.1802
+  ],
+  "render_vs_collider_mm": 3.9,
+  "surfaces": [
+   {
+    "top_z": 0.0065,
+    "free_box": [
+     [
+      -0.19999999999999998,
+      0.21000000000000002
+     ],
+     [
+      -0.10999999999999999,
+      0.11000000000000001
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.19999999999999998,
+      0.21000000000000002
+     ],
+     [
+      -0.10999999999999999,
+      0.11000000000000001
+     ]
+    ],
+    "area": 0.0902,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.1792,
+    "container": true,
+    "n_free_cells": 902
+   }
+  ],
+  "joints": {},
+  "ok": true,
+  "why": null,
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_24_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_24/Box_24/Box_24.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_24/Box_24/Box_24_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_24/Box_24/Box_24_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_24/Box_24/Box_24_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   0.004,
+   -0.0002,
+   -0.1617
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.2188,
+   0.2134,
+   0.2147
+  ],
+  "render_size": [
+   0.2186,
+   0.2114,
+   0.2156
+  ],
+  "render_vs_collider_mm": 2.0,
+  "surfaces": [
+   {
+    "top_z": 0.0071,
+    "free_box": [
+     [
+      -0.1,
+      0.1
+     ],
+     [
+      -0.1,
+      0.1
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.1,
+      0.1
+     ],
+     [
+      -0.1,
+      0.1
+     ]
+    ],
+    "area": 0.04,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.2144,
+    "container": true,
+    "n_free_cells": 400
+   }
+  ],
+  "joints": {},
+  "ok": true,
+  "why": null,
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_25_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_25/Box_25/Box_25.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_25/Box_25/Box_25_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_25/Box_25/Box_25_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_25/Box_25/Box_25_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   0.0122,
+   -0.0009,
+   -0.106
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.2248,
+   0.3275,
+   0.1265
+  ],
+  "render_size": [
+   0.2233,
+   0.3271,
+   0.1256
+  ],
+  "render_vs_collider_mm": 1.5,
+  "surfaces": [
+   {
+    "top_z": 0.0048,
+    "free_box": [
+     [
+      -0.09999999999999998,
+      0.1
+     ],
+     [
+      -0.15,
+      0.15000000000000002
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.09999999999999998,
+      0.1
+     ],
+     [
+      -0.15,
+      0.15000000000000002
+     ]
+    ],
+    "area": 0.06,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.1265,
+    "container": true,
+    "n_free_cells": 600
+   }
+  ],
+  "joints": {},
+  "ok": true,
+  "why": null,
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_26_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_26/Box_26/Box_26.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_26/Box_26/Box_26_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_26/Box_26/Box_26_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_26/Box_26/Box_26_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   -0.0001,
+   0.0004,
+   -0.1424
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   -0.0,
+   -0.0
+  ],
+  "collider_size": [
+   0.1988,
+   0.36,
+   0.2319
+  ],
+  "render_size": [
+   0.1985,
+   0.3595,
+   0.2293
+  ],
+  "render_vs_collider_mm": 2.5,
+  "surfaces": [
+   {
+    "top_z": 0.0071,
+    "free_box": [
+     [
+      -0.09000000000000001,
+      0.08999999999999998
+     ],
+     [
+      -0.16999999999999998,
+      0.17
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.09000000000000001,
+      0.08999999999999998
+     ],
+     [
+      -0.16999999999999998,
+      0.17
+     ]
+    ],
+    "area": 0.0612,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.2319,
+    "container": true,
+    "n_free_cells": 612
+   }
+  ],
+  "joints": {},
+  "ok": false,
+  "why": "rim 0.232 m",
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_27_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_27/Box_27/Box_27.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_27/Box_27/Box_27_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_27/Box_27/Box_27_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_27/Box_27/Box_27_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   0.0018,
+   -0.0004,
+   -0.1391
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   -0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.2219,
+   0.2627,
+   0.2069
+  ],
+  "render_size": [
+   0.2222,
+   0.2604,
+   0.2055
+  ],
+  "render_vs_collider_mm": 2.3,
+  "surfaces": [
+   {
+    "top_z": 0.0064,
+    "free_box": [
+     [
+      -0.09999999999999998,
+      0.1
+     ],
+     [
+      -0.12,
+      0.12000000000000002
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.09999999999999998,
+      0.1
+     ],
+     [
+      -0.12,
+      0.12000000000000002
+     ]
+    ],
+    "area": 0.048,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.2069,
+    "container": true,
+    "n_free_cells": 480
+   }
+  ],
+  "joints": {},
+  "ok": true,
+  "why": null,
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_28_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_28/Box_28/Box_28.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_28/Box_28/Box_28_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_28/Box_28/Box_28_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_28/Box_28/Box_28_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   0.001,
+   -0.0003,
+   -0.133
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.1809,
+   0.2406,
+   0.2162
+  ],
+  "render_size": [
+   0.1805,
+   0.2378,
+   0.2168
+  ],
+  "render_vs_collider_mm": 2.7,
+  "surfaces": [
+   {
+    "top_z": 0.007,
+    "free_box": [
+     [
+      -0.08000000000000002,
+      0.08
+     ],
+     [
+      -0.10999999999999999,
+      0.11000000000000001
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.08000000000000002,
+      0.08
+     ],
+     [
+      -0.10999999999999999,
+      0.11000000000000001
+     ]
+    ],
+    "area": 0.0352,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.216,
+    "container": true,
+    "n_free_cells": 352
+   }
+  ],
+  "joints": {},
+  "ok": true,
+  "why": null,
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_29_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_29/Box_29/Box_29.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_29/Box_29/Box_29_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_29/Box_29/Box_29_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_29/Box_29/Box_29_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   -0.0015,
+   0.0013,
+   -0.1448
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "collider_size": [
+   0.1998,
+   0.295,
+   0.2434
+  ],
+  "render_size": [
+   0.1996,
+   0.2934,
+   0.2428
+  ],
+  "render_vs_collider_mm": 1.6,
+  "surfaces": [
+   {
+    "top_z": 0.008,
+    "free_box": [
+     [
+      -0.09000000000000001,
+      0.08999999999999998
+     ],
+     [
+      -0.13999999999999999,
+      0.14
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.09000000000000001,
+      0.08999999999999998
+     ],
+     [
+      -0.13999999999999999,
+      0.14
+     ]
+    ],
+    "area": 0.0504,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.2434,
+    "container": true,
+    "n_free_cells": 504
+   }
+  ],
+  "joints": {},
+  "ok": false,
+  "why": "rim 0.243 m",
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_3_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_3/Box_3/Box_3.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_3/Box_3/Box_3_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_3/Box_3/Box_3_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_3/Box_3/Box_3_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   -0.0054,
+   0.0194,
+   -0.2373
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   -0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.4129,
+   0.3329,
+   0.3104
+  ],
+  "render_size": [
+   0.4104,
+   0.3334,
+   0.3156
+  ],
+  "render_vs_collider_mm": 5.2,
+  "surfaces": [
+   {
+    "top_z": 0.0116,
+    "free_box": [
+     [
+      -0.18999999999999997,
+      0.19
+     ],
+     [
+      -0.15,
+      0.15000000000000002
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.18999999999999997,
+      0.19
+     ],
+     [
+      -0.15,
+      0.15000000000000002
+     ]
+    ],
+    "area": 0.114,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.3104,
+    "container": true,
+    "n_free_cells": 1141
+   }
+  ],
+  "joints": {},
+  "ok": false,
+  "why": "rim 0.310 m",
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_30_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_30/Box_30/Box_30.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_30/Box_30/Box_30_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_30/Box_30/Box_30_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_30/Box_30/Box_30_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   -0.0023,
+   -0.0049,
+   -0.1034
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.2081,
+   0.2767,
+   0.1559
+  ],
+  "render_size": [
+   0.2078,
+   0.2768,
+   0.1552
+  ],
+  "render_vs_collider_mm": 0.6,
+  "surfaces": [
+   {
+    "top_z": 0.0052,
+    "free_box": [
+     [
+      -0.09,
+      0.09
+     ],
+     [
+      -0.13,
+      0.12999999999999998
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.09,
+      0.09
+     ],
+     [
+      -0.13,
+      0.12999999999999998
+     ]
+    ],
+    "area": 0.0468,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.1558,
+    "container": true,
+    "n_free_cells": 468
+   }
+  ],
+  "joints": {},
+  "ok": true,
+  "why": null,
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_4_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_4/Box_4/Box_4.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_4/Box_4/Box_4_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_4/Box_4/Box_4_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_4/Box_4/Box_4_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   -0.0259,
+   -0.0008,
+   -0.2342
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.2817,
+   0.3339,
+   0.3141
+  ],
+  "render_size": [
+   0.2838,
+   0.3331,
+   0.3183
+  ],
+  "render_vs_collider_mm": 4.3,
+  "surfaces": [
+   {
+    "top_z": 0.0127,
+    "free_box": [
+     [
+      -0.12999999999999998,
+      0.13
+     ],
+     [
+      -0.15,
+      0.15000000000000002
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.12999999999999998,
+      0.13
+     ],
+     [
+      -0.15,
+      0.15000000000000002
+     ]
+    ],
+    "area": 0.078,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.3141,
+    "container": true,
+    "n_free_cells": 781
+   }
+  ],
+  "joints": {},
+  "ok": false,
+  "why": "rim 0.314 m",
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_5_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_5/Box_5/Box_5.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_5/Box_5/Box_5_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_5/Box_5/Box_5_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_5/Box_5/Box_5_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   0.0166,
+   -0.0048,
+   -0.1157
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.2173,
+   0.3341,
+   0.1374
+  ],
+  "render_size": [
+   0.2176,
+   0.3312,
+   0.1363
+  ],
+  "render_vs_collider_mm": 2.9,
+  "surfaces": [
+   {
+    "top_z": 0.0061,
+    "free_box": [
+     [
+      -0.1,
+      0.1
+     ],
+     [
+      -0.16,
+      0.16000000000000003
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.1,
+      0.1
+     ],
+     [
+      -0.16,
+      0.16000000000000003
+     ]
+    ],
+    "area": 0.064,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.1353,
+    "container": true,
+    "n_free_cells": 640
+   }
+  ],
+  "joints": {},
+  "ok": true,
+  "why": null,
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_6_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_6/Box_6/Box_6.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_6/Box_6/Box_6_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_6/Box_6/Box_6_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_6/Box_6/Box_6_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   0.0016,
+   -0.0034,
+   -0.1026
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.2203,
+   0.2119,
+   0.1626
+  ],
+  "render_size": [
+   0.2187,
+   0.2114,
+   0.1621
+  ],
+  "render_vs_collider_mm": 1.6,
+  "surfaces": [
+   {
+    "top_z": 0.0072,
+    "free_box": [
+     [
+      -0.09999999999999998,
+      0.1
+     ],
+     [
+      -0.1,
+      0.1
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.09999999999999998,
+      0.1
+     ],
+     [
+      -0.1,
+      0.1
+     ]
+    ],
+    "area": 0.04,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.1626,
+    "container": true,
+    "n_free_cells": 400
+   }
+  ],
+  "joints": {},
+  "ok": true,
+  "why": null,
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_7_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_7/Box_7/Box_7.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_7/Box_7/Box_7_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_7/Box_7/Box_7_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_7/Box_7/Box_7_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   0.0026,
+   -0.0004,
+   -0.1137
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.2203,
+   0.1797,
+   0.2071
+  ],
+  "render_size": [
+   0.2196,
+   0.1796,
+   0.208
+  ],
+  "render_vs_collider_mm": 0.9,
+  "surfaces": [
+   {
+    "top_z": 0.0072,
+    "free_box": [
+     [
+      -0.09999999999999998,
+      0.1
+     ],
+     [
+      -0.08,
+      0.08
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.09999999999999998,
+      0.1
+     ],
+     [
+      -0.08,
+      0.08
+     ]
+    ],
+    "area": 0.032,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.2066,
+    "container": true,
+    "n_free_cells": 320
+   }
+  ],
+  "joints": {},
+  "ok": true,
+  "why": null,
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_8_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_8/Box_8/Box_8.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_8/Box_8/Box_8_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_8/Box_8/Box_8_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_8/Box_8/Box_8_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   0.0015,
+   0.0017,
+   -0.0909
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.3506,
+   0.2658,
+   0.1415
+  ],
+  "render_size": [
+   0.3463,
+   0.2652,
+   0.142
+  ],
+  "render_vs_collider_mm": 4.3,
+  "surfaces": [
+   {
+    "top_z": 0.0046,
+    "free_box": [
+     [
+      -0.15999999999999998,
+      0.17
+     ],
+     [
+      -0.12,
+      0.12000000000000002
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.15999999999999998,
+      0.17
+     ],
+     [
+      -0.12,
+      0.12000000000000002
+     ]
+    ],
+    "area": 0.0792,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.1415,
+    "container": true,
+    "n_free_cells": 792
+   }
+  ],
+  "joints": {},
+  "ok": true,
+  "why": null,
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ },
+ "Box_9_noflap": {
+  "src": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_9/Box_9/Box_9.usda",
+  "flaps_removed": 4,
+  "open": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_9/Box_9/Box_9_noflap.usda",
+  "dst": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_9/Box_9/Box_9_noflap_static.usda",
+  "flat": "/data/harvest/assets_x/molmospaces/objects_thor/usd/thor_Box_9/Box_9/Box_9_noflap_static_flat.usda",
+  "stripped_apis": 10,
+  "joints_deactivated": 1,
+  "meters_per_unit": 1.0,
+  "up_axis": "Z",
+  "y_up_fix": true,
+  "raw_origin": [
+   -0.0026,
+   -0.0016,
+   -0.156
+  ],
+  "n_colliders": 5,
+  "origin_offset": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collider_size": [
+   0.2166,
+   0.274,
+   0.2762
+  ],
+  "render_size": [
+   0.2141,
+   0.2729,
+   0.2768
+  ],
+  "render_vs_collider_mm": 2.5,
+  "surfaces": [
+   {
+    "top_z": 0.0093,
+    "free_box": [
+     [
+      -0.1,
+      0.1
+     ],
+     [
+      -0.13,
+      0.12999999999999998
+     ]
+    ],
+    "xy_box": [
+     [
+      -0.1,
+      0.1
+     ],
+     [
+      -0.13,
+      0.12999999999999998
+     ]
+    ],
+    "area": 0.052,
+    "covered_above": null,
+    "clearance": null,
+    "rim_z": 0.2762,
+    "container": true,
+    "n_free_cells": 520
+   }
+  ],
+  "joints": {},
+  "ok": false,
+  "why": "rim 0.276 m",
+  "license": "CC BY 4.0 (MolmoSpaces objects_thor, AI2-THOR)"
+ }
+}
