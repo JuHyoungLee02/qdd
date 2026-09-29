@@ -1,8 +1,9 @@
 """Final 35B main-training open point pool + mix (controller 09-29): the verified full packs, point labels only, head
 views only (wide / fisheye excluded), G rows removed and guarded, ids unique; mixed additively into the L8-X base with a
 repeat cap. usage: python open_pool.py <base d-min jsonl> <out jsonl> [p 0.75] [max repeat 1.5]
-Sources: RB2 records_verified_v2 (G change 1), BEHAVIOR, RB3, MolmoBot RBY1 (head), ManiSkill records_verified, AgiBot v3
-rows_live (what exists at build time; the converter is still running). Open rows = round(p x base), capped at
+Sources: RB2 records_verified_v2 (G change 1), BEHAVIOR, RB3, MolmoBot RBY1 (head), ManiSkill records_verified (the old
+verified sets; E-POOLV8 WORSE, E-POOLV8-FIX WORSE -> kept), AgiBot v3 final 1,384 rows in place of agibot_p0 (controller
+09-29; the swap alone was not tested separately — indirectly checked by E-C35 vs f35_d). Open rows = round(p x base), capped at
 max_repeat x pool; prints rows per source, the open share and the repeat factor (also <out>.counts.json)."""
 import json
 import os
@@ -16,7 +17,7 @@ from xemb import gsplit as GS  # noqa: E402
 X = "/data/harvest/out/xemb_proto/points"
 SOURCES = {"rb2": f"{X}/rb2/records_verified_v2.jsonl", "behavior": f"{X}/behavior/records_verified.jsonl",
            "rb3": f"{X}/rb3/records_verified.jsonl", "molmobot_rby1": f"{X}/molmobot_rby1/records_verified.jsonl",
-           "maniskill": f"{X}/maniskill/records_verified.jsonl", "agibot_v3": f"{X}/agibot_p0/rows_live.jsonl"}
+           "maniskill": f"{X}/maniskill/records_verified.jsonl", "agibot_v3": f"{X}/agibot_v3_verified/final_all.jsonl"}
 EXCLUDE = f"{X}/exclude_wide_fisheye.txt"
 
 
