@@ -185,7 +185,7 @@ def test_unique_names_change18():
 def test_head_pose_change17():
     hs = [CX.head_pose(s) for s in range(40000, 42000)]
     r = [h for h in hs if h["random"]]
-    assert 0.12 <= len(r) / len(hs) <= 0.18
+    assert 0.14 <= len(r) / len(hs) <= 0.20
     assert all(h["tilt"] == 0.785 and h["pan"] == 0.0 for h in hs if not h["random"])
     assert all(abs(h["pan"]) <= CX.HEAD_PAN_MAX and abs(h["tilt"] - 0.785) <= CX.HEAD_TILT_MAX for h in r)
 

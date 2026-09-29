@@ -246,24 +246,29 @@ def unique_named(pool: dict, taken: set) -> dict:
 
 
 HEAD_TILT0 = 0.785  # rad, 45 deg: the real robot's head pitch (head_joint1)
-HEAD_P = 0.15  # share of L8S episodes with a random head pose (user-log 181, change 17)
+HEAD_P = 0.17  # share drawn (user-log 181: ~15 % applied; a few fall back after the in-view check, change 19)
 HEAD_PAN_MAX, HEAD_TILT_MAX = 0.2618, 0.1745  # +-15 deg pan (head_joint2), +-10 deg tilt (user); the roll is never moved
 
 
-def head_pose(seed: int) -> dict:
+def head_pose(seed: int, attempt: int = 0) -> dict:
     """Head joints of an L8S episode: default (tilt 0.785, pan 0) or, with p = HEAD_P, a small pose drawn from
-    normals truncated at the limits (sd = limit / 2, so most poses stay near the default)."""
+    normals truncated at the limits (sd = limit / 2, so most poses stay near the default). attempt > 0: a redraw
+    after the in-view check failed, with the range halved per attempt (pilot 2: 2 of 5 draws failed the check)."""
     import numpy as np
     rng = np.random.default_rng([int(seed), 17, 1])
     if rng.random() >= HEAD_P:
         return {"tilt": HEAD_TILT0, "pan": 0.0, "random": False}
+    if attempt:
+        rng = np.random.default_rng([int(seed), 17, 1, int(attempt)])
+    sc = 0.5 ** int(attempt)
 
     def tn(lim):
         while True:
             v = float(rng.normal(0.0, lim / 2))
             if abs(v) <= lim:
                 return v
-    return {"tilt": round(HEAD_TILT0 + tn(HEAD_TILT_MAX), 4), "pan": round(tn(HEAD_PAN_MAX), 4), "random": True}
+    return {"tilt": round(HEAD_TILT0 + tn(HEAD_TILT_MAX * sc), 4), "pan": round(tn(HEAD_PAN_MAX * sc), 4),
+            "random": True, "attempt": int(attempt)}
 
 
 ISO0 = 14.0  # film ISO at exposure 1.0 (change-17 calibration: ISO 100 / 50 / 25 -> 32-60 % saturated, 12 -> 0.1 %)

@@ -120,12 +120,19 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             if not hasattr(self, "_rm"):
                 self._rm = ReachModel.load(reach_path)
             from ..sim.tasks import X_FURNITURE_TASKS
-            sc = FU.sample_scene(furniture, seed, reach=self._rm, mesh_assets=mesh, split=mesh_split, rooms=rooms)
+            def sample(sd):
+                try:
+                    return FU.sample_scene(furniture, sd, reach=self._rm, mesh_assets=mesh, split=mesh_split,
+                                           rooms=rooms)
+                except RuntimeError as ex:  # change 19: a piece inside the robot's keep-out box = a skipped scene
+                    if "keep-out" in str(ex):
+                        raise fx.SkipScene(str(ex)) from ex
+                    raise
+            sc = sample(seed)
             for k in range(1, 6 if (l8s and rooms) else 1):  # L8S: every episode has a room (pilot: 10/88 had none)
                 if sc.get("room") is not None:
                     break
-                sc = FU.sample_scene(furniture, seed + 100003 * k, reach=self._rm, mesh_assets=mesh, split=mesh_split,
-                                     rooms=rooms)
+                sc = sample(seed + 100003 * k)
             if l8s and rooms and sc.get("room") is None:
                 raise fx.SkipScene(f"no room fits: {sc.get('room_skip')}")
             upper, vid = None, TASKS[task].place
@@ -212,13 +219,21 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                 env.env.sim.render()
             if l8s:  # audit P1: auto exposure (film ISO), an episode still > 10 % saturated is skipped
                 self.furniture_scene["iso"] = self._auto_exposure()
-            if head is not None and head["random"] and not self._head_sees(lay, task, tz, upper):
-                # change 17: a random head pose is used only when the object and its destination stay in view
-                for jn, v in (("head_joint1", HEAD_TILT0), ("head_joint2", 0.0)):
+            attempt = 0
+            while head is not None and head["random"] and not self._head_sees(lay, task, tz, upper):
+                # change 17 / 19: a random head pose is used only when the object and its destination stay in view;
+                # redraw with a halved range (2 tries), then the default pose
+                attempt += 1
+                if attempt <= 2:
+                    from .clutter_x import head_pose
+                    head = head_pose(seed, attempt)
+                else:
+                    head.update(tilt=HEAD_TILT0, pan=0.0, random=False, fallback=True)
+                for jn, v in (("head_joint1", head["tilt"]), ("head_joint2", head["pan"])):
                     if jn in rob.joint_names:
                         rob.data.default_joint_pos[0, rob.joint_names.index(jn)] = v
                         rob.cfg.init_state.joint_pos[jn] = v
-                head.update(tilt=HEAD_TILT0, pan=0.0, random=False, fallback=True)
+                self.furniture_scene["head"] = head
                 env.reset()
                 perturb(env, "P0", seed)
                 for _ in range(PRE_RENDER):
