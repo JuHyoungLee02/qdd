@@ -1,0 +1,69 @@
+"""L8S change 26 diagnosis: replay a recorded right-arm PD target series (joints.npz arm_target_torque_vel) on the
+robot alone (seed 0 standard scene, no furniture / clutter, no cameras) and print joint1's per-step change.
+--no-self turns the robot's self collisions off (USD PhysxArticulationAPI, re-read by the hard reset).
+If the joint1 jump is reproduced here it comes from the robot itself (self contact / drive), not the scene.
+
+  python.sh -m harvest.teach_l8d.arm_replay --npz EP/joints.npz --steps 0-80 [--no-self] --out F.json
+"""
+from __future__ import annotations
+
+import argparse
+import json
+
+
+def _self_collisions(stage, root: str, on: bool) -> list:
+    from pxr import PhysxSchema
+    hit = []
+    for p in stage.Traverse():
+        if str(p.GetPath()).startswith(root) and p.HasAPI(PhysxSchema.PhysxArticulationAPI):
+            PhysxSchema.PhysxArticulationAPI(p).CreateEnabledSelfCollisionsAttr(bool(on))
+            hit.append(str(p.GetPath()))
+    return hit
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--npz", required=True)
+    ap.add_argument("--steps", default="0-80")
+    ap.add_argument("--no-self", action="store_true")
+    ap.add_argument("--out", required=True)
+    a = ap.parse_args()
+    import numpy as np
+
+    from ..sim.scene import GRIP_MAX_W, make_env
+    z = np.load(a.npz, allow_pickle=True)
+    ids = [int(i) for i in z["arm_ids"]]
+    names = [str(n) for n in z["names"]]
+    q_all, tgt = z["q"], z["arm_target_torque_vel"][:, :len(ids)]
+    s0, s1 = (int(v) for v in a.steps.split("-"))
+    lift = float(q_all[s0, names.index("lift_joint")])
+    env = make_env(0, headless=True, cameras=(), lift=lift)
+    roots = []
+    if a.no_self:
+        import omni.usd
+        roots = _self_collisions(omni.usd.get_context().get_stage(), "/World/envs/env_0/Robot", False)
+    env.reset(settle_s=0.0)
+    rob, torch = env.robot, env.torch
+    q0 = rob.data.joint_pos.clone()
+    q0[0, ids] = torch.as_tensor(q_all[s0, ids], device=q0.device)
+    rob.write_joint_state_to_sim(q0, torch.zeros_like(q0))  # diagnosis only: start at the recorded pose
+    for _ in range(10):
+        env.step(np.concatenate([q_all[s0, ids], [GRIP_MAX_W]]))
+    rows = []
+    for i in range(s0, min(s1, len(tgt))):
+        env.step(np.concatenate([tgt[i], [GRIP_MAX_W]]))
+        q = rob.data.joint_pos[0, ids].cpu().numpy()
+        rows.append({"t": i, "q": [round(float(v), 4) for v in q], "rec_q": [round(float(v), 4) for v in q_all[i + 1, ids]],
+                     "tau": [round(float(v), 2) for v in rob.data.applied_torque[0, ids].cpu().numpy()]})
+    q = np.asarray([r["q"] for r in rows])
+    dq = np.abs(np.diff(q, axis=0)).max(0)
+    res = {"npz": a.npz, "no_self": a.no_self, "roots": roots, "lift": lift, "max_dq": dq.round(4).tolist(),
+           "rows": rows}
+    json.dump(res, open(a.out, "w"), indent=0)
+    print("ARM_REPLAY", "no_self" if a.no_self else "self", "max dq per joint", dq.round(3).tolist(), "roots", roots)
+    import os
+    os._exit(0)
+
+
+if __name__ == "__main__":
+    main()
