@@ -9,7 +9,7 @@
                                     with AgiBot v3 final in place of agibot_p0), G rows removed, 3 % of rows by
                                     sha256("c35|<id>") % 100 < 3 held out -> <out>/pool_src/<src>.jsonl (train part)
                                     + <out>/val_open.jsonl (geval format, gset val_<src>)
-  strat  <n> <out dir>           -> change 3: stratified sample by plan share (task kind x furniture), manifests as l8s
+  strat  <n> <out dir>           -> change 3/4: stratified sample by plan share of task kind (ring 3 %), furniture round-robin
   strat_ready <n>                -> exit 0 when every stratum has its target, else 3 (prints the short strata)
   subset <out dir>               -> arm a (change 2): <out>/pool_src_a = the rows of <out>/pool_src with
                                     sha256("c35a|<id>") % 3 == 0 (one third of the pool)
@@ -84,7 +84,7 @@ def kind_of(task):
 
 
 def plan_strata():
-    """plan share per (task kind, furniture) over the production job files' plan chunks."""
+    """plan share per task kind (change 4) over the production job files' plan chunks."""
     import collections
     c = collections.Counter()
     for jf in JOBS:
@@ -92,7 +92,7 @@ def plan_strata():
             if "--plan" not in line:
                 continue
             for e in json.load(open(line.split("--plan", 1)[1].split()[0])):
-                c[(kind_of(e["task"]), e["furniture"])] += 1
+                c[kind_of(e["task"])] += 1  # change 4: task kind only
     tot = sum(c.values())
     return {k: v / tot for k, v in c.items()}
 
@@ -105,8 +105,8 @@ def finished():
             rel = os.path.relpath(os.path.dirname(m), root)
             vdir, ep = rel.split("/", 1)
             task, seed = ep.rsplit("_s", 1)
-            st = ("ring", "ring") if root == RING else (kind_of(task), vdir.replace("drf_fx_", "", 1))
-            out.append((st, root, rel, seed))
+            st = "ring" if root == RING else kind_of(task)
+            out.append((st, vdir.replace("drf_fx_", "", 1), root, rel, seed))
     return out
 
 
@@ -114,19 +114,36 @@ def strat_targets(n):
     sh = plan_strata()
     main_n = n - round(n * RING_SHARE)
     t = {k: round(main_n * v) for k, v in sh.items()}
-    t[("ring", "ring")] = round(n * RING_SHARE)
+    t["ring"] = round(n * RING_SHARE)
     return t
 
 
+def round_robin(cands):
+    """change 4: within a stratum, alternate over furniture (each furniture's episodes in sha256("c35s|<seed>")
+    order) so no furniture dominates."""
+    import collections
+    by = collections.defaultdict(list)
+    for c in cands:
+        by[c[1]].append(c)
+    qs = [sorted(v, key=lambda c: (h100(f"c35s|{c[4]}"), int(c[4]))) for _k, v in sorted(by.items())]
+    out, i = [], 0
+    while any(qs):
+        q = qs[i % len(qs)]
+        if q:
+            out.append(q.pop(0))
+        i += 1
+    return out
+
+
 def strat(n, out, check_only=False):
-    """change 3: stratified sample of n episodes by plan share of (task kind, furniture); within a stratum, order by
-    sha256("c35s|<seed>"). Not ready (exit 3) while any stratum has fewer finished episodes than its target."""
+    """change 3/4: stratified sample of n episodes by plan share of task kind (ring 3 %); within a stratum, furniture
+    round-robin, each furniture in sha256("c35s|<seed>") order. Not ready (exit 3) while a stratum is short of its target."""
     import collections
     t = strat_targets(n)
     eps = collections.defaultdict(list)
-    for st, root, rel, seed in finished():
-        eps[st].append((h100(f"c35s|{seed}") * 10 ** 9 + int(seed), root, rel, seed))
-    short = {f"{k[0]}|{k[1]}": [len(eps.get(k, [])), v] for k, v in t.items() if len(eps.get(k, [])) < v}
+    for c in finished():
+        eps[c[0]].append(c)
+    short = {k: [len(eps.get(k, [])), v] for k, v in t.items() if len(eps.get(k, [])) < v}
     if short:
         print(json.dumps({"ready": False, "short": short}))
         sys.exit(3)
@@ -135,10 +152,12 @@ def strat(n, out, check_only=False):
         return
     os.makedirs(out, exist_ok=True)
     man = {(r, s): [] for r in ("main", "ring") for s in ("train", "val")}
+    furn = collections.Counter()
     for k, v in t.items():
-        for _o, root, rel, seed in sorted(eps[k])[:v]:
+        for _st, fu, root, rel, seed in round_robin(eps[k])[:v]:
+            furn[f"{k}|{fu}"] += 1
             man[("main" if root == PROD else "ring", "val" if h100(f"c35|{seed}") < 3 else "train")].append(rel)
-    counts = {"targets": {f"{k[0]}|{k[1]}": v for k, v in t.items()}}
+    counts = {"targets": t, "by_kind_furniture": dict(furn)}
     for (r, s), v in man.items():
         json.dump({"episodes": v}, open(os.path.join(out, f"{r}_{s}.json"), "w"), indent=0)
         counts[f"{r}_{s}"] = len(v)
