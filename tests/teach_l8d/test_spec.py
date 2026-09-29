@@ -6,7 +6,7 @@ from harvest.teach_l8d import spec as S
 
 
 def test_seed_ranges_are_disjoint_and_guarded():
-    assert S.TRAIN_SEEDS == range(30000, 35000) and S.GATE_SEEDS == range(35000, 35500)  # + new-task gates (prereg_l8x_tasks change 1)
+    assert S.TRAIN_SEEDS == range(30000, 35000) and S.GATE_SEEDS == range(35000, 35600)  # + new-task gates (prereg_l8x_tasks change 1)
     assert S.OOD_SEEDS == range(70000, 71000)
     assert S.OOD_SETS["ood_h"] == range(70000, 70100) and S.OOD_SETS["ood_o"] == range(70100, 70300)
     assert S.OOD_SETS["ood_d"] == range(70300, 70500)
