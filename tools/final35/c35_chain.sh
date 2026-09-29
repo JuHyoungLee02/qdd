@@ -7,15 +7,16 @@
 # usage: c35_chain.sh <code dir> [N 1000]
 C=$1; N=${2:-1000}
 O=/data/harvest/out/c35; D=$O/data; L=/data/harvest/logs/c35; P=/data/harvest/venv_train/bin/python
-T8=/data/harvest/out/teach_l8d; AUD="$T8/l8s_prod/AUDIT800.json $T8/l8s_prod/AUDIT300.json"  # change 3: 800-episode audit
+T8=/data/harvest/out/teach_l8d  # audit gate: AUDIT800.json when present, else AUDIT300.json (change 3)
 RUNS="b_s0 a_s0 b_s1"
 mkdir -p $O/man $D $L
 log() { echo "$1 $(date -u +%FT%TZ)" >> $L/c35.log; }
 cd $C; export PYTHONPATH=$C
-# 1. wait: audit PASS + every stratum (task kind x furniture, plan share of N) filled (change 3)
-until cat $AUD 2>/dev/null | grep -q '"verdict": *"PASS"' && \
+# 1. wait: audit PASS + every stratum (task kind, plan share of N; change 3/4/5) filled
+audf() { [ -f $T8/l8s_prod/AUDIT800.json ] && echo $T8/l8s_prod/AUDIT800.json || echo $T8/l8s_prod/AUDIT300.json; }
+until grep -q '"verdict": *"PASS"' $(audf) 2>/dev/null && \
   $P tools/final35/c35_prep.py strat_ready $N > $L/strat_ready.json 2>> $L/prep.log; do
-  cat $AUD 2>/dev/null | grep -q '"verdict": *"FAIL"' && { log "WAIT_STOP audit FAIL"; exit 1; }
+  # change 5: an audit FAIL is not final (fixes are re-audited) -> keep waiting for PASS
   sleep 600
 done
 log "WAIT_DONE N=$N"

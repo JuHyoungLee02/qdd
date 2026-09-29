@@ -75,7 +75,7 @@ def l8s(n, out, after=None):
     print(json.dumps(counts))
 
 
-JOBS = ("/data/harvest/out/teach_l8d/plan5/jobs_l8s2_m.txt", "/data/harvest/out/teach_l8d/plan5/jobs_l8s2_x.txt")
+JOBS = tuple(f"/data/harvest/out/teach_l8d/plan5/jobs_l8s2_{k}.txt" for k in ("m", "x", "into_m", "into_x"))  # change 5
 RING_SHARE = 0.03  # ring V episodes (separate root, ~3 % of production, L8D 09-29)
 
 
