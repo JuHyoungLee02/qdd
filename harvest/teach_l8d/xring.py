@@ -68,11 +68,13 @@ def preds(ring_c, ring_bottom, tilt, grasp_pt, tcp, grip_w, ring: dict, peg: dic
 
 
 # ============================================================================ Isaac (pod)
-def make_ring_world(rings: dict, pegs: dict, meta: dict):
+def make_ring_world(rings: dict, pegs: dict, meta: dict, rooms: dict | None = None):
     from ..astra_motion import prompts as P
     from ..astra_motion.world_isaac import CAMS, NO_RENDER, PRE_RENDER, IsaacWorld
     from ..sim import scene as SC
     from tools.l8x_assets.validate_objects import tilt_deg
+
+    from .xart import l8s_step, place_room, preroll_arm, room_cfgs  # L8S audit 3: rooms, ARM_START, joints
 
     rids, pids = sorted(rings), sorted(pegs)
     peg_meta = dict(meta["peg"], block_h=meta["block_h"])
@@ -83,6 +85,7 @@ def make_ring_world(rings: dict, pegs: dict, meta: dict):
         from isaaclab.assets import AssetBaseCfg, RigidObjectCfg
         cfg, lay = orig(*x, **k)
         cfg.scene.table = None
+        room_cfgs(cfg, rooms)
         cfg.scene.stand = AssetBaseCfg(
             prim_path="{ENV_REGEX_NS}/STAND",
             spawn=sim_utils.CuboidCfg(
@@ -164,6 +167,7 @@ def make_ring_world(rings: dict, pegs: dict, meta: dict):
                 self._usd_pose(f"/World/envs/env_0/RAIL_{j}", ((bx0 + bx1) / 2, (by0 + by1) / 2,
                                                               STAND_TOP + peg_meta["block_h"] / 2),
                                (bx1 - bx0, by1 - by0, peg_meta["block_h"]))
+            room = place_room(rooms, seed, STAND_CENTRE[0], STAND_CENTRE[1], 0.5 * max(STAND_SIZE))
             rob = env.robot
             for jn, v in (("lift_joint", lay["lift"]), ("head_joint1", HEAD_TILT0), ("head_joint2", 0.0)):
                 if jn in rob.joint_names:
@@ -191,17 +195,23 @@ def make_ring_world(rings: dict, pegs: dict, meta: dict):
                 env.step(hold)
             perturb(env, "P0", seed)
             self._dome(seed)
-            for _ in range(PRE_RENDER):
-                env.env.sim.render()
-            self.iso = self._auto_exposure()
             self.pl = OraclePlanner(env)
             self.cmd_quat = np.asarray(self.pl.cmd_quat, float)
             self.quat0 = np.asarray(self.pl.goal_quat, float)
+            arm_start = preroll_arm(self)  # L8D change 21: the right arm starts out of the head view
+            self._jlog = []  # change 20: joints.npz from here (collect_episode saves world._jlog)
+            for _ in range(PRE_RENDER):
+                env.env.sim.render()
+            self.iso = self._auto_exposure()
             self.w_close = max(0.0, 2 * float(ring["tube_r"]) - 0.008)
             self._st = None
             self.furniture_scene = {"kind": "ring_peg_V", "ring": rid, "peg": pid, "layout": lay, "iso": self.iso,
                                     "hdr": self.hdr, "head": {"tilt": HEAD_TILT0, "pan": 0.0}, "surface": "stand",
-                                    "room": None, "room_skip": "ring scenes: no iTHOR room background (exception)"}
+                                    "room": room, "room_skip": None if room else "no rooms loaded",
+                                    "arm_start": arm_start}
+
+        def step(self, cmd_pos, width: float, quat=None) -> None:
+            l8s_step(self, cmd_pos, width, quat)
 
         def _register(self, ring, peg):
             h = float(ring["tube_r"]) + 0.018  # the plan grasps at h - 1.8 cm above the support: the tube centre
@@ -310,7 +320,10 @@ def run_ring(out: str, rings_json: str, seeds: list, split: str = "train", clean
     meta = json.load(open(rings_json))
     pick = pairs(meta["rings"], meta["pegs"], seeds, gaps)
     use_r = {r for r, _ in pick.values()}
-    world = make_ring_world({k: meta["rings"][k] for k in use_r}, meta["pegs"], meta)
+    from .fx import rooms_of  # L8S: every episode has a room background (train-split iTHOR rooms)
+    rooms = rooms_of(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sim", "assets_x"),
+                     "train")
+    world = make_ring_world({k: meta["rings"][k] for k in use_r}, meta["pegs"], meta, rooms)
     res = []
     for s in seeds:
         r, pg = pick[s]
