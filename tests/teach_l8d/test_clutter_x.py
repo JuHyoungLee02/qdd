@@ -83,6 +83,23 @@ def test_occlusion_ignores_the_container_itself():
     assert CX.occlusion(cam, depth, (0.0, 0.0), 0.02, 0.1, ignore=[far]) == 1.0
 
 
+def test_container_boxes_only_for_env_containers(monkeypatch):
+    """A place that is not an env body (ring V peg, place_kind 'around') or not a container gives no box."""
+    from harvest.sim import scene as SC
+
+    class _E:
+        objects = {}
+
+        def object_pose(self, k):
+            raise KeyError(k)
+    monkeypatch.setitem(SC.OBJ_GEOM, "_t_peg", {"shape": "cuboid", "size": [0.04, 0.04, 0.002],
+                                                "place_kind": "around"})
+    monkeypatch.setitem(SC.OBJ_GEOM, "_t_cup", {"shape": "cuboid", "size": [0.1, 0.1, 0.1],
+                                                "half_extents": [0.05] * 3, "place_kind": "into"})
+    assert CX.container_boxes(_E(), "_t_peg") == [] and CX.container_boxes(_E(), "_t_cup") == []
+    assert CX.container_boxes(None, "_t_cup") == []
+
+
 def test_upright_rule_by_shape():
     """L8S change 28 (audit 4): rolling objects need no upright pose; an object in a container may lean <= 60 deg;
     everything else keeps the 30 deg predicate."""

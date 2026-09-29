@@ -354,8 +354,8 @@ def container_boxes(env, k) -> list:
 
     from ..sim.scene import OBJ_GEOM
     g = OBJ_GEOM.get(k) or {}
-    if not g.get("place_kind") or env is None:
-        return []
+    if g.get("place_kind") not in ("into", "onto") or env is None or k not in (getattr(env, "objects", None) or {}):
+        return []  # only L8S containers that are env bodies (ring V's peg is 'around' and not one: KeyError before)
     pos, q = env.object_pose(k)
     c = np.asarray(pos, float) - env.scene.env_origins[0].cpu().numpy()
     yaw = math.atan2(2 * (q[0] * q[3] + q[1] * q[2]), 1 - 2 * (q[2] ** 2 + q[3] ** 2))
