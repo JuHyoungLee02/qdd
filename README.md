@@ -6,8 +6,10 @@
 
 - VLM은 머리 영상 위의 **점(0–1000 정규화 픽셀) + 단계 의도**만 출력한다.
 - 로봇 좌표 xyz는 **코드(resolver)** 가 센서 깊이와 카메라 보정으로 계산한다(`harvest/astra_solo/resolve.py`). 학습에는 깊이가 필요 없고, 실행에는 깊이 카메라가 필요하다.
-- 손 정보는 입력하지 않는다. 이미지는 원(ring) 표시판, 머리 시점만 쓴다(격자·3인칭·어안은 쓰지 않는다).
+- 손 정보는 입력하지 않는다(학습 때만 쓴다). 조종 행은 머리 영상(손끝 표시 원만 그림)과 오른손목 영상(아무것도 그리지 않음) 두 장, 공개 점 행은 머리 시점 한 장만 쓴다(격자·3인칭·어안은 쓰지 않는다).
 - 모델: Qwen3.5-35B-A3B LoRA r16(attention·DeltaNet·shared experts), 파드 안 DDP, global batch 24.
+- 본 학습: L8S 전량(약 5.1만 행) + 공개 점(약 3.8만 행). 공개 행은 같은 행을 2배까지만 반복하고 시뮬 행의 0.75배를 넘지 않는다. 3 에폭, 체크포인트 1·1.5·2·2.5·3 에폭, 자동 평가는 2 → 1.5 → 2.5 순서, 최적 에폭은 학습에 쓰지 않은 검증 분할로 고른다.
+- VLA 층은 기각이 아니라 보류다. 지금은 상위 단독을 먼저 다듬고, 2단계 결합 때 늘 쓰는 조이스틱으로 복원한다(user-log 188).
 
 채택 구성 전체는 한 쪽 요약 **[docs/stage3/main35_recipe.md](docs/stage3/main35_recipe.md)** 에 있다.
 
@@ -34,7 +36,7 @@
 | `docs/` | 정본·결과·사전 등록·기록책·사용자 발언 |
 | `paper/` | 논문(CVPR 양식)·마인드맵 |
 
-`archive/` 에는 중단·기각된 방향(Astra/GPT 정책, VLA 층, H 하이브리드, 옛 단계 2·3 실험 SR·MA·CONF·NOV0 등)의 코드·스크립트·옛 계획을 원래 경로 그대로 옮겨 두었다(기록 보존용, 실행 경로 아님).
+`archive/` 에는 실행 경로에서 더 이상 참조되지 않는 옛 실험 도구 폴더 8개(`tools/` 아래 `conf`·`couple_dry`·`mar2d`·`marr_real`·`open_vlm`·`pre_r7`·`sr1b`·`sr1e`), 그 폴더만 시험하던 `tests/` 7개, 옛 superpowers 계획·설계를 원래 경로 그대로 옮겨 두었다(git mv, 기록 보존용). 중단·보류된 방향이라도 살아 있는 코드와 폴더를 함께 쓰는 파일(예: `tools/teach_pt/build_min.py`는 E-C35 체인이 씀)은 제자리에 두었다.
 
 ## 주요 단계 실행
 
@@ -57,7 +59,7 @@
 
 ## 문서
 
-- 채택 구성 요약: [docs/stage3/main35_recipe.md](docs/stage3/main35_recipe.md)
+- 채택 구성 요약: [docs/stage3/main35_recipe.md](docs/stage3/main35_recipe.md), 나중 문제·걱정거리: [docs/later_problems.md](docs/later_problems.md)
 - 정본(설계 결정): [docs/design/00-interfaces.md](docs/design/00-interfaces.md)
 - 사용자 발언 원문: [docs/user-log.md](docs/user-log.md)
 - 결과: [docs/stage3/results/](docs/stage3/results/) (본 35B: [final35.md](docs/stage3/results/final35.md)), 사전 등록 `docs/stage3/prereg_*.md`
