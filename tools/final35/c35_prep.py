@@ -12,7 +12,7 @@
   strat  <n> <out dir>           -> change 3/4: stratified sample by plan share of task kind (ring 3 %), furniture round-robin
   strat_ready <n>                -> exit 0 when every stratum has its target, else 3 (prints the short strata)
   subset <out dir>               -> arm a (change 2): <out>/pool_src_a = the rows of <out>/pool_src with
-                                    sha256("c35a|<id>") % 3 == 0 (one third of the pool)
+                                    sha256("c35a|<id>") % <mod> == 0 (default 3; change 9: 5)
   mix    <base jsonl> <src dir> <out jsonl> [repeat guard 3.0]
                                  -> tools/final35/open_pool.main over <src dir>/*.jsonl (open = 0.75 x base)"""
 import glob
@@ -202,7 +202,7 @@ def pool(verdict_p, out):
     print(json.dumps(counts))
 
 
-def subset(out):
+def subset(out, mod=3):
     d, a = os.path.join(out, "pool_src"), os.path.join(out, "pool_src_a")
     os.makedirs(a, exist_ok=True)
     counts = {}
@@ -211,7 +211,7 @@ def subset(out):
         with open(os.path.join(a, os.path.basename(p)), "w", encoding="utf-8", newline="\n") as f:
             for line in open(p, encoding="utf-8"):
                 n += 1
-                if int(hashlib.sha256(("c35a|" + json.loads(line)["id"]).encode()).hexdigest(), 16) % 3 == 0:
+                if int(hashlib.sha256(("c35a|" + json.loads(line)["id"]).encode()).hexdigest(), 16) % mod == 0:
                     k += 1
                     f.write(line)
         counts[os.path.basename(p)[:-6]] = {"pool": n, "subset": k}
@@ -231,5 +231,5 @@ if __name__ == "__main__":
     c, a = sys.argv[1], sys.argv[2:]
     {"ood58": lambda: ood58(a[0]), "l8s": lambda: l8s(int(a[0]), a[1], a[2] if len(a) > 2 else None), "pool": lambda: pool(a[0], a[1]),
      "strat": lambda: strat(int(a[0]), a[1]), "strat_ready": lambda: strat(int(a[0]), None, True),
-     "subset": lambda: subset(a[0]), "split_man": lambda: split_man(a[0], int(a[1]), a[2]),
+     "subset": lambda: subset(a[0], int(a[1]) if len(a) > 1 else 3), "split_man": lambda: split_man(a[0], int(a[1]), a[2]),
      "mix": lambda: mix(a[0], a[1], a[2], float(a[3]) if len(a) > 3 else 3.0)}[c]()

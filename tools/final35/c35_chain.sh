@@ -53,7 +53,7 @@ if [ ! -f $D/train_c35_a.jsonl ]; then
   [ -s $D/l8s_main_d-min.jsonl ] || { log "PREP_FAIL empty base"; exit 1; }
   $P tools/teach_pt/build_min.py $O/val_src $D x_val_l8s d-min clean $O/val_src >> $L/prep.log 2>&1 || { log "PREP_FAIL val"; exit 1; }
   $P tools/final35/c35_prep.py pool /data/harvest/out/poolv/verdict_fix.json $O/pool >> $L/prep.log 2>&1 || { log "PREP_FAIL pool"; exit 1; }
-  $P tools/final35/c35_prep.py subset $O/pool >> $L/prep.log 2>&1 || { log "PREP_FAIL subset"; exit 1; }
+  $P tools/final35/c35_prep.py subset $O/pool 5 >> $L/prep.log 2>&1 || { log "PREP_FAIL subset"; exit 1; }
   cp $O/pool/val_open.jsonl $D/val_open.jsonl
   for arm in b a; do
     [ $arm = b ] && { S=$O/pool/pool_src; CAP=3.0; } || { S=$O/pool/pool_src_a; CAP=4.0; }
