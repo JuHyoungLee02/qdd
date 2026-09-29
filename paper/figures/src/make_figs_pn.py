@@ -153,7 +153,7 @@ def fig_overview():
     rbox(ax, bx[0], by, bw, bh, "astra", "상위 계획기 학습 (주 기여)", fs=6.4, bold=True,
          sub="시뮬 참값 라벨 + 공개 점 라벨\n8B 대리 → 35B, 줄기 D", sfs=5.2)
     rbox(ax, bx[1], by, bw, bh, "mem", "다양화 데이터", fs=6.4, bold=True,
-         sub="L8-X → 사실적 L8S (실물·방·조명·목 무작위)\n공개 점 데이터 (시뮬 행의 0.75배)", sfs=5.2)
+         sub="L8-X → 사실적 L8S (실물·방·조명·목 무작위)\n공개 점 데이터 (≤0.75배, 반복 ≤2배)", sfs=5.2)
     dbox(ax, bx[2], by, bw, bh, "#EEF4FB", VL[1])
     ax.text(bx[2] + bw / 2, by + bh * 0.66, "VLA 끝-끝 학습 (상위 단독 뒤)", ha="center", va="center", fontsize=6.4,
             color=TXT, fontweight="bold")
