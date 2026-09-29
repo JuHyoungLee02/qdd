@@ -283,3 +283,11 @@ def test_real_relation_refs_change20():
     assert "brown bottle" in T.TASKS[f"ov_left__{k}"].instruction and "green" not in place_rule("o17", OBJ_NAME["o17"])
     lay = T.x_task_layout(40002, f"ov_left__{k}", ws=((0.37, 0.55), (-0.42, -0.04)))
     assert b in lay and "o8" not in lay
+
+
+def test_shrink_ws_change21():
+    from harvest.teach_l8d import fx
+    surf = {"xy_box": [[0.30, 0.60], [-0.50, 0.00]]}
+    assert fx.shrink_ws(((0.30, 0.60), (-0.50, 0.00)), surf, [0.05]) == ((0.36, 0.54), (-0.44, -0.06))
+    assert fx.shrink_ws(((0.40, 0.48), (-0.30, -0.20)), surf, [0.05]) == ((0.40, 0.48), (-0.30, -0.20))
+    assert fx.shrink_ws(((0.30, 0.40), (-0.50, -0.40)), surf, [0.06]) == ((0.30, 0.40), (-0.50, -0.40))

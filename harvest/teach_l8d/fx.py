@@ -188,3 +188,16 @@ def summary(scene: dict, surface: dict, region, dropped) -> dict:
 
 
 assert math.isfinite(0.0)
+
+
+def shrink_ws(ws, surface: dict, radii) -> tuple:
+    """L8S (change 21): the work box minus the task objects' footprint where it would reach past the surface box
+    (on_surface margin 1 cm); never narrower than 8 cm (then unchanged: the layout redraw / skip decides)."""
+    r = max([0.0] + [min(float(v), 0.06) for v in radii]) + 0.01
+    (x0, x1), (y0, y1) = ws
+    (sx0, sx1), (sy0, sy1) = surface["xy_box"]
+    nx = (max(x0, sx0 + r), min(x1, sx1 - r))
+    ny = (max(y0, sy0 + r), min(y1, sy1 - r))
+    if nx[1] - nx[0] < 0.08 or ny[1] - ny[0] < 0.08:
+        return ws
+    return tuple(round(v, 4) for v in nx), tuple(round(v, 4) for v in ny)

@@ -93,15 +93,43 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                 self._reset_furniture(seed, task)
                 return
             from . import fx as _fx
-            self._jlog = []
+            last = None
             for k in range(8):  # change 20 (audit 2): relayout while the target / destination is occluded
                 self._occ_try = k
-                self._reset_furniture(seed, task)
+                try:
+                    self._reset_furniture(seed, task)
+                except _fx.SkipScene as ex:  # change 21: a failed / off-surface layout is redrawn, not skipped
+                    if str(ex).startswith(("layout", "task object")):
+                        last = ex
+                        continue
+                    raise
+                self._preroll_arm()  # change 21: the right arm starts above, out of the head view
+                self._jlog = []
                 occ = self._first_occlusion(task)
                 self.furniture_scene["occlusion"] = {"try": k, **occ}
                 if max(occ.values()) < OCC_MAX:
                     return
-            raise _fx.SkipScene(f"target / destination occluded in the first head frame after 8 layouts: {occ}")
+                last = _fx.SkipScene(f"target / destination occluded in the first head frame after 8 layouts: {occ}")
+            raise last
+
+        def _preroll_arm(self, steps: int = 200):
+            """Move the right TCP to ARM_START (table frame offset, main35_recipe.md) before the episode, joint steps
+            <= ARM_DQ; the first recorded frame shows the table without the arm in front of it."""
+            import numpy as np
+
+            from .clutter_x import ARM_START
+            tz = float(self.table_z)
+            goal = np.array([ARM_START[0], ARM_START[1], tz + ARM_START[2]])
+            for _ in range(steps):
+                if np.linalg.norm(np.asarray(self.status()["tcp"], float) - goal) < 0.01:
+                    break
+                self.step(goal, self.w_open, None)
+            for _ in range(10):  # settle
+                self.step(goal, self.w_open, None)
+            self.furniture_scene["arm_start"] = {"tcp": [round(float(v), 4) for v in self.status()["tcp"]],
+                                                 "q_arm": [round(float(v), 4) for v, n in zip(
+                                                     self.env.robot.data.joint_pos[0].cpu().numpy(),
+                                                     self.env.robot.joint_names) if n.startswith("arm_r_joint")]}
 
         def _apply_clutter(self, seed, task):
             from ..sim import scene as SC
@@ -160,6 +188,10 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             env.ws = fx.ws_from_region(region)
             if l8s and env.ws[0][1] - env.ws[0][0] >= 0.16:  # audit P5: not at the image's bottom edge
                 env.ws = ((env.ws[0][0] + 0.04, env.ws[0][1]), env.ws[1])
+            if l8s:  # change 21: centres drawn in the box keep the large task objects on the surface
+                env.ws = fx.shrink_ws(env.ws, surf, [SC.OBJ_GEOM[o]["footprint_r"] for o in
+                                                     (TASKS[task].target, TASKS[task].place) if o in SC.OBJ_GEOM
+                                                     and SC.OBJ_GEOM[o].get("shape") not in ("marker", "surface")])
             tz = float(surf["top_z"])
             env.table_top_z, self.table_z = tz, tz
             SC._LAYOUT["table_z"] = tz
@@ -325,7 +357,18 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             raise fx.SkipScene(f"exposure not fixed: {sat:.3f} saturated, mean {mean:.0f}, ISO {iso:.1f}")
 
         def step(self, cmd_pos, width: float, quat=None) -> None:
-            IsaacWorld.step(self, cmd_pos, width, quat)
+            if not l8s:
+                IsaacWorld.step(self, cmd_pos, width, quat)
+                return
+            import numpy as np
+
+            from ..sim.planner import W_MAX, _slerp_step
+            from .clutter_x import ARM_DQ
+            goal = self.pl.goal_quat if quat is None else np.asarray(quat, float)  # = IsaacWorld.step with the
+            self.cmd_quat = _slerp_step(self.cmd_quat, goal, W_MAX * self.dt)  # L8S arm step ARM_DQ (change 21:
+            q = self.pl._ik(np.asarray(cmd_pos, float), self.cmd_quat, ARM_DQ)  # measured arm steps <= 0.04 rad)
+            self.env.step(np.concatenate([q, [float(width)]]).astype(np.float32))
+            self._st = None
             if l8s:  # change 20: joint angles per step (collect saves joints.npz)
                 if not hasattr(self, "_jlog"):
                     self._jlog = []
@@ -358,8 +401,6 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
         def _head_sees(self, lay, task, tz, upper, margin: float = 0.05) -> bool:
             """Target and destination project inside the head image (5 % margin) at the current head pose and are not
             occluded (change 20: the depth check of audit 2)."""
-            if max(self._first_occlusion(task).values()) >= OCC_MAX:
-                return False
             from ..astra_motion import geometry as G
             from ..sim.tasks import TASKS
             cam = self._cam("cam_head", "head")

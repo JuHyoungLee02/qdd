@@ -313,3 +313,8 @@ def occlusion(cam, depth, centre, half_xy: float, top_z: float, n: int = 5) -> f
             dz = d[int(v), int(u)]
             hid += bool(np.isfinite(dz) and dz < z - OCC_TOL)
     return 1.0 if tot == 0 else hid / tot
+
+
+ARM_START = (0.22, -0.42, 0.30)  # change 21: right TCP start (x, y, z above the work surface), above / right of the
+# head camera's view of the table (main35_recipe.md; the real robot starts from the same pose)
+ARM_DQ = 0.035  # rad per env step for the L8S arm command (measured steps stay <= 0.04 incl. PD overshoot)

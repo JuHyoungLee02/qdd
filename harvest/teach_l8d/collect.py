@@ -194,8 +194,12 @@ def collect_episode(world, seed: int, task: str, variant: str, split: str, out_d
         q = np.asarray(jl, np.float32)
         np.savez_compressed(os.path.join(out_dir, "joints.npz"), q=q,
                             names=np.asarray(world.env.robot.joint_names), dt=float(world.dt))
-        dq = np.abs(np.diff(q, axis=0)).max() if len(q) > 1 else 0.0
-        meta["max_dq_rad"] = round(float(dq), 4)
+        names = list(world.env.robot.joint_names)
+        d = np.abs(np.diff(q, axis=0)) if len(q) > 1 else np.zeros((1, len(names)))
+        arm = [i for i, n in enumerate(names) if n.startswith("arm_r_joint")]
+        fing = [i for i, n in enumerate(names) if n.startswith("gripper_r")]
+        meta["max_dq_rad"] = round(float(d[:, arm].max()) if arm else float(d.max()), 4)  # right arm (<= 0.04)
+        meta["max_dq_finger_rad"] = round(float(d[:, fing].max()), 4) if fing else None  # fingers: excluded
         world._jlog = []
     with open(os.path.join(out_dir, "meta.json"), "w") as f:
         json.dump(meta, f)
