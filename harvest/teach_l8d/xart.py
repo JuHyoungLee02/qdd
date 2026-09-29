@@ -231,6 +231,10 @@ def make_art_world(kind: str, fixture: str, rec: dict, objs: dict):
             self.obj, self.i_obj = oid, ids.index(oid)
             o = objs[oid]
             lay = layout(kind, rec, o, seed)
+            yq = (math.cos(math.pi / 4), 0.0, 0.0, math.sin(math.pi / 4)) if kind == "A" else (1.0, 0.0, 0.0, 0.0)
+            q0 = qmul(yq, tuple(o["spawn_quat_wxyz"]))  # A: the narrow side along world y (fingers along y)
+            cx0, cy0 = o["centre_from_root_xy"]
+            rx, ry = (-cy0, cx0) if kind == "A" else (cx0, cy0)  # the caliper centre offset turned with the yaw
             self.lay = lay
             self._pose("/World/envs/env_0/FIXTURE", lay["pos"], YAW)  # applied by the hard reset below
             rob = env.robot
@@ -253,12 +257,12 @@ def make_art_world(kind: str, fixture: str, rec: dict, objs: dict):
                     x, y = lay["obj_xy"]
                     cx, cy = o["centre_from_root_xy"]
                     z = lay["obj_z"] + o["root_above_bottom"] + 0.003
-                    p = [x - cx, y - cy, z, *o["spawn_quat_wxyz"]]
+                    p = [x - rx, y - ry, z, *q0]
                 else:
                     p = [PARK[0] - 0.4 * i, PARK[1], PARK[2], *objs[n]["spawn_quat_wxyz"]]
                 ob.write_root_pose_to_sim(env.torch.tensor([p], dtype=env.torch.float32, device=env.env.device))
                 ob.write_root_velocity_to_sim(env.torch.zeros((1, 6), device=env.env.device))
-            self._q0 = tuple(o["spawn_quat_wxyz"])
+            self._q0, self._roff = tuple(q0), (rx, ry)
             hold = np.concatenate([env.arm_q(), [SC.GRIP_MAX_W]])
             for _ in range(15):
                 env.step(hold)
@@ -270,6 +274,8 @@ def make_art_world(kind: str, fixture: str, rec: dict, objs: dict):
             self.pl = OraclePlanner(env)
             self.cmd_quat = np.asarray(self.pl.cmd_quat, float)
             self.quat0 = np.asarray(self.pl.goal_quat, float)
+            if kind == "A":  # fingers close along world y: the open drawer is shallow in x (run 4: a 6 cm gap in an
+                self.quat0 = np.array([1.0, 0.0, 0.0, 0.0])  # 11 cm deep drawer kept the object held)
             from ..sim.tasks import close_width
             self.w_close = float(close_width(oid))  # object width - 14 mm (L8 squeeze); 0 threw objects (pilots)
             self._st = None
@@ -347,7 +353,7 @@ def make_art_world(kind: str, fixture: str, rec: dict, objs: dict):
             q = d.root_quat_w[0].cpu().numpy()
             o = objs[self.obj]
             bottom = float(c[2] - o["root_above_bottom"])
-            cen = c + np.array([o["centre_from_root_xy"][0], o["centre_from_root_xy"][1],
+            cen = c + np.array([self._roff[0], self._roff[1],
                                 o["root_above_bottom"] + o["height"] / 2 - o["root_above_bottom"]])
             cen[2] = bottom + o["height"] / 2
             tcp = pl.tcp_pose()[0]
