@@ -24,7 +24,7 @@ import os
 
 import numpy as np
 
-TARGET_XY = (0.44, -0.22)  # pilot 3: at 0.38 the arm could not carry to the drawer near its body (IK diverged)
+TARGET_XY = (0.42, -0.22)  # pilot 3: at 0.38 IK diverged; 0.44 -> 0.42 (audit 3): with rooms only Dresser_318_1 fits (2.3 / 2.6 m dressers exceed the 2 m room zone), its top at 0.44 was 8 mm beyond reach
 C_BOX_XY, C_OBJ_XY = (0.52, None), (0.42, -0.38)  # pilot 4: y -0.47 was out of reach, (0.58, 0.0) too
 C_GAP, C_BOX_Y_MAX = 0.13, 0.02  # C gate 1: at 10 cm the open fingers met the Box_2 wall (approach blocked 5 cm up)
 C_GRASP_DEEPER = 0.02  # C gate 1: pinched 1.8 cm below the top, tall boxes (Perricone) tipped in the pads
@@ -172,6 +172,27 @@ def pick_room(rooms: dict, seed: int):
     return names[int(np.random.default_rng([int(seed), 97, 200]).integers(len(names)))]
 
 
+def fixture_aabb(rec: dict, pos) -> tuple:
+    """World xy box of a fixture placed at pos with yaw -90 deg (asset x -> world -y): collider centred on the origin."""
+    sx, sy = float(rec["collider_size"][0]), float(rec["collider_size"][1])
+    return ((pos[0] - sy / 2, pos[0] + sy / 2), (pos[1] - sx / 2, pos[1] + sx / 2))
+
+
+def in_room_zone(boxes) -> bool:
+    """Every xy box inside rooms.ZONE (the clear part of an iTHOR room around the robot: L8S room rule)."""
+    from ..sim.assets_x.rooms import ZONE
+    (zx0, zx1), (zy0, zy1) = ZONE
+    return all(zx0 <= x0 and x1 <= zx1 and zy0 <= y0 and y1 <= zy1 for (x0, x1), (y0, y1) in boxes)
+
+
+def scene_boxes(kind: str, rec: dict, lay: dict) -> list:
+    out = [fixture_aabb(rec, lay["pos"])]
+    if kind == "C":
+        out.append(((STAND_CENTRE[0] - STAND_SIZE[0] / 2, STAND_CENTRE[0] + STAND_SIZE[0] / 2),
+                    (STAND_CENTRE[1] - STAND_SIZE[1] / 2, STAND_CENTRE[1] + STAND_SIZE[1] / 2)))
+    return out
+
+
 def room_cfgs(cfg, rooms: dict | None):
     """Render-only iTHOR rooms, parked (as L8S isaac.slot_cfgs), added to a scene cfg."""
     import isaaclab.sim as sim_utils
@@ -184,20 +205,18 @@ def room_cfgs(cfg, rooms: dict | None):
             init_state=AssetBaseCfg.InitialStateCfg(pos=(ROOM_PARK[0] - 12.0 * j, ROOM_PARK[1], ROOM_PARK[2]))))
 
 
-def place_room(rooms: dict | None, seed: int, x: float, y: float, h: float):
-    """A train-split iTHOR room around the scene (same pick as L8S); the scene (centre x, y, half size h) must lie in
-    rooms.ZONE, else ValueError (skipped). The others are parked. USD poses (render only). -> scene room record."""
+def place_room(rooms: dict | None, seed: int, boxes: list):
+    """A train-split iTHOR room around the scene (same pick as L8S); the scene's xy boxes must lie in rooms.ZONE,
+    else ValueError (skipped). The others are parked. USD poses (render only). -> scene room record."""
     import omni.usd
 
     from ..sim.assets_x.isaac import ROOM_PARK, yaw_quat
-    from ..sim.assets_x.rooms import ZONE
     from ..sim.randomize import _set_pose
     name = pick_room(rooms, seed)
     if name is None:
         return None
-    (zx0, zx1), (zy0, zy1) = ZONE
-    if not (zx0 <= x - h and x + h <= zx1 and zy0 <= y - h and y + h <= zy1):
-        raise ValueError(f"scene outside the room zone: {(x, y, h)}")
+    if not in_room_zone(boxes):
+        raise ValueError(f"scene outside the room zone: {[[[round(v, 3) for v in a] for a in b] for b in boxes]}")
     stage = omni.usd.get_context().get_stage()
     for j, rn in enumerate(sorted(rooms)):
         prim = stage.GetPrimAtPath(f"/World/envs/env_0/FR_{rn}")
@@ -372,8 +391,7 @@ def make_art_world(kind: str, fixture: str, rec: dict, objs: dict, rooms: dict |
                                     "head": {"tilt": HEAD_TILT0, "pan": 0.0}, "surface": "art_" + kind}
 
         def _room(self, seed, lay):
-            h = 0.5 * max(float(v) for v in rec["collider_size"][:2]) + (0.40 if kind == "C" else 0.0)
-            return place_room(rooms, seed, float(lay["pos"][0]), float(lay["pos"][1]), h)
+            return place_room(rooms, seed, scene_boxes(kind, rec, lay))
 
         def _preroll_arm(self) -> dict:
             return preroll_arm(self)

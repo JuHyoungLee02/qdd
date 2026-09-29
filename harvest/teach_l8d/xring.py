@@ -167,7 +167,8 @@ def make_ring_world(rings: dict, pegs: dict, meta: dict, rooms: dict | None = No
                 self._usd_pose(f"/World/envs/env_0/RAIL_{j}", ((bx0 + bx1) / 2, (by0 + by1) / 2,
                                                               STAND_TOP + peg_meta["block_h"] / 2),
                                (bx1 - bx0, by1 - by0, peg_meta["block_h"]))
-            room = place_room(rooms, seed, STAND_CENTRE[0], STAND_CENTRE[1], 0.5 * max(STAND_SIZE))
+            room = place_room(rooms, seed, [((STAND_CENTRE[0] - STAND_SIZE[0] / 2, STAND_CENTRE[0] + STAND_SIZE[0] / 2),
+                                             (STAND_CENTRE[1] - STAND_SIZE[1] / 2, STAND_CENTRE[1] + STAND_SIZE[1] / 2))])
             rob = env.robot
             for jn, v in (("lift_joint", lay["lift"]), ("head_joint1", HEAD_TILT0), ("head_joint2", 0.0)):
                 if jn in rob.joint_names:

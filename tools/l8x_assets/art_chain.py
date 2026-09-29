@@ -33,9 +33,10 @@ def feasible(opened: dict, spec: dict, kind: str) -> list:
         elif ts.get("rim_z") is None or r["collider_size"][2] > RIM_MAX or ts["area"] < 0.03:
             continue
         try:  # the layout must fit the workspace (drawer: object on the top within reach; box: not too wide)
-            for s in (1, 2, 3):
-                XA.layout(kind, r, {"footprint_r": 0.03, "height": 0.085, "length": 0.08}, s)
+            lays = [XA.layout(kind, r, {"footprint_r": 0.03, "height": 0.085, "length": 0.08}, s) for s in (1, 2, 3)]
         except ValueError:
+            continue
+        if not all(XA.in_room_zone(XA.scene_boxes(kind, r, la)) for la in lays):  # L8S: every episode has a room
             continue
         out.append((ts["area"], n))
     return [n for _, n in sorted(out, reverse=True)[:N_FIX]]
