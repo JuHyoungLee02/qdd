@@ -94,14 +94,14 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                 return
             from . import fx as _fx
             self._jlog = []
-            for k in range(4):  # change 20 (audit 2): relayout while the target / destination is occluded
+            for k in range(8):  # change 20 (audit 2): relayout while the target / destination is occluded
                 self._occ_try = k
                 self._reset_furniture(seed, task)
                 occ = self._first_occlusion(task)
                 self.furniture_scene["occlusion"] = {"try": k, **occ}
                 if max(occ.values()) < OCC_MAX:
                     return
-            raise _fx.SkipScene(f"target / destination occluded in the first head frame after 4 layouts: {occ}")
+            raise _fx.SkipScene(f"target / destination occluded in the first head frame after 8 layouts: {occ}")
 
         def _apply_clutter(self, seed, task):
             from ..sim import scene as SC
@@ -353,7 +353,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
         def _obj_world(self, k):
             """Canonical centre of object k in the base frame the head camera uses (world status)."""
             import numpy as np
-            return np.asarray(self.status()["obj"][k], float)
+            return np.asarray(self.env.object_pose(k)[0], float) - self.env.scene.env_origins[0].cpu().numpy()  # no planner yet
 
         def _head_sees(self, lay, task, tz, upper, margin: float = 0.05) -> bool:
             """Target and destination project inside the head image (5 % margin) at the current head pose and are not
