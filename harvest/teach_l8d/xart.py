@@ -209,7 +209,7 @@ def make_art_world(kind: str, fixture: str, rec: dict, objs: dict):
             env.table_top_z = self.table_z = float(lay["work_z"])
             SC._LAYOUT["table_z"] = self.table_z
             env.lift = lay["lift"]
-            env.task = task
+            env.task = "mug_tray"  # the OraclePlanner (IK / TCP helper) needs a registered task with scene objects
             env.layout = {oid: (lay["obj_xy"][0], lay["obj_xy"][1], 0.0), PLACE_ID: (*lay["place_xy"], 0.0)}
             env.present = [oid, PLACE_ID]
             env.randomization = None  # set by _dome (drf) after the reset
