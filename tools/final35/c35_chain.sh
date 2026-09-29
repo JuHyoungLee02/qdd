@@ -24,21 +24,22 @@ log "WAIT_DONE N=$N"
 mixlog() { tr -d ' \n' < $1 | grep -o '"pool":[0-9]*\|"open_over_base":[0-9.]*,"open_share_of_file":[0-9.]*,"repeat":[0-9.]*' | tr '\n' ' '; }
 if [ ! -f $D/train_c35_a.jsonl ]; then
   $P tools/final35/c35_prep.py strat $N $O/man >> $L/prep.log 2>&1 || { log PREP_FAIL_strat; exit 1; }
-  for r in main ring; do
-    [ $r = main ] && R=$T8/l8s_prod || R=$T8/l8s_prod_ring
-    $P tools/teach_l8d/build.py $R $D/b_$r train pt --manifest $O/man/${r}_train.json >> $L/prep.log 2>&1
-    $P tools/teach_pt/convert_min.py $D/b_$r/train_pt.jsonl $D d-min l8s_${r}_d-min.jsonl >> $L/prep.log 2>&1
+  for r in main; do  # change 6: ring V excluded (KeyError rp_ring); every build step's exit code is checked
+    R=$T8/l8s_prod
+    $P tools/teach_l8d/build.py $R $D/b_$r train pt --manifest $O/man/${r}_train.json >> $L/prep.log 2>&1 || { log "PREP_FAIL build $r"; exit 1; }
+    $P tools/teach_pt/convert_min.py $D/b_$r/train_pt.jsonl $D d-min l8s_${r}_d-min.jsonl >> $L/prep.log 2>&1 || { log "PREP_FAIL convert $r"; exit 1; }
     for e in $(grep -o '"[^"]*_s[0-9]*"' $O/man/${r}_val.json | tr -d '"'); do
       mkdir -p $O/val_src/$(dirname $e); ln -sfn $R/train/$e $O/val_src/$e
     done
   done
   $P tools/teach_l8d/build.py /data/harvest/out/teach_l8d/b3d_drawer $D/b_drawer train pt \
-    --manifest $C/docs/stage3/l8d_bundle_b3d.json >> $L/prep.log 2>&1
-  $P tools/teach_pt/convert_min.py $D/b_drawer/train_pt.jsonl $D d-min drawer_d-min.jsonl >> $L/prep.log 2>&1
-  cat $D/l8s_main_d-min.jsonl $D/l8s_ring_d-min.jsonl $D/drawer_d-min.jsonl > $D/base_c35_d-min.jsonl 2>> $L/prep.log
-  $P tools/teach_pt/build_min.py $O/val_src $D x_val_l8s d-min clean $O/val_src >> $L/prep.log 2>&1
-  $P tools/final35/c35_prep.py pool /data/harvest/out/poolv/verdict_fix.json $O/pool >> $L/prep.log 2>&1
-  $P tools/final35/c35_prep.py subset $O/pool >> $L/prep.log 2>&1
+    --manifest $C/docs/stage3/l8d_bundle_b3d.json >> $L/prep.log 2>&1 || { log "PREP_FAIL build drawer"; exit 1; }
+  $P tools/teach_pt/convert_min.py $D/b_drawer/train_pt.jsonl $D d-min drawer_d-min.jsonl >> $L/prep.log 2>&1 || { log "PREP_FAIL convert drawer"; exit 1; }
+  cat $D/l8s_main_d-min.jsonl $D/drawer_d-min.jsonl > $D/base_c35_d-min.jsonl || { log "PREP_FAIL base"; exit 1; }
+  [ -s $D/l8s_main_d-min.jsonl ] && [ -s $D/drawer_d-min.jsonl ] || { log "PREP_FAIL empty base part"; exit 1; }
+  $P tools/teach_pt/build_min.py $O/val_src $D x_val_l8s d-min clean $O/val_src >> $L/prep.log 2>&1 || { log "PREP_FAIL val"; exit 1; }
+  $P tools/final35/c35_prep.py pool /data/harvest/out/poolv/verdict_fix.json $O/pool >> $L/prep.log 2>&1 || { log "PREP_FAIL pool"; exit 1; }
+  $P tools/final35/c35_prep.py subset $O/pool >> $L/prep.log 2>&1 || { log "PREP_FAIL subset"; exit 1; }
   cp $O/pool/val_open.jsonl $D/val_open.jsonl
   for arm in b a; do
     [ $arm = b ] && { S=$O/pool/pool_src; CAP=3.0; } || { S=$O/pool/pool_src_a; CAP=4.0; }

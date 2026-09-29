@@ -76,7 +76,7 @@ def l8s(n, out, after=None):
 
 
 JOBS = tuple(f"/data/harvest/out/teach_l8d/plan5/jobs_l8s2_{k}.txt" for k in ("m", "x", "into_m", "into_x"))  # change 5
-RING_SHARE = 0.03  # ring V episodes (separate root, ~3 % of production, L8D 09-29)
+RING_SHARE = 0.0  # change 6: ring V excluded (build KeyError rp_ring in obj_height); was 0.03
 
 
 def kind_of(task):
@@ -114,7 +114,8 @@ def strat_targets(n):
     sh = plan_strata()
     main_n = n - round(n * RING_SHARE)
     t = {k: round(main_n * v) for k, v in sh.items()}
-    t["ring"] = round(n * RING_SHARE)
+    if RING_SHARE > 0:
+        t["ring"] = round(n * RING_SHARE)
     return t
 
 
