@@ -78,3 +78,9 @@ def test_seed_guards():
     assert C.check_seed(22, "ood_d", "random") == 22
     with pytest.raises(ValueError):
         C.check_seed(20100, "train", "standard", 0.82)
+
+
+def test_c35_validation_split_accepts_training_seeds_only():
+    DS._check(49130, "x_val_l8s")  # an L8S training seed held out for E-C35 validation
+    with pytest.raises(ValueError):
+        DS._check(70160, "x_val_l8s")  # protected OOD seeds never enter the validation split
