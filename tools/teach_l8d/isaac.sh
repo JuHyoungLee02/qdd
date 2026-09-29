@@ -14,6 +14,7 @@ mkdir -p $L $Q/out/teach_l8d $C/tmp
 ENVS="HOME=$Q/home TMPDIR=$C/tmp XDG_CACHE_HOME=$Q/cache HF_HOME=$Q/cache/hf TORCH_HOME=$Q/cache/torch PIP_CACHE_DIR=$Q/cache/pip WARP_CACHE_PATH=$Q/cache/warp MPLCONFIGDIR=$Q/cache/mpl PYTHONPATH=$C PYTHONPYCACHEPREFIX=$Q/cache/pyc_teach_l8d OMP_WAIT_POLICY=PASSIVE OMP_NUM_THREADS=4"
 [ -n "$L8S_LIGHT_GAIN" ] && ENVS="$ENVS L8S_LIGHT_GAIN=$L8S_LIGHT_GAIN"  # calibration runs only
 [ -n "$L8S_ISO" ] && ENVS="$ENVS L8S_ISO=$L8S_ISO"  # calibration runs only
+[ -n "$L8S_ARM_START" ] && ENVS="$ENVS L8S_ARM_START=$L8S_ARM_START"  # change 26 diagnosis only
 cd $Q/ir
 export CUDA_VISIBLE_DEVICES=$G
 echo "START $(date -u +%FT%TZ) host=$(hostname) gpu=$G $MOD $*" >> $L/$TAG.log
