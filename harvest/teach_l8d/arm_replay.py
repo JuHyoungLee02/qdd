@@ -33,6 +33,7 @@ def main():
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--stiff", type=float, default=None)
     ap.add_argument("--nograv", action="store_true")
+    ap.add_argument("--gprobe", action="store_true")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     import numpy as np
@@ -101,6 +102,24 @@ def main():
         base = drift()
         print("ARM_PROBE base drift", round(base, 3), "colliders", len(cols))
         out = {"probe": a.probe, "base": base, "bodies": {}}
+        if a.gprobe:  # gravity off on one robot body at a time (USD disableGravity, re-read by the hard reset)
+            from pxr import PhysxSchema
+            rb = {p.GetName(): p for p in stage.Traverse() if str(p.GetPath()).startswith("/World/envs/env_0/Robot")
+                  and p.HasAPI(UsdPhysics.RigidBodyAPI)}
+            for b in rob.body_names:
+                if b not in rb:
+                    continue
+                api = PhysxSchema.PhysxRigidBodyAPI.Apply(rb[b])
+                old = api.GetDisableGravityAttr().Get() if api.GetDisableGravityAttr() else None
+                api.CreateDisableGravityAttr(True)
+                d = drift()
+                api.CreateDisableGravityAttr(bool(old) if old is not None else False)
+                out["bodies"][b] = round(d, 4)
+                print("ARM_GPROBE", b, "gravity was", "off" if old else "on", round(d, 3), flush=True)
+            json.dump(out, open(a.out, "w"), indent=0)
+            import sys
+            sys.stdout.flush()
+            os._exit(0)
         scene_cols = [p for p in stage.Traverse() if p.HasAPI(UsdPhysics.CollisionAPI)
                       and not str(p.GetPath()).startswith("/World/envs/env_0/Robot")]
         for tag, group in (("ALL_ROBOT", cols), ("ALL_SCENE", scene_cols)):
