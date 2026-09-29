@@ -315,9 +315,10 @@ def occlusion(cam, depth, centre, half_xy: float, top_z: float, n: int = 5) -> f
     return 1.0 if tot == 0 else hid / tot
 
 
-ARM_START = (0.22, -0.42, 0.30)  # change 26: back to change 21 (24 had 0.15, -0.42, 0.40): right TCP start (x, y, z above the work surface), above / right of the
-# head camera's view of the table (main35_recipe.md; the real robot starts from the same pose)
+ARM_START = (0.34, -0.25, 0.25)  # change 26: = the INIT_R_ARM TCP (change 21 0.22, -0.42, 0.30 and 24 0.15, -0.42, 0.40 pushed joint1 off its target leaving the start); right TCP start (x, y, z above the work surface), above / right of the
+# head camera's view of the work area (main35_recipe.md; the first-frame occlusion check still applies)
 if os.environ.get("L8S_ARM_START"):  # change 26 diagnosis only (candidate start poses); unset in production
     ARM_START = tuple(float(v) for v in os.environ["L8S_ARM_START"].split(","))
 ARM_DQ = 0.035  # rad per env step for the L8S arm command (measured steps stay <= 0.04 incl. PD overshoot)
+ARM_BAND = 0.03  # change 26: L8S arm command within this of the measured joints (no stored error snapping free)
 ARM_VMAX_STEP = 0.038  # change 24: right-arm joint speed cap per env step (PhysX max joint velocity = this / dt)

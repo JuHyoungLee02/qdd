@@ -121,13 +121,17 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             command without the gravity offset moves <= ARM_DQ per step; the offset is added back for the PD."""
             import numpy as np
 
-            from .clutter_x import ARM_DQ
+            from .clutter_x import ARM_BAND, ARM_DQ
             g = self.pl._gravity_offset()[0].cpu().numpy()
             qd = self.pl._ik(cmd_pos, self.cmd_quat, 10.0) - g  # unclamped IK solution
             if getattr(self, "_qcmd", None) is None:
                 rob = self.env.robot
                 self._qcmd = rob.data.joint_pos[0, self.env.arm_ids].cpu().numpy().copy()
             self._qcmd = self._qcmd + np.clip(qd - self._qcmd, -ARM_DQ, ARM_DQ)
+            # change 26: the command stays within ARM_BAND of the measured joints, so a joint held back by contact
+            # (joint7 pinned while the object touches the container) stores no error that snaps free on release
+            qm = self.env.robot.data.joint_pos[0, self.env.arm_ids].cpu().numpy()
+            self._qcmd = np.clip(self._qcmd, qm - ARM_BAND, qm + ARM_BAND)
             if not hasattr(self, "_alog"):
                 self._alog = []
             self._alog.append(np.concatenate([self._qcmd, g, qd]).astype(np.float32))  # change 26: cmd, offset, IK
