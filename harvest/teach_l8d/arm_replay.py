@@ -180,6 +180,12 @@ def main():
             print("ARM_HOLD body", b, np.round(rob.data.body_pos_w[0, rob.body_names.index(b)].cpu().numpy(), 3).tolist())
         mass = rob.root_physx_view.get_masses()[0].cpu().numpy()
         print("ARM_HOLD masses", {n: round(float(m), 2) for n, m in zip(rob.body_names, mass) if float(m) > 0.5})
+        coms = view.get_coms()[0].cpu().numpy()
+        ine = view.get_inertias()[0].cpu().numpy()
+        for i, n in enumerate(rob.body_names):
+            if n.startswith(("arm_r", "gripper_r", "arm_base")):
+                print("ARM_HOLD link", n, "mass", round(float(mass[i]), 3), "com(pos,quat)", np.round(coms[i], 4).tolist(),
+                      "I diag", np.round(ine[i].reshape(3, 3).diagonal(), 5).tolist(), flush=True)
         json.dump({"hold": a.hold, "rows": rows}, open(a.out, "w"), indent=0)
         import sys; sys.stdout.flush(); os._exit(0)
     for i in range(s0, min(s1, len(tgt))):
