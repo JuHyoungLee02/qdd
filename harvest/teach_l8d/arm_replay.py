@@ -34,6 +34,7 @@ def main():
     ap.add_argument("--stiff", type=float, default=None)
     ap.add_argument("--nograv", action="store_true")
     ap.add_argument("--gprobe", action="store_true")
+    ap.add_argument("--spec-inertia", action="store_true")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     import numpy as np
@@ -149,6 +150,19 @@ def main():
             rob.write_joint_effort_limit_to_sim(a.effort, joint_ids=[ids[0]])
         if a.stiff is not None:  # drift ~ 1 / K means a force pushes joint1; unchanged means a position constraint
             rob.write_joint_stiffness_to_sim(a.stiff, joint_ids=[ids[0]])
+        if a.spec_inertia:  # ROBOTIS ffw_sg2 (ai_worker ffw_description) principal inertias, in the COM frame PhysX reports
+            spec = {"arm_base_link": (0.108375, 0.0796286, 0.0542098), "arm_r_link1": (0.00336559, 0.00296956, 0.00240308),
+                    "arm_r_link2": (0.0108884, 0.0107203, 0.00242441), "arm_r_link3": (0.00340682, 0.00290928, 0.00183278),
+                    "arm_r_link4": (0.00611519, 0.00607254, 0.00141405), "arm_r_link5": (0.00188453, 0.00172697, 0.00124878),
+                    "arm_r_link6": (0.00161885, 0.00141804, 0.000538212), "arm_r_link7": (0.000452453, 0.000416075, 0.0001032)}
+            ine = view.get_inertias().clone()
+            print("ARM_HOLD inertia before", {n: ine[0, i].cpu().numpy().tolist() for i, n in enumerate(rob.body_names)
+                                              if n in spec}, flush=True)
+            for i, n in enumerate(rob.body_names):
+                if n in spec:
+                    ine[0, i] = torch.tensor(np.diag(spec[n]).reshape(-1), dtype=ine.dtype)
+            view.set_inertias(ine, torch.arange(1, dtype=torch.int32))
+            print("ARM_HOLD inertia after", np.round(view.get_inertias()[0, rob.body_names.index("arm_r_link5")].cpu().numpy(), 5).tolist(), flush=True)
         if a.nograv:
             import carb
             from pxr import Gf, UsdPhysics
