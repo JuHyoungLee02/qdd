@@ -18,6 +18,27 @@ from ..teach_pt.collect import PtCollector
 SCENE_SCHEMA = "qdd.l8d.scene/v1"
 
 
+_OCC_MAX = 0.5
+
+
+def _occ(w, st, info, lab):
+    """Occluded share of the current step's point object (target while approaching / grasping, else the
+    destination) in this call's head frame; None without depth (non-L8S worlds)."""
+    obs = getattr(w, "last_obs", None)
+    if lab is None or obs is None or not getattr(obs, "depth", None) or "head" not in obs.depth:
+        return None
+    from ..sim import scene as SC
+    from .clutter_x import occlusion
+    k = info["tgt"] if lab.get("phase") == "approach" else info["place"]
+    if k not in st["obj"] or k not in SC.OBJ_GEOM:
+        return None
+    g = SC.OBJ_GEOM[k]
+    he = g.get("half_extents", (g.get("radius", 0.03),) * 3)
+    p = np.asarray(st["obj"][k], float)
+    top = p[2] + (he[2] if g.get("shape") not in ("marker", "surface") else 0.0)
+    return round(occlusion(obs.cams["head"], obs.depth["head"], p[:2], 0.6 * min(he[0], he[1]), top), 3)
+
+
 class _XLabels(LC.Collector):
     """teach_l8.collect.Collector.ask with the support-aware labels (xlabels.label == labels.label on one table)."""
 
@@ -36,12 +57,15 @@ class _XLabels(LC.Collector):
         drop = "tipped" if lab is None else ("not_visible" if cams and not LC.visible(cams, tgt) else None)
         if drop is None and L.stuck(last, self.prev_cmd, lab["command"]):
             drop = "stuck"
+        occ = _occ(w, st, info, lab)
+        if drop is None and occ is not None and occ >= _OCC_MAX:  # change 20: the step's point is hidden
+            drop = "occluded"
         row = {"call": meta["call"], "site": meta["site"], "prev_kind": self.prev_kind, "drop": drop,
                "gt": {"tgt": LC._l(tgt), "place": LC._l(st["obj"][info["place"]]), "tcp": LC._l(st["tcp"]),
                       "grip_w": round(float(st["grip_w"]), 4),
                       "others": {k: LC._l(v) for k, v in st["obj"].items() if k not in (info["tgt"], info["place"])}},
                "ex_target": LC._l(ep.ex.target), "drawn": list(getattr(ep, "drawn", [])),
-               "tgt": info["tgt"], "place": info["place"]}
+               "tgt": info["tgt"], "place": info["place"], "occ": occ}
         if lab is None:
             row.update(step="tipped", phase="tipped", status=None, answer=None, exec_kind="stop")
             self.rows.append(row)
@@ -165,6 +189,14 @@ def collect_episode(world, seed: int, task: str, variant: str, split: str, out_d
             "wall_s": res.get("wall_s"), "n_pt_labels": sum(r.get("pt_answer") is not None for r in coll.rows)}
     if judge is not None:  # new tasks only (old tasks: meta byte-identical)
         meta["judge"], meta["success"] = judge, meta["success"] and judge
+    jl = getattr(world, "_jlog", None)
+    if jl:  # change 20 (audit 2): every physics step's joint angles (jump check <= 0.04 rad / frame)
+        q = np.asarray(jl, np.float32)
+        np.savez_compressed(os.path.join(out_dir, "joints.npz"), q=q,
+                            names=np.asarray(world.env.robot.joint_names), dt=float(world.dt))
+        dq = np.abs(np.diff(q, axis=0)).max() if len(q) > 1 else 0.0
+        meta["max_dq_rad"] = round(float(dq), 4)
+        world._jlog = []
     with open(os.path.join(out_dir, "meta.json"), "w") as f:
         json.dump(meta, f)
     return meta

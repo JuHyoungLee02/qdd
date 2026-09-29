@@ -136,8 +136,15 @@ def register_for_tasks(tasks, rows: dict | None = None) -> list:
     if any(k not in rows for k in ids):  # b3 real objects (helper objects_real.json, objv-compatible rows)
         from ..teach_l8d.clutter_x import load_real
         rows = {**load_real(), **rows}
+    rel = [t for t in tasks if str(t).startswith(("ov_left__", "ov_right__", "ov_front__", "ov_behind__",
+                                                     "ov_between__"))]
+    if rel and any(k.startswith(("gso_", "gsor_", "thor_")) for k in ids):  # L8S: real references (change 20)
+        from .tasks import use_real_refs
+        refs = use_real_refs()
+        rows = {**load_real_rows_all(), **rows}
+        ids = sorted(set(ids) | set(refs))
     register({k: rows[k] for k in ids})
-    register_objv_tasks(ids, {k: prompt_name(rows[k]) for k in ids})
+    register_objv_tasks([k for k in ids if not (rel and k in _REF_IDS())], {k: prompt_name(rows[k]) for k in ids})
     if into:
         for t in into:
             a, c = t[len("ov_into__"):].rsplit("__", 1)
@@ -172,7 +179,9 @@ def load_containers(path: str | None = None, usable_only: bool = True) -> dict:
         i = r["inside"]
         if usable_only and not (r.get("gate_pass") and (i.get("rim_z") or i["inner_floor_z"]) <= RIM_MAX + 1e-9):
             continue
-        out[k] = dict(r, name=r.get("name") or r["noun"].replace("_", " "), split=r.get("split") or "train",
+        src = str(r.get("source_name") or k).lower()
+        noun = "mug" if "mug" in src else ("cup" if "cup" in src.split("_") else r["noun"].replace("_", " "))
+        out[k] = dict(r, name=r.get("name") or noun, split=r.get("split") or "train",  # audit 2: no mug "pen holder"
                       uid=r.get("uid") or k)
     return out
 
@@ -193,3 +202,13 @@ def register_containers(rows: dict) -> list:
 def into_fits(obj: dict, cont: dict) -> bool:
     """The object passes the container's opening with 1 cm each side (2 x footprint_r <= opening - 2 cm)."""
     return 2 * float(obj["footprint_r"]) <= float(cont["inside"].get("opening_min_side", 0)) - 0.02
+
+
+def load_real_rows_all() -> dict:
+    from ..teach_l8d.clutter_x import load_real
+    return load_real()
+
+
+def _REF_IDS() -> set:
+    from .tasks import L8S_REL_REFS
+    return {v[0] for v in L8S_REL_REFS.values()}

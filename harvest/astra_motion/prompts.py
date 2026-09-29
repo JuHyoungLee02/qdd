@@ -156,6 +156,9 @@ TEMPLATES = {"grasp": GRASP_Q, "static": STATIC, "cam": CAM, "dynamic": DYNAMIC,
 PROMPT_ID = hashlib.sha256("\n".join(TEMPLATES[k] for k in sorted(TEMPLATES)).encode()).hexdigest()[:12]
 
 
+REL_NAMES = {"bottle": "green bottle", "box": "yellow box"}  # relational references (L8S: tasks.use_real_refs)
+
+
 def place_rule(place: str, place_name: str) -> str:
     from ..sim.scene import OBJ_GEOM
     pk = OBJ_GEOM.get(place, {}).get("place_kind")
@@ -174,14 +177,15 @@ def place_rule(place: str, place_name: str) -> str:
         return f"inside the {place_name} (standing on its floor)"
     if place in ("o17", "o18"):  # L8-X relational spot
         side = "left (+y)" if place == "o17" else "right (-y)"
-        return (f"on the table about 10 cm to the robot's {side} of the green bottle (its centre within 4 cm of "
+        return (f"on the table about 10 cm to the robot's {side} of the {REL_NAMES['bottle']} (its centre within 4 cm of "
                 f"that point, standing on the table)")
     if place in ("o27", "o28"):  # change 18: in front of / behind the bottle
         side = "in front of (toward the robot, -x)" if place == "o27" else "behind (away from the robot, +x)"
-        return (f"on the table about 10 cm {side} the green bottle (its centre within 4 cm of that point, standing on "
-                f"the table)")
+        return (f"on the table about 10 cm {side} the {REL_NAMES['bottle']} (its centre within 4 cm of that point, "
+                f"standing on the table)")
     if place == "o29":
-        return ("on the table halfway between the green bottle and the yellow box (its centre within 4 cm of that "
+        return (f"on the table halfway between the {REL_NAMES['bottle']} and the {REL_NAMES['box']} (its centre within 4 "
+                "cm of that "
                 "point, standing on the table)")
     return f"on the {place_name} (resting on it, supported by it)"
 

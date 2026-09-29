@@ -130,10 +130,11 @@ def test_relational_real_tasks_change15():
     k = sorted(k for k, r in CX.load_real().items() if r["split"] == "train" and r.get("task_target_ok"))[3]
     OV.register_for_tasks([f"ov_left__{k}"])
     t = f"ov_left__{k}"
-    assert T.TASKS[t].place == "o17" and T.X_REL[t] == ("o8", "o17", 0.10)
+    b = T.L8S_REL_REFS["bottle"][0]  # change 20: real references for real-object relations
+    assert T.TASKS[t].place == "o17" and T.X_REL[t] == (b, "o17", 0.10)
     for seed in range(40000, 40010):
         lay = T.x_task_layout(seed, t, ws=((0.37, 0.52), (-0.40, -0.06)))
-        assert {k, "o8", "o17"} <= set(lay) and abs(lay["o17"][1] - lay["o8"][1] - 0.10) < 1e-9
+        assert {k, b, "o17"} <= set(lay) and abs(lay["o17"][1] - lay[b][1] - 0.10) < 1e-9
 
 
 def test_confusers_change16():
@@ -159,15 +160,16 @@ def test_front_behind_between_change18():
     from harvest.sim import tasks as T
     k = sorted(k for k, r in CX.load_real().items() if r["split"] == "train" and r.get("task_target_ok"))[5]
     OV.register_for_tasks([f"ov_front__{k}", f"ov_behind__{k}", f"ov_between__{k}"])
+    rb, rx = T.L8S_REL_REFS["bottle"][0], T.L8S_REL_REFS["box"][0]
     ws = ((0.37, 0.55), (-0.42, -0.04))
     for seed in range(40000, 40010):
         f = T.x_task_layout(seed, f"ov_front__{k}", ws=ws)
-        assert abs(f["o27"][0] - f["o8"][0] + 0.10) < 1e-9 and ws[0][0] <= f["o27"][0] <= ws[0][1]
+        assert abs(f["o27"][0] - f[rb][0] + 0.10) < 1e-9 and ws[0][0] <= f["o27"][0] <= ws[0][1]
         b = T.x_task_layout(seed, f"ov_behind__{k}", ws=ws)
-        assert abs(b["o28"][0] - b["o8"][0] - 0.10) < 1e-9
+        assert abs(b["o28"][0] - b[rb][0] - 0.10) < 1e-9
         w = T.x_task_layout(seed, f"ov_between__{k}", ws=ws)
-        mid = ((w["o8"][0] + w["o9"][0]) / 2, (w["o8"][1] + w["o9"][1]) / 2)
-        assert math.dist(mid, w["o29"][:2]) < 1e-9 and 0.20 - 1e-9 <= math.dist(w["o8"][:2], w["o9"][:2]) <= 0.26 + 1e-9
+        mid = ((w[rb][0] + w[rx][0]) / 2, (w[rb][1] + w[rx][1]) / 2)
+        assert math.dist(mid, w["o29"][:2]) < 1e-9 and 0.20 - 1e-9 <= math.dist(w[rb][:2], w[rx][:2]) <= 0.26 + 1e-9
         assert math.dist(w[k][:2], w["o29"][:2]) >= 0.12 - 1e-9
 
 
@@ -248,3 +250,36 @@ def test_into_judge_opening_and_band():
     assert not container_contains(c, box, np.array([0.45 + ox + 0.5, -0.20 + oy]), floor + 0.01)  # outside
     rim = 0.02 + (ins.get("rim_z") or ins["inner_floor_z"])
     assert not container_contains(c, box, np.array([0.45 + ox, -0.20 + oy]), rim + 0.02)  # above the rim
+
+
+def test_occlusion_helper():
+    import numpy as np
+    from harvest.astra_motion import geometry as G
+    R = np.array([[0, -1, 0], [-1, 0, 0], [0, 0, -1]], float)  # looking straight down
+    cam = G.Cam("head", 100, 100, 100.0, 100.0, 50.0, 50.0, R, np.array([0.0, 0.0, 1.0]))
+    free = np.full((100, 100), 1.0)
+    assert CX.occlusion(cam, free, (0.0, 0.0), 0.05, 0.0) == 0.0
+    blocked = free.copy()
+    blocked[30:70, 30:70] = 0.5  # an arm half way down
+    assert CX.occlusion(cam, blocked, (0.0, 0.0), 0.05, 0.0) >= 0.5
+
+
+def test_audit2_names():
+    from harvest.sim import objv as OV
+    assert CX.names_clash("white bottle", "small white bottle") and CX.names_clash("mug", "mug")
+    assert not CX.names_clash("white bottle", "white box")
+    c = OV.load_containers(usable_only=False)
+    assert all(r["name"] != "pen holder" for k, r in c.items() if "mug" in str(r.get("source_name", k)).lower())
+
+
+def test_real_relation_refs_change20():
+    from harvest.sim import objv as OV
+    from harvest.sim import tasks as T
+    from harvest.astra_motion.prompts import OBJ_NAME, place_rule
+    k = sorted(k for k, r in CX.load_real().items() if r["split"] == "train" and r.get("task_target_ok") and k not in {v[0] for v in T.L8S_REL_REFS.values()})[7]
+    OV.register_for_tasks([f"ov_left__{k}", f"ov_between__{k}"])
+    b, x = T.L8S_REL_REFS["bottle"][0], T.L8S_REL_REFS["box"][0]
+    assert T.X_REL[f"ov_left__{k}"][0] == b and T.X_BETWEEN[f"ov_between__{k}"][:2] == (b, x)
+    assert "brown bottle" in T.TASKS[f"ov_left__{k}"].instruction and "green" not in place_rule("o17", OBJ_NAME["o17"])
+    lay = T.x_task_layout(40002, f"ov_left__{k}", ws=((0.37, 0.55), (-0.42, -0.04)))
+    assert b in lay and "o8" not in lay

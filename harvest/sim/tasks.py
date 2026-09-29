@@ -205,6 +205,28 @@ OBJV_REL = {"left": ("o8", "o17", 0.10), "right": ("o8", "o18", -0.10),
             "front": ("o8", "o27", 0.0, -0.10), "behind": ("o8", "o28", 0.0, 0.10)}  # ref, spot, dy[, dx]
 OBJV_BETWEEN = {"between": ("o8", "o9", "o29")}  # refs a, b, spot (their midpoint)
 X_BETWEEN: dict = {}
+# change 20 (audit 2): L8S relational references are real objects (not the primitive bottle o8 / box o9)
+L8S_REL_REFS = {"bottle": ("gsor_Twinlab_Premium_Creatine_Fuel_Powder", "brown bottle"),
+                "box": ("gso_JarroSil_Activated_Silicon_5exdZHIeLAp", "pink box")}
+
+
+def use_real_refs() -> tuple:
+    """Switch the ov_* relational kinds to the L8S real references (texts, X_REL refs, spot names); -> ref ids.
+    Call before registering the tasks (objv.register_for_tasks does it for real-object rel tasks)."""
+    from ..astra_motion import prompts as P
+    (b, bn), (x, xn) = L8S_REL_REFS["bottle"], L8S_REL_REFS["box"]
+    for kind, side in (("left", "to the left of"), ("right", "to the right of"), ("front", "in front of"),
+                       ("behind", "behind")):
+        pl = OBJV_TASK_KINDS[kind][0]
+        OBJV_TASK_KINDS[kind] = (pl, "Put the {n} " + side + " the " + bn + ".", ())
+        OBJV_REL[kind] = (b,) + tuple(OBJV_REL[kind][1:])
+    OBJV_TASK_KINDS["between"] = ("o29", "Put the {n} between the " + bn + " and the " + xn + ".", ())
+    OBJV_BETWEEN["between"] = (b, x, "o29")
+    P.REL_NAMES.update(bottle=bn, box=xn)
+    for k, t in (("o17", "left of"), ("o18", "right of"), ("o27", "in front of"), ("o28", "behind")):
+        P.OBJ_NAME[k] = f"spot {t} the {bn}"
+    P.OBJ_NAME["o29"] = f"spot between the {bn} and the {xn}"
+    return b, x
 
 
 def objv_task_id(kind: str, obj: str) -> str:

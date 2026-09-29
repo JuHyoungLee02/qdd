@@ -26,6 +26,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
     from .xlabels import x_info
     mesh = None
     l8s = variant == "drf"  # L8S render rules (changes 17-18): head, exposure, materials, HDRIs, gated pieces
+    from .clutter_x import OCC_MAX  # change 20 (audit 2): occlusion threshold
     if furniture is not None:  # L8-X furniture: no L8 table, furniture slots (helper L8X-assets, 85a37da)
         from ..sim.assets_x import isaac as FX
         from . import fx as _fx
@@ -88,7 +89,19 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                     return
                 IsaacWorld.reset(self, seed, task)
                 return
-            self._reset_furniture(seed, task)
+            if not l8s:
+                self._reset_furniture(seed, task)
+                return
+            from . import fx as _fx
+            self._jlog = []
+            for k in range(4):  # change 20 (audit 2): relayout while the target / destination is occluded
+                self._occ_try = k
+                self._reset_furniture(seed, task)
+                occ = self._first_occlusion(task)
+                self.furniture_scene["occlusion"] = {"try": k, **occ}
+                if max(occ.values()) < OCC_MAX:
+                    return
+            raise _fx.SkipScene(f"target / destination occluded in the first head frame after 4 layouts: {occ}")
 
         def _apply_clutter(self, seed, task):
             from ..sim import scene as SC
@@ -173,7 +186,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             if l8s:
                 self._retexture(seed, sc)
             try:
-                env.set_seed(seed, task)
+                env.set_seed(seed + 7919 * getattr(self, "_occ_try", 0), task)  # change 20: relayout if occluded
             except RuntimeError as ex:  # task_layout found no layout in this box
                 raise fx.SkipScene(f"layout: {ex}") from ex
             if l8s and getattr(self, "_hdr", None) and env.randomization.get("hdr"):
@@ -196,10 +209,10 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                 fr = {k: SC.OBJ_GEOM[k]["footprint_r"] for k in lay}
                 taken = {" ".join(str(OBJ_NAME.get(k, k)).lower().split()) for k in lay}  # audit P2: unique names
                 # change 16: ~20 % of episodes get look-alikes of the target (same colour, similar size) near it
-                lay, conf = add_confusers(lay, seed, TASKS[task].target, TASKS[task].place, clutter_pool, fr,
+                lay, conf = add_confusers(lay, seed + 7919 * getattr(self, "_occ_try", 0), TASKS[task].target, TASKS[task].place, clutter_pool, fr,
                                           surf["xy_box"], taken_names=taken)
                 fr = {k: SC.OBJ_GEOM[k]["footprint_r"] for k in lay}
-                lay, placed = add_clutter(lay, seed, clutter_pool, env.ws, fr, surface=surf, arrange=True,
+                lay, placed = add_clutter(lay, seed + 7919 * getattr(self, "_occ_try", 0), clutter_pool, env.ws, fr, surface=surf, arrange=True,
                                           taken_names=taken)
                 self.clutter_scene = {"n": len(placed), "ids": [p["id"] for p in placed], "confusers": conf,
                                       "arr": {a: sum(p.get("arr") == a for p in placed) for a in ("display", "stack")}}
@@ -311,8 +324,42 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                     return {"iso": round(iso, 2), "sat": round(sat, 4), "mean": round(mean, 1), "tries": k + 1}
             raise fx.SkipScene(f"exposure not fixed: {sat:.3f} saturated, mean {mean:.0f}, ISO {iso:.1f}")
 
+        def step(self, cmd_pos, width: float, quat=None) -> None:
+            IsaacWorld.step(self, cmd_pos, width, quat)
+            if l8s:  # change 20: joint angles per step (collect saves joints.npz)
+                if not hasattr(self, "_jlog"):
+                    self._jlog = []
+                self._jlog.append(self.env.robot.data.joint_pos[0].cpu().numpy().copy())
+
+        def _first_occlusion(self, task) -> dict:
+            """Occluded share of the target's and the destination's top face in the current head frame (depth)."""
+            from ..sim import scene as SC
+            from ..sim.tasks import TASKS
+            from .clutter_x import occlusion
+            env, s = self.env, TASKS[task]
+            cam = self._cam("cam_head", "head")
+            depth = env.camera_depth("cam_head")
+            out = {}
+            for role, k in (("tgt", s.target), ("place", s.place)):
+                if k not in env.layout:
+                    continue
+                pos = self._obj_world(k)
+                g = SC.OBJ_GEOM[k]
+                he = g.get("half_extents", (g.get("radius", 0.03),) * 3)
+                top = pos[2] + (he[2] if g.get("shape") not in ("marker", "surface") else 0.0)
+                out[role] = round(occlusion(cam, depth, pos[:2], 0.6 * min(he[0], he[1]), top), 3)
+            return out or {"tgt": 0.0}
+
+        def _obj_world(self, k):
+            """Canonical centre of object k in the base frame the head camera uses (world status)."""
+            import numpy as np
+            return np.asarray(self.status()["obj"][k], float)
+
         def _head_sees(self, lay, task, tz, upper, margin: float = 0.05) -> bool:
-            """Target and destination project inside the head image (5 % margin) at the current head pose."""
+            """Target and destination project inside the head image (5 % margin) at the current head pose and are not
+            occluded (change 20: the depth check of audit 2)."""
+            if max(self._first_occlusion(task).values()) >= OCC_MAX:
+                return False
             from ..astra_motion import geometry as G
             from ..sim.tasks import TASKS
             cam = self._cam("cam_head", "head")

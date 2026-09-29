@@ -205,7 +205,7 @@ def add_confusers(layout: dict, seed: int, target: str, place: str, pool: dict, 
         return layout, []
     cand = [k for k in confuser_ids(pool, target) if k in pool and k not in layout]
     if taken_names is not None:  # look-alikes must have their own names (audit P2)
-        cand = [k for k in cand if name_of(pool[k]) not in taken_names]
+        cand = [k for k in cand if not any(names_clash(name_of(pool[k]), s) for s in taken_names)]
     (x0, x1), (y0, y1) = box
     out, ids = dict(layout), []
     m = layout[target]
@@ -234,12 +234,19 @@ def name_of(row: dict) -> str:
     return " ".join(str(row.get("task_name") or row.get("name") or "").lower().split())
 
 
+def names_clash(a: str, b: str) -> bool:
+    """Two names clash when equal or when one's words are a subset of the other's ("white bottle" / "small white
+    bottle": an instruction naming the shorter one would not pick one object; audit 2)."""
+    wa, wb = set(a.split()), set(b.split())
+    return bool(wa and wb) and (wa <= wb or wb <= wa)
+
+
 def unique_named(pool: dict, taken: set) -> dict:
-    """Pool entries whose name is not taken and not shared with an earlier (sorted) entry."""
+    """Pool entries whose name clashes with no taken name and no earlier (sorted) entry (names_clash)."""
     out, seen = {}, set(taken)
     for k in sorted(pool):
         n = name_of(pool[k])
-        if n and n not in seen:
+        if n and not any(names_clash(n, s) for s in seen):
             out[k] = pool[k]
             seen.add(n)
     return out
@@ -283,3 +290,26 @@ def material_ok(mid: str, rec: dict) -> bool:
     """L8S pilot: no mossy / grassy (green) Poly Haven materials on furniture, floors or walls."""
     words = " ".join([mid] + list(rec.get("categories") or []) + list(rec.get("tags") or [])).lower()
     return not any(w in words for w in GREEN_WORDS)
+
+
+OCC_MAX = 0.5  # audit 2: a point target hidden for >= 50 % of its footprint samples is occluded
+OCC_TOL = 0.03  # m: a depth pixel nearer than the expected depth by more than this hides the sample
+
+
+def occlusion(cam, depth, centre, half_xy: float, top_z: float, n: int = 5) -> float:
+    """Share of an object's visible samples (a grid over its top face at top_z, n x n, radius half_xy) whose
+    head-depth pixel is nearer than the sample's own optical depth by > OCC_TOL (something in front of it)."""
+    import numpy as np
+    from ..astra_motion import geometry as G
+    d = np.asarray(depth, float)
+    H, W = d.shape[:2]
+    hid = tot = 0
+    for a in np.linspace(-half_xy, half_xy, n):
+        for b in np.linspace(-half_xy, half_xy, n):
+            u, v, z = G.project(cam, (centre[0] + a, centre[1] + b, top_z))
+            if not (z > 0 and 0 <= u < W and 0 <= v < H):
+                continue
+            tot += 1
+            dz = d[int(v), int(u)]
+            hid += bool(np.isfinite(dz) and dz < z - OCC_TOL)
+    return 1.0 if tot == 0 else hid / tot
