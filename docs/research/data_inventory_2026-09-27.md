@@ -128,3 +128,7 @@
 - ARIO 편별(시리즈별) 라이선스와 깊이 유무 — 규모가 커서(약 300만 편) 확인되면 상위 후보로 올라갈 수 있음.
 - AgiBot World 깊이 PNG의 단위·대상 카메라.
 - RoboSet 카메라 4대 중 깊이 카메라 포함 여부.
+
+## 6. 변환 완료 기록
+
+- 2026-09-29 AgiBot World v3 물체점(머리캠, CC BY-NC-SA 4.0): 3,534행 → 이름·마스크 재검증(SAM3.1 전체이름 재grounding ≥0.5/머리명사 ≥0.6, 로컬 Qwen3-VL-8B yes ≥0.9·자체 점 같은 마스크, 포괄명·부위명·tray/plate 제외; 유료 API 0) 통과 1,432 → q6 의도 불확인 60편(과제 525·787) 행 48 제외 → **최종 1,384행(학습 1,219·G 165)**. 새 표본 30장 눈검사 오답 0. 정확도 우선 규칙으로 통과율 41 % 수용(통제자 09-29). 경로 `/data/harvest/out/xemb_proto/points/agibot_v3_verified/final_{all,records,records_G}.jsonl`, 탈락 사유 `rejected.jsonl`, 의도 제외 `intents_exclude.json`. DROID 3인칭은 사용자 결정으로 폐기.
