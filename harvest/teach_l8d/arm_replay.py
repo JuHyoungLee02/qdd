@@ -28,6 +28,7 @@ def main():
     ap.add_argument("--no-self", action="store_true")
     ap.add_argument("--hold", type=int, default=None)
     ap.add_argument("--probe", type=int, default=None)
+    ap.add_argument("--effort", type=float, default=None)
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     import numpy as np
@@ -97,6 +98,8 @@ def main():
     if a.hold is not None:  # static check: hold the recorded pose at step a.hold; PhysX gravity torque vs drive
         view = rob.root_physx_view
         qh = q_all[a.hold, ids]
+        if a.effort is not None:  # diagnosis only: how much joint1 torque holding this pose needs
+            rob.write_joint_effort_limit_to_sim(a.effort, joint_ids=[ids[0]])
         q0[0, ids] = torch.as_tensor(qh, device=q0.device)
         rob.write_joint_state_to_sim(q0, torch.zeros_like(q0))
         for k in range(40):
@@ -107,6 +110,12 @@ def main():
                          "tau": [round(float(v), 2) for v in rob.data.applied_torque[0, ids].cpu().numpy()],
                          "grav": [round(float(v), 2) for v in c]})
         print("ARM_HOLD", a.hold, "q-qh", np.round(q - qh, 3).tolist(), "tau", rows[-1]["tau"], "grav", rows[-1]["grav"])
+        print("ARM_HOLD limits", np.round(rob.data.joint_pos_limits[0, ids].cpu().numpy(), 3).tolist())
+        for b in ("arm_base_link", "arm_r_link1", "arm_r_link2", "arm_r_link3", "arm_r_link4", "arm_r_link6",
+                  "arm_r_link7", "head_link2"):
+            print("ARM_HOLD body", b, np.round(rob.data.body_pos_w[0, rob.body_names.index(b)].cpu().numpy(), 3).tolist())
+        mass = rob.root_physx_view.get_masses()[0].cpu().numpy()
+        print("ARM_HOLD masses", {n: round(float(m), 2) for n, m in zip(rob.body_names, mass) if float(m) > 0.5})
         json.dump({"hold": a.hold, "rows": rows}, open(a.out, "w"), indent=0)
         import os
         os._exit(0)
