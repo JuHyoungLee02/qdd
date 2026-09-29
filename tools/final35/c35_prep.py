@@ -8,8 +8,8 @@
                                     with AgiBot v3 final in place of agibot_p0), G rows removed, 3 % of rows by
                                     sha256("c35|<id>") % 100 < 3 held out -> <out>/pool_src/<src>.jsonl (train part)
                                     + <out>/val_open.jsonl (geval format, gset val_<src>)
-  mix    <base jsonl> <out dir> <out jsonl>
-                                 -> tools/final35/open_pool.main over <out>/pool_src (p 0.75, repeat cap 1.5)"""
+  mix    <base jsonl> <out dir> <out jsonl> [repeat guard 3.0]
+                                 -> tools/final35/open_pool.main over <out>/pool_src (open = 0.75 x base, repeat guard 3.0)"""
 import glob
 import hashlib
 import json
@@ -92,13 +92,15 @@ def pool(verdict_p, out):
     print(json.dumps(counts))
 
 
-def mix(base, out, out_jsonl):
+def mix(base, out, out_jsonl, cap=3.0):
+    """open rows = 0.75 x base rows exactly (user-log 195, prereg_c35 change 1); the repeat cap is only a guard (3.0)
+    -- the build log / .counts.json records the repeat actually used."""
     import open_pool as OP
     OP.SOURCES = {os.path.basename(p)[:-6]: p for p in sorted(glob.glob(os.path.join(out, "pool_src", "*.jsonl")))}
-    OP.main(base, out_jsonl, 0.75, 1.5)
+    OP.main(base, out_jsonl, 0.75, cap)
 
 
 if __name__ == "__main__":
     c, a = sys.argv[1], sys.argv[2:]
     {"ood58": lambda: ood58(a[0]), "l8s": lambda: l8s(int(a[0]), a[1]), "pool": lambda: pool(a[0], a[1]),
-     "mix": lambda: mix(a[0], a[1], a[2])}[c]()
+     "mix": lambda: mix(a[0], a[1], a[2], float(a[3]) if len(a) > 3 else 3.0)}[c]()

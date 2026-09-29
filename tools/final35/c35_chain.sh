@@ -38,7 +38,8 @@ if [ ! -f $D/train_c35.jsonl ]; then
   $P tools/final35/c35_prep.py mix $D/base_c35_d-min.jsonl $O/pool $D/train_c35.jsonl.tmp >> $L/prep.log 2>&1 && \
     PYTHONPATH=$C/tools $P -m xemb.gsplit check $D/train_c35.jsonl.tmp >> $L/prep.log 2>&1 && \
     mv $D/train_c35.jsonl.tmp $D/train_c35.jsonl || { log PREP_FAIL; exit 1; }
-  log "PREP_DONE rows=$(wc -l < $D/train_c35.jsonl)"
+  cp $D/train_c35.jsonl.tmp.counts.json $D/train_c35.counts.json 2>/dev/null
+  log "PREP_DONE rows=$(wc -l < $D/train_c35.jsonl) mix=$(tr -d ' \n' < $D/train_c35.counts.json | grep -o '"open_over_base":[0-9.]*,"open_share_of_file":[0-9.]*,"repeat":[0-9.]*')"
 fi
 # 3. train seed 0 then 1 (wait for the 4 cards; resume on retry)
 free4() { [ "$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | awk '$1 < 1000' | wc -l)" -ge 4 ]; }
