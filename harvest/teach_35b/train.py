@@ -127,6 +127,8 @@ def main(argv=None):
     ap.add_argument("--max-steps", type=int, default=0, help="stop after this many optimizer steps (smoke)")
     ap.add_argument("--limit", type=int, default=0, help="use only the first N rows (smoke)")
     ap.add_argument("--save-every-epoch", type=int, default=1)
+    ap.add_argument("--save-half-epoch", action="store_true",
+                    help="also save the adapter half-way through each epoch -> <out>/epoch<e>.5 (main35 checkpoints)")
     ap.add_argument("--save-every", type=int, default=0,
                     help="full-state checkpoint (LoRA, optimizer, loop position, RNG) every N optimizer steps -> <out>/state")
     ap.add_argument("--resume", action="store_true", help="continue from <out>/state (same layout required)")
@@ -253,6 +255,11 @@ def main(argv=None):
                         print("LOG " + json.dumps(rec), flush=True)
                     cnt.zero_()
                     t_win = time.time()
+                if a.save_half_epoch and main_rank and k + 1 >= len(mine) // 2:
+                    hd = os.path.join(a.out, f"epoch{ep + 0.5}")  # epoch0.5, epoch1.5, ... (main35 checkpoints)
+                    if not os.path.isdir(hd):
+                        core.save_pretrained(hd)
+                        print(f"HALF_EPOCH {ep + 0.5} step {step}", flush=True)
                 if a.save_every and step % a.save_every == 0:
                     ckpt.save(a.out, core, opt, {"step": step, "epoch": ep, "next_k": k + 1}, layout, rank, barrier)
                     if a.stop_after and step == a.stop_after:
