@@ -150,10 +150,10 @@ def fig_overview():
     ax.text(0.04, 0.84, "(c) 학습", fontsize=8, va="top", color=TXT, fontweight="bold")
     bw, bh, by = 2.16, 0.60, 0.05
     bx = [0.05, 2.36, 4.67]
-    rbox(ax, bx[0], by, bw, bh, "astra", "상위 계획기 증류 (주 기여)", fs=6.4, bold=True,
-         sub="Astra·시뮬 참값 선생 → 학생이 간 상태에 라벨\n8B 대리 → 35B, 줄기 D 대 H(R은 대조)", sfs=5.2)
+    rbox(ax, bx[0], by, bw, bh, "astra", "상위 계획기 학습 (주 기여)", fs=6.4, bold=True,
+         sub="시뮬 참값 라벨 + 공개 점 라벨\n8B 대리 → 35B, 줄기 D", sfs=5.2)
     rbox(ax, bx[1], by, bw, bh, "mem", "다양화 데이터", fs=6.4, bold=True,
-         sub="L8-X: 받침면 9·과제 14·높이 약 0.45–1.08 m\n공개 데이터: 좌표계 만들기 대 카메라 없는 조종", sfs=5.2)
+         sub="L8-X → 사실적 L8S (실물·방·조명·목 무작위)\n공개 점 데이터 (시뮬 행의 0.75배)", sfs=5.2)
     dbox(ax, bx[2], by, bw, bh, "#EEF4FB", VL[1])
     ax.text(bx[2] + bw / 2, by + bh * 0.66, "VLA 끝-끝 학습 (상위 단독 뒤)", ha="center", va="center", fontsize=6.4,
             color=TXT, fontweight="bold")
@@ -190,11 +190,11 @@ def fig_model():
     note(ax, 2.30, 1.86, 0.66, 0.40, "코드: 목표→\n조이스틱 방향\n+ 늘 섞기", fs=4.8, ec="#6F6F6F")
     arr(ax, [(2.63, 2.45), (2.63, 2.26)], color=UP[1], lw=0.9)
     arr(ax, [(2.62, 1.86), (2.62, 1.72)], color="#6F6F6F", lw=0.8)
-    # right column: M4, chunk, robot, verification back
-    rbox(ax, 2.45, 1.30, 0.75, 0.42, "rule", "M4 확정", fs=6.2, sub="합의 + 측정", sfs=5.2)
+    # right column: gate (T1 / V1h), chunk, robot, verification back
+    rbox(ax, 2.45, 1.30, 0.75, 0.42, "rule", "관문", fs=6.2, sub="T1·V1h 허가", sfs=5.2)
     arr(ax, [(bx + bw, 1.49), (2.45, 1.49)], lw=0.8)
     arr(ax, [(2.62, 1.30), (2.62, 0.75), (2.10, 0.75), (2.10, 0.70)], lw=0.8)
-    ax.text(2.70, 1.02, "확정 결정", ha="left", va="center", fontsize=5.2, color="#555")
+    ax.text(2.70, 1.02, "허가된 결정", ha="left", va="center", fontsize=5.2, color="#555")
     arr(ax, [(bx + bw, 0.53), (2.42, 0.53)], lw=0.8)
     ax.text(2.46, 0.53, "0.4 s 청크\n→ 안전 투영", ha="left", va="center", fontsize=5.3, color="#444")
     icon_robot(ax, 2.95, 0.02, s=0.36)
