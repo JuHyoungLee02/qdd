@@ -166,6 +166,8 @@ def place_rule(place: str, place_name: str) -> str:
         return f"inside the {place_name} (standing on its inner floor, within its rim)"
     if pk == "onto":
         return f"on the {place_name} (standing on it, fully inside its edges)"
+    if pk == "around":  # L8-X ring on a peg (helper xring)
+        return f"around the {place_name} (threaded onto it and slid down towards its base)"
     if place == "o11":
         return (f"on the {place_name} (its centre within 4 cm of the marker centre, standing on the table inside the "
                 f"marker)")
