@@ -21,7 +21,7 @@ def main(root: str, out: str) -> dict:
     from harvest.teach_l8d.clutter_x import ROLLING, load_real
     rows_real = load_real()
     conts = OV.load_containers(usable_only=False)
-    OV.register_containers(conts)
+    OV.register_containers({k: v for k, v in conts.items() if v.get("inside")})  # the ones with an opening box
     n = {"failed": 0, "now_success": 0, "done_row_not_rejudgeable": 0}
     with open(out, "w", encoding="utf-8", newline="\n") as f:
         for m in sorted(glob.glob(os.path.join(root, "*", "*", "meta.json"))):
