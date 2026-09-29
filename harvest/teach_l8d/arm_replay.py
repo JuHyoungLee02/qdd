@@ -71,6 +71,12 @@ def main():
                 print("ARM_LIST", tn, path.replace("/World/envs/env_0/", ""), [str(x).split("/")[-1] for x in b0],
                       [str(x).split("/")[-1] for x in b1], "exclude", ex.Get() if ex and ex.IsValid() else None,
                       "enabled", en.Get() if en and en.IsValid() else None, odd, flush=True)
+                for at in p.GetAttributes():
+                    if "mimic" in at.GetName().lower():
+                        print("ARM_LIST   attr", at.GetName(), at.Get(), flush=True)
+                for rel in p.GetRelationships():
+                    if "mimic" in rel.GetName().lower():
+                        print("ARM_LIST   rel", rel.GetName(), [str(x) for x in rel.GetTargets()], flush=True)
         import sys
         sys.stdout.flush()
         os._exit(0)
@@ -114,7 +120,6 @@ def main():
             out["bodies"][b] = round(d, 4)
             print("ARM_PROBE", b, len(mine), round(d, 3), flush=True)
         json.dump(out, open(a.out, "w"), indent=0)
-        import os
         import sys; sys.stdout.flush(); os._exit(0)
     if a.hold is not None:  # static check: hold the recorded pose at step a.hold; PhysX gravity torque vs drive
         view = rob.root_physx_view
@@ -143,7 +148,6 @@ def main():
         mass = rob.root_physx_view.get_masses()[0].cpu().numpy()
         print("ARM_HOLD masses", {n: round(float(m), 2) for n, m in zip(rob.body_names, mass) if float(m) > 0.5})
         json.dump({"hold": a.hold, "rows": rows}, open(a.out, "w"), indent=0)
-        import os
         import sys; sys.stdout.flush(); os._exit(0)
     for i in range(s0, min(s1, len(tgt))):
         env.step(np.concatenate([tgt[i], [GRIP_MAX_W]]))
@@ -156,7 +160,6 @@ def main():
            "rows": rows}
     json.dump(res, open(a.out, "w"), indent=0)
     print("ARM_REPLAY", "no_self" if a.no_self else "self", "max dq per joint", dq.round(3).tolist(), "roots", roots)
-    import os
     import sys; sys.stdout.flush(); os._exit(0)
 
 
