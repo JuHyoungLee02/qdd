@@ -321,4 +321,27 @@ if os.environ.get("L8S_ARM_START"):  # change 26 diagnosis only (candidate start
     ARM_START = tuple(float(v) for v in os.environ["L8S_ARM_START"].split(","))
 ARM_DQ = 0.035  # rad per env step for the L8S arm command (measured steps stay <= 0.04 incl. PD overshoot)
 ARM_BAND = 0.03  # change 26: L8S arm command within this of the measured joints (no stored error snapping free)
+# change 27 (bug fix, coordinator-approved): the robot USD gives every arm link a 1e-6 kg m^2 placeholder inertia
+# (PhysX read-back), so under gravity the right arm swung joint1 past its 61.4 Nm drive (0.1 rad / step). These are the
+# principal inertias of ROBOTIS ai_worker ffw_description/mujoco/ffw_sg2/ffw_sg2.xml (masses / COMs already match).
+ARM_INERTIA = {"arm_base_link": (0.108375, 0.0796286, 0.0542098), "arm_r_link1": (0.00336559, 0.00296956, 0.00240308),
+               "arm_r_link2": (0.0108884, 0.0107203, 0.00242441), "arm_r_link3": (0.00340682, 0.00290928, 0.00183278),
+               "arm_r_link4": (0.00611519, 0.00607254, 0.00141405), "arm_r_link5": (0.00188453, 0.00172697, 0.00124878),
+               "arm_r_link6": (0.00161885, 0.00141804, 0.000538212), "arm_r_link7": (0.000452453, 0.000416075, 0.0001032)}
+
+
+def set_arm_inertia(robot) -> list:
+    """Write ARM_INERTIA (diagonal, COM frame) into PhysX; the hard reset re-reads the USD, so call after every reset.
+    Returns the links written."""
+    import numpy as np
+    import torch
+    view = robot.root_physx_view
+    ine = view.get_inertias().clone()
+    done = []
+    for i, n in enumerate(robot.body_names):
+        if n in ARM_INERTIA:
+            ine[0, i] = torch.tensor(np.diag(ARM_INERTIA[n]).reshape(-1), dtype=ine.dtype)
+            done.append(n)
+    view.set_inertias(ine, torch.arange(1, dtype=torch.int32))
+    return done
 ARM_VMAX_STEP = 0.038  # change 24: right-arm joint speed cap per env step (PhysX max joint velocity = this / dt)

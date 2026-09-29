@@ -157,7 +157,8 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             <= ARM_DQ; the first recorded frame shows the table without the arm in front of it."""
             import numpy as np
 
-            from .clutter_x import ARM_START
+            from .clutter_x import ARM_START, set_arm_inertia
+            set_arm_inertia(self.env.robot)  # change 27: after the hard reset, before the arm moves
             tz = float(self.table_z)
             goal = np.array([ARM_START[0], ARM_START[1], tz + ARM_START[2]])
             for _ in range(steps):

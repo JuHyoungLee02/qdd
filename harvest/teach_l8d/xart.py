@@ -232,7 +232,8 @@ def place_room(rooms: dict | None, seed: int, boxes: list):
 
 def preroll_arm(world, steps: int = 200) -> dict:
     """= L8DWorld._preroll_arm (change 21): right TCP to ARM_START above the work surface (joint steps <= ARM_DQ)."""
-    from .clutter_x import ARM_START
+    from .clutter_x import ARM_START, set_arm_inertia
+    set_arm_inertia(world.env.robot)  # L8D change 27: after the hard reset, before the arm moves
     goal = np.array([ARM_START[0], ARM_START[1], float(world.table_z) + ARM_START[2]])
     for _ in range(steps):
         if np.linalg.norm(np.asarray(world.status()["tcp"], float) - goal) < 0.01:
