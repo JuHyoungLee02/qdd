@@ -48,6 +48,17 @@ def test_pairs_use_different_colours():
         assert rings[r]["colour"] != pegs[p]["colour"]
 
 
+def test_open_gripper_is_judged_on_the_measured_gap():
+    """L8S change 29: at the OPEN_W command the pads measure ~22 mm; that gap must not be labelled 'reopen'."""
+    from harvest.teach_l8d import xlabels as XL
+    XR.register_geom(dict(RA.ring_dims(0.035), name="red ring"), dict(PEG, name="wooden peg"))
+    st = {"pred": {}, "tcp": [0.40, -0.30, 1.20], "grip_w": 0.021,
+          "obj": {XR.RING_ID: [0.45, -0.30, 0.90], XR.PEG_ID: [0.45, -0.10, 0.90]}}
+    info = {"tgt": XR.RING_ID, "place": XR.PEG_ID}
+    assert XL.plan(st, info, 0.85, XR.OPEN_W)[0] == "reopen"  # the bug: command width as the open test
+    assert XL.plan(st, info, 0.85, XR.OPEN_W_MEAS)[0] != "reopen"
+
+
 def test_builder_registers_each_rows_ring(tmp_path, monkeypatch):
     """The dataset builder puts the row's own ring geometry in OBJ_GEOM (KeyError rp_ring before), per ring."""
     import json

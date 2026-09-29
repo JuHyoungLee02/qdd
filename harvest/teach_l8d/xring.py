@@ -26,6 +26,10 @@ LIFT0, REL_TABLE = -0.0993, 0.85
 PARK = (-7.0, 7.0, 0.3)
 PEG_ID, RING_ID = "rp_peg", "rp_ring"
 OPEN_W = 0.030  # pads open only 3 cm around the tube: the inner finger passes beside the source block
+# L8S change 29: the measured pad gap at the OPEN_W command is 21-22 mm (all 33 open-gripper rows of 30 ring V
+# episodes; scene.width_to_joint's table gives q ~0.86 for 30 mm, the pads stop at ~22 mm), so the labeller's
+# "is the gripper open" test uses this, not the command width (39 / 86 built rows were a false "reopen").
+OPEN_W_MEAS = 0.022
 
 
 def register_geom(ring: dict, peg: dict) -> None:
@@ -138,6 +142,7 @@ def make_ring_world(rings: dict, pegs: dict, meta: dict, rooms: dict | None = No
             env = self.env
             # gate 1 (0/10): fully open (10.7 cm) the inner finger landed on the source block / the ring and tipped it
             self.dt, self.w_open = float(env.step_dt), OPEN_W
+            self.w_open_label = OPEN_W_MEAS  # change 29: the labeller compares the measured gap with this
             self._st, self.last_obs = None, None
             env.layout = {}
             SC._LAYOUT["layout"] = {}

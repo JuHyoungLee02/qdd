@@ -62,7 +62,7 @@ class _XLabels(LC.Collector):
         ep, w = self.ep, self.w
         st, info = w.status(), ep.info
         last = ep.history[-1] if ep.history else ""
-        lab = XL.label(st, info, w.table_z, w.w_open, first=not ep.history, last_line=last,
+        lab = XL.label(st, info, w.table_z, getattr(w, "w_open_label", w.w_open), first=not ep.history, last_line=last,
                        prev_failed=self.prev_failed)
         cams = w.last_obs.cams if getattr(w, "last_obs", None) is not None else {}
         tgt = np.asarray(st["obj"][info["tgt"]], float)
