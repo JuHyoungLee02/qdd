@@ -27,7 +27,7 @@ import numpy as np
 TARGET_XY = (0.42, -0.22)  # pilot 3: at 0.38 IK diverged; 0.44 -> 0.42 (audit 3): with rooms only Dresser_318_1 fits (2.3 / 2.6 m dressers exceed the 2 m room zone), its top at 0.44 was 8 mm beyond reach
 C_BOX_XY, C_OBJ_XY = (0.52, None), (0.42, -0.38)  # pilot 4: y -0.47 was out of reach, (0.58, 0.0) too
 C_GAP, C_BOX_Y_MAX = 0.13, 0.02  # C gate 1: at 10 cm the open fingers met the Box_2 wall (approach blocked 5 cm up)
-C_GRASP_DEEPER = 0.02  # C gate 1: pinched 1.8 cm below the top, tall boxes (Perricone) tipped in the pads
+C_GRASP_DEEPER = 0.0  # C gate 2: 2 cm deeper made it worse (3/10, fingertips on the stand -> tipped at the grasp); reverted
 STAND_TOP, STAND_SIZE, STAND_CENTRE = 0.65, (0.52, 0.95), (0.52, -0.14)  # flap tops below the start TCP (1.06 m)
 TOP_BEHIND = (0.04, 0.06)
 MAX_LEN = 0.15  # objects at most 15 cm long (a held shoe hit the furniture while carried)
