@@ -38,6 +38,7 @@ LIFT0, REL_TABLE = -0.0993, 0.85
 PARK = (-7.0, 7.0, 0.3)
 YAW = -math.pi / 2
 PLACE_ID = "art_place"
+GRIP_MAX = 0.107  # = scene.GRIP_MAX_W
 
 
 def fixture_hint(rec: dict) -> str:
@@ -126,6 +127,11 @@ def layout(kind: str, rec: dict, obj: dict, seed: int) -> dict:
     if carry > work + BOX_UP - 0.005:
         raise ValueError(f"carry height {carry:.3f} above the executor box ({work:.3f} + {BOX_UP})")
     place_tcp = floor + h - TCP_BELOW_TOP + 0.004
+    # A: the fingers open along world x inside the drawer (run 4: at 10.7 cm they stopped at 6 cm on the walls of an
+    # 11 cm deep drawer and the object stayed held) -> open only to the drawer depth - 3.5 cm
+    w_open = GRIP_MAX if kind != "A" else min(GRIP_MAX, (box[0][1] - box[0][0]) - 0.035)
+    if float(obj.get("grasp_width", 0.0)) > w_open - 0.02:
+        raise ValueError(f"object {obj.get('grasp_width')} m wide > the release width {w_open:.3f} - 2 cm")
     # the lift centres the used TCP band (place .. carry) where L8 works at the default lift (table 0.85 + 7-24 cm);
     # C (pilot 5): the carry over the flaps (table + 37 cm) was out of reach there -> the band top goes to the carry
     mid = 0.5 * (place_tcp + carry) if kind == "A" else carry - 0.085
@@ -135,7 +141,7 @@ def layout(kind: str, rec: dict, obj: dict, seed: int) -> dict:
             "floor": round(floor, 4), "rim": None if rim is None else round(rim, 4), "obj_xy": [round(ox, 4),
                                                                                                  round(oy, 4)],
             "obj_z": round(obj_z, 4), "work_z": round(work, 4), "lift": round(lift, 4), "jy": round(jy, 4),
-            "carry_z": round(carry, 4)}
+            "carry_z": round(carry, 4), "w_open": round(w_open, 4)}
 
 
 def preds(obj_c, obj_bottom, obj_tilt, tcp, grip_w, w_open, lay, reach: float = 0.06) -> dict:
@@ -232,6 +238,7 @@ def make_art_world(kind: str, fixture: str, rec: dict, objs: dict):
             o = objs[oid]
             lay = layout(kind, rec, o, seed)
             self.lay = lay
+            self.w_open = float(lay["w_open"])  # the executor opens to this (A: the drawer depth - 3.5 cm)
             self._pose("/World/envs/env_0/FIXTURE", lay["pos"], YAW)  # applied by the hard reset below
             rob = env.robot
             for jn, v in (("lift_joint", lay["lift"]), ("head_joint1", HEAD_TILT0), ("head_joint2", 0.0)):
