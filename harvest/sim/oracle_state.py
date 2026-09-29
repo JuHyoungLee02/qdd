@@ -80,11 +80,13 @@ def oracle_objects(env):
             else:
                 contacts |= marker_contacts(pos, bottom, k)
             continue
+        if OBJ_GEOM[k].get("kinematic"):  # L8S container: no sensor; objects resting in it are found from their side
+            continue
         fm = env.contact[k].data.force_matrix_w  # (1, 1, n_filters, 3); filters = fingers + other objects
         mag = fm[0, 0].norm(dim=-1).cpu().numpy()
         if (mag[:n_f] > CONTACT_FORCE_N).any():
             contacts.add(frozenset({"gripper", k}))
-        others = [j for j in all_ids if j != k]
+        others = [j for j in all_ids if j != k and not OBJ_GEOM[j].get("kinematic")]  # = the sensor filter order
         for j, m in zip(others, mag[n_f:]):
             if m > CONTACT_FORCE_N and j in env.present:
                 contacts.add(frozenset({k, j}))

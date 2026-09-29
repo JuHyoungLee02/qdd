@@ -388,7 +388,7 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
         return "{ENV_REGEX_NS}/" + k.upper() + ("/" + g["body_rel"] if g.get("body_rel") else "")
 
     def contact_cfg(k):
-        others = [body_path(j) for j in obj_ids if j != k]
+        others = [body_path(j) for j in obj_ids if j != k and not OBJ_GEOM[j].get("kinematic")]  # L8S containers: no sensor
         return ContactSensorCfg(prim_path=body_path(k), update_period=0.0, history_length=0,
                                 filter_prim_paths_expr=finger_paths + others)
 
@@ -411,7 +411,8 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
     }
     for k in obj_ids:
         scene_attrs[k] = obj_cfg(k)
-        scene_attrs[f"contact_{k}"] = contact_cfg(k)
+        if not OBJ_GEOM[k].get("kinematic"):  # kinematic containers: no contact reporter (rest contacts are geometric)
+            scene_attrs[f"contact_{k}"] = contact_cfg(k)
     if variant not in ("standard", "drf"):  # random / dr: one parked rigid body per pool distractor (own colliders)
         from .randomize import distractor_scene_cfgs, randomized_table_cfg
         scene_attrs.update(distractor_scene_cfgs(variant))
@@ -556,7 +557,7 @@ class Env:
         if not self.robot.is_fixed_base:  # canon §38 (the one deviation from the copied FFW_SG2_MOBILE_CFG)
             raise RuntimeError("robot base is not fixed")
         self.objects = {k: self.scene[k] for k in self.obj_ids}
-        self.contact = {k: self.scene[f"contact_{k}"] for k in self.objects}
+        self.contact = {k: self.scene[f"contact_{k}"] for k in self.objects if not OBJ_GEOM[k].get("kinematic")}
         self.present = [k for k in self.present_ids if k in self.layout]  # o10 joins after P2 fires
         jn = self.robot.joint_names
         self.arm_ids = [jn.index(n) for n in ARM_JOINTS[arm]]
