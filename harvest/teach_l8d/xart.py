@@ -24,10 +24,11 @@ import os
 
 import numpy as np
 
-TARGET_XY = (0.42, -0.22)
+TARGET_XY = (0.36, -0.22)  # pilot: at 0.42 the object on the top stood at x 0.69 (> the 0.65 workspace box)
 C_BOX_XY, C_OBJ_XY = (0.50, -0.26), (0.44, 0.02)
 STAND_TOP, STAND_SIZE, STAND_CENTRE = 0.78, (0.40, 0.62), (0.48, -0.13)
-TOP_BEHIND = (0.08, 0.12)
+TOP_BEHIND = (0.06, 0.09)
+BOX_UP, CARRY_DZ, TCP_BELOW_TOP = 0.40, 0.22, 0.018  # executor box height above table_z, xlabels carry, grasp depth
 FLOOR_TOL, TILT_UP = 0.015, 20.0
 HOLD_GAP = 0.005
 LIFT0, REL_TABLE = -0.0993, 0.85
@@ -49,6 +50,8 @@ def target_surface(rec: dict, kind: str):
     """The place surface of an opened fixture (asset frame): A = the largest uncovered container surface below the
     top (the open drawer's exposed inside); C = the largest container surface (the box floor)."""
     S = rec["surfaces"]
+    if not S:
+        return None
     top = max(s["top_z"] for s in S)
     if kind == "A":
         c = [s for s in S if s["container"] and s["covered_above"] is None and s["top_z"] < top - 0.05]
@@ -100,6 +103,11 @@ def layout(kind: str, rec: dict, obj: dict, seed: int) -> dict:
     box = to_world(ts["free_box"], pos)
     rim = None if ts.get("rim_z") is None else float(ts["rim_z"]) + pos[2]
     work = min(floor, obj_z)
+    h = float(obj["height"])
+    if kind == "A":  # executor box: carry (top + 22 cm) <= table_z + 40 cm, drawer placement >= table_z + 2.5 cm
+        work = max(work, obj_z + CARRY_DZ - BOX_UP + 0.005)
+        if work > floor + h - TCP_BELOW_TOP - 0.025 + 0.004:
+            raise ValueError(f"top {obj_z:.3f} too far above the drawer floor {floor:.3f} for the executor box")
     lift = float(np.clip(LIFT0 + (0.5 * (floor + obj_z) - REL_TABLE) + rng.uniform(-0.02, 0.02), -0.5, 0.0))
     return {"pos": [round(v, 4) for v in pos], "place_box": [[round(v, 4) for v in b] for b in box],
             "place_xy": [round((box[0][0] + box[0][1]) / 2, 4), round((box[1][0] + box[1][1]) / 2, 4)],
@@ -285,6 +293,7 @@ def make_art_world(kind: str, fixture: str, rec: dict, objs: dict):
                 st.set("/rtx/post/tonemap/filmIso", iso)
                 for _ in range(PRE_RENDER):
                     self.env.env.sim.render()
+                self.env.scene["cam_head"].update(0.0, force_recompute=True)  # the frame just rendered
                 rgb = self.env.scene["cam_head"].data.output["rgb"][0].cpu().numpy()[..., :3].astype(float)
                 sat, mean = float((rgb.max(axis=2) >= 250).mean()), float(rgb.mean())
                 if sat > SAT_MAX:
@@ -308,7 +317,6 @@ def make_art_world(kind: str, fixture: str, rec: dict, objs: dict):
 
         def _status_from(self, pl):
             env = self.env
-            pl.observe()
             d = env.scene[f"ai_{self.i_obj}"].data
             c = d.root_pos_w[0].cpu().numpy().copy()
             q = d.root_quat_w[0].cpu().numpy()
@@ -358,8 +366,14 @@ def run_art(out: str, kind: str, fixture: str, opened: str, objects: str, seeds:
         if os.path.exists(os.path.join(od, "meta.json")):
             continue
         style = "clean" if clean else style_of(s, S.CLEAN_SHARE)
-        m = collect_episode(world, s, task, "drf", split, od, 0.0 if style == "clean" else p, 4, 40, 120.0, style,
-                            video=s in video)
+        try:
+            m = collect_episode(world, s, task, "drf", split, od, 0.0 if style == "clean" else p, 4, 40, 120.0,
+                                style, video=s in video)
+        except ValueError as ex:  # layout not feasible for this object (executor box / fit): recorded, run goes on
+            os.makedirs(od, exist_ok=True)
+            json.dump({"seed": s, "task": task, "reason": str(ex)}, open(os.path.join(od, "skipped.json"), "w"))
+            print("SKIP " + json.dumps({"seed": s, "task": task, "reason": str(ex)}), flush=True)
+            continue
         m["art"] = world.furniture_scene
         json.dump(m, open(os.path.join(od, "meta.json"), "w"))
         res.append(m)

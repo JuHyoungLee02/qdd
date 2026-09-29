@@ -17,6 +17,7 @@ def main(argv=None):
     ap.add_argument("--opened", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--names", default="")
+    ap.add_argument("--z", type=float, default=0.0, help="base height (small pieces: raise into view)")
     a = ap.parse_args(argv)
     code = 0
     try:
@@ -53,7 +54,7 @@ def main(argv=None):
                 p = stage.GetPrimAtPath("/World/envs/env_0/OP_%d" % j)
                 if j == i:
                     sx, sy, _ = rows[n]["collider_size"]  # after yaw -90 the asset's y depth runs along world x
-                    _set_pose(p, (0.45 + sy / 2, -0.2, 0.0), q)
+                    _set_pose(p, (0.45 + sy / 2, -0.2, a.z), q)
                 else:
                     _set_pose(p, (PARK[0] - 3.0 * j, PARK[1], PARK[2]), (1.0, 0.0, 0.0, 0.0))
             env.reset(settle_s=0.1)

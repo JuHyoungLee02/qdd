@@ -41,8 +41,11 @@ def _usd_world(stage):
     """{prim name: 4x4 column-convention world matrix} of every prim of a USD stage."""
     from pxr import UsdGeom
     xc = UsdGeom.XformCache()
-    return {p.GetName(): (np.array(xc.GetLocalToWorldTransform(p)).T, str(p.GetPath())) for p in stage.Traverse()
-            if p.IsA(UsdGeom.Xformable)}
+    out = {}
+    for p in stage.Traverse():  # first (outermost) prim of a name: THOR bodies have a same-named Mesh child
+        if p.IsA(UsdGeom.Xformable):
+            out.setdefault(p.GetName(), (np.array(xc.GetLocalToWorldTransform(p)).T, str(p.GetPath())))
+    return out
 
 
 def write_open(src: str, moved: dict, dst_flat: str) -> None:

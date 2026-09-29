@@ -22,8 +22,8 @@ def test_drawer_layout_puts_the_exposed_inside_at_the_target_and_the_object_on_t
     (x0, x1), (y0, y1) = lay["place_box"]
     assert abs((x0 + x1) / 2 - XA.TARGET_XY[0]) < 1e-6 and abs((y0 + y1) / 2 - XA.TARGET_XY[1]) <= 0.02 + 1e-6
     front = lay["pos"][0] + DRAWER["surfaces"][2]["free_box"][1][0]
-    assert front + 0.08 - 1e-6 <= lay["obj_xy"][0] <= front + 0.12 + 1e-6
-    assert lay["obj_z"] == 1.107 and lay["floor"] == 0.996 and lay["work_z"] == 0.996
+    assert front + XA.TOP_BEHIND[0] - 1e-6 <= lay["obj_xy"][0] <= front + XA.TOP_BEHIND[1] + 1e-6 <= 0.65
+    assert lay["obj_z"] == 1.107 and lay["floor"] == 0.996 and 0.996 <= lay["work_z"] <= 0.996 + 0.047
     assert -0.5 <= lay["lift"] <= 0.0 and XA.layout("A", DRAWER, OBJ, 49150) == lay
 
 
