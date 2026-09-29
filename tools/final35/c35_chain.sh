@@ -21,19 +21,32 @@ until grep -q '"verdict": *"PASS"' $(audf) 2>/dev/null && \
 done
 log "WAIT_DONE N=$N"
 # 2. data
+# change 7: build.py is single-threaded (~27 s/episode) -> k parallel builds over manifest chunks, then concatenate
+pbuild() {  # <collect root> <manifest> <out dir> <k>
+  local R=$1 M=$2 OUT=$3 K=$4 i rc=0
+  [ -s $OUT/train_pt.jsonl ] && return 0
+  $P tools/final35/c35_prep.py split_man $M $K $OUT/man >> $L/prep.log 2>&1 || return 1
+  for i in $(seq 0 $((K - 1))); do
+    OMP_NUM_THREADS=1 $P tools/teach_l8d/build.py $R $OUT/part$i train pt --manifest $OUT/man/part$i.json \
+      > $OUT/man/part$i.log 2>&1 &
+  done
+  for i in $(seq 0 $((K - 1))); do wait -n || rc=1; done
+  [ $rc = 0 ] || return 1
+  for i in $(seq 0 $((K - 1))); do [ -s $OUT/part$i/train_pt.jsonl ] || return 1; done
+  cat $OUT/part*/train_pt.jsonl > $OUT/train_pt.jsonl
+}
 mixlog() { tr -d ' \n' < $1 | grep -o '"pool":[0-9]*\|"open_over_base":[0-9.]*,"open_share_of_file":[0-9.]*,"repeat":[0-9.]*' | tr '\n' ' '; }
 if [ ! -f $D/train_c35_a.jsonl ]; then
   $P tools/final35/c35_prep.py strat $N $O/man >> $L/prep.log 2>&1 || { log PREP_FAIL_strat; exit 1; }
   for r in main; do  # change 6: ring V excluded (KeyError rp_ring); every build step's exit code is checked
     R=$T8/l8s_prod
-    $P tools/teach_l8d/build.py $R $D/b_$r train pt --manifest $O/man/${r}_train.json >> $L/prep.log 2>&1 || { log "PREP_FAIL build $r"; exit 1; }
+    pbuild $R $O/man/${r}_train.json $D/b_$r 32 || { log "PREP_FAIL build $r"; exit 1; }
     $P tools/teach_pt/convert_min.py $D/b_$r/train_pt.jsonl $D d-min l8s_${r}_d-min.jsonl >> $L/prep.log 2>&1 || { log "PREP_FAIL convert $r"; exit 1; }
     for e in $(grep -o '"[^"]*_s[0-9]*"' $O/man/${r}_val.json | tr -d '"'); do
       mkdir -p $O/val_src/$(dirname $e); ln -sfn $R/train/$e $O/val_src/$e
     done
   done
-  $P tools/teach_l8d/build.py /data/harvest/out/teach_l8d/b3d_drawer $D/b_drawer train pt \
-    --manifest $C/docs/stage3/l8d_bundle_b3d.json >> $L/prep.log 2>&1 || { log "PREP_FAIL build drawer"; exit 1; }
+  pbuild /data/harvest/out/teach_l8d/b3d_drawer $C/docs/stage3/l8d_bundle_b3d.json $D/b_drawer 12 || { log "PREP_FAIL build drawer"; exit 1; }
   $P tools/teach_pt/convert_min.py $D/b_drawer/train_pt.jsonl $D d-min drawer_d-min.jsonl >> $L/prep.log 2>&1 || { log "PREP_FAIL convert drawer"; exit 1; }
   cat $D/l8s_main_d-min.jsonl $D/drawer_d-min.jsonl > $D/base_c35_d-min.jsonl || { log "PREP_FAIL base"; exit 1; }
   [ -s $D/l8s_main_d-min.jsonl ] && [ -s $D/drawer_d-min.jsonl ] || { log "PREP_FAIL empty base part"; exit 1; }

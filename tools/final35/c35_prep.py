@@ -166,6 +166,15 @@ def strat(n, out, check_only=False):
     print(json.dumps({k: v for k, v in counts.items() if k != "targets"}))
 
 
+def split_man(man, k, out):
+    """change 7: split a manifest into k round-robin chunks <out>/part<i>.json (parallel build.py, ~27 s/episode)."""
+    eps = json.load(open(man))["episodes"]
+    os.makedirs(out, exist_ok=True)
+    for i in range(k):
+        json.dump({"episodes": eps[i::k]}, open(os.path.join(out, f"part{i}.json"), "w"), indent=0)
+    print(json.dumps({"episodes": len(eps), "parts": k}))
+
+
 def pool(verdict_p, out):
     v = json.load(open(verdict_p)).get("verdict") if os.path.exists(verdict_p) else None
     src = FIX if v == "NONINFERIOR" else OLD
@@ -222,5 +231,5 @@ if __name__ == "__main__":
     c, a = sys.argv[1], sys.argv[2:]
     {"ood58": lambda: ood58(a[0]), "l8s": lambda: l8s(int(a[0]), a[1], a[2] if len(a) > 2 else None), "pool": lambda: pool(a[0], a[1]),
      "strat": lambda: strat(int(a[0]), a[1]), "strat_ready": lambda: strat(int(a[0]), None, True),
-     "subset": lambda: subset(a[0]),
+     "subset": lambda: subset(a[0]), "split_man": lambda: split_man(a[0], int(a[1]), a[2]),
      "mix": lambda: mix(a[0], a[1], a[2], float(a[3]) if len(a) > 3 else 3.0)}[c]()
