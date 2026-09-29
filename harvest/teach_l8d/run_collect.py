@@ -106,7 +106,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                     raise
                 self._qcmd = None  # change 25: the arm command restarts from the measured pose
                 self._preroll_arm()  # change 21: the right arm starts above, out of the head view
-                self._jlog, self._blog = [], []
+                self._jlog, self._blog, self._alog = [], [], []
                 occ = self._first_occlusion(task)
                 self.furniture_scene["occlusion"] = {"try": k, **occ}
                 if max(occ.values()) < OCC_MAX:
@@ -128,6 +128,9 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                 rob = self.env.robot
                 self._qcmd = rob.data.joint_pos[0, self.env.arm_ids].cpu().numpy().copy()
             self._qcmd = self._qcmd + np.clip(qd - self._qcmd, -ARM_DQ, ARM_DQ)
+            if not hasattr(self, "_alog"):
+                self._alog = []
+            self._alog.append(np.concatenate([self._qcmd, g, qd]).astype(np.float32))  # change 26: cmd, offset, IK
             return self._qcmd + g
 
         def _arm_vel_limit(self):
