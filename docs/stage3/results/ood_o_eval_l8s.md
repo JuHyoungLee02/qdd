@@ -1,0 +1,25 @@
+# OOD-O 폐루프 평가 세트 (L8S 규칙, 2026-09-29, L8X-assets)
+
+- 목적: 새 물체(학습 풀에 없는 물체) 폐루프 평가 세트를 30편 이상으로 만든다. 평가 전용이며 학습에 쓰지 않는다(통제자 09-29 지시).
+- 기존 OOD-O 폐루프 7편과의 관계:
+  - 기존 편은 E-DIST8·STRIP8·final35 f35_d의 smallcup_tray(작은 빨간 컵 o14)다. 시드는 70100–70139 구역의 70104·70106·70113·70115·70122·70124·70131·70133 등이다.
+  - 새 세트는 같은 선정 규칙을 따른다: ood_o 분할(이름 해시)의 물체, 물체 관문 통과, 보호 시드 구역 70100–70299.
+  - 물체는 prereg_l8d 변경 11의 동결 실물 OOD-O 목록(`docs/stage3/l8d_ood_sets_real.json`, 70160–70289)에서 가져온다.
+  - 시드는 기존 편과 겹치지 않는다(모두 ≥ 70160).
+- 물체: 13개(`pass_ood_o`), 물체마다 앞 3시드씩 골라 39편이다.
+  - L8S 학습 계획(`plan5/plan_l8s.json`)과 목표 목록(`plan5/l8s_targets.json`)에 13개 모두 없음을 확인했다(`tools/l8x_assets/ood_o_eval_plan.py`).
+- 렌더 설정: L8S 규칙과 같다.
+  - 코드는 `code_teach_l8d_d6cf944`(변경 22: 매 호출 노출 검사)다.
+  - 인자: `run_collect --split ood_o --confirm-ood --variant drf --table-z 0.0 --ws-x 0.36,0.54 --furniture thor_low_table --rooms --objset x --clutter 40`.
+  - 실행 위치는 x2 GPU1이다.
+- 결과:
+  - 39편 모두 생성됐다(건너뜀 0).
+  - 모든 편에 방 배경이 있다(39/39).
+  - 호출별 포화는 최대 8.4 %(< 10 %)다.
+  - 참값 성공은 22/39다.
+- 경로(파드 /data):
+  - 계획: `/data/harvest/out/l8x_assets/ood_o_eval/plan_ood_o_eval.json`, 목록은 `plan_ood_o_eval_list.json`.
+  - 렌더: `/data/harvest/out/l8x_assets/ood_o_eval/render/`.
+  - 편별 목록: `/data/harvest/out/l8x_assets/ood_o_eval/eval_list.json`(시드·과제·성공·방·노출).
+  - 먼저 b1ab7e7(변경 21)로 렌더한 10편은 `render_b1ab7e7_partial/`에 옮겨 두었고, 쓰지 않는다.
+- 시드: 70160–70162, 70170–70172, …, 70280–70282(물체마다 10칸 구역의 앞 3시드).
