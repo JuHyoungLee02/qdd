@@ -4,7 +4,7 @@ A flat ring (tools/l8x_assets/ring_assets.py: torus, inner diameter = peg diamet
 that carries its -x part; the pads pinch its tube at the +x side (the grasp point). The L8-D collection path runs on
 a RingWorld (IsaacWorld protocol) with the xlabels truth plan, the ring presented as a pseudo object "centred" at the
 grasp point (height = tube radius + 1.8 cm, so the plan's grasp z is the tube centre) and the place target = the peg
-axis + the same grasp offset, released 3 cm below the peg top (threaded), then it slides down.
+axis + the same grasp offset, released 5 cm above the peg top (centred over it), then it falls around the peg.
 Judge (on(ring, peg)): the ring's axis within (inner radius - peg radius) of the peg axis, the ring bottom below the
 peg top - 1 cm, released; upright = ring tilt <= 35 deg. Task id rp__<ring>__<peg>; names "<colour> ring" /
 "<colour> peg" (different colours: unique names). Lighting / head / exposure as xart (drf + CC0 HDRI, 0.785 rad)."""
@@ -21,7 +21,7 @@ STAND_TOP, STAND_SIZE, STAND_CENTRE = 0.80, (0.50, 0.70), (0.50, -0.18)
 PEG_XY, RING_XY = (0.50, -0.08), (0.42, -0.36)
 BLOCK_HALF_Y = 0.05
 RAIL_W = 0.010
-RELEASE_BELOW, TILT_UP = 0.03, 35.0
+RELEASE_ABOVE, TILT_UP = 0.05, 35.0  # pilot 3: releasing 3 cm below the top jammed (the far side of the one-side pinch sags onto the peg top); drop from above
 LIFT0, REL_TABLE = -0.0993, 0.85
 PARK = (-7.0, 7.0, 0.3)
 PEG_ID, RING_ID = "rp_peg", "rp_ring"
@@ -258,7 +258,7 @@ def make_ring_world(rings: dict, pegs: dict, meta: dict):
             ring, lay = rings[self.rid], self.lay
             return {"instruction": f"Put the {ring['name']} on the {pegs[self.pid]['name']}.", "tgt": RING_ID,
                     "place": PEG_ID, "present": [RING_ID, PEG_ID], "sup_tgt": lay["block_top"],
-                    "sup_place": lay["peg_top"], "place_top": lay["peg_top"] - RELEASE_BELOW}
+                    "sup_place": lay["peg_top"], "place_top": lay["peg_top"] + RELEASE_ABOVE}
 
         def _status_from(self, pl):
             env = self.env
