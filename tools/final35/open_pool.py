@@ -1,11 +1,9 @@
 """Final 35B main-training open point pool + mix (controller 09-29): the verified full packs, point labels only, head
 views only (wide / fisheye excluded), G rows removed and guarded, ids unique; mixed additively into the L8-X base with a
 repeat cap. usage: python open_pool.py <base d-min jsonl> <out jsonl> [p 0.75] [max repeat 1.5]
-Sources (controller 09-29, label audit -> data_inventory 2026-09-29): BEHAVIOR and ManiSkill records_verified (audit 0/30
-wrong); RB2 / RB3 / MolmoBot RBY1 re-verified sets <src>_verified/records.jsonl (audit 7 / 4 / 2 of 30 wrong -> 4-way
-check); AgiBot v3 final 1,384 rows (agibot_v3_verified/final_all.jsonl; the old agibot_p0 rows_live is dropped, >= 15/30
-wrong). Open rows = round(p x base), capped at max_repeat x pool; prints rows per source, the open share and the
-repeat factor (also <out>.counts.json)."""
+Sources: RB2 records_verified_v2 (G change 1), BEHAVIOR, RB3, MolmoBot RBY1 (head), ManiSkill records_verified, AgiBot v3
+rows_live (what exists at build time; the converter is still running). Open rows = round(p x base), capped at
+max_repeat x pool; prints rows per source, the open share and the repeat factor (also <out>.counts.json)."""
 import json
 import os
 import sys
@@ -16,10 +14,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 from xemb import gsplit as GS  # noqa: E402
 
 X = "/data/harvest/out/xemb_proto/points"
-SOURCES = {"rb2": f"{X}/rb2_verified/records.jsonl", "behavior": f"{X}/behavior/records_verified.jsonl",
-           "rb3": f"{X}/rb3_verified/records.jsonl", "molmobot_rby1": f"{X}/molmobot_rby1_verified/records.jsonl",
-           "maniskill": f"{X}/maniskill/records_verified.jsonl",
-           "agibot_v3": f"{X}/agibot_v3_verified/final_all.jsonl"}
+SOURCES = {"rb2": f"{X}/rb2/records_verified_v2.jsonl", "behavior": f"{X}/behavior/records_verified.jsonl",
+           "rb3": f"{X}/rb3/records_verified.jsonl", "molmobot_rby1": f"{X}/molmobot_rby1/records_verified.jsonl",
+           "maniskill": f"{X}/maniskill/records_verified.jsonl", "agibot_v3": f"{X}/agibot_p0/rows_live.jsonl"}
 EXCLUDE = f"{X}/exclude_wide_fisheye.txt"
 
 
