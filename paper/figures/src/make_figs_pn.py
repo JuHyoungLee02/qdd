@@ -33,7 +33,7 @@ def check(ax, x, y, s=0.05, c="#2E7D32"):
 
 # ================================================================ Fig. 1 PaceNotes overview (staged: co-driver first)
 def dbox(ax, x, y, w, h, fc, ec, lw=1.2):
-    """dashed rounded box = planned / conditional part"""
+    """dashed rounded box = stage-2 part (measured after the upper-only stage)"""
     ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=0.06", fc=fc, ec=ec, lw=lw,
                                 ls=(0, (4, 2.5))))
 
@@ -44,7 +44,7 @@ def fig_overview():
     fig, ax = canvas(W, H)
 
     # ---------------- (a) roles
-    ax.text(0.04, H - 0.05, "(a) 코드라이버 먼저: 1단계는 상위 + 실행기, VLA는 한계가 확인될 때만", fontsize=8, va="top",
+    ax.text(0.04, H - 0.05, "(a) 느린 코드라이버 + 조이스틱 드라이버: 검증은 1단계 상위 단독부터", fontsize=8, va="top",
             color=TXT, fontweight="bold")
     py, ph = 2.75, 1.95
     # upper planner panel (stage 1, solid)
@@ -79,13 +79,13 @@ def fig_overview():
     arr(ax, [(ex0, py + 0.75), (px + pw, py + 0.75)], color=VER[1], lw=1.0)
     ax.text((px + pw + ex0) / 2, py + 0.70, "측정", ha="center", va="top", fontsize=5.4, color=VER[1])
 
-    # VLA panel (stage 2, dashed = conditional)
+    # VLA panel (stage 2, dashed = measured after stage 1; the VLA is always-on in the target structure)
     vx, vw = 4.18, 2.65
     dbox(ax, vx, py, vw, ph, "#EEF4FB", VL[1])
-    ax.text(vx + 0.10, py + ph - 0.10, "2단계(조건부): VLA = 드라이버", fontsize=7.6, va="top", color="#2F4F7A",
+    ax.text(vx + 0.10, py + ph - 0.10, "2단계: VLA = 늘 쓰는 조이스틱 드라이버", fontsize=7.6, va="top", color="#2F4F7A",
             fontweight="bold")
-    ax.text(vx + 0.10, py + ph - 0.33, "기다림 실패·벽시계 등 한계가 측정될 때만", fontsize=5.8, va="top", color="#2F4F7A")
-    note(ax, vx + 0.10, py + 1.06, vw - 0.20, 0.36, "코드: 상위 목표 → 매 0.33 s VLA 결정 칸으로 변환", fs=5.6,
+    ax.text(vx + 0.10, py + ph - 0.33, "명령 구간을 가는 동안 미세조정, 상위는 그사이 다음 추론", fontsize=5.8, va="top", color="#2F4F7A")
+    note(ax, vx + 0.10, py + 1.06, vw - 0.20, 0.36, "입력: 구간 의도(잡기·이동·놓기)\n+ 조이스틱 방향(좌우·앞뒤·상하, 상위 목표에서)", fs=5.4,
          ec="#6F6F6F")
     note(ax, vx + 0.10, py + 0.62, vw - 0.20, 0.36, "VLA 자기 결정과 늘 연속 혼합 (답 나이·확신·가시성)\n쥐는 시점은 VLA, 상위가 검증", fs=5.4,
          ec=VL[1])
@@ -110,12 +110,12 @@ def fig_overview():
                                    hatch="////"))
         else:
             ax.add_patch(Rectangle((X(a), y1 - 0.06), (b - a) * sx, 0.12, fc=EX[0], ec=EX[1], lw=0.6))
-    ax.text(X(12.0), y1 - 0.10, "빗금 = 상위가 생각하는 동안 로봇 대기   초록 = 실행기 운동   (대기가 한계 후보)",
+    ax.text(X(12.0), y1 - 0.10, "빗금 = 상위가 생각하는 동안 로봇 대기   초록 = 실행기 운동   (상위 단독 검증)",
             ha="center", va="top", fontsize=5.2, color="#555")
     # stage 2 lanes (dashed group)
     dy = 0.14
     dbox(ax, 0.05, 1.02, 6.78, 1.05, "none", "#7A96C0", lw=0.9)
-    ax.text(0.12, 2.03, "2단계(조건부)", fontsize=5.8, va="top", color="#2F4F7A", fontweight="bold")
+    ax.text(0.12, 2.03, "2단계: 상위가 생각하는 동안 VLA가 움직임을 미세조정", fontsize=5.8, va="top", color="#2F4F7A", fontweight="bold")
     lanes = [("상위 계획기", 1.78 + dy - 0.06), ("VLA (0.33 s)", 1.50 + dy - 0.06), ("상위 목표 가중", 1.22 + dy - 0.06)]
     for name, yy in lanes:
         ax.text(x0 - 0.08, yy, name, ha="right", va="center", fontsize=6.0, color="#333")
@@ -155,7 +155,7 @@ def fig_overview():
     rbox(ax, bx[1], by, bw, bh, "mem", "다양화 데이터", fs=6.4, bold=True,
          sub="L8-X: 받침면 9·과제 14·높이 약 0.45–1.08 m\n공개 데이터: 좌표계 만들기 대 카메라 없는 조종", sfs=5.2)
     dbox(ax, bx[2], by, bw, bh, "#EEF4FB", VL[1])
-    ax.text(bx[2] + bw / 2, by + bh * 0.66, "VLA 끝-끝 학습 (조건부)", ha="center", va="center", fontsize=6.4,
+    ax.text(bx[2] + bw / 2, by + bh * 0.66, "VLA 끝-끝 학습 (상위 단독 뒤)", ha="center", va="center", fontsize=6.4,
             color=TXT, fontweight="bold")
     ax.text(bx[2] + bw / 2, by + bh * 0.28, "결정 + 행동 전문가(KI)\n먼 구간 반사실 분기, 의도 교란", ha="center",
             va="center", fontsize=5.4, color="#555", linespacing=1.25)
@@ -174,7 +174,7 @@ def fig_model():
     ax.text(0.30, 1.51, "머리", ha="center", va="top", fontsize=5.6, color="#444")
     icon_scene(ax, 0.05, 1.00, 0.50, 0.36, "rnd")
     ax.text(0.30, 0.96, "활성 손목", ha="center", va="top", fontsize=5.6, color="#444")
-    note(ax, 0.02, 0.28, 0.58, 0.50, "과제 문장\n그리퍼 상태\n움직임 줄", fs=5.4, ec="#9A9A9A")
+    note(ax, 0.02, 0.28, 0.58, 0.50, "구간 의도\n그리퍼 상태\n움직임 줄", fs=5.4, ec="#9A9A9A")
     # backbone
     bx, bw = 0.78, 1.50
     ax.add_patch(FancyBboxPatch((bx, 0.28), bw, 1.98, boxstyle="round,pad=0,rounding_size=0.05",
@@ -187,7 +187,7 @@ def fig_model():
     for yy in [1.73, 1.18, 0.53]:
         arr(ax, [(0.60, yy), (bx, yy)], lw=0.8)
     # upper target -> code conversion + blend (not a model)
-    note(ax, 2.30, 1.86, 0.66, 0.40, "코드: 목표→결정\n변환 + 늘 섞기", fs=4.8, ec="#6F6F6F")
+    note(ax, 2.30, 1.86, 0.66, 0.40, "코드: 목표→\n조이스틱 방향\n+ 늘 섞기", fs=4.8, ec="#6F6F6F")
     arr(ax, [(2.63, 2.45), (2.63, 2.26)], color=UP[1], lw=0.9)
     arr(ax, [(2.62, 1.86), (2.62, 1.72)], color="#6F6F6F", lw=0.8)
     # right column: M4, chunk, robot, verification back

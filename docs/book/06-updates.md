@@ -140,3 +140,4 @@
 | 2026-09-28 18:5x | 01·04 | E-VIEW8 결과(A1·A2 REJECT, A/A 잡음 검사): 01 행, 04 없음 | [R/view8](../stage3/results/view8.md), 이 줄과 같은 커밋 |
 | 2026-09-28 19:0x | 01 | E-STAGE8 결과(S REJECT, M 유지): 01 행 | [R/stage8](../stage3/results/stage8.md), 이 줄과 같은 커밋 |
 | 2026-09-29 04:1x | 03·04 | L8-X 비열등 규칙 변경(user-log 186): 중앙값 + 20 mm 초과 실패율, A/A 5쌍 보정 여유 — `tools/teach_pt/ni_judge.py`, [ni_rule_ul186](../stage3/ni_rule_ul186.md) | 이 줄과 같은 커밋 |
+| 2026-09-29 09:5x | 03 | §96 보충 6 결정 줄(ul 188: VLA 상시 조이스틱·비동기, 상위 단독 먼저 유지) + 논문·마인드맵 틀 수정 | 정본 §96 보충 6, 이 줄과 같은 커밋 |
