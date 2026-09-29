@@ -13,14 +13,16 @@ def test_ring_dims_and_check():
         assert not RA.check(d) and abs(d["inner_d"] - 2 * RA.PEG_R - g) < 1e-9 and d["outer_d"] <= 0.09
 
 
-def test_layout_block_leaves_the_grasp_side_free():
+def test_layout_rails_leave_the_grasp_side_free():
     ring = RA.ring_dims(0.035)
     lay = XR.layout(ring, PEG, 35480)
-    (bx0, bx1), _ = lay["block"]
+    for (_, (y0, y1)) in lay["rails"]:
+        assert min(abs(y0 - lay["ring_xy"][1]), abs(y1 - lay["ring_xy"][1])) >= 0.02  # pads (+-1 cm) clear
     rx = lay["ring_xy"][0]
     grasp_x = rx + ring["centre_r"]
-    assert bx1 <= grasp_x - ring["tube_r"] - 0.012  # the inner finger passes the block edge
-    assert bx0 < rx < bx1  # the block carries the ring's centre
+    assert grasp_x > lay["ring_xy"][0]
+    ys = sorted((y0 + y1) / 2 for (_, (y0, y1)) in lay["rails"])
+    assert ys[0] < lay["ring_xy"][1] < ys[1]  # the rails carry the ring on both sides
     assert abs(lay["peg_top"] - (XR.STAND_TOP + PEG["top_z"])) < 1e-9
 
 

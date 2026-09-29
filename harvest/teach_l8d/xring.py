@@ -20,10 +20,12 @@ import numpy as np
 STAND_TOP, STAND_SIZE, STAND_CENTRE = 0.80, (0.50, 0.70), (0.50, -0.18)
 PEG_XY, RING_XY = (0.50, -0.08), (0.42, -0.36)
 BLOCK_HALF_Y = 0.05
+RAIL_W = 0.010
 RELEASE_BELOW, TILT_UP = 0.03, 35.0
 LIFT0, REL_TABLE = -0.0993, 0.85
 PARK = (-7.0, 7.0, 0.3)
 PEG_ID, RING_ID = "rp_peg", "rp_ring"
+OPEN_W = 0.030  # pads open only 3 cm around the tube: the inner finger passes beside the source block
 
 
 def task_id(ring: str, peg: str) -> str:
@@ -42,11 +44,16 @@ def layout(ring: dict, peg: dict, seed: int) -> dict:
     px, py = PEG_XY[0], PEG_XY[1] + jy
     rx, ry = RING_XY[0], RING_XY[1] + jy
     rc, t = float(ring["centre_r"]), float(ring["tube_r"])
-    block = [[rx - rc - t - 0.01, rx + rc - t - 0.015], [ry - BLOCK_HALF_Y, ry + BLOCK_HALF_Y]]
+    # two rails along x under the ring's +-y tube (gate 1: a block under the -x half put the inner finger on it);
+    # the +x tube (the grasp point) and both fingers stay clear of them
+    rails = [[[rx - rc - t, rx + rc + t], [ry + s * rc - RAIL_W / 2, ry + s * rc + RAIL_W / 2]] for s in (-1, 1)]
+    block = rails[0]
     top = STAND_TOP + float(peg["top_z"])
     lift = float(np.clip(LIFT0 + ((STAND_TOP + 0.20) - (REL_TABLE + 0.155)) + rng.uniform(-0.02, 0.02), -0.5, 0.0))
     return {"peg_xy": [round(px, 4), round(py, 4)], "ring_xy": [round(rx, 4), round(ry, 4)],
-            "block": [[round(v, 4) for v in b] for b in block], "block_top": round(STAND_TOP + peg["block_h"], 4),
+            "block": [[round(v, 4) for v in b] for b in block],
+            "rails": [[[round(v, 4) for v in b] for b in r] for r in rails],
+            "block_top": round(STAND_TOP + peg["block_h"], 4),
             "peg_top": round(top, 4), "work_z": STAND_TOP, "lift": round(lift, 4), "jy": round(jy, 4)}
 
 
@@ -82,11 +89,13 @@ def make_ring_world(rings: dict, pegs: dict, meta: dict):
                 size=(STAND_SIZE[0], STAND_SIZE[1], STAND_TOP), collision_props=sim_utils.CollisionPropertiesCfg(),
                 visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.62, 0.52, 0.40))),
             init_state=AssetBaseCfg.InitialStateCfg(pos=(STAND_CENTRE[0], STAND_CENTRE[1], STAND_TOP / 2)))
-        cfg.scene.block = AssetBaseCfg(
-            prim_path="{ENV_REGEX_NS}/BLOCK",
-            spawn=sim_utils.CuboidCfg(size=(1.0, 1.0, 1.0), collision_props=sim_utils.CollisionPropertiesCfg(),
-                                      visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.35, 0.35, 0.38))),
-            init_state=AssetBaseCfg.InitialStateCfg(pos=(PARK[0], -PARK[1], -3.0)))
+        for j in (0, 1):  # the two source rails (scaled / posed per episode)
+            setattr(cfg.scene, f"rail_{j}", AssetBaseCfg(
+                prim_path="{ENV_REGEX_NS}/RAIL_%d" % j,
+                spawn=sim_utils.CuboidCfg(
+                    size=(1.0, 1.0, 1.0), collision_props=sim_utils.CollisionPropertiesCfg(),
+                    visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.35, 0.35, 0.38))),
+                init_state=AssetBaseCfg.InitialStateCfg(pos=(PARK[0], -PARK[1] - j, -3.0))))
         for i, n in enumerate(pids):
             setattr(cfg.scene, f"peg_{i}", AssetBaseCfg(prim_path="{ENV_REGEX_NS}/PEG_%d" % i,
                                                          spawn=sim_utils.UsdFileCfg(usd_path=pegs[n]["usd"]),
@@ -109,7 +118,8 @@ def make_ring_world(rings: dict, pegs: dict, meta: dict):
             finally:
                 SC._build_cfg = orig
             env = self.env
-            self.dt, self.w_open = float(env.step_dt), float(GRIP_MAX_W)
+            # gate 1 (0/10): fully open (10.7 cm) the inner finger landed on the source block / the ring and tipped it
+            self.dt, self.w_open = float(env.step_dt), OPEN_W
             self._st, self.last_obs = None, None
             env.layout = {}
             SC._LAYOUT["layout"] = {}
@@ -150,10 +160,10 @@ def make_ring_world(rings: dict, pegs: dict, meta: dict):
             for i, n in enumerate(pids):  # the episode's peg on the stand, the others parked (USD, hard reset)
                 self._usd_pose(f"/World/envs/env_0/PEG_{i}", (*lay["peg_xy"], STAND_TOP) if n == pid
                                else (PARK[0] - 0.5 * i, -PARK[1], -3.0))
-            (bx0, bx1), (by0, by1) = lay["block"]
-            self._usd_pose("/World/envs/env_0/BLOCK", ((bx0 + bx1) / 2, (by0 + by1) / 2,
-                                                      STAND_TOP + peg_meta["block_h"] / 2),
-                           (bx1 - bx0, by1 - by0, peg_meta["block_h"]))
+            for j, ((bx0, bx1), (by0, by1)) in enumerate(lay["rails"]):
+                self._usd_pose(f"/World/envs/env_0/RAIL_{j}", ((bx0 + bx1) / 2, (by0 + by1) / 2,
+                                                              STAND_TOP + peg_meta["block_h"] / 2),
+                               (bx1 - bx0, by1 - by0, peg_meta["block_h"]))
             rob = env.robot
             for jn, v in (("lift_joint", lay["lift"]), ("head_joint1", HEAD_TILT0), ("head_joint2", 0.0)):
                 if jn in rob.joint_names:
