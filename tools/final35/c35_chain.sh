@@ -22,15 +22,17 @@ done
 log "WAIT_DONE N=$N"
 # 2. data
 # change 7: build.py is single-threaded (~27 s/episode) -> k parallel builds over manifest chunks, then concatenate
-pbuild() {  # <collect root> <manifest> <out dir> <k>
+pbuild() {  # <collect root> <manifest> <out dir> <k>   (resumable: finished parts are kept, change 8)
   local R=$1 M=$2 OUT=$3 K=$4 i rc=0
   [ -s $OUT/train_pt.jsonl ] && return 0
-  $P tools/final35/c35_prep.py split_man $M $K $OUT/man >> $L/prep.log 2>&1 || return 1
+  while ps -eo args | grep -q "^$P tools/teach_l8d/build.py $R $OUT/part"; do sleep 60; done  # parts of an earlier run
+  [ -f $OUT/man/part0.json ] || $P tools/final35/c35_prep.py split_man $M $K $OUT/man >> $L/prep.log 2>&1 || return 1
   for i in $(seq 0 $((K - 1))); do
+    grep -q '"total"' $OUT/man/part$i.log 2>/dev/null && [ -s $OUT/part$i/train_pt.jsonl ] && continue
     OMP_NUM_THREADS=1 $P tools/teach_l8d/build.py $R $OUT/part$i train pt --manifest $OUT/man/part$i.json \
       > $OUT/man/part$i.log 2>&1 &
   done
-  for i in $(seq 0 $((K - 1))); do wait -n || rc=1; done
+  while [ "$(jobs -rp | wc -l)" -gt 0 ]; do wait -n || rc=1; done
   [ $rc = 0 ] || return 1
   for i in $(seq 0 $((K - 1))); do [ -s $OUT/part$i/train_pt.jsonl ] || return 1; done
   cat $OUT/part*/train_pt.jsonl > $OUT/train_pt.jsonl
@@ -46,10 +48,8 @@ if [ ! -f $D/train_c35_a.jsonl ]; then
       mkdir -p $O/val_src/$(dirname $e); ln -sfn $R/train/$e $O/val_src/$e
     done
   done
-  pbuild /data/harvest/out/teach_l8d/b3d_drawer $C/docs/stage3/l8d_bundle_b3d.json $D/b_drawer 12 || { log "PREP_FAIL build drawer"; exit 1; }
-  $P tools/teach_pt/convert_min.py $D/b_drawer/train_pt.jsonl $D d-min drawer_d-min.jsonl >> $L/prep.log 2>&1 || { log "PREP_FAIL convert drawer"; exit 1; }
-  cat $D/l8s_main_d-min.jsonl $D/drawer_d-min.jsonl > $D/base_c35_d-min.jsonl || { log "PREP_FAIL base"; exit 1; }
-  [ -s $D/l8s_main_d-min.jsonl ] && [ -s $D/drawer_d-min.jsonl ] || { log "PREP_FAIL empty base part"; exit 1; }
+  cp $D/l8s_main_d-min.jsonl $D/base_c35_d-min.jsonl || { log "PREP_FAIL base"; exit 1; }  # change 8: drawer b3d out, as in the main 35B (user-log 213)
+  [ -s $D/l8s_main_d-min.jsonl ] || { log "PREP_FAIL empty base"; exit 1; }
   $P tools/teach_pt/build_min.py $O/val_src $D x_val_l8s d-min clean $O/val_src >> $L/prep.log 2>&1 || { log "PREP_FAIL val"; exit 1; }
   $P tools/final35/c35_prep.py pool /data/harvest/out/poolv/verdict_fix.json $O/pool >> $L/prep.log 2>&1 || { log "PREP_FAIL pool"; exit 1; }
   $P tools/final35/c35_prep.py subset $O/pool >> $L/prep.log 2>&1 || { log "PREP_FAIL subset"; exit 1; }
