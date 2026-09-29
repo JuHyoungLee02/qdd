@@ -107,11 +107,20 @@ def main(keep, meta, out, spec):
     # resumable + stop-safe: every kept row is appended at once to rows_live.jsonl and every finished episode to
     # done.txt; a restart skips done episodes and restores the per-task counts
     live_p, done_p = os.path.join(out, "rows_live.jsonl"), os.path.join(out, "done.txt")
-    if os.path.exists(live_p):
-        for x in open(live_p):
-            t_ = json.loads(x)["task"]
-            per_task[t_] = per_task.get(t_, 0) + 1
-    done = set(open(done_p).read().split()) if os.path.exists(done_p) else set()
+    import glob as _g
+    # AGB_PRIOR_DIRS (glob): output dirs of earlier runs with another task split -- their done episodes are skipped and
+    # their rows count toward the per-task cap
+    prior = sorted(_g.glob(os.environ.get("AGB_PRIOR_DIRS", ""))) if os.environ.get("AGB_PRIOR_DIRS") else []
+    done = set()
+    for dpath in [out] + [p for p in prior if os.path.abspath(p) != os.path.abspath(out)]:
+        lp, dp_ = os.path.join(dpath, "rows_live.jsonl"), os.path.join(dpath, "done.txt")
+        if os.path.exists(lp):
+            for x in open(lp):
+                t_ = json.loads(x)["task"]
+                per_task[t_] = per_task.get(t_, 0) + 1
+        if os.path.exists(dp_):
+            done |= set(open(dp_).read().split())
+    skipped = open(os.path.join(out, "skipped.txt"), "a")
     live, donef = open(live_p, "a"), open(done_p, "a")
     prev = None
     for ep, task in episodes(keep, spec):
@@ -125,6 +134,7 @@ def main(keep, meta, out, spec):
             donef.write(prev + "\n")
             donef.flush()
         prev = f"{task}/{ep}"
+        open(os.path.join(out, "current.txt"), "w").write(prev + "\n")  # the runner skips it if the process dies here
         if task not in infos:
             infos[task] = {e["episode_id"]: e for e in
                            json.load(open(os.path.join(meta, "task_info", f"task_{task}.json")))}
@@ -134,9 +144,15 @@ def main(keep, meta, out, spec):
         vid = os.path.join(keep, "obs", task, str(ep), "videos", "head_color.mp4")
         if ep not in info or not all(os.path.exists(p) for p in (npz, pdir, vid)):
             continue
+        try:  # a missing / broken calibration file skips the episode (logged), never stops the run
+            z = np.load(npz)
+            K, dist, Ts = load_cam(pdir)
+        except Exception as ex:
+            skipped.write(f"{task}/{ep}\t{type(ex).__name__}: {str(ex)[:120]}\n")
+            skipped.flush()
+            st["skipped_calib"] = st.get("skipped_calib", 0) + 1
+            continue
         st["episodes"] += 1
-        z = np.load(npz)
-        K, dist, Ts = load_cam(pdir)
         with open(os.path.join(out, "intents.jsonl"), "a") as fi:  # embodiment-free step intents (user-log 167)
             for s in info[ep]["label_info"]["action_config"]:
                 sa, sb = int(s["start_frame"]), int(s["end_frame"])
