@@ -94,7 +94,7 @@ def main():
             print("ARM_PROBE", b, len(mine), round(d, 3), flush=True)
         json.dump(out, open(a.out, "w"), indent=0)
         import os
-        os._exit(0)
+        import sys; sys.stdout.flush(); os._exit(0)
     if a.hold is not None:  # static check: hold the recorded pose at step a.hold; PhysX gravity torque vs drive
         view = rob.root_physx_view
         qh = q_all[a.hold, ids]
@@ -111,6 +111,11 @@ def main():
                          "grav": [round(float(v), 2) for v in c]})
         print("ARM_HOLD", a.hold, "q-qh", np.round(q - qh, 3).tolist(), "tau", rows[-1]["tau"], "grav", rows[-1]["grav"])
         print("ARM_HOLD limits", np.round(rob.data.joint_pos_limits[0, ids].cpu().numpy(), 3).tolist())
+        print("ARM_HOLD physx limits", np.round(view.get_dof_limits()[0, ids].cpu().numpy(), 3).tolist())
+        print("ARM_HOLD physx max force", np.round(view.get_dof_max_forces()[0, ids].cpu().numpy(), 1).tolist(),
+              "stiff", np.round(view.get_dof_stiffnesses()[0, ids].cpu().numpy(), 1).tolist(),
+              "armature", np.round(view.get_dof_armatures()[0, ids].cpu().numpy(), 3).tolist(),
+              "friction", np.round(view.get_dof_friction_coefficients()[0, ids].cpu().numpy(), 3).tolist())
         for b in ("arm_base_link", "arm_r_link1", "arm_r_link2", "arm_r_link3", "arm_r_link4", "arm_r_link6",
                   "arm_r_link7", "head_link2"):
             print("ARM_HOLD body", b, np.round(rob.data.body_pos_w[0, rob.body_names.index(b)].cpu().numpy(), 3).tolist())
@@ -118,7 +123,7 @@ def main():
         print("ARM_HOLD masses", {n: round(float(m), 2) for n, m in zip(rob.body_names, mass) if float(m) > 0.5})
         json.dump({"hold": a.hold, "rows": rows}, open(a.out, "w"), indent=0)
         import os
-        os._exit(0)
+        import sys; sys.stdout.flush(); os._exit(0)
     for i in range(s0, min(s1, len(tgt))):
         env.step(np.concatenate([tgt[i], [GRIP_MAX_W]]))
         q = rob.data.joint_pos[0, ids].cpu().numpy()
@@ -131,7 +136,7 @@ def main():
     json.dump(res, open(a.out, "w"), indent=0)
     print("ARM_REPLAY", "no_self" if a.no_self else "self", "max dq per joint", dq.round(3).tolist(), "roots", roots)
     import os
-    os._exit(0)
+    import sys; sys.stdout.flush(); os._exit(0)
 
 
 if __name__ == "__main__":
