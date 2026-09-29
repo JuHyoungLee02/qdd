@@ -25,7 +25,8 @@ import os
 import numpy as np
 
 TARGET_XY = (0.44, -0.22)  # pilot 3: at 0.38 the arm could not carry to the drawer near its body (IK diverged)
-C_BOX_XY, C_OBJ_XY = (0.52, -0.08), (0.40, -0.47)  # pilot 3: (0.58, 0.0) was out of reach while carrying
+C_BOX_XY, C_OBJ_XY = (0.52, None), (0.42, -0.38)  # pilot 4: y -0.47 was out of reach, (0.58, 0.0) too
+C_GAP, C_BOX_Y_MAX = 0.10, 0.02
 STAND_TOP, STAND_SIZE, STAND_CENTRE = 0.65, (0.52, 0.95), (0.52, -0.14)  # flap tops below the start TCP (1.06 m)
 TOP_BEHIND = (0.04, 0.06)
 MAX_LEN = 0.15  # objects at most 15 cm long (a held shoe hit the furniture while carried)
@@ -37,6 +38,10 @@ LIFT0, REL_TABLE = -0.0993, 0.85
 PARK = (-7.0, 7.0, 0.3)
 YAW = -math.pi / 2
 PLACE_ID = "art_place"
+
+
+def fixture_hint(rec: dict) -> str:
+    return os.path.basename(str(rec.get("src", "?")))
 
 
 def task_id(kind: str, fixture: str, obj: str) -> str:
@@ -99,7 +104,11 @@ def layout(kind: str, rec: dict, obj: dict, seed: int) -> dict:
         obj_z = float(tp["top_z"])
         floor = float(ts["top_z"])
     else:
-        tx, ty = C_BOX_XY[0], C_BOX_XY[1] + jy
+        half = 0.5 * max(float(rec["collider_size"][0]), float(rec["collider_size"][1]))  # flaps spread
+        # the inside centre goes next to the object (box edge 10 cm beside it); too wide a box = out of reach
+        tx, ty = C_BOX_XY[0], C_OBJ_XY[1] + jy + C_GAP + half
+        if ty > C_BOX_Y_MAX:
+            raise ValueError(f"box {fixture_hint(rec)} too wide: centre y {ty:.3f} > {C_BOX_Y_MAX}")
         pos = (tx - yc, ty + xc, STAND_TOP)
         ox, oy = C_OBJ_XY[0], C_OBJ_XY[1] + jy
         obj_z = STAND_TOP
