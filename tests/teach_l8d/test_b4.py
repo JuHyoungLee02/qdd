@@ -304,3 +304,12 @@ def test_shape_names_change22():
     assert "green cylinder" in T.TASKS["bottle_tray"].instruction
     T.TASKS.clear(); T.TASKS.update(saved[0]); T.X_TASKS.clear(); T.X_TASKS.update(saved[1])
     P.OBJ_NAME.clear(); P.OBJ_NAME.update(saved[2]); P.REL_NAMES.clear(); P.REL_NAMES.update(saved[3])
+
+
+def test_arm_jump_filter_change23(tmp_path):
+    import json
+    from harvest.teach_l8d import dataset as D
+    (tmp_path / "meta.json").write_text(json.dumps({"max_dq_rad": 0.05}))
+    assert D.arm_jump(str(tmp_path)) and D.load_rows(str(tmp_path), "train") == []
+    (tmp_path / "meta.json").write_text(json.dumps({"max_dq_rad": 0.03}))
+    assert not D.arm_jump(str(tmp_path))

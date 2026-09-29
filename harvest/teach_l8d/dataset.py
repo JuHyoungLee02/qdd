@@ -69,8 +69,22 @@ def scene_of(ep_dir: str) -> dict:
             "height_bin": SP.height_bin(sc["table_z"]), "dist_bin": SP.dist_bin(d["n"]), "ws": sc.get("ws")}
 
 
+ARM_DQ_MAX = 0.04  # rad per env step (the no-jump rule); L8S episodes above it are not built (change 23)
+
+
+def arm_jump(ep_dir: str) -> bool:
+    """The episode recorded a right-arm joint step above ARM_DQ_MAX (meta.max_dq_rad, L8S only)."""
+    p = os.path.join(ep_dir, "meta.json")
+    if not os.path.exists(p):
+        return False
+    v = json.load(open(p)).get("max_dq_rad")
+    return v is not None and float(v) > ARM_DQ_MAX
+
+
 def load_rows(ep_dir: str, split: str) -> list:
     rows = []
+    if arm_jump(ep_dir):
+        return rows
     vdir = os.path.basename(os.path.dirname(ep_dir))
     scene = scene_of(ep_dir)
     for line in open(os.path.join(ep_dir, "labels.jsonl")):

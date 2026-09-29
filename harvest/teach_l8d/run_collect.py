@@ -99,7 +99,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                 try:
                     self._reset_furniture(seed, task)
                 except _fx.SkipScene as ex:  # change 21: a failed / off-surface layout is redrawn, not skipped
-                    if str(ex).startswith(("layout", "task object")):
+                    if str(ex).startswith(("layout", "task object", "exposure not fixed")):  # change 23: + look
                         last = ex
                         continue
                     raise
