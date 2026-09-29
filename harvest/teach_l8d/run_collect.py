@@ -104,7 +104,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                         last = ex
                         continue
                     raise
-                self._arm_vel_limit()  # change 24: no momentum jumps past the 0.035 rad step
+                self._qcmd = None  # change 25: the arm command restarts from the measured pose
                 self._preroll_arm()  # change 21: the right arm starts above, out of the head view
                 self._jlog, self._blog = [], []
                 occ = self._first_occlusion(task)
@@ -113,6 +113,22 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                     return
                 last = _fx.SkipScene(f"target / destination occluded in the first head frame after 8 layouts: {occ}")
             raise last
+
+        def _arm_cmd(self, cmd_pos):
+            """change 25: rate-limit the arm's joint command against the previous command (not the measured pose):
+            the change-21 clamp was relative to the measured joints, so with the gravity offset the PD target kept a
+            constant lead and the arm built up speed (pilot 4: 0.05-0.14 rad / step with a still base). Here the
+            command without the gravity offset moves <= ARM_DQ per step; the offset is added back for the PD."""
+            import numpy as np
+
+            from .clutter_x import ARM_DQ
+            g = self.pl._gravity_offset()[0].cpu().numpy()
+            qd = self.pl._ik(cmd_pos, self.cmd_quat, 10.0) - g  # unclamped IK solution
+            if getattr(self, "_qcmd", None) is None:
+                rob = self.env.robot
+                self._qcmd = rob.data.joint_pos[0, self.env.arm_ids].cpu().numpy().copy()
+            self._qcmd = self._qcmd + np.clip(qd - self._qcmd, -ARM_DQ, ARM_DQ)
+            return self._qcmd + g
 
         def _arm_vel_limit(self):
             """change 24: PhysX max joint velocity of the right arm = ARM_VMAX_STEP / dt. The pilot-4 jumps
@@ -383,7 +399,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             from .clutter_x import ARM_DQ
             goal = self.pl.goal_quat if quat is None else np.asarray(quat, float)  # = IsaacWorld.step with the
             self.cmd_quat = _slerp_step(self.cmd_quat, goal, W_MAX * self.dt)  # L8S arm step ARM_DQ (change 21:
-            q = self.pl._ik(np.asarray(cmd_pos, float), self.cmd_quat, ARM_DQ)  # measured arm steps <= 0.04 rad)
+            q = self._arm_cmd(np.asarray(cmd_pos, float))  # change 25: the PD target itself moves <= ARM_DQ / step
             self.env.step(np.concatenate([q, [float(width)]]).astype(np.float32))
             self._st = None
             if l8s:  # change 20: joint angles per step (collect saves joints.npz)
