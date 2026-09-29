@@ -3,7 +3,7 @@
 확인 시각 2026-09-25 18:4x UTC(로컬 `ls`, 파드 `ls /data/harvest`; 21:07·21:30 UTC에 R2_TRAIN·탐침·E-MA1b 줄 재확인 — 2026-09-25 21:30 UTC, R7 29회차 N106; 23:28 UTC에 R2_TRAIN 두 줄을 파드 `ls /data/harvest/r2`로 재확인). 바뀌면 같은 커밋에서 고친다. **이 장은 위치만 적고 진행 상태(생성 중·진행 중 등)는 적지 않는다 — 지금 상태는 `docs/handoff.md`** [→ 2026-09-25 21:07 UTC, R7 28회차 D-2: 상태 꼬리표가 두 번 낡아 규칙으로 뺌].
 
 ## 저장소 (`D:\qdd`, 브랜치 dev만 — main 금지)
-> 2026-09-29 정리(09-30 보정): 실행 경로에서 참조되지 않는 옛 도구 폴더 8개(`tools/` 아래 `conf`·`couple_dry`·`mar2d`·`marr_real`·`open_vlm`·`pre_r7`·`sr1b`·`sr1e`)·그 시험 7개·옛 계획 5개, 모두 65개를 `archive/<원래 경로>`로 옮겼다(git mv, 이력 보존). 살아 있는 코드와 폴더를 함께 쓰는 파일은 제자리에 두었다. 아래 표의 경로가 없으면 `archive/` 아래 같은 경로를 본다. 지금 쓰는 구성은 [README](../../README.md)·[main35_recipe](../stage3/main35_recipe.md).
+> 2026-09-29 정리(09-30 보정): 실행 경로에서 참조되지 않는 옛 도구 폴더 8개(`tools/` 아래 `conf`·`couple_dry`·`mar2d`·`marr_real`·`open_vlm`·`pre_r7`·`sr1b`·`sr1e`)·그 시험 8개·옛 계획 5개, 모두 66개를 `archive/<원래 경로>`로 옮겼다(git mv, 이력 보존). 살아 있는 코드와 폴더를 함께 쓰는 파일은 제자리에 두었다. 아래 표의 경로가 없으면 `archive/` 아래 같은 경로를 본다. 지금 쓰는 구성은 [README](../../README.md)·[main35_recipe](../stage3/main35_recipe.md).
 
 | 경로 | 무엇 |
 |---|---|

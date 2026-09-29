@@ -36,7 +36,7 @@
 | `docs/` | 정본·결과·사전 등록·기록책·사용자 발언 |
 | `paper/` | 논문(CVPR 양식)·마인드맵 |
 
-`archive/` 에는 실행 경로에서 더 이상 참조되지 않는 옛 실험 도구 폴더 8개(`tools/` 아래 `conf`·`couple_dry`·`mar2d`·`marr_real`·`open_vlm`·`pre_r7`·`sr1b`·`sr1e`), 그 폴더만 시험하던 `tests/` 7개, 옛 superpowers 계획·설계를 원래 경로 그대로 옮겨 두었다(git mv, 기록 보존용). 중단·보류된 방향이라도 살아 있는 코드와 폴더를 함께 쓰는 파일(예: `tools/teach_pt/build_min.py`는 E-C35 체인이 씀)은 제자리에 두었다.
+`archive/` 에는 실행 경로에서 더 이상 참조되지 않는 옛 실험 도구 폴더 8개(`tools/` 아래 `conf`·`couple_dry`·`mar2d`·`marr_real`·`open_vlm`·`pre_r7`·`sr1b`·`sr1e`), 그 폴더만 시험하던 `tests/` 8개, 옛 superpowers 계획·설계를 원래 경로 그대로 옮겨 두었다(git mv, 기록 보존용). 중단·보류된 방향이라도 살아 있는 코드와 폴더를 함께 쓰는 파일(예: `tools/teach_pt/build_min.py`는 E-C35 체인이 씀)은 제자리에 두었다.
 
 ## 주요 단계 실행
 
