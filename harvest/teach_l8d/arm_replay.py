@@ -27,6 +27,7 @@ def main():
     ap.add_argument("--steps", default="0-80")
     ap.add_argument("--no-self", action="store_true")
     ap.add_argument("--hold", type=int, default=None)
+    ap.add_argument("--probe", type=int, default=None)
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     import numpy as np
@@ -51,6 +52,39 @@ def main():
     for _ in range(10):
         env.step(np.concatenate([q_all[s0, ids], [GRIP_MAX_W]]))
     rows = []
+    if a.probe is not None:  # which robot body's colliders push joint1: turn each body's colliders off in turn
+        import omni.usd
+        from pxr import UsdPhysics
+        stage = omni.usd.get_context().get_stage()
+        cols = [p for p in stage.Traverse() if str(p.GetPath()).startswith("/World/envs/env_0/Robot")
+                and p.HasAPI(UsdPhysics.CollisionAPI)]
+        qh = q_all[a.probe, ids]
+
+        def drift():
+            env.reset(settle_s=0.0)
+            qq = rob.data.joint_pos.clone()
+            qq[0, ids] = torch.as_tensor(qh, device=qq.device)
+            rob.write_joint_state_to_sim(qq, torch.zeros_like(qq))
+            for _ in range(15):
+                env.step(np.concatenate([qh, [GRIP_MAX_W]]))
+            return float(rob.data.joint_pos[0, ids[0]].cpu().numpy() - qh[0])
+        base = drift()
+        print("ARM_PROBE base drift", round(base, 3), "colliders", len(cols))
+        out = {"probe": a.probe, "base": base, "bodies": {}}
+        for b in rob.body_names:
+            mine = [p for p in cols if f"/{b}/" in str(p.GetPath()) + "/"]
+            if not mine:
+                continue
+            for p in mine:
+                UsdPhysics.CollisionAPI(p).GetCollisionEnabledAttr().Set(False)
+            d = drift()
+            for p in mine:
+                UsdPhysics.CollisionAPI(p).GetCollisionEnabledAttr().Set(True)
+            out["bodies"][b] = round(d, 4)
+            print("ARM_PROBE", b, len(mine), round(d, 3), flush=True)
+        json.dump(out, open(a.out, "w"), indent=0)
+        import os
+        os._exit(0)
     if a.hold is not None:  # static check: hold the recorded pose at step a.hold; PhysX gravity torque vs drive
         view = rob.root_physx_view
         qh = q_all[a.hold, ids]
