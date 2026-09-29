@@ -48,3 +48,8 @@
 - 끝 표지는 `/data/harvest/logs/l8sw/l8sw.log`의 `L8SW_DONE`, `/data/harvest/logs/opr2/opr3.log`의 `STAGE3_DONE`이다.
 
 ## 변경 기록
+- **변경 1 (2026-09-30 01:4x KST, 학습 전 — 데이터 빌드 중, 결과 없음)**: 고리(ring) 30편은 빼고 가려고 한다.
+  - 이유: `l8s_prod_ring` 빌드가 dev 06accad에서 `KeyError: 'rp_ring'`로 실패한다(`astra_motion/harness.py:55 obj_height` ← `pt_truth.label_pixel` ← `teach_pt/dataset.aux_pixels`).
+  - 영향: L8S 학습 편은 main만 쓴다. 100 %는 942편(972 − 고리 30)이고, 25·50 %도 고리 층 없이 같은 규칙으로 만든다.
+  - 보류분의 고리 편은 0편이라(`ring_val.json` 비어 있음) 평가에는 영향이 없다.
+  - 실제 편·행 수는 `train.counts.json`(episodes_with_rows)에 남는다. 작전T에 알림(E-C35도 같은 빌드를 씀).
