@@ -33,6 +33,30 @@ def support_from_contacts(pos: dict, half_z: dict, contacts: set, table_tol: flo
 REST_TOL_M = 0.006  # mesh object bottom within 6 mm of another object's top (convex-hull colliders sit a few mm off)
 
 
+def container_contains(j: str, b, xy, bottom_z: float) -> bool:
+    """L8S container j (objv.register_containers) holds a point: xy inside its opening box and the object's bottom
+    between inner floor - 1 cm and the rim (into) or within 1.5 cm of the top (onto). b: container Obj (canonical
+    centre, quat); the boxes are relative to the USD root = centre - R(yaw) centre_from_root_xy."""
+    import math
+
+    from .scene import OBJ_GEOM
+    g = OBJ_GEOM[j]
+    q = b.quat_wxyz
+    yaw = math.atan2(2 * (q[0] * q[3] + q[1] * q[2]), 1 - 2 * (q[2] ** 2 + q[3] ** 2))
+    dx, dy = float(xy[0] - b.pos[0]), float(xy[1] - b.pos[1])
+    c, s = math.cos(-yaw), math.sin(-yaw)
+    rx = c * dx - s * dy + g["centre_from_root_xy"][0]
+    ry = s * dx + c * dy + g["centre_from_root_xy"][1]
+    (x0, x1), (y0, y1) = g["opening_box"]
+    if not (x0 <= rx <= x1 and y0 <= ry <= y1):
+        return False
+    base = b.pos[2] - g["half_extents"][2]
+    floor = base + g["inner_floor_z"]
+    if g["place_kind"] == "onto":
+        return abs(bottom_z - floor) <= 0.015
+    return floor - 0.01 <= bottom_z <= base + g["rim_z"]
+
+
 def mesh_rest_contacts(k: str, objs: dict, tol: float = REST_TOL_M) -> set:
     """{k, j} when mesh object k rests on object j: k's lowest point within tol of j's top face and k's centre inside
     j's upright box in xy (table frame positions; boxes as OBJ_GEOM half extents, j assumed upright)."""
@@ -43,6 +67,10 @@ def mesh_rest_contacts(k: str, objs: dict, tol: float = REST_TOL_M) -> set:
     out = set()
     for j, b in objs.items():
         if j == k or OBJ_GEOM[j]["shape"] in ("marker", "surface"):
+            continue
+        if OBJ_GEOM[j].get("place_kind"):  # L8S container (pilot 2: bowls' curved floors failed the flat-top rule)
+            if container_contains(j, b, a.pos[:2], bot):
+                out.add(frozenset({k, j}))
             continue
         he = OBJ_GEOM[j]["half_extents"]
         top = b.pos[2] - he[2] + SUPPORT_TOP.get(j, 2 * he[2])

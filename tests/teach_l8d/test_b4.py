@@ -225,3 +225,26 @@ def test_into_container_tasks():
     assert t in lay and c in lay
     from harvest.astra_motion.prompts import place_rule
     assert place_rule(c, "bowl").startswith(("inside", "on"))
+
+
+def test_into_judge_opening_and_band():
+    import numpy as np
+    from harvest.predicates import Obj
+    from harvest.sim import objv as OV
+    from harvest.sim import scene as SC
+    from harvest.sim.oracle_state import container_contains
+    conts = OV.load_containers()
+    c = "cont_thor_Bowl_1" if "cont_thor_Bowl_1" in conts else sorted(conts)[0]
+    OV.register_containers({c: conts[c]})
+    g, ins = SC.OBJ_GEOM[c], conts[c]["inside"]
+    cz = 0.02 + g["half_extents"][2]  # container canonical centre (bottom on z = 0.02)
+    box = Obj(c, np.array([0.45, -0.20, cz]), np.array([1.0, 0, 0, 0]), np.array(g["half_extents"]))
+    ox = (ins["opening_box"][0][0] + ins["opening_box"][0][1]) / 2 - g["centre_from_root_xy"][0]
+    oy = (ins["opening_box"][1][0] + ins["opening_box"][1][1]) / 2 - g["centre_from_root_xy"][1]
+    floor = 0.02 + ins["inner_floor_z"]
+    ok = container_contains(c, box, np.array([0.45 + ox, -0.20 + oy]), floor + 0.015)
+    assert ok
+    assert not container_contains(c, box, np.array([0.45 + ox, -0.20 + oy]), floor - 0.02)  # below the floor
+    assert not container_contains(c, box, np.array([0.45 + ox + 0.5, -0.20 + oy]), floor + 0.01)  # outside
+    rim = 0.02 + (ins.get("rim_z") or ins["inner_floor_z"])
+    assert not container_contains(c, box, np.array([0.45 + ox, -0.20 + oy]), rim + 0.02)  # above the rim

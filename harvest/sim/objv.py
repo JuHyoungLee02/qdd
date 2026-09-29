@@ -183,7 +183,9 @@ def register_containers(rows: dict) -> list:
     ids = register(rows)
     for k in ids:
         i = rows[k]["inside"]
-        S.OBJ_GEOM[k].update(kinematic=True, place_kind=i["place_kind"], opening=float(i.get("opening_min_side", 0)))
+        S.OBJ_GEOM[k].update(kinematic=True, place_kind=i["place_kind"], opening=float(i.get("opening_min_side", 0)),
+                             opening_box=i["opening_box"], inner_floor_z=float(i["inner_floor_z"]),
+                             rim_z=float(i.get("rim_z") or i["inner_floor_z"]))
         S.SUPPORT_TOP[k] = float(i["inner_floor_z"]) - float(rows[k].get("root_above_bottom", 0.0))
     return ids
 
