@@ -1,0 +1,245 @@
+{
+ "rule": "user-log 186",
+ "fail_mm": 20.0,
+ "pairs": [
+  [
+   "/data/harvest/out/view8/eval/A0_s0",
+   "/data/harvest/out/view8/eval/A0_s1"
+  ],
+  [
+   "/data/harvest/out/view8/eval/A1_s0",
+   "/data/harvest/out/view8/eval/A1_s1"
+  ],
+  [
+   "/data/harvest/out/view8/eval/A2_s0",
+   "/data/harvest/out/view8/eval/A2_s1"
+  ],
+  [
+   "/data/harvest/out/opratio/eval/op_p0",
+   "/data/harvest/out/opratio/eval/op_p0_s1"
+  ],
+  [
+   "/data/harvest/out/opratio/eval/op_p75",
+   "/data/harvest/out/opratio/eval/op_p75_s1"
+  ]
+ ],
+ "sets": {
+  "dev": {
+   "median_margin_mm": 0.1,
+   "fail_margin": 0.0283,
+   "pairs": [
+    {
+     "median_diff": 0.0,
+     "fail_diff": -0.0088,
+     "n": 565
+    },
+    {
+     "median_diff": 0.0,
+     "fail_diff": 0.0159,
+     "n": 565
+    },
+    {
+     "median_diff": 0.0,
+     "fail_diff": 0.0106,
+     "n": 565
+    },
+    {
+     "median_diff": 0.0,
+     "fail_diff": 0.0177,
+     "n": 565
+    },
+    {
+     "median_diff": 0.0,
+     "fail_diff": 0.0035,
+     "n": 565
+    }
+   ]
+  },
+  "ood_h": {
+   "median_margin_mm": 0.15,
+   "fail_margin": 0.0288,
+   "pairs": [
+    {
+     "median_diff": 0.0,
+     "fail_diff": -0.016,
+     "n": 312
+    },
+    {
+     "median_diff": 0.0,
+     "fail_diff": 0.0032,
+     "n": 312
+    },
+    {
+     "median_diff": 0.0,
+     "fail_diff": -0.0032,
+     "n": 312
+    },
+    {
+     "median_diff": 0.0,
+     "fail_diff": -0.0064,
+     "n": 312
+    },
+    {
+     "median_diff": 0.0,
+     "fail_diff": 0.0032,
+     "n": 312
+    }
+   ]
+  },
+  "ood_d": {
+   "median_margin_mm": 0.2,
+   "fail_margin": 0.06,
+   "pairs": [
+    {
+     "median_diff": -0.2,
+     "fail_diff": -0.03,
+     "n": 100
+    },
+    {
+     "median_diff": 0.1,
+     "fail_diff": 0.02,
+     "n": 100
+    },
+    {
+     "median_diff": 0.0,
+     "fail_diff": -0.01,
+     "n": 100
+    },
+    {
+     "median_diff": 0.1,
+     "fail_diff": 0.02,
+     "n": 100
+    },
+    {
+     "median_diff": 0.1,
+     "fail_diff": 0.01,
+     "n": 100
+    }
+   ]
+  },
+  "ood_o": {
+   "median_margin_mm": 12.7,
+   "fail_margin": 0.1156,
+   "pairs": [
+    {
+     "median_diff": -1.6,
+     "fail_diff": -0.034,
+     "n": 147
+    },
+    {
+     "median_diff": -3.9,
+     "fail_diff": -0.034,
+     "n": 147
+    },
+    {
+     "median_diff": 3.1,
+     "fail_diff": 0.0136,
+     "n": 147
+    },
+    {
+     "median_diff": -1.1,
+     "fail_diff": -0.0068,
+     "n": 147
+    },
+    {
+     "median_diff": 11.9,
+     "fail_diff": 0.0884,
+     "n": 147
+    }
+   ]
+  },
+  "ood_s": {
+   "median_margin_mm": 0.25,
+   "fail_margin": 0.0612,
+   "pairs": [
+    {
+     "median_diff": 0.05,
+     "fail_diff": 0.0204,
+     "n": 98
+    },
+    {
+     "median_diff": -0.05,
+     "fail_diff": -0.0102,
+     "n": 98
+    },
+    {
+     "median_diff": 0.1,
+     "fail_diff": 0.0306,
+     "n": 98
+    },
+    {
+     "median_diff": 0.1,
+     "fail_diff": 0.0306,
+     "n": 98
+    },
+    {
+     "median_diff": 0.05,
+     "fail_diff": 0.0102,
+     "n": 98
+    }
+   ]
+  },
+  "ood_t": {
+   "median_margin_mm": 0.3,
+   "fail_margin": 0.049,
+   "pairs": [
+    {
+     "median_diff": 0.0,
+     "fail_diff": 0.0,
+     "n": 143
+    },
+    {
+     "median_diff": -0.2,
+     "fail_diff": 0.0,
+     "n": 143
+    },
+    {
+     "median_diff": 0.0,
+     "fail_diff": 0.028,
+     "n": 143
+    },
+    {
+     "median_diff": 0.0,
+     "fail_diff": -0.007,
+     "n": 143
+    },
+    {
+     "median_diff": -0.1,
+     "fail_diff": 0.028,
+     "n": 143
+    }
+   ]
+  },
+  "ood_hl": {
+   "median_margin_mm": 0.2,
+   "fail_margin": 0.0417,
+   "pairs": [
+    {
+     "median_diff": -0.05,
+     "fail_diff": -0.0185,
+     "n": 216
+    },
+    {
+     "median_diff": 0.0,
+     "fail_diff": -0.0093,
+     "n": 216
+    },
+    {
+     "median_diff": 0.0,
+     "fail_diff": -0.0093,
+     "n": 216
+    },
+    {
+     "median_diff": 0.0,
+     "fail_diff": -0.0278,
+     "n": 216
+    },
+    {
+     "median_diff": 0.0,
+     "fail_diff": -0.0093,
+     "n": 216
+    }
+   ]
+  }
+ }
+}
