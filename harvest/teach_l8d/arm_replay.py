@@ -26,6 +26,7 @@ def main():
     ap.add_argument("--npz", required=True)
     ap.add_argument("--steps", default="0-80")
     ap.add_argument("--no-self", action="store_true")
+    ap.add_argument("--hold", type=int, default=None)
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     import numpy as np
@@ -50,6 +51,22 @@ def main():
     for _ in range(10):
         env.step(np.concatenate([q_all[s0, ids], [GRIP_MAX_W]]))
     rows = []
+    if a.hold is not None:  # static check: hold the recorded pose at step a.hold; PhysX gravity torque vs drive
+        view = rob.root_physx_view
+        qh = q_all[a.hold, ids]
+        q0[0, ids] = torch.as_tensor(qh, device=q0.device)
+        rob.write_joint_state_to_sim(q0, torch.zeros_like(q0))
+        for k in range(40):
+            env.step(np.concatenate([qh, [GRIP_MAX_W]]))
+            c = view.get_gravity_compensation_forces()[0, ids].cpu().numpy()
+            q = rob.data.joint_pos[0, ids].cpu().numpy()
+            rows.append({"t": k, "q": [round(float(v), 4) for v in q], "rec_q": [round(float(v), 4) for v in qh],
+                         "tau": [round(float(v), 2) for v in rob.data.applied_torque[0, ids].cpu().numpy()],
+                         "grav": [round(float(v), 2) for v in c]})
+        print("ARM_HOLD", a.hold, "q-qh", np.round(q - qh, 3).tolist(), "tau", rows[-1]["tau"], "grav", rows[-1]["grav"])
+        json.dump({"hold": a.hold, "rows": rows}, open(a.out, "w"), indent=0)
+        import os
+        os._exit(0)
     for i in range(s0, min(s1, len(tgt))):
         env.step(np.concatenate([tgt[i], [GRIP_MAX_W]]))
         q = rob.data.joint_pos[0, ids].cpu().numpy()
