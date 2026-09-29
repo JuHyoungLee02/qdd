@@ -30,7 +30,7 @@ def feasible(opened: dict, spec: dict, kind: str) -> list:
             top = XA.top_surface(r)
             if top is None or top["top_z"] - ts["top_z"] > TOP_GAP_MAX:
                 continue
-        elif ts.get("rim_z") is None or ts["rim_z"] - ts["top_z"] > RIM_MAX or ts["area"] < 0.03:
+        elif ts.get("rim_z") is None or r["collider_size"][2] > RIM_MAX or ts["area"] < 0.03:
             continue
         out.append((ts["area"], n))
     return [n for _, n in sorted(out, reverse=True)[:N_FIX]]

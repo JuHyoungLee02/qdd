@@ -25,8 +25,8 @@ import os
 import numpy as np
 
 TARGET_XY = (0.38, -0.22)  # pilot: at 0.42 the object on the top stood at x 0.69 (> the 0.65 workspace box)
-C_BOX_XY, C_OBJ_XY = (0.50, -0.26), (0.44, 0.02)
-STAND_TOP, STAND_SIZE, STAND_CENTRE = 0.78, (0.40, 0.62), (0.48, -0.13)
+C_BOX_XY, C_OBJ_XY = (0.58, 0.0), (0.44, -0.40)  # run 2: the box (flaps up) left of the start TCP, object right
+STAND_TOP, STAND_SIZE, STAND_CENTRE = 0.65, (0.52, 0.95), (0.52, -0.14)  # flap tops below the start TCP (1.06 m)
 TOP_BEHIND = (0.06, 0.09)
 BOX_UP, CARRY_DZ, TCP_BELOW_TOP = 0.40, 0.22, 0.018  # executor box height above table_z, xlabels carry, grasp depth
 FLOOR_TOL, TILT_UP = 0.015, 20.0
@@ -108,12 +108,20 @@ def layout(kind: str, rec: dict, obj: dict, seed: int) -> dict:
         work = max(work, obj_z + CARRY_DZ - BOX_UP + 0.005)
         if work > floor + h - TCP_BELOW_TOP - 0.025 + 0.004:
             raise ValueError(f"top {obj_z:.3f} too far above the drawer floor {floor:.3f} for the executor box")
-    lift = float(np.clip(LIFT0 + (0.5 * (floor + obj_z) - REL_TABLE) + rng.uniform(-0.02, 0.02), -0.5, 0.0))
+    top = pos[2] + float(rec["collider_size"][2]) if kind == "C" else obj_z  # C: the flaps stand above the rim
+    carry = (max(top, obj_z) + h + 0.03) if kind == "C" else obj_z + CARRY_DZ
+    if carry > work + BOX_UP - 0.005:
+        raise ValueError(f"carry height {carry:.3f} above the executor box ({work:.3f} + {BOX_UP})")
+    place_tcp = floor + h - TCP_BELOW_TOP + 0.004
+    # the lift centres the used TCP band (place .. carry) where L8 works at the default lift (table 0.85 + 7-24 cm)
+    lift = float(np.clip(LIFT0 + (0.5 * (place_tcp + carry) - (REL_TABLE + 0.155)) + rng.uniform(-0.02, 0.02),
+                         -0.5, 0.0))
     return {"pos": [round(v, 4) for v in pos], "place_box": [[round(v, 4) for v in b] for b in box],
             "place_xy": [round((box[0][0] + box[0][1]) / 2, 4), round((box[1][0] + box[1][1]) / 2, 4)],
             "floor": round(floor, 4), "rim": None if rim is None else round(rim, 4), "obj_xy": [round(ox, 4),
                                                                                                  round(oy, 4)],
-            "obj_z": round(obj_z, 4), "work_z": round(work, 4), "lift": round(lift, 4), "jy": round(jy, 4)}
+            "obj_z": round(obj_z, 4), "work_z": round(work, 4), "lift": round(lift, 4), "jy": round(jy, 4),
+            "carry_z": round(carry, 4)}
 
 
 def preds(obj_c, obj_bottom, obj_tilt, tcp, grip_w, w_open, lay, reach: float = 0.06) -> dict:
@@ -313,8 +321,8 @@ def make_art_world(kind: str, fixture: str, rec: dict, objs: dict):
             text = {"A": f"Put the {name} into the open drawer.", "C": f"Put the {name} into the open box."}[kind]
             info = {"instruction": text, "tgt": self.obj, "place": PLACE_ID, "present": [self.obj, PLACE_ID],
                     "sup_tgt": lay["obj_z"], "place_top": lay["floor"], "sup_place": lay["floor"]}
-            if lay.get("rim") is not None:  # carry over the rim with the object hanging below the TCP
-                info["sup_place"] = max(lay["floor"], lay["rim"] + float(o["height"]) + 0.03 - 0.22)
+            if kind == "C":  # carry over the flaps / rim with the object hanging below the TCP
+                info["sup_place"] = max(lay["floor"], lay["carry_z"] - 0.22)
             return info
 
         def _status_from(self, pl):

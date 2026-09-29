@@ -10,7 +10,8 @@ DRAWER = {"surfaces": [
      "container": True, "rim_z": 1.107},
     {"top_z": 1.107, "free_box": [[-1.29, 1.29], [-0.30, 0.49]], "area": 2.038, "covered_above": None,
      "container": False, "rim_z": None}]}
-BOX = {"surfaces": [{"top_z": 0.009, "free_box": [[-0.12, 0.11], [-0.14, 0.14]], "area": 0.064,
+BOX = {"collider_size": [0.45, 0.55, 0.25],
+       "surfaces": [{"top_z": 0.009, "free_box": [[-0.12, 0.11], [-0.14, 0.14]], "area": 0.064,
                      "covered_above": None, "container": True, "rim_z": 0.189}]}
 OBJ = {"footprint_r": 0.03, "height": 0.085}
 
