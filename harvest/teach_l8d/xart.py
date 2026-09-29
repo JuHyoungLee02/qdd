@@ -24,10 +24,12 @@ import os
 
 import numpy as np
 
-TARGET_XY = (0.38, -0.22)  # pilot: at 0.42 the object on the top stood at x 0.69 (> the 0.65 workspace box)
-C_BOX_XY, C_OBJ_XY = (0.58, 0.0), (0.44, -0.40)  # run 2: the box (flaps up) left of the start TCP, object right
+TARGET_XY = (0.44, -0.22)  # pilot 3: at 0.38 the arm could not carry to the drawer near its body (IK diverged)
+C_BOX_XY, C_OBJ_XY = (0.52, -0.08), (0.40, -0.47)  # pilot 3: (0.58, 0.0) was out of reach while carrying
 STAND_TOP, STAND_SIZE, STAND_CENTRE = 0.65, (0.52, 0.95), (0.52, -0.14)  # flap tops below the start TCP (1.06 m)
-TOP_BEHIND = (0.06, 0.09)
+TOP_BEHIND = (0.04, 0.06)
+MAX_LEN = 0.15  # objects at most 15 cm long (a held shoe hit the furniture while carried)
+OBJ_X_MAX = 0.63
 BOX_UP, CARRY_DZ, TCP_BELOW_TOP = 0.40, 0.22, 0.018  # executor box height above table_z, xlabels carry, grasp depth
 FLOOR_TOL, TILT_UP = 0.015, 20.0
 HOLD_GAP = 0.005
@@ -92,6 +94,8 @@ def layout(kind: str, rec: dict, obj: dict, seed: int) -> dict:
         tp = top_surface(rec)
         front = pos[0] + tp["free_box"][1][0]  # the top's front edge (asset y min) in world x
         ox, oy = front + float(rng.uniform(*TOP_BEHIND)), ty
+        if ox > OBJ_X_MAX:
+            raise ValueError(f"object on the top at x {ox:.3f} beyond reach ({OBJ_X_MAX})")
         obj_z = float(tp["top_z"])
         floor = float(ts["top_z"])
     else:
@@ -364,7 +368,7 @@ def run_art(out: str, kind: str, fixture: str, opened: str, objects: str, seeds:
     rows = json.load(open(objects))
     ts = target_surface(rec, kind)
     box = [[0.0, ts["free_box"][0][1] - ts["free_box"][0][0]], [0.0, ts["free_box"][1][1] - ts["free_box"][1][0]]]
-    fit = {k: o for k, o in sorted(rows.items()) if fits(o, box)}
+    fit = {k: o for k, o in sorted(rows.items()) if fits(o, box) and float(o["length"]) <= MAX_LEN}
     if not fit:
         raise ValueError(f"{fixture}: no object fits the place ({box})")
     pick = {s: sorted(fit)[int(hashlib.sha256(f"ai:{fixture}:{s}".encode()).hexdigest()[:8], 16) % len(fit)]
