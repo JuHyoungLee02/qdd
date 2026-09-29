@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 
 
 def _self_collisions(stage, root: str, on: bool) -> list:
@@ -29,6 +30,7 @@ def main():
     ap.add_argument("--hold", type=int, default=None)
     ap.add_argument("--probe", type=int, default=None)
     ap.add_argument("--effort", type=float, default=None)
+    ap.add_argument("--list", action="store_true")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     import numpy as np
@@ -53,6 +55,25 @@ def main():
     for _ in range(10):
         env.step(np.concatenate([q_all[s0, ids], [GRIP_MAX_W]]))
     rows = []
+    if a.list:  # joints / constraints of the robot USD: loop joints, mimic joints, tendons (position-level couplings)
+        import omni.usd
+        stage = omni.usd.get_context().get_stage()
+        for p in stage.Traverse():
+            path = str(p.GetPath())
+            schemas = [str(s) for s in p.GetAppliedSchemas()]
+            tn = str(p.GetTypeName())
+            odd = [s for s in schemas if "Mimic" in s or "Tendon" in s or "Attachment" in s]
+            if "Joint" in tn or odd:
+                b0 = p.GetRelationship("physics:body0").GetTargets() if p.GetRelationship("physics:body0") else []
+                b1 = p.GetRelationship("physics:body1").GetTargets() if p.GetRelationship("physics:body1") else []
+                ex = p.GetAttribute("physics:excludeFromArticulation")
+                en = p.GetAttribute("physics:jointEnabled")
+                print("ARM_LIST", tn, path.replace("/World/envs/env_0/", ""), [str(x).split("/")[-1] for x in b0],
+                      [str(x).split("/")[-1] for x in b1], "exclude", ex.Get() if ex and ex.IsValid() else None,
+                      "enabled", en.Get() if en and en.IsValid() else None, odd, flush=True)
+        import sys
+        sys.stdout.flush()
+        os._exit(0)
     if a.probe is not None:  # which robot body's colliders push joint1: turn each body's colliders off in turn
         import omni.usd
         from pxr import UsdPhysics
