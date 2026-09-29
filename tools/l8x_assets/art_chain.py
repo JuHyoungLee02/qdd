@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 from harvest.teach_l8d import xart as XA  # noqa: E402
 
 SEEDS = {"A": (range(49150, 49160), range(35490, 35494)), "C": (range(49170, 49180), range(35496, 35500))}
-TOP_GAP_MAX, RIM_MAX = 0.22, 0.28
+TOP_GAP_MAX, RIM_MAX = 0.17, 0.28  # pilot: Desk_308_2_1 (0.205) blocked carrying to the drawer near the body
 N_FIX = 4
 
 
