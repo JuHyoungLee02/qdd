@@ -81,6 +81,24 @@ def arm_jump(ep_dir: str) -> bool:
     return v is not None and float(v) > ARM_DQ_MAX
 
 
+RINGS_JSON = "/data/harvest/assets_x/rings/rings.json"  # helper ring assets (tools/l8x_assets/ring_assets.py)
+_RINGS: dict = {}
+
+
+def ring_geom(task: str) -> None:
+    """Ring-on-peg V rows (rp__<ring>__<peg>, helper xring): put that ring's / peg's geometry in scene.OBJ_GEOM before
+    the row's pixel labels (obj_height(rp_ring)); every ring has its own tube radius, so per row. L8D_RINGS_JSON
+    overrides the asset table path."""
+    if not str(task).startswith("rp__"):
+        return
+    from .xring import parse, register_geom
+    p = os.environ.get("L8D_RINGS_JSON", RINGS_JSON)
+    if p not in _RINGS:
+        _RINGS[p] = json.load(open(p))
+    ring, peg = parse(task)
+    register_geom(_RINGS[p]["rings"][ring], _RINGS[p]["pegs"][peg])
+
+
 def load_rows(ep_dir: str, split: str) -> list:
     rows = []
     if arm_jump(ep_dir):
@@ -157,6 +175,7 @@ def build(root: str, out_dir: str, split: str, fmt: str = "v2", tags: bool = Fal
     pdir = os.path.join(out_dir, "prompts", f"{split}_{fmt}" + sfx)
     ctrl = []
     for r in base:
+        ring_geom(r["task"])
         x = PD.arm_row(r, arm, keep_unlabelled=split != "train")
         if x is None:
             continue
@@ -176,6 +195,7 @@ def build(root: str, out_dir: str, split: str, fmt: str = "v2", tags: bool = Fal
     auxr = []
     if aux:
         for r in ctrl:
+            ring_geom(r["task"])
             a = PD.aux_for(r, arm, rng)
             if a is None:
                 continue

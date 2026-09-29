@@ -28,6 +28,21 @@ PEG_ID, RING_ID = "rp_peg", "rp_ring"
 OPEN_W = 0.030  # pads open only 3 cm around the tube: the inner finger passes beside the source block
 
 
+def register_geom(ring: dict, peg: dict) -> None:
+    """The ring / peg entries of scene.OBJ_GEOM and the prompt names (pure; the ring world and the dataset builder,
+    which needs obj_height(rp_ring) for the pixel labels)."""
+    from ..astra_motion import prompts as P
+    from ..sim import scene as SC
+    h = float(ring["tube_r"]) + 0.018  # the plan grasps at h - 1.8 cm above the support: the tube centre
+    SC.OBJ_GEOM[RING_ID] = {"shape": "cuboid", "size": [2 * ring["tube_r"], 0.03, h], "height": h,
+                           "footprint_r": 0.02, "grasp_width": 2 * ring["tube_r"]}
+    SC.OBJ_GEOM[PEG_ID] = {"shape": "cuboid", "size": [0.04, 0.04, 0.002], "height": 0.002,
+                          "footprint_r": 0.02, "place_kind": "around"}
+    SC.SUPPORT_TOP[PEG_ID] = 0.0
+    P.OBJ_NAME[RING_ID], P.OBJ_DESC[RING_ID] = ring["name"], f"flat ring, {ring['outer_d'] * 100:.1f} cm across"
+    P.OBJ_NAME[PEG_ID], P.OBJ_DESC[PEG_ID] = peg["name"], "upright peg on a round base"
+
+
 def task_id(ring: str, peg: str) -> str:
     return f"rp__{ring}__{peg}"
 
@@ -215,14 +230,7 @@ def make_ring_world(rings: dict, pegs: dict, meta: dict, rooms: dict | None = No
             l8s_step(self, cmd_pos, width, quat)
 
         def _register(self, ring, peg):
-            h = float(ring["tube_r"]) + 0.018  # the plan grasps at h - 1.8 cm above the support: the tube centre
-            SC.OBJ_GEOM[RING_ID] = {"shape": "cuboid", "size": [2 * ring["tube_r"], 0.03, h], "height": h,
-                                   "footprint_r": 0.02, "grasp_width": 2 * ring["tube_r"]}
-            SC.OBJ_GEOM[PEG_ID] = {"shape": "cuboid", "size": [0.04, 0.04, 0.002], "height": 0.002,
-                                  "footprint_r": 0.02, "place_kind": "around"}
-            SC.SUPPORT_TOP[PEG_ID] = 0.0
-            P.OBJ_NAME[RING_ID], P.OBJ_DESC[RING_ID] = ring["name"], f"flat ring, {ring['outer_d'] * 100:.1f} cm across"
-            P.OBJ_NAME[PEG_ID], P.OBJ_DESC[PEG_ID] = peg["name"], "upright peg on a round base"
+            register_geom(ring, peg)
 
         def _dome(self, seed):
             from ..sim import randomize as R

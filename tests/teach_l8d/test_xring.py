@@ -1,6 +1,8 @@
 """Ring on a peg V: pure layout / predicates / pairing (harvest.teach_l8d.xring) and the asset dimensions."""
 import numpy as np
 
+import pytest
+
 from harvest.teach_l8d import xring as XR
 from tools.l8x_assets import ring_assets as RA
 
@@ -44,3 +46,21 @@ def test_pairs_use_different_colours():
     pegs = {f"p{c}": {"colour": c} for c in ("black", "wooden")}
     for s, (r, p) in XR.pairs(rings, pegs, list(range(35480, 35490))).items():
         assert rings[r]["colour"] != pegs[p]["colour"]
+
+
+def test_builder_registers_each_rows_ring(tmp_path, monkeypatch):
+    """The dataset builder puts the row's own ring geometry in OBJ_GEOM (KeyError rp_ring before), per ring."""
+    import json
+
+    from harvest.astra_motion.harness import obj_height
+    from harvest.teach_l8d import dataset as D
+    a, b = dict(RA.ring_dims(0.035), name="red ring"), dict(RA.ring_dims(0.045), name="black ring")
+    p = tmp_path / "rings.json"
+    p.write_text(json.dumps({"rings": {"ra": a, "rb": b}, "pegs": {"pw": dict(PEG, name="wooden peg")}}))
+    monkeypatch.setenv("L8D_RINGS_JSON", str(p))
+    D.ring_geom("rp__ra__pw")
+    assert obj_height(XR.RING_ID) == pytest.approx(a["tube_r"] + 0.018)
+    D.ring_geom("rp__rb__pw")
+    assert obj_height(XR.RING_ID) == pytest.approx(b["tube_r"] + 0.018)
+    D.ring_geom("mug_tray")  # other tasks: untouched
+    assert obj_height(XR.RING_ID) == pytest.approx(b["tube_r"] + 0.018)
