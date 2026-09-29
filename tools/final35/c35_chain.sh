@@ -7,22 +7,22 @@
 # usage: c35_chain.sh <code dir> [N 1000]
 C=$1; N=${2:-1000}
 O=/data/harvest/out/c35; D=$O/data; L=/data/harvest/logs/c35; P=/data/harvest/venv_train/bin/python
-T8=/data/harvest/out/teach_l8d; AUD=$T8/l8s_prod/AUDIT300.json
+T8=/data/harvest/out/teach_l8d; AUD="$T8/l8s_prod/AUDIT800.json $T8/l8s_prod/AUDIT300.json"  # change 3: 800-episode audit
 RUNS="b_s0 a_s0 b_s1"
 mkdir -p $O/man $D $L
 log() { echo "$1 $(date -u +%FT%TZ)" >> $L/c35.log; }
 cd $C; export PYTHONPATH=$C
-# 1. wait: audit PASS + N finished episodes
-until grep -q '"verdict": *"PASS"' $AUD 2>/dev/null && \
-  [ "$(ls $T8/l8s_prod/train/*/*/meta.json $T8/l8s_prod_ring/train/*/*/meta.json 2>/dev/null | wc -l)" -ge $N ]; do
-  grep -q '"verdict": *"FAIL"' $AUD 2>/dev/null && { log "WAIT_STOP audit FAIL"; exit 1; }
-  sleep 300
+# 1. wait: audit PASS + every stratum (task kind x furniture, plan share of N) filled (change 3)
+until cat $AUD 2>/dev/null | grep -q '"verdict": *"PASS"' && \
+  $P tools/final35/c35_prep.py strat_ready $N > $L/strat_ready.json 2>> $L/prep.log; do
+  cat $AUD 2>/dev/null | grep -q '"verdict": *"FAIL"' && { log "WAIT_STOP audit FAIL"; exit 1; }
+  sleep 600
 done
 log "WAIT_DONE N=$N"
 # 2. data
 mixlog() { tr -d ' \n' < $1 | grep -o '"pool":[0-9]*\|"open_over_base":[0-9.]*,"open_share_of_file":[0-9.]*,"repeat":[0-9.]*' | tr '\n' ' '; }
 if [ ! -f $D/train_c35_a.jsonl ]; then
-  $P tools/final35/c35_prep.py l8s $N $O/man >> $L/prep.log 2>&1 || { log PREP_FAIL_l8s; exit 1; }
+  $P tools/final35/c35_prep.py strat $N $O/man >> $L/prep.log 2>&1 || { log PREP_FAIL_strat; exit 1; }
   for r in main ring; do
     [ $r = main ] && R=$T8/l8s_prod || R=$T8/l8s_prod_ring
     $P tools/teach_l8d/build.py $R $D/b_$r train pt --manifest $O/man/${r}_train.json >> $L/prep.log 2>&1

@@ -1,6 +1,7 @@
 """E-C35 (docs/stage3/prereg_c35.md) data preparation.
   ood58  <out dir>               -> manifest of the 58 new OOD-O evaluation episodes (eval_list.json)
-  l8s    <n> <out dir>           -> the first <n> finished L8S production episodes (meta.json, by its mtime; main and
+  l8s    <n> <out dir> [after]   -> the first <n> finished L8S production episodes (meta.json, by its mtime, finished
+                                    after <after> UTC when given; main and
                                     ring roots), episode-level validation split sha256("c35|<seed>") % 100 < 3;
                                     manifests <out>/{main,ring}_{train,val}.json + counts
   pool   <verdict_fix.json> <out dir>
@@ -8,6 +9,8 @@
                                     with AgiBot v3 final in place of agibot_p0), G rows removed, 3 % of rows by
                                     sha256("c35|<id>") % 100 < 3 held out -> <out>/pool_src/<src>.jsonl (train part)
                                     + <out>/val_open.jsonl (geval format, gset val_<src>)
+  strat  <n> <out dir>           -> change 3: stratified sample by plan share (task kind x furniture), manifests as l8s
+  strat_ready <n>                -> exit 0 when every stratum has its target, else 3 (prints the short strata)
   subset <out dir>               -> arm a (change 2): <out>/pool_src_a = the rows of <out>/pool_src with
                                     sha256("c35a|<id>") % 3 == 0 (one third of the pool)
   mix    <base jsonl> <src dir> <out jsonl> [repeat guard 3.0]
@@ -45,12 +48,17 @@ def ood58(out):
     print(json.dumps({"ood58": len(eps)}))
 
 
-def l8s(n, out):
+def l8s(n, out, after=None):
+    """after (UTC ISO, change 3): only episodes finished after the 23:20 KST relaunch with the shuffled furniture order
+    (the first 481 production episodes were task-skewed: basket 62 %, simple 38 %, THOR relations 0)."""
+    import datetime
+    t0 = datetime.datetime.fromisoformat(after.replace("Z", "+00:00")).timestamp() if after else 0.0
     os.makedirs(out, exist_ok=True)
     eps = []
     for root in (PROD, RING):
         for m in glob.glob(os.path.join(root, "*", "*", "meta.json")):
-            eps.append((os.path.getmtime(m), root, os.path.relpath(os.path.dirname(m), root)))
+            if os.path.getmtime(m) >= t0:
+                eps.append((os.path.getmtime(m), root, os.path.relpath(os.path.dirname(m), root)))
     eps.sort()
     eps = eps[:n]
     man = {(r, s): [] for r in ("main", "ring") for s in ("train", "val")}
@@ -65,6 +73,77 @@ def l8s(n, out):
     counts["last_meta_mtime"] = eps[-1][0] if eps else None
     json.dump(counts, open(os.path.join(out, "l8s_counts.json"), "w"), indent=1)
     print(json.dumps(counts))
+
+
+JOBS = ("/data/harvest/out/teach_l8d/plan5/jobs_l8s2_m.txt", "/data/harvest/out/teach_l8d/plan5/jobs_l8s2_x.txt")
+RING_SHARE = 0.03  # ring V episodes (separate root, ~3 % of production, L8D 09-29)
+
+
+def kind_of(task):
+    return task.split("__", 1)[0] if "__" in task else "simple"
+
+
+def plan_strata():
+    """plan share per (task kind, furniture) over the production job files' plan chunks."""
+    import collections
+    c = collections.Counter()
+    for jf in JOBS:
+        for line in open(jf):
+            if "--plan" not in line:
+                continue
+            for e in json.load(open(line.split("--plan", 1)[1].split()[0])):
+                c[(kind_of(e["task"]), e["furniture"])] += 1
+    tot = sum(c.values())
+    return {k: v / tot for k, v in c.items()}
+
+
+def finished():
+    """[(stratum, root, rel, seed)] of finished episodes (meta.json) in the main and ring roots."""
+    out = []
+    for root in (PROD, RING):
+        for m in glob.glob(os.path.join(root, "*", "*", "meta.json")):
+            rel = os.path.relpath(os.path.dirname(m), root)
+            vdir, ep = rel.split("/", 1)
+            task, seed = ep.rsplit("_s", 1)
+            st = ("ring", "ring") if root == RING else (kind_of(task), vdir.replace("drf_fx_", "", 1))
+            out.append((st, root, rel, seed))
+    return out
+
+
+def strat_targets(n):
+    sh = plan_strata()
+    main_n = n - round(n * RING_SHARE)
+    t = {k: round(main_n * v) for k, v in sh.items()}
+    t[("ring", "ring")] = round(n * RING_SHARE)
+    return t
+
+
+def strat(n, out, check_only=False):
+    """change 3: stratified sample of n episodes by plan share of (task kind, furniture); within a stratum, order by
+    sha256("c35s|<seed>"). Not ready (exit 3) while any stratum has fewer finished episodes than its target."""
+    import collections
+    t = strat_targets(n)
+    eps = collections.defaultdict(list)
+    for st, root, rel, seed in finished():
+        eps[st].append((h100(f"c35s|{seed}") * 10 ** 9 + int(seed), root, rel, seed))
+    short = {f"{k[0]}|{k[1]}": [len(eps.get(k, [])), v] for k, v in t.items() if len(eps.get(k, [])) < v}
+    if short:
+        print(json.dumps({"ready": False, "short": short}))
+        sys.exit(3)
+    if check_only:
+        print(json.dumps({"ready": True}))
+        return
+    os.makedirs(out, exist_ok=True)
+    man = {(r, s): [] for r in ("main", "ring") for s in ("train", "val")}
+    for k, v in t.items():
+        for _o, root, rel, seed in sorted(eps[k])[:v]:
+            man[("main" if root == PROD else "ring", "val" if h100(f"c35|{seed}") < 3 else "train")].append(rel)
+    counts = {"targets": {f"{k[0]}|{k[1]}": v for k, v in t.items()}}
+    for (r, s), v in man.items():
+        json.dump({"episodes": v}, open(os.path.join(out, f"{r}_{s}.json"), "w"), indent=0)
+        counts[f"{r}_{s}"] = len(v)
+    json.dump(counts, open(os.path.join(out, "l8s_counts.json"), "w"), indent=1)
+    print(json.dumps({k: v for k, v in counts.items() if k != "targets"}))
 
 
 def pool(verdict_p, out):
@@ -121,6 +200,7 @@ def mix(base, srcdir, out_jsonl, cap=3.0):
 
 if __name__ == "__main__":
     c, a = sys.argv[1], sys.argv[2:]
-    {"ood58": lambda: ood58(a[0]), "l8s": lambda: l8s(int(a[0]), a[1]), "pool": lambda: pool(a[0], a[1]),
+    {"ood58": lambda: ood58(a[0]), "l8s": lambda: l8s(int(a[0]), a[1], a[2] if len(a) > 2 else None), "pool": lambda: pool(a[0], a[1]),
+     "strat": lambda: strat(int(a[0]), a[1]), "strat_ready": lambda: strat(int(a[0]), None, True),
      "subset": lambda: subset(a[0]),
      "mix": lambda: mix(a[0], a[1], a[2], float(a[3]) if len(a) > 3 else 3.0)}[c]()
