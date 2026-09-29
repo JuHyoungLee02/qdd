@@ -23,6 +23,7 @@ PEG_R, PEG_H, BASE_R, BASE_H = 0.010, 0.15, 0.05, 0.015
 TUBE_R = 0.006
 GAPS = (0.035, 0.030, 0.025)
 N_SEG = 16
+RING_MASS = 0.015  # light: less torque on the one-side pinch
 BLOCK_H = 0.07
 COLOURS = {"red": (0.80, 0.12, 0.10), "blue": (0.10, 0.25, 0.80), "green": (0.10, 0.55, 0.20),
            "yellow": (0.90, 0.78, 0.10), "orange": (0.95, 0.45, 0.08), "purple": (0.45, 0.18, 0.60),
@@ -78,7 +79,7 @@ def torus_mesh(rc, t, nu=48, nv=16):
     return P, F
 
 
-def write_ring(dst: str, d: dict, rgb, mass: float = 0.04) -> None:
+def write_ring(dst: str, d: dict, rgb, mass: float = RING_MASS) -> None:
     from pxr import Gf, Usd, UsdGeom, UsdPhysics, UsdShade, Vt
     if os.path.exists(dst):
         os.remove(dst)
@@ -98,15 +99,14 @@ def write_ring(dst: str, d: dict, rgb, mass: float = 0.04) -> None:
     m.CreateSubdivisionSchemeAttr(UsdGeom.Tokens.catmullClark)
     UsdShade.MaterialBindingAPI.Apply(m.GetPrim()).Bind(_mat(st, "/Ring/Looks/mat", rgb))
     seg = 2 * rc * math.sin(math.pi / N_SEG)
-    for k in range(N_SEG):  # capsules along the circle (collision only)
-        a = 2 * math.pi * (k + 0.5) / N_SEG
-        c = UsdGeom.Capsule.Define(st, f"/Ring/col_{k}")
-        c.CreateRadiusAttr(t)
-        c.CreateHeightAttr(seg)
-        c.CreateAxisAttr("Y")  # along the tangent after the yaw below
+    for k in range(N_SEG):  # flat box segments (collision only): the pads get flat faces (round capsules let the
+        a = 2 * math.pi * k / N_SEG  # ring pivot in the pinch and hang: pilot 2); a segment centred at +x
+        c = UsdGeom.Cube.Define(st, f"/Ring/col_{k}")
+        c.CreateSizeAttr(1.0)
         xf = UsdGeom.Xformable(c)
         xf.AddTranslateOp().Set(Gf.Vec3d(rc * math.cos(a), rc * math.sin(a), 0.0))
         xf.AddRotateZOp().Set(math.degrees(a))
+        xf.AddScaleOp().Set(Gf.Vec3f(2 * t, seg * 1.02, 2 * t))  # radial x tangent x height
         c.CreatePurposeAttr(UsdGeom.Tokens.guide)
         UsdPhysics.CollisionAPI.Apply(c.GetPrim())
     st.GetRootLayer().Save()
@@ -146,7 +146,7 @@ def main(argv=None):
             usd = os.path.join(out, rid + ".usda")
             write_ring(usd, d, rgb)
             rows["rings"][rid] = dict(d, colour=cname, name=f"{cname} ring", usd=usd, ok=not why, why=why,
-                                      mass=0.04)
+                                      mass=RING_MASS)
     for cname, rgb in PEG_COLOURS.items():
         pid = f"peg_{cname}"
         usd = os.path.join(out, pid + ".usda")

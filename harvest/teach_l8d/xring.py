@@ -197,7 +197,7 @@ def make_ring_world(rings: dict, pegs: dict, meta: dict):
             self.pl = OraclePlanner(env)
             self.cmd_quat = np.asarray(self.pl.cmd_quat, float)
             self.quat0 = np.asarray(self.pl.goal_quat, float)
-            self.w_close = max(0.0, 2 * float(ring["tube_r"]) - 0.006)
+            self.w_close = max(0.0, 2 * float(ring["tube_r"]) - 0.008)
             self._st = None
             self.furniture_scene = {"kind": "ring_peg_V", "ring": rid, "peg": pid, "layout": lay, "iso": self.iso,
                                     "hdr": self.hdr, "head": {"tilt": HEAD_TILT0, "pan": 0.0}, "surface": "stand",
