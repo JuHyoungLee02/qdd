@@ -144,12 +144,15 @@ def layout(kind: str, rec: dict, obj: dict, seed: int) -> dict:
             "carry_z": round(carry, 4), "w_open": round(w_open, 4)}
 
 
-def preds(obj_c, obj_bottom, obj_tilt, tcp, grip_w, w_open, lay, reach: float = 0.06) -> dict:
+def preds(obj_c, obj_bottom, obj_tilt, tcp, grip_w, w_open, lay, reach: float = 0.06, gw: float | None = None) -> dict:
     """The oracle predicates of an articulated put-in episode (pure)."""
     obj_c, tcp = np.asarray(obj_c, float), np.asarray(tcp, float)
     # reach: the object centre can be up to half its length from the TCP (a shoe is held at one end; pilot:
     # 6 cm read a lifted shoe as released and tipped)
-    hold = HOLD_GAP < grip_w < w_open - HOLD_GAP and float(np.linalg.norm(obj_c - tcp)) < reach
+    # gw: the object width -- pads more than 8 mm wider than it are not holding it (pilot 8: a release inside a
+    # drawer stopped at 6.4 cm on a 5 cm object and read as still held)
+    top = w_open - HOLD_GAP if gw is None else min(w_open - HOLD_GAP, gw + 0.008)
+    hold = HOLD_GAP < grip_w < top and float(np.linalg.norm(obj_c - tcp)) < reach
     (x0, x1), (y0, y1) = lay["place_box"]
     inside = x0 <= obj_c[0] <= x1 and y0 <= obj_c[1] <= y1
     on = (not hold) and inside and abs(obj_bottom - lay["floor"]) <= FLOOR_TOL
@@ -360,7 +363,7 @@ def make_art_world(kind: str, fixture: str, rec: dict, objs: dict):
             tcp = pl.tcp_pose()[0]
             w = float(env.gripper_width())
             p = preds(cen, bottom, tilt_deg(q, self._q0), tcp, w, self.w_open, self.lay,
-                      reach=max(0.06, 0.5 * float(o["length"]) + 0.03))
+                      reach=max(0.06, 0.5 * float(o["length"]) + 0.03), gw=float(o["grasp_width"]))
             pred = {f"holding({self.obj})": p["holding(t)"], f"on({self.obj},{PLACE_ID})": p["on(t,p)"],
                     f"upright({self.obj})": p["upright(t)"], f"lifted({self.obj})": p["lifted(t)"]}
             pl_c = np.array([*self.lay["place_xy"], self.lay["floor"] + 0.001])
