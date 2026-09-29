@@ -45,3 +45,11 @@ def test_predicates():
     p = XA.preds(c + [0.5, 0, 0], lay["floor"], 3.0, c + [0, 0, 0.3], 0.107, 0.107, lay)
     assert not p["on(t,p)"]
     assert XA.parse(XA.task_id("A", "Dresser_219_1", "gsor_x")) == ("A", "Dresser_219_1", "gsor_x")
+
+
+def test_pick_room_every_episode():
+    rooms = {"FloorPlan1": {}, "FloorPlan2": {}, "FloorPlan3": {}}
+    assert XA.pick_room({}, 1) is None
+    picks = [XA.pick_room(rooms, s) for s in range(20)]
+    assert all(p in rooms for p in picks) and picks == [XA.pick_room(rooms, s) for s in range(20)]
+    assert len(set(picks)) > 1

@@ -163,7 +163,15 @@ def preds(obj_c, obj_bottom, obj_tilt, tcp, grip_w, w_open, lay, reach: float = 
 
 
 # ============================================================================ Isaac (pod)
-def make_art_world(kind: str, fixture: str, rec: dict, objs: dict):
+def pick_room(rooms: dict, seed: int):
+    """L8S rule: every episode has a room. Same pick as furniture.sample_scene (seed rng [seed, 97, 200])."""
+    if not rooms:
+        return None
+    names = sorted(rooms)
+    return names[int(np.random.default_rng([int(seed), 97, 200]).integers(len(names)))]
+
+
+def make_art_world(kind: str, fixture: str, rec: dict, objs: dict, rooms: dict | None = None):
     from ..astra_motion.world_isaac import CAMS, NO_RENDER, PRE_RENDER, IsaacWorld
     from ..sim import scene as SC
     from ..sim.objv import register_for_tasks
@@ -178,6 +186,11 @@ def make_art_world(kind: str, fixture: str, rec: dict, objs: dict):
         from isaaclab.assets import AssetBaseCfg, RigidObjectCfg
         cfg, lay = orig(*x, **k)
         cfg.scene.table = None
+        from ..sim.assets_x.isaac import ROOM_PARK
+        for j, (rn, r) in enumerate(sorted((rooms or {}).items())):  # render-only iTHOR rooms, parked (as L8S)
+            setattr(cfg.scene, f"fr_{rn}", AssetBaseCfg(
+                prim_path="{ENV_REGEX_NS}/FR_" + rn, spawn=sim_utils.UsdFileCfg(usd_path=r["usd"]),
+                init_state=AssetBaseCfg.InitialStateCfg(pos=(ROOM_PARK[0] - 12.0 * j, ROOM_PARK[1], ROOM_PARK[2]))))
         cfg.scene.fixture = AssetBaseCfg(prim_path="{ENV_REGEX_NS}/FIXTURE",
                                          spawn=sim_utils.UsdFileCfg(usd_path=rec["dst"]),
                                          init_state=AssetBaseCfg.InitialStateCfg(pos=(PARK[0], -PARK[1], -3.0)))
@@ -245,6 +258,7 @@ def make_art_world(kind: str, fixture: str, rec: dict, objs: dict):
             self.lay = lay
             self.w_open = float(lay["w_open"])  # the executor opens to this (A: the drawer depth - 3.5 cm)
             self._pose("/World/envs/env_0/FIXTURE", lay["pos"], YAW)  # applied by the hard reset below
+            room = self._room(seed, lay)
             rob = env.robot
             for jn, v in (("lift_joint", lay["lift"]), ("head_joint1", HEAD_TILT0), ("head_joint2", 0.0)):
                 if jn in rob.joint_names:
@@ -276,19 +290,76 @@ def make_art_world(kind: str, fixture: str, rec: dict, objs: dict):
                 env.step(hold)
             perturb(env, "P0", seed)
             self._dome(seed)
-            for _ in range(PRE_RENDER):
-                env.env.sim.render()
-            self.iso = self._auto_exposure()
             self.pl = OraclePlanner(env)
             self.cmd_quat = np.asarray(self.pl.cmd_quat, float)
             self.quat0 = np.asarray(self.pl.goal_quat, float)
+            arm_start = self._preroll_arm()  # L8D change 21: the right arm starts out of the head view
+            self._jlog = []  # change 20: joints.npz records from here (collect_episode saves world._jlog)
+            for _ in range(PRE_RENDER):
+                env.env.sim.render()
+            self.iso = self._auto_exposure()
             from ..sim.tasks import close_width
             self.w_close = float(close_width(oid))  # object width - 14 mm (L8 squeeze); 0 threw objects (pilots)
             self._st = None
             self.furniture_scene = {"kind": f"art_{kind}", "fixture": fixture, "layout": lay, "iso": self.iso,
-                                    "hdr": self.hdr, "room": None, "room_skip": "articulated scenes: no iTHOR room "
-                                    "background (exception to the all-episodes room rule, reported)",
+                                    "hdr": self.hdr, "room": room, "room_skip": None if room else "no rooms loaded",
+                                    "arm_start": arm_start,
                                     "head": {"tilt": HEAD_TILT0, "pan": 0.0}, "surface": "art_" + kind}
+
+        def _room(self, seed, lay):
+            """A train-split iTHOR room around the scene (fx.rooms_of, same pick as L8S); the fixture must lie in
+            rooms.ZONE, else ValueError (skipped). The others are parked. USD poses (render only)."""
+            import omni.usd
+
+            from ..sim.assets_x.isaac import ROOM_PARK, yaw_quat
+            from ..sim.assets_x.rooms import ZONE
+            from ..sim.randomize import _set_pose
+            name = pick_room(rooms, seed)
+            if name is None:
+                return None
+            (zx0, zx1), (zy0, zy1) = ZONE
+            x, y = float(lay["pos"][0]), float(lay["pos"][1])
+            h = 0.5 * max(float(v) for v in rec["collider_size"][:2]) + (0.40 if kind == "C" else 0.0)
+            if not (zx0 <= x - h and x + h <= zx1 and zy0 <= y - h and y + h <= zy1):
+                raise ValueError(f"fixture outside the room zone: {(x, y, h)}")
+            stage = omni.usd.get_context().get_stage()
+            for j, rn in enumerate(sorted(rooms)):
+                prim = stage.GetPrimAtPath(f"/World/envs/env_0/FR_{rn}")
+                if rn == name:
+                    r = rooms[rn]
+                    _set_pose(prim, (r["pos"][0], r["pos"][1], r["pos"][2] + 0.001), yaw_quat(r["yaw"]))
+                else:
+                    _set_pose(prim, (ROOM_PARK[0] - 12.0 * j, ROOM_PARK[1], ROOM_PARK[2]), (1.0, 0.0, 0.0, 0.0))
+            r = rooms[name]
+            return {"name": name, "usd": r["usd"], "pos": r["pos"], "yaw": r["yaw"], "kind": r.get("kind"),
+                    "license": r.get("license"), "source": r.get("source")}
+
+        def _preroll_arm(self, steps: int = 200) -> dict:
+            """= L8DWorld._preroll_arm: right TCP to ARM_START above the work surface (joint steps <= ARM_DQ)."""
+            from .clutter_x import ARM_START
+            goal = np.array([ARM_START[0], ARM_START[1], float(self.table_z) + ARM_START[2]])
+            for _ in range(steps):
+                if np.linalg.norm(np.asarray(self.status()["tcp"], float) - goal) < 0.01:
+                    break
+                self.step(goal, self.w_open, None)
+            for _ in range(10):
+                self.step(goal, self.w_open, None)
+            env = self.env
+            return {"tcp": [round(float(v), 4) for v in self.status()["tcp"]],
+                    "q_arm": [round(float(v), 4) for v, n in zip(env.robot.data.joint_pos[0].cpu().numpy(),
+                                                                 env.robot.joint_names) if n.startswith("arm_r_joint")]}
+
+        def step(self, cmd_pos, width: float, quat=None) -> None:
+            """= L8DWorld.step (L8S): arm step ARM_DQ (measured <= 0.04 rad), joint angles logged per step."""
+            from ..sim.planner import W_MAX, _slerp_step
+            from .clutter_x import ARM_DQ
+            goal = self.pl.goal_quat if quat is None else np.asarray(quat, float)
+            self.cmd_quat = _slerp_step(self.cmd_quat, goal, W_MAX * self.dt)
+            q = self.pl._ik(np.asarray(cmd_pos, float), self.cmd_quat, ARM_DQ)
+            self.env.step(np.concatenate([q, [float(width)]]).astype(np.float32))
+            self._st = None
+            if hasattr(self, "_jlog"):
+                self._jlog.append(self.env.robot.data.joint_pos[0].cpu().numpy().copy())
 
         def _register_place(self, lay):
             from ..astra_motion import prompts as P
@@ -396,7 +467,10 @@ def run_art(out: str, kind: str, fixture: str, opened: str, objects: str, seeds:
         raise ValueError(f"{fixture}: no object fits the place ({box})")
     pick = {s: sorted(fit)[int(hashlib.sha256(f"ai:{fixture}:{s}".encode()).hexdigest()[:8], 16) % len(fit)]
             for s in seeds}
-    world = make_art_world(kind, fixture, rec, {k: fit[k] for k in sorted(set(pick.values()))})
+    from .fx import rooms_of  # L8S: every episode has a room background (train-split iTHOR rooms, audit 3)
+    rooms = rooms_of(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sim", "assets_x"),
+                     "train")
+    world = make_art_world(kind, fixture, rec, {k: fit[k] for k in sorted(set(pick.values()))}, rooms)
     res = []
     for s in seeds:
         task = task_id(kind, fixture, pick[s])
