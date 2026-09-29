@@ -3,7 +3,7 @@ L8-X dev / OOD-O: ni_judge (A/A margins from the seed pairs of each arm, median 
 G (6 subsets + ALL): hit-rate difference (OLD - NEW) and point pixel error difference (NEW - OLD, open held-out
 subsets only) over the pooled (seed, row) pairs, paired bootstrap 10,000 (seed 0); A/A margin = 95th percentile of the
 pooled |bootstrap difference| of the two A/A pairs; non-inferior when the upper 95 % bound <= margin.
-usage: python poolv_compare.py <eval root> <g_eval.jsonl> <out json>"""
+usage: python poolv_compare.py <eval root> <g_eval.jsonl> <out json> [new arm name, default new]"""
 import json
 import os
 import sys
@@ -42,8 +42,8 @@ def boot_mean_diff(d, seed=0):
     return d[idx].mean(1)
 
 
-def main(root, gpath, outp):
-    old, new = ["pv_old_s0", "pv_old_s1"], ["pv_new_s0", "pv_new_s1"]
+def main(root, gpath, outp, new_arm="new"):
+    old, new = ["pv_old_s0", "pv_old_s1"], [f"pv_{new_arm}_s0", f"pv_{new_arm}_s1"]
     ed = lambda a: os.path.join(root, a)
     M = NJ.aa(outp + ".aa_x.json", [ed(old[0]), ed(old[1]), ed(new[0]), ed(new[1])])
     X = NJ.judge(outp + ".aa_x.json", outp + ".judge_x.json", [ed(a) for a in new], [ed(a) for a in old])
@@ -77,4 +77,4 @@ def main(root, gpath, outp):
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:4])
+    main(*sys.argv[1:5])

@@ -1,13 +1,14 @@
 #!/bin/bash
 # E-POOLV8 arm (docs/stage3/prereg_poolv.md): train one pool arm / seed on one GPU (resume if a state exists), merge,
 # vLLM on the same GPU, then G (geval.py) and L8-X dev + OOD-O (evaluate.py, d-min). Auto-retries training 3x.
-# usage: poolv.sh <code dir> <old|new> <gpu> <port> <seed>
+# usage: poolv.sh <code dir> <old|new|fix> <gpu> <port> <seed>
 C=$1; ARM=$2; G=$3; PORT=$4; SEED=$5
 O=/data/harvest/out/poolv; L=/data/harvest/logs/poolv; mkdir -p $O $L
 cd $C; export PYTHONPATH=$C
 case $ARM in
   old) D=/data/harvest/out/final35/dryrun2/train_open.jsonl; S=2602;;
   new) D=$O/train_new.jsonl; S=2165;;
+  fix) D=$O/train_fix.jsonl; S=2628;;  # E-POOLV8-FIX (prereg_poolv_fix.md)
   *) echo "arm?"; exit 1;;
 esac
 A=pv_${ARM}_s$SEED
