@@ -432,10 +432,11 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
             """Occluded share of the target's and the destination's top face in the current head frame (depth)."""
             from ..sim import scene as SC
             from ..sim.tasks import TASKS
-            from .clutter_x import occlusion
+            from .clutter_x import container_boxes, occlusion
             env, s = self.env, TASKS[task]
             cam = self._cam("cam_head", "head")
             depth = env.camera_depth("cam_head")
+            own = container_boxes(env, s.place)  # change 28: the destination container is not an occluder
             out = {}
             for role, k in (("tgt", s.target), ("place", s.place)):
                 if k not in env.layout:
@@ -444,7 +445,7 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                 g = SC.OBJ_GEOM[k]
                 he = g.get("half_extents", (g.get("radius", 0.03),) * 3)
                 top = pos[2] + (he[2] if g.get("shape") not in ("marker", "surface") else 0.0)
-                out[role] = round(occlusion(cam, depth, pos[:2], 0.6 * min(he[0], he[1]), top), 3)
+                out[role] = round(occlusion(cam, depth, pos[:2], 0.6 * min(he[0], he[1]), top, ignore=own), 3)
             return out or {"tgt": 0.0}
 
         def _obj_world(self, k):
@@ -469,6 +470,15 @@ def make_world(variant: str, table_z: float, ws, lift, objset=None, furniture=No
                         and margin * cam.H <= v <= (1 - margin) * cam.H):
                     return False
             return True
+
+        def _status_from(self, pl):
+            st = IsaacWorld._status_from(self, pl)
+            if not l8s:
+                return st
+            from ..sim.scene import OBJ_GEOM
+            from .clutter_x import upright_rule
+            info = self.task_info()  # change 28: shape-aware upright(target) for the judge and the done label
+            return upright_rule(st, self.env, info, into=OBJ_GEOM.get(info["place"], {}).get("place_kind") == "into")
 
         def task_info(self):
             from ..sim.tasks import X_STEPS

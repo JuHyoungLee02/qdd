@@ -53,3 +53,50 @@ def test_real_object_tasks_register():
     rows = CX.load_real()
     k = sorted(k for k, r in rows.items() if r["split"] == "train" and r.get("task_target_ok"))[0]
     assert k in OV.register_for_tasks([f"ov_tray__{k}"]) and T.TASKS[f"ov_tray__{k}"].target == k
+
+
+class _Env:
+    def __init__(self, quat):
+        self.quat = quat
+
+    def object_pose(self, k):
+        return [0.0, 0.0, 0.0], self.quat
+
+
+def _tilted(deg):
+    a = math.radians(deg) / 2
+    return [math.cos(a), math.sin(a), 0.0, 0.0]  # about x
+
+
+def test_occlusion_ignores_the_container_itself():
+    """L8S change 28 (audit 4 item 3): a sample hidden only by the destination container (its rim / wall / handle)
+    is not counted; anything else in front still is."""
+    import numpy as np
+
+    from harvest.astra_motion import geometry as G
+    cam = G.Cam("c", 100, 100, 100.0, 100.0, 50.0, 50.0, np.diag([1.0, -1.0, -1.0]), np.array([0.0, 0.0, 1.0]))
+    depth = np.full((100, 100), 0.4)  # something 0.4 m below the camera (world z 0.6) in front of the top at z 0.1
+    box = ((0.0, 0.0, 0.6), (0.2, 0.2, 0.05), 0.0)
+    assert CX.occlusion(cam, depth, (0.0, 0.0), 0.02, 0.1) == 1.0
+    assert CX.occlusion(cam, depth, (0.0, 0.0), 0.02, 0.1, ignore=[box]) == 0.0
+    far = ((0.0, 0.0, 0.3), (0.2, 0.2, 0.05), 0.0)  # a box elsewhere does not excuse the occluder
+    assert CX.occlusion(cam, depth, (0.0, 0.0), 0.02, 0.1, ignore=[far]) == 1.0
+
+
+def test_upright_rule_by_shape():
+    """L8S change 28 (audit 4): rolling objects need no upright pose; an object in a container may lean <= 60 deg;
+    everything else keeps the 30 deg predicate."""
+    rows = CX.load_real()
+    roll = next(k for k, r in rows.items() if r.get("noun") in CX.ROLLING)
+    plain = next(k for k, r in rows.items() if r.get("noun") not in CX.ROLLING and r.get("sphericity", 0) < 0.6)
+    st = lambda k, v: {"pred": {f"upright({k})": v}, "obj": {}}  # noqa: E731
+    assert CX.upright_rule(st(roll, False), _Env(_tilted(90)), {"tgt": roll, "place": "o5"}, into=False)[
+        "pred"][f"upright({roll})"] is True
+    assert CX.upright_rule(st(plain, False), _Env(_tilted(45)), {"tgt": plain, "place": "c"}, into=True)[
+        "pred"][f"upright({plain})"] is True
+    assert CX.upright_rule(st(plain, False), _Env(_tilted(75)), {"tgt": plain, "place": "c"}, into=True)[
+        "pred"][f"upright({plain})"] is False
+    assert CX.upright_rule(st(plain, False), _Env(_tilted(45)), {"tgt": plain, "place": "o5"}, into=False)[
+        "pred"][f"upright({plain})"] is False
+    assert CX.upright_rule(st(plain, True), _Env(_tilted(10)), {"tgt": plain, "place": "o5"}, into=False)[
+        "pred"][f"upright({plain})"] is True

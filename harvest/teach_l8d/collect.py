@@ -39,15 +39,16 @@ def _occ(w, st, info, lab):
     if lab is None or obs is None or not getattr(obs, "depth", None) or "head" not in obs.depth:
         return None
     from ..sim import scene as SC
-    from .clutter_x import occlusion
+    from .clutter_x import container_boxes, occlusion
     k = info["tgt"] if lab.get("phase") == "approach" else info["place"]
+    own = container_boxes(getattr(w, "env", None), info["place"])  # change 28: the destination is not an occluder
     if k not in st["obj"] or k not in SC.OBJ_GEOM:
         return None
     g = SC.OBJ_GEOM[k]
     he = g.get("half_extents", (g.get("radius", 0.03),) * 3)
     p = np.asarray(st["obj"][k], float)
     top = p[2] + (he[2] if g.get("shape") not in ("marker", "surface") else 0.0)
-    return round(occlusion(obs.cams["head"], obs.depth["head"], p[:2], 0.6 * min(he[0], he[1]), top), 3)
+    return round(occlusion(obs.cams["head"], obs.depth["head"], p[:2], 0.6 * min(he[0], he[1]), top, ignore=own), 3)
 
 
 class _XLabels(LC.Collector):
@@ -66,6 +67,8 @@ class _XLabels(LC.Collector):
         cams = w.last_obs.cams if getattr(w, "last_obs", None) is not None else {}
         tgt = np.asarray(st["obj"][info["tgt"]], float)
         drop = "tipped" if lab is None else ("not_visible" if cams and not LC.visible(cams, tgt) else None)
+        if drop is None and lab["step"] == "done" and st["pred"].get(f"upright({info['tgt']})") is False:
+            drop = "tipped"  # change 28 (audit 4): "done" only with the judge's upright (success_now)
         if drop is None and L.stuck(last, self.prev_cmd, lab["command"]):
             drop = "stuck"
         occ = _occ(w, st, info, lab)

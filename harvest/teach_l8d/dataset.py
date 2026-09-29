@@ -87,10 +87,14 @@ def load_rows(ep_dir: str, split: str) -> list:
         return rows
     vdir = os.path.basename(os.path.dirname(ep_dir))
     scene = scene_of(ep_dir)
+    mp = os.path.join(ep_dir, "meta.json")
+    failed = os.path.exists(mp) and json.load(open(mp)).get("success") is False
     for line in open(os.path.join(ep_dir, "labels.jsonl")):
         x = json.loads(line)
         check_row(x, split)
         if x["drop"] is not None:
+            continue
+        if failed and x.get("step") == "done":  # L8S change 28 (audit 4): no "task done" row from a failed episode
             continue
         c = os.path.join(ep_dir, "calls", f"c{x['call']:03d}")
         rows.append(dict(x, id=f"{vdir}_{x['task']}_s{x['seed']}_c{x['call']:03d}",

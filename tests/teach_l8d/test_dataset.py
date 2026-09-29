@@ -126,3 +126,21 @@ def test_split_guards():
     D.check_row({"seed": 34850, "variant": "drx", "task": "mug_tray"}, "dev_x")
     with pytest.raises(ValueError):
         D.check_row({"seed": 30001, "variant": "standard"}, "ood_h")
+
+
+def test_failed_episode_drops_done_rows(root, tmp_path):
+    """L8S change 28 (audit 4 item 7): a failed episode's step=='done' rows never reach the build."""
+    import shutil
+    src = root / "collect" / "train" / "standard_tz0.850" / "mug_tray_s30001"
+    dst = tmp_path / "standard_tz0.850" / "mug_tray_s30001"
+    shutil.copytree(src, dst)
+    rows = [json.loads(x) for x in open(dst / "labels.jsonl")]
+    rows.append(dict(rows[-1], step="done", drop=None, call=rows[-1]["call"] + 1))  # a final "task done" row
+    with open(dst / "labels.jsonl", "w") as f:
+        f.write("".join(json.dumps(r) + "\n" for r in rows))
+    m = json.load(open(dst / "meta.json"))
+    for success, n_done in ((True, 1), (False, 0)):
+        m["success"] = success
+        json.dump(m, open(dst / "meta.json", "w"))
+        got = D.load_rows(str(dst), "train")
+        assert got and sum(r["step"] == "done" for r in got) == n_done

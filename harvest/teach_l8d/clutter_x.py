@@ -296,22 +296,37 @@ OCC_MAX = 0.5  # audit 2: a point target hidden for >= 50 % of its footprint sam
 OCC_TOL = 0.03  # m: a depth pixel nearer than the expected depth by more than this hides the sample
 
 
-def occlusion(cam, depth, centre, half_xy: float, top_z: float, n: int = 5) -> float:
+def occlusion(cam, depth, centre, half_xy: float, top_z: float, n: int = 5, ignore=()) -> float:
     """Share of an object's visible samples (a grid over its top face at top_z, n x n, radius half_xy) whose
-    head-depth pixel is nearer than the sample's own optical depth by > OCC_TOL (something in front of it)."""
+    head-depth pixel is nearer than the sample's own optical depth by > OCC_TOL (something in front of it).
+    ignore (change 28): boxes (centre xyz, half extents, yaw) whose own surface does not count as an occluder -- the
+    point seen at the measured depth along the sample's ray lies inside one of them (1 cm margin)."""
+    import math
+
     import numpy as np
     from ..astra_motion import geometry as G
     d = np.asarray(depth, float)
     H, W = d.shape[:2]
+    t = np.asarray(cam.t, float)
     hid = tot = 0
     for a in np.linspace(-half_xy, half_xy, n):
         for b in np.linspace(-half_xy, half_xy, n):
-            u, v, z = G.project(cam, (centre[0] + a, centre[1] + b, top_z))
+            p = np.array([centre[0] + a, centre[1] + b, top_z], float)
+            u, v, z = G.project(cam, p)
             if not (z > 0 and 0 <= u < W and 0 <= v < H):
                 continue
             tot += 1
             dz = d[int(v), int(u)]
-            hid += bool(np.isfinite(dz) and dz < z - OCC_TOL)
+            if not (np.isfinite(dz) and dz < z - OCC_TOL):
+                continue
+            q = t + (p - t) * (dz / z)  # the surface actually seen on this ray
+            own = False
+            for c, he, yaw in ignore:
+                dx, dy = q[0] - c[0], q[1] - c[1]
+                cs, sn = math.cos(-yaw), math.sin(-yaw)
+                own |= (abs(cs * dx - sn * dy) <= he[0] + 0.01 and abs(sn * dx + cs * dy) <= he[1] + 0.01
+                        and abs(q[2] - c[2]) <= he[2] + 0.01)
+            hid += not own
     return 1.0 if tot == 0 else hid / tot
 
 
@@ -328,6 +343,53 @@ ARM_INERTIA = {"arm_base_link": (0.108375, 0.0796286, 0.0542098), "arm_r_link1":
                "arm_r_link2": (0.0108884, 0.0107203, 0.00242441), "arm_r_link3": (0.00340682, 0.00290928, 0.00183278),
                "arm_r_link4": (0.00611519, 0.00607254, 0.00141405), "arm_r_link5": (0.00188453, 0.00172697, 0.00124878),
                "arm_r_link6": (0.00161885, 0.00141804, 0.000538212), "arm_r_link7": (0.000452453, 0.000416075, 0.0001032)}
+
+
+def container_boxes(env, k) -> list:
+    """change 28: [(centre xyz in the env's base frame, half extents, yaw)] for an L8S container k (place_kind set),
+    else [] -- the box occlusion() does not count as an occluder of k's own opening / of objects next to it."""
+    import math
+
+    import numpy as np
+
+    from ..sim.scene import OBJ_GEOM
+    g = OBJ_GEOM.get(k) or {}
+    if not g.get("place_kind") or env is None:
+        return []
+    pos, q = env.object_pose(k)
+    c = np.asarray(pos, float) - env.scene.env_origins[0].cpu().numpy()
+    yaw = math.atan2(2 * (q[0] * q[3] + q[1] * q[2]), 1 - 2 * (q[2] ** 2 + q[3] ** 2))
+    return [(c, tuple(float(v) for v in g["half_extents"]), yaw)]
+
+
+ROLLING = ("egg", "apple", "potato", "tomato", "ball")  # = xnew.ROLLING_NOUNS
+UPRIGHT_INTO_DEG = 60.0  # change 28: an object inside a container may lean on its wall (bottle in a mug)
+_ROWS: dict = {}
+
+
+def upright_rule(st: dict, env, info: dict, into: bool) -> dict:
+    """change 28 (audit 4): the target's upright predicate by shape, so the episode judge (success_now, 30 deg tilt)
+    and the done label agree with what the frames show: rolling objects (ROLLING nouns or sphericity >= 0.6) have no
+    upright pose -> always upright; inside a container (into) -> tilt <= UPRIGHT_INTO_DEG; otherwise unchanged."""
+    import numpy as np
+
+    from ..predicates import _tilt_deg
+    tgt = info["tgt"]
+    key = f"upright({tgt})"
+    if key not in st["pred"]:
+        return st
+    if not _ROWS:
+        _ROWS.update(load_real())
+    r = _ROWS.get(tgt) or {}
+    if r.get("noun") in ROLLING or float(r.get("sphericity", 0.0)) >= 0.6:
+        new = True
+    elif into:
+        new = _tilt_deg(np.asarray(env.object_pose(tgt)[1], float)) <= UPRIGHT_INTO_DEG
+    else:
+        return st
+    if st["pred"][key] is new:
+        return st
+    return dict(st, pred={**st["pred"], key: new})
 
 
 def set_arm_inertia(robot) -> list:
