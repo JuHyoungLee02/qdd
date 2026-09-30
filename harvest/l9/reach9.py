@@ -10,8 +10,8 @@ import numpy as np
 from ..sim.assets_x.reach import LIFT_DEFAULT, LIFTS, OBJ_H, VIEW_MARGIN_PX, Z_NEED, ReachModel
 from . import arm as A
 
-BAND_X = (0.30, 0.62)  # probe x range
-BAND_Y = (-0.40, -0.06)  # probe y range (right arm); left = mirrored
+BAND_X = (0.30, 0.68)  # probe x range (reach_l9.json: wide L9 probe merged with the L8-D gate probe)
+BAND_Y = (-0.52, 0.08)  # probe y range (right arm); left = mirrored
 
 
 def band(arm: str) -> tuple:
@@ -55,7 +55,7 @@ def usable_points(rm: ReachModel, arm: str, X, Y, top: float) -> np.ndarray:
 
 def load_default() -> ReachModel:
     import os
-    return ReachModel.load(os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets9", "reach_base.json"))
+    return ReachModel.load(os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets9", "reach_l9.json"))
 
 
 __all__ = ["BAND_X", "BAND_Y", "LIFTS", "LIFT_DEFAULT", "band", "reach_points", "visible_points", "usable_points",

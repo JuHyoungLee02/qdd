@@ -30,7 +30,7 @@ FOOD = ("fruit", "vegetable", "bread")
 TOYISH = ("toy", "block", "shoe")
 DRINK = ("can", "bottle", "cup", "mug")
 MAX_SPOTS, MAX_SURF, MAX_SUPP = 6, 3, 4
-MAX_CONTAINER_R = 0.10  # container footprint radius (the work band is ~0.32 x 0.34 m)
+MAX_CONTAINER_R = 0.12  # container footprint radius (the work band is ~0.32 x 0.34 m)
 
 
 @dataclass(frozen=True)
@@ -185,7 +185,7 @@ def _defs():
     # 4. sort (분류)
     W_ = {"role": "container", "kind": "wide"}
     add("sort2_colour", "sort", {"A": dict(T, colour_named=True), "B": dict(T, colour_named=True, other_colour="A"),
-                                 "H": dict(W_, colour_named=True), "G": dict(W_, colour_named=True, other_colour="H")},
+                                 "H": W_, "G": W_},
         [("A", "H"), ("B", "G")], _t("Put the {A} in the {H} and the {B} in the {G}.",
                                      "Sort by colour: {A} into the {H}, {B} into the {G}.",
                                      "The {A} goes in the {H}, the {B} in the {G}.",
@@ -479,12 +479,17 @@ def deps(spec: dict) -> set:
     return out
 
 
+def needed_first(name: str, objs: dict) -> bool:
+    """A container another object starts in / on must be picked (and placed) before that object."""
+    return any(name in deps(sp) for sp in objs.values())
+
+
 def dep_order(objs: dict) -> list:
     """Object names in pick / place order: dependencies first, containers before the rest, then by name."""
     out, left = [], dict(objs)
     while left:
         ready = sorted((n for n, sp in left.items() if deps(sp) <= set(out)),
-                       key=lambda n: (left[n]["role"] != "container", n))
+                       key=lambda n: (left[n]["role"] == "container" and not needed_first(n, objs), n))
         if not ready:
             raise ValueError(f"cyclic object constraints {list(left)}")
         out.append(ready[0])
@@ -575,7 +580,7 @@ def _try(defn, scene, pool, rng, rm):
                     continue
                 if float(r["footprint_r"]) > MAX_CONTAINER_R:
                     continue
-                if spec.get("big") and float((r.get("inside") or {}).get("opening_min_side", 0)) < 0.14:
+                if spec.get("big") and float((r.get("inside") or {}).get("opening_min_side", 0)) < 0.12:
                     continue
             if spec.get("cats") and r.get("l9cat") not in spec["cats"]:
                 continue
@@ -591,6 +596,19 @@ def _try(defn, scene, pool, rng, rm):
             if spec.get("decoy_of"):
                 ref = pool[chosen[spec["decoy_of"]]]
                 if r.get("colour") == ref.get("colour") or (role == "container" and kind_of(r) != kind_of(ref)):
+                    continue
+            if role == "container" and any(chosen.get(a) is not None and not fits_into(pool[chosen[a]], r)
+                                           for a, dd in defn.steps if dd == oname):
+                continue
+            if role == "base" and any(chosen.get(a) is not None
+                                      and float(pool[chosen[a]]["footprint_r"]) > float(r["footprint_r"]) * 1.3
+                                      for a, dd in defn.steps if dd == oname):
+                continue
+            rk = spec.get("rank")
+            if rk in ("tall", "big"):
+                key = "height" if rk == "tall" else "footprint_r"
+                lows = [chosen[o] for o, sp in defn.objs.items() if sp.get("rank") in ("short", "small") and o in chosen]
+                if any(float(r[key]) < float(pool[x][key]) * 1.15 for x in lows):
                     continue
             for a, dname in defn.steps:  # the object must fit every container / base it goes to
                 if a == oname and dname in chosen and defn.objs.get(dname, {}).get("role") == "container"                         and not fits_into(r, pool[chosen[dname]]):
@@ -674,7 +692,8 @@ def _try(defn, scene, pool, rng, rm):
         node, pts, vis = node_for(spec)
         movers = {a for a, _ in defn.steps}
         dests = {d for _, d in defn.steps}
-        if on not in movers and on not in dests:  # only looked at: anywhere visible on the node
+        refs = {sp.get("ref") for sp in defn.dst.values()} | {x for sp in defn.dst.values() for x in sp.get("between", ())}
+        if on not in movers and on not in dests and on not in refs:  # only looked at: anywhere visible on the node
             pts = vis
         idx = rng.permutation(len(pts))
         for i in idx[:300]:
@@ -737,8 +756,16 @@ def _try(defn, scene, pool, rng, rm):
                 key = "line_" + axis
                 if key not in ep:
                     sp = spec.get("spacing", float(rng.uniform(0.11, 0.14)))
-                    c = main_pts[int(rng.integers(len(main_pts)))]
-                    ep[key] = (c, sp)
+                    ep[key] = None
+                    for ci in rng.permutation(len(main_pts))[:80]:
+                        c = main_pts[ci]
+                        pts = [c + (np.array([0.0, -(j - (n - 1) / 2) * sp]) if axis == "y"
+                                    else np.array([(j - (n - 1) / 2) * sp, 0.0])) for j in range(n)]
+                        if all(np.min(np.hypot(*(main_pts - q).T)) <= 0.015 for q in pts):
+                            ep[key] = (c, sp)
+                            break
+                    if ep[key] is None:
+                        raise Fail("no line fits")
                 c, sp = ep[key]
                 t = (i - (n - 1) / 2) * sp
                 xy = c + (np.array([0.0, -t]) if axis == "y" else np.array([t, 0.0]))  # left first (+y), front first (-x)
