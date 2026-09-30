@@ -130,7 +130,6 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             self._st, self.last_obs, self.furniture_scene, self.clutter_scene = None, None, None, None
             self.ep, self.scene9, self.light = None, None, None
             self._head_limit()
-            self._arm_vel_limit()
 
         # ------------------------------------------------------------------ setup helpers
         def _head_limit(self, upper_deg: float = 57.0):
@@ -412,7 +411,8 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
         def _preroll_arm(self, tz, steps: int = 200) -> dict:
             from ..teach_l8d.clutter_x import set_arm_inertia
             set_arm_inertia(self.env.robot, A.LEFT_HEAD_INERTIA)  # right (change 27) + left + head (later_problems 11)
-            self._arm_vel_limit()  # L8S change 24: the hard reset re-reads the USD, so after every reset
+            # (no PhysX joint velocity cap: L8S defines _arm_vel_limit but never calls it -- change 25's command
+            # rate limit replaced it; with the cap the L9 gate froze the arm mid-carry, diag 2026-10-01)
             s = A.arm_start(arm)
             goal = np.array([s[0], s[1], tz + s[2]])
             for _ in range(steps):
