@@ -1,4 +1,4 @@
-"""PaceNotes v2 paper figures (2026-09-30): F1-F8.
+"""Fly-by-Wire v2 paper figures (2026-10-01, 구 명칭 대체): F1-F8.
 Font setup = paper/figures/src/make_figs.py (Malgun Gothic, pdf.fonttype 42).
 Content = D:/tools/scratch_qdd/board/NOW.md, PAPER_SKELETON.md, PLAN_coupling.md and docs/stage3 (no Astra, no teacher policy;
 sim labels are "시뮬 참값(특권 정보로 계산)"; no third-person views). Orange text = tentative numbers.

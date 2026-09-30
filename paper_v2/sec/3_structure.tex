@@ -1,4 +1,4 @@
-\section{전체 구조: PaceNotes}
+\section{전체 구조: Fly-by-Wire}
 \label{sec:structure}
 
 \begin{figure*}[t]
@@ -8,7 +8,7 @@
 \label{fig:overview}
 \end{figure*}
 
-랠리에서 코드라이버는 앞 구간을 읽어 주고 드라이버는 그 지시 안에서 차를 몬다. PaceNotes에서 코드라이버는 상위 VLM, 드라이버는 JCR다(\cref{fig:overview}).
+조종사는 조이스틱으로 직접 조종하며 권한을 전부 갖고, 비행 제어 컴퓨터는 허용 범위(envelope) 안에서만 안정화·보정할 뿐 목적지를 정하지 않는다. Fly-by-Wire에서 조종사는 상위 VLM, 비행 제어 컴퓨터는 JCR다(\cref{fig:overview}).
 
 \paragraph{권한.} 명령 권한은 항상 상위에 있다. 목표, 높이 의도, 그리퍼 의도, 진행 평가와 검증은 상위가 낸다. JCR는 상위가 허용한 범위 안에서만 움직임을 고치고, 이상 신호를 내어 상위를 일찍 다시 부를 근거를 준다. JCR는 과제를 고르거나 상위 목표를 바꾸지 않는다.
 
