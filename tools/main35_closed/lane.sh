@@ -20,7 +20,10 @@ l9_on_gpu() {  # an L9 process on this GPU (by its command line)
       | grep -qiE '(^|[^a-z0-9])l9([^0-9]|$)' && { echo $pid; break; }
   done
 }
-want() { [ -f $W1 ] && { echo GPU_WANTED; return; }; [ -f $W2 ] && { echo lane_WANTED; return; }
+# per-card yield (user approval 2026-10-01): L9 GPU_WANTED counts only when it lists this card, e.g. "7a2a:0,1,3"
+KEY=$(hostname | sed -E 's/.*7a2a-(x[0-9]+)$//; s/.*native-7a2a$/7a2a/')
+listed() { [ -f "$1" ] && grep -oE "(^|[[:space:]])$KEY:[0-9,]+" "$1" | grep -qE "[:,]$G(,|$)"; }
+want() { listed $W1 && { echo GPU_WANTED; return; }; [ -f $W2 ] && { echo lane_WANTED; return; }
   local p; p=$(l9_on_gpu); [ -n "$p" ] && echo "l9_pid_$p"; }
 sfx() { [ "$1" = lane_WANTED ] && echo " (CL yield test: lane WANTED file, not an L9 request)"; }
 freed() {
@@ -46,7 +49,7 @@ while true; do
   log "RUN ckpt=$CK group=$GID conds=$CONDS"
   bash $C/tools/teach_strip8/isaac.sh $C $G $TAG harvest.teach_pt.run_closed_l8s --job "$JOB" \
     --episodes $R/eps_$GID.json --conds $CONDS --ckpt $CK --qwen-url $URL --qwen-name $NAME --out $R/res \
-    --vid-root /data/harvest/videos/main35_closed --current $R/CURRENT --yield-files $W1,$W2,$YF --owner $LN &
+    --vid-root /data/harvest/videos/main35_closed --current $R/CURRENT --yield-files $W2,$YF --owner $LN &
   ip=$!; t_w=0
   while kill -0 $ip 2>/dev/null; do
     sleep 15; touch $R/lanes/$LN.alive $R/lanes/$LN.group
