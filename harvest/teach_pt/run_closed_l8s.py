@@ -172,9 +172,11 @@ def episode_class():
     from PIL import Image
 
     from ..teach_strip8.boost import LimitEpisode
+    from ..teach_strip8.stall import with_loop_break
 
-    class CLEpisode(LimitEpisode):
-        """LimitEpisode + a 10 fps three-camera frame dump (head | left wrist | right wrist) to vid_dir."""
+    class CLEpisode(with_loop_break(LimitEpisode)):
+        """LimitEpisode (+ the stall loop break when loop_break=True, prereg_main35_closed2.md; off = unchanged) +
+        a 10 fps three-camera frame dump (head | left wrist | right wrist) to vid_dir."""
         vid_dir = None
 
         def _tick(self):
@@ -248,6 +250,9 @@ def main(argv=None):
     ap.add_argument("--owner", default="")
     ap.add_argument("--stop-calls", type=int, default=30)
     ap.add_argument("--stop-motion", type=float, default=120.0)
+    ap.add_argument("--loop-break", action="store_true",
+                    help="stall hint + skip + 'stall' end (prereg_main35_closed2)")
+    ap.add_argument("--stall-n", type=int, default=3, help="stalled calls after the hint before the 'stall' end")
     a = ap.parse_args(argv)
     code = 0
     yf = [f for f in a.yield_files.split(",") if f]
@@ -288,7 +293,7 @@ def main(argv=None):
                     os.makedirs(vd, exist_ok=True)
                     t0 = time.perf_counter()
                     kw = dict(video=False, variant=j.variant, stop_calls=a.stop_calls, stop_motion_s=a.stop_motion,
-                              mem_points=True, fix_loop=True,
+                              mem_points=True, fix_loop=True, loop_break=a.loop_break, stall_n=a.stall_n,
                               corrupt=("light", c["level"]) if c["kind"] == "light" else None)
                     model.errors = 0
                     try:
@@ -319,7 +324,8 @@ def main(argv=None):
                            "success": bool(res.get("success")), "fail_stage": res.get("fail_stage"),
                            "end_reason": res.get("end_reason"), "n_calls": res.get("n_calls"),
                            "sim_t": res.get("sim_t"), "wall_s": round(time.perf_counter() - t0, 1),
-                           "repro": rep, "mp4": mp4 if ok else None, "n_frames": getattr(ep, "_nv", 0),
+                           "loop_break": a.loop_break, "repro": rep, "mp4": mp4 if ok else None,
+                           "n_frames": getattr(ep, "_nv", 0),
                            "frames": vd, "result": os.path.join(od, "result.json"), "src": e["dir"]}
                     json.dump(row, open(os.path.join(od, "cl.json"), "w"))
                     os.makedirs(a.vid_root, exist_ok=True)
