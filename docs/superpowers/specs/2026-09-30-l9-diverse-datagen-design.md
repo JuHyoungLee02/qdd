@@ -111,3 +111,18 @@ L8S 기준값은 `harvest/sim/assets_x/*.json`, `harvest/sim/tasks.py`, `docs/st
 - '동작 성향'(속도·신중함·곡률)을 편마다 뽑는다.
 - 궤적 최적화는 **cuRobo v0.8.0 이상(Apache-2.0)만** 쓴다. v0.7.8 이하·Isaac Lab SkillGen 고정 커밋은 NC라 금지. GraspGen·MimicGen 코드·ACRONYM 가중치·NC 손 데이터 금지. GraspGen-X는 가중치 라이선스·학습 데이터 출처를 원문으로 확인한 뒤에만.
 - 안전: 관절 걸음 ≤ 0.04 rad(속도 한계 + 리샘플링). meta에 motion_version·motion_style·grasp 변주 값 기록, 다양성 보고에 궤적·잡기·성향 분포, 프레임 영상 검수에서 사람 같은지 확인.
+## 11. 근거 출처 표 (사용자 원칙 2026-10-01: 방법은 시험 근거로만 채택, 아이디어는 최근 1.5년 신뢰 논문·스타 많은 연구 코드)
+
+GitHub 수치는 2026-10-01 GitHub API로 읽은 값. '가설'은 이 문서에서 근거 없이 고른 것으로, 시범(G1·G2)·다양성 보고(G4)의 수치로 채택 여부를 가른다.
+
+| 선택 | 근거 출처 (날짜 · 스타 · 라이선스) | 상태 |
+|---|---|---|
+| 방 배경: ProcTHOR 집 + iTHOR 방 | ProcTHOR (Deitke 외, NeurIPS 2022; 기간 밖, 기초 문헌) · allenai/procthor 474★ Apache-2.0; 에셋은 MolmoSpaces (allenai/molmospaces, 마지막 갱신 2026-09, 484★, 라이선스 NOASSERTION → 에셋별 표기 CC BY 4.0 사용) | 채택(에셋 공급원), 방 다양성 효과는 G4에서 측정 |
+| 가구를 치수 무작위 상자 조합으로 생성(8 계열 × 5 규칙) | 절차적 장면 생성은 ProcTHOR·RoboCasa(robocasa/robocasa 1,772★, NOASSERTION) 계열 방식; 우리 규칙·범위는 자체 | 가설 — G2 프레임 검수·G4 근접 중복 비율로 판정 |
+| 조명 계열 11종(방향·색온도·부드러움·보조광) | 도메인 무작위화 일반 관행; 계열 정의 자체는 근거 없음 | 가설 — G4 SigLIP 퍼짐으로 판정 |
+| 목 자세 매 편 흔들기(tilt 45°±15°, pan ±0.34 rad) | 실로봇 관절 범위(ffw_sg2.xml head_joint2 ±0.35 rad); spec §4의 ±30°는 하드웨어 한계로 줄임 | 가설 — G2에서 대상이 화면 안에 있는 비율로 판정 |
+| 다양성 지표: SigLIP 임베딩 무작위 쌍 코사인 거리·근접 중복(>0.95) 비율 | SigLIP (Zhai 외, ICCV 2023; 기간 밖, 기초 문헌) · google-research/big_vision 3,542★ Apache-2.0 | 채택(측정 도구) |
+| 사람 같은 동작: min-jerk 종 모양 속도, 두 단계 도달, 사전 벌림 60~80 % | Flash & Hogan 1985, Jeannerod 1984 (기간 밖, 기초 문헌) | 가설 — §10 코드 교체 뒤 프레임 영상 검수로 판정 |
+| 궤적 최적화 cuRobo v0.8.0 이상 | NVlabs/curobo 1,882★ Apache-2.0 (마지막 갱신 2026-09) | 후보 — §10 단계에서 시험 뒤 채택 |
+| 파지 샘플러: 자체 antipodal 해석 + Isaac 들어 올림 시험 | 근거 논문 미정(GraspGen은 NC라 금지) | 가설 — 시범 들어 올림 성공률로 판정 |
+| 한 팔 과제를 L8-X 단계(대상, 놓을 곳)로 컴파일 | 우리 L8S 실행기·판정기 재사용(내부 근거: L8S 수율·관문) | 채택(내부 시험 근거) |
