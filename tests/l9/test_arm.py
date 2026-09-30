@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import pytest
 
@@ -26,9 +28,10 @@ def test_left_joint_limits_contain_start():
     # ffw_sg2.xml left ranges (checked 2026-09-30)
     lo = (-3.14, 0.0, -3.14, -2.9361, -3.14, -1.57, -1.5804)
     hi = (3.14, 3.14, 3.14, 1.0786, 3.14, 1.57, 1.8201)
-    # joint 7: the robot USD's right range differs from the MJCF (INIT_R_ARM j7 = 1.80 is valid in the USD), so the
-    # j7 mirror is checked on the pod by FK (left TCP at INIT_L_ARM = y-mirrored right TCP), not here
     assert all(a <= v <= b for a, v, b in list(zip(lo, A.INIT_L_ARM, hi))[:6])
+    # joint 7: the robot USD's range is the MJCF's mirrored (pod smoke 2026-10-01: arm_l_joint7 [-104.28, 90.55] deg,
+    # arm_r_joint7 [-90.55, 104.28] deg; left TCP at INIT_L_ARM (0.334, +0.247, 1.081) = right (0.334, -0.247, 1.081))
+    assert -math.radians(104.28) <= A.INIT_L_ARM[6] <= math.radians(90.55)
 
 
 def test_scene_left_tables():
