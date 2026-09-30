@@ -3,7 +3,8 @@
   sched.py next <lane>        -> "<group id> <conds>" for this lane, or WAIT (nothing served / nothing left)
   sched.py done <ckpt>        -> exit 0 when every item of the checkpoint is finished
   sched.py summary            -> <root>/summary.json + summary.md, videos index.md
-Items = checkpoint x condition x episode; base condition first for every group, then the variants.
+Items = checkpoint x condition x episode; a lane runs all conditions of one group (one world build), groups with
+pending base items first.
 Results: <root>/res/<ckpt>/<cond dir>/<set>/<task>_s<seed>/{result,skip,error,cl}.json."""
 from __future__ import annotations
 
@@ -154,19 +155,19 @@ def nxt(lane):
         if os.path.basename(f)[:-6] != lane and now - os.path.getmtime(f) < 900:
             gid = open(f).read().strip()
             active[gid] = active.get(gid, 0) + 1
-    for conds in ([BASE], VARIANTS):
-        best = None
-        for g in G["groups"]:
-            n = sum(pending(item_dir(ck, c, e), now) for c in conds for e in g["eps"])
-            if n == 0:
-                continue
-            score = n / (1 + active.get(g["id"], 0))
-            if best is None or score > best[0]:
-                best = (score, g["id"])
-        if best:
-            print(best[1], ",".join(conds))
-            return
-    print("WAIT")
+    # one world build serves every condition of a group (the runner goes condition by condition, base first);
+    # groups with pending base items come first, then the largest pending share per active lane
+    conds = [BASE] + VARIANTS
+    best = None
+    for g in G["groups"]:
+        nb = sum(pending(item_dir(ck, BASE, e), now) for e in g["eps"])
+        n = sum(pending(item_dir(ck, c, e), now) for c in conds for e in g["eps"])
+        if n == 0:
+            continue
+        score = (nb > 0, n / (1 + active.get(g["id"], 0)))
+        if best is None or score > best[0]:
+            best = (score, g["id"])
+    print(f"{best[1]} {','.join(conds)}" if best else "WAIT")
 
 
 def ck_done(ck) -> bool:
