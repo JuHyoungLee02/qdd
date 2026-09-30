@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from . import reach9 as R9
 from . import scene9 as S9
 
 SPOT_R = 0.04  # = tasks.MARKER_ON_R
@@ -91,10 +92,10 @@ def _defs():
            "First the {A} into the {V}; then the {B} into the {H}.",
            "Stand the {A} in the {V}, then put the {B} in the {H}.", "{A} into the {V}, {B} into the {H}."),
         dst={"V": HV}, judge=up, needs=("node:slot",))
-    add("ins_from_container", "insert", {"P0": {"role": "container", "kind": "wide"}, "A": dict(SL, on="on:P0")},
-        [("A", "V")], _t("Take the {A} out of the {P0} and stand it in the {V}.",
-                         "Move the {A} from the {P0} into the {V}.", "Put the {A} that is in the {P0} into the {V}.",
-                         "Get the {A} from the {P0}; insert it into the {V}.", "The {A} in the {P0} goes into the {V}."),
+    add("ins_from_plate", "insert", {"P0": {"role": "container", "kind": "flat"}, "A": dict(SL, on="on:P0")},
+        [("A", "V")], _t("Take the {A} off the {P0} and stand it in the {V}.",
+                         "Move the {A} from the {P0} into the {V}.", "Put the {A} that is on the {P0} into the {V}.",
+                         "Get the {A} from the {P0}; insert it into the {V}.", "The {A} on the {P0} goes into the {V}."),
         dst={"V": HV}, judge=up, needs=("node:slot",))
     add("ins_jar", "insert", {"A": SL, "H": {"role": "container", "kind": "wide", "cats": ("jar", "vase", "mug", "cup")}},
         [("A", "H")], _t("Put the {A} into the {H}.", "Stand the {A} up in the {H}.", "Insert the {A} into the {H}.",
@@ -767,6 +768,14 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
             host = where.split(":", 1)[1]
             hk = chosen[host]
             hx = ep["objects"][hk]
+            hr = pool[hk]
+            lift_top = nodes[hx["node"]][0]["top_z"] + (
+                float(hr["height"]) if hr.get("role9") != "container" else
+                float((hr.get("inside") or {}).get("inner_floor_z") or 0) - float(hr.get("root_above_bottom", 0) or 0)
+                + float(hr["height"]) / 2)
+            m = rm.at_lift(scene["lift"])
+            if not R9.reach_points(m, scene["arm"], [hx["xy"][0]], [hx["xy"][1]], lift_top)[0]:
+                raise Fail("stacked start out of reach")  # pilot 4: the approach above a stacked object got stuck
             ep["objects"][k] = {"xy": list(hx["xy"]), "node": hx["node"], "support": hk, "fr": fr}
             return
         node, pts, vis = node_for(spec)
