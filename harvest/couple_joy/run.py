@@ -6,7 +6,9 @@ seeds:
   px / pv = the D planner (LimitEpisode d-min, local vLLM) + scripted / VLA executor (E-CJ2, not in E-CJ1)
 Episodes are claimed with mkdir (lanes share the list); between episodes the process exits 3 when a yield file exists
 (L9 GPU_WANTED / the lane's own WANTED file). Every episode: result.json (the episode's own record), cj.json (one row),
-vla_steps.jsonl (VLA arms: one row per decision step), 10 fps head | right wrist video (jpg + H.264 mp4), and one line
+vla_steps.jsonl (VLA arms: one row per decision step with the committed joystick, the 8-D joint state and the
+returned chunk), ticks.jsonl (10 Hz: time, TCP, joints, pad gap, object poses), calls/ (commander prompts + answers,
+the episode's own record), 10 fps head | right wrist video (jpg + H.264 mp4), and one line
 in <vid-root>/index.jsonl.
 python -m harvest.couple_joy.run --arms ox,ov --variant standard --seeds 0-19 --vla-url http://x2:8151
   --out /data/harvest/out/couple/cj1 --vid-root /data/harvest/videos/couple_cj1 [--yield-files a,b] [--owner lane]"""
@@ -90,7 +92,7 @@ def joy_class(base):
         exec_kind, vla, vid_dir = "code", None, None
 
         def make_exec(self, st):
-            self._ntick, self._nv = 0, 0
+            self._ntick, self._nv, self.ticks = 0, 0, []
             if self.exec_kind == "code":
                 return super().make_exec(st)
             w = self.w
@@ -106,6 +108,12 @@ def joy_class(base):
 
         def _tick(self):
             self._ntick = getattr(self, "_ntick", 0) + 1
+            if self._ntick % VID_EVERY == 0:  # 10 Hz state log (commands / joints / time; later E2E training)
+                st = self.w.status()
+                self.ticks.append({"t": round(float(st["t"]), 4), "tcp": np.round(st["tcp"], 5).tolist(),
+                                   "grip_w": round(float(st["grip_w"]), 5),
+                                   "q": np.round(self.w.env.arm_q(), 5).tolist(), "busy": bool(self.ex.busy),
+                                   "obj": {k: np.round(v, 5).tolist() for k, v in st["obj"].items()}})
             if not getattr(self.ex, "joint_mode", False):
                 super()._tick()
             else:
@@ -128,7 +136,7 @@ def joy_class(base):
             if wr.shape[0] != h.shape[0]:
                 wr = np.asarray(Image.fromarray(wr).resize((int(wr.shape[1] * h.shape[0] / wr.shape[0]), h.shape[0])))
             Image.fromarray(np.concatenate([h[..., :3], wr[..., :3]], axis=1).astype(np.uint8)).save(
-                os.path.join(self.vid_dir, f"{self._nv:05d}.jpg"), quality=85)
+                os.path.join(self.vid_dir, f"f{self._nv:05d}.jpg"), quality=85)
             self._nv += 1
 
     return JoyEpisode
@@ -178,7 +186,7 @@ def main(argv=None):
                     code = 3
                     raise StopIteration
                 od = os.path.join(a.out, arm, a.variant, f"s{s}")
-                if not claim(od, owner):
+                if os.path.exists(os.path.join(od, "cj.json")) or not claim(od, owner):
                     continue
                 cmdr, exk = ARMS[arm]
                 vd = os.path.join(od, "frames10")
@@ -207,6 +215,10 @@ def main(argv=None):
                     with open(os.path.join(od, "vla_steps.jsonl"), "w") as f:
                         for r in ep.ex.log:
                             f.write(json.dumps(r) + "\n")
+                with open(os.path.join(od, "ticks.jsonl"), "w") as f:  # 10 Hz, both executors
+                    for r in getattr(ep, "ticks", []):
+                        f.write(json.dumps(r) + "
+")
                 mp4 = os.path.join(a.vid_root, arm, a.variant, f"s{s}.mp4")
                 ok = make_mp4(vd, mp4)
                 row = {"arm": arm, "commander": cmdr, "executor": exk, "variant": a.variant, "seed": s,

@@ -118,3 +118,10 @@ def test_client_error_holds_the_arm_and_is_logged():
     ex.go_to([0.6, 0.0, 1.0], "keep", 0.0)
     q, w, ev = ex.tick_q(0.0, [0.4, 0.0, 1.0])
     assert np.allclose(q, 0.0) and any(e["event"] == "vla_error" for e in ev)
+
+
+def test_initial_gripper_command_is_open_not_the_measured_gap():
+    # smoke 09-30: the measured pad gap 0.1068 < w_open made the episode's holding() true -> phase carry at t = 0
+    ex = VLAJoyExec(FakeIO(), FakeClient(), dt=0.05, table_z=0.8, tcp0=[0.4, 0.0, 1.0], q0=np.zeros(7), w0=0.1068,
+                    w_open=0.107, w_close=0.0)
+    assert ex.width == 0.107

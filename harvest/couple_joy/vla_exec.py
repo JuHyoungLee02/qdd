@@ -43,7 +43,8 @@ class VLAJoyExec:
         self.target = self.cmd.copy()
         self.goal_quat = np.asarray(quat0, float)
         self.q_cmd = np.asarray(q0, float)[:7].copy()
-        self.width = float(w0)
+        self.width = float(w_open)  # commanded open (as MinJerkExec); w0 = the measured gap, logged only
+        self.w0 = float(w0)
         self.intent = {"mode": "point", "height": "above", "gripper": "keep"}
         self.phase = "approach"
         self.released = False
@@ -119,6 +120,8 @@ class VLAJoyExec:
             return [{"t": round(float(t), 3), "event": "vla_error", "error": str(r.error)}]
         self.stats["chunks"] += 1
         self.chunk = (np.asarray(r.chunk, float), float(r.chunk_dt), float(t))
+        row["chunk"] = np.round(self.chunk[0], 5).tolist()  # the VLA's output, kept for later training (E2E)
+        row["joint_pos"] = np.round(jp, 5).tolist()
         return []
 
     def _grip_done(self, action) -> bool:
