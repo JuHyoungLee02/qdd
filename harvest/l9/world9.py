@@ -334,9 +334,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             from ..sim import randomize as R
             from ..sim.assets_x import materials as M
             cat, _, hdrs = self._materials()
-            if not getattr(self, "_vis_ready", False):
-                R.setup_visuals(self.env)
-                self._vis_ready = True
+            # (make_env variant drf already ran randomize.setup_visuals: dome, key / fill lights)
             h = self.hdr_name(seed)
             m = R.sample_randomization(seed, "drf", self.env.layout)
             m["distractors"] = []
