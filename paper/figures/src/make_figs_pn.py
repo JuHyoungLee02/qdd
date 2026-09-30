@@ -1,6 +1,6 @@
 """PaceNotes figures (2026-09-27 figure pass): Fig. 1 overview, joystick-VLA model, evidence plot, eval protocol.
 Reuses the style helpers of make_figs.py (pastel rounded boxes, thin gray elbow arrows).
-Numbers come only from docs/stage3/results (teach_l8.md, open_vlm_solo.md, astra_solo_pilot.md) and canon §90/§91/§96.
+Evidence numbers = paper/sec/5_evidence.tex (2026-09-30 figure pass: current evidence and evaluation).
 Run (D drive only for caches):
   MPLCONFIGDIR=D:/tools/mplcache <python with matplotlib> paper/figures/src/make_figs_pn.py
 """
@@ -51,7 +51,7 @@ def fig_overview():
     px, pw = 0.05, 2.40
     ax.add_patch(FancyBboxPatch((px, py), pw, ph, boxstyle="round,pad=0,rounding_size=0.06", fc=UP[0], ec=UP[1], lw=1.3))
     ax.text(px + 0.10, py + ph - 0.10, "상위 계획기 = 코드라이버", fontsize=8.0, va="top", color=TXT, fontweight="bold")
-    ax.text(px + 0.10, py + ph - 0.33, "Astra (비교 기준) → 학습한 35B (목표)", fontsize=5.9, va="top", color="#6A4A2A")
+    ax.text(px + 0.10, py + ph - 0.33, "본 35B: Qwen3.5-35B-A3B LoRA (학습한 상위)", fontsize=5.9, va="top", color="#6A4A2A")
     ax.text(px + 0.10, py + ph - 0.55, "명령 권한 전부: 구간 의도·목표·검증", fontsize=6.2, va="top", color="#333")
     ny = py + 0.80
     notes = ["지금: 접근\n머그로", "지금: 잡기\n할 일: 쥐기", "지금: 나르기\n다음: 놓기"]
@@ -206,66 +206,214 @@ def fig_model():
     save(fig, "model")
 
 
-# ================================================================ evidence: closed-loop approach error per episode
-def fig_evidence():
-    W, H = COL_W, 2.15
-    fig = plt.figure(figsize=(W, H))
-    ax = fig.add_axes([0.16, 0.24, 0.80, 0.66])
-    # per-episode median commanded approach-target xy error (mm), same astra-solo@v2 interface, DEV seeds 0-1 x std/dr
-    data = [
-        ("Qwen3-VL-8B\n영샷", [389.5, 487.2, 149.3, 145.4], "0/4", "#9A9A9A"),   # teach_l8.md §3
-        ("gpt-5.2 대리\n영샷", [206.7, 202.0, 103.6, 167.4], "0/4", "#9A9A9A"),  # open_vlm_solo.md §2
-        ("Astra low\n(프런티어)", [2.6, 48.9, 21.0, 7.2], "4/4", UP[1]),          # astra_solo_pilot.md §3 (pilot)
-        ("Qwen3-VL-8B\n시뮬 참값 LoRA", [19.0, 18.2, 8.4, 7.7], "4/4", VL[1]),    # teach_l8.md §3
-    ]
-    rng = np.random.default_rng(0)
-    for i, (name, vals, succ, c) in enumerate(data):
-        xs = i + rng.uniform(-0.12, 0.12, len(vals))
-        ax.scatter(xs, vals, s=14, color=c, zorder=3, edgecolors="white", linewidths=0.4)
-        med = float(np.median(vals))
-        ax.plot([i - 0.25, i + 0.25], [med, med], color=c, lw=1.6, zorder=2)
-        ax.text(i, 900, f"성공 {succ}", ha="center", va="center", fontsize=6.2, color=c, fontweight="bold")
-    ax.set_yscale("log")
-    ax.set_ylim(1.5, 1500)
-    ax.axhline(20, color="#BBBBBB", lw=0.7, ls=(0, (3, 2)), zorder=1)
-    ax.text(3.45, 22, "20 mm", fontsize=5.4, color="#888", va="bottom", ha="right")
-    ax.set_xticks(range(len(data)))
-    ax.set_xticklabels([d[0] for d in data], fontsize=5.6)
-    ax.set_xlim(-0.5, len(data) - 0.5)
-    ax.set_ylabel("접근 목표 xy 오차 (mm, 로그)", fontsize=6.0)
-    ax.tick_params(axis="y", labelsize=5.6)
+# ================================================================ evidence: current key evidence (all tentative)
+def _ev_axis(ax, title):
+    ax.set_title(title, fontsize=6.6, color=TXT, fontweight="bold", loc="left", pad=3)
+    ax.tick_params(axis="both", labelsize=5.4, length=2, pad=1.5)
     for s in ["top", "right"]:
         ax.spines[s].set_visible(False)
+    for s in ["left", "bottom"]:
+        ax.spines[s].set_color("#9A9A9A")
+        ax.spines[s].set_linewidth(0.6)
+
+
+def fig_evidence():
+    """Numbers = paper/sec/5_evidence.tex (E-C35, E-L8SW, E-OPR3, main35 ep0.25/0.5); 50 % L8SW point and the
+    E-OPR3 per-ratio rates come from the verdict files (/data/harvest/out/l8sw/verdict.json,
+    /data/harvest/out/opr2/verdict_stage3.json) and are also written in the text."""
+    W, H = FULL_W, 2.05
+    fig = plt.figure(figsize=(W, H))
+    GR, OR = "#8C8C8C", TENT
+    top, bot, hh = 0.83, 0.20, 0.63
+
+    # (a) E-C35 vs f35_d: dumbbell, percent
+    ax = fig.add_axes([0.085, bot, 0.175, hh])
+    rows = [("새 물체 실패", 60.0, 36.0, False), ("L8-X dev 실패", 16.8, 27.5, False),
+            ("OOD-H 실패", 17.3, 22.8, False), ("G Franka 적중*", 87.0, 45.0, True)]
+    for i, (name, a, b, rep) in enumerate(rows):
+        y = len(rows) - 1 - i
+        c = "#B0B0B0" if rep else "#6F6F6F"
+        ax.annotate("", xy=(b, y), xytext=(a, y),
+                    arrowprops=dict(arrowstyle="-|>", color=c, lw=0.8, mutation_scale=6, shrinkA=2, shrinkB=2))
+        ax.scatter([a], [y], s=12, color=GR, zorder=3, edgecolors="white", linewidths=0.4)
+        ax.scatter([b], [y], s=12, color=OR, zorder=3, edgecolors="white", linewidths=0.4)
+        lo, hi = (a, b) if a < b else (b, a)
+        ax.text(lo - 3, y, f"{lo:g}", ha="right", va="center", fontsize=5.0, color=GR if lo == a else OR)
+        ax.text(hi + 3, y, f"{hi:g}", ha="left", va="center", fontsize=5.0, color=GR if hi == a else OR)
+    ax.set_yticks(range(len(rows)))
+    ax.set_yticklabels([r[0] for r in rows][::-1], fontsize=5.3)
+    ax.set_ylim(-0.6, len(rows) - 0.1)
+    ax.set_xlim(0, 100)
+    ax.set_xlabel("%", fontsize=5.4, labelpad=1)
+    _ev_axis(ax, "(a) E-C35: f35_d → 확인판")
+    fig.text(0.085 - 0.075, 0.045, "새 물체 중앙 40.9 → 9.6 mm · 회색 f35_d, 주황 확인판 · *3인칭, 보고만",
+             fontsize=4.9, color="#555", ha="left")
+
+    # (b) E-L8SW: L8S share 25/50/100 %
+    ax = fig.add_axes([0.335, bot, 0.18, hh])
+    xs = [25, 50, 100]
+    newo = [30.0, 10.2, 10.2]
+    held = [8.2, 6.6, 5.2]
+    ax.plot(xs, newo, color=OR, lw=1.1, marker="o", ms=3)
+    ax.plot(xs, held, color=VL[1], lw=1.1, marker="s", ms=2.8)
+    for x, v, dx, dy, ha in zip(xs, newo, [0, 4, 0], [1.6, 1.2, 1.6], ["center", "left", "center"]):
+        ax.text(x + dx, v + dy, f"{v:.1f}", ha=ha, va="bottom", fontsize=5.0, color=OR)
+    ax.text(25, held[0] - 1.3, f"{held[0]:g}", ha="center", va="top", fontsize=5.0, color=VL[1])
+    ax.text(100, held[-1] - 1.3, f"{held[-1]:g}", ha="center", va="top", fontsize=5.0, color=VL[1])
+    ax.text(62, 22.5, "새 물체", fontsize=5.3, color=OR, ha="center")
+    ax.text(62, 1.2, "L8S 보류", fontsize=5.3, color=VL[1], ha="center")
+    ax.set_xticks(xs)
+    ax.set_xticklabels(["25", "50", "100"])
+    ax.set_xlim(15, 110)
+    ax.set_ylim(0, 36)
+    ax.set_xlabel("L8S 양 (%)", fontsize=5.4, labelpad=1)
+    ax.set_ylabel("접근 3D 중앙 (mm)", fontsize=5.4, labelpad=1)
+    _ev_axis(ax, "(b) E-L8SW: L8S가 많을수록")
+    fig.text(0.335, 0.045, "OOD-H 실패 29 → 24 % · 50 % 뒤 이득 작음", fontsize=4.9, color="#555", ha="left")
+
+    # (c) E-OPR3: open/sim ratio
+    ax = fig.add_axes([0.585, bot, 0.165, hh])
+    xr = [0, 1, 2, 3]
+    dev = [21.2, 21.4, 24.4, 27.3]
+    hl = [13.9, 16.2, 19.4, 29.6]
+    ax.plot(xr, dev, color=OR, lw=1.1, marker="o", ms=3)
+    ax.plot(xr, hl, color=VL[1], lw=1.1, marker="^", ms=3, ls=(0, (3, 1.5)))
+    ax.text(3.12, dev[-1] - 1.2, f"{dev[-1]:g}", fontsize=5.0, color=OR, va="center")
+    ax.text(3.12, hl[-1] + 0.8, f"{hl[-1]:g}", fontsize=5.0, color=VL[1], va="center")
+    ax.text(-0.12, dev[0] + 1.2, f"{dev[0]:g}", fontsize=5.0, color=OR, va="bottom", ha="center")
+    ax.text(-0.12, hl[0] - 1.2, f"{hl[0]:g}", fontsize=5.0, color=VL[1], va="top", ha="center")
+    ax.text(1.4, 29.5, "dev 실패", fontsize=5.3, color=OR, ha="center")
+    ax.text(1.8, 12.0, "OOD-HL 실패", fontsize=5.3, color=VL[1], ha="center")
+    ax.set_xticks(xr)
+    ax.set_xticklabels(["0.59", "1.0", "1.5", "3.0"])
+    ax.set_xlim(-0.5, 3.6)
+    ax.set_ylim(8, 34)
+    ax.set_xlabel("공개/시뮬 비율", fontsize=5.4, labelpad=1)
+    ax.set_ylabel("L8-X 실패 (%)", fontsize=5.4, labelpad=1)
+    _ev_axis(ax, "(c) E-OPR3: 공개 비중↑")
+    fig.text(0.585, 0.045, "G 적중 0.64--0.65로 같음 → 상한 0.75".replace("--", "–"), fontsize=4.9, color="#555",
+             ha="left")
+
+    # (d) main35 early checkpoints vs E-C35, f35_d reference dashed
+    ax = fig.add_axes([0.815, bot, 0.17, hh])
+    xc = [0, 1, 2]
+    dv = [27.5, 23.7, 21.4]
+    oh = [22.8, 25.0, 18.6]
+    ax.axhline(16.8, color=OR, lw=0.7, ls=(0, (2, 2)), alpha=0.7)
+    ax.axhline(17.3, color=VL[1], lw=0.7, ls=(0, (2, 2)), alpha=0.7)
+    ax.text(-0.3, 16.2, "f35_d: dev 16.8 · OOD-H 17.3", fontsize=4.6, color="#777", va="top", ha="left")
+    ax.plot(xc, dv, color=OR, lw=1.1, marker="o", ms=3)
+    ax.plot(xc, oh, color=VL[1], lw=1.1, marker="^", ms=3, ls=(0, (3, 1.5)))
+    for (x, v), (dx, dy, va) in zip(zip(xc, dv), [(0, 0.8, "bottom"), (0, -0.9, "top"), (0, 0.8, "bottom")]):
+        ax.text(x + dx, v + dy, f"{v:.1f}", ha="center", va=va, fontsize=5.0, color=OR)
+    for (x, v), (dx, dy, ha, va) in zip(zip(xc, oh), [(0, -0.9, "center", "top"), (0, 0.8, "center", "bottom"),
+                                                     (-0.12, 0, "right", "center")]):
+        ax.text(x + dx, v + dy, f"{v:.1f}", ha=ha, va=va, fontsize=5.0, color=VL[1])
+    ax.text(0.5, 30.0, "dev 실패", fontsize=5.3, color=OR, ha="center")
+    ax.text(1.0, 27.4, "OOD-H 실패", fontsize=5.3, color=VL[1], ha="center")
+    ax.set_xticks(xc)
+    ax.set_xticklabels(["확인판", "0.25 에폭", "0.5 에폭"])
+    ax.set_xlim(-0.35, 2.35)
+    ax.set_ylim(12, 32)
+    ax.set_yticks([15, 20, 25, 30])
+    ax.set_ylabel("실패 (%)", fontsize=5.4, labelpad=1)
+    _ev_axis(ax, "(d) 본 35B 초기 체크포인트")
+    fig.text(0.815, 0.045, "새 물체 중앙 9.6 → 9.5 → 9.5 mm", fontsize=4.9, color="#555", ha="left")
     save(fig, "evidence")
 
 
-# ================================================================ eval protocol (paired RD)
+# ================================================================ eval protocol (current: offline sets, closed loop, coupling 2x2)
+def chip(ax, x, y, w, h, text, kind="gray", fs=5.4, tc=TXT, bold=False):
+    fc, ec = PAL[kind]
+    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=0.035", fc=fc, ec=ec, lw=0.7))
+    ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=fs, color=tc, linespacing=1.15,
+            fontweight="bold" if bold else "normal")
+
+
+def panel(ax, x, y, w, h, title, ec="#BDBDBD"):
+    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=0.05", fc="none", ec=ec, lw=0.9,
+                                ls=(0, (3, 2))))
+    ax.text(x + 0.08, y + h - 0.07, title, ha="left", va="top", fontsize=7.0, color=TXT, fontweight="bold")
+
+
 def fig_eval():
-    W, H = COL_W, 1.95
+    W, H = FULL_W, 2.30
     fig, ax = canvas(W, H)
-    icon_scene(ax, 0.04, 1.08, 0.56, 0.42, "std")
-    icon_scene(ax, 0.04, 0.40, 0.56, 0.42, "rnd")
-    ax.text(0.32, 1.54, "standard", ha="center", va="bottom", fontsize=6.2, color="#444")
-    ax.text(0.32, 0.36, "random", ha="center", va="top", fontsize=6.2, color="#444")
-    ax.text(0.32, 0.96, "같은 layout 짝", ha="center", va="center", fontsize=6.0, color="#555")
-    ax.add_patch(FancyBboxPatch((0.80, 0.22), 1.55, 1.50, boxstyle="round,pad=0,rounding_size=0.05",
-                                fc="none", ec="#BDBDBD", lw=0.9, ls=(0, (3, 2))))
-    ax.text(1.575, 1.66, "바꾸는 축", ha="center", va="top", fontsize=6.4, color="#333", fontweight="bold")
-    rbox(ax, 0.88, 1.12, 1.39, 0.36, "astra", "상위: Astra · 8B · 35B · 끔", fs=6.0)
-    rbox(ax, 0.88, 0.70, 1.39, 0.36, "jev", "구성: VLA · 상위 · 상위+VLA", fs=6.0)
-    rbox(ax, 0.88, 0.28, 1.39, 0.36, "gray", "기준선: π0.5 · 코드 정책 · 규칙", fs=5.8)
-    arr(ax, [(0.60, 1.29), (0.70, 1.29), (0.70, 0.97), (0.80, 0.97)])
-    arr(ax, [(0.60, 0.61), (0.70, 0.61), (0.70, 0.97)], head=False)
-    rbox(ax, 2.52, 0.62, 0.70, 0.70, "rule", "RD", fs=9, sub="1 − 성공(rnd)\n÷ 성공(std)", sfs=6.0)
-    arr(ax, [(2.35, 0.97), (2.52, 0.97)])
-    ax.text(W / 2, 0.08, "시계 두 가지: 지연 충실 · 동기 공정(생각 시간 공짜)", ha="center", va="center",
-            fontsize=6.0, color="#333")
+    py, ph = 0.05, 2.20
+
+    # (a) offline point evaluation
+    x0, w0 = 0.04, 2.30
+    panel(ax, x0, py, w0, ph, "(a) 오프라인 점 평가 (체크포인트마다)")
+    ax.text(x0 + 0.10, 1.93, "L8-X 보호 분할 7세트", fontsize=5.6, color="#444", va="center")
+    sets = ["dev", "OOD-H", "OOD-O", "OOD-D", "OOD-S", "OOD-T", "OOD-HL"]
+    cw, gap = 0.29, 0.024
+    for i, s in enumerate(sets):
+        chip(ax, x0 + 0.10 + i * (cw + gap), 1.66, cw, 0.17, s, "jev", fs=4.9)
+    chip(ax, x0 + 0.10, 1.34, 1.02, 0.22, "새 물체 OOD-O58", "astra", fs=5.4, bold=True)
+    chip(ax, x0 + 1.18, 1.34, 1.02, 0.22, "L8S 보류 검증\n(최적 에폭 선택)", "skill", fs=5.0, bold=True)
+    chip(ax, x0 + 0.10, 0.98, 2.10, 0.26, "G 1,577행: 학습에서 뺀 공개 과제·기체 + 가리키기 벤치\nMolmoBot Franka = 3인칭 → 보고만, 판정 제외",
+         "mem", fs=4.9)
+    ax.add_patch(FancyBboxPatch((x0 + 0.10, 0.14), 2.10, 0.74, boxstyle="round,pad=0,rounding_size=0.04",
+                                fc=PAL["rule"][0], ec=PAL["rule"][1], lw=0.9))
+    ax.text(x0 + 1.15, 0.78, "판정 ni_judge (실행 전 고정)", ha="center", va="center", fontsize=5.8, color=TXT,
+            fontweight="bold")
+    ax.text(x0 + 1.15, 0.44, "접근 3D 오차의 중앙값 + 20 mm 초과 실패율\n비열등 여유 = 같은 모델 시드 쌍(A/A)의 흔들림\n"
+            "짝 부트스트랩 95 % 구간, 기준 f35_d", ha="center", va="center", fontsize=4.9, color="#444",
+            linespacing=1.3)
+
+    # (b) closed loop E-M35CL (report only)
+    x1, w1 = 2.42, 1.86
+    panel(ax, x1, py, w1, ph, "(b) 폐루프 E-M35CL (보고만)")
+    ax.text(x1 + 0.10, 1.93, "같은 편을 체크포인트마다 (f35_d → 0.5 → … → 3)", fontsize=5.0, color="#444", va="center")
+    conds = ["기본", "어두운\n조명", "머리\n+10°", "머리\n+15°"]
+    rows = ["OOD-O58", "L8S 보류"]
+    gx, gy, cwid, chh = x1 + 0.52, 1.10, 0.32, 0.22
+    for j, c in enumerate(conds):
+        ax.text(gx + j * (cwid + 0.02) + cwid / 2, gy + 2 * (chh + 0.04) + 0.02, c, ha="center", va="bottom",
+                fontsize=4.6, color="#444")
+    for i, r in enumerate(rows):
+        yy = gy + (1 - i) * (chh + 0.04)
+        ax.text(gx - 0.05, yy + chh / 2, r, ha="right", va="center", fontsize=4.9, color="#444")
+        for j in range(len(conds)):
+            chip(ax, gx + j * (cwid + 0.02), yy, cwid, chh, "", "astra" if i == 0 else "skill")
+            ax.text(gx + j * (cwid + 0.02) + cwid / 2, yy + chh / 2, "▶", ha="center", va="center", fontsize=5.0,
+                    color="#777")
+    ax.text(x1 + w1 / 2, 0.86, "OOD-O58 + L8S 보류 약 160편 × 4조건\n모든 편 영상 저장", ha="center", va="center", fontsize=5.0,
+            color="#444")
+    note(ax, x1 + 0.10, 0.14, w1 - 0.20, 0.56, "판정 규칙 없음\n약 15 %p 이상 차이만 읽는다\n(새 물체 개선이 폐루프에서도 유지되는가)",
+         fs=4.9, ec=PAL["rule"][1])
+
+    # (c) coupling 2x2 + H-J
+    x2, w2 = 4.36, 2.48
+    panel(ax, x2, py, w2, ph, "(c) 결합 평가: 같은 시드의 2×2 (2단계)")
+    cx, cy, cw2, ch2 = x2 + 0.72, 1.12, 0.82, 0.30
+    ax.text(cx + cw2 / 2, cy + 2 * ch2 + 0.08, "조이스틱 VLA", ha="center", va="bottom", fontsize=5.0, color=VL[1],
+            fontweight="bold")
+    ax.text(cx + cw2 * 1.5 + 0.04, cy + 2 * ch2 + 0.08, "참값 실행기", ha="center", va="bottom", fontsize=5.0,
+            color="#555", fontweight="bold")
+    ax.text(cx - 0.05, cy + ch2 * 1.5 + 0.02, "상위(본 35B)", ha="right", va="center", fontsize=5.0, color=UP[1],
+            fontweight="bold")
+    ax.text(cx - 0.05, cy + ch2 * 0.5, "참값 명령", ha="right", va="center", fontsize=5.0, color="#555",
+            fontweight="bold")
+    cells = [(0, 1, "결합 (실제)", "crit"), (1, 1, "상한 B", "gray"), (0, 0, "상한 A", "gray"),
+             (1, 0, "과제 상한", "gray")]
+    for cc, rr, t, k in cells:
+        chip(ax, cx + cc * (cw2 + 0.04), cy + rr * (ch2 + 0.04), cw2, ch2, t, k, fs=5.4,
+             bold=(k == "crit"))
+    ax.text(x2 + w2 / 2, 0.93, "연결 손실 = min(상한 A, 상한 B) − 결합  ≤ 5 %p", ha="center", va="center",
+            fontsize=5.5, color=TXT, fontweight="bold")
+    ax.text(x2 + w2 / 2, 0.73, "실패 탓 가르기: 한쪽만 참값으로 바꾼 반사실 재생\n→ 상위 / VLA / 연결(인터페이스) 탓, 연결 탓 ≤ 실패의 10 %",
+            ha="center", va="center", fontsize=4.9, color="#444", linespacing=1.3)
+    note(ax, x2 + 0.10, 0.22, w2 - 0.20, 0.34, "H-J: 같은 VLA를 단독(스스로 계획) 대 상위 아래 조이스틱으로\n같은 장면에서 비교 → 짐을 덜어 준 쪽이 나아야 채택",
+         fs=4.9, ec=VL[1])
+    ax.text(x2 + w2 / 2, 0.13, "참값 = 시뮬 특권 정보로 계산한 명령·실행", ha="center", va="center", fontsize=4.6,
+            color="#777")
     save(fig, "eval_protocol")
 
 
 if __name__ == "__main__":
-    fig_overview()
-    fig_model()
-    fig_evidence()
-    fig_eval()
+    # overview/model are drawn by fig_overview/fig_model; pass names to redraw only some figures
+    names = sys.argv[1:] or ["overview", "model", "evidence", "eval"]
+    for n in names:
+        {"overview": fig_overview, "model": fig_model, "evidence": fig_evidence, "eval": fig_eval}[n]()
     print("ok")
