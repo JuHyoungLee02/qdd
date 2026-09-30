@@ -28,3 +28,8 @@
 - NONINFERIOR면 본 35B를 f35_d 대체 후보로 올린다. WORSE면 나빠진 세트를 보고하고 결정은 통제·사용자.
 
 ## 변경 기록
+- **변경 1 (2026-09-30 KST, 기동 전 — 학습·평가 결과 없음)**: 사용자 결정(2026-09-30, 0300a0 세션 경유).
+  - **게이트 이탈**: E-C35가 b 대 f35_d WORSE(dev·OOD-H·G MolmoBot Franka·RBY1·G 전체)로 §0 기동 조건을 못 넘었다. 원인 진단(재학습 없음): Franka G 보류 300행은 전부 3인칭·어안이라 머리 시점 규칙(user-log 165·169)과 안 맞고, RBY1은 C35 실사용 280행으로 적었고, L8-X dev·OOD-H는 옛 L8-X 도메인·양 차이다(E-L8SW에서 L8S 25→100 %로 OOD-H 실패율 29→24 %). 사용자가 소규모 재실행 없이 본 학습 기동을 결정했다. 체인은 `/data/harvest/out/main35/GATE_OVERRIDE`(결정 원문 한 줄)가 있으면 게이트 대신 `GATE_OVERRIDE`를 기록하고 넘어간다(main35_chain.sh).
+  - **G Franka 판정 제외**: §4 판정의 주 결론은 G에서 MolmoBot Franka를 뺀 행(G 전체 포함 다시 계산)으로 낸다(`verdict_main_vs_f35d_nofranka.json`). Franka를 넣은 판정은 `with_franka`로 함께 보고한다(main35_judge.py).
+  - **RBY1**: 4중 검증 통과 RBY1 행(700)은 이미 채택 풀에 전부 있다. f35_d가 더 쓴 dist8 팩 행은 검증 탈락분이라 넣지 않는다. 본 학습은 공개 풀을 반복 2배 상한까지 써서 RBY1 노출이 C35의 약 5배다.
+  - 옛 L8-X b2는 넣지 않는다. 데이터·학습·평가 세트는 그대로.

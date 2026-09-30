@@ -49,8 +49,14 @@ def main(out):
     gm = CJ.gmargins(root, grows, sub)
     r = CJ.compare(root, ["main_best"], ["f35_d"], grows, sub, gm, os.path.join(C35, "verdict", "aa_x_b.json"),
                    os.path.join(out, "verdict_main_vs_f35d.json"))
+    # G MolmoBot Franka (all 3rd-person / fisheye, outside the head-only rule) is reported, not judged (user 2026-09-30):
+    # the primary verdict recomputes G (incl. g_ALL) without it
+    nf = [x for x in grows if sub[x["id"]] != "molmobot_franka"]
+    rnf = CJ.compare(root, ["main_best"], ["f35_d"], nf, sub, CJ.gmargins(root, nf, sub),
+                     os.path.join(C35, "verdict", "aa_x_b.json"), os.path.join(out, "verdict_main_vs_f35d_nofranka.json"))
     summ = {"checkpoints": {e: {"val_fail": round(v[0], 4), "val_open_hit": round(v[1], 4)} for e, v in cands.items()},
-            "best": best, "verdict": r["verdict"], "worse": r["worse"]}
+            "best": best, "verdict": rnf["verdict"], "worse": rnf["worse"],
+            "with_franka": {"verdict": r["verdict"], "worse": r["worse"]}}
     json.dump(summ, open(os.path.join(out, "verdict_summary.json"), "w"), indent=1)
     print(json.dumps(summ))
 

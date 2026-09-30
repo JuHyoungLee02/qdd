@@ -18,12 +18,15 @@ log() { echo "$1 $(date -u +%FT%TZ)" >> $L/main35${DRYRUN:+_dryrun}.log; }
 cd $C; export PYTHONPATH=$C
 # 0. gate
 until grep -q "^JUDGE_DONE" $GATE_LOG 2>/dev/null; do sleep 600; done
-if ! $P tools/final35/main35_build.py gate $GATE_FILE >> $L/gate${DRYRUN:+_dryrun}.log 2>&1; then
+if [ -f $O/GATE_OVERRIDE ]; then
+  log "GATE_OVERRIDE $(head -1 $O/GATE_OVERRIDE)"  # user decision after the E-C35 gate failure (prereg_main35 deviation 1)
+elif ! $P tools/final35/main35_build.py gate $GATE_FILE >> $L/gate${DRYRUN:+_dryrun}.log 2>&1; then
   log "GATE_FAIL $(tail -1 $L/gate${DRYRUN:+_dryrun}.log)"
   [ -n "$DRYRUN" ] || echo "E-C35 b vs f35_d not NONINFERIOR: main 35B not started $(date -u +%FT%TZ)" > $O/ALERT_GATE_FAIL
   exit 3
+else
+  log "GATE_PASS"
 fi
-log "GATE_PASS"
 [ -n "$DRYRUN" ] && { log "DRYRUN_WOULD_BUILD_AND_TRAIN"; exit 0; }
 # 1. production end -> pre-build stop -> unbuilt tail
 until [ -f $ROOT/PROD_DONE ]; do sleep 900; done
