@@ -8,6 +8,7 @@
 C=$1; G=$2; LN=$3; V=$4; SEEDS=$5; OUT=$6; VID=$7; SC=${8:-0.75}
 R=/data/harvest/out/jcr; L=/data/harvest/logs/jcr; DIST=$R/upper_err_dist.json
 W1=/data/harvest/out/l9/GPU_WANTED; W2=$R/lanes/$LN.WANTED
+W3=$R/lanes/$LN.L9  # set by this lane when L9 names this card: the recorder yields between episodes on it
 POD=$(hostname)
 mkdir -p $R/lanes $L $VID
 log() { echo "$(date -u +%FT%TZ) $LN $*" >> $L/lanes.log; }
@@ -39,6 +40,7 @@ watch() {
     sleep 15; touch $R/lanes/$LN.alive
     w=$(want)
     if [ -n "$w" ]; then
+      touch $W3
       [ $t_w = 0 ] && { log "YIELD_REQ $w"; t_w=$(date +%s); }
       [ $(( $(date +%s) - t_w )) -gt 600 ] && { log "YIELD_ABORT"; bash $C/tools/teach_strip8/stop.sh jcr_$LN >> $L/lanes.log 2>&1; }
     fi
@@ -48,8 +50,9 @@ log "LANE_START gpu=$G variant=$V seeds=$SEEDS out=$OUT scale=$SC code=$C"
 touch $R/lanes/$LN.alive
 while true; do
   w=$(want); [ -n "$w" ] && freed "$w"
+  rm -f $W3
   bash $C/tools/teach_strip8/isaac.sh $C $G jcr_$LN harvest.jcr.record --variant $V --seeds $SEEDS --out $OUT \
-    --vid-root $VID --dist $DIST --scale $SC --yield-files $W1,$W2 --owner $LN &
+    --vid-root $VID --dist $DIST --scale $SC --yield-files $W2,$W3 --owner $LN &
   ip=$!; watch $ip; wait $ip
   w=$(want); [ -n "$w" ] && freed "$w"
   tail -3 /data/harvest/logs/strip8/jcr_$LN.log | grep -q RUN_DONE && break
