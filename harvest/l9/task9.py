@@ -403,6 +403,14 @@ def _defs():
 
 
 DEFS = _defs()
+# object gate (L8S objv gate rule: clean truth pick-and-place, pass >= 2 of the tries): not a task definition
+GATE_DEFS = {"gate_move": TaskDef("gate_move", "gate", {"A": {"role": "target"}}, {"P": {"type": "spot", "rel": "left",
+                                                                                               "ref": "A", "gap": 0.06}},
+                                  (("A", "P"),), ("Move the {A} a little to the left.",) * 5)}
+
+
+def get_def(name: str) -> TaskDef:
+    return DEFS.get(name) or GATE_DEFS[name]
 FAMILIES = ("insert", "arrange", "stack", "sort", "put_in", "set", "clear", "relation", "height")
 
 
@@ -504,12 +512,13 @@ class Fail(Exception):
     pass
 
 
-def instantiate(defn: TaskDef, scene: dict, pool: dict, seed: int, rm, tries: int = 40):
-    """-> episode dict, or None when this scene / pool cannot host the definition (the caller redraws)."""
+def instantiate(defn: TaskDef, scene: dict, pool: dict, seed: int, rm, tries: int = 40, fixed: dict | None = None):
+    """-> episode dict, or None when this scene / pool cannot host the definition (the caller redraws).
+    fixed: {object name: pool id} (the object gate)."""
     for k in range(tries):
         rng = np.random.default_rng([int(seed), 911, k, int(hashlib.sha256(defn.id.encode()).hexdigest()[:6], 16)])
         try:
-            return _try(defn, scene, pool, rng, rm)
+            return _try(defn, scene, pool, rng, rm, fixed or {})
         except Fail:
             continue
     return None
@@ -526,7 +535,8 @@ def _nodes(scene, rm):
     return out
 
 
-def _try(defn, scene, pool, rng, rm):
+def _try(defn, scene, pool, rng, rm, fixed=None):
+    fixed = fixed or {}
     nodes = _nodes(scene, rm)
     flats = [v for v in nodes.values() if v[0]["kind"] in ("top", "zone", "seat")]
     if not flats:
@@ -565,6 +575,8 @@ def _try(defn, scene, pool, rng, rm):
         role = spec["role"]
         cand = []
         for k, r in pool.items():
+            if oname in fixed and k != fixed[oname]:
+                continue
             if k in chosen.values():
                 continue
             nm = name_of(r)

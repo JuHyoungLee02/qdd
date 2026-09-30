@@ -28,7 +28,7 @@ class NoEpisode(Exception):
 def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 8, world=None) -> tuple:
     """(scene, ep, light family, head, combo hash, visual seed) for a plan row, or NoEpisode. With a world the combo
     record names the room / HDRI / materials the world will use (same draws), else their seed."""
-    d = T9.DEFS[row["def"]]
+    d = T9.get_def(row["def"])
     last = None
     for k in range(tries):
         sd = int(row["seed"]) + 100003 * k
@@ -37,7 +37,7 @@ def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 8, world=None) -> 
         except RuntimeError as ex:
             last = str(ex)
             continue
-        ep = T9.instantiate(d, sc, pool, sd, rm, tries=20)
+        ep = T9.instantiate(d, sc, pool, sd, rm, tries=20, fixed=row.get("fixed"))
         if ep is None:
             last = "definition does not fit the scene"
             continue

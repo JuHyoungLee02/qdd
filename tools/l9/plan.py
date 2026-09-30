@@ -119,6 +119,31 @@ def main():
         ch = jobs(rows, arg("--job-size", 6), arg("--pool0", 0))
         print(json.dumps(write(out, rows, ch, lanes, "plan_smoke.json", pod)))
         return
+    if mode == "ogate":  # object gate: every target of the catalog slice, `--tries` clean moves each
+        from harvest.l9 import assets9 as A9
+        cat = A9.catalog("train")
+        tg = sorted(k for k, r in cat.items() if r["role9"] == "target")
+        lo, hi = arg("--from", 0), arg("--to", len(tg))
+        tg = tg[lo:hi]
+        rows, seed, per_job = [], arg("--start", 1900000), arg("--job-size", 24)
+        for i in range(0, len(tg), per_job // arg("--tries", 2)):
+            ids = tg[i:i + per_job // arg("--tries", 2)]
+            for t in range(arg("--tries", 2)):
+                for k in ids:
+                    rows.append({"seed": seed, "arm": "right", "family": "dining", "rule": "centrepiece",
+                                 "def": "gate_move", "split": "train", "style": "clean", "clean": True,
+                                 "fixed": {"A": k}, "obj": k, "pool_ids": ids})
+                    seed += 1
+        ch = []
+        k = 0
+        for i in range(0, len(rows), per_job):
+            c = rows[i:i + per_job]
+            for r in c:
+                r.update(job=f"g{k:05d}", pool=arg("--pool0", 5000) + k, rooms=k)
+            ch.append(c)
+            k += 1
+        print(json.dumps(write(out, rows, ch, lanes, "plan_ogate.json", pod)))
+        return
     if mode == "pilot":
         rows = rows_for(defs, arg("--per", 10), arg("--start", 900000), ft)
         ch = jobs(rows, arg("--job-size", 12), arg("--pool0", 100))

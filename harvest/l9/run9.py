@@ -84,6 +84,10 @@ def main(argv=None):
         apply_arm_workspace(arm)  # left: mirrored safety box / reach corner (before the episode modules load)
         split = rows[0].get("split", "train")
         pool = A9.pool_for(int(rows[0]["pool"]), "train" if split == "train" else "ood_o")
+        if rows[0].get("pool_ids"):  # object gate jobs: exactly these targets (+ the pool's clutter / containers)
+            cat = A9.catalog("train")
+            pool = {k: v for k, v in pool.items() if v["role9"] != "target"}
+            pool.update({k: cat[k] for k in rows[0]["pool_ids"] if k in cat})
         rooms = rooms_for(int(rows[0]["rooms"]), "train" if split == "train" else "ood")
         mesh = A9.mesh_for(int(rows[0]["rooms"]), split="train" if split == "train" else "ood")
         world = make_world9(arm, pool, rooms, mesh=mesh)
