@@ -21,7 +21,8 @@ for m in glob.glob(os.path.join(root, "**", "skipped.json"), recursive=True):
     k = (row.get("fixed") or {}).get("A")
     if k:
         per.setdefault(k, {"n": 0, "ok": 0})["skipped"] = per.get(k, {}).get("skipped", 0) + 1
-ok = sorted(k for k, d in per.items() if d["n"] >= 2 and d["ok"] >= 2)
+tries = int(sys.argv[sys.argv.index("--tries") + 1]) if "--tries" in sys.argv else 2
+ok = sorted(k for k, d in per.items() if d["n"] >= tries and d["ok"] >= tries)  # every try clean and jump-free
 bad = sorted(k for k, d in per.items() if d["n"] >= 1 and d["ok"] == 0)
 json.dump({"pass": ok, "fail": bad, "per": per}, open(out, "w"))
 print(json.dumps({"objects": len(per), "pass": len(ok), "fail": len(bad),

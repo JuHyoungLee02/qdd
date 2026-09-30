@@ -49,7 +49,7 @@ def objects(split: str = "train") -> dict:
         role = r.get("role")
         if role == "target" and r.get("grasp_rule") == "topdown_7_10cm" and float(r["footprint_r"]) <= TARGET_R_MAX                 and r.get("l9cat") not in NOT_TARGET and k not in blocked_targets()                 and (gate_pass() is None or k in gate_pass()):
             out[k] = dict(r, role9="target")
-        elif role in ("clutter", "target"):
+        elif role in ("clutter", "target") and float(r["height"]) <= 0.25:  # ungated / failed targets stay as clutter
             out[k] = dict(r, role9="clutter")
     return out
 
