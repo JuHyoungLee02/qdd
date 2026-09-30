@@ -40,7 +40,7 @@ def test_light_meta_per_family():
 def test_head_pose_every_episode():
     for s in range(200):
         h = V.head_pose(s)
-        assert h["random"] and abs(h["pan"]) <= math.radians(30) + 1e-6
+        assert h["random"] and abs(h["pan"]) <= 0.35
         assert 0.40 <= h["tilt"] <= V.HEAD_TILT_MAX
     assert V.head_pose(3) == V.head_pose(3) and V.head_pose(3, 1) != V.head_pose(3)
     assert V.head_default()["tilt"] == 0.785

@@ -15,7 +15,7 @@ import numpy as np
 
 HEAD_TILT0 = 0.785  # 45 deg, the real robot
 HEAD_TILT_RANGE = math.radians(15.0)
-HEAD_PAN_RANGE = math.radians(30.0)
+HEAD_PAN_RANGE = 0.34  # spec §4 asked +-30 deg; the robot's head_joint2 range is +-0.35 rad (20 deg, USD / MJCF): hardware wins
 HEAD_TILT_MAX = math.radians(57.0) - 0.01  # the raised USD limit (L8S _head_limit)
 HEAD_TRIES = 5  # spec §4: redraw while the task objects leave the view, then the default pose
 
