@@ -1,0 +1,40 @@
+{
+ "furniture_mesh": {
+  "l9_new": 588,
+  "l8s": 274,
+  "total": 862,
+  "target_mesh": 600,
+  "by_category": {
+   "table": 203,
+   "shelf": 186,
+   "seat": 115,
+   "side_table": 107,
+   "counter": 106,
+   "low": 64,
+   "low_table": 48,
+   "appliance": 18,
+   "bed": 6,
+   "bin": 4,
+   "work_table": 3,
+   "toilet": 1,
+   "basket": 1
+  }
+ },
+ "materials": {
+  "textures": 1307,
+  "target": 650,
+  "by_role": {
+   "floor": 569,
+   "furniture": 318,
+   "wall": 316,
+   "fabric": 104
+  },
+  "hdris": 501,
+  "target_hdri": 140,
+  "hdri_setting": {
+   "indoor": 301,
+   "outdoor": 200
+  },
+  "root": "/data/harvest/assets_l9/materials"
+ }
+}
