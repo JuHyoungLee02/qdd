@@ -75,6 +75,35 @@ def done(od: str) -> bool:
     return any(os.path.exists(os.path.join(od, n)) for n in ("result.json", "skip.json", "error.json"))
 
 
+def served(current: str):
+    """The checkpoint named in the served-checkpoint file, None when there is none (no server)."""
+    try:
+        t = open(current).read().split()
+    except OSError:
+        return None
+    return t[0] if len(t) == 3 else None
+
+
+def server_error(err) -> bool:
+    """A transport / server-side error (LocalVLM stores it in reply.error and the episode goes on)."""
+    e = str(err or "")
+    return bool(e) and (not e.startswith("http_") or e.startswith(("http_5", "http_404")))
+
+
+class ErrCount:
+    def __init__(self, m):
+        self.m, self.errors = m, 0
+
+    def ask(self, *a, **k):
+        r = self.m.ask(*a, **k)
+        if server_error(getattr(r, "error", None)):
+            self.errors += 1
+        return r
+
+    def __getattr__(self, k):
+        return getattr(self.m, k)
+
+
 def job_args(job: str):
     ap = argparse.ArgumentParser()
     for k in ("--split", "--variant", "--ws-x", "--furniture", "--objset", "--plan"):
@@ -235,7 +264,7 @@ def main(argv=None):
         world = build_world(j)
         print("WORLD " + json.dumps({"furniture": j.furniture, "plan": j.plan, "n": len(eps), "ckpt": a.ckpt}),
               flush=True)
-        model = LocalVLM(a.qwen_url, a.qwen_name, "qwen8b")
+        model = ErrCount(LocalVLM(a.qwen_url, a.qwen_name, "qwen8b"))
         Ep = episode_class()
         owner = f"{a.owner} pid={os.getpid()}"
         for cond in a.conds.split(","):
@@ -248,8 +277,7 @@ def main(argv=None):
                         print("YIELD " + why, flush=True)
                         code = 3
                         raise StopIteration
-                    if a.current and os.path.exists(a.current) and \
-                            open(a.current).read().split()[:1] != [a.ckpt]:
+                    if a.current and served(a.current) != a.ckpt:  # switched or the server yielded
                         print("CKPT_CHANGED", flush=True)
                         raise StopIteration
                     name = f"{e['task']}_s{e['seed']}"
@@ -262,6 +290,7 @@ def main(argv=None):
                     kw = dict(video=False, variant=j.variant, stop_calls=a.stop_calls, stop_motion_s=a.stop_motion,
                               mem_points=True, fix_loop=True,
                               corrupt=("light", c["level"]) if c["kind"] == "light" else None)
+                    model.errors = 0
                     try:
                         ep = Ep(world, model, e["seed"], e["task"], od, **kw)
                         ep.vid_dir = vd
@@ -276,6 +305,11 @@ def main(argv=None):
                         json.dump({"error": repr(ex), "tb": traceback.format_exc()[-3000:]},
                                   open(os.path.join(od, "error.json"), "w"))
                         print("EP_ERROR " + json.dumps({"seed": e["seed"], "task": e["task"], "err": repr(ex)}),
+                              flush=True)
+                        continue
+                    if model.errors:  # the server went away (yield / restart): not a model failure -> retry later
+                        os.rename(od, f"{od}.srv_err.{int(time.time())}")
+                        print("EP_SRV_ERR " + json.dumps({"seed": e["seed"], "task": e["task"], "n": model.errors}),
                               flush=True)
                         continue
                     rep = repro_check(world, e["dir"])

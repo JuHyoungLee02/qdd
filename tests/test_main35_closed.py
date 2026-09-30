@@ -20,7 +20,7 @@ def test_claim_once_and_stale(tmp_path):
     od = str(tmp_path / "ep")
     assert R.claim(od, "a")
     assert not R.claim(od, "b")  # fresh claim held
-    assert R.claim(od, "c", now=time.time() + R.STALE_S + 1)  # stale claim taken over
+    assert R.claim(od, "c", now=time.time() + R.STALE_S + 5)  # stale (D: mtime is 2 s coarse)
     open(os.path.join(od, "result.json"), "w").write("{}")
     assert R.done(od) and not R.claim(od, "d", now=time.time() + 10 * R.STALE_S)
 
@@ -52,3 +52,12 @@ def test_head_patch_restores():
     assert abs(CX.head_pose(1, 1)["pan"] - 0.1309) < 1e-3
     undo()
     assert CX.head_pose(1) == {"orig": True}
+
+
+def test_server_error_and_served(tmp_path):
+    assert R.server_error("ConnectError") and R.server_error("timeout") and R.server_error("http_503:x")
+    assert R.server_error("http_404:no model") and not R.server_error("http_400:too long") and not R.server_error(None)
+    f = tmp_path / "CURRENT"
+    assert R.served(str(f)) is None
+    f.write_text("f35d http://h:1 m35cl_f35d")
+    assert R.served(str(f)) == "f35d"
