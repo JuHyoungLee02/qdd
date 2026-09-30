@@ -118,9 +118,10 @@ def cmd_train(a):
         if a.save_every and (step + 1) % a.save_every == 0 and step + 1 < a.steps:
             m.save(os.path.join(a.out, f"step{step + 1}"), {"step": step + 1})
     m.save(os.path.join(a.out, "last"), {"step": a.steps, "data": a.data, "n_train": len(tr), "args": vars(a)})
-    res = offline_eval(m, enc, va[:a.max_val] if a.max_val else va, device, seed=0)
-    json.dump(res, open(os.path.join(a.out, "last", "offline.json"), "w"), indent=1)
-    print("OFFLINE " + json.dumps(res), flush=True)
+    if va:
+        res = offline_eval(m, enc, va[:a.max_val] if a.max_val else va, device, seed=0)
+        json.dump(res, open(os.path.join(a.out, "last", "offline.json"), "w"), indent=1)
+        print("OFFLINE " + json.dumps(res), flush=True)
     print("TRAIN_DONE", flush=True)
 
 
