@@ -98,5 +98,17 @@
   "target": 300,
   "by_kind": {},
   "place_kind": {}
+ },
+ "rooms": {
+  "l9_new": 289,
+  "l8s": 38,
+  "target_new": 150,
+  "by_kind": {
+   "living_room": 128,
+   "kitchen": 41,
+   "other": 92,
+   "bedroom": 24,
+   "bathroom": 4
+  }
  }
 }
