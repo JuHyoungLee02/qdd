@@ -289,10 +289,12 @@ def finalize(ep, res: dict, od: str) -> dict:
             s["window"] = "tail"
         else:
             s["window"] = "normal"
-        if len(tick_t):  # G-br (online): commanded row DS-1 vs the measured TCP DS ticks later
+        if len(tick_t):  # G-br (online): the chunk's planned TCP displacement over one decision step (4 rows) vs the
+            # measured TCP displacement over the same 4 ticks (displacements: the load sag / IK lag offset cancels)
+            j0 = int(np.searchsorted(tick_t, s["t"] - 1e-6))
             j = int(np.searchsorted(tick_t, s["t"] + 4 * dt - 1e-6))
             if j < len(tick_t):
-                e = float(np.linalg.norm(tcp[j] - np.asarray(s["chunk"][3]))) * 1e3
+                e = float(np.linalg.norm((tcp[j] - tcp[j0]) - (np.asarray(s["chunk"][3]) - np.asarray(s["p_cmd"])))) * 1e3
                 s["gbr_mm"] = round(e, 2)
                 gbr.append(e)
     fail = None
