@@ -30,6 +30,24 @@
   - 단계(참값 단계 이름), 명령원(참값/흉내)과 주입값.
   - 외란 종류·시점, 이상 시점(참값 기준), 편 결과(성공 / 실패 원인 = 놓침·떨어짐·시간 초과·충돌·복구 불가).
 
+## 0-5. 근거 출처 표 (NOW.md §4 첫 줄; 2026-10-01 GitHub API로 스타·라이선스 조회)
+
+| 규칙 | 근거 (arXiv·날짜 / 저장소 ★ / 라이선스) | 1.5년 규칙 |
+|---|---|---|
+| 우선순위 섞기(끌림) | Geometric Fabrics 2109.10443(NVlabs/FABRICS ★96 NOASSERTION) | 기초 |
+| 잔차 한계 + 램프 | Policy Decorator 2412.13630(ICLR'25; tongzhoumu/policy_decorator ★120 NOASSERTION) | 기초(2024-12) |
+| 필요할 때만 이탈 | IDA 2409.15317(NeurIPS'24, 코드 없음) | 기초 |
+| 공유 자율 참고 | To the Noise and Back 2302.12244(ripl ★38), Shared Autonomy via Deep RL 1802.01744(rddy/deepassist ★80 Apache-2.0) | 기초 |
+| 회피(나중) | PACS 2511.06385(2025-11, 코드 예정), LatentCBF 2511.18606(2025-11) | 최근 |
+| 실패 행동 대신 교정 라벨 | CR-DAgger 2506.16685(NeurIPS'25; yifan-hou/cr-dagger ★90 MIT), RaC 2509.07953(2025-09, 코드 예정) | 최근 |
+| 이진 우위 토큰(쓰지 않음) | π*0.6 / RECAP 2511.14759(2025-11, 코드 없음) | 최근 |
+| 교란 크기 커리큘럼 | DART 1703.09327(CoRL'17) | 기초 |
+| conformal 오탐 고정 | FAIL-Detect 2503.08558(RSS'25; CXU-TRI/FAIL-Detect ★58 NOASSERTION), FIPER(NeurIPS'25; learnsyslab/fiper ★56 MIT) | 경계 / 최근 |
+| 반사실 분기 조건 데이터 | 우리 E-SR1c(0.991) | 자체 근거 |
+| w_max(목적지 고정점 해소) | 문헌 없음 — 식 결함의 수치 확인(§0-4) | **가설**, 스윕으로 가름 |
+| 끌림 식 모양·값(ρ, w_min, A) | 위 문헌의 형태 + 값은 문헌 없음 | **가설**, 변경 3 스윕 |
+| via_above(위로 먼저) | 문헌 없음 — 스모크 넘어뜨림 1편 | **가설**, 데이터 성공률로 관찰 |
+
 ## 0-4. 끌림 규칙 교체: 우선순위 섞기 (변경 3, 문헌 조사 반영; §0-3의 끌림 식보다 우선)
 
 **구조 (geometric fabrics · Policy Decorator · IDA)**
