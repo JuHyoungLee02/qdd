@@ -123,7 +123,10 @@ GRIP_ALL = {"right": [f"gripper_r_joint{i}" for i in range(1, 5)], "left": [f"gr
 PAD_INSET_M = 0.0077  # finger link2 origin -> pad inner face (USD bbox), per finger pair
 EE_BODY = {"right": "arm_r_link7", "left": "arm_l_link7"}
 FINGER_BODIES = {"right": ("gripper_r_rh_p12_rn_l1", "gripper_r_rh_p12_rn_l2", "gripper_r_rh_p12_rn_r1",
-                           "gripper_r_rh_p12_rn_r2")}
+                           "gripper_r_rh_p12_rn_r2"),
+                 "left": ("gripper_l_rh_p12_rn_l1", "gripper_l_rh_p12_rn_l2", "gripper_l_rh_p12_rn_r1",
+                          "gripper_l_rh_p12_rn_r2")}  # L9 (arm="left", opt-in)
+GRIPPER_PRIM = {"right": "right_gripper", "left": "left_gripper"}  # sub-prim of the robot USD holding the fingers
 # initial robot pose. v1: cyclo_lab SG2 pick-place default (set_default_joint_pose: arm_?_joint1 0.75, joint4 -2.30,
 # lift -0.0993) with the head pitched to 0.69 so the table workspace is inside the head camera.
 # v2 (challenge-env robot): the RIGHT arm starts top-down above the workspace instead (INIT_R_ARM). From the cyclo
@@ -134,6 +137,13 @@ INIT_R_ARM = (-1.0511, -1.0975, 1.2281, -2.3934, 0.4838, 1.2356, 1.80)  # TCP (0
 # (IK gave joint7 = 1.8201, its upper limit 1.820; 1.80 keeps the default inside the limits)
 INIT_JOINTS = {"arm_l_joint1": 0.75, "arm_l_joint4": -2.30, "head_joint1": 0.69, "lift_joint": -0.0993,
                **{f"arm_r_joint{i + 1}": v for i, v in enumerate(INIT_R_ARM)}}
+
+
+def init_joints(arm: str = "right") -> dict:
+    """Initial joints of an env acting with `arm`: "right" = INIT_JOINTS (unchanged); "left" (L9) = the left arm at the
+    mirrored INIT_R_ARM start, the right arm in the cyclo idle pose (harvest.l9.arm)."""
+    from ..l9.arm import init_joints as _ij
+    return _ij(arm, INIT_JOINTS)
 
 
 def joint_to_width(q: float) -> float:
@@ -343,12 +353,12 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
     from isaaclab.sensors import ContactSensorCfg
     from isaaclab.utils import configclass
 
-    if arm != "right":
-        raise NotImplementedError("single right arm only (T11)")
+    if arm not in ("right", "left"):  # L9: arm="left" (opt-in); every L8 caller passes the default "right"
+        raise NotImplementedError(f"arm {arm!r}")
     from .tasks import task_layout
     layout = task_layout(seed, task, ws=ws)  # mug_tray = sample_layout(seed)
     robot_prefix = "{ENV_REGEX_NS}/Robot/ffw_sg2_follower"
-    finger_paths = [f"{robot_prefix}/right_gripper/{b}" for b in FINGER_BODIES[arm]]
+    finger_paths = [f"{robot_prefix}/{GRIPPER_PRIM[arm]}/{b}" for b in FINGER_BODIES[arm]]
     obj_ids = ["o3", "o5", "o8", "o9", "o10"] + (list(X_RIGID) + list(OBJV_IDS) if objset == "x" else [])
 
     def obj_cfg(k):
@@ -393,7 +403,8 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
                                 filter_prim_paths_expr=finger_paths + others)
 
     robot = _robot_cfg()
-    joints = dict(INIT_JOINTS) if lift is None else {**INIT_JOINTS, "lift_joint": float(lift)}  # L8-D lift flag
+    base = INIT_JOINTS if arm == "right" else init_joints(arm)  # L9 left arm: mirrored start, right arm stowed
+    joints = dict(base) if lift is None else {**base, "lift_joint": float(lift)}  # L8-D lift flag
     robot = robot.replace(init_state=robot.init_state.replace(joint_pos={**robot.init_state.joint_pos, **joints}))
 
     scene_attrs = {
@@ -502,7 +513,7 @@ def _measure_finger_offsets(arm: str):
     bb = UsdGeom.BBoxCache(Usd.TimeCode.Default(), ["default", "render", "proxy"])
     zs = []
     for b in FINGER_BODIES[arm][1::2]:  # l2, r2
-        rng = bb.ComputeWorldBound(stage.GetPrimAtPath(f"{root}/right_gripper/{b}")).ComputeAlignedRange()
+        rng = bb.ComputeWorldBound(stage.GetPrimAtPath(f"{root}/{GRIPPER_PRIM[arm]}/{b}")).ComputeAlignedRange()
         lo, hi = rng.GetMin(), rng.GetMax()
         for cx in (lo[0], hi[0]):
             for cy in (lo[1], hi[1]):

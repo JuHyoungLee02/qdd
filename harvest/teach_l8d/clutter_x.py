@@ -392,17 +392,19 @@ def upright_rule(st: dict, env, info: dict, into: bool) -> dict:
     return dict(st, pred={**st["pred"], key: new})
 
 
-def set_arm_inertia(robot) -> list:
+def set_arm_inertia(robot, extra: dict | None = None) -> list:
     """Write ARM_INERTIA (diagonal, COM frame) into PhysX; the hard reset re-reads the USD, so call after every reset.
-    Returns the links written."""
+    extra (L9, opt-in): more {link: principal inertias} written the same way (harvest.l9.arm.LEFT_HEAD_INERTIA: the
+    left arm and head links, later_problems 11). Returns the links written."""
     import numpy as np
     import torch
     view = robot.root_physx_view
     ine = view.get_inertias().clone()
     done = []
+    table = {**ARM_INERTIA, **(extra or {})}
     for i, n in enumerate(robot.body_names):
-        if n in ARM_INERTIA:
-            ine[0, i] = torch.tensor(np.diag(ARM_INERTIA[n]).reshape(-1), dtype=ine.dtype)
+        if n in table:
+            ine[0, i] = torch.tensor(np.diag(table[n]).reshape(-1), dtype=ine.dtype)
             done.append(n)
     view.set_inertias(ine, torch.arange(1, dtype=torch.int32))
     return done

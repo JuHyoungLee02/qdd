@@ -50,6 +50,8 @@ def _command(d, err, allow_eef):
         out["height"] = V2._enum(c, "height", INTENTS, err, "command")
         out["point_2d"] = None if out["height"] == "lift" and c.get("point_2d") is None else _point(c, err)
         out["gripper"] = V2._enum(c, "gripper", V2.GRIPPER, err, "command")
+        if c.get("hand") is not None:  # L9 (spec §4): optional arm; absent = right (L8S answers parse as before)
+            out["hand"] = V2._enum(c, "hand", ("left", "right"), err, "command")
     elif mode == "gripper":
         out["gripper"] = V2._enum(c, "gripper", ("open", "close"), err, "command")
     return out

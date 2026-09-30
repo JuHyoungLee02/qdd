@@ -84,8 +84,13 @@ def row(r: dict, out_dir: str, track: str, dm: str = "clean") -> dict:
                     label_missing=False)
     if track == "d-min":
         miss = r.get("pt_answer") is None
-        return dict(base, prompt_path=_write(out_dir, "d", r["id"], d_text(v2)), images=ims,
-                    answer=r["answer"] if miss else r["pt_answer"], label_missing=miss, depth_path=_depth(r, out_dir, dm),
+        txt, ans = d_text(v2), r["answer"] if miss else r["pt_answer"]
+        if r.get("hand"):  # L9 (spec §4, opt-in): the used arm; rows without it (L8S) are unchanged
+            from ..l9.hand import add_hand_format, left_text, with_hand
+            txt = add_hand_format(left_text(txt) if r["hand"] == "left" else txt)
+            ans = ans if miss else with_hand(ans, r["hand"])
+        return dict(base, prompt_path=_write(out_dir, "d", r["id"], txt), images=ims,
+                    answer=ans, label_missing=miss, depth_path=_depth(r, out_dir, dm),
                     d_mode=dm)
     if track == "h-min":
         dp = _depth(r, out_dir, dm)
