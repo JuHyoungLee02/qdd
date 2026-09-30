@@ -60,7 +60,7 @@ a)
   fi
   run_arm x3 0 Z15 $B15 "$(vars_of Z15)"
   drop_line x3:0; echo "x3:0 freed by FUT1 stage A $(date -u +%FT%TZ)" >> $Q/out/vla/GPU_FREED
-  ev "stage A done, x3:0 released"
+  touch $F/STAGE_A_DONE; ev "stage A done, x3:0 released"
   ;;
 b)
   KEY=$3; PAIRS=$4
@@ -76,7 +76,7 @@ b)
     until [ -f $BASE/MERGE_OK ]; do sleep 30; done
   fi
   ev "stage B on $KEY ($PAIRS): base = main35 best ep$best ($BASE)"
-  [ $KEY = x3 ] && want_line x3:0
+  [ $KEY = x3 ] && { until [ -f $F/STAGE_A_DONE ]; do sleep 120; done; want_line x3:0; }
   declare -A chains=()
   for pr in $PAIRS; do chains[${pr%%:*}]+="${pr#*:} "; done
   for g in "${!chains[@]}"; do
