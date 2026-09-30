@@ -27,8 +27,10 @@ BLOCKED_M = 0.03
 
 
 class TruthExec:
-    def __init__(self, dt, table_z, tcp0, w_open, w_close, quat0, state_fn, tgt="o3", place="o5"):
+    def __init__(self, dt, table_z, tcp0, w_open, w_close, quat0, state_fn, tgt="o3", place="o5",
+                 r_goal: float = T.R_GOAL):
         self.dt, self.table_z = float(dt), float(table_z)
+        self.r_goal = float(r_goal)  # 0 = a scripted executor (c* = the received command; the OXe arm)
         self.w_open, self.w_close, self.width = float(w_open), float(w_close), float(w_open)
         self.goal_quat = np.asarray(quat0, float)
         self.state_fn, self.tgt, self.place = state_fn, tgt, place
@@ -89,6 +91,7 @@ class TruthExec:
         seg["t_act"] = float(t)
         d = float(np.linalg.norm(seg["goal_cmd"] - np.asarray(st["tcp"], float)))
         seg["T"] = max(d / V_BUDGET, T_MIN) + EXTRA_S
+        seg["p_start"] = self.cmd.copy()
         self.seg, self.pending = seg, None
         self.plan = None  # re-plan now
         self._still = 0
@@ -109,7 +112,9 @@ class TruthExec:
             held = bool(st.get("holding"))
             if not (s["ref"] == self.tgt and held):
                 gt = gt + (np.asarray(st["obj"][s["ref"]], float) - s["ref0"])
-        c, mis = T.project_ball(gt, s["goal_cmd"], T.R_GOAL)
+        c, mis = T.project_ball(gt, s["goal_cmd"], self.r_goal)
+        if self.r_goal == 0.0:
+            mis = False
         return c, mis, gt
 
     def _width_out(self, t):
@@ -158,6 +163,7 @@ class TruthExec:
             self.samples.append({"k": self.k, "t": round(t, 4), "tcp": tcp.tolist(), "p_cmd": self.cmd.tolist(),
                                  "v": self.v.tolist(), "chunk": P.tolist(), "c_star": c.tolist(),
                                  "goal_cmd": s["goal_cmd"].tolist(), "goal_true": gt.tolist(), "r_goal": T.R_GOAL,
+                                 "seg_start": s["p_start"].tolist(),
                                  "allow": s["grip"] if s["grip"] in ("open", "close") else None,
                                  "cmd_age": round(t - s["t_issue"], 3), "cmd_src": s["src"], "role": s["role"],
                                  "stop": stop, "anomaly": sorted(an), "touched": sorted(st.get("touched", ())),

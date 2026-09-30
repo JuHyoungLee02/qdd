@@ -36,11 +36,19 @@ RECOVER_S = 3.0  # RaC: samples later than this after a disturbance, in a failed
 UNREC_END_S = 1.0
 
 
-def seed_list(spec: str) -> list:
+EVAL_SEEDS = range(0, 20)  # = the E-CJ1 DEV layout seeds (closed-loop evaluation only, never data)
+
+
+def seed_list(spec: str, eval_mode: bool = False) -> list:
     out = []
     for part in spec.split(","):
         a, _, b = part.partition("-")
         out += list(range(int(a), int(b or a) + 1))
+    if eval_mode:
+        bad = [s for s in out if s not in EVAL_SEEDS]
+        if bad:
+            raise SystemExit(f"--mode eval: DEV seeds 0-19 only: {bad[:5]}")
+        return out
     bad = [s for s in out if s not in TRAIN_SEEDS]
     if bad:
         raise SystemExit(f"R2_TRAIN seeds {TRAIN_SEEDS.start}-{TRAIN_SEEDS.stop - 1} only (DEV / CAL / TEST never): {bad[:5]}")
@@ -67,6 +75,8 @@ def classes():
     class JcrRecEpisode(PtEpisode):
         plan = dist = rng = None
         img_dir = vid_dir = None
+        exec_kind, client = "truth", None
+        _fr_cache = None
 
         # ---------------------------------------------------------------- privileged state
         def _priv(self) -> dict:
@@ -82,9 +92,20 @@ def classes():
             self._ntick, self._nv, self.ticks, self.dist_events = 0, 0, [], []
             self._dstate = {e["kind"]: {"done": False} for e in self.plan["events"]}
             self._unrec_t = None
-            ex = TruthExec(w.dt, w.table_z, st["tcp"], w.w_open, w.w_close, w.quat0, self._priv,
-                           tgt=self.info["tgt"], place=self.info["place"])
-            return ex
+            args = (w.dt, w.table_z, st["tcp"], w.w_open, w.w_close, w.quat0, self._priv)
+            kw = dict(tgt=self.info["tgt"], place=self.info["place"])
+            if self.exec_kind == "jcr":
+                from .exec_jcr import JcrExec
+                return JcrExec(*args, client=self.client, obs_fn=self._obs, seed=int(self.seed), **kw)
+            if self.exec_kind == "script":  # OXe: c* = the received command (no correction)
+                return TruthExec(*args, r_goal=0.0, **kw)
+            return TruthExec(*args, **kw)
+
+        def _obs(self) -> dict:
+            fr = self._fr_cache if self._fr_cache is not None else self.w.frame()
+            env = self.w.env
+            return {"head": fr["head"], "wrist": fr["wrist"], "q": np.asarray(env.arm_q(), float).tolist(),
+                    "grip_w": float(env.gripper_width()), "effort": self._effort()}
 
         # ---------------------------------------------------------------- commands
         def _role(self, cmd, hold: bool) -> str:
@@ -215,8 +236,10 @@ def classes():
             samp = self._will_sample(t)
             vid = self._ntick % VID_EVERY == 0
             fr = self.w.frame() if (samp or vid) else None
+            self._fr_cache = fr if samp else None
             n0 = len(self.ex.samples)
             super()._tick()
+            self._fr_cache = None
             if len(self.ex.samples) > n0 and fr is not None:
                 s = self.ex.samples[-1]
                 for cam, key in (("head", "head"), ("wrist", "wrist")):
@@ -294,7 +317,8 @@ def finalize(ep, res: dict, od: str) -> dict:
             j0 = int(np.searchsorted(tick_t, s["t"] - 1e-6))
             j = int(np.searchsorted(tick_t, s["t"] + 4 * dt - 1e-6))
             if j < len(tick_t):
-                e = float(np.linalg.norm((tcp[j] - tcp[j0]) - (np.asarray(s["chunk"][3]) - np.asarray(s["p_cmd"])))) * 1e3
+                ch = s.get("chunk", s.get("truth_chunk"))
+                e = float(np.linalg.norm((tcp[j] - tcp[j0]) - (np.asarray(ch[3]) - np.asarray(s["p_cmd"])))) * 1e3
                 s["gbr_mm"] = round(e, 2)
                 gbr.append(e)
     fail = None
@@ -311,7 +335,10 @@ def finalize(ep, res: dict, od: str) -> dict:
                                                       for w in ("normal", "recover", "tail")},
            "gbr_mm": {"n": len(gbr), "p50": round(float(np.median(gbr)), 2) if gbr else None,
                       "p90": round(float(np.percentile(gbr, 90)), 2) if gbr else None},
-           "exec_events": ex.log_events, "events": ep.events}
+           "exec_events": ex.log_events, "events": ep.events, "exec_kind": ep.exec_kind,
+           "exec_stats": {k: v for k, v in getattr(ex, "stats", {}).items() if k != "lat"},
+           "lat_p50_s": float(np.median([x for x in ex.stats["lat"] if x is not None]))
+           if getattr(ex, "stats", None) and ex.stats.get("lat") else None}
     with open(os.path.join(od, "samples.jsonl"), "w") as f:
         for s in ex.samples:
             f.write(json.dumps(s) + "\n")
@@ -338,7 +365,14 @@ def main(argv=None):
     ap.add_argument("--owner", default="")
     ap.add_argument("--stop-calls", type=int, default=30)
     ap.add_argument("--stop-motion", type=float, default=120.0)
+    ap.add_argument("--mode", default="data", choices=["data", "eval"])
+    ap.add_argument("--exec", default="truth", choices=["truth", "script", "jcr"])
+    ap.add_argument("--src", default="plan", choices=["plan", "truth", "upper"],
+                    help="eval: truth = clean commands (OJ), upper = main-35B errors injected (OJe / OXe)")
+    ap.add_argument("--jcr-url", default="")
     a = ap.parse_args(argv)
+    if a.mode == "eval" and (a.exec == "truth" or a.src == "plan"):
+        raise SystemExit("--mode eval needs --exec script|jcr and --src truth|upper")
     yf = [f for f in a.yield_files.split(",") if f]
     code = 0
     try:
@@ -352,7 +386,11 @@ def main(argv=None):
         if abs(world.dt - T.DT) > 1e-6:
             raise SystemExit(f"world dt {world.dt} != truth DT {T.DT}")
         owner = f"{a.owner} pid={os.getpid()}"
-        for s in seed_list(a.seeds):
+        client = None
+        if a.exec == "jcr":
+            from .serve import Client
+            client = Client(a.jcr_url)
+        for s in seed_list(a.seeds, a.mode == "eval"):
             why = yield_reason(yf)
             if why:
                 print("YIELD " + why, flush=True)
@@ -366,6 +404,12 @@ def main(argv=None):
                     stop_calls=a.stop_calls, stop_motion_s=a.stop_motion)
             m.ep = ep
             ep.plan = D.plan_episode(s, a.scale)
+            if a.mode == "eval":  # no physical disturbance; command source fixed; upper realism = the data rates
+                up = a.src == "upper"
+                ep.plan = {"seed": s, "normal": True, "src": a.src, "scale": 1.0, "events": [],
+                           "p_swap": D.P_SWAP if up else 0.0, "p_pre": D.P_PRE if up else 0.0,
+                           "rng_seed": [int(s), 9001]}
+            ep.exec_kind, ep.client = a.exec, client
             ep.dist = dist
             ep.rng = np.random.default_rng(ep.plan["rng_seed"])
             ep.cmd_log = []
