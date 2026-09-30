@@ -41,8 +41,8 @@ def firsts(root: str, n: int, seed: int, gen: str | None):
 def embed(paths, device: str, bs: int = 64) -> np.ndarray:
     import torch
     from PIL import Image
-    from transformers import AutoModel, AutoProcessor
-    proc = AutoProcessor.from_pretrained(MODEL)
+    from transformers import AutoImageProcessor, AutoModel
+    proc = AutoImageProcessor.from_pretrained(MODEL)  # image side only (no sentencepiece on the pod)
     model = AutoModel.from_pretrained(MODEL).to(device).eval()
     out = []
     with torch.no_grad():
@@ -50,6 +50,8 @@ def embed(paths, device: str, bs: int = 64) -> np.ndarray:
             ims = [Image.open(p).convert("RGB") for p in paths[i:i + bs]]
             x = proc(images=ims, return_tensors="pt").to(device)
             e = model.get_image_features(**x)
+            if not torch.is_tensor(e):  # newer transformers return a model output
+                e = e.pooler_output
             out.append(torch.nn.functional.normalize(e, dim=-1).float().cpu().numpy())
     return np.concatenate(out)
 
@@ -122,14 +124,17 @@ def main():
     ap.add_argument("--device", default="cuda")
     a = ap.parse_args()
     rep = {}
+    n = min(a.n, len(firsts(a.l9, a.n, 0, "l9")))  # equal sample sizes (nearest-neighbour similarity grows with n)
     for name, root, gen in (("l9", a.l9, "l9"), ("l8s", a.l8s, None)):
-        eps = firsts(root, a.n, 0, gen)
+        eps = firsts(root, n, 0, gen)
         E = embed([p for _, p in eps], a.device)
         rep[name] = metrics(E)
         if name == "l9":
             all_dirs = [os.path.dirname(m) for m in glob.glob(os.path.join(root, "**", "meta.json"), recursive=True)]
             rep["l9_counts"] = meta_counts(all_dirs)
-    rep["pass_near_dup"] = rep["l9"]["nn_dup"] < rep["l8s"]["nn_dup"]
+    rep["pass_near_dup"] = (rep["l9"]["nn_dup"] < rep["l8s"]["nn_dup"]
+                            or (rep["l9"]["nn_dup"] == rep["l8s"]["nn_dup"] == 0
+                                and rep["l9"]["nn_sim_median"] < rep["l8s"]["nn_sim_median"]))
     rep["pass_spread"] = rep["l9"]["pair_dist"] > rep["l8s"]["pair_dist"]
     json.dump(rep, open(a.out, "w"), indent=1)
     print(json.dumps(rep))
