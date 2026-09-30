@@ -270,3 +270,12 @@
 | P132 | Isaac 프로세스를 늘렸는데 편/시간이 오히려 줄어듦(메인 7개 → 프로세스당 245 % CPU, cgroup 스로틀 94/100 주기) | 파드 CPU 쿼터(메인 32·x2 12·x3 2)를 다른 에이전트와 공유; Isaac 하나가 5–7 CPU | 생성 전 `/sys/fs/cgroup/cpu.stat`의 nr_throttled 증가율과 다른 작업 CPU를 보고 프로세스 수를 정한다(메인 ≤ 5); GPU가 비어도 CPU가 병목이면 늘리지 않는다; 가치 순으로 레인을 재배치 | 2026-09-26 21:0x UTC, [R/l8d](../stage3/results/l8d.md) |
 | P133 | 도달 탐침이 L8이 55/55 성공한 x 0.36–0.40을 '닿지 않음'으로 판정 | 25틱 유지가 스윙 중간에 끝난 일회성 흔들림(1–2 mm 이웃 사이 114–237 mm) 한 점 | 격자 탐침의 판정은 z 방향 3점 중앙값처럼 단발 튐을 거르는 규칙을 먼저 등록하고, 탐침 결과를 실제 참값 편 성공으로 교차 확인 | 2026-09-26 19:0x UTC, 변경 1 `e6b2e1e` |
 | P134 | 보드에 적은 KST 시각이 UTC 값(18:0x)으로 찍힘 | Git Bash의 `TZ=Asia/Seoul date`가 tzdata 없이 UTC를 냄 | KST는 `date -u -d '+9 hours'`로만; 적은 뒤 UTC와 9시간 차인지 확인(다른 에이전트도 같은 실수 — 보드 정정 줄 여럿) | 2026-09-27 03:0x KST, 보드 정정 줄 |
+## 추가: L9 에셋 확장에서 (2026-09-30 ~ 10-01)
+
+| # | 증상 | 원인 | 예방 규칙 | 발생 |
+|---|---|---|---|---|
+| P135 | Objaverse 물체가 검게 렌더됨(L9 후보 약 12 %, L8S objects_objv 표본 200개 중 34개도 같음) | MolmoSpaces Objaverse 패키지 일부의 텍스처가 3 kB짜리 검정 PNG | 에셋 표를 만들 때 텍스처 파일 크기·평균 밝기로 검정 텍스처를 거르고, 렌더 접촉 시트로 표본을 본다 | L9 에셋(tools/l9/assets, 348ea90) |
+| P136 | 큰 물체(쟁반·바구니) 정착 시험 실패가 많음(통과율 58 %) | validate_objects의 12개 격자에서 큰 물체끼리 밀침 | 크기별로 한 판에 12/4/2개, 주차 간격 0.6 m(`tools/l9/assets/validate_objects9.py`) → 68 %; 정착 실패를 물체 탓으로만 보지 말고 배치 간섭을 먼저 의심 | L9 에셋 |
+| P137 | Isaac 잡이 `FileNotFoundError`(taskC_ffw_sg2.py) | 배포 tar에 `harvest tools tests`만 넣음 — 로봇 설정이 third_party에 있음 | Isaac 잡 배포 archive에는 `third_party`도 넣는다(`-- harvest tools tests third_party`) | L9 에셋 |
+| P138 | 파드에서 tar 풀기가 실패 | `kubectl exec` 명령 줄에서 `&` 백그라운드 실행과 tar(stdin)를 한 줄에 걸면 stdin이 /dev/null로 바뀜 | tar 전송(stdin)과 백그라운드 기동은 exec 호출을 나눈다 | L9 에셋 |
+| P139 | ProcTHOR 방 USD가 물체를 못 찾음; objathor 메타 경로 열기 실패 | ProcTHOR 집은 `../../objects/thor`를 상대 참조; objathor 메타는 `.json.gz`라는 이름의 **디렉터리** | 방 폴더 옆에 objects 링크를 건다; 경로 이름을 믿지 말고 `find`로 실제 파일을 확인 | L9 에셋 |
