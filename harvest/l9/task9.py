@@ -59,48 +59,49 @@ def _defs():
     T = {"role": "target"}
     SL = {"role": "target", "slender": True}
     up = {"upright_max_deg": 15.0}
-    # 1. insert (꽂기): upright into a narrow holder
-    ins_t = _t("Put the {A} into the {H}.", "Stand the {A} up in the {H}.", "Insert the {A} into the {H}.",
-               "Place the {A} upright inside the {H}.", "Could you put the {A} in the {H}?", "The {A} goes into the {H}.")
-    add("ins_one", "insert", {"A": SL, "H": {"role": "container", "kind": "narrow"}}, [("A", "H")], ins_t, judge=up)
-    add("ins_two_holders", "insert", {"A": SL, "B": SL, "H": {"role": "container", "kind": "narrow"},
-                                      "G": {"role": "container", "kind": "narrow"}}, [("A", "H"), ("B", "G")],
-        _t("Put the {A} into the {H} and the {B} into the {G}.", "Insert the {A} in the {H}, then the {B} in the {G}.",
-           "Stand the {A} in the {H} and the {B} in the {G}.", "First the {A} into the {H}, then the {B} into the {G}.",
-           "Place the {A} in the {H}; place the {B} in the {G}."), judge=up)
-    add("ins_by_colour", "insert", {"A": SL, "H": {"role": "container", "kind": "narrow", "colour_named": True},
-                                    "X": {"role": "container", "kind": "narrow", "decoy_of": "H"}}, [("A", "H")],
-        _t("Put the {A} into the {H}, not the other holder.", "Insert the {A} into the {H}.",
-           "Stand the {A} in the {H}.", "The {A} belongs in the {H}.", "Place the {A} upright in the {H}."), judge=up)
-    add("ins_by_side", "insert", {"A": SL, "H": {"role": "container", "kind": "narrow"},
-                                  "X": {"role": "container", "kind": "narrow"}}, [("A", "H")],
-        _t("Put the {A} into the holder on the {Hside}.", "Insert the {A} in the {Hside} one of the two holders.",
-           "Stand the {A} in the holder that is on the {Hside}.", "Use the {Hside} holder for the {A}.",
-           "Place the {A} upright in the {Hside} holder."), judge=up, needs=("side_pair:H:X",))
-    add("ins_from_second", "insert", {"A": dict(SL, on="second"), "H": {"role": "container", "kind": "narrow"}},
-        [("A", "H")], _t("Take the {A} from the {Asurf} and put it into the {H}.",
-                         "Move the {A} off the {Asurf} into the {H}.", "Put the {A} from the {Asurf} in the {H}.",
-                         "Stand the {A} from the {Asurf} in the {H}.", "Get the {A} and insert it into the {H}."),
-        judge=up, needs=("second",))
-    add("ins_holder_second", "insert", {"A": SL, "H": {"role": "container", "kind": "narrow", "on": "second"}},
-        [("A", "H")], _t("Put the {A} into the {H} on the {Hsurf}.", "Insert the {A} in the {H} over on the {Hsurf}.",
-                         "Stand the {A} in the {H} that sits on the {Hsurf}.", "Move the {A} into the {H}.",
-                         "The {A} goes into the {H} on the {Hsurf}."), judge=up, needs=("second",))
+    # 1. insert: upright into a holder (a furniture slot node: pen / utensil / cup holder, rack slot, stand)
+    HV = {"type": "node", "kinds": ("slot",)}
+    ins_t = _t("Put the {A} into the {V}.", "Stand the {A} up in the {V}.", "Insert the {A} into the {V}.",
+               "Place the {A} upright inside the {V}.", "Could you put the {A} in the {V}?", "The {A} goes into the {V}.")
+    add("ins_one", "insert", {"A": SL}, [("A", "V")], ins_t, dst={"V": HV}, judge=up, needs=("node:slot",))
+    add("ins_two_holders", "insert", {"A": SL, "B": SL}, [("A", "V1"), ("B", "V2")],
+        _t("Put the {A} into one holder and the {B} into the other.", "Insert the {A} and the {B} into the two holders.",
+           "Stand the {A} in the {V1} and the {B} in the {V2}.",
+           "First the {A} into a holder, then the {B} into the other one.",
+           "Place the {A} and the {B} upright, one in each holder."),
+        dst={"V1": HV, "V2": HV}, judge=up, needs=("node2:slot",))
+    add("ins_by_side", "insert", {"A": SL}, [("A", "V")],
+        _t("Put the {A} into the holder on the {Vside}.", "Insert the {A} in the {Vside} holder.",
+           "Stand the {A} in the holder that is on the {Vside}.", "Use the {Vside} holder for the {A}.",
+           "Place the {A} upright in the {Vside} holder."), dst={"V": dict(HV, side_of_two=True)}, judge=up,
+        needs=("node2:slot",))
+    add("ins_from_second", "insert", {"A": dict(SL, on="second")}, [("A", "V")],
+        _t("Take the {A} from the {Asurf} and put it into the {V}.", "Move the {A} off the {Asurf} into the {V}.",
+           "Put the {A} from the {Asurf} in the {V}.", "Stand the {A} from the {Asurf} in the {V}.",
+           "Get the {A} and insert it into the {V}."), dst={"V": HV}, judge=up, needs=("second", "node:slot"))
+    add("ins_among", "insert", {"A": dict(SL, colour_named=True), "X": dict(SL, decoy_of="A")}, [("A", "V")],
+        _t("Put only the {A} into the {V}.", "Insert the {A}, not the other one, into the {V}.",
+           "Stand the {A} in the {V}.", "Pick the {A} and put it in the {V}.", "The {A} goes into the {V}."),
+        dst={"V": HV}, judge=up, needs=("node:slot",))
+    add("ins_then_in", "insert", {"A": SL, "B": T, "H": {"role": "container", "kind": "wide"}},
+        [("A", "V"), ("B", "H")],
+        _t("Put the {A} into the {V}, then the {B} into the {H}.", "Insert the {A} in the {V} and drop the {B} in the {H}.",
+           "First the {A} into the {V}; then the {B} into the {H}.",
+           "Stand the {A} in the {V}, then put the {B} in the {H}.", "{A} into the {V}, {B} into the {H}."),
+        dst={"V": HV}, judge=up, needs=("node:slot",))
+    add("ins_from_container", "insert", {"P0": {"role": "container", "kind": "wide"}, "A": dict(SL, on="on:P0")},
+        [("A", "V")], _t("Take the {A} out of the {P0} and stand it in the {V}.",
+                         "Move the {A} from the {P0} into the {V}.", "Put the {A} that is in the {P0} into the {V}.",
+                         "Get the {A} from the {P0}; insert it into the {V}.", "The {A} in the {P0} goes into the {V}."),
+        dst={"V": HV}, judge=up, needs=("node:slot",))
+    add("ins_jar", "insert", {"A": SL, "H": {"role": "container", "kind": "wide", "cats": ("jar", "vase", "mug", "cup")}},
+        [("A", "H")], _t("Put the {A} into the {H}.", "Stand the {A} up in the {H}.", "Insert the {A} into the {H}.",
+                         "Place the {A} upright inside the {H}.", "The {A} goes into the {H}."),
+        judge={"upright_max_deg": 30.0})
     add("ins_slot", "insert", {"A": SL}, [("A", "V")],
         _t("Put the {A} into the {V}.", "Stand the {A} in the {V}.", "Insert the {A} into the {V}.",
            "Place the {A} upright in the {V}.", "Drop the {A} into the {V}."),
         dst={"V": {"type": "node", "kinds": ("slot", "cubby")}}, needs=("node:slot|cubby",))
-    add("ins_among", "insert", {"A": dict(SL, colour_named=True), "X": dict(SL, decoy_of="A"),
-                                "H": {"role": "container", "kind": "narrow"}}, [("A", "H")],
-        _t("Put only the {A} into the {H}.", "Insert the {A}, not the other one, into the {H}.",
-           "Stand the {A} in the {H}.", "Pick the {A} and put it in the {H}.", "The {A} goes into the {H}."), judge=up)
-    add("ins_then_line", "insert", {"A": SL, "B": T, "H": {"role": "container", "kind": "narrow"}},
-        [("A", "H"), ("B", "P")], _t("Put the {A} into the {H}, then place the {B} to the right of the {H}.",
-                                     "Insert the {A} in the {H} and set the {B} on the right of the {H}.",
-                                     "First the {A} into the {H}; then the {B} to the {H}'s right.",
-                                     "Stand the {A} in the {H}, then put the {B} right of it.",
-                                     "Put the {A} in the {H} and the {B} beside it on the right."),
-        dst={"P": {"type": "spot", "rel": "right", "ref": "H"}}, judge=up)
 
     # 2. arrange / line up (정리·줄 세우기)
     ln_t2 = _t("Line up the {A} and the {B} side by side, {A} on the left.", "Put the {A} and the {B} in a row, left to right.",
@@ -427,13 +428,23 @@ def kind_of(row: dict) -> str | None:
     return "wide"
 
 
+FINGER_OPEN = 0.107  # open pad gap (scene.GRIP_MAX_W): the fingers must fit the opening, or stay above the rim
+
+
 def fits_into(obj: dict, cont: dict) -> bool:
+    """onto: the footprint inside the top; into: the object passes the opening (6 mm each side) and the released
+    fingers either fit inside the opening (open gap + 2 cm) or stay above the rim (grasp 1.8 cm below the object's
+    top: rim depth <= object height - 3 cm)."""
     ins = cont.get("inside") or {}
     if ins.get("place_kind") == "onto":
         ob = ins.get("opening_box") or [[0, 0], [0, 0]]
         side = min(ob[0][1] - ob[0][0], ob[1][1] - ob[1][0])
         return 2 * float(obj["footprint_r"]) <= side + 0.01
-    return 2 * float(obj["footprint_r"]) <= float(ins.get("opening_min_side", 0)) - 0.02
+    op = float(ins.get("opening_min_side", 0))
+    if 2 * float(obj["footprint_r"]) > op - 0.012:
+        return False
+    depth = float(ins.get("rim_z") or ins.get("inner_floor_z") or 0) - float(ins.get("inner_floor_z") or 0)
+    return op >= FINGER_OPEN + 0.02 or depth <= float(obj["height"]) - 0.03
 
 
 def is_slender(row: dict) -> bool:
@@ -452,7 +463,11 @@ def rel_offset(rel: str, gap: float, fa: float, fr: float) -> np.ndarray:
 
 
 def surf_name(node: dict) -> str:
-    return {"top": "surface", "zone": "mat", "seat": "place mat", "cubby": "compartment", "slot": "slot",
+    if node["kind"] == "slot":
+        if node["part"].startswith("holder"):
+            return "holder"
+        return "umbrella stand" if node["part"].startswith("umbrella") else "rack slot"
+    return {"top": "surface", "zone": "mat", "seat": "place mat", "cubby": "compartment",
             "container": "open box"}.get(node["kind"], "surface")
 
 
@@ -764,6 +779,15 @@ def _try(defn, scene, pool, rng, rm):
                 c = [v for v in nodes.values() if v[0]["kind"] in kinds and v[0]["top_z"] < oz - 0.03]
             used = {s["node"] for s in surfs.values()}
             c = [v for v in c if v[0]["id"] not in used]
+            if spec.get("side_of_two"):
+                if len(c) < 2:
+                    raise Fail("need two nodes for a side choice")
+                two = [c[int(i)] for i in rng.choice(len(c), 2, replace=False)]
+                ys = [float(np.mean(v[1][:, 1])) for v in two]
+                if abs(ys[0] - ys[1]) < 0.08:
+                    raise Fail("side nodes too close in y")
+                c = [two[0]]
+                ep.setdefault("words", {})[f"{dname}side"] = "left" if ys[0] > ys[1] else "right"
             if not c:
                 raise Fail(f"no node for {dname}")
             node, pts, _ = c[int(rng.integers(len(c)))]

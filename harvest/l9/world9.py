@@ -368,6 +368,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
         def _preroll_arm(self, tz, steps: int = 200) -> dict:
             from ..teach_l8d.clutter_x import set_arm_inertia
             set_arm_inertia(self.env.robot, A.LEFT_HEAD_INERTIA)  # right (change 27) + left + head (later_problems 11)
+            self._arm_vel_limit()  # L8S change 24: the hard reset re-reads the USD, so after every reset
             s = A.arm_start(arm)
             goal = np.array([s[0], s[1], tz + s[2]])
             for _ in range(steps):

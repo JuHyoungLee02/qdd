@@ -120,7 +120,7 @@ def bucket_sizes(split: str = "train") -> dict:
     return dict(Counter(bucket_of(r) for r in catalog(split).values()))
 
 
-CONTAINER_R_MAX = {"narrow": 0.070, "wide": 0.100, "flat": 0.100}  # footprint radius after rescaling (work band)
+CONTAINER_R_MAX = {"narrow": 0.090, "wide": 0.100, "flat": 0.100}  # footprint radius after rescaling (work band)
 _LEN = ("half_extents", "size", "footprint_r", "root_above_bottom", "centre_from_root_xy", "height", "grasp_width",
         "length", "inner_floor_z", "rim_z", "opening_min_side", "opening_box", "inner_box", "depth", "bottom_z",
         "centre_xy", "caliper_centre", "origin_from_root")
