@@ -5,6 +5,8 @@
 #     the 4 render lanes on x2 GPU1 (they yield to L9 by themselves). Waits as long as L9 holds the render cards.
 #  2. relabel (tools/jcr/relabel.py), gate (tools/jcr/data_gate.py): limits + G-br + normal share, all automatic
 #     (the contact frame sheet is written for audit). Gate FAIL -> $R/ALERT_chain_d1 and stop.
+#     Right after the last render step x2 GPU1 goes back to L9: lanes stopped, "x2:1 returned by JCR <UTC>" appended
+#     to /data/harvest/out/l9/GPU_FREED (a later closed-loop JCR evaluation asks for a render card again, user ok first).
 #  3. sweep stage 1 in the background (nice, CPU), trainings A and P concurrently on GPU0 (the COUPLE C1 server stays),
 #     offline eval included (train.py). DONE marker $R/chain_d1.DONE.
 # Every milestone -> $R/chain_events.log ("<KST> | JCR | ..." lines to copy into the board events.log).
@@ -40,7 +42,12 @@ while [ "$(n_ep)" -lt "$N_EP" ]; do
   sleep 300
 done
 cd $C
-ev "d1 complete: $(n_ep) eps -> relabel"
+# render done: hand x2 GPU1 back to L9 at once (user 10-01 "jcr 작업 끝나면 넘겨줘야 해"); training / sweep are GPU0 / CPU
+for l in h i j k; do touch $R/lanes/${POD}_g1_$l.WANTED; done
+for i in $(seq 60); do [ "$(alive)" = 0 ] && break; sleep 10; done
+for l in h i j k; do bash $C/tools/jcr/stop.sh ${POD}_g1_$l > /dev/null 2>&1; done
+echo "x2:1 returned by JCR $(date -u +%FT%TZ)" >> $Q/out/l9/GPU_FREED
+ev "x2 GPU1 returned to L9 (GPU_FREED line); d1 complete: $(n_ep) eps -> relabel"
 PYTHONPATH=$C $P tools/jcr/relabel.py --data $D >> $Q/logs/jcr/chain_d1.log 2>&1 || { echo relabel > $R/ALERT_chain_d1; ev "ALERT relabel failed"; exit 1; }
 PYTHONPATH=$C $P tools/jcr/data_gate.py --data $D --out $R/d1_gate >> $Q/logs/jcr/chain_d1.log 2>&1
 ok=$($P -c "import json;g=json.load(open('$R/d1_gate/gate.json'))['gate'];print(int(all(g.values())))" 2>/dev/null)
