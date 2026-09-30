@@ -60,3 +60,8 @@ def test_grip_gate_blocks_wrong_direction_and_bounds_value():
     assert J.grip_gate(0.10, 0.12, "close", 0.107, 0.0) == 0.10  # an opening move while closing is blocked
     # opening allowed, clipped to the open width
     assert J.grip_gate(0.02, 0.20, "open", 0.107, 0.0) == 0.107
+
+
+def test_runner_module_imports_and_parses_seeds():
+    from harvest.couple_joy import run as R
+    assert R.seed_list("0-2,5") == [0, 1, 2, 5]

@@ -217,8 +217,7 @@ def main(argv=None):
                             f.write(json.dumps(r) + "\n")
                 with open(os.path.join(od, "ticks.jsonl"), "w") as f:  # 10 Hz, both executors
                     for r in getattr(ep, "ticks", []):
-                        f.write(json.dumps(r) + "
-")
+                        f.write(json.dumps(r) + "\n")
                 mp4 = os.path.join(a.vid_root, arm, a.variant, f"s{s}.mp4")
                 ok = make_mp4(vd, mp4)
                 row = {"arm": arm, "commander": cmdr, "executor": exk, "variant": a.variant, "seed": s,
