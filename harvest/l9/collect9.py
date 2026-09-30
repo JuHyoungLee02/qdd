@@ -33,15 +33,20 @@ def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 8, world=None) -> 
     for k in range(tries):
         sd = int(row["seed"]) + 100003 * k
         try:
-            sc = S9.sample(row["family"], row["rule"], sd, row["arm"], rm)
+            rmx = rm
+            if row.get("reach") == "base":  # diagnosis rows: the L8S reach probe / default lift
+                from . import reach9 as R9
+                rmx = R9.load_base()
+            sc = S9.sample(row["family"], row["rule"], sd, row["arm"], rmx,
+                           lifts=[S9.LIFT_DEFAULT] if row.get("lift_mode") == "default" else None)
         except RuntimeError as ex:
             last = str(ex)
             continue
-        ep = T9.instantiate(d, sc, pool, sd, rm, tries=20, fixed=row.get("fixed"))
+        ep = T9.instantiate(d, sc, pool, sd, rmx, tries=20, fixed=row.get("fixed"))
         if ep is None:
             last = "definition does not fit the scene"
             continue
-        T9.add_clutter(ep, sc, pool, sd, rm)
+        T9.add_clutter(ep, sc, pool, sd, rmx)
         light = V.pick_light_family(sd, row["family"])
         head = V.head_pose(sd)
         rp, hp = V.pose_key(sc["robot_pose"], head)

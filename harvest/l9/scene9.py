@@ -685,7 +685,7 @@ def choose_lift(scene: dict, rm, lifts=LIFTS, min_pts: int = 4):
 
 
 # ----------------------------------------------------------------------------------------------- sampling
-def sample(family: str, rule: str, seed: int, arm: str, rm=None, tries: int = 24) -> dict:
+def sample(family: str, rule: str, seed: int, arm: str, rm=None, tries: int = 24, lifts=None) -> dict:
     """One scene: parts (S and world), nodes, robot pose, lift, usable point counts per node.
     Redraws (new sub-seed) while parts enter the robot keep-out box or no node is usable; RuntimeError after
     `tries`."""
@@ -716,7 +716,7 @@ def sample(family: str, rule: str, seed: int, arm: str, rm=None, tries: int = 24
         sc = {"family": family, "rule": rule, "seed": int(seed), "arm": arm, "try": k, "yaw": round(yaw, 5),
               "robot_pose": {"distance": round(d, 4), "yaw": round(-yaw, 5)}, "params": params,
               "parts_s": b.parts, "nodes": b.nodes}
-        lift, per = choose_lift(sc, rm)
+        lift, per = choose_lift(sc, rm) if lifts is None else choose_lift(sc, rm, lifts=tuple(lifts))
         if max(per.values(), default=0) < 4:
             last = f"no usable node {per}"
             continue

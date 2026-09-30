@@ -58,5 +58,11 @@ def load_default() -> ReachModel:
     return ReachModel.load(os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets9", "reach_l9.json"))
 
 
+def load_base() -> ReachModel:
+    """The L8-D gate probe alone (L8S band y -0.40..-0.06)."""
+    import os
+    return ReachModel.load(os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets9", "reach_base.json"))
+
+
 __all__ = ["BAND_X", "BAND_Y", "LIFTS", "LIFT_DEFAULT", "band", "reach_points", "visible_points", "usable_points",
            "load_default"]
