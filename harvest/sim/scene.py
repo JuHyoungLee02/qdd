@@ -367,7 +367,8 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
             spawn = sim_utils.UsdFileCfg(usd_path=g["usd"],
                                          rigid_props=sim_utils.RigidBodyPropertiesCfg(max_depenetration_velocity=1.0),
                                          mass_props=sim_utils.MassPropertiesCfg(mass=g["mass"]),
-                                         activate_contact_sensors=True)
+                                         activate_contact_sensors=True,
+                                         **({"scale": tuple(g["spawn_scale"])} if g.get("spawn_scale") else {}))  # L9 opt-in
             pos, rot = _object_reset_pose(k, layout)
             return RigidObjectCfg(prim_path="{ENV_REGEX_NS}/" + k.upper(), spawn=spawn,
                                   init_state=RigidObjectCfg.InitialStateCfg(pos=pos, rot=rot))

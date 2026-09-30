@@ -106,7 +106,8 @@ class _B:
         return self.node(kind, host["part"], top, x0, x1, y0, y1, host=host["id"], **extra)
 
     def backwall(self, x, y0, y1, color, h=2.2):
-        self.box("wall_back", x, x + 0.05, y0, y1, 0.0, h, color, "wall")
+        """A plain wall behind the furniture: used only when no room background is placed (world9 drops it)."""
+        self.box("wall_back", x, x + 0.05, y0, y1, 0.0, h, color, "room_wall")
 
 
 def _yc(rng, arm):
@@ -247,7 +248,7 @@ def _living_low(b: _B, rule: str, d: float, yc: float):
 def _kitchen(b: _B, rule: str, d: float, yc: float):
     rng = b.rng
     top = rng.uniform(0.86, 0.96)
-    depth, w = rng.uniform(0.55, 0.65), rng.uniform(1.4, 2.0)
+    depth, w = rng.uniform(0.55, 0.65), rng.uniform(1.2, 1.7)
     y0, y1 = yc - w / 2, yc + w / 2
     b.box("counter_body", d + 0.12, d + depth, y0, y1, 0.0, top - 0.04, _c(rng, WOOD + PAINT), "body")
     back = d + depth
@@ -438,7 +439,7 @@ def _store(b: _B, rule: str, d: float, yc: float):
 
 def _workbench(b: _B, rule: str, d: float, yc: float):
     rng = b.rng
-    w = rng.uniform(1.20, 1.80)
+    w = rng.uniform(1.00, 1.50)
     y0, y1 = yc - w / 2, yc + w / 2
     top = rng.uniform(0.85, 0.95)
     dep = rng.uniform(0.60, 0.75)
@@ -557,6 +558,15 @@ def aabb_world(parts, yaw: float):
     return out
 
 
+DECOR = ("chair", "sofa")  # dropped when they would stand outside the room's clear zone
+ZONE = ((-0.50, 1.30), (-1.10, 0.90))  # = assets_x.rooms.ZONE (every room keeps this box clear around the robot)
+
+
+def in_zone(parts, yaw: float) -> bool:
+    (zx0, zx1), (zy0, zy1) = ZONE
+    return all(zx0 <= x0 and x1 <= zx1 and zy0 <= y0 and y1 <= zy1 for (x0, x1), (y0, y1) in aabb_world(parts, yaw))
+
+
 # ----------------------------------------------------------------------------------------------- usability
 FINGER_X, FINGER_Y = 0.065, 0.03  # = assets_x.reach (open fingers close along world x)
 GRIPPER_ABOVE = 0.20 + 0.24  # carry band top above the node + wrist height (reach.GRIPPER_ABOVE_TCP + Z_NEED[1])
@@ -597,14 +607,18 @@ def node_points(node: dict, yaw: float, step: float = 0.02, margin: float = EDGE
     return (rot(yaw) @ S.T).T, S
 
 
-def usable(node: dict, scene: dict, rm, lift: float) -> np.ndarray:
-    """World points of the node the arm can use at this lift (reach + view + free of parts)."""
+def usable(node: dict, scene: dict, rm, lift: float, reach: bool = True) -> np.ndarray:
+    """World points of the node the arm can use at this lift (reach + view + free of parts); reach=False: every
+    visible, free point of the node (objects that are only looked at: references, decoys, distractors)."""
     W, S = node_points(node, scene["yaw"])
     if len(W) == 0:
         return W
     m = rm.at_lift(lift)
     own = {node["part"]}
-    ok = R9.usable_points(m, scene["arm"], W[:, 0], W[:, 1], node["top_z"])
+    if reach:
+        ok = R9.usable_points(m, scene["arm"], W[:, 0], W[:, 1], node["top_z"])
+    else:
+        ok = R9.visible_points(m, W[:, 0], W[:, 1], node["top_z"])
     if node.get("rim_z") is None:
         ok &= ~blocked_s(S, node["top_z"], scene["parts_s"], own)
     else:  # inside a container: only parts above its rim block (its own walls are handled by the margin)
@@ -625,7 +639,7 @@ def choose_lift(scene: dict, rm, lifts=LIFTS, min_pts: int = 4):
 
 
 # ----------------------------------------------------------------------------------------------- sampling
-def sample(family: str, rule: str, seed: int, arm: str, rm=None, tries: int = 12) -> dict:
+def sample(family: str, rule: str, seed: int, arm: str, rm=None, tries: int = 24) -> dict:
     """One scene: parts (S and world), nodes, robot pose, lift, usable point counts per node.
     Redraws (new sub-seed) while parts enter the robot keep-out box or no node is usable; RuntimeError after
     `tries`."""
@@ -647,6 +661,10 @@ def sample(family: str, rule: str, seed: int, arm: str, rm=None, tries: int = 12
         bad = keep_out_hits(b.parts, yaw)
         if bad:
             last = f"keep-out {bad}"
+            continue
+        b.parts = [p for p in b.parts if p["role"] not in DECOR or in_zone([p], yaw)]  # decor past the room zone
+        if not in_zone([p for p in b.parts if p["role"] != "room_wall"], yaw):
+            last = "outside the room zone"
             continue
         sc = {"family": family, "rule": rule, "seed": int(seed), "arm": arm, "try": k, "yaw": round(yaw, 5),
               "robot_pose": {"distance": round(d, 4), "yaw": round(-yaw, 5)}, "params": params,

@@ -161,6 +161,8 @@ REL_NAMES = {"bottle": "green bottle", "box": "yellow box"}  # relational refere
 
 def place_rule(place: str, place_name: str) -> str:
     from ..sim.scene import OBJ_GEOM
+    if OBJ_GEOM.get(place, {}).get("rule_text"):  # L9 spots / surfaces (opt-in: only L9 ids carry it)
+        return OBJ_GEOM[place]["rule_text"]
     pk = OBJ_GEOM.get(place, {}).get("place_kind")
     if pk == "into":  # L8S containers (objv.register_containers)
         return f"inside the {place_name} (standing on its inner floor, within its rim)"

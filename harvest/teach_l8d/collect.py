@@ -178,9 +178,10 @@ def save_joints(world, out_dir: str, meta: dict) -> None:
 
         names = list(world.env.robot.joint_names)
         d = np.abs(np.diff(q, axis=0)) if len(q) > 1 else np.zeros((1, len(names)))
-        arm = [i for i, n in enumerate(names) if n.startswith("arm_r_joint")]
-        fing = [i for i, n in enumerate(names) if n.startswith("gripper_r")]
-        meta["max_dq_rad"] = round(float(d[:, arm].max()) if arm else float(d.max()), 4)  # right arm (<= 0.04)
+        side = "l" if getattr(world, "arm", "right") == "left" else "r"  # L9 left-arm worlds (opt-in attribute)
+        arm = [i for i, n in enumerate(names) if n.startswith(f"arm_{side}_joint")]
+        fing = [i for i, n in enumerate(names) if n.startswith(f"gripper_{side}")]
+        meta["max_dq_rad"] = round(float(d[:, arm].max()) if arm else float(d.max()), 4)  # the used arm (<= 0.04)
         meta["max_dq_finger_rad"] = round(float(d[:, fing].max()), 4) if fing else None  # fingers: excluded
         world._jlog = []
 
