@@ -1,6 +1,6 @@
 """E-CJ1 summary and verdict (docs/stage3/prereg_cj1.md §5; fixed at registration). venv_train, no Isaac.
   python tools/couple_joy/summary.py [--root /data/harvest/out/couple/cj1] [--n-boot 10000]
-Reads <root>/res/{ox,ov}/<variant>/s<seed>/cj.json (+ vla_steps.jsonl) and <root>/res/v0/<variant>/s<seed>/closed.json,
+Reads <root>/res/{ox,ov}/<variant>/s<seed>/cj.json (+ vla_steps.jsonl) and <root>/res/v0/<variant>/s<seed>/worker_<variant>.json,
 writes <root>/summary.json + summary.md. Units = (variant, seed) pairs present in every compared arm."""
 from __future__ import annotations
 
@@ -23,9 +23,11 @@ def load(root: str) -> dict:
             r = json.load(open(p))
             r["_dir"] = os.path.dirname(p)
             out[arm][(r["variant"], int(r["seed"]))] = r
-    for p in glob.glob(os.path.join(root, "res", "v0", "*", "s*", "closed.json")):
+    for p in glob.glob(os.path.join(root, "res", "v0", "*", "s*", "worker_*.json")):  # old closed.py: rows here
         d = json.load(open(p))
-        for t in d.get("trials", []):
+        for t in d.get("rows", []):
+            if "_cond_done" in t:
+                continue
             out["v0"][(t["variant"], int(t["seed"]))] = {"success": bool(t["success"]),
                                                           "termination": t.get("termination"), "_dir": os.path.dirname(p)}
     return out
