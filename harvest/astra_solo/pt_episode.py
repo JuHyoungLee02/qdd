@@ -27,7 +27,6 @@ from . import pt_prompts as PT
 from . import pt_schema as PS
 from . import resolve as RS
 from .episode import MAX_INVALID_RUN, Episode, outcome
-from .executor import MinJerkExec
 from .overlay import head_overlay, png_bytes
 
 HOLD_GAP_M = 0.005
@@ -265,7 +264,7 @@ class PtEpisode(Episode):
         self.mon = Monitor(w, self.info)
         st = w.status()
         self.t0 = float(st["t"])
-        self.ex = MinJerkExec(w.dt, w.table_z, st["tcp"], w.w_open, w.w_close, quat0=w.quat0)
+        self.ex = self.make_exec(st)
         wall0 = time.perf_counter()
         statics = None
         inv_run, r = 0, None

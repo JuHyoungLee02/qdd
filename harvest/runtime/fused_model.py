@@ -393,7 +393,7 @@ def make_handler(engine):
 def serve(a):
     from http.server import ThreadingHTTPServer
     eng = StageBFused(a.ckpt, device=a.device, graph=not a.no_graph, max_ctx_age_s=a.max_ctx_age)
-    srv = ThreadingHTTPServer(("127.0.0.1", a.port), make_handler(eng))
+    srv = ThreadingHTTPServer((a.host, a.port), make_handler(eng))
     print("FUSED_READY " + json.dumps({"port": a.port, **eng.info()}, default=str), flush=True)
     srv.serve_forever()
 
@@ -521,6 +521,7 @@ def main(argv=None):
     s = sub.add_parser("serve")
     s.add_argument("--ckpt", required=True)
     s.add_argument("--port", type=int, default=8150)
+    s.add_argument("--host", default="127.0.0.1", help="0.0.0.0 = reachable from other pods (couple_joy lanes)")
     s.add_argument("--device", default="cuda")
     s.add_argument("--no-graph", action="store_true")
     s.add_argument("--max-ctx-age", type=float, default=0.7)

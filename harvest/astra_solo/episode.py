@@ -199,6 +199,11 @@ class Episode:
         self.ex.grip(cmd["gripper"], st["t"])
         return []
 
+    def make_exec(self, st):
+        """The low-level executor of this episode (subclasses swap it: harvest.couple_joy)."""
+        w = self.w
+        return MinJerkExec(w.dt, w.table_z, st["tcp"], w.w_open, w.w_close, quat0=w.quat0)
+
     def run(self) -> dict:
         w = self.w
         w.reset(self.seed, self.task)
@@ -206,7 +211,7 @@ class Episode:
         self.mon = Monitor(w, self.info)
         st = w.status()
         self.t0 = float(st["t"])
-        self.ex = MinJerkExec(w.dt, w.table_z, st["tcp"], w.w_open, w.w_close, quat0=w.quat0)
+        self.ex = self.make_exec(st)
         wall0 = time.perf_counter()
         head_static = None
         inv_run, r = 0, None
