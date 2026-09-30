@@ -62,6 +62,20 @@ def target_point(mode: str, p_true, goal, kappa: float = 1.0, r: float = R_GOAL)
     return c, mis
 
 
+CLEAR_XY_M = 0.02  # lateral distance above which the truth path first goes over the target (no sideways sweep)
+CLEAR_Z_M = 0.05
+
+
+def via_above(p_cmd, c) -> np.ndarray:
+    """The point the truth motion heads for now: c itself when within CLEAR_XY_M laterally, else c raised to at least
+    CLEAR_Z_M above it (and never lower than the current commanded height) -- a low sideways move would sweep the
+    object (smoke d1 dr s20100 knocked the mug over)."""
+    p, c = np.asarray(p_cmd, float), np.asarray(c, float)
+    if float(np.linalg.norm(c[:2] - p[:2])) <= CLEAR_XY_M:
+        return c.copy()
+    return np.array([c[0], c[1], max(c[2] + CLEAR_Z_M, p[2])])
+
+
 def _v_brake(dist: float) -> float:
     """Largest speed from which discrete braking at A_MAX (speed drops A_MAX*DT per tick) stops within dist."""
     u = A_MAX * DT * DT
@@ -97,11 +111,12 @@ def step(p, v, c, stop: bool = False):
 
 
 def smooth_chunk(p_cmd, v_prev, c, H: int = H, stop: bool = False):
-    """-> (P [H, 3] commanded TCP rows for the next H ticks, velocity after row 0)."""
+    """-> (P [H, 3] commanded TCP rows for the next H ticks, velocity after row 0). The target of every row is
+    via_above(row, c): over the target first, then down."""
     p, v = np.asarray(p_cmd, float), np.asarray(v_prev, float)
     rows, v0 = [], None
     for k in range(H):
-        p, v = step(p, v, c, stop)
+        p, v = step(p, v, via_above(p, c), stop)
         rows.append(p)
         if k == 0:
             v0 = v

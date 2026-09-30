@@ -18,7 +18,7 @@ from . import features as FT
 from . import truth as T
 from .exec_truth import DS_TICKS, TruthExec
 
-R_PATH = 0.04
+R_PATH = 0.06  # the truth path may rise CLEAR_Z_M over the target before descending
 R_SAFE = 0.10  # arm B (pull only): only this wide safety range is cut (NOW.md §1-0e)
 V_CAP = 0.12
 REST_M = 0.003

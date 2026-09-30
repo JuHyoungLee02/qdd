@@ -2,7 +2,7 @@ import numpy as np
 
 from harvest.jcr import features as FT
 from harvest.jcr import truth as T
-from harvest.jcr.exec_jcr import JcrExec, envelope_clip
+from harvest.jcr.exec_jcr import R_PATH, JcrExec, envelope_clip
 from .test_exec_truth import Fake
 
 
@@ -51,4 +51,4 @@ def test_envelope_clip_pulls_rows_into_tube_and_caps_speed():
     out = envelope_clip(P, [0, 0, 0], [0, 0, 0], [1.0, 0, 0], 0.03)
     assert np.all(np.linalg.norm(np.diff(np.vstack([[0, 0, 0], out]), axis=0), axis=1) <= 0.12 * 0.05 + 1e-9)
     out = envelope_clip(np.array([[0.5, 0.2, 0.0]]), [0.5, 0, 0], [0, 0, 0], [1.0, 0, 0], 0.03, v_cap=10)
-    assert abs(out[0][1] - 0.04) < 1e-9
+    assert abs(out[0][1] - R_PATH) < 1e-9

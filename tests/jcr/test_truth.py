@@ -93,3 +93,11 @@ def test_target_point_modes():
 
 def test_pull_weaker_when_carrying():
     assert T.pull_weight(0.04, 0.2) > T.pull_weight(0.04, 0.9)
+
+
+def test_low_sideways_move_goes_over_the_target_first():
+    path = _run([0.40, 0.0, 0.93], [0.46, 0.0, 0.93], n=400)
+    far = np.linalg.norm(path[:, :2] - [0.46, 0.0], axis=1) > T.CLEAR_XY_M
+    assert np.all(path[far, 2] >= 0.93 - 1e-9)
+    assert path[far, 2].max() > 0.93 + 0.03
+    assert np.linalg.norm(path[-1] - [0.46, 0.0, 0.93]) < 1e-4

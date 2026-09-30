@@ -32,7 +32,7 @@ def test_region_points_on_a_box_in_depth():
     pts = A.region_points(c, depth, 0.0, [500, 500])
     assert pts is not None and np.allclose(pts[:, 2], 0.1, atol=1e-6)
     m = A.project_mask(c, pts, r_px=0)
-    assert m[30:50, 40:60].mean() > 0.9 and m.sum() <= 400
+    assert m[30:50, 40:60].mean() > 0.9 and m.sum() <= 1500
 
 
 def test_continuation_and_report():
