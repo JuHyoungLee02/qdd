@@ -55,15 +55,16 @@ if [ $KIND = run ]; then
     tail -3 /data/harvest/logs/strip8/cj_$LN.log | grep -q RUN_DONE && break
     log "RESTART (no RUN_DONE)"; sleep 30
   done
-else  # v0: VLA alone, one closed.py process per episode (seeds claimed by mkdir)
-  cd $C
+else  # v0: VLA alone, one closed.py process per episode (seeds claimed by mkdir). Runtime = the E-VLA-solo copy
+  # (code_vla_solo_d752509 = 9322853 + tools/vla_alone): the current runtime refuses the pre-ser-A-min-3 C1 checkpoint
+  cd /data/harvest/code_vla_solo_d752509
   for s in $(echo $SEEDS | tr ',' ' '); do
     w=$(want); [ -n "$w" ] && freed "$w"
     od=$R/res/v0/$V/s$s
     [ -f $od/closed.json ] && continue
     mkdir -p $od; mkdir $od/claim 2>/dev/null || continue
     log "V0 $V s$s"
-    PYTHONPATH=$C OMP_WAIT_POLICY=PASSIVE $P tools/vla_alone/vla_closed.py --model /data/harvest/ckpt/sr1c/c1/last \
+    PYTHONPATH=/data/harvest/code_vla_solo_d752509 OMP_WAIT_POLICY=PASSIVE $P tools/vla_alone/vla_closed.py --model /data/harvest/ckpt/sr1c/c1/last \
       --backend fused --url $VURL --out $od --split dev --seeds $s --variants $V --conditions C5 --max-seconds 120 \
       --couple off --astra none --isaac-gpu $G --inst-prefix strip8_cjv0_$LN --vla-speed 1.0 --vla-video-hz 10 \
       > $od/run.out 2>&1 &

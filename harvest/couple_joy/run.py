@@ -38,8 +38,10 @@ def seed_list(spec: str) -> list:
 
 class WorldIO:
     """What the VLA executor reads from the robot: frames (rendered at most once per control tick), the 8-D
-    joint_pos (7 right-arm joints + pad gap, the aiworker state the VLA was trained on) and the stage-B context text
-    (image-only state + unknown segment / motion lines = what harvest.runtime.core feeds this checkpoint)."""
+    joint_pos (7 right-arm joints + pad gap, the aiworker state the VLA was trained on) and the stage-B context text.
+    The E-SR1c C1 checkpoint predates ser-A-min-3 (no segment / motion lines): its context is the image-only state
+    alone, exactly what the runtime that served it (9322853 core: canonicalize(image_only_state(s0))) fed it; the
+    text is byte-identical between that code and this one (checked on the pod, 2026-09-30)."""
 
     def __init__(self, ep):
         self.ep = ep
@@ -62,7 +64,7 @@ class WorldIO:
         return np.r_[np.asarray(env.arm_q(), float), float(env.gripper_width())]
 
     def ctx_text(self, phase: str, t: float) -> str:
-        from ..serialize import MOTION_UNKNOWN, SEGMENT_UNKNOWN, canonicalize
+        from ..serialize import canonicalize
         from ..sim.planner import PHASE_TIMEOUT_S
         from ..sim.snapshot import text_state
         from ..train.stageb_data import image_only_state
@@ -77,7 +79,7 @@ class WorldIO:
         s = text_state(float(t), phase, float(t) - self.t_phase0, PHASE_TIMEOUT_S.get(phase, 60.0), pred,
                        list(st["obj"]), {}, bool(pred.get("gripper_open")), bool(pred.get(f"holding({tgt})")),
                        moving, [], tgt=tgt)
-        return canonicalize(image_only_state(s) + "\n" + SEGMENT_UNKNOWN + "\n" + MOTION_UNKNOWN)
+        return canonicalize(image_only_state(s))
 
 
 def joy_class(base):
