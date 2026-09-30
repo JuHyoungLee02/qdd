@@ -1,10 +1,11 @@
 #!/bin/bash
 # E-VB1 chain on 78dc (docs/stage3/prereg_vb1.md change 1): conversion (CPU) + pi0.5 training (GPU 0-3).
 #  1. after SMOKE_OK (render smoke group g0000): convert it to vb1_smoke + exact stats (CPU, nice 19)
-#  2. main35 finished (MAIN35_DONE, or JUDGE_FAIL / EVAL_INCOMPLETE / TRAIN_FAIL in main35.log) and all 4 GPUs empty
-#     (< 1 GB each): 20-step smoke training on vb1_smoke (pipeline check; failure -> ALERT_train_smoke, stop)
+#  2. main35 finished (MAIN35_DONE, or JUDGE_FAIL / EVAL_INCOMPLETE / TRAIN_FAIL in main35.log), E-FUT1 stage 2
+#     finished (/data/harvest/out/fut1/summary/summary_fut1.json; main decision 10-01: E-FUT1 takes 78dc first) and
+#     all 4 GPUs empty (< 1 GB each): 20-step smoke training on vb1_smoke (failure -> ALERT_train_smoke, stop)
 #  3. render finished (eps.py status: left 0): 16 conversion shards in parallel (CPU, nice 19) -> merge -> exact stats
-#  4. 4 GPUs still empty -> full training (train.sh, 30k steps, save 5k) -> TRAIN_DONE
+#  4. E-FUT1 finished and 4 GPUs empty -> full training (train.sh, 30k steps, save 5k) -> TRAIN_DONE
 # The main35 run is never touched: its files are only read, the chain waits until the GPUs are empty.
 # Every milestone -> /data/harvest/out/vb1/events.log.  usage (78dc): nohup bash chain_train.sh <code dir> > /dev/null 2>&1 &
 C=$1
@@ -15,6 +16,8 @@ ev() { echo "$(TZ=Asia/Seoul date '+%F %H:%M') KST | VB1 | $*" >> $R/events.log;
 st() { CODE=$C PYTHONPATH=$C $PV -m tools.vb1.eps status; }
 free4() { [ "$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | awk '$1 < 1000' | wc -l)" -ge 4 ]; }
 m35_over() { [ -f $M35/MAIN35_DONE ] || grep -qE "^(JUDGE_FAIL|EVAL_INCOMPLETE|TRAIN_FAIL)" $M35L 2> /dev/null; }
+FUT1=$Q/out/fut1/summary/summary_fut1.json
+fut1_over() { [ -f $FUT1 ]; }
 conv() { (cd $C && HF_HUB_OFFLINE=1 nice -n 19 $PG tools/vb1/convert.py "$@"); }
 ev "chain_train start code=$C"
 # 1. smoke conversion
@@ -27,8 +30,8 @@ if [ ! -f $R/lerobot/vb1_smoke/meta/stats_lerobot_backup.json ]; then
   ev "smoke dataset vb1_smoke ready ($(grep -o 'SHARD_DONE.*' $L/convert_smoke.log | tail -1))"
 fi
 # 2. smoke training once main35 is over and the cards are empty
-until m35_over && free4; do sleep 300; done
-ev "main35 over and 78dc GPU 0-3 empty -> smoke training"
+until m35_over && fut1_over && free4; do sleep 300; done
+ev "main35 over, E-FUT1 stage 2 over and 78dc GPU 0-3 empty -> smoke training"
 if ! grep -q "train end .* rc=0" $L/train_smoke.log 2> /dev/null; then
   SMOKE=1 DATASET_ID=vb1_smoke RUN=smoke_vb1 bash $C/tools/vb1/train.sh $C > $L/train_smoke.log 2>&1
   grep -q "train end .* rc=0" $L/train_smoke.log || { echo train_smoke > $R/ALERT_train_smoke; ev "ALERT smoke training failed ($L/train_smoke.log)"; exit 1; }
@@ -54,7 +57,7 @@ if [ ! -f $R/lerobot/vb1_l8s_train/meta/stats_lerobot_backup.json ]; then
   ev "dataset ready: $(grep -o 'MERGE_DONE.*' $L/convert_merge.log)"
 fi
 # 4. full training
-until free4; do sleep 300; done
+until m35_over && fut1_over && free4; do sleep 300; done
 ev "training start (78dc GPU 0-3, 30k steps)"
 bash $C/tools/vb1/train.sh $C > $L/train.log 2>&1
 if grep -q "train end .* rc=0" $L/train.log; then touch $R/TRAIN_DONE; ev "TRAIN_DONE ($(tail -1 $L/train.log))"
