@@ -520,6 +520,17 @@ def flat_top(row: dict) -> bool:
     return row.get("l9cat") in STACK_BASE and float(row.get("boxiness", 0.5)) >= 0.3
 
 
+FINGER_HALF_X = 0.0535 + 0.012 + 0.01  # open pad half-gap + finger thickness + margin (fingers close along world x)
+FINGER_HALF_Y = 0.02
+
+
+def finger_clear(d, f_other: float) -> bool:
+    """The open fingers around a grasp / release point (offset d = point - other object's centre) miss an object of
+    footprint radius f_other: apart in x by more than the finger reach, or in y by more than the finger half-width
+    (pilot 3: 57 % of the failures tipped or knocked a neighbour at the approach)."""
+    return abs(float(d[0])) >= f_other + FINGER_HALF_X or abs(float(d[1])) >= f_other + FINGER_HALF_Y
+
+
 def rel_offset(rel: str, gap: float, fa: float, fr: float) -> np.ndarray:
     """World offset of a relational spot from its reference (robot's view: left = +y, front = -x)."""
     d = fa + fr + gap
@@ -736,7 +747,7 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
             base = fr + f + 0.02
             if np.hypot(*d) < base:
                 return False
-            if (t or target) and abs(d[0]) < 0.10 and abs(d[1]) < base:
+            if (t or target) and not finger_clear(d, f if target else fr):
                 return False
         return True
 
@@ -796,7 +807,7 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
         ex = [(np.asarray(v["xy"]), v["fr"], False) for kk, v in ep["objects"].items() if kk in movers]
         others = [(p, f, t) for (p, f, t) in placed if not any(np.allclose(p, e[0]) for e in ex)]
         for (p, f, t) in others:
-            if np.hypot(*(np.asarray(xy) - p)) < fr + f + 0.02:
+            if np.hypot(*(np.asarray(xy) - p)) < fr + f + 0.02 or not finger_clear(np.asarray(xy) - p, f):
                 return False
         for q in spots.values():
             if np.hypot(*(np.asarray(xy) - np.asarray(q["xy"]))) < 2 * SPOT_R + 0.02:
@@ -890,7 +901,7 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
             node, pts, _ = c[int(rng.integers(len(c)))]
             pts = [p for p in pts if inside(node, p, fr)]
             rng.shuffle(pts)
-            xy = next((p for p in pts if free(p, fr, False)), None)
+            xy = next((p for p in pts if free(p, fr, True)), None)
             if xy is None:
                 raise Fail(f"no free point on {dname}")
             (x0, x1), (y0, y1) = node["box"]
@@ -999,7 +1010,7 @@ def add_clutter(ep: dict, scene: dict, pool: dict, seed: int, rm, n_range=(2, 6)
             (x0, x1), (y0, y1) = node["box"]
             if not (x0 + fr <= s[0] <= x1 - fr and y0 + fr <= s[1] <= y1 - fr):
                 continue
-            if all(np.hypot(*(xy - p)) >= fr + f + 0.03 and (abs(xy[0] - p[0]) >= 0.11 or abs(xy[1] - p[1]) >= fr + f + 0.03)
+            if all(np.hypot(*(xy - p)) >= fr + f + 0.03 and finger_clear(xy - p, fr)
                    for p, f in busy):
                 out[k] = {"xy": [round(float(xy[0]), 4), round(float(xy[1]), 4)], "node": node["id"], "fr": fr,
                           "yaw": round(float(rng.uniform(-math.pi, math.pi)), 4)}
