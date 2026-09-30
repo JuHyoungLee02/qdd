@@ -83,8 +83,9 @@ def build():
     for d in [ln.strip() for ln in open(VAL) if ln.strip()]:
         meta = json.load(open(os.path.join(d, "meta.json")))
         seed, task = int(meta["seed"]), meta["task"]
-        furn = os.path.basename(os.path.dirname(d)).split("_fx_", 1)[1]
-        why = excluded(task)
+        vd = os.path.basename(os.path.dirname(d))
+        why = excluded(task) or (None if "_fx_" in vd else "not a furniture job dir")
+        furn = vd.split("_fx_", 1)[-1]
         if why:
             excl.append({"set": "l8s_val", "dir": d, "why": why})
             continue
