@@ -416,10 +416,17 @@ def main(argv=None):
     ap.add_argument("--src", default="plan", choices=["plan", "truth", "upper"],
                     help="eval: truth = clean commands (OJ), upper = main-35B errors injected (OJe / OXe)")
     ap.add_argument("--jcr-url", default="")
-    ap.add_argument("--envelope", default="A", choices=["A", "B", "C"], help="eval: the JCR arm's envelope rule")
+    ap.add_argument("--envelope", default="A", choices=["A", "B", "C"], help="eval: the executed envelope rule")
+    ap.add_argument("--prio", default="", help="eval: JSON overriding the B / C blend parameters (rule sweep)")
+    ap.add_argument("--clip-r", type=float, default=None, help="eval: rule A width (m)")
     a = ap.parse_args(argv)
-    if a.mode == "eval" and (a.executor == "truth" or a.src == "plan"):
-        raise SystemExit("--mode eval needs --executor script|jcr and --src truth|upper")
+    if a.mode == "eval" and a.src == "plan":
+        raise SystemExit("--mode eval needs --src truth|upper (executor truth = the rule ceiling, sweep stage 2)")
+    if a.prio:
+        pr = json.loads(a.prio)
+        T.MODE_PRIO[a.envelope] = dict(T.MODE_PRIO[a.envelope], **pr)
+    if a.clip_r is not None:
+        T.CLIP_R = float(a.clip_r)
     yf = [f for f in a.yield_files.split(",") if f]
     code = 0
     try:

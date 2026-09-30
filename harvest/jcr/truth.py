@@ -109,8 +109,11 @@ def mismatch(p_true, goal, r: float = R_GOAL) -> bool:
     return float(np.linalg.norm(np.asarray(p_true, float) - np.asarray(goal, float))) > r
 
 
+CLIP_R = R_GOAL  # rule A width (the closed-loop sweep sets 1 / 2 / 3 cm per process)
+
+
 def mode_chunk(mode: str, p_cmd, v, p_true, goal, kappa: float = KAPPA_REF, age: float = 0.0, stop: bool = False,
-               lower: bool = False, prm: dict | None = None, r: float = R_GOAL) -> np.ndarray:
+               lower: bool = False, prm: dict | None = None, r: float | None = None) -> np.ndarray:
     """Executed truth rows of an envelope rule. 'P' = JCR's own label (straight to the true point), 'S' = scripted
     (to the command), 'A' = hard clip (project_ball r), 'B' / 'C' = priority blend of the P rows."""
     if mode == "P":
@@ -118,7 +121,7 @@ def mode_chunk(mode: str, p_cmd, v, p_true, goal, kappa: float = KAPPA_REF, age:
     if mode == "S":
         return smooth_chunk(p_cmd, v, goal, stop=stop)[0]
     if mode in ("A", "A1", "A2"):
-        rr = {"A": r, "A1": 0.01, "A2": 0.02}[mode]
+        rr = {"A": CLIP_R if r is None else r, "A1": 0.01, "A2": 0.02}[mode]
         return smooth_chunk(p_cmd, v, project_ball(p_true, goal, rr)[0], stop=stop)[0]
     if stop:
         return smooth_chunk(p_cmd, v, p_cmd, stop=True)[0]

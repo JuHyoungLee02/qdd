@@ -7,7 +7,8 @@ it into the JCR command and turns JCR's report back into the upper's existing 'p
                      on the JCR images (no tracking: what a code adapter can do on the real robot)
   stage            : the height intent (above / grasp / place / lift) + holding (robot self-measurement)
   gripper allowed  : the gripper intent (close / open / keep)
-  pull strength    : kappa(stage, distance) -- weak while carrying, strong near grasp / place (truth.target_point)
+  pull strength    : kappa(stage, distance) -- weak while carrying, strong near grasp / place; it scales the
+                     priority blend w_min / rho (truth.stage_prio, change 3)
   command age      : s since the command was issued
   continuation     : while the upper is thinking after an arrival (1-3 s) the adapter keeps JCR busy: after a
                      successful close -> lift start (+LIFT_START_M), after an open -> small retreat (+RETREAT_M)
