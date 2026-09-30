@@ -85,6 +85,20 @@ def track_shift(pts_then, pts_now) -> np.ndarray:
     return b - a
 
 
+HELD_R_M = 0.07  # region points this close to the TCP while holding = the carried object (it moves with the hand)
+
+
+def drop_held(pts, tcp, holding: bool):
+    """Region points without the carried object (points within HELD_R_M of the TCP while holding): pointing at the
+    place while carrying, the depth region also takes the held object, which moves with the hand (smoke: 5 false
+    'object_moved' drops in one carry)."""
+    if pts is None or not holding or tcp is None:
+        return pts
+    p = np.asarray(pts, float)
+    keep = np.linalg.norm(p - np.asarray(tcp, float), axis=1) > HELD_R_M
+    return p[keep] if keep.any() else None
+
+
 def stale_check(snap: dict, now: dict, obj_m: float = STALE_OBJ_M):
     """-> (keep, reason, shift). Drop when the pointed object moved more than obj_m (the scene the upper saw is gone)
     or the gripper premise flipped (closed / holding at request vs now). Small moves are absorbed: the destination
@@ -93,7 +107,8 @@ def stale_check(snap: dict, now: dict, obj_m: float = STALE_OBJ_M):
         return False, "holding_changed", np.zeros(3)
     if bool(snap.get("grip_closed")) != bool(now.get("grip_closed")):
         return False, "gripper_changed", np.zeros(3)
-    sh = track_shift(snap.get("region"), now.get("region"))
+    sh = track_shift(drop_held(snap.get("region"), snap.get("tcp"), bool(snap.get("holding"))),
+                     drop_held(now.get("region"), now.get("tcp"), bool(now.get("holding"))))
     if float(np.linalg.norm(sh)) > obj_m:
         return False, "object_moved", sh
     return True, None, sh

@@ -36,3 +36,13 @@ def test_continuity_counts_mid_episode_stops():
     P = np.stack([x, np.zeros(len(x)), np.zeros(len(x))], 1)
     c = O.continuity(P, dt)
     assert c["stops"] == 1 and abs(c["stop_s"] - 1.0) < 0.11
+
+
+def test_carried_object_is_not_a_moved_target():
+    tray = np.array([[0.45, -0.2, 0.86], [0.47, -0.2, 0.86]])
+    mug_then = np.array([[0.45, -0.3, 1.0]])
+    mug_now = np.array([[0.45, -0.25, 1.0]])
+    snap = {"region": np.vstack([tray, mug_then]), "tcp": [0.45, -0.3, 1.02], "holding": True}
+    now = {"region": np.vstack([tray, mug_now]), "tcp": [0.45, -0.25, 1.02], "holding": True}
+    keep, why, sh = O.stale_check(snap, now)
+    assert keep and np.linalg.norm(sh) < 1e-9

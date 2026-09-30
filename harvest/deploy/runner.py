@@ -156,7 +156,8 @@ def classes():
             self.inv_run = 0
             cmd = p.answer["command"]
             # stale check: premise of a pre-ask (the in-flight move reached) + object region + holding
-            now = {"holding": bool(self.holding(st)), "grip_closed": self.ex.width < self.w.w_open - 0.02}
+            now = {"holding": bool(self.holding(st)), "grip_closed": self.ex.width < self.w.w_open - 0.02,
+                   "tcp": np.asarray(st["tcp"], float)}
             if p.snap.get("region") is not None:
                 obs = self.w.observe(depth=True)
                 d_now = (obs.depth or {}).get("head")
