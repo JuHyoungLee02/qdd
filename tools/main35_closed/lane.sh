@@ -15,7 +15,9 @@ l9_on_gpu() {  # an L9 process on this GPU (by its command line)
   local u; u=$(nvidia-smi -i $G --query-gpu=uuid --format=csv,noheader 2>/dev/null)
   nvidia-smi --query-compute-apps=pid,gpu_uuid --format=csv,noheader 2>/dev/null | while IFS=', ' read -r pid gu; do
     [ "$gu" = "$u" ] || continue
-    tr '\0' ' ' < /proc/$pid/cmdline 2>/dev/null | grep -qiE '(^|[^a-z0-9])l9([^0-9]|$)' && { echo $pid; break; }
+    tr '\0' '\n' < /proc/$pid/environ 2>/dev/null | grep -q '^IR_INST=strip8_m35cl_' && continue  # our own lanes
+    tr '\0' ' ' < /proc/$pid/cmdline 2>/dev/null | sed 's#/data/harvest/out/l9/GPU_[A-Z]*##g' \
+      | grep -qiE '(^|[^a-z0-9])l9([^0-9]|$)' && { echo $pid; break; }
   done
 }
 want() { [ -f $W1 ] && { echo GPU_WANTED; return; }; [ -f $W2 ] && { echo lane_WANTED; return; }
