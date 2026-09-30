@@ -130,7 +130,7 @@ def main():
             ids = tg[i:i + per_job // arg("--tries", 2)]
             for t in range(arg("--tries", 2)):
                 for k in ids:
-                    rows.append({"seed": seed, "arm": "right", "family": "dining", "rule": "centrepiece",
+                    rows.append({"seed": seed, "arm": "right", "family": "dining", "rule": "seats2",
                                  "def": "gate_move", "split": "train", "style": "clean", "clean": True,
                                  "fixed": {"A": k}, "obj": k, "pool_ids": ids})
                     seed += 1

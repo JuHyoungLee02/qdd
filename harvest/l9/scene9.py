@@ -614,7 +614,7 @@ def blocked_s(pts_s: np.ndarray, top: float, parts, own=()) -> np.ndarray:
         if p["id"] in own:
             continue
         lo, hi = _bounds(p)
-        if hi[2] <= top + 0.005:
+        if hi[2] <= top + 0.001:  # a 4 mm mat / runner on the node blocks too (gate 1: objects spawned into it tipped)
             continue
         if lo[2] > top + GRIPPER_ABOVE:
             continue
