@@ -17,6 +17,7 @@ from __future__ import annotations
 import numpy as np
 
 from ..astra_motion.executor import CLOSE_WAIT_S, OPEN_WAIT_S, SETTLE_M_PER_TICK, SETTLE_TICKS, clip_box
+from . import adapter as AD
 from . import truth as T
 
 DS_TICKS = 4  # 0.2 s at 20 Hz: one decision step = one sample
@@ -28,9 +29,12 @@ BLOCKED_M = 0.03
 
 class TruthExec:
     def __init__(self, dt, table_z, tcp0, w_open, w_close, quat0, state_fn, tgt="o3", place="o5",
-                 r_goal: float = T.R_GOAL):
+                 mode: str = "A", continuation: bool = True):
         self.dt, self.table_z = float(dt), float(table_z)
-        self.r_goal = float(r_goal)  # 0 = a scripted executor (c* = the received command; the OXe arm)
+        if mode not in T.MODES + ("S",):
+            raise ValueError(mode)
+        self.mode = mode  # A / B / C = the envelope rule executed; S = scripted (c* = the received command; OXe)
+        self.cont = bool(continuation)
         self.w_open, self.w_close, self.width = float(w_open), float(w_close), float(w_open)
         self.goal_quat = np.asarray(quat0, float)
         self.state_fn, self.tgt, self.place = state_fn, tgt, place
@@ -66,7 +70,7 @@ class TruthExec:
         seg = {"goal_cmd": q, "goal_true0": gt, "grip": grip, "role": m.get("role", "lift"), "t_issue": float(t),
                "t_act": float(t) + float(m.get("delay_s", 0.0)), "pre": bool(m.get("pre", False)) and grip == "keep",
                "swap_t": m.get("swap_t"), "swap_dxyz": m.get("swap_dxyz"), "src": m.get("src", "truth"),
-               "noise": m.get("noise")}
+               "noise": m.get("noise"), "height": m.get("height", "lift"), "region": m.get("region")}
         self.target = q.copy()
         if seg["t_act"] <= t + 1e-9:
             self._activate(seg, t)
@@ -107,17 +111,45 @@ class TruthExec:
         self.plan = None
         return [{"t": round(t, 3), "event": action, "tcp": np.round(np.asarray(tcp, float), 4).tolist()}]
 
-    def c_star(self, st):
+    def kappa(self, st) -> float:
+        s = self.seg
+        return AD.kappa(s["height"], bool(st.get("holding")),
+                        float(np.linalg.norm(np.asarray(st["tcp"], float) - s["goal_cmd"])))
+
+    def true_point(self, st):
         s = self.seg
         gt = s["goal_true0"]
         if s["ref"] is not None:
             held = bool(st.get("holding"))
             if not (s["ref"] == self.tgt and held):
                 gt = gt + (np.asarray(st["obj"][s["ref"]], float) - s["ref0"])
-        c, mis = T.project_ball(gt, s["goal_cmd"], self.r_goal)
-        if self.r_goal == 0.0:
-            mis = False
+        return gt
+
+    def c_star(self, st, mode=None):
+        """-> (c*, mismatch, true point) under the envelope rule `mode` (default: the executed one)."""
+        m = mode or self.mode
+        gt = self.true_point(st)
+        if m == "S":
+            return self.seg["goal_cmd"].copy(), False, gt
+        c, mis = T.target_point(m, gt, self.seg["goal_cmd"], self.kappa(st))
         return c, mis, gt
+
+    def _continue(self, action, t):
+        """Adapter continuation while the upper thinks (NOW.md §1-0e): lift start after a held close, small retreat after
+        an open; a released segment (the episode loop may ask the upper at once)."""
+        if not self.cont or self.pending is not None:
+            return []
+        st = self.state_fn()
+        g = AD.continuation(action, bool(st.get("holding")), st["tcp"])
+        if g is None:
+            return []
+        g, _ = clip_box(g, self.table_z)
+        seg = {"goal_cmd": g, "goal_true0": g.copy(), "grip": "keep", "role": "lift", "t_issue": float(t),
+               "t_act": float(t), "pre": False, "swap_t": None, "swap_dxyz": None, "src": "adapter", "noise": None,
+               "height": "lift", "region": None, "cont": action}
+        self._activate(seg, t)
+        self.seg["released"] = True
+        return [{"t": round(t, 3), "event": "continuation", "after": action}]
 
     def _width_out(self, t):
         return self.width + (self.slip_m if t < self.slip_until else 0.0)
@@ -130,7 +162,9 @@ class TruthExec:
         if self.wait_until is not None:
             if t >= self.wait_until - 1e-9:
                 ev.append({"t": round(t, 3), "event": "gripper_done", "action": self.wait_action})
+                a = self.wait_action
                 self.wait_until = self.wait_action = None
+                ev += self._continue(a, t)
             self.k += 1
             return self.cmd.copy(), self._width_out(t), ev
         if self.pending_grip is not None:
@@ -163,8 +197,15 @@ class TruthExec:
         if self.plan is None or self.plan[1] >= DS_TICKS:
             P, _ = T.smooth_chunk(self.cmd, self.v, c, stop=stop)
             self.plan = [P, 0]
+            lab = {}
+            for m in T.MODES:  # the labels of every envelope rule from this same state (arms A / B / C)
+                cm, mm, _ = self.c_star(st, m)
+                lab[m] = {"c_star": cm.tolist(), "chunk": T.smooth_chunk(self.cmd, self.v, cm, stop=stop)[0].tolist(),
+                          "mismatch": bool(mm)}
             self.samples.append({"k": self.k, "t": round(t, 4), "tcp": tcp.tolist(), "p_cmd": self.cmd.tolist(),
-                                 "v": self.v.tolist(), "chunk": P.tolist(), "c_star": c.tolist(),
+                                 "v": self.v.tolist(), "chunk": P.tolist(), "c_star": c.tolist(), "mode": self.mode,
+                                 "labels": lab, "kappa": round(self.kappa(st), 3), "height": s["height"],
+                                 "cont": s.get("cont"),
                                  "goal_cmd": s["goal_cmd"].tolist(), "goal_true": gt.tolist(), "r_goal": T.R_GOAL,
                                  "seg_start": s["p_start"].tolist(),
                                  "allow": s["grip"] if s["grip"] in ("open", "close") else None,

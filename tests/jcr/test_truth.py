@@ -75,3 +75,21 @@ def test_holding_flicker_with_object_between_pads_is_not_dropped():
     k = T.anomaly_kinds(touched=set(), tgt="o3", holding=False, was_holding=True, grip_cmd_closed=True,
                         tgt_shift_m=0.0, mismatch=False, tgt_z=0.9, table_z=0.8, upright=True, pads_empty=False)
     assert "dropped" not in k
+
+
+def test_target_point_modes():
+    g, p = np.array([0.4, 0.0, 0.9]), np.array([0.41, 0.0, 0.9])
+    for m in T.MODES:
+        c, mis = T.target_point(m, p, g, kappa=1.0)
+        assert np.linalg.norm(c - p) < 0.002 and not mis  # 1 cm: corrected in every mode
+    far = np.array([0.50, 0.0, 0.9])
+    cA, mA = T.target_point("A", far, g)
+    cB, mB = T.target_point("B", far, g, kappa=1.0)
+    cC, mC = T.target_point("C", far, g, kappa=0.0)
+    assert np.isclose(np.linalg.norm(cA - g), T.R_GOAL) and mA
+    assert np.linalg.norm(cB - g) < 0.005 and mB  # strong pull: stays at the commanded point, flags it
+    assert np.linalg.norm(cC - g) <= T.R_GOAL + 1e-9 and mC
+
+
+def test_pull_weaker_when_carrying():
+    assert T.pull_weight(0.04, 0.2) > T.pull_weight(0.04, 0.9)

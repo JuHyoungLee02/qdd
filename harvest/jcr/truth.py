@@ -33,6 +33,35 @@ def project_ball(p_true, goal, r: float = R_GOAL):
     return g + d * (r / n), True
 
 
+MODES = ("A", "B", "C")  # A hard envelope, B pull only, C pull + hard envelope (user 10-01, NOW.md §1-0e)
+RHO_STRONG, RHO_WEAK = 0.02, 0.07  # B / C: correction scale at pull strength kappa = 1 / 0
+
+
+def pull_weight(dist: float, kappa: float) -> float:
+    """Share of the discrepancy d = p_true - goal the JCR corrects: ~1 for |d| << rho, ~0 for |d| >> rho, rho shrinking
+    with the pull strength kappa (strong near grasp / place, weak while carrying)."""
+    k = min(max(float(kappa), 0.0), 1.0)
+    rho = RHO_STRONG * k + RHO_WEAK * (1.0 - k)
+    return 1.0 / (1.0 + (float(dist) / rho) ** 4)
+
+
+def target_point(mode: str, p_true, goal, kappa: float = 1.0, r: float = R_GOAL):
+    """-> (c*, mismatch). A: project_ball(p_true, goal, r). B: goal + w * d (w = pull_weight), no hard wall; mismatch
+    when the pull keeps less than half of the correction (w < 0.5). C: the B point projected onto the r ball."""
+    p, g = np.asarray(p_true, float), np.asarray(goal, float)
+    if mode == "A":
+        return project_ball(p, g, r)
+    d = p - g
+    n = float(np.linalg.norm(d))
+    w = pull_weight(n, kappa)
+    c = g + w * d
+    mis = w < 0.5 and n > 1e-9
+    if mode == "C":
+        c, hit = project_ball(c, g, r)
+        mis = mis or hit
+    return c, mis
+
+
 def _v_brake(dist: float) -> float:
     """Largest speed from which discrete braking at A_MAX (speed drops A_MAX*DT per tick) stops within dist."""
     u = A_MAX * DT * DT

@@ -92,3 +92,37 @@ def test_delay_keeps_previous_until_active():
     assert np.allclose(w.tcp, p0)
     run(ex, w)
     assert np.linalg.norm(w.tcp - (p0 + [0.05, 0, 0])) < T.REACH_M
+
+
+def test_continuation_lifts_after_held_close_and_releases_the_loop():
+    w = Fake()
+    ex = make(w)
+    true = np.array([0.45, -0.30, 0.93])
+    ex.next_meta = {"goal_true": true, "role": "approach", "height": "grasp"}
+    ex.go_to(true, "close", w.t)
+    for _ in range(400):
+        cmd, _, ev = ex.tick(w.t, w.tcp)
+        w.tcp = cmd.copy()
+        w.t += 0.05
+        if any(e["event"] == "close" for e in ev):
+            w.holding = True
+        if any(e["event"] == "continuation" for e in ev):
+            break
+    assert not ex.busy and ex.seg is not None and ex.seg["cont"] == "close"
+    for _ in range(60):
+        cmd, _, _ = ex.tick(w.t, w.tcp)
+        w.tcp = cmd.copy()
+        w.t += 0.05
+    assert w.tcp[2] > true[2] + 0.02
+
+
+def test_every_sample_has_labels_for_all_modes():
+    w = Fake()
+    ex = TruthExec(0.05, 0.80, w.tcp, 0.107, 0.05, (1, 0, 0, 0), w.state, mode="B")
+    true = np.array([0.45, -0.30, 0.93])
+    ex.next_meta = {"goal_true": true, "role": "approach", "height": "above"}
+    ex.go_to(true + [0.06, 0, 0], "keep", w.t)
+    run(ex, w)
+    s = ex.samples[0]
+    assert set(s["labels"]) == set(T.MODES) and s["mode"] == "B"
+    assert s["labels"]["A"]["mismatch"] and np.allclose(s["chunk"], s["labels"]["B"]["chunk"])

@@ -13,7 +13,7 @@ import numpy as np
 P_NORMAL = 0.5
 P_TRUTH = 0.3
 P_SWAP = 0.10
-P_PRE = 0.30
+P_PRE = 0.0  # pre-issue before arrival: a later option (needs upper training, NOW.md §1-0e)
 PHYS = ("push", "shake", "obstacle", "slip")
 
 
@@ -21,6 +21,7 @@ def plan_episode(seed: int, scale: float = 1.0) -> dict:
     rng = np.random.default_rng([int(seed), 7001])
     normal = bool(rng.uniform() < P_NORMAL)
     src = "truth" if rng.uniform() < P_TRUTH else "upper"
+    mode = "ABC"[int(rng.integers(3))]  # executed envelope rule (every sample carries the labels of all three)
     n_ev = int(rng.integers(1, 3))
     kinds = [PHYS[i] for i in rng.choice(len(PHYS), size=n_ev, replace=False)]
     push_m = float(rng.uniform(0.01, 0.03)) * scale
@@ -40,5 +41,5 @@ def plan_episode(seed: int, scale: float = 1.0) -> dict:
                 ev.append({"kind": "obstacle"})
             else:
                 ev.append({"kind": "slip", "open_m": slip_m, "dur_s": slip_s, "after_lift_s": 1.0})
-    return {"seed": int(seed), "normal": normal, "src": src, "scale": float(scale), "events": ev,
+    return {"seed": int(seed), "normal": normal, "src": src, "mode": mode, "scale": float(scale), "events": ev,
             "p_swap": 0.0 if normal else P_SWAP, "p_pre": P_PRE, "rng_seed": [int(seed), 7002]}

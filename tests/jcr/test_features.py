@@ -47,3 +47,19 @@ def test_norm_roundtrip():
     n = F.Norm.fit(ss)
     d = F.delta(ss[0])
     assert np.allclose(n.unz(n.z(d)), d, atol=1e-6)
+
+
+def test_branch_modes_use_the_same_rule_as_the_executor():
+    rng = np.random.default_rng(1)
+    s = sample(height="above", holding=True)
+    for m in T.MODES:
+        b = F.branch(s, rng, mode=m)
+        c, _ = T.target_point(m, b["goal_true"], b["goal_cmd"], b["kappa"])
+        assert np.allclose(b["c_star"], c)
+
+
+def test_use_mode_swaps_labels():
+    s = sample()
+    s["labels"] = {"B": {"chunk": [[0, 0, 0]] * T.H, "c_star": [0, 0, 0], "mismatch": True}}
+    o = F.use_mode(s, "B")
+    assert o["chunk"] == [[0, 0, 0]] * T.H and "cmd_mismatch" in o["anomaly"] and F.use_mode(s, "A") is s

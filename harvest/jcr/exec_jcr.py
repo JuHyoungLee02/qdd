@@ -19,6 +19,7 @@ from . import truth as T
 from .exec_truth import DS_TICKS, TruthExec
 
 R_PATH = 0.04
+R_SAFE = 0.10  # arm B (pull only): only this wide safety range is cut (NOW.md §1-0e)
 V_CAP = 0.12
 REST_M = 0.003
 REST_N = 2
@@ -64,7 +65,9 @@ class JcrExec(TruthExec):
         if self.wait_until is not None:
             if t >= self.wait_until - 1e-9:
                 ev.append({"t": round(t, 3), "event": "gripper_done", "action": self.wait_action})
+                a = self.wait_action
                 self.wait_until = self.wait_action = None
+                ev += self._continue(a, t)
             self.k += 1
             return self.cmd.copy(), self._width_out(t), ev
         if self.pending_grip is not None:
@@ -88,6 +91,7 @@ class JcrExec(TruthExec):
         if self.plan is None or self.plan[1] >= DS_TICKS:
             st = self.state_fn()  # privileged: the truth label of this state only (relabel), never used to act
             c, mis, gt = self.c_star(st)
+            kap = self.kappa(st)  # adapter rule: stage + holding (self-measured in deployment) + distance
             hold = bool(st.get("holding"))
             an = T.anomaly_kinds(st.get("touched", set()), self.tgt, hold, self.was_holding,
                                  self.width < self.w_open - 0.02, 0.0 if s["ref"] != self.tgt else float(
@@ -98,8 +102,10 @@ class JcrExec(TruthExec):
             self.was_holding = self.was_holding or hold
             P_truth, _ = T.smooth_chunk(self.cmd, self.v, c, stop="unrecoverable" in an)
             ob = self.obs_fn()
+            r_env = R_SAFE if self.mode == "B" else T.R_GOAL
             smp = {"k": self.k, "t": round(t, 4), "tcp": tcp.tolist(), "p_cmd": self.cmd.tolist(),
-                   "v": self.v.tolist(), "goal_cmd": s["goal_cmd"].tolist(), "r_goal": T.R_GOAL, "allow": allow,
+                   "v": self.v.tolist(), "goal_cmd": s["goal_cmd"].tolist(), "r_goal": r_env, "allow": allow,
+                   "kappa": round(kap, 3), "height": s["height"],
                    "cmd_age": round(t - s["t_issue"], 3), "q": list(map(float, ob["q"])), "grip_w": ob["grip_w"],
                    "effort": ob["effort"]}
             try:
@@ -120,11 +126,18 @@ class JcrExec(TruthExec):
                 if kind == "stop":
                     self.stats["stop"] += 1
                     P = np.repeat(self.cmd[None], T.H, 0)
-                P = envelope_clip(P, self.cmd, s["p_start"], s["goal_cmd"], T.R_GOAL)
+                P = envelope_clip(P, self.cmd, s["p_start"], s["goal_cmd"], r_env,
+                                  r_path=R_SAFE if self.mode == "B" else R_PATH)
                 if kind in ("close", "open") and kind == allow and self.grip_at is None:
                     self.grip_at = (t + row * self.dt, kind)
             self.plan = [P, 0]
+            lab = {}
+            for m in T.MODES:
+                cm, mm, _ = self.c_star(st, m)
+                lab[m] = {"c_star": cm.tolist(), "mismatch": bool(mm), "chunk": T.smooth_chunk(
+                    smp["p_cmd"], smp["v"], cm, stop="unrecoverable" in an)[0].tolist()}
             smp.update(truth_chunk=P_truth.tolist(), c_star=c.tolist(), goal_true=gt.tolist(), anomaly=sorted(an),
+                       labels=lab, mode=self.mode, cont=s.get("cont"),
                        touched=sorted(st.get("touched", ())), holding=hold, stop=("unrecoverable" in an),
                        seg_start=s["p_start"].tolist(), role=s["role"], cmd_src=s["src"], stage=self.stage,
                        jcr={"delta": o.get("delta"), "event": [kind, row], "contact_p": o.get("contact_p"),

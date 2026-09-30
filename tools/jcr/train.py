@@ -28,7 +28,7 @@ MODEL_DIR = "/data/harvest/models/Qwen3-VL-4B-Instruct"
 RECOVER_SHARE = 1.0 / 2.5  # recover : progress = 1 : 1.5 inside disturbed episodes
 
 
-def load_data(roots):
+def load_data(roots, mode="A"):
     tr, va = [], []
     for root in roots:
         for sp in sorted(glob.glob(os.path.join(root, "*", "s*", "samples.jsonl"))):
@@ -47,6 +47,7 @@ def load_data(roots):
                     s["anomaly"] = [k for k in s.get("anomaly", []) if k != "dropped"]
                 s["_imgs"] = [["head camera", os.path.join(d, "img", s["img"] + "_head.jpg")],
                               ["right wrist camera", os.path.join(d, "img", s["img"] + "_wrist.jpg")]]
+                s = FT.use_mode(s, mode)
                 s["_normal"], s["_seed"] = normal, seed
                 (va if seed % 20 == 0 else tr).append(s)
     return tr, va
@@ -87,8 +88,8 @@ def cmd_train(a):
     import torch
     torch.manual_seed(a.seed)
     rng = np.random.default_rng(a.seed)
-    tr, va = load_data(a.data)
-    print(json.dumps({"train": len(tr), "val": len(va)}), flush=True)
+    tr, va = load_data(a.data, a.envelope)
+    print(json.dumps({"train": len(tr), "val": len(va), "envelope": a.envelope}), flush=True)
     device = "cuda"
     m, enc = make_model(a, tr, device)
     heads = list(m.expert.parameters()) + list(m.head.parameters())
@@ -103,7 +104,8 @@ def cmd_train(a):
     t0 = time.time()
     for step in range(a.steps):
         idx = rng.choice(len(tr), size=a.batch, p=w)
-        rows = [(tr[i]["_imgs"], [tr[i]] + [FT.branch(tr[i], rng) for _ in range(a.K)]) for i in idx]
+        rows = [(tr[i]["_imgs"], [tr[i]] + [FT.branch(tr[i], rng, mode=a.envelope) for _ in range(a.K)])
+                for i in idx]
         m.train()
         with torch.autocast("cuda", dtype=torch.bfloat16, enabled=a.backbone != "tiny"):
             loss, parts = m.losses(enc, rows, device)
@@ -120,21 +122,22 @@ def cmd_train(a):
             print("STEP " + json.dumps(rec), flush=True)
         if a.save_every and (step + 1) % a.save_every == 0 and step + 1 < a.steps:
             m.save(os.path.join(a.out, f"step{step + 1}"), {"step": step + 1})
-    m.save(os.path.join(a.out, "last"), {"step": a.steps, "data": a.data, "n_train": len(tr), "args": vars(a)})
+    m.save(os.path.join(a.out, "last"), {"step": a.steps, "data": a.data, "n_train": len(tr), "args": vars(a),
+                                         "envelope": a.envelope})
     if va:
-        res = offline_eval(m, enc, va[:a.max_val] if a.max_val else va, device, seed=0)
+        res = offline_eval(m, enc, va[:a.max_val] if a.max_val else va, device, seed=0, mode=a.envelope)
         json.dump(res, open(os.path.join(a.out, "last", "offline.json"), "w"), indent=1)
         print("OFFLINE " + json.dumps(res), flush=True)
     print("TRAIN_DONE", flush=True)
 
 
-def offline_eval(m, enc, va, device, seed=0):
+def offline_eval(m, enc, va, device, seed=0, mode="A"):
     rng = np.random.default_rng(seed + 1)
     m.eval()
     comp = {"far": [], "near": []}
     end_mm, ev_ok, ev_row, cp, ct, ap, at = [], [], [], [], [], [], []
     for s in va:
-        grp = [s] + [FT.branch(s, rng) for _ in range(2)]
+        grp = [s] + [FT.branch(s, rng, mode=mode) for _ in range(2)]
         outs = m.predict(enc, s["_imgs"], grp, device, seed=seed)
         for g, o in zip(grp, outs):
             pd, td = np.asarray(o["delta"])[-1], FT.delta(g)[-1]
@@ -177,9 +180,9 @@ def auroc(p, y):
 
 def cmd_eval(a):
     from harvest.jcr.model import load
-    _, va = load_data(a.data)
+    _, va = load_data(a.data, a.envelope)
     m, enc = load(a.ckpt, MODEL_DIR, "cuda")
-    res = offline_eval(m, enc, va[:a.max_val] if a.max_val else va, "cuda")
+    res = offline_eval(m, enc, va[:a.max_val] if a.max_val else va, "cuda", mode=a.envelope)
     json.dump(res, open(a.out, "w"), indent=1)
     print("OFFLINE " + json.dumps(res), flush=True)
 
@@ -199,6 +202,7 @@ def main(argv=None):
     ap.add_argument("--max-val", type=int, default=400)
     ap.add_argument("--save-every", type=int, default=1000)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--envelope", default="A", choices=["A", "B", "C"])
     a = ap.parse_args(argv)
     (cmd_train if a.mode == "train" else cmd_eval)(a)
 

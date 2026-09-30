@@ -26,6 +26,7 @@ import time
 
 import numpy as np
 
+from . import adapter as AD
 from . import disturb as D
 from . import truth as T
 from . import upper as U
@@ -77,6 +78,8 @@ def classes():
         img_dir = vid_dir = None
         exec_kind, client = "truth", None
         _fr_cache = None
+        cur_region = None
+        pending_report = ""
 
         # ---------------------------------------------------------------- privileged state
         def _priv(self) -> dict:
@@ -93,18 +96,36 @@ def classes():
             self._dstate = {e["kind"]: {"done": False} for e in self.plan["events"]}
             self._unrec_t = None
             args = (w.dt, w.table_z, st["tcp"], w.w_open, w.w_close, w.quat0, self._priv)
-            kw = dict(tgt=self.info["tgt"], place=self.info["place"])
+            kw = dict(tgt=self.info["tgt"], place=self.info["place"], mode=self.plan["mode"])
+            ep = self
+
+            class _Hist(list):  # the adapter's JCR report joins the upper's 'previous command and result' line
+                def append(self, x):
+                    super().append(x + (f"; {ep.pending_report}" if ep.pending_report else ""))
+                    ep.pending_report = ""
+            self.history = _Hist(self.history)
             if self.exec_kind == "jcr":
                 from .exec_jcr import JcrExec
                 return JcrExec(*args, client=self.client, obs_fn=self._obs, seed=int(self.seed), **kw)
-            if self.exec_kind == "script":  # OXe: c* = the received command (no correction)
-                return TruthExec(*args, r_goal=0.0, **kw)
             return TruthExec(*args, **kw)
+
+        def _imgs(self, fr) -> dict:
+            """JCR images: head / wrist with the adapter's target mask tinted (region of the last point command,
+            re-projected into the live cameras)."""
+            hc = self.w._cam("cam_head", "head")
+            out = {}
+            for key, cam in (("head", hc), ("wrist", fr["wrist_cam"])):
+                img = np.asarray(fr[key])[..., :3].astype(np.uint8)
+                out[key + "_raw"] = img
+                out[key] = AD.overlay(img, AD.project_mask(cam, self.cur_region)) if self.cur_region is not None \
+                    else img
+            return out
 
         def _obs(self) -> dict:
             fr = self._fr_cache if self._fr_cache is not None else self.w.frame()
+            ims = self._imgs(fr)
             env = self.w.env
-            return {"head": fr["head"], "wrist": fr["wrist"], "q": np.asarray(env.arm_q(), float).tolist(),
+            return {"head": ims["head"], "wrist": ims["wrist"], "q": np.asarray(env.arm_q(), float).tolist(),
                     "grip_w": float(env.gripper_width()), "effort": self._effort()}
 
         # ---------------------------------------------------------------- commands
@@ -140,9 +161,13 @@ def classes():
                     return [{"t": round(t, 3), "event": "point_unresolved"}]
                 role = self._role(cmd, hold)
                 gt = np.asarray(res["goal"], float)
+                if cmd.get("point_2d") is not None:
+                    reg = AD.region_points(self.head, self.depth, self.w.table_z, cmd["point_2d"], tcp=st["tcp"])
+                    self.cur_region = reg if reg is not None else self.cur_region
                 n = self._noise(role, cmd["height"], cmd["gripper"], self.plan["scale"])
                 goal = gt + np.asarray(n["dxyz"], float)
                 self.ex.next_meta = self._meta(role, n, gt, t)
+                self.ex.next_meta["height"] = cmd["height"]
                 self.ex.stage = self.model.last_step
                 self.cmd_log.append({"t": round(t, 3), "stage": self.model.last_step, "cmd": cmd, "role": role,
                                      "goal_true": gt.round(4).tolist(), "goal_cmd": goal.round(4).tolist(),
@@ -152,7 +177,7 @@ def classes():
             if cmd["mode"] == "edit":
                 n = self._noise("lift", "lift", cmd.get("gripper", "keep"), self.plan["scale"])
                 self.ex.next_meta = {"role": "lift", "delay_s": n["delay_s"], "src": self.plan["src"], "noise": n,
-                                     "pre": False}
+                                     "pre": False, "height": "lift"}
                 self.ex.stage = self.model.last_step
                 self.cmd_log.append({"t": round(t, 3), "stage": self.model.last_step, "cmd": cmd, "role": "lift",
                                      "noise": n})
@@ -242,9 +267,9 @@ def classes():
             self._fr_cache = None
             if len(self.ex.samples) > n0 and fr is not None:
                 s = self.ex.samples[-1]
-                for cam, key in (("head", "head"), ("wrist", "wrist")):
-                    Image.fromarray(np.asarray(fr[key])[..., :3].astype(np.uint8)).save(
-                        os.path.join(self.img_dir, f"k{s['k']:05d}_{cam}.jpg"), quality=90)
+                ims = self._imgs(fr)
+                for key in ("head", "wrist", "head_raw", "wrist_raw"):
+                    Image.fromarray(ims[key]).save(os.path.join(self.img_dir, f"k{s['k']:05d}_{key}.jpg"), quality=90)
                 s["img"] = f"k{s['k']:05d}"
                 s["q"] = np.asarray(self.w.env.arm_q(), float).round(5).tolist()
                 s["effort"] = self._effort()
@@ -266,11 +291,32 @@ def classes():
                                "touched": sorted(p["touched"]), "contacts": contacts,
                                "obj": {k: np.round(v, 5).tolist() for k, v in p["obj"].items()},
                                "busy": self.ex.busy, "stage": self.ex.stage, "anomaly": an})
+            self._report(t)
             if "unrecoverable" in an:
                 self._unrec_t = t if self._unrec_t is None else self._unrec_t
             else:
                 self._unrec_t = None
             self._ntick += 1
+
+        def _report(self, t):
+            """Adapter report text after a gripper action / arrival (contact, grasp success, anomalies)."""
+            from .truth import ANOMALIES
+            evs = [e for e in self.events if e.get("t", -1) >= t - 1e-9]
+            if not any(e["event"] in ("gripper_done", "settled", "timeout", "reach") for e in evs):
+                return
+            smp = self.ex.samples[-1] if self.ex.samples else {}
+            jc = smp.get("jcr") or {}
+            cp = jc.get("contact_p")
+            if cp is None and "touched" in smp:  # truth / scripted executors: the sensor itself
+                cp = float(self.info["tgt"] in smp["touched"])
+            grasp = None
+            if any(e["event"] == "gripper_done" and e.get("action") == "close" for e in evs):
+                grasp = bool(self.holding(self.w.status()))
+            if jc.get("anomaly_p"):
+                an = [k for k, p in zip(ANOMALIES, jc["anomaly_p"]) if p >= 0.5]
+            else:
+                an = smp.get("anomaly", [])
+            self.pending_report = AD.report_text(cp, grasp, an)
 
         def _effort(self) -> float:
             env = self.w.env
@@ -370,6 +416,7 @@ def main(argv=None):
     ap.add_argument("--src", default="plan", choices=["plan", "truth", "upper"],
                     help="eval: truth = clean commands (OJ), upper = main-35B errors injected (OJe / OXe)")
     ap.add_argument("--jcr-url", default="")
+    ap.add_argument("--envelope", default="A", choices=["A", "B", "C"], help="eval: the JCR arm's envelope rule")
     a = ap.parse_args(argv)
     if a.mode == "eval" and (a.executor == "truth" or a.src == "plan"):
         raise SystemExit("--mode eval needs --executor script|jcr and --src truth|upper")
@@ -408,6 +455,7 @@ def main(argv=None):
                 up = a.src == "upper"
                 ep.plan = {"seed": s, "normal": True, "src": a.src, "scale": 1.0, "events": [],
                            "p_swap": D.P_SWAP if up else 0.0, "p_pre": D.P_PRE if up else 0.0,
+                           "mode": "S" if a.executor == "script" else a.envelope,
                            "rng_seed": [int(s), 9001]}
             ep.exec_kind, ep.client = a.executor, client
             ep.dist = dist
