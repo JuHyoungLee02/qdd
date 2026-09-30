@@ -32,7 +32,9 @@ from . import truth as T
 from . import upper as U
 
 TRAIN_SEEDS = range(10000, 60000)  # = datagen.gen.R2_TRAIN_SEEDS
-VID_EVERY = 2
+VID_FPS = 5  # decision frames (0.2 s)
+NEAR_IMG_M = 0.10  # data mode: decisions within this of the command target (or <= RECOVER_S after a disturbance)
+# always get images; farther transit decisions only 1 in --far-img-every
 RECOVER_S = 3.0  # RaC: samples later than this after a disturbance, in a failed episode, are the 'tail' (dropped)
 UNREC_END_S = 1.0
 
@@ -77,6 +79,7 @@ def classes():
         plan = dist = rng = None
         img_dir = vid_dir = None
         exec_kind, client = "truth", None
+        far_every = 1
         _fr_cache = None
         cur_region = None
         pending_report = ""
@@ -259,13 +262,18 @@ def classes():
             t = float(st["t"])
             self._disturb(t)
             samp = self._will_sample(t)
-            vid = self._ntick % VID_EVERY == 0
-            fr = self.w.frame() if (samp or vid) else None
-            self._fr_cache = fr if samp else None
+            if samp and self.far_every > 1 and self.exec_kind != "jcr":  # data mode: far transit rendered 1 in N
+                near = float(np.linalg.norm(np.asarray(st["tcp"], float) - self.ex.target)) < NEAR_IMG_M
+                recent = any(t - e["t"] < RECOVER_S for e in self.dist_events)
+                self._far_n = getattr(self, "_far_n", -1) + (0 if (near or recent) else 1)
+                samp = near or recent or self._far_n % self.far_every == 0
+            vid = samp  # video = the decision frames only (user 10-01: render only at decisions)
+            fr = self.w.frame() if samp else None
+            self._fr_cache = fr
             n0 = len(self.ex.samples)
             super()._tick()
             self._fr_cache = None
-            if len(self.ex.samples) > n0 and fr is not None:
+            if len(self.ex.samples) > n0 and fr is not None and self.ex.samples[-1]["k"] == self.ex.k - 1:
                 s = self.ex.samples[-1]
                 ims = self._imgs(fr)
                 for key in ("head", "wrist", "head_raw", "wrist_raw"):
@@ -331,6 +339,17 @@ def classes():
             return None
 
     return StepTruth, JcrRecEpisode
+
+
+def make_mp4_fps(frames_dir: str, out: str, fps: int) -> bool:
+    import subprocess
+
+    from ..teach_pt.run_closed_l8s import ffmpeg_exe
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    r = subprocess.run([ffmpeg_exe(), "-y", "-loglevel", "error", "-framerate", str(fps), "-i",
+                        os.path.join(frames_dir, "f%05d.jpg"), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-vf",
+                        "pad=ceil(iw/2)*2:ceil(ih/2)*2", out], capture_output=True, text=True)
+    return r.returncode == 0 and os.path.exists(out)
 
 
 def finalize(ep, res: dict, od: str) -> dict:
@@ -410,7 +429,7 @@ def main(argv=None):
     ap.add_argument("--yield-files", default="")
     ap.add_argument("--owner", default="")
     ap.add_argument("--stop-calls", type=int, default=30)
-    ap.add_argument("--stop-motion", type=float, default=120.0)
+    ap.add_argument("--stop-motion", type=float, default=None, help="default: data 60 s (short episodes), eval 120 s")
     ap.add_argument("--mode", default="data", choices=["data", "eval"])
     ap.add_argument("--executor", default="truth", choices=["truth", "script", "jcr"])
     ap.add_argument("--src", default="plan", choices=["plan", "truth", "upper"],
@@ -419,7 +438,10 @@ def main(argv=None):
     ap.add_argument("--envelope", default="A", choices=["A", "B", "C"], help="eval: the executed envelope rule")
     ap.add_argument("--prio", default="", help="eval: JSON overriding the B / C blend parameters (rule sweep)")
     ap.add_argument("--clip-r", type=float, default=None, help="eval: rule A width (m)")
+    ap.add_argument("--far-img-every", type=int, default=3, help="data: far-transit decisions rendered 1 in N")
     a = ap.parse_args(argv)
+    if a.stop_motion is None:
+        a.stop_motion = 60.0 if a.mode == "data" else 120.0
     if a.mode == "eval" and a.src == "plan":
         raise SystemExit("--mode eval needs --src truth|upper (executor truth = the rule ceiling, sweep stage 2)")
     if a.prio:
@@ -430,11 +452,11 @@ def main(argv=None):
     yf = [f for f in a.yield_files.split(",") if f]
     code = 0
     try:
-        from ..astra_solo.world import SoloWorld
-        from ..teach_pt.run_closed_l8s import claim, make_mp4, yield_reason
+        from ..teach_pt.run_closed_l8s import claim, yield_reason
+        from .world import JcrWorld
         StepTruth, Ep = classes()
         dist = U.load_dist(a.dist)
-        world = SoloWorld(a.variant, depth=True)
+        world = JcrWorld(a.variant, depth=True)
         print("WORLD " + json.dumps({"variant": a.variant, "dt": world.dt, "dist": dist.get("sha256"),
                                      "scale": a.scale}), flush=True)
         if abs(world.dt - T.DT) > 1e-6:
@@ -465,6 +487,7 @@ def main(argv=None):
                            "mode": "S" if a.executor == "script" else a.envelope,
                            "rng_seed": [int(s), 9001]}
             ep.exec_kind, ep.client = a.executor, client
+            ep.far_every = a.far_img_every if a.mode == "data" else 1
             ep.dist = dist
             ep.rng = np.random.default_rng(ep.plan["rng_seed"])
             ep.cmd_log = []
@@ -483,7 +506,7 @@ def main(argv=None):
                 print("EP_ERROR " + json.dumps({"seed": s, "err": repr(ex)}), flush=True)
                 continue
             mp4 = os.path.join(a.vid_root, a.variant, f"s{s}.mp4")
-            ok = make_mp4(ep.vid_dir, mp4)
+            ok = make_mp4_fps(ep.vid_dir, mp4, VID_FPS)
             if ok:  # the per-sample head / wrist frames in img/ are the kept originals; the composite is the video
                 for fn in os.listdir(ep.vid_dir):
                     os.remove(os.path.join(ep.vid_dir, fn))

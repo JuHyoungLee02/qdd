@@ -15,12 +15,17 @@ N_EP=${N_EP:-2000}; W=$Q/out/l9/GPU_WANTED; POD=$(hostname)
 export JCR_JOB=chain_d1
 mkdir -p $R/lanes $Q/logs/jcr
 ev() { echo "$(TZ=Asia/Seoul date '+%F %H:%M') KST | JCR | $*" >> $R/chain_events.log; }
+wanted_me() { [ -f $W ] || return 1; [ -s $W ] || return 0; grep -qiE "(^|[^a-z0-9-])((7a2a-)?x2:1|all)([^0-9]|$)" $W; }
 n_ep() { ls $D/*/s*/ep.json 2>/dev/null | wc -l; }
 alive() { ls $R/lanes/${POD}_g1_*.alive 2>/dev/null | wc -l; }
+eta() {  # finish estimate from the episodes of the last hour
+  local n1 n0; n1=$(n_ep); n0=$(find $D -maxdepth 3 -name ep.json -mmin +60 2>/dev/null | wc -l)
+  local r=$((n1 - n0)); [ $r -le 0 ] && { echo "ETA n/a"; return; }
+  echo "rate ${r}/h, ETA $(TZ=Asia/Seoul date -d "+$(( (N_EP - n1) * 60 / r )) min" '+%m-%d %H:%M') KST"; }
 ev "chain start code=$C d1=$(n_ep)/$N_EP"
 last=-1
 while [ "$(n_ep)" -lt "$N_EP" ]; do
-  if [ ! -f $W ] && [ "$(alive)" = 0 ]; then
+  if ! wanted_me && [ "$(alive)" = 0 ]; then
     rm -f $R/lanes/${POD}_g1_*.WANTED
     for x in "h standard 11000-11999" "i dr 21000-21999" "j standard 11000-11999" "k dr 21000-21999"; do
       set -- $x; nohup bash $C/tools/jcr/lane.sh $C 1 ${POD}_g1_$1 $2 $3 $D $V 0.75 > /dev/null 2>&1 &
@@ -28,9 +33,9 @@ while [ "$(n_ep)" -lt "$N_EP" ]; do
     ev "d1 lanes (re)started at $(n_ep) eps"
     sleep 120
   fi
-  n=$(n_ep); [ $((n / 250)) != $((last / 250)) ] && { ev "d1 progress $n/$N_EP (L9 wanted=$([ -f $W ] && echo yes || echo no))"; last=$n; }
+  n=$(n_ep); [ $((n / 100)) != $((last / 100)) ] && { ev "d1 progress $n/$N_EP (x2:1 wanted by L9=$(wanted_me && echo yes || echo no), $(eta))"; last=$n; }
   # all seeds claimed and lanes finished but short of N_EP (errors): proceed with what exists
-  [ "$(alive)" = 0 ] && [ ! -f $W ] && grep -q "LANE_DONE" $Q/logs/jcr/lanes.log && \
+  [ "$(alive)" = 0 ] && ! wanted_me && grep -q "LANE_DONE" $Q/logs/jcr/lanes.log && \
     [ "$(grep -c "_g1_[hijk] LANE_DONE" $Q/logs/jcr/lanes.log)" -ge 4 ] && { ev "d1 lanes done at $(n_ep) eps"; break; }
   sleep 300
 done

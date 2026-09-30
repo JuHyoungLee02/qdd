@@ -20,7 +20,11 @@ l9_on_gpu() {
       | grep -qiE '(^|[^a-z0-9])l9([^0-9]|$)' && { echo $pid; break; }
   done
 }
-want() { [ -f $W1 ] && { echo GPU_WANTED; return; }; [ -f $W2 ] && { echo lane_WANTED; return; }
+# GPU_WANTED names the cards L9 wants ("<pod short>:<gpu>" per line/word, e.g. 7a2a:3); an empty file = all cards.
+# User 10-01 (render plan A): JCR keeps x2 GPU1 unless the file names it (x2:<G> / 7a2a-x2:<G>) or is empty / "all".
+wanted_me() { [ -f $W1 ] || return 1; [ -s $W1 ] || return 0
+  grep -qiE "(^|[^a-z0-9-])((7a2a-)?x2:$G|all)([^0-9]|$)" $W1; }
+want() { wanted_me && { echo GPU_WANTED; return; }; [ -f $W2 ] && { echo lane_WANTED; return; }
   local p; p=$(l9_on_gpu); [ -n "$p" ] && echo "l9_pid_$p"; }
 freed() {
   rm -f $R/lanes/$LN.alive
