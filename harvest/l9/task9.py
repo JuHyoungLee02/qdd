@@ -399,6 +399,61 @@ def _defs():
            "Put the {A} down beside the {R}, on its right.", "Take the {A} down next to the {R}.",
            "The {A} goes down, right of the {R}."), dst={"P": {"type": "spot", "rel": "right", "ref": "R"}},
         needs=("higher",))
+    # extra single-step definitions (headroom for the >= 75 passing G1, 2026-10-01)
+    add("rel_behind_container", "relation", {"A": T, "H": W_}, [("A", "P")],
+        _t("Put the {A} behind the {H}.", "Place the {A} on the far side of the {H}.", "Set the {A} just behind the {H}.",
+           "Move the {A} so it stands behind the {H}.", "The {A} goes behind the {H}."),
+        dst={"P": {"type": "spot", "rel": "behind", "ref": "H"}})
+    add("rel_front_of_container", "relation", {"A": T, "H": W_}, [("A", "P")],
+        _t("Put the {A} in front of the {H}.", "Place the {A} on the near side of the {H}.", "Set the {A} just in front of the {H}.",
+           "Move the {A} so it stands in front of the {H}.", "The {A} goes in front of the {H}."),
+        dst={"P": {"type": "spot", "rel": "front", "ref": "H"}})
+    add("in_kind_food", "put_in", {"A": dict(T, cats=FOOD), "X": dict(T, cats=TOYISH), "H": W_}, [("A", "H")],
+        _t("Put the food into the {H}.", "Put the {A} into the {H}, not the toy.", "Place the food item, the {A}, in the {H}.",
+           "The {A} goes into the {H}.", "Drop the {A} into the {H}."))
+    add("in_kind_toy", "put_in", {"A": dict(T, cats=TOYISH), "X": dict(T, cats=FOOD), "H": W_}, [("A", "H")],
+        _t("Put the toy into the {H}.", "Put the {A} into the {H}, not the food.", "Place the toy, the {A}, in the {H}.",
+           "The {A} goes into the {H}.", "Drop the {A} into the {H}."))
+    add("set_drink_front", "set", {"A": dict(T, cats=DRINK), "H": PL}, [("A", "P")],
+        _t("Set the {A} in front of the {H}.", "Put the {A} on the near side of the {H}.", "Place the {A} just in front of the {H}.",
+           "The {A} goes in front of the {H}.", "Put the {A} before the {H}, close to me."),
+        dst={"P": {"type": "spot", "rel": "front", "ref": "H"}})
+    add("clear_food_bowl", "clear", {"A": dict(T, cats=FOOD), "H": {"role": "container", "kind": "wide", "cats": ("bowl",)}},
+        [("A", "H")], _t("Clear the {A} into the {H}.", "Put the leftover {A} in the {H}.", "Tidy the {A} away into the {H}.",
+                         "The {A} goes back into the {H}.", "Put the {A} in the {H} to clear up."))
+    add("clear_toy_bin", "clear", {"A": dict(T, cats=TOYISH), "H": {"role": "container", "kind": "wide",
+                                                                  "cats": ("bin", "basket", "box")}},
+        [("A", "H")], _t("Tidy the {A} into the {H}.", "Put the {A} away in the {H}.", "Clear the {A} into the {H}.",
+                         "The {A} belongs in the {H}.", "Put the {A} back in the {H}."))
+    add("to_front_right", "arrange", {"A": T}, [("A", "P")],
+        _t("Move the {A} to the front right of the {Msurf}.", "Put the {A} near the front right.", "Place the {A} closer to me, on the right.",
+           "Put the {A} in the front right area.", "Move the {A} to the near right corner."),
+        dst={"P": {"type": "spot", "corner": "front_right"}})
+    add("to_back_left", "arrange", {"A": T}, [("A", "P")],
+        _t("Move the {A} to the back left of the {Msurf}.", "Put the {A} far back on the left.", "Place the {A} away from me, on the left.",
+           "Put the {A} in the back left area.", "Move the {A} to the rear left corner."),
+        dst={"P": {"type": "spot", "corner": "back_left"}})
+    add("spread_right", "arrange", {"A": T, "B": T}, [("A", "P")],
+        _t("Move the {A} away from the {B}, to its right.", "Give the {B} room: put the {A} on the {B}'s right.",
+           "Separate the {A} from the {B}; place it to the right.", "Put the {A} a little to the right of the {B}.",
+           "Shift the {A} right of the {B}."), dst={"P": {"type": "spot", "rel": "right", "ref": "B", "gap": 0.06}})
+    add("stack_named", "stack", {"A": dict(T, colour_named=True), "X": dict(T, decoy_of="A"), "B": B_}, [("A", "B")],
+        _t("Stack the {A} on the {B}.", "Put the {A}, not the other one, on the {B}.", "Place the {A} on top of the {B}.",
+           "The {A} goes on the {B}.", "Set the {A} onto the {B}."))
+    add("down_left_of", "height", {"A": dict(T, on="higher"), "R": T}, [("A", "P")],
+        _t("Bring the {A} down and put it left of the {R}.", "Move the {A} from the {Asurf} to the left of the {R}.",
+           "Put the {A} down beside the {R}, on its left.", "Take the {A} down next to the {R}, on the left.",
+           "The {A} goes down, left of the {R}."), dst={"P": {"type": "spot", "rel": "left", "ref": "R"}},
+        needs=("higher",))
+    add("down_front_of", "height", {"A": dict(T, on="higher"), "R": T}, [("A", "P")],
+        _t("Bring the {A} down in front of the {R}.", "Move the {A} from the {Asurf} to the front of the {R}.",
+           "Put the {A} down on the near side of the {R}.", "Take the {A} down and set it before the {R}.",
+           "The {A} goes down, in front of the {R}."), dst={"P": {"type": "spot", "rel": "front", "ref": "R"}},
+        needs=("higher",))
+    add("ins_named", "insert", {"A": dict(SL, colour_named=True)}, [("A", "V")],
+        _t("Put the {A} into the {V}.", "Stand the {Acol} one up in the {V}.", "Insert the {A} into the {V}.",
+           "Place the {A} upright inside the {V}.", "The {A} goes into the {V}."), dst={"V": HV}, judge=up,
+        needs=("node:slot",))
     return {d.id: d for d in D}
 
 
@@ -785,7 +840,8 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
                 xy = c + (np.array([0.0, -t]) if axis == "y" else np.array([t, 0.0]))  # left first (+y), front first (-x)
             elif "corner" in spec:
                 P = main_pts
-                sc = {"front_left": P[:, 1] - P[:, 0], "back_right": P[:, 0] - P[:, 1], "centre": None}[spec["corner"]]
+                sc = {"front_left": P[:, 1] - P[:, 0], "back_right": P[:, 0] - P[:, 1], "front_right": -P[:, 1] - P[:, 0],
+                      "back_left": P[:, 0] + P[:, 1], "centre": None}[spec["corner"]]
                 if sc is None:
                     xy = P.mean(axis=0)
                     xy = P[np.argmin(np.hypot(*(P - xy).T))]
