@@ -34,6 +34,7 @@ _NOTE_DROP_V2 = ("\nNOTE: the table point below the TCP is outside the head imag
 _NOTE_TCP_ND = "\nNOTE: the TCP is outside the head image this time: no ring is drawn."
 _OBJ_HEAD_V2 = "OBJECTS (name: shape; other objects on the table are obstacles, do not touch them)"
 _OBJ_HEAD_MIN = "OBJECTS (other objects on the table are obstacles, do not touch them)"
+_RING_DESC_RE = re.compile(r": flat ring, [\d.]+ cm across")
 _RECIPE_STARTS = ("- Grasping an upright object of height h", "- Putting a held object down:")
 _LIFT_V2 = "Moves are straight lines: lift before moving sideways over objects."
 _LIFT_MIN = "Moves are straight lines."
@@ -79,7 +80,10 @@ def _sizes(t: str) -> str:
                     ln = ln[:k] + ln[k + 2 + len(desc):]
                     break
             else:
-                raise ValueError(f"strip: unknown object line {ln!r}")
+                m = _RING_DESC_RE.search(ln)  # xring.py sets the ring description at run time (generator only)
+                if not m:
+                    raise ValueError(f"strip: unknown object line {ln!r}")
+                ln = ln[:m.start()] + ln[m.end():]
         lines.append(ln)
     return head + _OBJ_HEAD_MIN + "\n".join(lines) + sep + tail
 

@@ -104,3 +104,13 @@ def test_runner_factory_picks_the_interface(tmp_path):
     assert isinstance(e, Episode) and not isinstance(e, StripEpisode)
     with pytest.raises(ValueError):
         make_episode("pt", w, None, 0, out_dir=None)
+
+
+def test_sizes_strips_a_run_time_ring_description():
+    # xring.py sets OBJ_DESC[ring] = "flat ring, <d> cm across" only inside the generator process, so the builder
+    # process (convert_min -> strip) must still recognise it (main35 pre-build ring chunks failed on this line)
+    t = (S._OBJ_HEAD_V2 + "\n- black ring: flat ring, 7.9 cm across (the object to move)\n"
+         "- red mug: " + next(iter(OBJ_DESC.values())) + "\n\nTASK")
+    out = S._sizes(t)
+    assert "- black ring (the object to move)" in out and "flat ring" not in out
+    assert "- red mug\n" in out
