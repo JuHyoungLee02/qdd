@@ -11,13 +11,15 @@
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/evidence.pdf}
-\caption{\textbf{데이터 구성과 본 35B 초기 체크포인트 (모두 \tentative{초기값}).} (a) E-C35: 확인판(L8S 1,000편 + 공개 점)은 f35\_d 대비 새 물체 실패 \tentative{60$\rightarrow$36\%}로 좋아졌지만 L8-X dev와 OOD-H에서 나빠졌다. G Franka는 3인칭이라 보고만 한다. (b) E-L8SW(8B, 시드 0): L8S 25·50·100\% 에서 새 물체 \tentative{30.0·10.2·10.2\,mm}, L8S 보류 \tentative{8.2·6.6·5.2\,mm}. (c) E-OPR3(8B, 시드 0): 공개/시뮬 0.59·1.0·1.5·3.0에서 dev 실패 \tentative{21.2·21.4·24.4·27.3\%}, OOD-HL \tentative{13.9·16.2·19.4·29.6\%}, G 적중 \tentative{0.64--0.65}. (d) 본 35B 0.25·0.5 에폭: f35\_d(점선)와의 차가 줄어든다.}
+\caption{\textbf{데이터 구성과 본 35B (모두 \tentative{초기값}).} (a) E-C35: 확인판(L8S 1,000편 + 공개 점)은 f35\_d 대비 새 물체 실패 \tentative{60$\rightarrow$36\%}로 좋아졌지만 L8-X dev와 OOD-H에서 나빠졌다. G Franka는 3인칭이라 보고만 한다. (b) E-L8SW(8B, 시드 0): L8S 25·50·100\% 에서 새 물체 \tentative{30.0·10.2·10.2\,mm}, L8S 보류 \tentative{8.2·6.6·5.2\,mm}. (c) E-OPR3(8B, 시드 0): 공개/시뮬 0.59·1.0·1.5·3.0에서 dev 실패 \tentative{21.2·21.4·24.4·27.3\%}, OOD-HL \tentative{13.9·16.2·19.4·29.6\%}, G 적중 \tentative{0.64--0.65}. (d) 본 35B: 학습이 진행될수록 L8-X dev·OOD-H 실패가 f35\_d(점선)에 다가간다(1 에폭 dev \tentative{18.9} 대 \tentative{16.8\,\%}, OOD-H \tentative{17.3} 대 \tentative{17.3\,\%}).}
 \label{fig:evidence}
 \end{figure*}
 
 \paragraph{오프라인 점.} L8-X 보호 분할 7세트(dev\_x, 본 적 없는 탁자 높이 OOD-H, 리프트 범위의 보류 높이 OOD-H-lift, 새 물체 범주 OOD-O, 보류 방해물·재질·조명 OOD-D, 보류 조합 OOD-T, 보류 가구 OOD-S), 학습에 한 번도 나오지 않은 실물 13종의 새 물체 세트 OOD-O58(\tentative{58}편), L8S 보류 검증, 일반 평가 G(학습에서 뺀 공개 과제·기체와 공개 가리키기 벤치, 1,577행)를 쓴다(\cref{fig:eval}a). G의 MolmoBot Franka 세트는 전부 3인칭·어안이라 보고만 하고 판정에서 뺀다. 지표는 접근 목표 3D 오차의 중앙값과 20\,mm 초과 실패율이다. 비열등 여유는 같은 모델의 두 시드(A/A) 흔들림으로 정하고, 같은 스냅숏 짝 부트스트랩 95\,\% 구간으로 판정한다.
 
 \paragraph{폐루프.} 새 물체 OOD-O58과 L8S 보류 편을 기본, 어두운 조명, 머리 기울기 +10$^\circ$·팬 +15$^\circ$ 변형으로 체크포인트마다 돌린다(E-M35CL, \cref{fig:eval}b). 편당 한 번이라 약 15\,\%p 이상의 차이만 읽는 보고 전용이며, 모든 편의 머리·손목 영상을 저장한다.
+
+\paragraph{JCR 단독.} JCR는 늘 두 조건을 함께 돈다. 시뮬 참값 명령(OJ)과, 같은 명령에 상위 오차·지연·도중 교체·미리 내기를 주입한 조건(OJe)이다. 대조는 같은 명령 조건의 스크립트 실행기(OX, OXe)다. 결합 2$\times$2로 넘어가는 관문은 OJ $\ge$ 30/40이고 OX$-$OJ $\le$ 10\,\%p, OJe $\ge$ OXe$-$10\,\%p, 접촉 F1 $\ge$ 0.90, 그리퍼 시점 오차 중앙 $\le$ 0.2\,s다. 편마다 머리·손목 영상을 확인한다.
 
 \paragraph{결합.} 같은 시드 2$\times$2로 연결 손실과 원인 비율을 재고(\cref{sec:closs}), 같은 JCR를 단독 모드와 조이스틱 모드로 돌려 H-J를 비교하며, 판당 대기 시간·취소율을 함께 적는다(\cref{fig:eval}c). 세트는 새 물체, L8S 보류, L9 보류다.
 
