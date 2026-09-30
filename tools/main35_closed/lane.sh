@@ -22,6 +22,7 @@ l9_on_gpu() {  # an L9 process on this GPU (by its command line)
 }
 want() { [ -f $W1 ] && { echo GPU_WANTED; return; }; [ -f $W2 ] && { echo lane_WANTED; return; }
   local p; p=$(l9_on_gpu); [ -n "$p" ] && echo "l9_pid_$p"; }
+sfx() { [ "$1" = lane_WANTED ] && echo " (CL yield test: lane WANTED file, not an L9 request)"; }
 freed() {
   rm -f $R/lanes/$LN.alive $R/lanes/$LN.group $YF
   local left; left=$(ls $R/lanes/${POD}_g${G}_*.alive 2>/dev/null | wc -l)
@@ -32,7 +33,7 @@ freed() {
 log "LANE_START gpu=$G code=$C"
 while true; do
   touch $R/lanes/$LN.alive
-  w=$(want); [ -n "$w" ] && freed "" "$w"
+  w=$(want); [ -n "$w" ] && freed "$(sfx $w)" "$w"
   cur=$(cat $R/CURRENT 2>/dev/null); set -- $cur
   if [ $# -ne 3 ]; then sleep 60; continue; fi
   CK=$1; URL=$2; NAME=$3
@@ -57,6 +58,6 @@ while true; do
   done
   wait $ip
   rm -f $R/lanes/$LN.group
-  [ -f $YF ] && freed "" "$(cat $YF)"
+  [ -f $YF ] && { w=$(cat $YF); freed "$(sfx $w)" "$w"; }
   tail -1 /data/harvest/logs/strip8/$TAG.log | grep -q "EXIT 0" || sleep 30  # a failed process: back off
 done
