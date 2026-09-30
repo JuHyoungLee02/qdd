@@ -36,5 +36,67 @@
    "outdoor": 200
   },
   "root": "/data/harvest/assets_l9/materials"
+ },
+ "objects": {
+  "l9_new_stable": 1917,
+  "l8s_passed": 883,
+  "total": 2800,
+  "target": 6000,
+  "files": [
+   ".\\harvest/l9/assets9\\objects_l9.json"
+  ],
+  "by_l9cat": {
+   "other": 825,
+   "box": 232,
+   "shoe": 203,
+   "bottle": 145,
+   "toy": 135,
+   "jar": 107,
+   "bowl": 96,
+   "can": 96,
+   "cup": 92,
+   "bin": 91,
+   "block": 86,
+   "mug": 82,
+   "plate": 76,
+   "pen": 75,
+   "bread": 71,
+   "book": 70,
+   "vegetable": 67,
+   "basket": 61,
+   "vase": 60,
+   "fruit": 47,
+   "tray": 39,
+   "flower": 28,
+   "spoon_fork": 14,
+   "pen_holder": 2
+  },
+  "by_role": {
+   "place": 665,
+   "clutter": 1071,
+   "target": 1064
+  },
+  "by_colour_l9": {
+   "grey": 585,
+   "brown": 295,
+   "black": 237,
+   "white": 179,
+   "orange": 169,
+   "yellow": 123,
+   "red": 119,
+   "blue": 111,
+   "green": 59,
+   "pink": 26,
+   "purple": 14
+  }
+ },
+ "containers": {
+  "l9_gate_pass": 0,
+  "l9_with_inside_stable": 434,
+  "l8s_gate_pass": 35,
+  "total_gate_pass": 35,
+  "target": 300,
+  "by_kind": {},
+  "place_kind": {}
  }
 }
