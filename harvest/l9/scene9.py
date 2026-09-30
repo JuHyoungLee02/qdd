@@ -602,7 +602,8 @@ def in_zone(parts, yaw: float) -> bool:
 
 # ----------------------------------------------------------------------------------------------- usability
 FINGER_X, FINGER_Y = 0.065, 0.03  # = assets_x.reach (open fingers close along world x)
-GRIPPER_ABOVE = 0.20 + 0.24  # carry band top above the node + wrist height (reach.GRIPPER_ABOVE_TCP + Z_NEED[1])
+GRIPPER_ABOVE = 0.20 + 0.24
+TALL, TALL_MARGIN = 0.12, 0.09  # pilot 1: carried objects / the wrist hit parts taller than the carry clearance  # carry band top above the node + wrist height (reach.GRIPPER_ABOVE_TCP + Z_NEED[1])
 
 
 def blocked_s(pts_s: np.ndarray, top: float, parts, own=()) -> np.ndarray:
@@ -619,6 +620,8 @@ def blocked_s(pts_s: np.ndarray, top: float, parts, own=()) -> np.ndarray:
             continue
         mx = FINGER_X if lo[2] <= top + 0.25 else 0.0  # high parts (cabinets) only block straight below them
         my = FINGER_Y if lo[2] <= top + 0.25 else 0.0
+        if lo[2] <= top + 0.25 and hi[2] > top + TALL:  # tall parts (monitor, backsplash, books, dividers of a
+            mx, my = max(mx, TALL_MARGIN), max(my, TALL_MARGIN)  # higher tier): the carried object / wrist need room
         out |= ((pts_s[:, 0] > lo[0] - mx) & (pts_s[:, 0] < hi[0] + mx) & (pts_s[:, 1] > lo[1] - my)
                 & (pts_s[:, 1] < hi[1] + my))
     return out
@@ -719,3 +722,25 @@ def usable_nodes(scene: dict, min_pts: int = 4) -> list:
 
 def all_rules() -> list:
     return [(f, r) for f, (_, rs) in FAMILIES.items() for r in rs]
+
+
+def tall_parts(scene: dict, top: float) -> list:
+    """S-frame xy boxes of the parts rising more than TALL above `top` (and starting below top + 0.25)."""
+    out = []
+    for p in scene["parts_s"]:
+        lo, hi = _bounds(p)
+        if hi[2] > top + TALL and lo[2] <= top + 0.25:
+            out.append(((lo[0], hi[0]), (lo[1], hi[1])))
+    return out
+
+
+def seg_box_dist(a, b, box, n: int = 12) -> float:
+    """Smallest distance (S frame, xy) from the segment a-b to an axis-aligned box (sampled)."""
+    (x0, x1), (y0, y1) = box
+    best = 9.0
+    for t in np.linspace(0.0, 1.0, n):
+        q = np.asarray(a, float) * (1 - t) + np.asarray(b, float) * t
+        dx = max(x0 - q[0], 0.0, q[0] - x1)
+        dy = max(y0 - q[1], 0.0, q[1] - y1)
+        best = min(best, float(np.hypot(dx, dy)))
+    return best

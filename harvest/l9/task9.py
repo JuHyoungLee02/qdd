@@ -30,6 +30,8 @@ FOOD = ("fruit", "vegetable", "bread")
 TOYISH = ("toy", "block", "shoe")
 DRINK = ("can", "bottle", "cup", "mug")
 MAX_SPOTS, MAX_SURF, MAX_SUPP = 6, 3, 4
+CLUTTER_H_MAX = 0.13  # L8S clutter_x.MAX_H 0.14: the carried object passes ~14 cm above the surface (pilot 1:
+# 25 cm clutter was hit while carrying -> collision, joint jumps up to 1.2 rad)
 MAX_CONTAINER_R = 0.12  # container footprint radius (the work band is ~0.32 x 0.34 m)
 
 
@@ -578,7 +580,7 @@ def _try(defn, scene, pool, rng, rm):
             elif role == "container":
                 if kind_of(r) != spec["kind"]:
                     continue
-                if float(r["footprint_r"]) > MAX_CONTAINER_R:
+                if float(r["footprint_r"]) > MAX_CONTAINER_R or float(r["height"]) > CLUTTER_H_MAX:
                     continue
                 if spec.get("big") and float((r.get("inside") or {}).get("opening_min_side", 0)) < 0.12:
                     continue
@@ -830,6 +832,14 @@ def _try(defn, scene, pool, rng, rm):
                             "name": surf_name(node)}
             if spec.get("shared"):
                 pass
+    # carry paths: the straight move from each mover to its destination stays clear of tall parts (pilot 1)
+    for a, d in defn.steps:
+        src = np.asarray(ep["objects"][chosen[a]]["xy"], float)
+        dst = spots.get(d, surfs.get(d, {})).get("xy") if d in spots or d in surfs else ep["objects"][chosen[d]]["xy"]
+        top = max(mz, nodes[ep["objects"][chosen[a]]["node"]][0]["top_z"])
+        for box in S9.tall_parts(scene, top):
+            if S9.seg_box_dist(S9.s_of(src, scene["yaw"]), S9.s_of(dst, scene["yaw"]), box) < 0.08:
+                raise Fail("carry path near a tall part")
     if len(spots) > MAX_SPOTS or len(surfs) > MAX_SURF:
         raise Fail("too many destinations")
     # shared node destinations: steps into the same surface get side-by-side offsets
@@ -909,7 +919,7 @@ def add_clutter(ep: dict, scene: dict, pool: dict, seed: int, rm, n_range=(2, 6)
             break
         r = pool[k]
         nm = name_of(r)
-        if not nm or any(clash(nm, t) for t in taken) or float(r["height"]) > 0.25:
+        if not nm or any(clash(nm, t) for t in taken) or float(r["height"]) > CLUTTER_H_MAX:
             continue
         fr = float(r["footprint_r"])
         node, _, vis = flats[int(rng.integers(len(flats)))]
@@ -921,7 +931,8 @@ def add_clutter(ep: dict, scene: dict, pool: dict, seed: int, rm, n_range=(2, 6)
             (x0, x1), (y0, y1) = node["box"]
             if not (x0 + fr <= s[0] <= x1 - fr and y0 + fr <= s[1] <= y1 - fr):
                 continue
-            if all(np.hypot(*(xy - p)) >= fr + f + 0.03 for p, f in busy):
+            if all(np.hypot(*(xy - p)) >= fr + f + 0.03 and (abs(xy[0] - p[0]) >= 0.11 or abs(xy[1] - p[1]) >= fr + f + 0.03)
+                   for p, f in busy):
                 out[k] = {"xy": [round(float(xy[0]), 4), round(float(xy[1]), 4)], "node": node["id"], "fr": fr,
                           "yaw": round(float(rng.uniform(-math.pi, math.pi)), 4)}
                 busy.append((np.asarray(xy, float), fr))

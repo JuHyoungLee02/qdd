@@ -113,9 +113,10 @@ def main():
     ft = features()
     defs = list(T9.DEFS.values())
     if mode == "smoke":
-        pick = [T9.DEFS[k] for k in ("in_wide", "rel_left", "up_to_higher", "stack2", "ins_one", "line2_y")]
-        rows = rows_for(pick, 2, arg("--start", 890000), ft)
-        ch = jobs(rows, 6, arg("--pool0", 0))
+        names = arg("--defs", "in_wide,rel_left,up_to_higher,stack2,ins_one,line2_y").split(",")
+        pick = [T9.DEFS[k] for k in names]
+        rows = rows_for(pick, arg("--per", 2), arg("--start", 890000), ft)
+        ch = jobs(rows, arg("--job-size", 6), arg("--pool0", 0))
         print(json.dumps(write(out, rows, ch, lanes, "plan_smoke.json", pod)))
         return
     if mode == "pilot":
