@@ -41,6 +41,11 @@ def with_lift(text: str, lift_q: float) -> str:
 
 def check_row(r: dict, split: str) -> None:
     s, v = int(r["seed"]), r["variant"]
+    if r.get("gen") == "l9":  # L9 rows (opt-in by the row's gen field): L9's own seed ranges (harvest.l9.SEEDS)
+        from ..l9 import SEEDS
+        if split not in SEEDS or s not in SEEDS[split] or v != "drf":
+            raise ValueError(f"L9 {split} row refused: seed {s} / variant {v}")
+        return
     if split == "train":
         if not SP.is_train_seed(s) or v not in TRAIN_VARIANTS:
             raise ValueError(f"train row refused: seed {s} / variant {v} (TRAIN 30000-34799 + 36000-37999, standard / drx)")

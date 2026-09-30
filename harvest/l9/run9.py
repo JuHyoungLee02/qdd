@@ -34,7 +34,17 @@ def rooms_for(idx: int, split: str = "train", n: int = N_ROOMS) -> dict:
     """The idx-th subset of n rooms (rotating through the whole table)."""
     t = room_table(split)
     order = sorted(t, key=lambda k: hashlib.sha256(f"l9room:{k}".encode()).hexdigest())
-    return {order[(idx * n + j) % len(order)]: t[order[(idx * n + j) % len(order)]] for j in range(n)}
+    out = {}
+    for j in range(n):
+        k = order[(idx * n + j) % len(order)]
+        out[prim_safe(k)] = dict(t[k], name0=k)  # USD prim names: letters, digits, _ only (ProcTHOR names have '-')
+    return out
+
+
+def prim_safe(name: str) -> str:
+    import re
+    s = re.sub(r"[^A-Za-z0-9_]", "_", name)
+    return s if s[:1].isalpha() else "r_" + s
 
 
 def ep_dir(out: str, row: dict) -> str:

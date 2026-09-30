@@ -166,7 +166,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                 else:
                     _set_pose(prim, (ROOM_PARK[0] - 12.0 * j, ROOM_PARK[1], ROOM_PARK[2]), (1.0, 0.0, 0.0, 0.0))
             r = rooms[name]
-            return {"name": name, "kind": r.get("kind"), "license": r.get("license"), "source": r.get("source")}
+            return {"name": r.get("name0", name), "kind": r.get("kind"), "license": r.get("license"), "source": r.get("source")}
 
         # ------------------------------------------------------------------ episode
         def prepare(self, scene: dict, ep: dict, light_family: str, head: dict | None = None, vseed: int | None = None):
