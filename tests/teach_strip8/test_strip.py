@@ -110,7 +110,9 @@ def test_sizes_strips_a_run_time_ring_description():
     # xring.py sets OBJ_DESC[ring] = "flat ring, <d> cm across" only inside the generator process, so the builder
     # process (convert_min -> strip) must still recognise it (main35 pre-build ring chunks failed on this line)
     t = (S._OBJ_HEAD_V2 + "\n- black ring: flat ring, 7.9 cm across (the object to move)\n"
+         "- grey peg: upright peg on a round base (where to put it)\n"
          "- red mug: " + next(iter(OBJ_DESC.values())) + "\n\nTASK")
     out = S._sizes(t)
     assert "- black ring (the object to move)" in out and "flat ring" not in out
+    assert "- grey peg (where to put it)" in out and "upright peg" not in out
     assert "- red mug\n" in out
