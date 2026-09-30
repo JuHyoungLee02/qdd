@@ -25,7 +25,7 @@ class NoEpisode(Exception):
     pass
 
 
-def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 8, world=None) -> tuple:
+def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 20, world=None) -> tuple:
     """(scene, ep, light family, head, combo hash, visual seed) for a plan row, or NoEpisode. With a world the combo
     record names the room / HDRI / materials the world will use (same draws), else their seed."""
     d = T9.get_def(row["def"])
