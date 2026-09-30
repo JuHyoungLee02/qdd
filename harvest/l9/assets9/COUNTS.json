@@ -91,13 +91,27 @@
   }
  },
  "containers": {
-  "l9_gate_pass": 0,
+  "l9_gate_pass": 210,
   "l9_with_inside_stable": 434,
   "l8s_gate_pass": 35,
-  "total_gate_pass": 35,
+  "total_gate_pass": 245,
   "target": 300,
-  "by_kind": {},
-  "place_kind": {}
+  "by_kind": {
+   "bin": 49,
+   "bowl": 33,
+   "mug": 27,
+   "basket": 24,
+   "box": 18,
+   "jar": 17,
+   "plate": 16,
+   "tray": 10,
+   "cup": 9,
+   "vase": 7
+  },
+  "place_kind": {
+   "into": 189,
+   "onto": 21
+  }
  },
  "rooms": {
   "l9_new": 289,
