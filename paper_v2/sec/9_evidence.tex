@@ -16,12 +16,6 @@
 
 \paragraph{D와 공개 점.} 35B를 D와 하이브리드 H로 학습해 비교하자 새 물체에서 D \tentative{4.0} 대 H \tentative{83.7\,mm}, 폐루프 \tentative{6/8} 대 \tentative{4/8}이었고 나머지 다섯 세트는 같았다(E-FINAL35, 판마다 시드 하나). 공개 점만 뺀 D는 새 물체 \tentative{85.3\,mm}, 폐루프 \tentative{2/8}이었다(짝 차 \tentative{[$-$25.6, $-$8.0]\,mm}). 재학습 없는 실행기 규칙은 같은 8편에서 \tentative{2/8 $\rightarrow$ 4/8}, 퇴행 0이었다(boost1). 이 35B D(f35\_d)가 본 학습의 비교 기준이다.
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/evidence.pdf}
-\caption{\textbf{데이터 구성과 본 35B 초기 체크포인트 (모두 \tentative{초기값}).} (a) E-C35: 확인판(L8S 1,000편 + 공개 점)은 f35\_d 대비 새 물체 실패 \tentative{60$\rightarrow$36\%}로 좋아졌지만 L8-X dev와 OOD-H에서 나빠졌다. G Franka는 3인칭이라 보고만 한다. (b) E-L8SW(8B, 시드 0): L8S 25·50·100\% 에서 새 물체 \tentative{30.0·10.2·10.2\,mm}, L8S 보류 \tentative{8.2·6.6·5.2\,mm}. (c) E-OPR3(8B, 시드 0): 공개/시뮬 0.59·1.0·1.5·3.0에서 dev 실패 \tentative{21.2·21.4·24.4·27.3\%}, OOD-HL \tentative{13.9·16.2·19.4·29.6\%}, G 적중 \tentative{0.64--0.65}. (d) 본 35B 0.25·0.5 에폭: f35\_d(점선)와의 차가 줄어든다.}
-\label{fig:evidence}
-\end{figure*}
 
 \paragraph{데이터 구성.} 사실적 L8S로 만든 확인판(E-C35)은 새 물체 OOD-O58 오차 중앙을 \tentative{40.9 $\rightarrow$ 9.6\,mm}, 실패율을 \tentative{60 $\rightarrow$ 36\,\%}로 줄였다. 반면 L8-X dev 실패(\tentative{16.8 $\rightarrow$ 27.5\,\%})와 OOD-H(\tentative{17.3 $\rightarrow$ 22.8\,\%})는 나빠져 관문을 넘지 못했다. 재학습 없이 원인을 나눈 결과, G Franka는 3인칭 세트라 지금 규칙과 맞지 않고, L8-X 차이는 옛 도메인과 양의 차이였다. 사용자 결정으로 확인판을 다시 돌리지 않고 본 학습을 시작했고, 이 관문 이탈은 사전 등록에 변경으로 남겼다. 공개 비중을 0.59보다 올리면 L8-X가 나빠지고 G는 나아지지 않았다(E-OPR3, \cref{fig:evidence}c). L8S는 많을수록 나았고 50\,\% 뒤로는 포화에 가까웠다(E-L8SW, \cref{fig:evidence}b). 두 결과 모두 시드 하나의 방향 신호다.
 
@@ -29,4 +23,4 @@
 
 \paragraph{결합 쪽 근거.} 상위 결정 토큰만 바꿔서는 VLA의 행동 청크가 거의 움직이지 않았다(강제 방향 준수 \tentative{0.34}, 우연 약 0.33, E-SR0). 물체에서 먼 구간의 반사실 분기를 흐름 정합 학습에 섞자 준수가 시뮬 \tentative{0.991}(E-SR1c), 실데이터 \tentative{0.899}(E-SR1e, 두 시드)로 올랐고 접촉 근처 능력은 비열등이었다. 오프라인 준수이며 폐루프 확인은 아니다. 앞선 두 층 구현의 무료 사전 실행에서 VLA 단독은 모든 조건에서 \tentative{0/12}였고(같은 장면 스크립트 기준선 \tentative{12/12}), 그중 \tentative{8}편은 모델이 아니라 층 사이 런타임의 멈춤 고리였다(E-VLA-solo). 층 사이의 부품이 새 실패를 만든다는 이 결과가, 연결 손실을 따로 재는 이유다.
 
-\paragraph{진행 중.} 본 35B 최종 판정, 폐루프 E-M35CL, 결합 E-CJ1(스모크)은 결과가 없다. 채울 자리: 최적 에폭의 오프라인·폐루프 표, 2$\times$2 첫 값, H-J 짝 비교.
+\paragraph{진행 중.} 본 35B 최종 판정과 폐루프 E-M35CL은 결과가 없다. 결합 E-CJ1(스모크 중)은 상위 없이 시뮬 참값 명령을 스크립트 실행기와 VLA 조이스틱에 각각 주고, 같은 VLA 단독과 같은 시드(머그$\rightarrow$쟁반 DEV 0--19 $\times$ 기본·무작위화, 팔당 40편)로 비교한다. 본 35B 최적 체크포인트가 나오면 상위 명령 쪽 두 칸(E-CJ2)을 채워 2$\times$2와 연결 손실 첫 값을 낸다. 채울 자리: 최적 에폭의 오프라인·폐루프 표, 2$\times$2 첫 값, H-J 짝 비교.

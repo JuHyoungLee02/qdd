@@ -240,7 +240,7 @@ def f3_vla():
     txt(ax, gx - 0.45, gy + 0.10, "상위 목표", fs=5.4, c=RED)
     txt(ax, px + 1.30, py + 0.55, "기본 경로(점선)\n+ VLA 보정(파랑)", fs=5.4, c=VL[1])
     arrow(ax, [(4.69, 1.03), (4.93, 1.03)], lw=0.9)
-    txt(ax, 3.3, 0.35, "0.4 s 관절 청크 → 로봇 (100 Hz 위치 명령, 관절 걸음 ≤ 0.04 rad)", fs=5.6, c=TXT)
+    txt(ax, 3.3, 0.35, "관절 청크(지금 VLA: 30 Hz · 15행) → 로봇 (100 Hz 위치 명령, 관절 걸음 ≤ 0.04 rad)", fs=5.6, c=TXT)
     save(fig, "f3_vla")
 
 
@@ -423,7 +423,7 @@ def f6_coupling_loss():
         txt(ax, tx + 0.45, yy, a, fs=5.6)
         txt(ax, tx + 1.35, yy, b, fs=5.6)
         txt(ax, tx + 2.40, yy, lab, fs=5.8, c=c, bold=True)
-    txt(ax, bx + 1.55, 0.02, "판정 규칙은 정의안(사전 등록 전)", fs=5.2, c=TENT, va="bottom")
+    txt(ax, bx + 1.55, 0.02, "같은 편을 두 번 돌려 판정이 바뀌면 '불안정'으로 따로 셈", fs=5.2, c=SUB, va="bottom")
     save(fig, "f6_coupling_loss")
 
 
