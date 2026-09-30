@@ -662,11 +662,21 @@ def usable(node: dict, scene: dict, rm, lift: float, reach: bool = True) -> np.n
     return W[ok]
 
 
+REL_OK = (0.72, 0.98)  # node height relative to the torso (= its height at the default lift): the L8 / L8S range
+# (pilot 1: at low lifts the elbow hit the furniture and the carry height was not reached)
+
+
+def rel_height(top: float, lift: float) -> float:
+    return float(top) - (float(lift) - LIFT_DEFAULT)
+
+
 def choose_lift(scene: dict, rm, lifts=LIFTS, min_pts: int = 4):
-    """The lift with the most usable nodes (>= min_pts points each), then the most points, then the default."""
+    """The lift with the most usable nodes (>= min_pts points each, relative height inside REL_OK), then the most
+    points, then the default."""
     best = None
     for L in lifts:
-        per = {n["id"]: len(usable(n, scene, rm, L)) for n in scene["nodes"]}
+        per = {n["id"]: (len(usable(n, scene, rm, L)) if REL_OK[0] <= rel_height(n["top_z"], L) <= REL_OK[1] else 0)
+               for n in scene["nodes"]}
         n_ok = sum(v >= min_pts for v in per.values())
         key = (n_ok, sum(per.values()), L == LIFT_DEFAULT, -abs(L - LIFT_DEFAULT))
         if best is None or key > best[0]:

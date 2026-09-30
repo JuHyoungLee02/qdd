@@ -47,10 +47,28 @@ def objects(split: str = "train") -> dict:
         if r.get("split") != split or not r.get("stable_upright"):
             continue
         role = r.get("role")
-        if role == "target" and r.get("grasp_rule") == "topdown_7_10cm" and float(r["footprint_r"]) <= TARGET_R_MAX                 and r.get("l9cat") not in NOT_TARGET and k not in blocked_targets():
+        if role == "target" and r.get("grasp_rule") == "topdown_7_10cm" and float(r["footprint_r"]) <= TARGET_R_MAX                 and r.get("l9cat") not in NOT_TARGET and k not in blocked_targets()                 and (gate_pass() is None or k in gate_pass()):
             out[k] = dict(r, role9="target")
         elif role in ("clutter", "target"):
             out[k] = dict(r, role9="clutter")
+    return out
+
+
+def l8s_targets(split: str = "train") -> dict:
+    """L8S real objects referenced by the L9 table as targets that passed the L8S target gate (task_target_ok):
+    known-good grasps (role9 target, l8s_proven)."""
+    here = os.path.dirname(os.path.dirname(DIR))
+    out, tabs = {}, {}
+    for ref in _load("objects_l9.json").get("l8s", {}).values():
+        if ref.get("role") != "target" or not ref["table"].endswith("objects_real.json"):
+            continue
+        if ref["table"] not in tabs:
+            tabs[ref["table"]] = json.load(open(os.path.join(os.path.dirname(here), ref["table"])))["objects"]
+        r = tabs[ref["table"]].get(ref["id"])
+        if r is None or not r.get("task_target_ok") or r.get("split", "train") != split:
+            continue
+        out[ref["id"]] = dict(r, role9="target", l9cat=ref.get("l9cat"), colour=ref.get("colour", r.get("colour")),
+                              l8s_proven=True)
     return out
 
 
@@ -92,7 +110,7 @@ def bucket_of(r: dict) -> tuple:
 def catalog(split: str = "train") -> dict:
     key = f"cat:{split}"
     if key not in _CACHE:
-        _CACHE[key] = {**objects(split), **containers(split)}
+        _CACHE[key] = {**objects(split), **l8s_targets(split), **containers(split)}
     return _CACHE[key]
 
 
@@ -200,3 +218,12 @@ def mesh_for(idx: int, n: int = 10, split: str = "train") -> dict:
     cat = furniture_mesh(split)
     order = sorted(cat, key=lambda k: hashlib.sha256(f"l9mesh:{k}".encode()).hexdigest())
     return {order[(idx * n + j) % len(order)]: cat[order[(idx * n + j) % len(order)]] for j in range(n)}
+
+
+def gate_pass():
+    """Targets that passed the L9 object gate (assets9/gate_targets.json "pass", tools/l9/ogate_tally.py), or None
+    before the gate has run (then every catalog target is eligible)."""
+    if "gate" not in _CACHE:
+        p = os.path.join(DIR, "gate_targets.json")
+        _CACHE["gate"] = set(json.load(open(p))["pass"]) if os.path.exists(p) else None
+    return _CACHE["gate"]
