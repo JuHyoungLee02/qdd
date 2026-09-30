@@ -26,7 +26,7 @@ plt.rcParams.update({
 
 # role colours (fill, border): 4 roles only
 UP = ("#FCE3CF", "#D9762B")    # upper VLM (orange)
-VL = ("#D6E6F8", "#3F74B8")    # joystick VLA (blue)
+VL = ("#D6E6F8", "#3F74B8")    # joystick JCR (blue)
 CO = ("#EFEFEF", "#8A8A8A")    # code / robot (gray)
 OF = ("#E9E2F5", "#7E5DB5")    # offline: data, training, evaluation (purple)
 RED = "#C0392B"
@@ -114,7 +114,7 @@ def f1_overview():
     y, h, w = 1.62, 0.66, 1.16
     xs = [0.22, 1.92, 3.62, 5.32]
     items = [(UP, "상위 VLM", "점 + 높이 의도"), (CO, "좌표 변환", "픽셀 → xyz"),
-             (VL, "조이스틱 VLA", "범위 안 보정"), (CO, "로봇", "FFW-SG2")]
+             (VL, "조이스틱 JCR", "범위 안 보정"), (CO, "로봇", "FFW-SG2")]
     for x, (col, t, s) in zip(xs, items):
         box(ax, x, y, w, h, col, t, s, tfs=8.0, sfs=6.6)
     for i in range(3):
@@ -122,7 +122,7 @@ def f1_overview():
     txt(ax, (xs[0] + w + xs[1]) / 2, y + h / 2 + 0.11, "명령", fs=5.8)
     txt(ax, (xs[1] + w + xs[2]) / 2, y + h / 2 + 0.11, "목표·범위", fs=5.8)
     txt(ax, (xs[2] + w + xs[3]) / 2, y + h / 2 + 0.11, "관절 청크", fs=5.8)
-    # single thin dashed feedback line: robot/VLA -> upper
+    # single thin dashed feedback line: robot/JCR -> upper
     fy = y + h + 0.12
     ax.plot([xs[3] + w / 2, xs[3] + w / 2, xs[0] + w / 2], [y + h, fy, fy], color=RED, lw=0.7, ls=(0, (3, 2)))
     arrow(ax, [(xs[0] + w / 2, fy), (xs[0] + w / 2, y + h + 0.01)], c=RED, lw=0.7, hw=0.18, hl=0.35)
@@ -133,7 +133,7 @@ def f1_overview():
     y2 = 0.22
     xo = [0.22, 2.60, 4.98]
     wo = 1.66
-    items2 = [("데이터", "L8S · 공개 점 · L9"), ("학습", "상위 LoRA · VLA 4단계"), ("평가", "오프라인 · 폐루프 · 2×2")]
+    items2 = [("데이터", "L8S · 공개 점 · L9"), ("학습", "상위 LoRA · JCR 4단계"), ("평가", "오프라인 · 폐루프 · 2×2")]
     for x, (t, s) in zip(xo, items2):
         box(ax, x, y2, wo, h, OF, t, s, tfs=8.0, sfs=6.6)
     for i in range(2):
@@ -186,11 +186,11 @@ def f2_upper_call():
     arrow(ax, [(ox + 1.32, 2.55), (cx - 0.03, 2.05)], lw=0.8, hw=0.16, hl=0.3)
     arrow(ax, [(ox + 1.32, 2.05), (cx - 0.03, 1.10)], lw=0.8, hw=0.16, hl=0.3)
     arrow(ax, [(cx + 0.65, 0.60), (cx + 0.65, 0.32)], lw=0.9)
-    txt(ax, cx + 0.65, 0.18, "목표 xyz + 그리퍼 → 실행기/VLA", fs=5.8, c=TXT)
+    txt(ax, cx + 0.65, 0.18, "목표 xyz + 그리퍼 → 실행기/JCR", fs=5.8, c=TXT)
     save(fig, "f2_upper_call")
 
 
-# ============================================================ F3 joystick VLA
+# ============================================================ F3 joystick JCR
 def f3_vla():
     W, H = FULL_W, 2.85
     fig, ax = canvas(W, H)
@@ -198,8 +198,8 @@ def f3_vla():
     box(ax, 0.05, 1.70, 1.55, 0.95, UP, "상위 명령", "목표 xyz·영상 점, 높이 의도\n그리퍼, 허용 범위 ±cm·±°\n시간 예산, 명령 나이",
         tfs=7.0, sfs=5.4)
     box(ax, 0.05, 0.75, 1.55, 0.75, CO, "관측", "머리 + 쓰는 팔 손목 영상\n관절 상태", tfs=7.0, sfs=5.4)
-    # VLA
-    box(ax, 2.00, 0.95, 1.30, 1.30, VL, "조이스틱 VLA", "스스로 계획 안 함\n잡는 시점·작은 회피\n밀린 물체 재정렬", tfs=7.6, sfs=5.5)
+    # JCR
+    box(ax, 2.00, 0.95, 1.30, 1.30, VL, "조이스틱 JCR", "스스로 계획 안 함\n잡는 시점·작은 회피\n밀린 물체 재정렬", tfs=7.6, sfs=5.5)
     arrow(ax, [(1.62, 2.17), (1.80, 2.17), (1.80, 1.75), (1.98, 1.75)], lw=0.8, hw=0.16, hl=0.3)
     arrow(ax, [(1.62, 1.12), (1.80, 1.12), (1.80, 1.45), (1.98, 1.45)], lw=0.8, hw=0.16, hl=0.3)
     # outputs: correction -> clip
@@ -238,7 +238,7 @@ def f3_vla():
     ax.add_patch(Circle((px + 0.80, py + 1.05), 0.10, fc="#BDBDBD", ec="none"))
     txt(ax, px + pw / 2, py + ph - 0.12, "허용 범위(주황) 안에서만", fs=5.8, c=TXT)
     txt(ax, gx - 0.45, gy + 0.10, "상위 목표", fs=5.4, c=RED)
-    txt(ax, px + 1.30, py + 0.55, "기본 경로(점선)\n+ VLA 보정(파랑)", fs=5.4, c=VL[1])
+    txt(ax, px + 1.30, py + 0.55, "기본 경로(점선)\n+ JCR 보정(파랑)", fs=5.4, c=VL[1])
     arrow(ax, [(4.69, 1.03), (4.93, 1.03)], lw=0.9)
     txt(ax, 3.3, 0.35, "관절 청크(지금 VLA: 30 Hz · 15행) → 로봇 (100 Hz 위치 명령, 관절 걸음 ≤ 0.04 rad)", fs=5.6, c=TXT)
     save(fig, "f3_vla")
@@ -278,7 +278,7 @@ def f4_timeline():
     yp, yr, yv = 1.58, 1.02, 0.62
     txt(ax, 1.02, yp + 0.10, "상위 VLM", fs=6.2, c=TXT, ha="right")
     txt(ax, 1.02, yr + 0.10, "실행(로봇)", fs=6.2, c=TXT, ha="right")
-    txt(ax, 1.02, yv + 0.09, "VLA 틱", fs=6.2, c=TXT, ha="right")
+    txt(ax, 1.02, yv + 0.09, "JCR 틱", fs=6.2, c=TXT, ha="right")
     cf = 0.30          # command-first: command tokens available this long after call start
     calls = [(0.0, "1"), (2.0, "2"), (4.4, "3"), (5.2, "4")]
     # call 1
@@ -320,9 +320,9 @@ def f4_timeline():
     _seg(ax, X(m2b), X(5.2 + cf), yr, 0.20, "#8CC084", "#5E9E57")
     _seg(ax, X(5.2 + cf), X(7.0), yr, 0.20, "#DCEFD9", "#5E9E57")
     txt(ax, X(6.3), yr + 0.10, "명령 4 실행", fs=5.4, c=TXT)
-    # anomaly arrow from VLA row
+    # anomaly arrow from JCR row
     arrow(ax, [(X(5.2) - 0.02, yv + 0.20), (X(5.2) - 0.02, yr - 0.02)], c=RED, lw=0.7, hw=0.14, hl=0.28)
-    # VLA ticks + correction band
+    # JCR ticks + correction band
     ax.add_patch(Rectangle((X(cf), yv), X(7.0) - X(cf), 0.18, fc=VL[0], ec="none"))
     for k in range(int((7.0 - cf) / 0.18) + 1):
         tt = cf + k * 0.18
@@ -342,7 +342,7 @@ def f4_timeline():
     _seg(ax, lx, lx + 0.22, 0.05, 0.12, "#8CC084", "#5E9E57")
     txt(ax, lx + 0.27, 0.11, "확정 구간(RTC식: 다음 명령이 이어 붙음)", fs=5.2, ha="left")
     _seg(ax, 3.00, 3.22, 0.05, 0.12, VL[0], VL[1])
-    txt(ax, 3.27, 0.11, "VLA 보정(허용 범위 안)", fs=5.2, ha="left")
+    txt(ax, 3.27, 0.11, "JCR 보정(허용 범위 안)", fs=5.2, ha="left")
     txt(ax, 4.72, 0.11, "잡기·놓기 직전은 미리 내지 않음", fs=5.2, ha="left", c=RED)
     save(fig, "f4_timeline")
 
@@ -351,16 +351,16 @@ def f4_timeline():
 def f5_training():
     W, H = FULL_W, 2.85
     fig, ax = canvas(W, H)
-    # VLA stage 1, 2
-    box(ax, 0.05, 1.75, 1.25, 0.78, VL, "VLA ① 단독", "참값 명령 + 교란 장면\n정답 = 시뮬 참값 보정", tfs=6.8, sfs=5.2)
-    box(ax, 0.05, 0.70, 1.25, 0.78, VL, "VLA ② 상위 흉내", "측정한 상위 오차·지연\n명령 도중 교체 주입", tfs=6.8, sfs=5.2)
+    # JCR stage 1, 2
+    box(ax, 0.05, 1.75, 1.25, 0.78, VL, "JCR ① 단독", "참값 명령 + 교란 장면\n정답 = 시뮬 참값 보정", tfs=6.8, sfs=5.2)
+    box(ax, 0.05, 0.70, 1.25, 0.78, VL, "JCR ② 상위 흉내", "측정한 상위 오차·지연\n명령 도중 교체 주입", tfs=6.8, sfs=5.2)
     arrow(ax, [(0.675, 1.73), (0.675, 1.50)], lw=0.9)
     # loop container
     section(ax, 1.55, 0.35, 3.30, 2.40, "번갈아 맞추기 (④)")
     box(ax, 1.68, 1.55, 1.30, 0.92, UP, "상위 갱신", "입력: 도착 0–3 s 전 장면\n+ 실행 중 명령 + 도착 예상 표시\n출력: 다음 명령 + 미리 내도 되나",
         tfs=6.8, sfs=5.0)
-    box(ax, 3.42, 1.55, 1.30, 0.92, VL, "VLA ③ 갱신", "실제 상위 명령 위의\n기록에서 재학습\n(연결 지점 분포 맞춤)", tfs=6.8, sfs=5.0)
-    box(ax, 1.68, 0.55, 1.30, 0.62, ("#FFF4E8", "#D9762B"), "보조 과제", "실제(VLA가 만든) 도착 위치 예측\n제어 출력에는 안 씀", tfs=6.2,
+    box(ax, 3.42, 1.55, 1.30, 0.92, VL, "JCR ③ 갱신", "실제 상위 명령 위의\n기록에서 재학습\n(연결 지점 분포 맞춤)", tfs=6.8, sfs=5.0)
+    box(ax, 1.68, 0.55, 1.30, 0.62, ("#FFF4E8", "#D9762B"), "보조 과제", "실제(JCR가 만든) 도착 위치 예측\n제어 출력에는 안 씀", tfs=6.2,
         sfs=4.9, ls=(0, (3, 2)))
     arrow(ax, [(2.33, 1.19), (2.33, 1.53)], c=UP[1], lw=0.7, hw=0.14, hl=0.28)
     # alternation arrows
@@ -392,12 +392,12 @@ def f6_coupling_loss():
     fig, ax = canvas(W, H)
     txt(ax, 0.05, H - 0.05, "(a) 같은 시드 2×2", fs=7.4, c=TXT, ha="left", va="top", bold=True)
     gx, gy, cw, ch = 1.00, 0.55, 1.10, 0.70
-    txt(ax, gx + cw / 2, gy + 2 * ch + 0.22, "조이스틱 VLA", fs=6.4, c=VL[1], bold=True)
+    txt(ax, gx + cw / 2, gy + 2 * ch + 0.22, "조이스틱 JCR", fs=6.4, c=VL[1], bold=True)
     txt(ax, gx + cw * 1.5 + 0.08, gy + 2 * ch + 0.22, "참값 실행기", fs=6.4, c=SUB, bold=True)
     txt(ax, gx - 0.08, gy + ch * 1.5 + 0.04, "상위 VLM", fs=6.4, c=UP[1], ha="right", bold=True)
     txt(ax, gx - 0.08, gy + ch * 0.5 + 0.04, "참값 명령", fs=6.4, c=SUB, ha="right", bold=True)
     cells = [(0, 1, ("#F6DCE6", "#C2577F"), "결합", "실제 성공률"), (1, 1, CO, "상한 B", "상위 + 참값 실행"),
-             (0, 0, CO, "상한 A", "참값 명령 + VLA"), (1, 0, CO, "과제 상한", "참값 + 참값")]
+             (0, 0, CO, "상한 A", "참값 명령 + JCR"), (1, 0, CO, "과제 상한", "참값 + 참값")]
     for i, j, col, t, s in cells:
         box(ax, gx + i * (cw + 0.08), gy + j * ch + 0.04, cw, ch - 0.08, col, t, s, tfs=7.0, sfs=5.4)
     txt(ax, gx + cw + 0.04, 0.28, "연결 손실 = min(상한 A, 상한 B) − 결합", fs=6.6, c=TXT, bold=True)
@@ -407,15 +407,15 @@ def f6_coupling_loss():
     txt(ax, bx, H - 0.05, "(b) 실패 편 원인 가르기 (반사실 재실행)", fs=7.4, c=TXT, ha="left", va="top", bold=True)
     box(ax, bx, 1.75, 0.95, 0.52, ("#F6DCE6", "#C2577F"), "결합 실패 편", "같은 시드", tfs=6.4, sfs=5.2)
     box(ax, bx + 1.20, 2.00, 1.55, 0.42, CO, "상위만 참값으로", "재실행 → 성공?", tfs=6.0, sfs=5.2)
-    box(ax, bx + 1.20, 1.50, 1.55, 0.42, CO, "VLA만 참값으로", "재실행 → 성공?", tfs=6.0, sfs=5.2)
+    box(ax, bx + 1.20, 1.50, 1.55, 0.42, CO, "JCR만 참값으로", "재실행 → 성공?", tfs=6.0, sfs=5.2)
     arrow(ax, [(bx + 0.97, 2.10), (bx + 1.18, 2.21)], lw=0.8, hw=0.14, hl=0.28)
     arrow(ax, [(bx + 0.97, 1.92), (bx + 1.18, 1.71)], lw=0.8, hw=0.14, hl=0.28)
     # decision table
-    rows = [("성공", "실패", "상위 탓", UP[1]), ("실패", "성공", "VLA 탓", VL[1]), ("성공", "성공", "연결 탓", "#C2577F"),
+    rows = [("성공", "실패", "상위 탓", UP[1]), ("실패", "성공", "JCR 탓", VL[1]), ("성공", "성공", "연결 탓", "#C2577F"),
             ("실패", "실패", "둘 다 / 과제", SUB)]
     tx, ty = bx + 0.10, 1.15
     txt(ax, tx + 0.45, ty, "상위만 참값", fs=5.6, c=TXT, bold=True)
-    txt(ax, tx + 1.35, ty, "VLA만 참값", fs=5.6, c=TXT, bold=True)
+    txt(ax, tx + 1.35, ty, "JCR만 참값", fs=5.6, c=TXT, bold=True)
     txt(ax, tx + 2.40, ty, "판정", fs=5.6, c=TXT, bold=True)
     ax.plot([tx, tx + 3.05], [ty - 0.10, ty - 0.10], color="#AAA", lw=0.6)
     for k, (a, b, lab, c) in enumerate(rows):
@@ -456,7 +456,7 @@ def f7_data():
         x += 1.32
     box(ax, 5.55, 0.62, 1.20, 0.62, UP, "다음 본 학습", "기본 모델부터\nL8S + L9 + 미리 내기 행", tfs=6.4, sfs=4.9)
     arrow(ax, [(x - 0.16, 0.93), (5.53, 0.93)], lw=0.8, hw=0.14, hl=0.28)
-    box(ax, 1.52, 0.14, 3.80, 0.34, VL, "결합 학습용 로그: 매 순간 프레임 · 관절 · 명령 발행/도착 시각 → 미리 내기 행 · VLA 데이터", tfs=5.6)
+    box(ax, 1.52, 0.14, 3.80, 0.34, VL, "결합 학습용 로그: 매 순간 프레임 · 관절 · 명령 발행/도착 시각 → 미리 내기 행 · JCR 데이터", tfs=5.6)
     arrow(ax, [(4.51, 0.60), (4.51, 0.50)], lw=0.7, hw=0.12, hl=0.25)
     txt(ax, 0.62, 0.30, "비현실 모드는\n효과 검증 전 제외", fs=4.9, c=SUB)
     save(fig, "f7_data")

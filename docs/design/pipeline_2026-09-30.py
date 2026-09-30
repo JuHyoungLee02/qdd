@@ -1,5 +1,5 @@
 """Pipeline overview (2026-09-30, redrawn per user request): same picture as paper_v2 Fig. 1.
-Runtime row (upper VLM -> coordinate conversion -> joystick VLA -> robot) above the offline row
+Runtime row (upper VLM -> coordinate conversion -> joystick JCR -> robot) above the offline row
 (data -> training -> evaluation), one thin dashed feedback line, four role colours.
 Run: MPLCONFIGDIR=D:/tools/mplcache PYTHONPATH=D:/tools/pylib python docs/design/pipeline_2026-09-30.py
 """

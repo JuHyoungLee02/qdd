@@ -1,5 +1,7 @@
 # E-CJ1 사전등록 — 시뮬 참값 명령 × {스크립트 실행기, VLA 조이스틱} + 같은 VLA 단독 (결합 프로그램 1번, P0-3 + P0-8)
 
+> **명칭 갱신 (2026-10-01):** 사용자 확정으로 하위 모델을 'VLA'가 아니라 **JCR(Joystick-Conditioned Reflex, 조이스틱 반사 정책)**로 부른다. 이 문서는 사전등록 원문이라 아래 'VLA' 표기를 그대로 둔다(등록 뒤 결과 규칙). 새 문서·논문은 JCR을 쓴다. NOW.md §1-0 참고.
+
 - 작성 2026-09-30 22시경 KST, COUPLE 에이전트. 프로그램 `docs/stage3/coupling_program.md`, 계획 `D:\tools\scratch_qdd\board\PLAN_coupling.md`. **이 문서 커밋 뒤에 본 실행을 시작한다.** 결과를 본 뒤 문턱·팔·시드를 바꾸지 않는다(바꾸면 '변경 n'으로 기록). 유료 호출 0.
 - 상위 LLM은 이 실험에 쓰지 않는다: 명령은 **시뮬 참값**(`harvest/astra_solo/pt_truth.PtTruth` — 시뮬 물체 자세로 계산한 점 + 높이 의도 명령, 방식 D와 같은 점 → 깊이 → xyz 경로). 상위를 붙이는 재실행(PX·PV)은 E-CJ2(본 35B 최적 체크포인트, 없으면 f35_d)에서 한다. Astra·교사 정책은 쓰지 않는다.
 
