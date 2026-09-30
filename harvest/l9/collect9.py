@@ -107,6 +107,7 @@ def run_episode(world, row: dict, out_dir: str, pool: dict, rm, ledger=None, p: 
                 objects={k: {"name": ep["names"].get(k), "node": o["node"]} for k, o in ep["objects"].items()},
                 clutter=sorted(ep.get("clutter", {})), room=(fs.get("room") or {}).get("name"), hdr=fs.get("hdr"),
                 materials=sorted(set((fs.get("materials") or {}).values())), iso=fs.get("iso"),
+                decor=fs.get("decor"),
                 motion_version=MOTION_VERSION, judge_l9=judge or None, plan_row=row)
     with open(os.path.join(out_dir, "meta.json"), "w") as f:
         json.dump(meta, f)

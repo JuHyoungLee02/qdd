@@ -166,3 +166,37 @@ def blocked_targets() -> set:
         p = os.path.join(DIR, "blocked_targets.json")
         _CACHE["blocked"] = set(json.load(open(p))["ids"]) if os.path.exists(p) else set()
     return _CACHE["blocked"]
+
+
+def furniture_mesh(split: str = "train") -> dict:
+    """Licensed mesh furniture (L9 new + the L8S tables they reference): {name: asset row (dst, collider_size,
+    origin_offset, yaw?, category, license, source)}; prim-safe names."""
+    import re
+    key = f"fm:{split}"
+    if key in _CACHE:
+        return _CACHE[key]
+    here = os.path.dirname(DIR)
+    out = {}
+    tab = _load("furniture_mesh_l9.json")
+    rows = dict(tab["assets"])
+    for ref in tab.get("l8s", {}).values():
+        src = json.load(open(os.path.join(os.path.dirname(os.path.dirname(here)), ref["table"])))
+        r = (src.get("assets") or {}).get(ref["id"])
+        if r is not None:
+            rows[ref["id"]] = r
+    for k, r in rows.items():
+        if r.get("split", "train") != split or not r.get("dst") or not licence_ok(r.get("license", "")):
+            continue
+        sx, sy, sz = r["collider_size"]
+        if max(sx, sy) > 2.2 or sz > 2.3:
+            continue
+        out[re.sub(r"[^A-Za-z0-9_]", "_", k)] = dict(r, name0=k)
+    _CACHE[key] = out
+    return out
+
+
+def mesh_for(idx: int, n: int = 10, split: str = "train") -> dict:
+    """The idx-th subset of n mesh furniture pieces (rotating through the catalog)."""
+    cat = furniture_mesh(split)
+    order = sorted(cat, key=lambda k: hashlib.sha256(f"l9mesh:{k}".encode()).hexdigest())
+    return {order[(idx * n + j) % len(order)]: cat[order[(idx * n + j) % len(order)]] for j in range(n)}

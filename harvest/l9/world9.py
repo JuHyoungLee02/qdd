@@ -63,7 +63,48 @@ def register_pool(pool: dict) -> list:
     return sorted(ids)
 
 
-def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "train"):
+def decor_parts(mesh: dict, vseed: int, furniture: list, room: bool) -> list:
+    """1-2 mesh furniture pieces beside the task furniture (background: chairs, shelves, side tables ...), facing
+    the robot, outside the robot keep-out box, inside the room's clear zone when a room is used. Pure."""
+    from . import scene9 as S9
+    if not mesh:
+        return []
+    rng = np.random.default_rng([int(vseed), 917])
+    boxes = S9.aabb_world([p for p in furniture if p.get("role") != "room_wall"], 0.0)
+    (fx0, fx1) = (min(b[0][0] for b in boxes), max(b[0][1] for b in boxes)) if boxes else (0.3, 1.0)
+    (fy0, fy1) = (min(b[1][0] for b in boxes), max(b[1][1] for b in boxes)) if boxes else (-0.5, 0.5)
+    names = sorted(mesh)
+    out = []
+    (zx0, zx1), (zy0, zy1) = S9.ZONE if room else ((-0.5, 2.5), (-2.0, 2.0))
+
+    def dims(r):
+        sx, sy, sz = r["collider_size"]
+        yaw = float(r.get("yaw", -math.pi / 2))
+        return abs(math.sin(yaw)) * sy + abs(math.cos(yaw)) * sx, abs(math.sin(yaw)) * sx + abs(math.cos(yaw)) * sy, sz, yaw
+
+    for side in rng.permutation([-1, 1])[: int(rng.integers(1, 3))]:
+        slack = (zy1 - fy1 - 0.05) if side > 0 else (fy0 - zy0 - 0.05)
+        fit = [n for n in names if dims(mesh[n])[1] <= slack and dims(mesh[n])[0] <= zx1 - 0.2
+               and not any(p["asset"] == n for p in out)]
+        if not fit:
+            continue
+        a = fit[int(rng.integers(len(fit)))]
+        r = mesh[a]
+        dx, dy, sz, yaw = dims(r)
+        y = (fy1 + 0.05 + dy / 2) if side > 0 else (fy0 - 0.05 - dy / 2)
+        x = float(np.clip(fx0 + dx / 2 + rng.uniform(0.0, 0.3), 0.20 + dx / 2, zx1 - dx / 2))
+        lo, hi = (x - dx / 2, y - dy / 2), (x + dx / 2, y + dy / 2)
+        if lo[0] < 0.15 and hi[1] > -0.45 and lo[1] < 0.45:  # robot keep-out (x < 0.15, |y| < 0.45)
+            continue
+        if not (zx0 <= lo[0] and hi[0] <= zx1 and zy0 <= lo[1] and hi[1] <= zy1):
+            continue
+        out.append({"id": a, "usd": r["dst"], "asset": a, "prim": "mesh", "size": [dx, dy, sz],
+                    "pos": [x, y, sz / 2], "base_pos": [x, y, 0.0], "yaw": yaw, "role": "decor",
+                    "category": r.get("category"), "license": r.get("license"), "source": r.get("source")})
+    return out
+
+
+def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "train", mesh: dict | None = None):
     from ..astra_motion.world_isaac import CAMS, KEYS, NO_RENDER, PRE_RENDER, IsaacWorld
     from ..sim import scene as SC
     from ..sim.assets_x import isaac as FX
@@ -71,7 +112,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
     A.check_arm(arm)
     register_l9_ids()
     ids = register_pool(pool)
-    undo = FX.without_table(None, rooms)
+    undo = FX.without_table(mesh, rooms)
 
     class World9(IsaacWorld):
         def __init__(self):
@@ -221,7 +262,8 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             room = self._place_room(seed, parts, sc["family"])
             if room is not None:
                 parts = [p for p in parts if p["role"] != "room_wall"]
-            FX.author_scene(env, {"furniture": parts, "walls": [], "room": None}, None, None)
+            decor = decor_parts(mesh, seed, parts, room is not None)
+            FX.author_scene(env, {"furniture": parts + decor, "walls": [], "room": None}, mesh, None)
             mats = self._retexture(seed, parts)
             if room is None:
                 from ..teach_l8d.xart import hide_ground_grid
@@ -318,7 +360,9 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                                     "robot_pose": sc["robot_pose"], "lift": sc["lift"], "room": room,
                                     "materials": mats, "hdr": self.hdr, "light_family": self.light_family,
                                     "head": head, "iso": self.iso, "arm_start": arm_start, "params": sc.get("params"),
-                                    "surface": nodes[ep["main"]]["kind"]}
+                                    "surface": nodes[ep["main"]]["kind"],
+                                    "decor": [{"asset": mesh[p["asset"]].get("name0", p["asset"]),
+                                               "category": p.get("category")} for p in decor]}
             self.clutter_scene = {"n": len(ep.get("clutter", {})), "ids": sorted(ep.get("clutter", {}))}
 
         def _obj_yaw(self, k):
