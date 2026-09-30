@@ -327,7 +327,7 @@ def finalize(ep, res: dict, od: str) -> dict:
         if res.get("fail_stage"):
             fail = f"{res.get('fail_stage')}:{fail}"
     an_all = sorted({a for s in ex.samples for a in s["anomaly"]})
-    rec = {"seed": ep.seed, "variant": ep.variant, "plan": ep.plan, "success": ok, "end_reason": res.get("end_reason"),
+    rec = {"seed": ep.seed, "variant": ep.variant, "plan": ep.plan, "anom_rule": 2, "success": ok, "end_reason": res.get("end_reason"),
            "fail_stage": res.get("fail_stage"), "failure": fail, "grasp_lift": res.get("grasp_lift"),
            "n_calls": res.get("n_calls"), "sim_t": res.get("sim_t"), "disturb_events": ep.dist_events,
            "anomalies": an_all, "t_first_anomaly": next((s["t"] for s in ex.samples if s["anomaly"]), None),
@@ -366,13 +366,13 @@ def main(argv=None):
     ap.add_argument("--stop-calls", type=int, default=30)
     ap.add_argument("--stop-motion", type=float, default=120.0)
     ap.add_argument("--mode", default="data", choices=["data", "eval"])
-    ap.add_argument("--exec", default="truth", choices=["truth", "script", "jcr"])
+    ap.add_argument("--executor", default="truth", choices=["truth", "script", "jcr"])
     ap.add_argument("--src", default="plan", choices=["plan", "truth", "upper"],
                     help="eval: truth = clean commands (OJ), upper = main-35B errors injected (OJe / OXe)")
     ap.add_argument("--jcr-url", default="")
     a = ap.parse_args(argv)
-    if a.mode == "eval" and (a.exec == "truth" or a.src == "plan"):
-        raise SystemExit("--mode eval needs --exec script|jcr and --src truth|upper")
+    if a.mode == "eval" and (a.executor == "truth" or a.src == "plan"):
+        raise SystemExit("--mode eval needs --executor script|jcr and --src truth|upper")
     yf = [f for f in a.yield_files.split(",") if f]
     code = 0
     try:
@@ -387,7 +387,7 @@ def main(argv=None):
             raise SystemExit(f"world dt {world.dt} != truth DT {T.DT}")
         owner = f"{a.owner} pid={os.getpid()}"
         client = None
-        if a.exec == "jcr":
+        if a.executor == "jcr":
             from .serve import Client
             client = Client(a.jcr_url)
         for s in seed_list(a.seeds, a.mode == "eval"):
@@ -409,7 +409,7 @@ def main(argv=None):
                 ep.plan = {"seed": s, "normal": True, "src": a.src, "scale": 1.0, "events": [],
                            "p_swap": D.P_SWAP if up else 0.0, "p_pre": D.P_PRE if up else 0.0,
                            "rng_seed": [int(s), 9001]}
-            ep.exec_kind, ep.client = a.exec, client
+            ep.exec_kind, ep.client = a.executor, client
             ep.dist = dist
             ep.rng = np.random.default_rng(ep.plan["rng_seed"])
             ep.cmd_log = []

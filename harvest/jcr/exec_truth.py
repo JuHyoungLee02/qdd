@@ -100,6 +100,8 @@ class TruthExec:
 
     def _act(self, action, t, tcp):
         self.width = self.w_close if action == "close" else self.w_open
+        if action == "open":
+            self.was_holding = False
         self.wait_until, self.wait_action = t + (CLOSE_WAIT_S if action == "close" else OPEN_WAIT_S), action
         self.v = np.zeros(3)
         self.plan = None
@@ -154,8 +156,9 @@ class TruthExec:
             np.asarray(st["obj"][self.tgt], float)[:2] - s["ref0"][:2]))
         an = T.anomaly_kinds(st.get("touched", set()), self.tgt, hold, self.was_holding, self.width < self.w_open - 0.02,
                              shift, mis, float(np.asarray(st["obj"][self.tgt])[2]), self.table_z,
-                             bool(st.get("upright", True)))
-        self.was_holding = hold
+                             bool(st.get("upright", True)),
+                             pads_empty=float(st.get("grip_w", 1.0)) < self.w_close + T.PAD_EMPTY_M)
+        self.was_holding = self.was_holding or hold
         stop = "unrecoverable" in an
         if self.plan is None or self.plan[1] >= DS_TICKS:
             P, _ = T.smooth_chunk(self.cmd, self.v, c, stop=stop)

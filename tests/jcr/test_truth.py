@@ -67,5 +67,11 @@ def test_anomaly_kinds():
                         tgt_shift_m=0.0, mismatch=False, tgt_z=0.9, table_z=0.8, upright=True)
     assert k == {"unexpected_contact"}
     k = T.anomaly_kinds(touched=set(), tgt="o3", holding=False, was_holding=True, grip_cmd_closed=True,
-                        tgt_shift_m=0.03, mismatch=True, tgt_z=0.7, table_z=0.8, upright=False)
+                        tgt_shift_m=0.03, mismatch=True, tgt_z=0.7, table_z=0.8, upright=False, pads_empty=True)
     assert k == {"dropped", "target_moved", "cmd_mismatch", "unrecoverable"}
+
+
+def test_holding_flicker_with_object_between_pads_is_not_dropped():
+    k = T.anomaly_kinds(touched=set(), tgt="o3", holding=False, was_holding=True, grip_cmd_closed=True,
+                        tgt_shift_m=0.0, mismatch=False, tgt_z=0.9, table_z=0.8, upright=True, pads_empty=False)
+    assert "dropped" not in k

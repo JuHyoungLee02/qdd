@@ -38,10 +38,13 @@ def load_data(roots):
             ep = json.load(open(os.path.join(d, "ep.json")))
             normal = bool(ep["plan"]["normal"])
             seed = int(ep["seed"])
+            old_rule = ep.get("anom_rule", 1) < 2  # rule 1 flagged 'dropped' on holding-predicate flicker
             for line in open(sp):
                 s = json.loads(line)
                 if "img" not in s or s.get("window") == "tail":
                     continue
+                if old_rule:
+                    s["anomaly"] = [k for k in s.get("anomaly", []) if k != "dropped"]
                 s["_imgs"] = [["head camera", os.path.join(d, "img", s["img"] + "_head.jpg")],
                               ["right wrist camera", os.path.join(d, "img", s["img"] + "_wrist.jpg")]]
                 s["_normal"], s["_seed"] = normal, seed

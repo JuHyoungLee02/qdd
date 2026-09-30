@@ -86,14 +86,19 @@ def grip_event(allow, tcp, c, reach: float = REACH_M) -> str:
     return "keep"
 
 
+PAD_EMPTY_M = 0.003  # pads within this of the closed width = nothing between them
+
+
 def anomaly_kinds(touched, tgt: str, holding: bool, was_holding: bool, grip_cmd_closed: bool, tgt_shift_m: float,
-                  mismatch: bool, tgt_z: float, table_z: float, upright: bool) -> set:
-    """Anomaly kinds true at this tick (privileged). unrecoverable = physically evident (off the table, tipped and not
-    held); the counterfactual-rollout definition (§0-2, N >= 3) is a stage-2 part."""
+                  mismatch: bool, tgt_z: float, table_z: float, upright: bool, pads_empty: bool = False) -> set:
+    """Anomaly kinds true at this tick (privileged). dropped = the object was held since the last close, the gripper
+    is still commanded closed and the pads have closed on nothing (pads_empty; the holding predicate alone flickers
+    while carrying -- smoke d0 dr s20000). unrecoverable = physically evident (off the table, tipped and not held);
+    the counterfactual-rollout definition (§0-2, N >= 3) is a stage-2 part."""
     out = set()
     if set(touched) - {tgt}:
         out.add("unexpected_contact")
-    if was_holding and not holding and grip_cmd_closed:
+    if was_holding and grip_cmd_closed and pads_empty and not holding:
         out.add("dropped")
     if not holding and tgt_shift_m > MOVED_M:
         out.add("target_moved")

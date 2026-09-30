@@ -93,8 +93,9 @@ class JcrExec(TruthExec):
                                  self.width < self.w_open - 0.02, 0.0 if s["ref"] != self.tgt else float(
                                      np.linalg.norm(np.asarray(st["obj"][self.tgt], float)[:2] - s["ref0"][:2])),
                                  mis, float(np.asarray(st["obj"][self.tgt])[2]), self.table_z,
-                                 bool(st.get("upright", True)))
-            self.was_holding = hold
+                                 bool(st.get("upright", True)),
+                             pads_empty=float(st.get("grip_w", 1.0)) < self.w_close + T.PAD_EMPTY_M)
+            self.was_holding = self.was_holding or hold
             P_truth, _ = T.smooth_chunk(self.cmd, self.v, c, stop="unrecoverable" in an)
             ob = self.obs_fn()
             smp = {"k": self.k, "t": round(t, 4), "tcp": tcp.tolist(), "p_cmd": self.cmd.tolist(),
