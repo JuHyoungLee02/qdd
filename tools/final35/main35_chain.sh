@@ -75,7 +75,7 @@ if ! grep -q "^TRAIN_DONE" $L/main35.log 2>/dev/null; then
     RES=""; [ -d $O/run/state ] && RES="--resume"
     log "TRAIN_START try $n"
     PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True bash $C/tools/teach_35b/train.sh $C 0,1,2,3 $D/train_main35.jsonl \
-      $O/run --epochs 3 --micro 2 --accum 3 --save-every 200 --save-half-epoch $RES
+      $O/run --epochs 3 --micro 2 --accum 3 --save-every 200 --adapter-every 0.25 $RES
   done
   [ -f $O/run/epoch3/adapter_model.safetensors ] || { log TRAIN_FAIL; exit 1; }
   log TRAIN_DONE

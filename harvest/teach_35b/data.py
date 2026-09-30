@@ -86,3 +86,18 @@ def check_rows(rows: list) -> dict:
         if p:
             bad.append({"id": r.get("id"), "problems": p})
     return {"counts": by, "invalid": len(bad), "invalid_first": bad[:5]}
+
+
+GROUPS = ("sim_control", "sim_aux", "open", "mixed")
+
+
+def row_group(row: dict) -> str:
+    """Loss-logging group: open point rows carry their public 'source'; the rest are simulator (L8S) rows."""
+    if row.get("source"):
+        return "open"
+    return "sim_control" if row.get("kind") == "control" else "sim_aux"
+
+
+def mb_group(groups: list) -> str:
+    """A micro-batch's group: the common group of its rows, else 'mixed' (its loss is not split per row)."""
+    return groups[0] if len(set(groups)) == 1 else "mixed"

@@ -33,7 +33,7 @@ import time
 
 from ..teach_l8 import ckpt
 from ..teach_l8.train import mask_labels, micro_batches
-from .data import check_rows, messages, request_text
+from .data import GROUPS, check_rows, mb_group, messages, request_text, row_group
 
 LORA_TARGET = (r".*language_model\.layers\.\d+\.(self_attn\.(q|k|v|o)_proj|linear_attn\.(in_proj_qkv|in_proj_z|out_proj)"
                r"|mlp\.shared_expert\.(gate|up|down)_proj)")
@@ -129,6 +129,9 @@ def main(argv=None):
     ap.add_argument("--save-every-epoch", type=int, default=1)
     ap.add_argument("--save-half-epoch", action="store_true",
                     help="also save the adapter half-way through each epoch -> <out>/epoch<e>.5 (main35 checkpoints)")
+    ap.add_argument("--adapter-every", type=float, default=0.0,
+                    help="also save the adapter every this fraction of an epoch (e.g. 0.25 -> epoch0.25, 0.5, 0.75, ...); "
+                         "--save-half-epoch = 0.5")
     ap.add_argument("--save-every", type=int, default=0,
                     help="full-state checkpoint (LoRA, optimizer, loop position, RNG) every N optimizer steps -> <out>/state")
     ap.add_argument("--resume", action="store_true", help="continue from <out>/state (same layout required)")
@@ -163,6 +166,30 @@ def main(argv=None):
         print("LABELS " + json.dumps(chk), flush=True)
     if chk["invalid"] and a.label_check == "strict":
         raise SystemExit(f"{chk['invalid']} control labels fail the runtime parser (--label-check warn to go on)")
+    groups = [row_group(r) for r in rows]
+    gi = {g: i for i, g in enumerate(GROUPS)}
+    if main_rank:  # run record (one file per start, resumes included): what exactly this run trained on and with
+        import hashlib
+        import platform
+        import peft
+        import transformers
+        h = hashlib.sha256()
+        with open(a.data, "rb") as f:
+            for blk in iter(lambda: f.read(1 << 24), b""):
+                h.update(blk)
+        meta = {"start_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "host": platform.node(), "world": world,
+                "args": vars(a), "code_dir": os.getcwd(), "data_sha256": h.hexdigest(),
+                "data_bytes": os.path.getsize(a.data), "rows": len(rows), "labels": chk,
+                "rows_by_group": {g: groups.count(g) for g in GROUPS[:3]},
+                "open_rows_by_source": {s: sum(1 for r in rows if r.get("source") == s)
+                                        for s in sorted({r["source"] for r in rows if r.get("source")})},
+                "versions": {"torch": torch.__version__, "transformers": transformers.__version__, "peft": peft.__version__,
+                             "cuda": torch.version.cuda},
+                "gpus": [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())],
+                "env": {k: os.environ.get(k) for k in ("CUDA_VISIBLE_DEVICES", "PYTHONPATH", "TEACH_35B_JOB",
+                                                       "PYTORCH_CUDA_ALLOC_CONF")}}
+        json.dump(meta, open(os.path.join(a.out, f"run_meta_{meta['start_utc'].replace(':', '')}.json"), "w"), indent=1)
+        print("RUN_META " + json.dumps({k: meta[k] for k in ("data_sha256", "rows", "rows_by_group")}), flush=True)
     proc = AutoProcessor.from_pretrained(a.model)
     enc = Encoder(proc)
     t0 = time.time()
@@ -207,6 +234,8 @@ def main(argv=None):
         if main_rank:
             print("RESUME " + json.dumps(pos), flush=True)
     cnt = torch.zeros(5, dtype=torch.float64, device=dev)  # tokens, answer tokens, samples, loss sum, loss count
+    gcnt = torch.zeros(2 * len(GROUPS), dtype=torch.float64, device=dev)  # per micro-batch group: loss sum, count
+    gn_sum, gn_max, gn_n = 0.0, 0.0, 0  # gradient norm before clipping (identical on every rank after the all-reduce)
     t_win = t_train0 = time.time()
     epoch_times = []
     model.train()
@@ -232,34 +261,50 @@ def main(argv=None):
                 (out.loss / a.accum).backward()
             cnt += torch.tensor([float(b["attention_mask"].sum()), float(n_ans), float(n_items),
                                  float(out.loss.detach()), 1.0], dtype=torch.float64, device=dev)
+            j = 2 * gi[mb_group([groups[i] for i in mine[k]])]
+            gcnt[j] += float(out.loss.detach())
+            gcnt[j + 1] += 1.0
             if boundary:
                 for g in opt.param_groups:
                     g["lr"] = lr_at(step)
-                torch.nn.utils.clip_grad_norm_(params, 1.0)
+                gn = float(torch.nn.utils.clip_grad_norm_(params, 1.0))
+                gn_sum, gn_max, gn_n = gn_sum + gn, max(gn_max, gn), gn_n + 1
                 opt.step()
                 opt.zero_grad(set_to_none=True)
                 step += 1
                 if step % a.log_every == 0:
                     tot = cnt.clone()
+                    gt = gcnt.clone()
                     if world > 1:
                         dist.all_reduce(tot)
+                        dist.all_reduce(gt)
                     dt = time.time() - t_win
                     rec = {"step": step, "epoch": ep, "loss": round(float(tot[3] / tot[4]), 5), "lr": lr_at(step),
                            "tok_s": round(float(tot[0]) / dt, 1), "answer_tok_s": round(float(tot[1]) / dt, 1),
                            "samples_s": round(float(tot[2]) / dt, 3),
                            "gpu_gb": round(torch.cuda.max_memory_allocated(dev) / 2**30, 1),
-                           "t": round(time.time() - t_train0, 1)}
+                           "t": round(time.time() - t_train0, 1),
+                           "grad_norm": round(gn_sum / max(1, gn_n), 4), "grad_norm_max": round(gn_max, 4),
+                           "loss_by_group": {g: (round(float(gt[2 * i] / gt[2 * i + 1]), 5) if gt[2 * i + 1] else None)
+                                             for i, g in enumerate(GROUPS)},
+                           "mb_by_group": {g: int(gt[2 * i + 1]) for i, g in enumerate(GROUPS)}}
                     if main_rank:
                         log.write(json.dumps(rec) + "\n")
                         log.flush()
                         print("LOG " + json.dumps(rec), flush=True)
                     cnt.zero_()
+                    gcnt.zero_()
+                    gn_sum, gn_max, gn_n = 0.0, 0.0, 0
                     t_win = time.time()
-                if a.save_half_epoch and main_rank and k + 1 >= len(mine) // 2:
-                    hd = os.path.join(a.out, f"epoch{ep + 0.5}")  # epoch0.5, epoch1.5, ... (main35 checkpoints)
-                    if not os.path.isdir(hd):
-                        core.save_pretrained(hd)
-                        print(f"HALF_EPOCH {ep + 0.5} step {step}", flush=True)
+                frac = a.adapter_every or (0.5 if a.save_half_epoch else 0.0)
+                if frac and main_rank:  # epoch0.25, 0.5, ... inside each epoch; the whole epochs are saved below
+                    for q in range(1, int(round(1 / frac))):
+                        if k + 1 >= int(len(mine) * q * frac):
+                            e = round(ep + q * frac, 4)
+                            hd = os.path.join(a.out, f"epoch{e:g}")  # epoch1.5 (main35 eval names), epoch0.25, ...
+                            if not os.path.isdir(hd):
+                                core.save_pretrained(hd)
+                                print(f"PART_EPOCH {e:g} step {step}", flush=True)
                 if a.save_every and step % a.save_every == 0:
                     ckpt.save(a.out, core, opt, {"step": step, "epoch": ep, "next_k": k + 1}, layout, rank, barrier)
                     if a.stop_after and step == a.stop_after:

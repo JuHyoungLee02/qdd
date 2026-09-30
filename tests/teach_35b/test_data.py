@@ -73,3 +73,10 @@ def test_min_track_rows(tmp_path):
     h = dict(d, format="nd-xyz", h_mode="on", answer="{}")
     assert DT.label_problems(h)
     assert DT.label_problems(dict(d, format="other-arm", answer="{}")) == []
+
+def test_row_group_splits_sim_control_sim_aux_and_open():
+    # main35 logs the loss per group: L8S control rows, L8S aux (pt) rows, open point rows (they carry a source)
+    assert DT.row_group({"kind": "control"}) == "sim_control"
+    assert DT.row_group({"kind": "aux", "format": "pt"}) == "sim_aux"
+    assert DT.row_group({"kind": "aux", "source": "robotis/ffw_bg2_rb2"}) == "open"
+    assert DT.mb_group(["open", "open"]) == "open" and DT.mb_group(["open", "sim_aux"]) == "mixed"
