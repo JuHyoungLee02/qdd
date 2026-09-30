@@ -104,7 +104,7 @@ def main(argv=None):
                       for k, c in c8.items()}}, os.path.join(od, "containers_l9.json"))
         cat = Counter(o["l9cat"] for o in objs.values()) + Counter(r["l9cat"] for r in l8s.values())
         counts["objects"] = {"l9_new_stable": len(objs), "l8s_passed": len(l8s), "total": len(objs) + len(l8s),
-                             "target": 6000, "files": files, "by_l9cat": dict(cat.most_common()),
+                             "target": 6000, "files": [os.path.basename(p) for p in files], "by_l9cat": dict(cat.most_common()),
                              "by_role": dict(Counter(o["role"] for o in objs.values())
                                              + Counter(r["role"] for r in l8s.values())),
                              "by_colour_l9": dict(Counter(o["colour"] for o in objs.values()).most_common())}
