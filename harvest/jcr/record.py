@@ -363,7 +363,7 @@ def finalize(ep, res: dict, od: str) -> dict:
             j0 = int(np.searchsorted(tick_t, s["t"] - 1e-6))
             j = int(np.searchsorted(tick_t, s["t"] + 4 * dt - 1e-6))
             if j < len(tick_t):
-                ch = s.get("chunk", s.get("truth_chunk"))
+                ch = s.get("exec_rows", s.get("chunk"))  # G-br: the rows actually commanded
                 e = float(np.linalg.norm((tcp[j] - tcp[j0]) - (np.asarray(ch[3]) - np.asarray(s["p_cmd"])))) * 1e3
                 s["gbr_mm"] = round(e, 2)
                 gbr.append(e)
@@ -373,7 +373,7 @@ def finalize(ep, res: dict, od: str) -> dict:
         if res.get("fail_stage"):
             fail = f"{res.get('fail_stage')}:{fail}"
     an_all = sorted({a for s in ex.samples for a in s["anomaly"]})
-    rec = {"seed": ep.seed, "variant": ep.variant, "plan": ep.plan, "anom_rule": 2, "success": ok, "end_reason": res.get("end_reason"),
+    rec = {"seed": ep.seed, "variant": ep.variant, "plan": ep.plan, "anom_rule": 2, "label_rule": 3, "success": ok, "end_reason": res.get("end_reason"),
            "fail_stage": res.get("fail_stage"), "failure": fail, "grasp_lift": res.get("grasp_lift"),
            "n_calls": res.get("n_calls"), "sim_t": res.get("sim_t"), "disturb_events": ep.dist_events,
            "anomalies": an_all, "t_first_anomaly": next((s["t"] for s in ex.samples if s["anomaly"]), None),

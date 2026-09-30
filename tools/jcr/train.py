@@ -33,6 +33,8 @@ def load_data(roots, mode="A"):
     for root in roots:
         for sp in sorted(glob.glob(os.path.join(root, "*", "s*", "samples.jsonl"))):
             d = os.path.dirname(sp)
+            if os.path.exists(os.path.join(d, "samples_r3.jsonl")):  # change-3 offline relabel (tools/jcr/relabel.py)
+                sp = os.path.join(d, "samples_r3.jsonl")
             if not os.path.exists(os.path.join(d, "ep.json")):
                 continue
             ep = json.load(open(os.path.join(d, "ep.json")))

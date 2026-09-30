@@ -77,22 +77,53 @@ def test_holding_flicker_with_object_between_pads_is_not_dropped():
     assert "dropped" not in k
 
 
-def test_target_point_modes():
-    g, p = np.array([0.4, 0.0, 0.9]), np.array([0.41, 0.0, 0.9])
-    for m in T.MODES:
-        c, mis = T.target_point(m, p, g, kappa=1.0)
-        assert np.linalg.norm(c - p) < 0.002 and not mis  # 1 cm: corrected in every mode
-    far = np.array([0.50, 0.0, 0.9])
-    cA, mA = T.target_point("A", far, g)
-    cB, mB = T.target_point("B", far, g, kappa=1.0)
-    cC, mC = T.target_point("C", far, g, kappa=0.0)
-    assert np.isclose(np.linalg.norm(cA - g), T.R_GOAL) and mA
-    assert np.linalg.norm(cB - g) < 0.005 and mB  # strong pull: stays at the commanded point, flags it
-    assert np.linalg.norm(cC - g) <= T.R_GOAL + 1e-9 and mC
+def test_prio_floor_and_shapes():
+    assert abs(T.prio_w(1.0, "gauss", 0.03, 0.2) - 0.2) < 1e-9
+    assert abs(T.prio_w(0.0, "gauss", 0.03, 0.2, 0.7) - 0.7) < 1e-9
+    assert T.prio_w(0.03, "p4", 0.03, 0.0) == 0.5
 
 
-def test_pull_weaker_when_carrying():
-    assert T.pull_weight(0.04, 0.2) > T.pull_weight(0.04, 0.9)
+def roll(p_true, g, prm, mode="B", n=80, lower=False, kappa=0.9):
+    x, v, age = np.array([0.40, 0.0, 0.95]), np.zeros(3), 0.0
+    for _ in range(n):
+        R = T.mode_chunk(mode, x, v, p_true, g, kappa=kappa, age=age, lower=lower, prm=prm)
+        x, v, age = R[3], (R[3] - R[2]) / T.DT, age + 4 * T.DT
+    return x
+
+
+def test_w_max_one_freezes_the_destination():
+    g = np.array([0.45, 0.0, 0.93])
+    e = roll(g + [0.01, 0, 0], g, dict(T.PRIO, w_max=1.0))
+    assert np.linalg.norm(e - g) < 1e-3  # the literal w(0) = 1: no correction at all (change 3 note)
+
+
+def test_default_blend_corrects_partly_and_lower_corrects_more():
+    g = np.array([0.45, 0.0, 0.93])
+    p = g + [0.01, 0, 0]
+    e = roll(p, g, T.PRIO)
+    e2 = roll(p, g, T.PRIO, lower=True)
+    assert 0.001 < np.linalg.norm(e - g) < 0.009
+    assert np.linalg.norm(e2 - g) > np.linalg.norm(e - g)
+
+
+def test_blend_rows_limits_and_residual_bound():
+    g = np.array([0.45, 0.0, 0.93])
+    x0 = np.array([0.40, 0.0, 0.95])
+    jr = T.smooth_chunk(x0, np.zeros(3), g + [0.0, 0.2, 0.0])[0]  # JCR wants to go far sideways
+    prm = dict(T.PRIO, A=0.02, eps=0.005, t_ramp=0.5)
+    R = T.blend_rows(x0, np.zeros(3), jr, g, prm, age=0.0)
+    ra = T.blend_rows(x0, np.zeros(3), np.repeat(x0[None], T.H, 0), g, dict(prm, w_min=1.0, w_max=1.0), age=0.0)
+    steps = np.diff(np.vstack([x0, R]), axis=0) / T.DT
+    assert np.linalg.norm(steps, axis=1).max() <= T.V_BLEND + 1e-9
+    for k in range(T.H):
+        a_eff = prm["eps"] + (prm["A"] - prm["eps"]) * min(1.0, (k + 1) * T.DT / prm["t_ramp"])
+        assert np.linalg.norm(R[k] - ra[k]) <= a_eff + 1e-6
+
+
+def test_carry_stage_keeps_less_priority():
+    rho_n, wm_n = T.stage_prio(T.PRIO, 0.9)
+    rho_c, wm_c = T.stage_prio(T.PRIO, 0.3)
+    assert wm_c < wm_n and rho_c < rho_n
 
 
 def test_low_sideways_move_goes_over_the_target_first():

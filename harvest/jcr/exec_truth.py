@@ -25,6 +25,9 @@ PRE_M = 0.03
 V_BUDGET = 0.04  # m/s for the time budget (= couple_joy.vla_exec.V_MIN)
 T_MIN, EXTRA_S = 2.0, 4.0
 BLOCKED_M = 0.03
+CONV_M = 1e-4  # last-row step below this: the executed motion has come to rest
+LABELS = ("P", "A", "A1", "A2")  # stored per sample: JCR's own label + hard-clip baselines 3 / 1 / 2 cm
+LOWER_ON = {"target_moved", "unexpected_contact"}  # IDA: the attraction priority is halved while these are on
 
 
 class TruthExec:
@@ -125,14 +128,17 @@ class TruthExec:
                 gt = gt + (np.asarray(st["obj"][s["ref"]], float) - s["ref0"])
         return gt
 
-    def c_star(self, st, mode=None):
-        """-> (c*, mismatch, true point) under the envelope rule `mode` (default: the executed one)."""
-        m = mode or self.mode
+    def rows(self, st, mode=None, stop=False, lower=False, t=None):
+        """Truth rows of the envelope rule `mode` (default: the executed one) from the current commanded state."""
+        s = self.seg
+        age = 0.0 if t is None else float(t) - s["t_issue"]
+        return T.mode_chunk(mode or self.mode, self.cmd, self.v, self.true_point(st), s["goal_cmd"],
+                            kappa=self.kappa(st), age=age, stop=stop, lower=lower)
+
+    def c_star(self, st):
+        """(target the truth motion heads for, mismatch, true point): used by the disturbance trigger only."""
         gt = self.true_point(st)
-        if m == "S":
-            return self.seg["goal_cmd"].copy(), False, gt
-        c, mis = T.target_point(m, gt, self.seg["goal_cmd"], self.kappa(st))
-        return c, mis, gt
+        return T.project_ball(gt, self.seg["goal_cmd"])[0], T.mismatch(gt, self.seg["goal_cmd"]), gt
 
     def _continue(self, action, t):
         """Adapter continuation while the upper thinks (NOW.md §1-0e): lift start after a held close, small retreat after
@@ -184,7 +190,8 @@ class TruthExec:
             self.plan = None
             ev.append({"t": round(t, 3), "event": "swap"})
         st = self.state_fn()
-        c, mis, gt = self.c_star(st)
+        gt = self.true_point(st)
+        mis = self.mode != "S" and T.mismatch(gt, s["goal_cmd"])
         hold = bool(st.get("holding"))
         shift = 0.0 if s["ref"] != self.tgt else float(np.linalg.norm(
             np.asarray(st["obj"][self.tgt], float)[:2] - s["ref0"][:2]))
@@ -194,16 +201,14 @@ class TruthExec:
                              pads_empty=float(st.get("grip_w", 1.0)) < self.w_close + T.PAD_EMPTY_M)
         self.was_holding = self.was_holding or hold
         stop = "unrecoverable" in an
+        lower = bool(an & LOWER_ON)
         if self.plan is None or self.plan[1] >= DS_TICKS:
-            P, _ = T.smooth_chunk(self.cmd, self.v, c, stop=stop)
+            P = self.rows(st, stop=stop, lower=lower, t=t)
             self.plan = [P, 0]
-            lab = {}
-            for m in T.MODES:  # the labels of every envelope rule from this same state (arms A / B / C)
-                cm, mm, _ = self.c_star(st, m)
-                lab[m] = {"c_star": cm.tolist(), "chunk": T.smooth_chunk(self.cmd, self.v, cm, stop=stop)[0].tolist(),
-                          "mismatch": bool(mm)}
+            lab = {m: self.rows(st, m, stop=stop, t=t).tolist() for m in LABELS}  # JCR label 'P' + baselines
             self.samples.append({"k": self.k, "t": round(t, 4), "tcp": tcp.tolist(), "p_cmd": self.cmd.tolist(),
-                                 "v": self.v.tolist(), "chunk": P.tolist(), "c_star": c.tolist(), "mode": self.mode,
+                                 "v": self.v.tolist(), "chunk": lab["P"], "exec_rows": P.tolist(), "mode": self.mode,
+                                 "lower": lower,
                                  "labels": lab, "kappa": round(self.kappa(st), 3), "height": s["height"],
                                  "cont": s.get("cont"),
                                  "goal_cmd": s["goal_cmd"].tolist(), "goal_true": gt.tolist(), "r_goal": T.R_GOAL,
@@ -218,16 +223,18 @@ class TruthExec:
         self.v = (new - self.cmd) / self.dt
         self.cmd = new.copy()
         self.plan[1] += 1
+        c = P[-1]  # where the executed motion settles (A: the clipped point; B / C: the blend's rest point)
+        conv = float(np.linalg.norm(P[-1] - P[-2])) < CONV_M
         err = float(np.linalg.norm(tcp - c))
         moved = float(np.linalg.norm(tcp - self._last_tcp)) if self._last_tcp is not None else 1.0
         self._last_tcp = tcp.copy()
-        at_cmd = float(np.linalg.norm(self.cmd - c)) < 1e-6
+        at_cmd = conv and float(np.linalg.norm(self.cmd - c)) < 1e-4
         self._still = self._still + 1 if (at_cmd and moved < SETTLE_M_PER_TICK) else 0
         if s["pre"] and not s.get("released") and err < PRE_M:
             s["released"] = True
             ev.append({"t": round(t, 3), "event": "pre_issue"})
         kind = None
-        if err < T.REACH_M:
+        if err < T.REACH_M and conv:
             kind = "reach"
         elif self._still >= SETTLE_TICKS:
             kind = "settled" if err <= BLOCKED_M else "timeout"

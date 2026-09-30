@@ -116,7 +116,8 @@ def test_continuation_lifts_after_held_close_and_releases_the_loop():
     assert w.tcp[2] > true[2] + 0.02
 
 
-def test_every_sample_has_labels_for_all_modes():
+def test_every_sample_has_labels_for_all_rules():
+    from harvest.jcr.exec_truth import LABELS
     w = Fake()
     ex = TruthExec(0.05, 0.80, w.tcp, 0.107, 0.05, (1, 0, 0, 0), w.state, mode="B")
     true = np.array([0.45, -0.30, 0.93])
@@ -124,5 +125,6 @@ def test_every_sample_has_labels_for_all_modes():
     ex.go_to(true + [0.06, 0, 0], "keep", w.t)
     run(ex, w)
     s = ex.samples[0]
-    assert set(s["labels"]) == set(T.MODES) and s["mode"] == "B"
-    assert s["labels"]["A"]["mismatch"] and np.allclose(s["chunk"], s["labels"]["B"]["chunk"])
+    assert set(s["labels"]) == set(LABELS) and s["mode"] == "B"
+    assert s["chunk"] == s["labels"]["P"] and "cmd_mismatch" in s["anomaly"]
+    assert not np.allclose(s["exec_rows"], s["chunk"])

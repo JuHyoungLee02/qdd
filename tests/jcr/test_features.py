@@ -32,14 +32,13 @@ def test_event_class_roundtrip():
 def test_branch_is_truth_relabelled_and_flags_mismatch():
     rng = np.random.default_rng(0)
     for _ in range(50):
-        b = F.branch(sample(), rng)
-        c, mis = T.project_ball(b["goal_true"], b["goal_cmd"])
-        assert np.allclose(b["c_star"], c)
-        assert ("cmd_mismatch" in b["anomaly"]) == mis
+        b = F.branch(sample(), rng, mode="A")
+        c, _ = T.project_ball(b["goal_true"], b["goal_cmd"])
+        assert ("cmd_mismatch" in b["anomaly"]) == T.mismatch(b["goal_true"], b["goal_cmd"])
         P, _ = T.smooth_chunk(b["p_cmd"], b["v"], c)
         assert np.allclose(b["chunk"], P) and b["grip_event"] == "keep"
-        off = np.linalg.norm(np.array(b["goal_cmd"]) - b["tcp"])
-        assert 0.003 - 1e-9 <= off <= 0.08 + 1e-9
+        off = np.linalg.norm(np.array(b["goal_cmd"]) - b["goal_true"])
+        assert 0.003 - 1e-9 <= off <= 0.06 + 1e-9
 
 
 def test_norm_roundtrip():
@@ -49,17 +48,15 @@ def test_norm_roundtrip():
     assert np.allclose(n.unz(n.z(d)), d, atol=1e-6)
 
 
-def test_branch_modes_use_the_same_rule_as_the_executor():
+def test_branch_p_label_unchanged_for_blend_rules():
     rng = np.random.default_rng(1)
-    s = sample(height="above", holding=True)
-    for m in T.MODES:
-        b = F.branch(s, rng, mode=m)
-        c, _ = T.target_point(m, b["goal_true"], b["goal_cmd"], b["kappa"])
-        assert np.allclose(b["c_star"], c)
-
-
-def test_use_mode_swaps_labels():
     s = sample()
-    s["labels"] = {"B": {"chunk": [[0, 0, 0]] * T.H, "c_star": [0, 0, 0], "mismatch": True}}
-    o = F.use_mode(s, "B")
-    assert o["chunk"] == [[0, 0, 0]] * T.H and "cmd_mismatch" in o["anomaly"] and F.use_mode(s, "A") is s
+    for m in ("B", "C"):
+        b = F.branch(s, rng, mode=m)
+        assert b["chunk"] == s["chunk"] and b["goal_cmd"] != s["goal_cmd"]
+
+
+def test_use_mode_picks_the_rule_label():
+    s = sample()
+    s["labels"] = {"P": [[1, 1, 1]] * T.H, "A": [[0, 0, 0]] * T.H}
+    assert F.use_mode(s, "B")["chunk"] == [[1, 1, 1]] * T.H and F.use_mode(s, "A")["chunk"] == [[0, 0, 0]] * T.H

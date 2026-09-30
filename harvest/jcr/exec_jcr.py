@@ -16,7 +16,7 @@ import numpy as np
 
 from . import features as FT
 from . import truth as T
-from .exec_truth import DS_TICKS, TruthExec
+from .exec_truth import DS_TICKS, LABELS, TruthExec
 
 R_PATH = 0.06  # the truth path may rise CLEAR_Z_M over the target before descending
 R_SAFE = 0.10  # arm B (pull only): only this wide safety range is cut (NOW.md §1-0e)
@@ -90,7 +90,8 @@ class JcrExec(TruthExec):
         allow = s["grip"] if s["grip"] in ("open", "close") else None
         if self.plan is None or self.plan[1] >= DS_TICKS:
             st = self.state_fn()  # privileged: the truth label of this state only (relabel), never used to act
-            c, mis, gt = self.c_star(st)
+            gt = self.true_point(st)
+            mis = T.mismatch(gt, s["goal_cmd"])
             kap = self.kappa(st)  # adapter rule: stage + holding (self-measured in deployment) + distance
             hold = bool(st.get("holding"))
             an = T.anomaly_kinds(st.get("touched", set()), self.tgt, hold, self.was_holding,
@@ -100,7 +101,7 @@ class JcrExec(TruthExec):
                                  bool(st.get("upright", True)),
                              pads_empty=float(st.get("grip_w", 1.0)) < self.w_close + T.PAD_EMPTY_M)
             self.was_holding = self.was_holding or hold
-            P_truth, _ = T.smooth_chunk(self.cmd, self.v, c, stop="unrecoverable" in an)
+            stop_t = "unrecoverable" in an
             ob = self.obs_fn()
             r_env = R_SAFE if self.mode == "B" else T.R_GOAL
             smp = {"k": self.k, "t": round(t, 4), "tcp": tcp.tolist(), "p_cmd": self.cmd.tolist(),
@@ -126,17 +127,19 @@ class JcrExec(TruthExec):
                 if kind == "stop":
                     self.stats["stop"] += 1
                     P = np.repeat(self.cmd[None], T.H, 0)
-                P = envelope_clip(P, self.cmd, s["p_start"], s["goal_cmd"], r_env,
-                                  r_path=R_SAFE if self.mode == "B" else R_PATH)
+                if self.mode == "A":  # hard clip
+                    P = envelope_clip(P, self.cmd, s["p_start"], s["goal_cmd"], r_env, r_path=R_PATH)
+                elif kind != "stop":  # B / C: priority blend with the upper's attraction (code, non-privileged)
+                    an_p = dict(zip(T.ANOMALIES, o.get("anomaly_p") or []))
+                    low = max(an_p.get("target_moved", 0.0), an_p.get("unexpected_contact", 0.0)) >= 0.5
+                    P = T.blend_rows(self.cmd, self.v, P, s["goal_cmd"], T.MODE_PRIO[self.mode], kap,
+                                     t - s["t_issue"], low)
                 if kind in ("close", "open") and kind == allow and self.grip_at is None:
                     self.grip_at = (t + row * self.dt, kind)
             self.plan = [P, 0]
-            lab = {}
-            for m in T.MODES:
-                cm, mm, _ = self.c_star(st, m)
-                lab[m] = {"c_star": cm.tolist(), "mismatch": bool(mm), "chunk": T.smooth_chunk(
-                    smp["p_cmd"], smp["v"], cm, stop="unrecoverable" in an)[0].tolist()}
-            smp.update(truth_chunk=P_truth.tolist(), c_star=c.tolist(), goal_true=gt.tolist(), anomaly=sorted(an),
+            lab = {m: T.mode_chunk(m, smp["p_cmd"], smp["v"], gt, s["goal_cmd"], kap, t - s["t_issue"],
+                                   stop=stop_t).tolist() for m in LABELS}
+            smp.update(chunk=lab["P"], exec_rows=np.asarray(P).tolist(), goal_true=gt.tolist(), anomaly=sorted(an),
                        labels=lab, mode=self.mode, cont=s.get("cont"),
                        touched=sorted(st.get("touched", ())), holding=hold, stop=("unrecoverable" in an),
                        seg_start=s["p_start"].tolist(), role=s["role"], cmd_src=s["src"], stage=self.stage,

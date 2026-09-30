@@ -43,7 +43,7 @@ def test_truthful_model_reaches_and_closes_by_itself():
     assert any(e["event"] == "close" for e in evs)
     assert ex.stats["grip_jcr"] == 1 and ex.stats["grip_fallback"] == 0
     assert np.linalg.norm(w.tcp - true) < T.REACH_M
-    assert all("truth_chunk" in s for s in ex.samples)
+    assert all("labels" in s and "P" in s["labels"] for s in ex.samples)
 
 
 def test_envelope_clip_pulls_rows_into_tube_and_caps_speed():
@@ -52,3 +52,24 @@ def test_envelope_clip_pulls_rows_into_tube_and_caps_speed():
     assert np.all(np.linalg.norm(np.diff(np.vstack([[0, 0, 0], out]), axis=0), axis=1) <= 0.12 * 0.05 + 1e-9)
     out = envelope_clip(np.array([[0.5, 0.2, 0.0]]), [0.5, 0, 0], [0, 0, 0], [1.0, 0, 0], 0.03, v_cap=10)
     assert abs(out[0][1] - R_PATH) < 1e-9
+
+
+def test_blend_rule_keeps_the_upper_destination_when_jcr_wanders():
+    """B: a JCR that heads 8 cm off the destination is still pulled back near the upper's destination."""
+    w = Fake()
+    g = np.array([0.45, -0.30, 0.93])
+
+    class Off(TruthClient):
+        def act(self, s, head, wrist, seed=0):
+            P, _ = T.smooth_chunk(s["p_cmd"], s["v"], g + [0.08, 0, 0])
+            return {"delta": (P - np.asarray(s["p_cmd"])).tolist(), "event_p": [1.0] + [0.0] * (FT.N_EVENT - 1),
+                    "contact_p": 0.0, "anomaly_p": [0.0] * 6}
+    ex = JcrExec(0.05, 0.80, w.tcp, 0.107, 0.05, (1, 0, 0, 0), w.state, client=Off(w, g), obs_fn=obs, mode="B")
+    ex.next_meta = {"goal_true": g, "role": "approach", "height": "grasp"}
+    ex.go_to(g, "keep", 0.0)
+    for _ in range(300):
+        cmd, _, _ = ex.tick(w.t, w.tcp)
+        w.tcp = cmd.copy()
+        w.t += 0.05
+    d = np.linalg.norm(w.tcp - g)
+    assert d < 0.08 and d <= T.PRIO["A"] + 1e-6

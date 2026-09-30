@@ -36,7 +36,8 @@ def main(argv=None):
         d = os.path.dirname(ej)
         e = json.load(open(ej))
         eps.append(e)
-        ss = [json.loads(x) for x in open(os.path.join(d, "samples.jsonl"))]
+        sp = os.path.join(d, "samples_r3.jsonl")
+        ss = [json.loads(x) for x in open(sp if os.path.exists(sp) else os.path.join(d, "samples.jsonl"))]
         tk = [json.loads(x) for x in open(os.path.join(d, "ticks.jsonl"))]
         q = np.array([x["q"] for x in tk])
         if len(q) > 1:

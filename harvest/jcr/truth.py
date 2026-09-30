@@ -1,7 +1,8 @@
 """JCR sim-truth labels (docs/stage3/jcr_design.md §4, §0-2). Pure numpy; computed from privileged sim state only --
 never from a learned policy -- so it relabels ANY state, including JCR's own rollouts (NOW.md §1-0d).
 
-One rule for both jobs of the joystick (follow + fine correction inside the envelope):
+Labels (change 3): JCR learns 'P' = go to the true task point (its own intention); the code composes the executed motion
+by the envelope rule (mode_chunk: A hard clip / B, C priority blend with the upper's attraction). Rule A below:
   c* = the true task point (what a noise-free command would resolve to, moved with the target object since the command)
        projected onto the envelope ball of radius r around the commanded goal. Outside the ball: follow to the
        boundary and flag cmd_mismatch (never ignore the command -- the commander keeps authority).
@@ -33,33 +34,96 @@ def project_ball(p_true, goal, r: float = R_GOAL):
     return g + d * (r / n), True
 
 
-MODES = ("A", "B", "C")  # A hard envelope, B pull only, C pull + hard envelope (user 10-01, NOW.md §1-0e)
-RHO_STRONG, RHO_WEAK = 0.02, 0.07  # B / C: correction scale at pull strength kappa = 1 / 0
+MODES = ("A", "B", "C")  # A hard clip, B priority blend (wide residual bound), C priority blend + 3 cm bound
+# Priority blend (change 3, geometric-fabrics / Policy-Decorator style; NOW.md §1-0e): the code composes the executed
+# motion u = (1 - w) u_JCR + w u_att, u_att = V_MAX tanh(ALPHA d) e_goal (attraction to the upper's destination),
+# w(d) = w_min + (1 - w_min) exp(-(d / rho)^2) (shape 'gauss'; 'p4' = w_min + (1 - w_min) / (1 + (d / rho)^4), the
+# old form, for the sweep), d = |x - goal|: far from the destination the attraction keeps at least w_min (the upper's
+# authority never vanishes), near it the attraction dominates (the end point is the upper's destination unless JCR
+# pushes). Residual bound (Policy Decorator): |x - x_att| <= A_eff, A_eff ramping from eps to A over t_ramp after the
+# command. Deviation only when needed (IDA): w halved while an obstacle / contact / anomaly signal is on (lower=True).
+# Stage (adapter kappa) moves w_min and rho: w_min * s, rho * (0.5 + 0.5 s), s = kappa / 0.9.
+ALPHA = 1.0 / 0.02
+V_BLEND = 0.12
+PRIO = {"shape": "gauss", "rho": 0.03, "w_min": 0.2, "w_max": 0.7, "A": 0.10, "eps": 0.01,
+        "t_ramp": 1.0}  # provisional (sweep)
+# w_max (added, change 3 note): the literal w(0) = 1 makes the destination a fixed point where u = u_att = 0 and JCR can
+# never correct there (checked: 0 mm correction for every rho x w_min); w(d) = w_min + (w_max - w_min) f(d / rho).
+MODE_PRIO = {"B": PRIO, "C": dict(PRIO, A=0.03)}
+KAPPA_REF = 0.9
 
 
-def pull_weight(dist: float, kappa: float) -> float:
-    """Share of the discrepancy d = p_true - goal the JCR corrects: ~1 for |d| << rho, ~0 for |d| >> rho, rho shrinking
-    with the pull strength kappa (strong near grasp / place, weak while carrying)."""
-    k = min(max(float(kappa), 0.0), 1.0)
-    rho = RHO_STRONG * k + RHO_WEAK * (1.0 - k)
-    return 1.0 / (1.0 + (float(dist) / rho) ** 4)
+def prio_w(d: float, shape: str, rho: float, w_min: float, w_max: float = 1.0) -> float:
+    x = float(d) / max(float(rho), 1e-9)
+    f = np.exp(-x * x) if shape == "gauss" else 1.0 / (1.0 + x ** 4)
+    return float(w_min + (max(w_max, w_min) - w_min) * f)
 
 
-def target_point(mode: str, p_true, goal, kappa: float = 1.0, r: float = R_GOAL):
-    """-> (c*, mismatch). A: project_ball(p_true, goal, r). B: goal + w * d (w = pull_weight), no hard wall; mismatch
-    when the pull keeps less than half of the correction (w < 0.5). C: the B point projected onto the r ball."""
-    p, g = np.asarray(p_true, float), np.asarray(goal, float)
-    if mode == "A":
-        return project_ball(p, g, r)
-    d = p - g
-    n = float(np.linalg.norm(d))
-    w = pull_weight(n, kappa)
-    c = g + w * d
-    mis = w < 0.5 and n > 1e-9
-    if mode == "C":
-        c, hit = project_ball(c, g, r)
-        mis = mis or hit
-    return c, mis
+def stage_prio(prm: dict, kappa: float):
+    s = min(max(float(kappa) / KAPPA_REF, 0.0), 1.0)
+    return prm["rho"] * (0.5 + 0.5 * s), prm["w_min"] * s
+
+
+def u_att(x, g) -> np.ndarray:
+    x = np.asarray(x, float)
+    t = via_above(x, g) - x
+    n = float(np.linalg.norm(t))
+    return np.zeros(3) if n < 1e-12 else V_MAX * np.tanh(ALPHA * n) * t / n
+
+
+def blend_rows(p0, v0, rows_jcr, goal, prm: dict, kappa: float = KAPPA_REF, age: float = 0.0,
+               lower: bool = False) -> np.ndarray:
+    """Executed TCP rows from JCR's rows (its own intended motion) and the attraction to the upper's destination."""
+    g = np.asarray(goal, float)
+    rho, w_min = stage_prio(prm, kappa)
+    x = xa = np.asarray(p0, float)
+    u_prev = ua_prev = np.asarray(v0, float)
+    prev_j = x
+    out = []
+    for k, rj in enumerate(np.asarray(rows_jcr, float)):
+        uj = (rj - prev_j) / DT
+        prev_j = rj
+        w = prio_w(np.linalg.norm(x - g), prm["shape"], rho, w_min, prm.get("w_max", 1.0)) * (0.5 if lower else 1.0)
+        u = (1.0 - w) * uj + w * u_att(x, g)
+        ua = u_att(xa, g)
+        for vv, vp in ((u, u_prev), (ua, ua_prev)):  # acceleration / speed limits on both rollouts
+            dv = vv - vp
+            n = float(np.linalg.norm(dv))
+            if n > A_MAX * DT:
+                vv[:] = vp + dv * (A_MAX * DT / n)
+            n = float(np.linalg.norm(vv))
+            if n > V_BLEND:
+                vv *= V_BLEND / n
+        x, xa = x + DT * u, xa + DT * ua
+        u_prev, ua_prev = u, ua
+        a_eff = prm["eps"] + (prm["A"] - prm["eps"]) * min(1.0, (age + (k + 1) * DT) / max(prm["t_ramp"], 1e-9))
+        r = x - xa
+        n = float(np.linalg.norm(r))
+        if n > a_eff:
+            x = xa + r * (a_eff / n)
+        out.append(x.copy())
+    return np.array(out)
+
+
+def mismatch(p_true, goal, r: float = R_GOAL) -> bool:
+    return float(np.linalg.norm(np.asarray(p_true, float) - np.asarray(goal, float))) > r
+
+
+def mode_chunk(mode: str, p_cmd, v, p_true, goal, kappa: float = KAPPA_REF, age: float = 0.0, stop: bool = False,
+               lower: bool = False, prm: dict | None = None, r: float = R_GOAL) -> np.ndarray:
+    """Executed truth rows of an envelope rule. 'P' = JCR's own label (straight to the true point), 'S' = scripted
+    (to the command), 'A' = hard clip (project_ball r), 'B' / 'C' = priority blend of the P rows."""
+    if mode == "P":
+        return smooth_chunk(p_cmd, v, p_true, stop=stop)[0]
+    if mode == "S":
+        return smooth_chunk(p_cmd, v, goal, stop=stop)[0]
+    if mode in ("A", "A1", "A2"):
+        rr = {"A": r, "A1": 0.01, "A2": 0.02}[mode]
+        return smooth_chunk(p_cmd, v, project_ball(p_true, goal, rr)[0], stop=stop)[0]
+    if stop:
+        return smooth_chunk(p_cmd, v, p_cmd, stop=True)[0]
+    P = smooth_chunk(p_cmd, v, p_true)[0]
+    return blend_rows(p_cmd, v, P, goal, prm or MODE_PRIO[mode], kappa, age, lower)
 
 
 CLEAR_XY_M = 0.02  # lateral distance above which the truth path first goes over the target (no sideways sweep)
