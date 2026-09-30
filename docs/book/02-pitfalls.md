@@ -279,3 +279,9 @@
 | P137 | Isaac 잡이 `FileNotFoundError`(taskC_ffw_sg2.py) | 배포 tar에 `harvest tools tests`만 넣음 — 로봇 설정이 third_party에 있음 | Isaac 잡 배포 archive에는 `third_party`도 넣는다(`-- harvest tools tests third_party`) | L9 에셋 |
 | P138 | 파드에서 tar 풀기가 실패 | `kubectl exec` 명령 줄에서 `&` 백그라운드 실행과 tar(stdin)를 한 줄에 걸면 stdin이 /dev/null로 바뀜 | tar 전송(stdin)과 백그라운드 기동은 exec 호출을 나눈다 | L9 에셋 |
 | P139 | ProcTHOR 방 USD가 물체를 못 찾음; objathor 메타 경로 열기 실패 | ProcTHOR 집은 `../../objects/thor`를 상대 참조; objathor 메타는 `.json.gz`라는 이름의 **디렉터리** | 방 폴더 옆에 objects 링크를 건다; 경로 이름을 믿지 말고 `find`로 실제 파일을 확인 | L9 에셋 |
+| P140 | L9 시범 성공 20 %: 운반 중 팔이 멈추고 IK가 발산해 손목 관절(j5·j7)이 한계로 넘어감(같은 파드의 L8S 대조는 4/5) | L8S `L8DWorld._arm_vel_limit`(변경 24, PhysX 관절 속도 상한)은 정의만 있고 **호출되지 않는 죽은 코드**인데, L9 월드가 그대로 가져와 매 리셋 뒤 호출함 → 속도 상한과 명령 띠(ARM_BAND)가 겹쳐 팔이 목표를 못 따라감 | 옛 월드의 보조 함수를 옮길 때 실제로 호출되는지(grep 호출처)부터 확인; 새 월드는 L8S 러너와 같은 조건의 대조 편(같은 파드·같은 시드 규칙)을 먼저 돌려 성공률을 나란히 비교 | 2026-10-01 L9 진단 diag1 4/16 → diag2 15/18 (3235a61) |
+| P141 | L9 물체가 놓이자마자 기울어 편이 첫 호출에서 멈춤 | 4 mm 매트·러너 부품 위에 물체를 놓음(막힘 판정이 윗면 +5 mm 이하 부품을 무시) | 받침면 위 부품은 두께와 상관없이 놓는 자리에서 뺀다(윗면 +1 mm 초과면 막힘) | L9 물체 관문 1차(dining/centrepiece) |
+| P142 | L9 운반 중 충돌·관절 튐(최대 1.2 rad) | 방해물 높이를 25 cm까지 허용 — 운반 높이(윗면 +22 cm)에서 든 물체가 부딪힘 | 방해물·용기 높이 ≤ 13 cm(L8S MAX_H 0.14), 운반 경로 8 cm 안의 키 큰 부품 금지 | L9 시범 1차 |
+| P143 | 레인을 재시작하자 같은 작업을 두 Isaac 프로세스가 동시에 씀 | 정리 스크립트가 레인(bash)만 죽이고 Isaac(python)은 남음; 새 레인은 자기 미완료 작업부터 다시 실행 | 정지·재시작은 IR_INST 환경변수로 python까지 찾아 죽인 뒤(나이 기준 `kill_old.sh`) 새 레인을 띄운다 | L9 물체 관문 레인 확장 |
+| P144 | Git Bash에서 `python plan.py … --pod /data/...`가 `C:/Program Files/Git/data/...`로 바뀌고, `MSYS_NO_PATHCONV=1`을 주면 `/d/tools/...` 출력 경로가 `D:\d\tools`로 감 | MSYS 경로 변환이 모든 인자에 적용 | 윈도 python에는 출력 경로를 `D:/...` 형식으로, 파드 경로 인자는 `MSYS_NO_PATHCONV=1`과 함께 준다 | L9 계획 도구 |
+| P145 | `kubectl exec … bash -c "…; pkill -f l8s_ctrl.sh …"`가 exit 143으로 자기 셸을 죽임(P27·P70 재발) | pkill 패턴이 그 명령줄 자신과 일치 | pkill은 쓰지 않는다: IR_INST로 찾는 스크립트 파일(`kill_old.sh`)만 쓴다 | L9 대조 실행 정리 |
