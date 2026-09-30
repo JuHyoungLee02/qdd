@@ -84,3 +84,27 @@ def init_joints(arm: str, base: dict) -> dict:
     out.update({f"arm_l_joint{i + 1}": v for i, v in enumerate(INIT_L_ARM)})
     out.update({"arm_r_joint1": STOW["joint1"], "arm_r_joint4": STOW["joint4"]})
     return out
+
+
+def apply_arm_workspace(arm: str) -> list:
+    """Process-level (one arm per Isaac process): the executor's safety box and the behaviour policy's reach-limit
+    corner for this arm. Right = unchanged. Left = y mirrored: astra_motion.executor.SAFE_Y (-0.50, 0.10) ->
+    (-0.10, 0.50) rebound in every loaded module that imported it by name (prompts, overlay, nd_prompts, behavior),
+    teach_l8.behavior.REACH_CORNER_Y mirrored. Import-time copies are why this runs before and after the imports
+    (call it at process start and again after the world is built). -> modules rebound."""
+    import sys
+
+    from ..astra_motion import executor as EX
+    from ..teach_l8 import behavior as BH
+    if check_arm(arm) == "right":
+        return []
+    r_y = (-0.50, 0.10)
+    l_y = (-r_y[1], -r_y[0])
+    EX.SAFE_Y = l_y
+    BH.REACH_CORNER_Y = (0.42, 0.50)
+    done = []
+    for name, mod in list(sys.modules.items()):
+        if name.startswith("harvest.") and getattr(mod, "SAFE_Y", None) in (r_y, l_y) and mod is not EX:
+            mod.SAFE_Y = l_y
+            done.append(name)
+    return sorted(done)

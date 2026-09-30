@@ -79,10 +79,15 @@ def main(argv=None):
         if not todo:
             print("RUN_DONE", flush=True)
             os._exit(0)
+        from .arm import apply_arm_workspace
+        arm = next(iter(arms))
+        apply_arm_workspace(arm)  # left: mirrored safety box / reach corner (before the episode modules load)
         split = rows[0].get("split", "train")
         pool = A9.pool_for(int(rows[0]["pool"]), "train" if split == "train" else "ood_o")
         rooms = rooms_for(int(rows[0]["rooms"]), "train" if split == "train" else "ood")
-        world = make_world9(arms.pop(), pool, rooms)
+        world = make_world9(arm, pool, rooms)
+        from ..teach_l8d import collect as _c  # noqa: F401  (load the episode modules, then rebind their copies)
+        print("WORKSPACE " + json.dumps({"arm": arm, "rebound": apply_arm_workspace(arm)}), flush=True)
         rm = R9.load_default()
         led_dir = os.path.join(a.out, "ledger")
         os.makedirs(led_dir, exist_ok=True)

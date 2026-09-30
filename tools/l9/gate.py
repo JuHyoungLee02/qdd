@@ -40,7 +40,9 @@ def scan(root: str) -> dict:
                         bad += 1
         parser["rows"] += n
         parser["bad"] += bad
-        eps.append({"dir": d, "task_id": meta.get("task_id"), "family": meta.get("env_family"),
+        res = json.load(open(os.path.join(d, "result.json"))) if os.path.exists(os.path.join(d, "result.json")) else {}
+        eps.append({"grasp_lift": res.get("grasp_lift"), "ever_hold": res.get("ever_hold"), "fail_stage": res.get("fail_stage"),
+                    "movers": [k for k, o in (meta.get("objects") or {}).items()], "dir": d, "task_id": meta.get("task_id"), "family": meta.get("env_family"),
                     "task_family": meta.get("task_family"), "arm": meta.get("arm"), "success": bool(meta.get("success")),
                     "max_dq": meta.get("max_dq_rad"), "combo": meta.get("combo_hash"), "end": meta.get("end_reason"),
                     "light": meta.get("light_family"), "layout": meta.get("layout"), "wall_s": meta.get("wall_s"),
@@ -69,13 +71,15 @@ def report(sc: dict, per: int, min_yield: float) -> dict:
         fam[e["family"]][0] += 1
         fam[e["family"]][1] += e["success"]
     arm = Counter(e["arm"] for e in eps if e["success"])
+    arm_n = Counter(e["arm"] for e in eps)
+    fails = Counter(e["fail_stage"] for e in eps if not e["success"])
     wall = sorted(e["wall_s"] for e in eps if e["wall_s"])
     return {"n_episodes": len(eps), "n_success": sum(e["success"] for e in eps), "definitions": defs,
             "pass": ok, "n_pass": len(ok), "fail": sorted(set(defs) - set(ok)),
             "arm_jumps": len(jumps), "arm_jump_dirs": jumps[:20], "max_dq_max": max((e["max_dq"] or 0) for e in eps) if eps else None,
             "combo_duplicates": sum(c - 1 for c in combos.values() if c > 1),
             "families": {k: {"n": v[0], "success": v[1]} for k, v in sorted(fam.items())},
-            "success_by_arm": dict(arm), "lights": dict(Counter(e["light"] for e in eps)),
+            "success_by_arm": dict(arm), "episodes_by_arm": dict(arm_n), "fail_stages": dict(fails), "lights": dict(Counter(e["light"] for e in eps)),
             "parser": sc["parser"], "skips": sc["skips"],
             "wall_s_median": wall[len(wall) // 2] if wall else None}
 

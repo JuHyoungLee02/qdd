@@ -20,6 +20,7 @@ ALLOWED_LICENCES = ("cc0", "cc-by", "cc by", "by", "cc-by-sa", "cc by-sa", "by-s
                     "by-sa-4.0", "mit")
 BAD = ("nc", "nd", "noncommercial", "noderivatives")
 _CACHE: dict = {}
+NOT_TARGET = ("shoe",)  # smoke 2026-10-01: a boot rescaled to 8.5 cm slipped out of the top-down grasp every try
 TARGET_R_MAX = 0.065  # moved objects: the work band is ~0.32 x 0.34 m (larger ones stay clutter)
 
 
@@ -46,7 +47,7 @@ def objects(split: str = "train") -> dict:
         if r.get("split") != split or not r.get("stable_upright"):
             continue
         role = r.get("role")
-        if role == "target" and r.get("grasp_rule") == "topdown_7_10cm" and float(r["footprint_r"]) <= TARGET_R_MAX:
+        if role == "target" and r.get("grasp_rule") == "topdown_7_10cm" and float(r["footprint_r"]) <= TARGET_R_MAX                 and r.get("l9cat") not in NOT_TARGET and k not in blocked_targets():
             out[k] = dict(r, role9="target")
         elif role in ("clutter", "target"):
             out[k] = dict(r, role9="clutter")
@@ -157,3 +158,11 @@ def fit_container(row: dict) -> dict:
     k = kind_of(row)
     s = min(1.0, CONTAINER_R_MAX.get(k, 0.10) / float(row["footprint_r"]))
     return scaled(row, s)
+
+
+def blocked_targets() -> set:
+    """Targets excluded after the pilots / audits (assets9/blocked_targets.json: never lifted in >= 2 tries)."""
+    if "blocked" not in _CACHE:
+        p = os.path.join(DIR, "blocked_targets.json")
+        _CACHE["blocked"] = set(json.load(open(p))["ids"]) if os.path.exists(p) else set()
+    return _CACHE["blocked"]

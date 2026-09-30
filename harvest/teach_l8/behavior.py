@@ -27,6 +27,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from ..astra_motion.executor import SAFE_X, SAFE_Y
+
+REACH_CORNER_Y = (-0.50, -0.42)  # reach_limit: the far right corner (L9 left-arm processes rebind it mirrored)
 from ..astra_motion.harness import GRASP_BELOW_TOP_M, obj_height
 from . import labels as L
 
@@ -98,7 +100,7 @@ def perturb(rng, kind: str, c: Ctx) -> dict:
     if kind == "early_close":
         return {"mode": "gripper", "gripper": "close"}
     if kind == "reach_limit":
-        return {"mode": "eef", "position_m": _r([rng.uniform(0.60, 0.65), rng.uniform(-0.50, -0.42),
+        return {"mode": "eef", "position_m": _r([rng.uniform(0.60, 0.65), rng.uniform(*REACH_CORNER_Y),
                                                  tz + rng.uniform(0.18, 0.30)]), "gripper": "keep"}
     if kind == "clip":
         side = int(rng.integers(3))

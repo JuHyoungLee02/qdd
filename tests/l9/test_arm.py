@@ -54,3 +54,13 @@ def test_left_head_inertia_matches_mjcf():
     assert t["arm_l_link4"] == (0.00633449, 0.00629266, 0.00142827)
     assert set(t) == {f"arm_l_link{i}" for i in range(1, 8)} | {"head_link1", "head_link2"}
     assert all(len(v) == 3 and min(v) > 1e-6 for v in t.values())
+
+
+def test_left_workspace_rebinds_in_subprocess():
+    import subprocess
+    import sys
+    code = ("from harvest.l9 import arm as A; import harvest.astra_solo.prompts as P; import harvest.teach_l8.behavior as B;"
+            "A.apply_arm_workspace('right'); r = P.SAFE_Y; A.apply_arm_workspace('left');"
+            "print(r, P.SAFE_Y, B.SAFE_Y, B.REACH_CORNER_Y)")
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True).stdout
+    assert out.strip() == "(-0.5, 0.1) (-0.1, 0.5) (-0.1, 0.5) (0.42, 0.5)"
