@@ -342,3 +342,13 @@
   \item \textbf{그래서(결정):} JCR은 어댑터가 실제로 내는 명령으로 학습한다(시뮬 참값 명령도, 상위 흉내 명령도, 실제 상위 명령도 모두 같은 어댑터를 거침). 연결 손실은 어댑터를 포함한 전체 파이프라인으로 측정. 상위는 동결하므로 결합 학습 루프(§6.3)의 \texttt{번갈아 맞추기}는 빠지고 JCR만 반복 정착한다.
   \item \textbf{결과:} paper\_v2 반영: sec/6\_coupling.tex(상위 불변+코드 어댑터로 재작성, 인터페이스·타이밍·학습 세 절 전부), sec/5\_vla.tex $\rightarrow$ sec/5\_jcr.tex(git mv, 어댑터 명령 다섯 가지로 입출력 재정의, clip($\Delta$,허용범위) $\rightarrow$ κ(x\_dest$-$x)+$\Delta$ 끌림식), sec/3\_structure.tex·sec/4\_upper.tex·sec/8\_eval.tex(허용범위 대 끌림만 대 섞음 세 방식 비교 추가)·sec/10\_questions.tex·sec/0\_abstract.tex. 그림 make\_figs\_v2.py F1(어댑터 박스)·F3(끌림 벡터장·안전범위)·F4(도착 뒤 재질의+JCR 이어감으로 전면 재설계, 미리부르기 줄거리 제거)·F5(상위 동결+JCR만 반복 정착으로 재설계, 번갈아 갱신·도착예측 보조과제 제거) 재생성, PDF harvest\_v2\_1001\_0136KST.pdf.
 \end{itemize}
+
+\paragraph{G33. 상위를 `도착 시점을 내다보고 답하게' 학습하는 방식 검증 E-FUT1 --- P2 두 줄의 구체화}
+{\small 10-01 (목) KST}
+\begin{itemize}
+  \item \textbf{사용자} (ul 228, 05시경 KST): \intent{LLM을 다른 방식으로 학습시키는게 옳은 방식일 가능성이 높은데 그것까지도 검증해보면 좋음 미래예측 보정도 되면 좋으니까. 이것도 그냥 생각대로 짜지말고 비슷한 연구찾아서 1.5년내에 아이디어 따오기} / \intent{그순간 등장하는 미래예측은 좀 어렵긴하겠고}
+  \item \textbf{왜:} E-DEP1 1단계에서 본 35B ep1은 도착 0.5 s 전 장면까지만 SAFE, 1 s부터 흔들리고 2 s에서 의도 $-$10 \%p(점 xy는 $\pm$1 mm로 그대로). 겹쳐서 계속 돌기(§1-0f)의 겹침 폭을 넓히려면 상위가 도중 장면에서도 도착 시점 의도를 내야 함.
+  \item \textbf{그래서(결정):} 예측 대상은 지금 장면 + 진행 중 명령으로 알 수 있는 것(도착 시점 명령·도착 자세)만. 새로 나타나는 일(새 물체·외란)은 행에서 빼고 운영에서는 JCR 이상 신호 + 상위 재호출 + 오래됨 검사 그대로. 팔: F0 본 35B 방식(정지 장면만) / F1 도중 장면 + 지금 상태 입력(Training-time RTC식 지연 흉내) / F2 상태를 진행 중 명령 목적지로 굴림(VLASH) / F3 F2 + 남은 시간 한 줄(TIC-VLA) / F4 F2 + 도착 TCP 자기예측 보조 행(FLARE·DreamVLA·HiF-VLA). 최적 체크포인트에서 같은 8,000행(재생 4,000 + d1 같은 지점 4,000)·333걸음 LoRA, 판정은 Δ 곡선 이득 +3 \%p·Δ* $\ge$ 1 s·정지 장면 $-$1 \%p 이내·본 판정 비열등(prereg\_fut1.md).
+  \item \textbf{가설(문헌 없음):} \tentative{H1 글자 인터페이스 LLM 계획기에도 VLA의 상태 굴리기·지연 학습 효과가 옮겨 간다} / \tentative{H2 잠재 손실이 아닌 글자 질의응답형 도착 예측 보조 행도 제어 행에 도움이 된다} / \tentative{H3 재생 50 \%·333걸음이면 정지 장면 성능이 지켜진다} / \tentative{H4 창 조건(물체 10 mm, 발행 뒤 0.3 s)·판정 문턱} / \tentative{H5 SoloWorld(d1) 결과가 L8S·L9로 옮겨 간다}.
+  \item \textbf{결과:} \tentative{대기 --- 데이터 d1 완료 뒤, 본 비교는 본 35B 판정($pprox$14:20) 뒤 78dc 0--3 + x3 0}.
+\end{itemize}
