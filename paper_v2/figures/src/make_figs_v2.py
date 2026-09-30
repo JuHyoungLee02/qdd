@@ -113,20 +113,20 @@ def f1_overview():
     section(ax, 0.03, 1.42, W - 0.06, 1.30, "실행 층 (매 판)")
     y, h, w = 1.62, 0.66, 1.16
     xs = [0.22, 1.92, 3.62, 5.32]
-    items = [(UP, "상위 VLM", "점 + 높이 의도"), (CO, "좌표 변환", "픽셀 → xyz"),
-             (VL, "조이스틱 JCR", "범위 안 보정"), (CO, "로봇", "FFW-SG2")]
+    items = [(UP, "상위 VLM (동결)", "점 + 높이 의도"), (CO, "코드 어댑터", "xyz·마스크·끌림 세기"),
+             (VL, "조이스틱 JCR", "끌림 따라 보정"), (CO, "로봇", "FFW-SG2")]
     for x, (col, t, s) in zip(xs, items):
-        box(ax, x, y, w, h, col, t, s, tfs=8.0, sfs=6.6)
+        box(ax, x, y, w, h, col, t, s, tfs=7.6, sfs=6.2)
     for i in range(3):
         arrow(ax, [(xs[i] + w + 0.03, y + h / 2), (xs[i + 1] - 0.03, y + h / 2)])
-    txt(ax, (xs[0] + w + xs[1]) / 2, y + h / 2 + 0.11, "명령", fs=5.8)
-    txt(ax, (xs[1] + w + xs[2]) / 2, y + h / 2 + 0.11, "목표·범위", fs=5.8)
+    txt(ax, (xs[0] + w + xs[1]) / 2, y + h / 2 + 0.11, "점+의도", fs=5.8)
+    txt(ax, (xs[1] + w + xs[2]) / 2, y + h / 2 + 0.11, "JCR 명령", fs=5.8)
     txt(ax, (xs[2] + w + xs[3]) / 2, y + h / 2 + 0.11, "관절 청크", fs=5.8)
-    # single thin dashed feedback line: robot/JCR -> upper
+    # single thin dashed feedback line: robot/JCR -> upper (verbalized by adapter)
     fy = y + h + 0.12
     ax.plot([xs[3] + w / 2, xs[3] + w / 2, xs[0] + w / 2], [y + h, fy, fy], color=RED, lw=0.7, ls=(0, (3, 2)))
     arrow(ax, [(xs[0] + w / 2, fy), (xs[0] + w / 2, y + h + 0.01)], c=RED, lw=0.7, hw=0.18, hl=0.35)
-    txt(ax, (xs[1] + xs[2] + w) / 2, fy + 0.09, "되돌림: 영상 · 진행 · 이상 신호", fs=5.8, c=RED)
+    txt(ax, (xs[1] + xs[2] + w) / 2, fy + 0.09, "되돌림: 접촉·성공·이상 신호 (어댑터가 문장화)", fs=5.6, c=RED)
 
     # offline row
     section(ax, 0.03, 0.05, W - 0.06, 1.25, "오프라인 층")
@@ -195,16 +195,16 @@ def f3_vla():
     W, H = FULL_W, 2.85
     fig, ax = canvas(W, H)
     # inputs
-    box(ax, 0.05, 1.70, 1.55, 0.95, UP, "상위 명령", "목표 xyz·영상 점, 높이 의도\n그리퍼 의도, 허용 범위\n(목표 구·경로 관), 명령 나이",
+    box(ax, 0.05, 1.70, 1.55, 0.95, UP, "어댑터 명령", "목적지 xyz·대상 마스크\n단계·그리퍼 허용\n끌림 세기 κ·명령 나이",
         tfs=7.0, sfs=5.4)
     box(ax, 0.05, 0.75, 1.55, 0.75, CO, "관측", "머리 + 쓰는 팔 손목 영상\n관절·그리퍼 폭·전류", tfs=7.0, sfs=5.4)
     # JCR
     box(ax, 2.00, 0.95, 1.30, 1.30, VL, "조이스틱 JCR", "계획 안 함\n조이스틱 따라가기\n잡기·놓기 시점 · 접촉", tfs=7.6, sfs=5.5)
     arrow(ax, [(1.62, 2.17), (1.80, 2.17), (1.80, 1.75), (1.98, 1.75)], lw=0.8, hw=0.16, hl=0.3)
     arrow(ax, [(1.62, 1.12), (1.80, 1.12), (1.80, 1.45), (1.98, 1.45)], lw=0.8, hw=0.16, hl=0.3)
-    # outputs: correction -> clip
-    box(ax, 3.62, 1.55, 1.05, 0.62, VL, "보정 Δ", "기본 경로 기준", tfs=7.0, sfs=5.4)
-    box(ax, 3.62, 0.72, 1.05, 0.62, CO, "범위로 자름", "clip(Δ, 허용 범위)", tfs=6.6, sfs=5.2)
+    # outputs: attraction + correction -> wide safety clip
+    box(ax, 3.62, 1.55, 1.05, 0.62, VL, "끌림+보정", "κ(x_dest−x)+Δ", tfs=7.0, sfs=5.4)
+    box(ax, 3.62, 0.72, 1.05, 0.62, CO, "안전 범위로 자름", "clip(·, 넓은 S)", tfs=6.6, sfs=5.2)
     arrow(ax, [(3.32, 1.86), (3.60, 1.86)], lw=0.9)
     arrow(ax, [(4.145, 1.53), (4.145, 1.36)], lw=0.9)
     # anomaly scores up
@@ -219,26 +219,35 @@ def f3_vla():
     t = np.linspace(0, 1, 60)
     bx = sx + (gx - sx) * t
     by = sy + (gy - sy) * (3 * t ** 2 - 2 * t ** 3)
-    # envelope tube around nominal path
+    # wide constant safety bound S (clip only) around the destination line
     dx = np.gradient(bx)
     dy = np.gradient(by)
     n = np.hypot(dx, dy)
     nx_, ny_ = -dy / n, dx / n
-    wtube = 0.16
+    wtube = 0.24
     upper = np.c_[bx + nx_ * wtube, by + ny_ * wtube]
     lower = np.c_[bx - nx_ * wtube, by - ny_ * wtube]
-    ax.add_patch(Polygon(np.r_[upper, lower[::-1]], closed=True, fc="#FCE3CF", ec="#D9762B", lw=0.6, alpha=0.8))
+    ax.add_patch(Polygon(np.r_[upper, lower[::-1]], closed=True, fc="#FCE3CF", ec="#D9762B", lw=0.6, alpha=0.6))
     ax.plot(bx, by, color="#777", lw=1.0, ls=(0, (3, 2)))
-    cxp = bx + nx_ * wtube * 0.75 * np.sin(np.pi * t) ** 2
-    cyp = by + ny_ * wtube * 0.75 * np.sin(np.pi * t) ** 2
+    # actual JCR path: attraction pulls it toward the destination line, tighter near goal (kappa weak->strong)
+    amp = wtube * 0.75 * np.sin(np.pi * t) ** 2 * (1.0 - 0.65 * t)
+    cxp = bx + nx_ * amp
+    cyp = by + ny_ * amp
     ax.plot(cxp, cyp, color=VL[1], lw=1.4)
+    # small kappa arrows: weak (far) -> strong (near goal), pointing back to the centerline
+    for tt, alen in [(0.25, 0.10), (0.55, 0.16), (0.85, 0.24)]:
+        ix = sx + (gx - sx) * tt
+        iy = sy + (gy - sy) * (3 * tt ** 2 - 2 * tt ** 3)
+        jx, jy = np.interp(tt, t, nx_), np.interp(tt, t, ny_)
+        arrow(ax, [(ix + jx * (alen + 0.06), iy + jy * (alen + 0.06)), (ix + jx * 0.02, iy + jy * 0.02)],
+              c=VL[1], lw=0.8, hw=0.05, hl=0.05)
     ax.plot([sx], [sy], "o", color="#444", ms=3.5)
     ax.plot([gx], [gy], marker="x", color=RED, ms=6, mew=1.5)
     # obstacle nudged
     ax.add_patch(Circle((px + 0.80, py + 1.05), 0.10, fc="#BDBDBD", ec="none"))
-    txt(ax, px + pw / 2, py + ph - 0.12, "허용 범위(주황) 안에서만", fs=5.8, c=TXT)
-    txt(ax, gx - 0.45, gy + 0.10, "상위 목표", fs=5.4, c=RED)
-    txt(ax, px + 1.30, py + 0.55, "기본 경로(점선)\n+ JCR 보정(파랑)", fs=5.4, c=VL[1])
+    txt(ax, px + pw / 2, py + ph - 0.12, "안전 범위(주황, 넓음)만 자름", fs=5.6, c=TXT)
+    txt(ax, gx - 0.62, gy + 0.20, "상위 목표", fs=5.4, c=RED)
+    txt(ax, px + 1.30, py + 0.55, "끌림(파랑): 약 → 강\n+ JCR 보정", fs=5.4, c=VL[1])
     arrow(ax, [(4.69, 1.03), (4.93, 1.03)], lw=0.9)
     txt(ax, 3.3, 0.35, "TCP 변위 청크(20 Hz · 10행) → 코드 IK → 로봇(관절 걸음 ≤ 0.04 rad)", fs=5.6, c=TXT)
     save(fig, "f3_vla")
@@ -273,77 +282,77 @@ def f4_timeline():
         _seg(ax, X(t + L), X(t + L + 1.2), ya_r, 0.20, "#DCEFD9", "#5E9E57")
         txt(ax, X(t + L + 0.6), ya_r + 0.10, "이동", fs=5.4, c=TXT)
         t += L + 1.2
-    # ---- (b) coupled
-    txt(ax, 0.05, 2.22, "(b) 결합: 기다림 없음", fs=7.4, c=TXT, ha="left", va="top", bold=True)
+    # ---- (b) coupled: re-query at arrival; JCR keeps going while upper thinks
+    txt(ax, 0.05, 2.22, "(b) 결합: 도착 뒤 재질의, 그 사이 JCR가 이어감", fs=7.4, c=TXT, ha="left", va="top", bold=True)
     yp, yr, yv = 1.58, 1.02, 0.62
     txt(ax, 1.02, yp + 0.10, "상위 VLM", fs=6.2, c=TXT, ha="right")
-    txt(ax, 1.02, yr + 0.10, "실행(로봇)", fs=6.2, c=TXT, ha="right")
+    txt(ax, 1.02, yr + 0.10, "실행(어댑터+JCR)", fs=6.2, c=TXT, ha="right")
     txt(ax, 1.02, yv + 0.09, "JCR 틱", fs=6.2, c=TXT, ha="right")
-    cf = 0.30          # command-first: command tokens available this long after call start
-    calls = [(0.0, "1"), (2.0, "2"), (4.4, "3"), (5.2, "4")]
-    # call 1
-    _seg(ax, X(0), X(L), yp, 0.20, UP[0], UP[1])
-    txt(ax, X(L / 2 + 0.15), yp + 0.10, "호출 1", fs=5.4, c=TXT)
-    # command-first tick
-    ax.plot([X(cf)] * 2, [yp - 0.02, yp + 0.24], color=UP[1], lw=1.4)
-    txt(ax, X(cf), yp + 0.33, "명령 먼저", fs=5.4, c=UP[1])
-    arrow(ax, [(X(cf), yp - 0.02), (X(cf), yr + 0.22)], c=UP[1], lw=0.8, hw=0.14, hl=0.28)
-    # move 1 : cf -> 3.2 ; committed prefix during call 2 (2.0..3.2)
-    m1a, m1b = cf, 3.2
+    cf = 0.30           # command-first: command tokens available this long after call start
+
+    # move 1: already executing toward destination under attraction (command issued earlier)
+    m1a, m1b = 0.0, 2.2
     _seg(ax, X(m1a), X(m1b), yr, 0.20, "#DCEFD9", "#5E9E57")
-    _seg(ax, X(2.0), X(m1b), yr, 0.20, "#8CC084", "#5E9E57")
-    txt(ax, X((m1a + 2.0) / 2), yr + 0.10, "명령 1 실행", fs=5.4, c=TXT)
-    txt(ax, X((2.0 + m1b) / 2), yr + 0.10, "확정 구간", fs=5.2, c="white", bold=True)
-    # call 2: early re-query at remaining <= L
-    _seg(ax, X(2.0), X(2.0 + L), yp, 0.20, UP[0], UP[1])
-    txt(ax, X(2.0 + L / 2), yp + 0.10, "호출 2", fs=5.4, c=TXT)
-    ax.annotate("", xy=(X(2.0), yp + 0.21), xytext=(X(2.0), yp + 0.44),
-                arrowprops=dict(arrowstyle="-|>,head_length=0.35,head_width=0.16", color=RED, lw=0.8))
-    txt(ax, X(2.0) - 0.05, yp + 0.52, "남은 시간 ≤ 지연 → 미리 부르기", fs=5.2, c=RED, ha="left")
-    # pre-issued next command appended
-    arrow(ax, [(X(2.0 + cf), yp - 0.02), (X(m1b), yr + 0.22)], c=UP[1], lw=0.8, hw=0.14, hl=0.28)
-    txt(ax, X(m1b) + 0.06, yr + 0.36, "다음 명령 미리 발행", fs=5.2, c=UP[1], ha="left")
-    # move 2 : 3.2 -> 5.6 (committed 4.4..)
-    m2b = 5.2
-    _seg(ax, X(m1b), X(m2b), yr, 0.20, "#DCEFD9", "#5E9E57")
-    txt(ax, X((m1b + m2b) / 2), yr + 0.10, "명령 2 실행", fs=5.4, c=TXT)
-    # call 3 pre-issue, then cancelled by anomaly at 5.2
-    _seg(ax, X(4.0), X(4.0 + L), yp, 0.20, UP[0], UP[1])
-    txt(ax, X(4.0 + L / 2 - 0.1), yp + 0.10, "호출 3", fs=5.4, c=TXT)
-    ax.plot([X(5.2)], [yp + 0.10], marker="x", color=RED, ms=7, mew=1.8)
-    txt(ax, X(5.2) + 0.08, yp + 0.34, "이상 신호 → 취소·재질의", fs=5.2, c=RED, ha="left")
-    # call 4
-    _seg(ax, X(5.2), X(5.2 + L), yp - 0.26, 0.20, UP[0], UP[1])
-    txt(ax, X(5.2 + L / 2 + 0.1), yp - 0.16, "호출 4", fs=5.4, c=TXT)
-    ax.plot([X(5.2 + cf)] * 2, [yp - 0.28, yp - 0.04], color=UP[1], lw=1.4)
-    arrow(ax, [(X(5.2 + cf), yp - 0.28), (X(5.2 + cf), yr + 0.22)], c=UP[1], lw=0.8, hw=0.14, hl=0.28)
-    _seg(ax, X(m2b), X(5.2 + cf), yr, 0.20, "#8CC084", "#5E9E57")
-    _seg(ax, X(5.2 + cf), X(7.0), yr, 0.20, "#DCEFD9", "#5E9E57")
-    txt(ax, X(6.3), yr + 0.10, "명령 4 실행", fs=5.4, c=TXT)
-    # anomaly arrow from JCR row
-    arrow(ax, [(X(5.2) - 0.02, yv + 0.20), (X(5.2) - 0.02, yr - 0.02)], c=RED, lw=0.7, hw=0.14, hl=0.28)
-    # JCR ticks + correction band
-    ax.add_patch(Rectangle((X(cf), yv), X(7.0) - X(cf), 0.18, fc=VL[0], ec="none"))
-    for k in range(int((7.0 - cf) / 0.18) + 1):
-        tt = cf + k * 0.18
-        ax.plot([X(tt)] * 2, [yv, yv + 0.18], color=VL[1], lw=0.6)
+    txt(ax, X((m1a + m1b) / 2), yr + 0.10, "명령 1 실행: 이동(끌림)", fs=5.4, c=TXT)
+    ax.plot([X(m1b)], [yr + 0.10], "o", color="#444", ms=4.0, zorder=6)
+    txt(ax, X(m1b), yr + 0.34, "도착", fs=5.4, c=TXT)
+
+    # call 2 at arrival: upper re-queried on the scene it was trained on, thinks 1-3 s
+    _seg(ax, X(m1b), X(m1b + L), yp, 0.20, UP[0], UP[1])
+    txt(ax, X(m1b + L / 2), yp + 0.10, "호출 2 (생각 1--3 s)", fs=5.4, c=TXT)
+    ax.plot([X(m1b + cf)] * 2, [yp - 0.02, yp + 0.24], color=UP[1], lw=1.4)
+    txt(ax, X(m1b + cf), yp + 0.33, "명령 먼저", fs=5.4, c=UP[1])
+
+    # JCR keeps going during the call: alignment / grasp-lift start, robot never idles
+    _seg(ax, X(m1b), X(m1b + L), yr, 0.20, VL[0], VL[1])
+    txt(ax, X(m1b + L / 2), yr + 0.10, "JCR 이어감: 정렬·잡기 시작", fs=5.2, c=TXT, bbox=dict(fc="white", ec="none", pad=2.0), zorder=6)
+
+    # move 2 after call 2 returns
+    m2a = m1b + L
+    m2_anom = m2a + 1.0
+    _seg(ax, X(m2a), X(m2_anom), yr, 0.20, "#DCEFD9", "#5E9E57")
+    txt(ax, X((m2a + m2_anom) / 2), yr + 0.10, "명령 2 실행", fs=5.4, c=TXT)
+
+    # anomaly mid-move -> cancel & re-query even before arrival
+    ax.plot([X(m2_anom)], [yv + 0.09], marker="x", color=RED, ms=7, mew=1.8, zorder=6)
+    arrow(ax, [(X(m2_anom), yv + 0.20), (X(m2_anom), yr - 0.02)], c=RED, lw=0.7, hw=0.14, hl=0.28)
+    txt(ax, X(m2_anom) + 0.06, yv + 0.32, "이상 신호 → 도착 전이라도 취소·재질의", fs=5.2, c=RED, ha="left")
+
+    # call 3, triggered by the anomaly (not by arrival) -- JCR still keeps going
+    _seg(ax, X(m2_anom), X(m2_anom + L), yp, 0.20, UP[0], UP[1])
+    txt(ax, X(m2_anom + L / 2), yp + 0.10, "호출 3", fs=5.4, c=TXT)
+    _seg(ax, X(m2_anom), X(m2_anom + L), yr, 0.20, VL[0], VL[1])
+    txt(ax, X(m2_anom + L / 2), yr + 0.10, "JCR 이어감", fs=5.2, c=TXT, bbox=dict(fc="white", ec="none", pad=2.0), zorder=6)
+
+    # move 3 after call 3 returns
+    m3a = m2_anom + L
+    m3b = 7.0
+    _seg(ax, X(m3a), X(m3b), yr, 0.20, "#DCEFD9", "#5E9E57")
+    txt(ax, X((m3a + m3b) / 2), yr + 0.10, "명령 3 실행", fs=5.4, c=TXT)
+
+    # JCR ticks: continuous across the whole coupled timeline, never idle
+    ax.add_patch(Rectangle((X(0), yv), X(7.0) - X(0), 0.18, fc=VL[0], ec="none", alpha=0.35))
+    for k in range(int(7.0 / 0.18) + 1):
+        tt = k * 0.18
+        ax.plot([X(tt)] * 2, [yv, yv + 0.18], color=VL[1], lw=0.5)
+
     # time axis
     ax.plot([X(0), X(7.0)], [0.36, 0.36], color="#777", lw=0.7)
     ax.annotate("", xy=(X(7.1), 0.36), xytext=(X(6.9), 0.36),
                 arrowprops=dict(arrowstyle="-|>,head_length=0.35,head_width=0.16", color="#777", lw=0.7))
     txt(ax, X(7.15), 0.36, "시간", fs=5.8, ha="left")
-    # latency bracket
-    ax.plot([X(2.0), X(2.0 + L)], [0.44, 0.44], color="#777", lw=0.6)
-    for xx in (X(2.0), X(2.0 + L)):
+    # thinking-time bracket on the arrival-triggered call
+    ax.plot([X(m1b), X(m1b + L)], [0.44, 0.44], color="#777", lw=0.6)
+    for xx in (X(m1b), X(m1b + L)):
         ax.plot([xx, xx], [0.40, 0.48], color="#777", lw=0.6)
-    txt(ax, X(2.0 + L / 2), 0.25, "상위 지연 L", fs=5.4)
+    txt(ax, X(m1b + L / 2), 0.25, "상위 생각 1--3 s", fs=5.4)
     # legend
     lx = 0.10
-    _seg(ax, lx, lx + 0.22, 0.05, 0.12, "#8CC084", "#5E9E57")
-    txt(ax, lx + 0.27, 0.11, "확정 구간(RTC식: 다음 명령이 이어 붙음)", fs=5.2, ha="left")
-    _seg(ax, 3.00, 3.22, 0.05, 0.12, VL[0], VL[1])
-    txt(ax, 3.27, 0.11, "JCR 보정(허용 범위 안)", fs=5.2, ha="left")
-    txt(ax, 4.72, 0.11, "잡기·놓기 직전은 미리 내지 않음", fs=5.2, ha="left", c=RED)
+    _seg(ax, lx, lx + 0.22, 0.05, 0.12, "#DCEFD9", "#5E9E57")
+    txt(ax, lx + 0.27, 0.11, "이동(끌림 실행)", fs=5.2, ha="left")
+    _seg(ax, 2.35, 2.57, 0.05, 0.12, VL[0], VL[1])
+    txt(ax, 2.62, 0.11, "JCR 이어감(로봇 멈추지 않음)", fs=5.2, ha="left")
+    txt(ax, 4.85, 0.11, "재질의는 도착 뒤 또는 이상 신호 때만", fs=5.2, ha="left", c=RED)
     save(fig, "f4_timeline")
 
 
@@ -355,18 +364,15 @@ def f5_training():
     box(ax, 0.05, 1.75, 1.25, 0.78, VL, "JCR ① 단독", "참값 명령 + 교란 장면\n정답 = 시뮬 참값 보정", tfs=6.8, sfs=5.2)
     box(ax, 0.05, 0.70, 1.25, 0.78, VL, "JCR ② 상위 흉내", "측정한 상위 오차·지연\n명령 도중 교체 주입", tfs=6.8, sfs=5.2)
     arrow(ax, [(0.675, 1.73), (0.675, 1.50)], lw=0.9)
-    # loop container
-    section(ax, 1.55, 0.35, 3.30, 2.40, "번갈아 맞추기 (④)")
-    box(ax, 1.68, 1.55, 1.30, 0.92, UP, "상위 갱신", "입력: 도착 0–3 s 전 장면\n+ 실행 중 명령 + 도착 예상 표시\n출력: 다음 명령 + 미리 내도 되나",
-        tfs=6.8, sfs=5.0)
-    box(ax, 3.42, 1.55, 1.30, 0.92, VL, "JCR ③ 갱신", "실제 상위 명령 위의\n기록에서 재학습\n(연결 지점 분포 맞춤)", tfs=6.8, sfs=5.0)
-    box(ax, 1.68, 0.55, 1.30, 0.62, ("#FFF4E8", "#D9762B"), "보조 과제", "실제(JCR가 만든) 도착 위치 예측\n제어 출력에는 안 씀", tfs=6.2,
-        sfs=4.9, ls=(0, (3, 2)))
+    # loop container: upper frozen, only JCR keeps updating
+    section(ax, 1.55, 0.35, 3.30, 2.40, "반복 정착 (④): JCR만 갱신")
+    box(ax, 1.68, 1.55, 1.30, 0.92, UP, "상위 (동결)", "지금 학습한 체크포인트\n재학습 없음, 성능 유지", tfs=6.8, sfs=5.0)
+    box(ax, 3.42, 1.55, 1.30, 0.92, VL, "JCR ③ 갱신", "동결 상위+어댑터를\n붙여 돈 기록에서 재학습\n(연결 지점 분포 맞춤)", tfs=6.8, sfs=5.0)
+    txt(ax, 2.33, 0.86, "코드 어댑터: 규칙, 학습 없음", fs=5.4, c=CO[1])
     arrow(ax, [(2.33, 1.19), (2.33, 1.53)], c=UP[1], lw=0.7, hw=0.14, hl=0.28)
-    # alternation arrows
-    arrow(ax, [(3.00, 2.12), (3.40, 2.12)], lw=0.9)
-    arrow(ax, [(3.40, 1.88), (3.00, 1.88)], lw=0.9)
-    txt(ax, 3.20, 2.00, "번갈아", fs=5.0)
+    # single forward hand-off: frozen upper -> adapter -> JCR (no alternating update)
+    arrow(ax, [(2.99, 2.01), (3.40, 2.01)], lw=0.9)
+    txt(ax, 3.20, 2.14, "어댑터", fs=5.0)
     box(ax, 3.42, 0.55, 1.30, 0.62, CO, "연결 손실 측정", "같은 시드 2×2 (그림 6)", tfs=6.4, sfs=5.0)
     arrow(ax, [(4.07, 1.53), (4.07, 1.19)], lw=0.9)
     arrow(ax, [(1.32, 1.09), (1.45, 1.09), (1.45, 2.00), (1.70, 2.00)], lw=0.9)
@@ -378,8 +384,8 @@ def f5_training():
     arrow(ax, [(4.74, 0.86), (dx, 0.86), (dx, dy - 0.44)], lw=0.9)
     txt(ax, dx + 0.62, dy + 0.12, "예 → 멈춤", fs=5.8, c=TXT, ha="left")
     arrow(ax, [(dx, dy + 0.44), (dx, 2.62), (4.10, 2.62), (4.10, 2.49)], lw=0.8, hw=0.16, hl=0.3)
-    txt(ax, dx + 0.06, 2.20, "아니오 → 한 바퀴 더", fs=5.4, ha="left")
-    box(ax, 5.05, 0.10, 1.75, 0.55, ("#F7F7F7", "#8A8A8A"), "(선택) 엔드투엔드 미세 학습", "인터페이스·모듈 단독 평가 유지", tfs=6.0,
+    txt(ax, dx + 0.06, 2.20, "아니오 → JCR만 한 바퀴 더", fs=5.4, ha="left")
+    box(ax, 5.05, 0.10, 1.75, 0.55, ("#F7F7F7", "#8A8A8A"), "(선택) 엔드투엔드 · 상위 미리내기 학습", "상위 추가 학습 필요, 나중 확장", tfs=5.8,
         sfs=4.9, ls=(0, (3, 2)))
     arrow(ax, [(dx + 0.56, dy), (6.55, dy), (6.55, 0.67)], c="#8A8A8A", lw=0.7, ls=(0, (3, 2)), hw=0.14, hl=0.28)
     txt(ax, 0.675, 0.45, "정답은 모두\n시뮬 참값(특권 정보로 계산)", fs=5.0)
