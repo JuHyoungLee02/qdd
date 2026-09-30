@@ -121,7 +121,9 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             from ..sim.assets_x import materials as M
             from ..teach_l8d.clutter_x import material_ok
             stage = omni.usd.get_context().get_stage()
-            cat = {k: r for k, r in M.usable(M.load(MAT_ROOT)).items() if material_ok(k, r)}
+            import json
+            tab = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets9", "materials_l9.json")))
+            cat = {k: r for k, r in M.usable(tab["materials"]).items() if material_ok(k, r)}
             paths = {}
             first = M.pick(cat, "furniture", 0)
             for i in range(FX.N_SLOTS):
