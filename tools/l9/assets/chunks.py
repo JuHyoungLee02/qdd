@@ -1,5 +1,7 @@
 """Split an L9 build output into validation chunk tables, and merge the Isaac settle results back (pure).
   split  python -m tools.l9.assets.chunks split BUILD.json OUTDIR [--size 300]   -> OUTDIR/c0000.json ...
+  conts  python -m tools.l9.assets.chunks conts MERGED.json OUTDIR [--size 120]  -> OUTDIR/k0000.json ... (the
+         containers whose dynamic twin passed the settle check, for gate_containers9)
   merge  python -m tools.l9.assets.chunks merge BUILD.json VALDIR OUT.json
          VALDIR/c*/objects_check.json (validate_objects) -> per row stable / stable_upright / settle, like
          objects_objv.json (stable rule: |bottom - top| <= 5 mm, tilt <= 10 deg, drift <= 2 cm)."""
@@ -47,9 +49,21 @@ def merge(build: str, valdir: str, out: str):
     print("merged", len(res), "stable", n_ok, "of", len(d["objects"]))
 
 
+def conts(merged: str, outdir: str, size: int = 120):
+    d = json.load(open(merged))
+    ks = sorted(k for k, c in d.get("containers", {}).items() if c.get("object_stable") and c.get("place_kind"))
+    os.makedirs(outdir, exist_ok=True)
+    for i in range(0, len(ks), size):
+        json.dump({"containers": {k: d["containers"][k] for k in ks[i:i + size]}},
+                  open(os.path.join(outdir, f"k{i // size:04d}.json"), "w"))
+    print("container chunks", (len(ks) + size - 1) // size, "containers", len(ks))
+
+
 if __name__ == "__main__":
     a = sys.argv[1:]
-    if a[0] == "split":
+    if a[0] == "conts":
+        conts(a[1], a[2], int(a[4]) if len(a) > 4 and a[3] == "--size" else 120)
+    elif a[0] == "split":
         split(a[1], a[2], int(a[4]) if len(a) > 4 and a[3] == "--size" else 300)
     else:
         merge(a[1], a[2], a[3])
