@@ -79,6 +79,8 @@ def main(argv=None):
         from .collect9 import NoEpisode, run_episode
         from .vary9 import ComboLedger
         from .world9 import make_world9
+        if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(a.out)), "MOTION_ON")):
+            a.motion = True  # run-level switch (spec §10 code swap: new episodes of a running production)
         if a.motion:
             from .motion9 import install
             install()
