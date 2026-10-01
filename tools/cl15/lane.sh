@@ -14,7 +14,7 @@ log "LANE_WAIT gpu=$G"
 until [ -f $R/LANES_GO_7a2a_$G ] || [ -f $R/STOP ] || [ -f $R/STOP_$CK ]; do sleep 20; done
 log "LANE_START gpu=$G code=$C"
 touch $R/lanes/$LN.alive
-while IFS=$'\t' read -r GID JOB; do
+while IFS=$'\t' read -r -u 3 GID JOB; do  # fd 3: the Isaac child must not eat the list
   { [ -f $R/STOP ] || [ -f $R/STOP_$CK ]; } && break  # STOP_<ckpt>: this arm only (e.g. the Astra budget stop)
   mkdir $R/claims/${CK}__$GID 2>/dev/null || continue
   log "RUN $GID"
