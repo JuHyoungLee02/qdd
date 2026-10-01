@@ -106,7 +106,7 @@ class TrajExec:
         if action == "close":
             self.width = 0.0
         else:
-            self.width = self.rt.open_width()
+            self.width = self.rt.release_width()  # release: pre-open + 1.5 cm (pads must leave the object)
         self.wait = (action, t, [])
         self.rt.on_grip_cmd(action, t)
         return [{"t": round(t, 3), "event": action, "tcp": np.round(np.asarray(tcp, float), 4).tolist()}]
@@ -220,6 +220,11 @@ class Runtime:
     def tcp_T(self) -> np.ndarray:
         p, q = self.w.pl.tcp_pose()
         return T_of(p, q)
+
+    def release_width(self) -> float:
+        """Opening after a release / reopen: the pre-open + 1.5 cm (clipped to the max): at the pre-open alone the
+        pads could keep touching a slightly turned object, 'holding' stayed true and the retreat dragged it."""
+        return float(min(self.w.w_open, self.open_width() + 0.015))
 
     def open_width(self) -> float:
         return float(self.choice.pre_open) if self.choice is not None else float(self.w.w_open)
