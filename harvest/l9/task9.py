@@ -1021,7 +1021,9 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
         fmt[on + "surf"] = "upper " + surf_name(nodes[nd][0]) if nodes[nd][0]["top_z"] > mz + 0.03 else \
             ("lower " + surf_name(nodes[nd][0]) if nodes[nd][0]["top_z"] < mz - 0.03 else surf_name(nodes[nd][0]))
     for d, s in surfs.items():
-        fmt[d] = ("upper " if s["top"] > mz + 0.03 else "lower " if s["top"] < mz - 0.03 else "") + s["name"]
+        movers_d = [a for a, dd in defn.steps if dd == d]  # height words relative to where the object starts
+        ref_z = nodes[ep["objects"][chosen[movers_d[0]]]["node"]][0]["top_z"] if movers_d else mz
+        fmt[d] = ("upper " if s["top"] > ref_z + 0.03 else "lower " if s["top"] < ref_z - 0.03 else "") + s["name"]
     for w, v in ep.get("words", {}).items():
         fmt[w] = v
     fmt["Msurf"] = surf_name(main[0])
