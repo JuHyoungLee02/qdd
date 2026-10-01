@@ -47,6 +47,17 @@ def prim_safe(name: str) -> str:
     return s if s[:1].isalpha() else "r_" + s
 
 
+YIELD_DIR = "/data/harvest/out/l9/yield"
+
+
+def yield_file() -> str:
+    """<YIELD_DIR>/<hostname>_<gpu>: when it exists, L9 processes on that card stop between episodes and lanes do
+    not restart there (the card is lent; tools/l9/lend9.sh)."""
+    import socket
+    g = (os.environ.get("CUDA_VISIBLE_DEVICES") or "x").split(",")[0]
+    return os.path.join(YIELD_DIR, f"{socket.gethostname()}_{g}")
+
+
 def ep_dir(out: str, row: dict) -> str:
     return os.path.join(out, row.get("split", "train"), row["family"], f"{row['def']}_s{row['seed']}_{row['arm']}")
 
@@ -105,7 +116,11 @@ def main(argv=None):
         vids = {int(v) for v in a.video_seeds.split(",") if v.strip()}
         print("WORLD " + json.dumps({"arm": world.arm, "pool": len(pool), "rooms": sorted(rooms), "n": len(todo)}),
               flush=True)
+        yf = yield_file()
         for r in todo:
+            if os.path.exists(yf):  # the card is lent to another job: stop between episodes (tools/l9/lend9.sh)
+                print("YIELD " + yf, flush=True)
+                break
             od = ep_dir(a.out, r)
             t0 = time.perf_counter()
             try:

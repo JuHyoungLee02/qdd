@@ -7,6 +7,7 @@
 # A restarted lane first finishes the jobs it had claimed (run9 resumes: finished episodes are skipped).
 C=$1; G=$2; R=$3; T=$4
 mkdir -p $R/claim $R/done
+Y=/data/harvest/out/l9/yield/$(hostname)_$G  # lent card: stop before the next job (run9 stops between episodes)
 run_job() {
   local line="$1" j="$2"
   bash $C/tools/l9/isaac.sh $C $G ${T}_$j harvest.l9.run9 $line --out $R/collect --video-seeds "$(cat $R/video_seeds 2>/dev/null)"
@@ -16,11 +17,13 @@ while read -r line; do  # own unfinished claims first
   j=$(echo "$line" | awk '{print $4}')
   [ -f $R/claim/$j/lane ] && [ "$(cat $R/claim/$j/lane)" = "$T" ] && [ ! -f $R/done/$j ] || continue
   [ -f /data/harvest/out/l9/STOP ] && { echo "STOP: lane $T"; exit 0; }
+  [ -f $Y ] && { echo "YIELD: lane $T"; exit 0; }
   run_job "$line" "$j"
 done < $R/jobs.txt
 while read -r line; do
   j=$(echo "$line" | awk '{print $4}')
   [ -f /data/harvest/out/l9/STOP ] && { echo "STOP: lane $T"; exit 0; }
+  [ -f $Y ] && { echo "YIELD: lane $T"; exit 0; }
   mkdir $R/claim/$j 2>/dev/null || continue
   echo $T > $R/claim/$j/lane
   run_job "$line" "$j"

@@ -22,6 +22,7 @@ while true; do
   if [ "$done_n" -ge "$total" ]; then log "all $total jobs done"; exit 0; fi
   for spec in $LANES; do
     g=${spec%%:*}; t=${spec##*:}
+    [ -f /data/harvest/out/l9/yield/$(hostname)_$g ] && continue  # card lent (tools/l9/lend9.sh)
     p=$(cat $R/pids/$t 2>/dev/null)
     if [ -z "$p" ] || ! kill -0 $p 2>/dev/null; then
       if [ -n "$p" ]; then log "lane $t (pid $p) not running: restart"; fi
