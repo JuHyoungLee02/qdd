@@ -19,7 +19,12 @@ m35_over() { [ -f $M35/MAIN35_DONE ] || grep -qE "^(JUDGE_FAIL|EVAL_INCOMPLETE|T
 FUT1=$Q/out/fut1/summary/summary_fut1.json
 fut1_over() { [ -f $FUT1 ]; }
 conv() { (cd $C && HF_HUB_OFFLINE=1 nice -n 19 $PG tools/vb1/convert.py "$@"); }
+# the GARO venv's python is a symlink into /home/irteam/.local/share/uv/python (pod-local): link it to the shared
+# interpreter under /data first (= train.sh / Task C recipe pitfall 4), then check that lerobot imports
+UV_DIR=/home/irteam/.local/share/uv/python; mkdir -p $UV_DIR
+ln -sfn /data/juhyoung_pi05/uvpython/cpython-3.12.13-linux-x86_64-gnu $UV_DIR/cpython-3.12.13-linux-x86_64-gnu
 ev "chain_train start code=$C"
+$PG -c "import lerobot" 2>> $L/convert_smoke.log || { echo venv > $R/ALERT_convert; ev "ALERT GARO lerobot venv does not start on $(hostname)"; exit 1; }
 # 1. smoke conversion
 until [ -f $R/SMOKE_OK ] || [ -f $R/SMOKE_FAIL ]; do sleep 300; done
 [ -f $R/SMOKE_FAIL ] && { ev "chain_train stops: render smoke failed"; exit 1; }
