@@ -29,3 +29,21 @@
 - 라벨은 시연 궤적의 잡기·놓기 시점 TCP를 깊이로 역투영해 만든다.
 - 분기 LoRA로만 학습하고 본 모델은 바꾸지 않는다. π0.5-LIBERO(96 %)와 같은 편에서 비교한다.
 - 3인칭 데이터라서, 학습에 쓰려면 NOW §4 '3인칭 금지'의 예외로 사용자 결정이 필요하다.
+
+## 진행 기록: SimplerEnv Google Robot 설치 (10-02 00시대 KST)
+- 설치: `/data/harvest/simpler`(SimplerEnv + ManiSkill2_real2sim, venv py3.10, SAPIEN 2.2.2). conda-forge의 vulkan loader·libgl을 `/data/harvest/simpler/vk`에 넣었다. 도구는 `tools/lib0/setup_simpler.sh`·`vk_test.py`·`vk_test3.py`이다.
+- **막힘**: SAPIEN 2.x(2.2.2·2.2.1·2.2.0)가 78dc 파드에서 `camera.take_picture()` 때 세그폴트로 죽는다.
+  - 바꿔 본 조건(전부 같은 결과):
+    - ICD: NVIDIA(드라이버 580, GPU3) / Mesa lavapipe(CPU)
+    - 셰이더: ibl·trivial·point
+    - vulkan loader: 1.4.357 / 1.3.250
+    - 라이브러리 경로를 최소로 줄임
+  - 대조:
+    - `vulkaninfo`는 H200 4장을 정상으로 본다.
+    - SAPIEN 3.0.1은 lavapipe로 렌더에 성공한다(NVIDIA ICD로는 멈춘다).
+  - 같은 증상이 SAPIEN 이슈 #171(take_picture 멈춤)과 SimplerEnv 이슈 #6(도커 세그폴트)에 보고돼 있고, 해결책은 없다.
+- SimplerEnv Google Robot은 SAPIEN 2 전용이다. ManiSkill3 판에는 Bridge(WidowX) 4과제만 있다.
+- 선택지(결정 필요):
+  - (가) RoboTwin 2.0으로 넘어간다. SAPIEN 3이고, 머리캠 + 손목캠 + 깊이가 있다. 다만 양팔 실행기가 필요하다.
+  - (나) SimplerEnv WidowX(ManiSkill3)를 참고용으로 한다. 3인칭이다.
+  - (다) SAPIEN 2를 더 판다. 다른 파드 이미지로 시험하거나 소스를 빌드해야 한다.
