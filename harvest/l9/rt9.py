@@ -224,6 +224,8 @@ class Runtime:
     def release_width(self) -> float:
         """Opening after a release / reopen: the pre-open + 1.5 cm (clipped to the max): at the pre-open alone the
         pads could keep touching a slightly turned object, 'holding' stayed true and the retreat dragged it."""
+        if getattr(self, "_release_full", False):
+            return float(self.w.w_open)
         return float(min(self.w.w_open, self.open_width() + 0.015))
 
     def open_width(self) -> float:
@@ -530,6 +532,9 @@ class Runtime:
             step, cmd = "lift_clear", {"mode": "eef", "position_m": [round(float(v), 4) for v in tcp + [0, 0, 0.05]],
                                        "gripper": "open", "quat_wxyz": [round(float(v), 5) for v in
                                                                         self.status2(st)["tcp_quat"]]}
+        # a repeated lower_open (still holding after the release): open fully next time (pilot 10-02: pads kept
+        # touching a turned object at the pre-open + 1.5 cm, 20+ lower_open calls in a row)
+        self._release_full = step == "lower_open" and getattr(self, "_last_step", None) == "lower_open"
         self._last_step = step
         self.last_label = (step, cmd)
         if cmd is None:

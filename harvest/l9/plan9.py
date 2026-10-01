@@ -224,7 +224,7 @@ class Planner9:
             self.ikl = InverseKinematics(InverseKinematicsCfg.create(
                 robot=__import__("copy").deepcopy(self._robot_cfg), scene_model={"cuboid": {"_floor": {"dims": [0.1, 0.1, 0.01],
                                                                           "pose": [5.0, 5.0, -5.0, 1, 0, 0, 0]}}},
-                num_seeds=8, self_collision_check=True, max_batch_size=1))
+                num_seeds=1, self_collision_check=True, max_batch_size=1))  # 1 seed = the previous waypoint: no branch jumps
         T0, T1 = np.asarray(T0_base, float), np.asarray(T1_base, float)
         n = max(2, int(np.ceil(np.linalg.norm(T1[:3, 3] - T0[:3, 3]) / step_m)) + 1)
         q = np.asarray(q0, float)
