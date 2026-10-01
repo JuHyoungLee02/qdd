@@ -31,6 +31,7 @@ while true; do
     fi
   done
   if [ $((n % 10)) -eq 0 ]; then
+    bash $C/tools/l9/shm_clean.sh >> $R/supervisor_$(hostname).log 2>&1  # stale carb shm on the 64 MB /dev (P148)
     /data/harvest/venv_train/bin/python $C/tools/l9/progress.py $R > $R/progress_$(hostname).json 2>> $R/supervisor_$(hostname).log
   fi
   n=$((n + 1))
