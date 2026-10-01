@@ -1,7 +1,7 @@
 #!/bin/bash
 # E-FUT1 change 7: F2r = F2 + the delta-0 rows back (the paired F0 rows: replay + every site's delta-0 row, plus F2's
-# delta > 0 rows), seed 0 (data_rv, trainer seed 0) on 78dc:0 and seed 1 (data_s1, trainer seed 1) on 78dc:1 (<= 2 cards,
-# user 10-02: the fastest first), one GPU each (micro 4 x accum 6 = 24), merge, evaluation on the whole held-out pool
+# delta > 0 rows), seed 0 (data_rv, trainer seed 0) then seed 1 (data_s1, trainer seed 1), both on 78dc:3 only
+# (E-HCAM8 H0 holds 78dc:0-2; user 10-02: the fastest first), one GPU each (micro 4 x accum 6 = 24), merge, evaluation on the whole held-out pool
 # ('roll') + the static sets on the same card, then rv2_summary.py --x0 F2r --x1 F2rs1 (two seeds pooled vs F0rv /
 # F0s1, change 6 rule). YIELD: a GPU_WANTED line without FUT1 listing 78dc:<g> -> stop, exit (rerun resumes).
 # usage: nohup bash rv3.sh <code dir> > /dev/null 2>&1 &   (on juhyoung-q-78dc)
@@ -97,9 +97,8 @@ print("$dd", len(f0), len(f2), len(rows))
 PY
 done
 ev "F2r rows: data_rv $(wc -l < $F/data_rv/train_F2r.jsonl), data_s1 $(wc -l < $F/data_s1/train_F2r.jsonl) (F0 rows + F2 delta>0 rows)"
-run_arm F2r F2r 0 0,0 roll $F/data_rv 0 & a0=$!
-run_arm F2rs1 F2r 1 1,1 roll $F/data_s1 1 & a1=$!
-wait $a0; wait $a1
+# 78dc:3 only, seed 0 then seed 1 (E-HCAM8 H0 holds 78dc:0-2 from 10-02 00:48)
+( run_arm F2r F2r 3 3,3 roll $F/data_rv 0 ) && ( run_arm F2rs1 F2r 3 3,3 roll $F/data_s1 1 )
 if [ -f $F/arms/F2r/DONE ] && [ -f $F/arms/F2rs1/DONE ]; then
   PYTHONPATH=$C $P $C/tools/fut1/rv2_summary.py --root $F --x0 F2r --x1 F2rs1 --out-name summary_fut1_rv3.json >> $L/rv3_summary.log 2>&1
   ev "RV3 SUMMARY: $(tail -1 $L/rv3_summary.log | cut -c1-700)"
