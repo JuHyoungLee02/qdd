@@ -108,7 +108,7 @@ class Planner9:
         cp = (lambda: copy.deepcopy(self._robot_cfg)) if isinstance(robot_cfg, dict) else (lambda: robot_cfg)
         cfg = MotionPlannerCfg.create(robot=cp(), scene_model={"cuboid": {"_floor": {
             "dims": [0.1, 0.1, 0.01], "pose": [5.0, 5.0, -5.0, 1, 0, 0, 0]}}},
-            collision_cache={"cuboid": collision_cache}, max_goalset=1, num_ik_seeds=32, num_trajopt_seeds=4,
+            collision_cache={"cuboid": collision_cache}, max_goalset=1, num_ik_seeds=64, num_trajopt_seeds=12,
             self_collision_check=self_collision)
         self.mp = MotionPlanner(cfg)
 
@@ -176,7 +176,7 @@ class Planner9:
                 "lift": self._pos(r.lift_interpolated_trajectory) if ok else None}
 
     def pose(self, q, T_base) -> np.ndarray | None:
-        r = self.mp.plan_pose(self._goal(T_base), self._js(q))
+        r = self.mp.plan_pose(self._goal(T_base), self._js(q), max_attempts=8)
         if r is None or not bool(r.success.any()):
             return None
         return self._pos(r.get_interpolated_plan())
