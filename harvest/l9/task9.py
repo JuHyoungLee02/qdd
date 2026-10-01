@@ -511,6 +511,35 @@ def _defs():
            "Place the large {A} on the left and the small {B} on the right.", "Move the {A} left and the {B} right.",
            "Big left, small right: the {A} and the {B}."),
         dst={"P1": {"type": "spot", "line": ("y", 0, 2), "spacing": 0.18}, "P2": {"type": "spot", "line": ("y", 1, 2), "spacing": 0.18}})
+    # clear / sort / insert on spots, surfaces and holders (re-pilot 2026-10-01: spot destinations ~0.9 success)
+    add("clear_to_back", "clear", {"A": T}, [("A", "P")],
+        _t("Clear the {A} out of the way to the back of the {Msurf}.", "Push the clutter back: put the {A} at the back.",
+           "Move the {A} to the far side of the {Msurf}.", "Tidy up by moving the {A} to the back.",
+           "Put the {A} away at the back of the {Msurf}."), dst={"P": {"type": "spot", "corner": "back_left"}})
+    add("clear_to_front_right", "clear", {"A": T}, [("A", "P")],
+        _t("Clear the {A} to the front right corner.", "Move the {A} out of the way, to the near right.",
+           "Tidy the {A} into the front right corner of the {Msurf}.", "Put the {A} aside at the front right.",
+           "Clear the middle: the {A} goes to the front right."), dst={"P": {"type": "spot", "corner": "front_right"}})
+    add("clear_two_aside", "clear", {"A": T, "B": T}, [("A", "P1"), ("B", "P2")],
+        _t("Clear the {A} and the {B} to one side, in a row.", "Move the {A} and then the {B} aside, side by side.",
+           "Tidy up: line the {A} and the {B} up out of the way.", "Put the {A} and the {B} next to each other on the side.",
+           "Clear both, the {A} and the {B}, into a neat row."),
+        dst={"P1": {"type": "spot", "line": ("y", 0, 2)}, "P2": {"type": "spot", "line": ("y", 1, 2)}})
+    add("sort_colour_front_back", "sort", {"A": dict(T, colour_named=True), "B": dict(T, colour_named=True, other_colour="A")},
+        [("A", "P1"), ("B", "P2")],
+        _t("Put the {Acol} one in front and the {Bcol} one at the back.", "Sort by colour: {A} near, {B} far.",
+           "Place the {A} close to me and the {B} further away.", "Move the {A} to the front and the {B} to the back.",
+           "Separate by colour: the {A} in front, the {B} behind."),
+        dst={"P1": {"type": "spot", "line": ("x", 0, 2), "spacing": 0.16}, "P2": {"type": "spot", "line": ("x", 1, 2), "spacing": 0.16}})
+    add("sort_kind_mat", "sort", {"A": dict(T, cats=FOOD), "X": dict(T, cats=TOYISH)}, [("A", "V")],
+        _t("Put the food on the {V} and leave the toy.", "Only the {A} goes on the {V}.",
+           "Sort: the food item, the {A}, onto the {V}.", "Place the {A} on the {V}, not the toy.",
+           "Move the {A} onto the {V}."), dst={"V": {"type": "node", "kinds": ("zone", "seat")}}, needs=("node:zone|seat",))
+    add("ins_from_block", "insert", {"A": dict(SL, on="node:stand")}, [("A", "V")],
+        _t("Take the {A} off the block and stand it in the {V}.", "Move the {A} from the block into the {V}.",
+           "Put the {A} that is on the block into the {V}.", "Get the {A} from the block; insert it into the {V}.",
+           "The {A} on the block goes into the {V}."), dst={"V": {"type": "node", "kinds": ("slot",)}}, judge=up,
+        needs=("node:stand", "node:slot"))
     return {d.id: d for d in D}
 
 
