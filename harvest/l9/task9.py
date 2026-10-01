@@ -455,6 +455,62 @@ def _defs():
         _t("Put the {A} into the {V}.", "Stand the {Acol} one up in the {V}.", "Insert the {A} into the {V}.",
            "Place the {A} upright inside the {V}.", "The {A} goes into the {V}."), dst={"V": HV}, judge=up,
         needs=("node:slot",))
+    # stack on parametric blocks / risers (node kind "stand"; pilot 5)
+    SV = {"type": "node", "kinds": ("stand",)}
+    add("block_stack", "stack", {"A": T}, [("A", "V")],
+        _t("Stack the {A} on the {V}.", "Put the {A} on top of the {V}.", "Place the {A} onto the {V}.",
+           "Set the {A} up on the {V}.", "The {A} goes on top of the {V}."), dst={"V": SV}, needs=("node:stand",))
+    add("block_two", "stack", {"A": T, "B": T}, [("A", "V1"), ("B", "V2")],
+        _t("Put the {A} on one block and the {B} on the other.", "Stack the {A} and the {B} on the two blocks.",
+           "Place the {A} on the {V1} and the {B} on the {V2}.", "One object per block: the {A}, then the {B}.",
+           "Put the {A} and the {B} on top of the two blocks."), dst={"V1": SV, "V2": SV}, needs=("node2:stand",))
+    add("block_by_side", "stack", {"A": T}, [("A", "V")],
+        _t("Put the {A} on the block on the {Vside}.", "Stack the {A} on the {Vside} block.",
+           "Place the {A} on top of the block that is on the {Vside}.", "Use the {Vside} block for the {A}.",
+           "The {A} goes on the {Vside} block."), dst={"V": dict(SV, side_of_two=True)}, needs=("node2:stand",))
+    add("block_unstack", "stack", {"A": dict(T, on="node:stand")}, [("A", "P")],
+        _t("Take the {A} off the block and put it on the {Msurf}.", "Unstack the {A}: set it down on the {Msurf}.",
+           "Move the {A} from the top of the block down to the {Msurf}.", "Lift the {A} off the block and put it down.",
+           "Put the {A} that is on the block onto the {Msurf}."), dst={"P": {"type": "spot", "off_node": "A"}},
+        needs=("node:stand",))
+    add("block_restack", "stack", {"A": dict(T, on="node:stand")}, [("A", "V")],
+        _t("Move the {A} from one block to the other.", "Restack the {A} onto the other block.",
+           "Take the {A} off its block and put it on the {V}.", "Shift the {A} to the other block.",
+           "Put the {A} on the other block instead."), dst={"V": dict(SV, not_obj_node="A")}, needs=("node2:stand",))
+    add("block_from_second", "stack", {"A": dict(T, on="second")}, [("A", "V")],
+        _t("Take the {A} from the {Asurf} and stack it on the {V}.", "Move the {A} off the {Asurf} onto the {V}.",
+           "Put the {A} from the {Asurf} on top of the {V}.", "Get the {A} and set it on the {V}.",
+           "The {A} goes onto the {V}."), dst={"V": SV}, needs=("second", "node:stand"))
+    add("block_then_in", "stack", {"A": T, "B": T, "H": {"role": "container", "kind": "wide"}}, [("A", "V"), ("B", "H")],
+        _t("Stack the {A} on the {V}, then put the {B} into the {H}.", "Put the {A} on the {V} and the {B} in the {H}.",
+           "First the {A} onto the {V}; then the {B} into the {H}.", "{A} on the {V}, {B} in the {H}.",
+           "Place the {A} on top of the {V}, then drop the {B} in the {H}."), dst={"V": SV}, needs=("node:stand",))
+    add("block_named", "stack", {"A": dict(T, colour_named=True), "X": dict(T, decoy_of="A")}, [("A", "V")],
+        _t("Stack the {A} on the {V}.", "Put the {A}, not the other one, on the {V}.", "Place the {A} on top of the {V}.",
+           "The {A} goes on the {V}.", "Set the {A} onto the {V}."), dst={"V": SV}, needs=("node:stand",))
+    # sorting onto places on the surface (spots; pilot 5: spot destinations held 89 %)
+    add("sort_front_back", "sort", {"A": dict(T, cats=FOOD), "B": dict(T, cats=TOYISH)}, [("A", "P1"), ("B", "P2")],
+        _t("Put the food ({A}) in front and the toy ({B}) at the back.", "Sort: {A} to the near side, {B} to the far side.",
+           "Place the {A} close to me and the {B} further away.", "Food in front, toy behind: move the {A} and the {B}.",
+           "Move the {A} to the front and the {B} to the back."),
+        dst={"P1": {"type": "spot", "line": ("x", 0, 2), "spacing": 0.16}, "P2": {"type": "spot", "line": ("x", 1, 2), "spacing": 0.16}})
+    add("sort_colour_sides", "sort", {"A": dict(T, colour_named=True), "B": dict(T, colour_named=True, other_colour="A")},
+        [("A", "P1"), ("B", "P2")],
+        _t("Put the {Acol} one on the left and the {Bcol} one on the right.", "Sort by colour: {A} left, {B} right.",
+           "Place the {A} on the left side and the {B} on the right side.", "Move the {A} to the left and the {B} to the right.",
+           "Separate them by colour: the {A} goes left, the {B} goes right."),
+        dst={"P1": {"type": "spot", "line": ("y", 0, 2), "spacing": 0.18}, "P2": {"type": "spot", "line": ("y", 1, 2), "spacing": 0.18}})
+    add("sort_food_bowl_toy_side", "sort", {"A": dict(T, cats=FOOD), "B": dict(T, cats=TOYISH), "H": W_},
+        [("A", "H"), ("B", "P")],
+        _t("Put the food in the {H} and the toy to its right.", "Sort: the {A} into the {H}, the {B} beside it on the right.",
+           "Place the {A} in the {H}; set the {B} right of the {H}.", "Food goes in the {H}, the toy next to it: {A}, {B}.",
+           "Put the {A} into the {H} and the {B} on the right of the {H}."),
+        dst={"P": {"type": "spot", "rel": "right", "ref": "H"}})
+    add("sort_size_sides", "sort", {"A": dict(T, rank="big"), "B": dict(T, rank="small")}, [("A", "P1"), ("B", "P2")],
+        _t("Put the bigger one on the left and the smaller one on the right.", "Sort by size: {A} left, {B} right.",
+           "Place the large {A} on the left and the small {B} on the right.", "Move the {A} left and the {B} right.",
+           "Big left, small right: the {A} and the {B}."),
+        dst={"P1": {"type": "spot", "line": ("y", 0, 2), "spacing": 0.18}, "P2": {"type": "spot", "line": ("y", 1, 2), "spacing": 0.18}})
     return {d.id: d for d in D}
 
 
@@ -540,6 +596,8 @@ def rel_offset(rel: str, gap: float, fa: float, fr: float) -> np.ndarray:
 
 
 def surf_name(node: dict) -> str:
+    if node["kind"] == "stand":
+        return "block"
     if node["kind"] == "slot":
         if node["part"].startswith("holder"):
             return "holder"
@@ -888,6 +946,9 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
                 c = [v for v in c if v[0]["top_z"] < mz - 0.03]
             if spec.get("second") and second is not None:
                 c = [second] if second[0]["kind"] in kinds else []
+            if spec.get("not_obj_node"):
+                nid0 = ep["objects"][chosen[spec["not_obj_node"]]]["node"]
+                c = [v for v in c if v[0]["id"] != nid0]
             if spec.get("of_obj"):
                 nid = ep["objects"][chosen[spec["of_obj"]]]["node"]
                 c = [v for v in c if v[0]["id"] == nid]

@@ -148,6 +148,36 @@ def add_holders(b: _B, rule: str) -> int:
     return added
 
 
+def add_stands(b: _B, p: float = 0.7) -> int:
+    """Small solid blocks / risers (stack bases: 9-13 cm wide, 5-10 cm tall) on the flat top nodes near the arm
+    band; node kind "stand" (pilot 5: stacking on rescaled catalog objects held 36 %, they are narrow and tall)."""
+    rng = b.rng
+    hosts = [n for n in b.nodes if n["kind"] == "top" and n["rim_z"] is None]
+    if not hosts or rng.random() >= p:
+        return 0
+    added = 0
+    for i in range(int(rng.integers(1, 3))):
+        if len(b.parts) + 1 > N_SLOTS:
+            break
+        host = hosts[int(rng.integers(len(hosts)))]
+        (x0, x1), (y0, y1) = host["box"]
+        w, dd, hgt = rng.uniform(0.09, 0.13), rng.uniform(0.09, 0.13), rng.uniform(0.05, 0.10)
+        cx = float(np.clip(rng.uniform(0.38, 0.56), x0 + dd / 2 + 0.02, x1 - dd / 2 - 0.02))
+        cy = float(np.clip(b.yb + rng.uniform(-0.12, 0.12), y0 + w / 2 + 0.02, y1 - w / 2 - 0.02))
+        if not (x0 + dd / 2 <= cx <= x1 - dd / 2 and y0 + w / 2 <= cy <= y1 - w / 2):
+            continue
+        if any(abs(cx - (m["box"][0][0] + m["box"][0][1]) / 2) < 0.14
+               and abs(cy - (m["box"][1][0] + m["box"][1][1]) / 2) < 0.14 for m in b.nodes if m["kind"] in ("slot", "stand")):
+            continue
+        pid = f"stand{i}"
+        top = host["top_z"] + hgt
+        b.box(pid, cx - dd / 2, cx + dd / 2, cy - w / 2, cy + w / 2, host["top_z"], top, _c(b.rng, WOOD + PAINT), "stand",
+              "stand")
+        b.node("stand", pid, top, cx - dd / 2, cx + dd / 2, cy - w / 2, cy + w / 2)
+        added += 1
+    return added
+
+
 # ----------------------------------------------------------------------------------------------- families
 def _shelf_front(b: _B, rule: str, d: float, yc: float):
     rng = b.rng
@@ -702,6 +732,7 @@ def sample(family: str, rule: str, seed: int, arm: str, rm=None, tries: int = 24
         b = _B(rng, yb=A.side(arm) * -0.23, sgn=A.side(arm))
         params = fn(b, rule, d, _yc(rng, arm))
         params["holders"] = add_holders(b, rule)
+        params["stands"] = add_stands(b)
         if len(b.parts) > N_SLOTS:
             last = f"{len(b.parts)} parts > {N_SLOTS}"
             continue
