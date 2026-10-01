@@ -920,3 +920,7 @@
     - E-CL15 결과(14:15 KST): T1 10/10 성공(Wilson 95 % 0.72–1.0, 시범 n=10), 호출 중앙 9(8–30), 환경 겹침 0(학습 편 7,670개의 방 28·HDRI 56과 실제 사용한 ood 방 10·HDRI 10·재질 교집합 없음, overlap.json PASS). 같은 편의 E-M35CL(학습 환경, loop break 끔, 참고)은 f35_d 5/10, ep0.5 0/5(돈 편만). T3 보류. 결과 /data/harvest/out/cl15/summary.md, 영상 /data/harvest/videos/cl15/T1, 노트북 D:\tools\pdf_out\cl15_videos\.
     - 추가 원문: "저환경에서 아스트라 10개 비교 그리고 학습안한 35B 까지 해서 해줘봐봐"(14시대) / "아스타라 고 실제 걸린 시간도"(15:5x, 메인 세션에 직접) / "아스ㅌ트라도 해서 좀 표로 비교를 명확하게 해주면 좋을듯 평가 10개에서 해서 사이트에도 작성을 해놔주면 좋을 것 같아"(17:4x).
     - E-CL15 3팔 비교(18:28 KST, 같은 T1 10편·ood 환경·loop break·30호출): ep1.5 10/10(Wilson 0.72–1.0, 편당 벽시계 중앙 44 s, 호출 지연 중앙 1.1 s), 원본 35B 0/10(0–0.28, 89 s, 1.4 s), Astra(gpt-6-astra low) 6/10(0.31–0.83, 68 s, 6.3 s, 4,409원). Astra 실패 4편 중 3편은 place/stop, ov_front는 approach/stop. 절차 사고 2건(작업 목록을 표준입력으로 읽다 Isaac 자식이 먹음 → fd 3 수정, 수정이 한 번 적용 안 돼 카드 한 번 헛 차용; 유료 0원) — 사전등록 변경 4·5. 표 /data/harvest/out/cl15d/compare.md, 영상 D:\tools\pdf_out\cl15_videos\compare\(30편).
+232. JCR 만들기 중단, 지금까지의 지식 보존 (2026-10-01 22시경 KST, 메인 세션 경유)
+    - "JCR을 어떻게 만들지는 이제 중단하고 지금 까지 하느 지식들을 다 저장해둬라"
+    - 요지: JCR 설계·학습·평가(E-JCR1 폐루프, E-JV1 폐루프, E-JCR2 d2)를 멈춘다. E-JV1 폐루프는 42/400편에서 정상 종료하고, x2:1은 L9에 반납했다(attach_x2.sh). 결과·가설·함정·재개 방법을 문서 하나로 남긴다.
+    - 반영: docs/stage3/results/jcr_knowledge.md, NOW.md §2 JCR·E-JV1 행(중단·지식 보존).
