@@ -215,7 +215,12 @@ class LiberoWorld:
              (50, EW.glass_blur, 40)]
         for top, fn, off in f:
             if n <= top:
-                return np.asarray(fn(pil, severity=n - off)).astype(np.uint8)[..., :3]
+                try:
+                    return np.asarray(fn(pil, severity=n - off)).astype(np.uint8)[..., :3]
+                except ValueError:  # change 1: functions with a built-in 256 px size -> at 256 px, then back to ours
+                    sm = Image.fromarray(img).resize((256, 256), Image.BILINEAR)
+                    z = np.asarray(fn(sm, severity=n - off)).astype(np.uint8)[..., :3]
+                    return np.asarray(Image.fromarray(z).resize(img.shape[1::-1], Image.BILINEAR))
         return img
 
     def observe(self, depth: bool = False) -> Obs:
