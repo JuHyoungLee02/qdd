@@ -31,6 +31,7 @@ VERSION = "l9v2-1"
 GRIP_NAME = {"ffw_sg2": "ffw_sg2", "franka_mast": "franka", "r1pro": "r1pro", "g1": "g1"}
 EMPTY_M, CONTACT_TOL, CONTACT_TOL_HI, SLIP_GAP, SLIP_MOVE = 0.003, 0.008, 0.020, 0.003, 0.010
 LIMIT_MARGIN = 0.01
+WIDE_KEEP = 0.045
 TARGET_CORE = 0.5  # while approaching, the target is an obstacle at half its box: the fingers / palm around a grasp
 #                    stay outside the core, the arm cannot pass through the object (smoke 10-02: full box -> no grasp
 #                    plannable; no box -> the arm knocked the target off the table)
@@ -535,7 +536,16 @@ class Runtime:
             self.segs["lift"] = None
             q0 = Q0[-1]
         Q = self._guard(self.planner.pose(q0, self.to_base(T)))
-        if Q is None and Q0 is None and step in ("lower_open", "retreat", "lift_clear", "carry_up", "reopen", None):
+        if Q is None and hold:  # pilot 10-02: carry_over failed in 7 of 40 episodes with the object attached
+            c_obj = np.asarray(self.w.env.object_pose(tg)[0], float)
+            for k, (att, bz) in enumerate(((True, min(c_obj[2], pos[2])), (False, None))):
+                self.refresh_world(holding=tg if att else None, below_z=bz, exclude=() if att else (tg,))
+                Q = self._guard(self.planner.pose(q0, self.to_base(T)))
+                if Q is not None:
+                    self.timeline.setdefault("carry_fallback", []).append([step, k])
+                    break
+        if Q is None and Q0 is None and step in ("lower_open", "retreat", "lift_clear", "carry_up", "carry_over",
+                                                  "reopen", None):
             Q = self._guard(self.planner.line(q0, self.to_base(self.tcp_T()), self.to_base(T)))  # short straight moves
             if Q is not None:
                 self.timeline.setdefault("line_moves", []).append(step)
@@ -581,9 +591,12 @@ class Runtime:
         gap = float(ws[-1][1]) if ws else float(self.w.status()["grip_w"])
         out = classify_close(gap, gc.w)
         self.timeline.update(t_settle=round(t, 3), final_gap=round(gap, 4), outcome_close=out, close_cmd_w=0.0)
-        if out == "CONTACT":
+        if out == "CONTACT" or (out == "WIDE" and gap < gc.w + WIDE_KEEP):
+            # WIDE with a plausible gap: the natural deep grasps often close on a wider section than the planned
+            # contacts (pilot 10-02: 13 of 40 picks); the micro-lift (SLIP / SUCCESS) and the truth holding state decide
             self._gap_before = gap
-            return f"gripper closed on the object (gap {gap * 100:.1f} cm)"
+            extra = "" if out == "CONTACT" else ", wider than planned"
+            return f"gripper closed on the object (gap {gap * 100:.1f} cm{extra})"
         tcp = np.asarray(self.w.status()["tcp"], float)
         if float(np.linalg.norm(tcp - gc.pos)) > 0.02:  # closed away from the grasp pose (behaviour perturbation /
             self.timeline["close_off_pose"] = self.timeline.get("close_off_pose", 0) + 1  # blocked move): not a
