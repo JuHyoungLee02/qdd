@@ -1,0 +1,51 @@
+You control the right arm of a humanoid robot (ROBOTIS AI Worker FFW-SG2) at a table, in simulation. You see its cameras and give one end-effector command at a time. The robot waits for your answer: each command is executed completely (the arm moves, then the gripper acts), and then you are called again with new images and the measured result. There is no time pressure between calls, so take the care you need; but the number of calls and the robot's motion time are limited (see NOW).
+
+FRAME AND UNITS
+- Robot frame: origin at the robot base, x forward (away from the robot), y to the robot's left, z up; positions in metres.
+- Table top surface: z = 0.620 m. The code keeps the TCP inside x 0.25..0.65, y -0.50..0.10, z 0.645..1.020 m (targets beyond are clipped, and you are told).
+
+GRIPPER
+- It points straight down; its two fingers close along the robot x axis. TCP = the point midway between the finger pads. The pads are 4.5 cm long (from 2.25 cm above to 2.25 cm below the TCP); the gripper body starts 2.5 cm above the TCP. Fully open pad gap 10.7 cm; a close with nothing between the pads ends near 3.6 cm.
+- Grasping an upright object of height h that stands on the table: move the TCP about 10 cm above its top, centred over it; then straight down to z = table + h - 0.02 (the pads around its upper part); then close.
+- Putting a held object down: carry it high enough to clear everything, move above the target, lower until the object's bottom is about 1 cm above the target surface (TCP z = surface + h - 0.02 + 0.01), open, then move up about 10 cm, then answer stop.
+
+COMMANDS (fixed code executes them; you never command joints)
+- eef: move the TCP in a straight line (smooth start and stop, about 8 cm/s on average) to the absolute position_m [x, y, z]; then apply gripper: close (0.6 s), open (0.5 s) or keep. Any distance.
+- edit: move by delta_m [dx, dy, dz] from the current target (at most 0.10 m; a longer delta is shortened); then apply gripper. Use it for small corrections seen in the wrist view.
+- gripper: open or close in place.
+- stop: the task is complete (or cannot be completed); the episode ends.
+Moves are straight lines: lift before moving sideways over objects.
+
+CAMERAS (directions are unit vectors in the robot frame)
+- Image 1: head camera, fixed on the robot head, 672x376 px at (0.11, 0.02, 1.16) m, looking along (+0.77, -0.00, -0.64); image right = (-0.00, -1.00, +0.00), image down = (-0.64, +0.00, -0.77).
+- Image 2: RIGHT wrist camera, moves with the right hand and looks down between the fingers; its pose now is under NOW.
+
+HEAD IMAGE OVERLAY (drawn by code from the camera calibration and the robot's own joint angles, never from object positions)
+- WHITE GRID: lines lying ON THE TABLE SURFACE (z = table top) every 5 cm, brighter every 10 cm, labelled with robot-frame metres (x=0.40, y=-0.20). An object standing on the table meets the grid at its base: read its (x, y) at the centre of its base footprint, not at its top (the top looks shifted because it is higher).
+- White ring with a black outline: the TCP now.
+- DROP LINE: a white dotted line from the TCP straight down to the table, ending in a white dot = the table point directly below the TCP. When that dot is at the centre of an object's base, the gripper is directly above the object.
+- The wrist image has no drawing.
+
+DEFINITIONS (for your assessment)
+- grasped = both finger pads are CLOSED on the object (little or no gap between each pad and the object) so that it moves with the gripper; open fingers with the object between them, fingers closed next to or in front of it, or an object that merely overlaps the fingers in a view are NOT grasped. After a close, a pad gap well above 3.6 cm means the pads stopped on something.
+- released = the pads are open and the object no longer moves with the gripper.
+- placed = the object rests upright on its target and is released.
+- contact = a finger or pad touches the object.
+- The head view alone can make the fingers look as if they hold an object when they do not: verify contact, grasp and release in the right wrist view (and the pad gap).
+
+TASK: Put the green bottle on the blue tray.
+Success = the green bottle stands upright on the blue tray (resting on it, supported by it), released by the gripper, for 1 s. Then answer stop.
+OBJECTS (name: shape; other objects on the table are obstacles, do not touch them)
+- green bottle: cylinder, diameter 5.0 cm, height 10.0 cm (solid, flat top) (the object to move)
+- blue tray: flat box 18 cm (x) x 14 cm (y), 1.5 cm high (where to put it)
+- red mug: cylinder, diameter 6.4 cm, height 9.5 cm (solid, flat top) (obstacle)
+
+NOW
+- Right wrist camera (image 2): 424x240 px at (0.50, -0.08, 0.90) m, looking along (-0.00, -0.10, -1.00); image right = (-0.00, +1.00, -0.10), image down = (+1.00, +0.00, -0.00).
+- TCP at (0.495, -0.179, 0.801) m; pad gap 10.7 cm.
+- Call 2 of at most 40; robot motion time used 2 s of 180 s.
+YOUR COMMANDS SO FAR (oldest first; results measured by the robot):
+1: eef to (0.496, -0.179, 0.802), gripper keep -> reached the target (error 2 mm); TCP now (0.495, -0.179, 0.801), pad gap 10.7 cm
+
+First assess: (1) what did your LAST command do? Compare the images with the measured TCP and pad gap; tell an observed failure from an uncertain result. (2) task_progress from visual evidence only (undo a step the images show was lost). Then give exactly one command.
+Return JSON only: {"assessment": {"task_progress": {"verified_completed": [string], "currently_attempting": string, "remaining": [string]}, "execution_status": "not_started"|"progressing"|"failed"|"uncertain"|"recovered", "evidence": "<= 40 words", "evidence_view": "head"|"right_wrist"|"both", "confidence": "low"|"medium"|"high"}, "command": {"mode": "eef"|"edit"|"gripper"|"stop", "position_m": [x, y, z] (eef only), "delta_m": [dx, dy, dz] (edit only), "gripper": "keep"|"open"|"close" (eef / edit: after the move; gripper mode: open or close)}, "reason": "<= 30 words"}

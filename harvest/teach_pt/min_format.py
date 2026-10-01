@@ -156,7 +156,7 @@ def build(root: str, out_dir: str, split: str, track: str, mode: str = "clean", 
     """mode: train -> per-row depth draw (H) / clean (D); evaluation: clean | noisy | off (off for H only)."""
     if track not in TRACKS:
         raise ValueError(track)
-    train = split == "train" or split.startswith("l9train")  # L9 training builds (prereg_hcam8)
+    train = split == "train"
     base = [r for d in episode_dirs(root) for r in DS.load_rows(d, split)]
     rng = np.random.default_rng([seed, TRACKS.index(track), 29])
     rows, auxr = [], []

@@ -75,16 +75,6 @@ def select(roots, mode, n, match=None, strata=None):
     return out, {"n": len(out), "strata": len(take), "available": sum(len(v) for v in by.values())}
 
 
-def stage(eps, d):
-    os.makedirs(d, exist_ok=True)
-    for e in eps:
-        fam = os.path.join(d, e["family"])
-        os.makedirs(fam, exist_ok=True)
-        link = os.path.join(fam, os.path.basename(e["dir"]))
-        if not os.path.islink(link):
-            os.symlink(e["dir"], link)
-
-
 def add_line(text, line):
     if ANCHOR not in text:
         raise ValueError("no CAMERAS header")
@@ -141,21 +131,16 @@ def main():
         json.dump(eps, open(opt["--out"], "w"))
         print(json.dumps(dict(info, out=opt["--out"])))
     elif cmd == "rows":
-        from harvest.teach_pt import min_format as MF
+        from harvest.l9 import build9 as B9
         eps, out, tag = json.load(open(pos[0])), pos[1], pos[2]
-        st = os.path.join(out, f"stage_{tag}")
-        stage(eps, st)
-        c = MF.build(st, out, "l9train", "d-min", "clean")
-        p = os.path.join(out, "l9train_d-min.jsonl")
-        final = os.path.join(out, f"l9_{tag}.jsonl")
-        rows = [json.loads(x) for x in open(p, encoding="utf-8")]
-        if "--camera-line" in a:
-            rows = relink_prompts(rows, out, tag)
-        with open(final, "w", encoding="utf-8", newline="\n") as f:
-            for r in rows:
-                f.write(json.dumps(r) + "\n")
-        os.remove(p)
-        print(json.dumps(dict(c, rows=len(rows), out=final, sha256=sha(final), episodes=len(eps))))
+        c = B9.build([e["dir"] for e in eps], out, "l9train", f"l9_{tag}", train=True,
+                     camera_line="--camera-line" in a)
+        rows = [json.loads(x) for x in open(c["path"], encoding="utf-8")]
+        chk = B9.check_rows(rows, camera_line="--camera-line" in a, sample=2000)
+        json.dump(chk, open(os.path.join(out, f"l9_{tag}.check.json"), "w"), indent=1)
+        print(json.dumps(dict(c, rows=len(rows), sha256=sha(c["path"]), check_n=chk["n"], check_errors=chk["n_errors"])))
+        if chk["n_errors"]:
+            sys.exit(3)
     elif cmd == "combine":
         base, l9, out = pos[0], pos[1], pos[2]
         b = [json.loads(x) for x in open(base, encoding="utf-8")]

@@ -64,6 +64,7 @@ def _overlay(t: str) -> str:
     raise ValueError("strip: no overlay legend found")
 
 
+_ROLE_RE = re.compile(r" \((?:the object to move|where to put it|obstacle)\)")
 _L9_LINE_RE = re.compile(r"^- ([^:]+): (.+?)( \((?:the object to move|where to put it|obstacle)\))?$")
 
 
@@ -80,7 +81,11 @@ def _sizes(t: str) -> str:
             for desc in sorted(OBJ_DESC.values(), key=len, reverse=True) + ["object"]:
                 k = ln.find(": " + desc)
                 if k > 0:
-                    ln = ln[:k] + ln[k + 2 + len(desc):]
+                    rest = ln[k + 2 + len(desc):]
+                    if rest and not _ROLE_RE.fullmatch(rest) and _L9_LINE_RE.match(ln):
+                        continue  # only a prefix of an unknown (L9 run-time) description, e.g. "object" of
+                        # "object about 5.6 x 5.6 cm, 8.5 cm high": it would leave the sizes in -> the L9 rule below
+                    ln = ln[:k] + rest
                     break
             else:
                 m = _RING_DESC_RE.search(ln)  # xring.py sets the ring description at run time (generator only)
