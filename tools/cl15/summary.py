@@ -8,6 +8,7 @@ import glob
 import json
 import math
 import os
+import sys
 
 ROOT = "/data/harvest/out/cl15"
 VID = "/data/harvest/videos/cl15/T1"
@@ -25,11 +26,16 @@ def wilson(k: int, n: int, z: float = 1.96):
 
 
 def main():
-    t1 = json.load(open(os.path.join(ROOT, "t1.json")))["kinds"]
+    global ROOT, VID
+    ck = "ep1.5"
+    if len(sys.argv) > 3:  # E-CL15b arms: <root> <video root> <ckpt>
+        ROOT, VID, ck = sys.argv[1:4]
+    t1_src = os.path.join(ROOT, "t1.json")
+    t1 = json.load(open(t1_src))["kinds"]
     rows = []
     for k, v in sorted(t1.items()):
         name = f"{v['task']}_s{v['seed']}"
-        od = os.path.join(ROOT, "res", "ep1.5", "none", "t1", name)
+        od = os.path.join(ROOT, "res", ck, "none", "t1", name)
         r = {"kind": k, "task": v["task"], "seed": v["seed"]}
         if os.path.exists(os.path.join(od, "cl.json")):
             c = json.load(open(os.path.join(od, "cl.json")))
@@ -41,10 +47,10 @@ def main():
             r["success"] = None
             r["end_reason"] = "not_run"
         ref = {}
-        for ck in ("f35d", "0.5", "1", "1.5"):
-            p = os.path.join(M35, ck, "none", "l8s_val", name, "cl.json")
+        for rk in ("f35d", "0.5", "1", "1.5"):
+            p = os.path.join(M35, rk, "none", "l8s_val", name, "cl.json")
             if os.path.exists(p):
-                ref[ck] = bool(json.load(open(p))["success"])
+                ref[rk] = bool(json.load(open(p))["success"])
         r["train_env_ref"] = ref
         rows.append(r)
     done = [r for r in rows if r["success"] is not None]
@@ -52,9 +58,9 @@ def main():
     fails = collections.Counter(f"{r.get('fail_stage')}/{r.get('end_reason')}" for r in done if not r["success"])
     lo, hi = wilson(k, len(done))
     out = {"n": len(done), "success": k, "sr": round(k / len(done), 3) if done else None, "wilson95": [lo, hi],
-           "fail_types": dict(fails.most_common()), "not_finished": len(rows) - len(done), "rows": rows}
+           "fail_types": dict(fails.most_common()), "not_finished": len(rows) - len(done), "rows": rows, "ckpt": ck}
     json.dump(out, open(os.path.join(ROOT, "summary.json"), "w"), indent=1)
-    md = [f"# E-CL15 T1 (ep1.5, held-out environment, loop break on)", "",
+    md = [f"# E-CL15 T1 ({ck}, held-out environment, loop break on)", "",
           f"- success {k}/{len(done)} = {out['sr']} (Wilson 95 % {lo}-{hi}); not finished {out['not_finished']}",
           f"- failure types: {', '.join(f'{w} {n}' for w, n in fails.most_common()) or '-'}", "",
           "| kind | task | seed | success | fail | calls | train-env ref (E-M35CL) | mp4 |", "|---|---|---|---|---|---|---|---|"]

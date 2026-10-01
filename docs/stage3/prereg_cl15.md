@@ -28,3 +28,4 @@
 
 ## 변경 기록
 - 변경 1 (렌더 전, 결과 없음): 기본 과제 3종 이름 정정 — prep.py 규칙(후보 수 내림차순, 동률은 이름순)대로 mug_stand가 아니라 mug_left_of_bottle. 렌더 전 겹침 검사 PASS(학습 편 폴더 7,670개: 방 28·HDRI 56, ood 풀 방 10·HDRI 10·재질 16, 교집합 0).
+- 변경 2 (T1 ep1.5 결과 뒤, 새 팔 렌더 전): 사용자 원문(10-01 14시대 KST) "저환경에서 아스트라 10개 비교 그리고 학습안한 35B 까지 해서 해줘봐봐". 같은 T1 10편·같은 ood 환경·같은 실행기(loop break 켬, 30호출)에 팔 추가: **base35** = Qwen3.5-35B-A3B 원본(LoRA 없음, 같은 프롬프트, 7a2a GPU2 vLLM). 출력 형식 오류도 그대로 실패로 센다(실행기 기록 그대로). 결과 루트 `/data/harvest/out/cl15b`, 영상 `/data/harvest/videos/cl15/base35`, 렌더는 7a2a GPU3을 다시 빌림(`cl15b/READY_FOR_LANES` → `cl15b/LANES_GO_7a2a_3` → `cl15b/DONE`). **Astra 팔은 유료 API라 사용자 직접 허락 전에는 돌리지 않는다**(qdd 규칙: 유료는 제안 → 사용자 허락 → 실행; NOW §4 Astra 안 씀의 예외도 사용자 확인 필요).
