@@ -451,8 +451,10 @@ def run(a):
         pas[idx[keep]] = ok
         tested = np.zeros(K, bool)
         tested[idx[keep]] = True
+        pas_sh = np.zeros(K, bool)  # shake ok at catalog friction only (without the 0.4 pass)
+        pas_sh[idx[keep]] = r["shake_ok"][keep]
         np.savez_compressed(os.path.join(od, k + ".npz"), idx=idx[keep], lift_ok=r["lift_ok"][keep],
-                            **{"pass": pas}, tested=tested, pad_drop=bool(a.pad_drop), collider=str(obj_mode.get(k, "none")),
+                            **{"pass": pas}, pass_shake=pas_sh, tested=tested, pad_drop=bool(a.pad_drop), collider=str(obj_mode.get(k, "none")),
                             shake_ok=r["shake_ok"][keep], lowfric_ok=r["lowfric_ok"][keep],
                             final_gap=r["final_gap"][keep], gap_hold=r["gap_hold"][keep], gap_end=r["gap_end"][keep],
                             slip_mm=r["slip_mm"][keep], rise_end=r["rise_end"][keep], w=w[keep], pre_open=pre[keep],

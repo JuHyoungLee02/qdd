@@ -375,7 +375,8 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
                                          rigid_props=sim_utils.RigidBodyPropertiesCfg(max_depenetration_velocity=1.0),
                                          mass_props=sim_utils.MassPropertiesCfg(mass=g["mass"]),
                                          activate_contact_sensors=True,
-                                         **({"scale": tuple(g["spawn_scale"])} if g.get("spawn_scale") else {}))  # L9 opt-in
+                                         **({"scale": tuple(g["spawn_scale"])} if g.get("spawn_scale") else {}),  # L9 opt-in
+                                         **_collider_spawn(k, g))  # L9 v2 opt-in (L9V2_COLLIDERS / row collider)
             pos, rot = _object_reset_pose(k, layout)
             return RigidObjectCfg(prim_path="{ENV_REGEX_NS}/" + k.upper(), spawn=spawn,
                                   init_state=RigidObjectCfg.InitialStateCfg(pos=pos, rot=rot))
@@ -814,6 +815,48 @@ class Env:
 
 def _no_callback(event):
     pass
+
+
+# ---------------------------------------------------------------------------------------------- L9 v2 colliders
+# Opt-in collider override of mesh objects (harvest/l9/gtest9.apply_collider, docs/book P167): a catalog row with
+# collider = 'sdf' (OBJ_GEOM 'collider'), or, with the environment variable L9V2_COLLIDERS = 1 (or a json path), the
+# objects listed in /data/harvest/l9v2/collider_override.json get their render meshes as SDF colliders. Without
+# either, the spawn config is exactly the v1 one.
+COLLIDER_MAP = "/data/harvest/l9v2/collider_override.json"
+_COLLIDERS = {}  # prim name (K.upper()) -> mode, read by spawn_usd_collider
+_COLLIDER_MAP = {}
+
+
+def _collider_spawn(k: str, g: dict) -> dict:
+    import os
+    mode = g.get("collider")
+    env = os.environ.get("L9V2_COLLIDERS", "")
+    if not mode and env and env != "0":
+        path = env if env.endswith(".json") else COLLIDER_MAP
+        if path not in _COLLIDER_MAP:
+            import json
+            _COLLIDER_MAP[path] = json.load(open(path)).get("objects", {}) if os.path.exists(path) else {}
+        mode = _COLLIDER_MAP[path].get(k)
+    if not mode or mode == "none":
+        return {}
+    _COLLIDERS[k.upper()] = mode
+    return {"func": spawn_usd_collider}
+
+
+def spawn_usd_collider(prim_path, cfg, translation=None, orientation=None, **kwargs):
+    """The Isaac Lab USD spawner, then gtest9.apply_collider on every spawned copy (mode from _COLLIDERS by the
+    prim name)."""
+    import omni.usd
+    from isaaclab.sim.spawners.from_files import spawn_from_usd
+    from isaaclab.sim.utils import find_matching_prim_paths
+
+    from ..l9.gtest9 import apply_collider
+    prim = spawn_from_usd(prim_path, cfg, translation=translation, orientation=orientation, **kwargs)
+    stage = omni.usd.get_context().get_stage()
+    mode = _COLLIDERS[prim_path.rsplit("/", 1)[-1]]
+    for path in find_matching_prim_paths(prim_path):
+        apply_collider(stage, path, mode)
+    return prim
 
 
 def spawn_open_box(prim_path, cfg, translation=None, orientation=None, **kwargs):
