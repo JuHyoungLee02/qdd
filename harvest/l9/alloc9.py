@@ -1,6 +1,7 @@
 """L9 v2 episode allocation over robots and task definitions (main 10-02 02h: ~15,000 successful episodes, AI Worker
 40 % / Franka / R1 Pro / G1 20 % each, >= 60 per definition summed over robots, every robot covers every family,
-relation / put_in (L8S overlap) a smaller share, new families more) and plan rows / jobs for tools/l9/plan.py v2.
+new families more; owner 10-02 03h: L9 v2 alone replaces L8S, so relation / put_in are no longer reduced and the
+AI Worker right arm gets >= half of its rows) and plan rows / jobs for tools/l9/plan.py v2.
 
 allocate() counts SUCCESSFUL episodes; plan_rows() turns them into plan rows with the definition's pilot yield
 (rows = ceil(successes / yield)). Held-out definitions (spec §7 / owner principle 6: ~5 % by axis, never trained)
@@ -16,8 +17,9 @@ from . import task9v2 as V2
 ROBOT_SHARE = {"ffw_sg2": 0.40, "franka_mast": 0.20, "r1pro": 0.20, "g1": 0.20}
 ROBOT_ARMS = {"ffw_sg2": ("right", "left"), "franka_mast": ("right",), "r1pro": ("right", "left"),
               "g1": ("right", "left")}  # Franka: right-arm rows only in stage 1 (spec §9.2)
-LOW_SHARE_FAMILIES = ("relation", "put_in")  # L8S already covers them
-FAMILY_WEIGHT_LOW, FAMILY_WEIGHT_V1, FAMILY_WEIGHT_NEW, FAMILY_WEIGHT_RECOVERY = 0.5, 1.0, 1.5, 1.0  # [가설]
+LOW_SHARE_FAMILIES = ("relation", "put_in")  # were reduced (L8S overlap); owner 10-02 03h: same weight again
+FAMILY_WEIGHT_LOW, FAMILY_WEIGHT_V1, FAMILY_WEIGHT_NEW, FAMILY_WEIGHT_RECOVERY = 1.0, 1.0, 1.5, 1.0  # [가설]
+RIGHT_SHARE = {"ffw_sg2": 0.55}  # right-arm share of a two-arm robot (others 0.5); L8S was AI Worker right only
 DEFAULT_YIELD, MIN_YIELD = 0.6, 0.3
 CLEAN_SHARE = 0.25  # = tools/l9/plan.py style_of
 HOLDOUT_SHARE = 0.05
@@ -107,6 +109,13 @@ def allocate(defs: dict, total: int = 15000, min_per_def: int = 60, robot_share:
     return out
 
 
+def _arm(arms: tuple, j: int, right: float) -> str:
+    """Deterministic arm deal: in every run of rows the right arm gets round(right x n) (Bresenham)."""
+    if len(arms) == 1:
+        return arms[0]
+    return "right" if math.floor((j + 1) * right) > math.floor(j * right) else "left"
+
+
 def style_of(seed: int) -> str:
     u = int(hashlib.sha256(f"l9-style:{seed}".encode()).hexdigest()[:8], 16) / 0xFFFFFFFF
     return "clean" if u < CLEAN_SHARE else ""
@@ -114,7 +123,7 @@ def style_of(seed: int) -> str:
 
 def plan_rows(alloc: dict, pairs: dict, start: int = 3000000, yields: dict | None = None, holdout=()) -> list:
     """Plan rows {seed, robot, grip_max, arm, family, rule, def, task_family, split, style, v2, n_steps, recovery,
-    requires}: per (definition, robot) ceil(successes / yield) rows, arms alternating, (family, layout rule) pairs
+    requires}: per (definition, robot) ceil(successes / yield) rows, arms dealt by RIGHT_SHARE, (family, layout rule) pairs
     dealt round-robin from pairs[def]."""
     yields = yields or {}
     ho = set(holdout)
@@ -129,10 +138,11 @@ def plan_rows(alloc: dict, pairs: dict, start: int = 3000000, yields: dict | Non
         for robot in sorted(alloc[k]):
             n = int(math.ceil(alloc[k][robot] / y))
             arms = ROBOT_ARMS[robot]
-            for _ in range(n):
+            for jj in range(n):
                 f, r = pairs[k][(i * 7 + j) % len(pairs[k])]
                 rows.append({"seed": seed, "robot": robot, "grip_max": V2.grip_max_of(robot),
-                             "arm": arms[j % len(arms)], "family": f, "rule": r, "def": k, "task_family": d.family,
+                             "arm": _arm(arms, jj, RIGHT_SHARE.get(robot, 0.5)), "family": f, "rule": r, "def": k,
+                             "task_family": d.family,
                              "split": "holdout" if k in ho else "train", "style": style_of(seed), "v2": True,
                              "n_steps": prof["n_steps"], "recovery": prof["recovery"], "requires": prof["requires"]})
                 seed += 1

@@ -74,6 +74,27 @@ def test_new_families_and_low_share_families():
     assert len(multi) >= 60
 
 
+def test_l8s_coverage_table():
+    # owner 10-02 03h: the next training uses L9 v2 only -> every L8S task kind maps to L9 v2 definitions
+    from harvest.sim import tasks as TS
+    kinds = set(TS.OBJV_TASK_KINDS) | {"marker", "stand", "stand_then_place", "confuser_attribute", "multi_step",
+                                        "open_container", "stack", "push", "ring_peg", "open_drawer_box"}
+    assert kinds <= set(V2.L8S_COVERAGE), kinds - set(V2.L8S_COVERAGE)
+    for kind, ids in V2.L8S_COVERAGE.items():
+        assert ids and all(k in V2.DEFS_V2 for k in ids), kind
+    assert any(V2.runnable(V2.DEFS_V2[k]) for k in V2.L8S_COVERAGE["left"])
+    push = [d for d in V2.NEW.values() if d.family == "push"]
+    assert len(push) >= 4 and all("exec:push" in d.extra["requires"] for d in push)
+
+
+def test_recovery_candidate_every_definition_share():
+    picks = [V2.recovery_candidate(s, "rel_left", 2) for s in range(4000)]
+    share = sum(p is not None for p in picks) / len(picks)
+    assert 0.12 <= share <= 0.18
+    p = next(x for x in picks if x)
+    assert p["step"] in (0, 1) and p["kind"] in ("off_target", "tilted") and p["teach"] is False
+
+
 def test_templates_fill_without_missing_keys():
     for k, d in V2.DEFS_V2.items():
         keys = set(d.objs) | set(d.dst)
@@ -217,8 +238,9 @@ def test_allocation_totals_and_floors():
     for r in AL.ROBOT_SHARE:  # every robot covers every family
         fams = {defs[k] for k, v in al.items() if v.get(r, 0) > 0}
         assert fams == set(defs.values())
-    mean = lambda f: np.mean([per_def[k] for k in per_def if defs[k] == f])  # noqa: E731
-    assert mean("relation") < mean("arrange") and mean("put_in") < mean("select")
+    mean = lambda f: np.mean([per_def[k] for k in per_def if defs[k] == f and len(V2.DEFS_V2[k].steps) == 1])  # noqa: E731
+    # owner 10-02 03h: relation / put_in no longer reduced (L9 v2 alone replaces L8S); new families still more
+    assert abs(mean("relation") - mean("arrange")) <= 2 and mean("put_in") < mean("select")
     assert AL.allocate(defs, total=15000, min_per_def=60) == al  # deterministic
 
 
@@ -255,6 +277,8 @@ def test_plan_rows_v2():
         assert r["v2"] and r["grip_max"] == pytest.approx(V2.grip_max_of(r["robot"]))
         assert r["arm"] in AL.ROBOT_ARMS[r["robot"]]
     assert {r["arm"] for r in rows if r["robot"] == "franka_mast"} == {"right"}
+    ffw = [r["arm"] for r in rows if r["robot"] == "ffw_sg2"]
+    assert ffw.count("right") >= 0.5 * len(ffw) and ffw.count("left") > 0  # L8S workhorse: right >= half
     ch = AL.jobs_v2(rows, 10)
     for c in ch:
         assert len({(r["robot"], r["arm"]) for r in c}) == 1

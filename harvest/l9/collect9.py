@@ -155,6 +155,7 @@ def run_episode(world, row: dict, out_dir: str, pool: dict, rm, ledger=None, p: 
     if ep.get("task_v2"):  # L9 v2 task fields (task9v2.finish): grasp-label scene constraints, place pose / height,
         # done predicates, instruction variant, recovery tags
         meta.update({k: ep.get(k) for k in ("step_info", "done", "instr_meta", "movable_containers", "start_poses",
+                                              "recovery_candidate",
                                               "requires")})
     with open(os.path.join(out_dir, "meta.json"), "w") as f:
         json.dump(meta, f, default=_json_default)

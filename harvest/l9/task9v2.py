@@ -39,7 +39,8 @@ HEIGHT_BANDS = ("floor", "low", "mid", "high", "above_eye")
 BAND_Z = ((0.25, "floor"), (0.60, "low"), (1.10, "mid"), (1.35, "high"))  # floor-based z [가설: AI Worker eye 1.40 m]
 DONE_PREDS = ("on_spot", "on_surface", "in_container", "on_container", "stacked_on")
 CAPS_ALL = ("node:shelf", "exec:approach_front", "exec:movable_container", "exec:place_pose", "exec:start_pose",
-            "exec:recovery")
+            "exec:recovery", "exec:push", "asset:ring_peg", "node:drawer_open")
+RECOVERY_SHARE = 0.15  # owner 10-02: every definition gets recovery variants -> ~15 % of instances propose one [가설]
 TALL_H, TALL_ASPECT = 0.15, 1.6  # [가설] tall = height >= 15 cm or height / width >= 1.6 (side grasp candidates)
 HANDLE_RATIO = 1.6  # [가설] catalog handle_ratio of mugs with a handle
 FLAT_H = 0.035
@@ -946,10 +947,92 @@ add("stack_then_two_in", "stack", {"A": T, "B": B_, "C": T, "D": T, "H": WB}, [(
        "Make a stack of the {A} on the {B}, then pack the {C} and the {D} in the {H}."),
     [("B1K", "boxing_books_up_for_storage"), ("CAL", "stack_block")])
 
+# L8S kinds missing so far (owner 10-02 03h: the next training uses L9 v2 alone, so it must cover every L8S kind).
+# 19. push: closed-finger push onto a place (L8S pu__<obj>: teach_l8d.xnew.plan_push = above_start / lower_behind /
+# push / lift_away with the existing eef + gripper commands) — CALVIN push_*_block, LIBERO push_the_plate
+PUSH = {0: {"mode": "push"}}
+add("push_onto_mat", "push", {"A": T}, [("A", "V")],
+    _t("Push the {A} onto the {V}.", "Slide the {A} over onto the {V} without lifting it.", "Nudge the {A} onto the {V}.",
+       "Without picking it up, push the {A} onto the {V}.", "Shove the {A} until it sits on the {V}."),
+    [("CAL", "push_red_block_right"), ("DROID", "push")], dst={"V": ZN}, needs=("node:zone|seat",), place=PUSH,
+    req=("exec:push",))
+add("push_left", "push", {"A": T}, [("A", "P")],
+    _t("Push the {A} to the left.", "Slide the {A} a bit to the left without lifting it.", "Nudge the {A} leftwards.",
+       "Without picking it up, move the {A} left by pushing it.", "Shove the {A} over to the left."),
+    [("CAL", "push_blue_block_left"), ("BRIDGE", "push")], dst={"P": {"type": "spot", "rel": "left", "ref": "A",
+                                                                       "gap": 0.03}}, place=PUSH, req=("exec:push",))
+add("push_right", "push", {"A": T}, [("A", "P")],
+    _t("Push the {A} to the right.", "Slide the {A} a bit to the right without lifting it.", "Nudge the {A} rightwards.",
+       "Without picking it up, move the {A} right by pushing it.", "Shove the {A} over to the right."),
+    [("CAL", "push_pink_block_right"), ("BRIDGE", "push")], dst={"P": {"type": "spot", "rel": "right", "ref": "A",
+                                                                        "gap": 0.03}}, place=PUSH, req=("exec:push",))
+add("push_to_front", "push", {"A": T}, [("A", "P")],
+    _t("Push the {A} towards me, to the front edge.", "Slide the {A} to the front of the {Msurf}.",
+       "Without lifting it, bring the {A} to the near edge.", "Push the {A} along until it reaches the front edge.",
+       "Nudge the {A} to the front."),
+    [("LIB", "push_the_plate_to_the_front_of_the_stove"), ("DROID", "push")],
+    dst={"P": {"type": "spot", "corner": "front_edge"}}, place=PUSH, req=("exec:push",))
+add("push_next_to", "push", {"A": T, "R": T}, [("A", "P")],
+    _t("Push the {A} next to the {R}.", "Slide the {A} over until it is beside the {R}.",
+       "Without lifting it, push the {A} up to the {R}'s right side.", "Nudge the {A} to the right of the {R}.",
+       "Shove the {A} over next to the {R}, on its right."),
+    [("CAL", "push_red_block_left"), ("VIMA", "sweep_without_exceeding")],
+    dst={"P": {"type": "spot", "rel": "right", "ref": "R", "gap": 0.02}}, place=PUSH, req=("exec:push",))
+add("push_to_back", "push", {"A": T}, [("A", "P")],
+    _t("Push the {A} away from me, to the back of the {Msurf}.", "Slide the {A} to the back without lifting it.",
+       "Nudge the {A} towards the back edge.", "Without picking it up, push the {A} to the far side.",
+       "Shove the {A} back, out of the way."),
+    [("CAL", "push_into_drawer (push part)"), ("BRIDGE", "push")], dst={"P": {"type": "spot", "corner": "deep_back"}},
+    place=PUSH, req=("exec:push",))
+# L8S stand_mug_tray (start on the white stand -> tray), ring on a peg (xring), open drawer / open-flap box (xart)
+add("tr_stand_to_plate", "transfer", {"A": dict(T, on="node:stand"), "H": PL}, [("A", "H")],
+    _t("Take the {A} off the block and put it on the {H}.", "Move the {A} from the block onto the {H}.",
+       "Put the {A} that stands on the block on the {H}.", "Lift the {A} off the block; it goes on the {H}.",
+       "The {A} on the block goes onto the {H}."),
+    [("RT2", "place_object_stand (reverse)"), ("CAL", "unstack_block")], needs=("node:stand",))
+add("ins_ring_peg", "insert", {"A": dict(T, cats=("ring",))}, [("A", "V")],
+    _t("Put the {A} on the {V}.", "Drop the {A} over the {V}.", "Thread the {A} onto the {V}.",
+       "Place the {A} around the {V}.", "The {A} goes onto the {V}."),
+    [("RLB", "put_rubbish_in_bin -> ring variant: place_shape_in_shape_sorter"), ("RT2", "place_object_stand")],
+    dst={"V": {"type": "node", "kinds": ("peg",)}}, needs=("node:peg",), req=("asset:ring_peg",))
+add("in_open_drawer", "put_in", {"A": T}, [("A", "V")],
+    _t("Put the {A} into the open drawer.", "Place the {A} inside the {V}.", "Drop the {A} in the open drawer.",
+       "Store the {A} in the {V}.", "The {A} goes into the open drawer."),
+    [("RC", "PickPlaceCounterToDrawer (drawer already open)"), ("LIB", "open_the_top_drawer_and_put_the_bowl_inside "
+                                                                      "(put part only)")],
+    dst={"V": {"type": "node", "kinds": ("drawer_open",)}}, needs=("node:drawer_open",), req=("node:drawer_open",))
+
 for _k, _d in T9.DEFS.items():
     SOURCES[_k] = (("v1", "task9 " + _k),) + V1_SOURCES[_d.family]
 DEFS_V2 = {**T9.DEFS, **NEW}
-NEW_FAMILIES = ("shelf", "select", "tall", "hollow", "pose", "kitchen", "tidy", "transfer", "recovery")
+NEW_FAMILIES = ("shelf", "select", "tall", "hollow", "pose", "kitchen", "tidy", "transfer", "recovery", "push")
+
+# L8S task kind (harvest/sim/tasks.py TASKS / X_TASKS / OBJV_TASK_KINDS / X_STEPS, teach_l8d xnew / xring / xart) ->
+# L9 v2 definitions covering it (owner 10-02 03h)
+L8S_COVERAGE = {
+    "tray": ("in_onto_tray", "set_food_on_plate", "sel_colour_plate", "sel_food_plate", "tall_on_tray", "tr_plate_to_plate"),
+    "bin": ("in_wide", "clear_one", "clear_toy_bin", "tall_into_bin", "sel_can_bin", "in_kind_toy"),
+    "basket": ("in_cubby", "clear_to_cubby", "kit_to_sink", "sel_bottle_basket", "tidy_gift_basket"),
+    "left": ("rel_left", "rel_left_of_container", "sel_colour_left_of", "tall_left_of", "spread_out"),
+    "right": ("rel_right", "rel_right_of_container", "line_next_to", "spread_right", "set_drink_right"),
+    "front": ("rel_front", "rel_front_of_container", "set_drink_front", "rel_front_left", "rel_front_right"),
+    "behind": ("rel_behind", "rel_behind_container", "set_behind_plate", "rel_behind_left", "rel_behind_right"),
+    "between": ("rel_between", "rel_between_containers", "tall_between", "arr_gap_narrow"),
+    "upper": ("up_to_higher", "up_into_container", "up_two", "tall_up_higher", "up_onto_plate"),
+    "marker": ("set_on_mat", "sort_kind_mat", "set_coaster", "kit_to_board", "tidy_two_mats", "to_front_left",
+               "set_centre"),
+    "stand": ("block_stack", "block_two", "block_by_side", "block_named", "sel_book_stand", "st_tower_stand"),
+    "stand_then_place": ("block_unstack", "tr_stand_to_bowl", "tr_stand_to_plate", "ins_from_block", "block_restack"),
+    "confuser_attribute": ("in_by_colour", "stack_by_colour", "ins_among", "sel_colour_in", "sel_smaller_in",
+                           "clear_colour", "stack_named"),
+    "multi_step": ("clear_two", "set_pair", "in_two_same", "tidy_pack_lunch", "set_place_three", "clear_three_mixed",
+                   "rel_chain3", "line3_y"),
+    "open_container": ("in_cubby", "kit_to_sink", "clear_to_cubby", "tr_out_of_cubby"),
+    "stack": ("stack2", "stack_on_bigger", "stack_named", "st_on_book", "st_colour_pair", "stack_then_in"),
+    "push": ("push_onto_mat", "push_left", "push_right", "push_to_front", "push_next_to"),
+    "ring_peg": ("ins_ring_peg", "ins_one", "ins_slot"),
+    "open_drawer_box": ("in_open_drawer", "in_cubby", "shelf_low_put"),
+}
 FAMILIES_V2 = T9.FAMILIES + NEW_FAMILIES
 
 
@@ -1096,6 +1179,23 @@ def apply_approach(ep: dict, approach: str | None, step: int = 0) -> str:
     return ep["instruction"]
 
 
+def recovery_candidate(seed: int, def_id: str, n_steps: int) -> dict | None:
+    """Every definition's recovery variant (owner 10-02): ~RECOVERY_SHARE of instances propose a perturbed release on
+    one step (off target 5-9 cm or tilted 30-60 deg, hashed); the executor applies it when it can (exec:recovery) and
+    the next call re-grasps. The labels never teach the perturbation."""
+    if _u("l9v2-rcv-c", seed, def_id) >= RECOVERY_SHARE:
+        return None
+    step = int(_u("l9v2-rcv-s", seed, def_id) * n_steps)
+    kind = "off_target" if _u("l9v2-rcv-k", seed, def_id) < 0.6 else "tilted"
+    ang = 2 * math.pi * _u("l9v2-rcv-a", seed, def_id)
+    mag = 0.05 + 0.04 * _u("l9v2-rcv-m", seed, def_id)
+    return {"step": step, "kind": kind, "teach": False,
+            "offset_m": [round(mag * math.cos(ang), 4), round(mag * math.sin(ang), 4)] if kind == "off_target" else None,
+            "tilt_deg": round(30 + 30 * _u("l9v2-rcv-t", seed, def_id), 1) if kind == "tilted" else None,
+            "fix": "the executor perturbs this release; the next call re-grasps the object and places it again "
+                   "(labels keep the correct target)"}
+
+
 def avoid_bench(defn: TaskDef, ep: dict, fmt: dict) -> tuple:
     """(instruction, clashed): a benchmark instruction verbatim moves to the next template that is not one (owner
     principle 1); sets ep["template"] to the template used."""
@@ -1214,7 +1314,7 @@ def finish(defn: TaskDef, ep: dict, ctx: dict) -> None:
                 "constraint": cons[0] if cons else None, "constraints": cons, "place_pose": pose,
                 "place_approach": approach, "place_point": ppoint, "place_node_kind": pnode.get("kind"),
                 "place_height": {"z": round(z, 4), "band": band, "rel_main": round(z - mz, 4)},
-                "height_intent": hint, "recovery": None}
+                "height_intent": hint, "recovery": None, "mode": px.get("mode", "pick_place")}
         if rcv and rcv.get("step") == i:
             ang = 2 * math.pi * _u("l9v2-rcv-a", seed, defn.id)
             mag = 0.05 + 0.04 * _u("l9v2-rcv-m", seed, defn.id)
@@ -1243,6 +1343,7 @@ def finish(defn: TaskDef, ep: dict, ctx: dict) -> None:
                   "stop_label": "done: " + "; ".join(x["text"] for x in done)}
     ep["movable_containers"] = sorted(chosen[n] for n, sp in defn.objs.items() if sp.get("hollow"))
     ep["start_poses"] = {chosen[n]: p for n, p in defn.extra.get("start", {}).items()}
+    ep["recovery_candidate"] = None if rcv else recovery_candidate(seed, defn.id, len(defn.steps))
     ep["requires"] = list(defn.extra.get("requires", ()))
     ep["task_v2"] = True
 
@@ -1258,7 +1359,8 @@ def def_profile(d: TaskDef) -> dict:
         spec = d.dst.get(dst, {})
         kinds = set(spec.get("kinds", ()))
         shelf = bool(kinds & set(SHELF_KINDS))
-        appr.append("front" if shelf else px.get(i, {}).get("approach", "top"))
+        appr.append("push" if px.get(i, {}).get("mode") == "push" else
+                    "front" if shelf else px.get(i, {}).get("approach", "top"))
         if kinds & {"shelf_high", "wall_shelf", "cupboard"} or spec.get("higher") or \
                 d.objs.get(dst, {}).get("on") == "higher":
             heights.append("high")
