@@ -102,3 +102,18 @@ def test_check_rows(tmp_path, robot):
     bad = B9.check_rows([dict(row, robot=other, answer=json.dumps({"command": {"hand": "left"}}))], camera_line=False)
     errs = bad["errors"][0]["errors"]
     assert any("robot" in e for e in errs) and any("hand" in e for e in errs) and any("camera line present" in e for e in errs)
+
+
+def test_v2_grasp_format_helpers():
+    import json as _j
+    from harvest.l9 import build9 as B
+    meta = {"robot": "ffw_sg2", "arm": "left", "grasp_v2": {"gripper": {"max_open": 0.107}}}
+    rl = B.robot_line(meta)
+    assert rl == "robot: ffw_sg2, arm left 7-DoF, parallel gripper max 10.7 cm"
+    t = "head\n" + B.CAM_ANCHOR + "- x\n\nFRAME AND UNITS\nend"
+    t2 = B.add_grasp_format(t, rl)
+    assert ("- " + rl) in t2 and B.GRASP_BLOCK in t2 and t2.index(B.GRASP_BLOCK) < t2.index("FRAME AND UNITS")
+    assert B.add_grasp_format(t2, rl) == t2
+    a = _j.dumps({"command": {"mode": "point", "point_2d": [1, 2], "approach": "side", "rot": 3}})
+    c = _j.loads(B.strip_grasp_fields(a))["command"]
+    assert "approach" not in c and "rot" not in c and c["point_2d"] == [1, 2]

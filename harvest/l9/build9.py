@@ -21,6 +21,15 @@ OBJ_HEAD = "OBJECTS ("
 CAM_ANCHOR = "CAMERAS (directions are unit vectors in the robot frame)\n"
 ROBOT_WORDS = {"ffw_sg2": "AI Worker FFW-SG2", "franka_mast": "Franka Emika Panda"}
 _READY = {}
+# L9 v2 output format (spec §12.8, research grasp_point_learning §11.7): grasp calls add approach + rot; the request
+# gets a robot line and this block. Final wording after E-GP2 (main).
+GRASP_BLOCK = ("GRASP (only when the gripper closes on an object): point at the visible part of the object where the "
+               "fingers will close, and also give \"approach\": top | oblique | front | side (robot base frame: top = "
+               "straight down, oblique = down at an angle, front = horizontally away from the robot, side = "
+               "horizontally from the left or the right) and \"rot\": 0-11 = the direction of the line between the "
+               "two finger pads as seen in image 1, in 15-degree steps (0 = image horizontal, increasing clockwise, "
+               "0-165 degrees because both pads look alike).\n\n")
+ROBOT_ANCHOR = CAM_ANCHOR
 
 
 def prepare(splits=("train", "ood_o")) -> int:
@@ -76,12 +85,41 @@ def add_camera_line(text: str, line: str) -> str:
     return text.replace(CAM_ANCHOR, CAM_ANCHOR + "- " + line + "\n", 1)
 
 
+def robot_line(meta: dict) -> str:
+    """'robot: <profile>, arm <arm> 7-DoF, parallel gripper max <cm> cm' from the episode meta (spec §12.8)."""
+    gv = meta.get("grasp_v2") or {}
+    g = gv.get("gripper") or {}
+    w = g.get("max_open")
+    w = f"{float(w) * 100:.1f}" if w else "?"
+    return f"robot: {meta.get('robot') or 'ffw_sg2'}, arm {meta.get('arm', 'right')} 7-DoF, parallel gripper max {w} cm"
+
+
+def add_grasp_format(text: str, rline: str) -> str:
+    """The v2 request: the robot line above the CAMERAS block and the GRASP block before FRAME AND UNITS (or at the
+    end of the static part)."""
+    if "\n- robot: " not in text and ROBOT_ANCHOR in text:
+        text = text.replace(ROBOT_ANCHOR, "ROBOT\n- " + rline + "\n\n" + ROBOT_ANCHOR, 1)
+    if GRASP_BLOCK not in text:
+        k = text.find("FRAME AND UNITS")
+        text = text[:k] + GRASP_BLOCK + text[k:] if k >= 0 else text + "\n" + GRASP_BLOCK
+    return text
+
+
+def strip_grasp_fields(answer: str) -> str:
+    d = json.loads(answer)
+    c = d.get("command") or {}
+    for k in ("approach", "rot"):
+        c.pop(k, None)
+    return json.dumps(d)
+
+
 def camera_of(r: dict, robot: str) -> str:
     cam = json.load(open(r["cams_path"]))["head"]
     return HC.line(cam, f"l9/{robot}")
 
 
-def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera_line: bool = False) -> tuple:
+def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera_line: bool = False,
+                 grasp_format: bool = True) -> tuple:
     """-> (control rows, aux rows, counts) of one L9 episode."""
     from ..teach_l8.dataset import repeat_of
     from ..teach_pt import dataset as DS
@@ -102,6 +140,15 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera
         line = camera_of(r, robot)
         x.update(robot=robot, head_cam_mode=(hc.get("draw") or {}).get("mode", hc.get("mode", "std")), camera=line,
                  source=f"l9/{robot}", gen="l9")
+        if meta.get("grasp_v2") is not None:  # spec §12.8 format v2 (grasp_format=False: the old point format)
+            rl = robot_line(meta)
+            x.update(robot_line=rl, gen_version="v2", label_origin=meta.get("label_origin", "l9v2"))
+            p = x["prompt_path"]
+            if grasp_format:
+                with open(p, "w", encoding="utf-8", newline="\n") as f:
+                    f.write(add_grasp_format(open(p, encoding="utf-8").read(), rl))
+            elif not x["label_missing"]:
+                x["answer"] = strip_grasp_fields(x["answer"])
         if camera_line:
             p = x["prompt_path"]
             dst = p[:-4] + "_cam.txt"
@@ -117,13 +164,13 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera
 
 
 def build(ep_dirs, out_dir: str, split: str, name: str, train: bool = True, camera_line: bool = False,
-          seed: int = 0) -> dict:
+          seed: int = 0, grasp_format: bool = True) -> dict:
     prepare(("train", "ood_o"))
     os.makedirs(out_dir, exist_ok=True)
     rng = np.random.default_rng([seed, 9, 29])
     ctrl, aux, c = [], [], Counter()
     for d in ep_dirs:
-        a, b, k = episode_rows(d, out_dir, split, train, rng, camera_line)
+        a, b, k = episode_rows(d, out_dir, split, train, rng, camera_line, grasp_format)
         ctrl += a
         aux += b
         c.update(k)
