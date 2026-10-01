@@ -30,6 +30,9 @@ while true; do
       if [ -n "$cu" ] && [ "$mx" != "max" ] && [ $(( (mx - cu) / 1073741824 )) -lt ${MEM_FREE_GB:-24} ]; then
         log "lane $t not started: $(( (mx - cu) / 1073741824 )) GiB free < ${MEM_FREE_GB:-24}"; continue
       fi
+      if [ -n "$cu" ] && [ -n "$MEM_USED_MAX_GB" ] && [ $(( cu / 1073741824 )) -ge $MEM_USED_MAX_GB ]; then
+        log "lane $t not started: pod uses $(( cu / 1073741824 )) GiB >= $MEM_USED_MAX_GB"; continue
+      fi
       if [ -n "$p" ]; then log "lane $t (pid $p) not running: restart"; fi
       nohup setsid bash $C/tools/l9/lane.sh $C $g $R $t >> $L/lane_$t.log 2>&1 < /dev/null &
       echo $! > $R/pids/$t
