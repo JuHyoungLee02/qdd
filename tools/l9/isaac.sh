@@ -11,7 +11,7 @@ case "$(hostname)-$G" in
 esac
 L=$Q/logs/l9
 mkdir -p $L $C/tmp
-ENVS="HOME=$Q/home TMPDIR=$C/tmp XDG_CACHE_HOME=$Q/cache HF_HOME=$Q/cache/hf TORCH_HOME=$Q/cache/torch PIP_CACHE_DIR=$Q/cache/pip WARP_CACHE_PATH=$Q/cache/warp MPLCONFIGDIR=$Q/cache/mpl PYTHONPATH=$C PYTHONPYCACHEPREFIX=$Q/cache/pyc_l9 OMP_WAIT_POLICY=PASSIVE OMP_NUM_THREADS=4"
+ENVS="HOME=$Q/home TMPDIR=$C/tmp XDG_CACHE_HOME=$Q/cache HF_HOME=$Q/cache/hf TORCH_HOME=$Q/cache/torch PIP_CACHE_DIR=$Q/cache/pip WARP_CACHE_PATH=$Q/cache/warp MPLCONFIGDIR=$Q/cache/mpl PYTHONPATH=$C PYTHONPYCACHEPREFIX=$Q/cache/pyc_l9 OMP_WAIT_POLICY=PASSIVE OMP_NUM_THREADS=4${L9V2_DEBUG_DIR:+ L9V2_DEBUG_DIR=$L9V2_DEBUG_DIR}"
 cd $Q/ir
 export CUDA_VISIBLE_DEVICES=$G
 echo "START $(date -u +%FT%TZ) host=$(hostname) gpu=$G $MOD $*" >> $L/$TAG.log
