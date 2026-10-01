@@ -41,8 +41,8 @@ ARM_KP, ARM_KD = 400.0, 80.0
 EFFORT_SHOULDER, EFFORT_FOREARM = 87.0, 12.0
 FINGER_KP, FINGER_KD, FINGER_EFFORT = 2.0e3, 1.0e2, 70.0  # Franka Hand continuous grasp force 70 N
 # wrist camera: D405 (as the AI Worker wrists, 424 x 240, hfov 87) beside the hand looking at the finger tips
-WRIST_POS = (0.055, 0.0, 0.03)  # in panda_hand (z = towards the fingers, y = finger axis)
-WRIST_LOOK_AT = (0.0, 0.0, 0.105)
+WRIST_POS = (0.09, 0.0, 0.0)  # in panda_hand (z = towards the fingers, y = finger axis); 5.5 cm saw the hand body (smoke 4)
+WRIST_LOOK_AT = (0.0, 0.0, 0.12)
 WRIST_W, WRIST_H, WRIST_HFOV = 424, 240, 87.0
 HEAD_CLIP, WRIST_CLIP = (0.1, 100.0), (0.03, 100.0)
 H_APERTURE = 20.955  # = FFW_SG2_REAL_cameras.H_APERTURE (only focal / aperture matters)
