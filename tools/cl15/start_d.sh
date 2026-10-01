@@ -26,8 +26,12 @@ if [ -s $R/jobs_base35.txt ] && [ ! -f $R/ALERT_server ]; then
     setsid -f bash $C/tools/cl15/lane.sh $C $G g${G}_base35 http://$IP:$PORT $N > /dev/null 2>&1 < /dev/null
 fi
 sleep 5
-CL15_ROOT=$R CL15_VID=/data/harvest/videos/cl15/astra CL15_CKPT=astra CL15_JOBS=$R/jobs_astra.txt \
-  CL15_EXTRA="--astra low --ledger $LED --cap-krw $CAP" bash $C/tools/cl15/lane.sh $C $G g${G}_astra http://none none
+for k in 1 2; do  # two Astra lanes (claims split the list; the ledger cap covers calls in flight)
+  CL15_ROOT=$R CL15_VID=/data/harvest/videos/cl15/astra CL15_CKPT=astra CL15_JOBS=$R/jobs_astra.txt \
+    CL15_EXTRA="--astra low --ledger $LED --cap-krw $CAP" setsid -f bash $C/tools/cl15/lane.sh $C $G g${G}_astra$k \
+    http://none none > /dev/null 2>&1 < /dev/null
+  sleep 5
+done
 until [ -f $R/DONE ]; do sleep 30; done
 bash $C/tools/teach_35b/stop.sh $N >> $L/lanes.log 2>&1
 $P $C/tools/cl15/compare.py >> $L/lanes.log 2>&1
