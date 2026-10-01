@@ -280,3 +280,9 @@ def test_kind_shares_follow_kind_p():
     k = Counter(E.draw(s, 0, c)["kind"] for s in range(400))
     for kind, p in zip(E.KINDS, E.KIND_P):
         assert abs(k[kind] / 400 - p) < 0.08, k
+
+
+def test_must_see_points_sit_above_the_object_centres():
+    """Objects inside a compartment have their centre under its board (smoke s7 seed 1020580: no pose at all)."""
+    pts = E.must_see([np.array([0.477, -0.37, 0.956])])
+    assert np.allclose(pts[0], [0.477, -0.37, 0.956 + E.WS_LIFT]) and E.WS_LIFT >= 0.04

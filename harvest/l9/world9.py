@@ -627,6 +627,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             if in_room:
                 (x0, x1), (y0, y1) = S9.ZONE
                 zone = ((x0 + 0.05, x1 - 0.05), (y0 + 0.05, y1 - 0.05))
+            ws = E9.must_see(ws)
             return E9.Ctx(look_ws=np.mean(ws, axis=0), robot_pts=robot_pts, ws_pts=ws, boxes=boxes, zone=zone,
                           surface_z=tz)
 

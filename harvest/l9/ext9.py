@@ -357,3 +357,11 @@ def grasp_rot(rec: dict, c1, c2) -> dict:
     deg, b = G.rot_img((c1 + c2) / 2, c, np.asarray(rec["K"], float), np.asarray(rec["R"], float),
                        np.asarray(rec["t"], float))
     return {"rot_deg_img": round(float(deg), 2), "rot_bin_img": int(b)}
+
+
+WS_LIFT = 0.05  # m: workspace must-see points = object centres raised to about their tops (a compartment's object
+# centre lies under its board: from above every camera 'sees' only the board, smoke s7)
+
+
+def must_see(centres) -> list:
+    return [np.asarray(p, float) + np.array([0.0, 0.0, WS_LIFT]) for p in centres]
