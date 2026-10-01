@@ -23,7 +23,7 @@ import numpy as np
 from . import grasp9 as G
 
 STANDOFF = (0.08, 0.14)
-PLACE_DZ = (0.004, 0.02)
+PLACE_DZ = (0.008, 0.025)  # pilot 10-02: placing 4 mm above the surface pushed the object into it (wrist jolts)
 RETREAT = (0.06, 0.12)
 LIFT_DZ = (0.02, 0.05)
 INSTRUCTED_P = 0.20
