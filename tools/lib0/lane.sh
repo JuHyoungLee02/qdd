@@ -5,7 +5,7 @@
 # Stop: touch /data/harvest/out/lib0/STOP (between jobs; the runner also checks it between episodes).
 # usage: lane.sh <code dir> <arm A|Ab|Ac|B|R> <lane name> <jobs file>   log -> /data/harvest/logs/lib0/lanes.log + lane_<name>.log
 C=$1; ARM=$2; LN=$3; J=$4
-O=/data/harvest/out/lib0; V=/data/harvest/videos/lib0; L=/data/harvest/logs/lib0
+O=${LIB0_OUT:-/data/harvest/out/lib0}; V=${LIB0_VID:-/data/harvest/videos/lib0}; L=/data/harvest/logs/$(basename $O)  # E-LIBP: LIB0_OUT / LIB0_VID / LIB0_BENCH=plus
 mkdir -p $O/claims $O/lanes $V $L
 source $C/tools/lib0/env_lib.sh $C
 export LIB0_JOB=lane_$LN

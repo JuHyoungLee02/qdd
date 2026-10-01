@@ -105,7 +105,8 @@ class LiberoWorld:
     def __init__(self, suite: str, task_id: int, depth: bool = True):
         self.suite, self.task_id = suite, int(task_id)
         self.task, self.bddl, self.init_states, _ = task_of(suite, task_id)
-        self.env = make_env(self.bddl, horizon=HORIZON, use_camera_obs=False)  # renders only when observed
+        self.plus = os.environ.get("LIB0_BENCH") == "plus"  # E-LIBP: LIBERO-plus (its wrapper adds image noise in step)
+        self.env = make_env(self.bddl, horizon=HORIZON, use_camera_obs=self.plus)  # LIBERO: renders only when observed
         self.dt = 1.0 / float(self.rs.control_freq)
         self.w_close = W_CLOSE
         self.gap_scale = 1.0  # E-LIB0b: every pad gap the code sees / reports x GAP_SCALE_B (the trained scale)
@@ -201,8 +202,25 @@ class LiberoWorld:
         return {"t": self.t, "tcp": self.to_base(self.obs["robot0_eef_pos"]), "grip_w": self._gap(), "obj": {},
                 "pred": {}}
 
+    def _plus_noise(self, img):
+        """E-LIBP: the LIBERO-plus sensor-noise corruption of this task (env_wrapper.step dispatch, same severity) on our
+        head RGB; depth is not corrupted (LIBERO-plus corrupts only the agentview RGB)."""
+        n = int(getattr(self.env, "noise", 0) or 0)
+        if not (self.plus and n):
+            return img
+        from PIL import Image
+        from libero.libero.envs import env_wrapper as EW
+        pil = Image.fromarray(img)
+        f = [(10, EW.motion_blur, 0), (20, EW.gaussian_blur, 10), (30, EW.zoom_blur, 20), (40, EW.fog, 30),
+             (50, EW.glass_blur, 40)]
+        for top, fn, off in f:
+            if n <= top:
+                return np.asarray(fn(pil, severity=n - off)).astype(np.uint8)[..., :3]
+        return img
+
     def observe(self, depth: bool = False) -> Obs:
         head_rgb, d, s = self.render(HEAD_CAM, HEAD_PX, HEAD_PX, depth=depth, seg=depth)
+        head_rgb = self._plus_noise(head_rgb)
         wr, _, _ = self.render(WRIST_CAM, WRIST_PX, WRIST_PX)
         st = self.status()
         dd = {"head": np.where(s, np.nan, d).astype(np.float32)} if depth else None

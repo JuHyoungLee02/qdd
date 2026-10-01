@@ -6,3 +6,9 @@ export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 NUMBA_NUM_THRE
 export LIBERO_CONFIG_PATH=$R/libero_cfg HOME=/data/harvest/home XDG_CACHE_HOME=$R/cache TMPDIR=/data/harvest/tmp
 export MPLCONFIGDIR=/data/harvest/cache/mpl PYTHONPYCACHEPREFIX=/data/harvest/cache/pyc_lib0 PYTHONPATH=${1:-$PWD}:$R/openpi/third_party/libero
 PY=$R/venv_libero/bin/python
+# E-LIBP: LIBERO-plus instead of LIBERO (LIB0_BENCH=plus): its venv, config and package path
+if [ "${LIB0_BENCH:-}" = plus ]; then
+  export LIBERO_CONFIG_PATH=$R/liberoplus_cfg PYTHONPATH=${1:-$PWD}:$R/LIBERO-plus
+  export MAGICK_HOME=$R/imagick LD_LIBRARY_PATH=$R/mesa24/lib:$R/imagick/lib  # Wand (ImageMagick, conda-forge)
+  PY=$R/venv_liberoplus/bin/python
+fi
