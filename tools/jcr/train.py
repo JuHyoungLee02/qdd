@@ -28,22 +28,24 @@ MODEL_DIR = "/data/harvest/models/Qwen3-VL-4B-Instruct"
 RECOVER_SHARE = 1.0 / 2.5  # recover : progress = 1 : 1.5 inside disturbed episodes
 
 
-def load_data(roots, mode="A"):
+def load_data(roots, mode="A", select=""):
     tr, va = [], []
+    sel = json.load(open(select)) if select else {"exclude_episodes": {}, "exclude_samples": {}}
     for root in roots:
         for sp in sorted(glob.glob(os.path.join(root, "*", "s*", "samples.jsonl"))):
             d = os.path.dirname(sp)
             if os.path.exists(os.path.join(d, "samples_r3.jsonl")):  # change-3 offline relabel (tools/jcr/relabel.py)
                 sp = os.path.join(d, "samples_r3.jsonl")
-            if not os.path.exists(os.path.join(d, "ep.json")):
+            if not os.path.exists(os.path.join(d, "ep.json")) or d in sel["exclude_episodes"]:
                 continue
+            drop_k = set(sel["exclude_samples"].get(d, []))
             ep = json.load(open(os.path.join(d, "ep.json")))
             normal = bool(ep["plan"]["normal"])
             seed = int(ep["seed"])
             old_rule = ep.get("anom_rule", 1) < 2  # rule 1 flagged 'dropped' on holding-predicate flicker
             for line in open(sp):
                 s = json.loads(line)
-                if "img" not in s or s.get("window") == "tail":
+                if "img" not in s or s.get("window") == "tail" or s["k"] in drop_k:
                     continue
                 if old_rule:
                     s["anomaly"] = [k for k in s.get("anomaly", []) if k != "dropped"]
@@ -90,7 +92,7 @@ def cmd_train(a):
     import torch
     torch.manual_seed(a.seed)
     rng = np.random.default_rng(a.seed)
-    tr, va = load_data(a.data, a.envelope)
+    tr, va = load_data(a.data, a.envelope, a.select)
     print(json.dumps({"train": len(tr), "val": len(va), "envelope": a.envelope}), flush=True)
     device = "cuda"
     m, enc = make_model(a, tr, device)
@@ -182,7 +184,7 @@ def auroc(p, y):
 
 def cmd_eval(a):
     from harvest.jcr.model import load
-    _, va = load_data(a.data, a.envelope)
+    _, va = load_data(a.data, a.envelope, a.select)
     m, enc = load(a.ckpt, MODEL_DIR, "cuda")
     res = offline_eval(m, enc, va[:a.max_val] if a.max_val else va, "cuda", mode=a.envelope)
     json.dump(res, open(a.out, "w"), indent=1)
@@ -205,6 +207,7 @@ def main(argv=None):
     ap.add_argument("--save-every", type=int, default=1000)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--envelope", default="A", choices=["A", "B", "C"])
+    ap.add_argument("--select", default="", help="tools/jcr/select_data.py output (validation filter)")
     a = ap.parse_args(argv)
     (cmd_train if a.mode == "train" else cmd_eval)(a)
 

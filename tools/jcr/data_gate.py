@@ -23,6 +23,7 @@ def main(argv=None):
     ap.add_argument("--out", required=True)
     ap.add_argument("--n-sheet", type=int, default=50)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--select", default="", help="tools/jcr/select_data.py output (validation filter)")
     a = ap.parse_args(argv)
     os.makedirs(a.out, exist_ok=True)
     eps, pool = [], []
@@ -32,8 +33,12 @@ def main(argv=None):
     win_dis = {"recover": 0, "progress": 0}
     an = {}
     n_s = 0
+    sel = json.load(open(a.select)) if a.select else {"exclude_episodes": {}, "exclude_samples": {}}
     for ej in sorted(glob.glob(os.path.join(a.data, "*", "s*", "ep.json"))):
         d = os.path.dirname(ej)
+        if d in sel["exclude_episodes"]:
+            continue
+        drop_k = set(sel["exclude_samples"].get(d, []))
         e = json.load(open(ej))
         eps.append(e)
         sp = os.path.join(d, "samples_r3.jsonl")
@@ -43,6 +48,8 @@ def main(argv=None):
         if len(q) > 1:
             dqmax = max(dqmax, float(np.abs(np.diff(q, axis=0)).max()))
         for s in ss:
+            if s["k"] in drop_k:
+                continue
             n_s += 1
             P = np.vstack([s["p_cmd"], s["chunk"]])
             v = np.linalg.norm(np.diff(P, axis=0), axis=1) / DT
