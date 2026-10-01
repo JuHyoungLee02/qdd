@@ -88,6 +88,9 @@ def from_alloc(alloc: dict, holdout=()) -> dict:
            "instructed_share_planned": V2.INSTRUCTED_SHARE,
            "holdout": {"defs": sorted(holdout), "episodes": sum(per[k] for k in holdout)}}
     rep.update(_planned(per))
+    nat = V2.natural_expected(alloc)  # natural_v1 grasp family / part expected from the catalog (class-balanced)
+    rep["natural_expected"] = {"overall": {k: round(v, 4) for k, v in nat["overall"].items()}, "parts": nat["parts"],
+                               "per_def": nat["per_def"]}
     return rep
 
 

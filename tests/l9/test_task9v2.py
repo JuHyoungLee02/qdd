@@ -95,6 +95,25 @@ def test_recovery_candidate_every_definition_share():
     assert p["step"] in (0, 1) and p["kind"] in ("off_target", "tilted") and p["teach"] is False
 
 
+def test_balanced_pick_by_natural_class():
+    # owner 10-02 03h (natural_v1): movers drawn class-balanced so natural grasps vary (side body / top body / ...)
+    pool = {f"b{i}": {"l9cat": "bottle", "name": "bottle", "height": 0.09} for i in range(30)}
+    pool.update({f"t{i}": {"l9cat": "toy", "name": "toy", "height": 0.09} for i in range(3)})
+    rng = np.random.default_rng(0)
+    got = Counter(V2.balanced_pick(sorted(pool), pool, rng)[0] for _ in range(600))
+    assert 0.35 <= got["t"] / 600 <= 0.65  # uniform over classes, not over objects (3 / 33 otherwise)
+    assert V2.natural_class(pool["b0"]) == ("side", "body") and V2.natural_class(pool["t0"]) == ("oblique", "body")
+    assert V2.natural_class({"l9cat": "vegetable", "name": "potato", "height": 0.08})[1] == "body"  # not pot / rim
+
+
+def test_natural_expected_distribution():
+    al = AL.allocate({k: V2.DEFS_V2[k].family for k in ("rel_left", "sel_can_bin", "tall_left_of", "set_food_on_plate")},
+                     total=400, min_per_def=60)
+    nat = V2.natural_expected(al)
+    assert abs(sum(nat["overall"].values()) - 1.0) < 1e-6
+    assert nat["overall"].get("top", 0) <= 0.5 and nat["per_def"]["sel_can_bin"]["side"] > 0.9
+
+
 def test_templates_fill_without_missing_keys():
     for k, d in V2.DEFS_V2.items():
         keys = set(d.objs) | set(d.dst)

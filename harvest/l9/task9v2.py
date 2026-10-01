@@ -1098,6 +1098,84 @@ def spec_ok(r: dict, spec: dict, oname: str, defn: TaskDef, grip_max=None) -> bo
     return True
 
 
+def category_word(r: dict) -> str:
+    """The catalog category (l9cat); the object name only for l9cat 'other'. grasp9.natural_order matches substrings,
+    so names alone mislead ('potato' -> pot / rim, 'pancake' -> pan, 'solid' -> lid)."""
+    c = r.get("l9cat") or ""
+    return c if c and c != "other" else str(r.get("name") or "")
+
+
+def natural_class(r: dict) -> tuple:
+    """The object's first natural (approach family, part) under grasp9.natural_order (natural_v1, owner 10-02)."""
+    from . import grasp9 as G9
+    return tuple(G9.natural_order(category_word(r), float(r.get("height") or 0.0))[0])
+
+
+def balanced_pick(cand: list, pool: dict, rng) -> str:
+    """v2 mover / object draw: a natural approach family uniformly, then a (family, part) class, then an object of that
+    class, all uniform (easy classes do not dominate, top stays <= 1/2 when two or more families are present; spec
+    §12.11 principle 2, natural_v1 gate top <= 50 %)."""
+    by = {}
+    for k in cand:
+        c = natural_class(pool[k])
+        by.setdefault(c[0], {}).setdefault(c, []).append(k)
+    fams = sorted(by)
+    cls = by[fams[int(rng.integers(len(fams)))]]
+    keys = sorted(cls)
+    ks = cls[keys[int(rng.integers(len(keys)))]]
+    return ks[int(rng.integers(len(ks)))]
+
+
+def _spec_rows(spec: dict, cat: dict) -> list:
+    """Catalog rows a definition object spec may draw (scene-free approximation for planning reports)."""
+    out = []
+    for r in cat.values():
+        if spec.get("hollow"):
+            if not hollow_ok(r, spec):
+                continue
+        elif r.get("role9") != "target":
+            continue
+        if spec.get("cats") and r.get("l9cat") not in spec["cats"]:
+            continue
+        if spec.get("slender") and not T9.is_slender(r):
+            continue
+        if spec.get("role") == "base" and not T9.flat_top(r):
+            continue
+        if (spec.get("tall") and not is_tall(r)) or (spec.get("lie_ok") and not can_lie(r)) or \
+                (spec.get("lean_ok") and not can_lean(r)) or (spec.get("orientable") and not is_orientable(r)):
+            continue
+        out.append(r)
+    return out
+
+
+def natural_expected(alloc: dict) -> dict:
+    """Expected natural grasp family / part shares per definition (movers drawn class-balanced) and overall
+    (episode- and step-weighted): {per_def: {id: {family: share}}, overall: {family: share}, parts: {part: share}}."""
+    from collections import Counter
+
+    from . import assets9 as A9
+    cat = A9.catalog()
+    per, tot, parts = {}, Counter(), Counter()
+    for k, v in alloc.items():
+        d = DEFS_V2[k]
+        n = sum(v.values())
+        fam = Counter()
+        for a, _ in d.steps:
+            classes = sorted({natural_class(r) for r in _spec_rows(d.objs[a], cat)})
+            fams = sorted({c[0] for c in classes})
+            for c in classes:  # family uniform, class uniform within its family (= balanced_pick)
+                w = 1.0 / len(fams) / sum(1 for x in classes if x[0] == c[0])
+                fam[c[0]] += w / len(d.steps)
+                parts[c[1]] += n * w / len(d.steps)
+        per[k] = {f: round(s, 4) for f, s in fam.items()}
+        for f, s in fam.items():
+            tot[f] += s * n
+    z = sum(tot.values()) or 1.0
+    zp = sum(parts.values()) or 1.0
+    return {"per_def": per, "overall": {f: s / z for f, s in tot.items()},
+            "parts": {p: round(s / zp, 4) for p, s in parts.items()}}
+
+
 def blocked_above(node: dict | None) -> bool:
     if not node:
         return False

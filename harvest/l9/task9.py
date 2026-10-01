@@ -815,7 +815,7 @@ def _try(defn, scene, pool, rng, rm, fixed=None, grip_max=None, v2=False, seed=0
                 cand.append(k)
         if not cand:
             raise Fail(f"no pool object for {oname}")
-        k = cand[int(rng.integers(len(cand)))]
+        k = V2.balanced_pick(cand, pool, rng) if v2 else cand[int(rng.integers(len(cand)))]  # v2: natural classes
         chosen[oname] = k
         names_used.add(name_of(pool[k]))
         return k
