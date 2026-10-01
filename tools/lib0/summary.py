@@ -16,7 +16,7 @@ import numpy as np
 
 SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
 SHORT = {"libero_spatial": "Spatial", "libero_object": "Object", "libero_goal": "Goal", "libero_10": "Long"}
-ARMS = ("A", "Ab", "Ac", "B", "R")
+ARMS = ("A", "Ab", "Ac", "B", "R", "P0", "PF")
 
 
 def wilson(k: int, n: int, z: float = 1.96):
@@ -97,14 +97,14 @@ def main(root: str = "/data/harvest/out/lib0"):
             return "-"
         return f"{d['k']}/{d['n']} = {d['rate'] * 100:.0f} % [{d['wilson'][0] * 100:.0f}–{d['wilson'][1] * 100:.0f}]"
     md = ["# E-LIB0 결과 (시범, 보고 전용)", "",
-          "| 묶음 | A 본 35B ep2.5 (무학습) | Ab = A + 어댑터 고침 (E-LIB0b) | Ac = Ab + 테두리 잡기 (E-LIB0c) | B π0.5 base (무학습) | A − B (짝, 과제 부트스트랩) | 참고 R π0.5-LIBERO (LIBERO 미세조정) | A, openpi 걸음 예산 안 |",
-          "|---|---|---|---|---|---|---|---|"]
+          "| 묶음 | A 본 35B ep2.5 (무학습) | Ab = A + 어댑터 고침 (E-LIB0b) | Ac = Ab + 테두리 잡기 (E-LIB0c) | B π0.5 base (무학습) | A − B (짝, 과제 부트스트랩) | 참고 R π0.5-LIBERO (LIBERO 미세조정) | 참고 P0 π0-LIBERO | 참고 PF π0-FAST-LIBERO | A, openpi 걸음 예산 안 |",
+          "|---|---|---|---|---|---|---|---|---|---|"]
     for s in SUITES + ("all",):
         p = P[s]
         pd = "-" if not p.get("n") else f"{p['diff_pp']:+.1f} %p [{p['ci_pp'][0]:+.1f}, {p['ci_pp'][1]:+.1f}] {p['label']}"
         ib = S[f"A|{s}"].get("in_budget") or {}
         ibs = "-" if ib.get("rate") is None else f"{ib['k']} ({ib['rate'] * 100:.0f} %)"
-        md.append(f"| {SHORT.get(s, '전체')} | {cell('A', s)} | {cell('Ab', s)} | {cell('Ac', s)} | {cell('B', s)} | {pd} | {cell('R', s)} | {ibs} |")
+        md.append(f"| {SHORT.get(s, '전체')} | {cell('A', s)} | {cell('Ab', s)} | {cell('Ac', s)} | {cell('B', s)} | {pd} | {cell('R', s)} | {cell('P0', s)} | {cell('PF', s)} | {ibs} |")
     md += ["", "## 실패 유형 (상위)"]
     for arm in ARMS:
         md.append(f"- {arm}: " + ", ".join(f"{k} {v}" for k, v in F[arm][:5]))

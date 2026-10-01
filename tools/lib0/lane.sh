@@ -23,7 +23,7 @@ while IFS=$'\t' read -r -u 3 SUITE TASK KS; do
     nice -n 10 timeout 10800 $PY -m harvest.lib0.run_a --suite $SUITE --task $TASK --ks $KS --qwen-url $LIB0_QURL \
       --qwen-name lib0_ep2_5 --out $O --vid-root $V --arm $ARM $FB --stop-files $O/STOP >> $L/lane_$LN.log 2>&1 < /dev/null
   else
-    P=8702; [ $ARM = R ] && P=8701
+    P=8702; [ $ARM = R ] && P=8701; P=${LIB0_PIPORT:-$P}  # E-LIB1 arms P0 / PF set LIB0_PIPORT
     nice -n 10 timeout 10800 $PY -m harvest.lib0.run_pi --suite $SUITE --task $TASK --ks $KS --host $LIB0_PIHOST --port $P \
       --arm $ARM --out $O --vid-root $V --stop-files $O/STOP >> $L/lane_$LN.log 2>&1 < /dev/null
   fi
