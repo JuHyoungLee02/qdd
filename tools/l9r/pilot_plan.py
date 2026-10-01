@@ -1,8 +1,9 @@
 """L9R pilot plan (pure; pod with the venv python): rows for the AI Worker head-camera pilot (hcam rand, both arms)
 and the Franka pilot (right arm), cut from the production plan (same definition / family / rule / pool / rooms
 combinations, new seeds so no production episode is repeated).
-usage: python tools/l9r/pilot_plan.py <prod plan.json> <out dir> [--ffw-defs 15] [--franka-defs 20] [--n 10]
-       [--smoke]   (smoke: 2 FFW rand rows + 2 Franka rows)
+usage: python tools/l9r/pilot_plan.py <prod plan.json> <out dir> [--ffw-defs=15] [--franka-defs=20] [--n=10]
+       [--smoke [--smoke-defs=a,b]]   (smoke: 2 FFW rand rows + 2 Franka rows)
+       [--eval --defs-ffw=a,b,.. --defs-franka=c,d,.. [--n-eval=300]]  (E-HCAM8 hold-out sets ii-a / ii-b / L9 std)
 -> <out dir>/plan.json, <out dir>/jobs.txt ("--plan P --job J" per job, 10 rows a job, one arm / robot each)"""
 import json
 import os
@@ -11,6 +12,7 @@ import sys
 from collections import defaultdict
 
 SEED_OFFSET = 70_000_000  # pilot seeds: production seed + offset (production seeds are < 2e6)
+EVAL_OFFSET = 8_000_000  # E-HCAM8 hold-out seeds 9e6+ (production seeds 1.0-1.3e6)
 
 
 def pick_defs(rows, k, rng):
@@ -32,7 +34,7 @@ def pick_defs(rows, k, rng):
     return out
 
 
-def rows_for(prod, defs, n, arms, robot, hcam, rng, tag):
+def rows_for(prod, defs, n, arms, robot, hcam, rng, tag, offset=SEED_OFFSET):
     out = []
     for d in defs:
         cand = [r for r in prod if r["def"] == d and r["arm"] in arms]
@@ -43,7 +45,7 @@ def rows_for(prod, defs, n, arms, robot, hcam, rng, tag):
             if per_arm[a] >= (n + len(arms) - 1) // len(arms) or sum(per_arm.values()) >= n:
                 continue
             per_arm[a] += 1
-            row = dict(r, seed=int(r["seed"]) + SEED_OFFSET, robot=robot)
+            row = dict(r, seed=int(r["seed"]) + offset, robot=robot)
             if hcam:
                 row["hcam"] = hcam
             out.append(row)
@@ -67,7 +69,15 @@ def main():
     os.makedirs(out_dir, exist_ok=True)
     rng = random.Random(20261001)
     n = int(opt.get("--n", 10))
-    if "--smoke" in sys.argv:
+    if "--eval" in sys.argv:  # prereg_hcam8 §4: hold-out seeds (9e6 + production seed), defs given
+        fd, kd = opt["--defs-ffw"].split(","), opt["--defs-franka"].split(",")
+        ne = int(opt.get("--n-eval", 300))
+        per_f, per_k = -(-ne // len(fd)), -(-ne // len(kd))
+        f_rows, f_jobs = rows_for(prod, fd, per_f, ("right", "left"), "ffw_sg2", "hold", rng, "ea", EVAL_OFFSET)
+        k_rows, k_jobs = rows_for(prod, kd, per_k, ("right",), "franka_mast", None, rng, "eb", EVAL_OFFSET)
+        s_rows, s_jobs = rows_for(prod, fd, per_f, ("right", "left"), "ffw_sg2", None, rng, "ec", EVAL_OFFSET + 1)
+        f_rows, f_jobs = f_rows + s_rows, f_jobs + s_jobs
+    elif "--smoke" in sys.argv:
         defs = opt["--smoke-defs"].split(",") if "--smoke-defs" in opt else pick_defs(prod, 2, rng)
         f_rows, f_jobs = rows_for(prod, defs[:1], 2, ("right",), "ffw_sg2", "rand", rng, "sf")
         k_rows, k_jobs = rows_for(prod, defs[1:2], 2, ("right",), "franka_mast", None, rng, "sk")
