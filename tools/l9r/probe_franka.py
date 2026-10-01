@@ -41,10 +41,22 @@ def main():
             env.step(np.concatenate([qd, [0.08]]))
         rep["reach_err_mm"] = round(float(np.linalg.norm(pl.tcp_pose()[0] - goal)) * 1e3, 1)
         rep["ee_quat_after"] = np.round(env.ee_pose()[1], 4).tolist()
-        for w in (0.08, 0.04, 0.0):
-            for _ in range(20):
+        d = env.robot.data
+        fid = [env.robot.joint_names.index(n) for n in R9.FINGERS]
+        for w in (0.08, 0.04, 0.0, 0.08):
+            for _ in range(40):
                 env.step(np.concatenate([env.arm_q(), [w]]))
-            rep[f"width_cmd_{w}"] = round(env.gripper_width(), 4)
+            rep[f"width_cmd_{w}"] = [round(env.gripper_width(), 4), d.joint_pos[0, fid].cpu().numpy().round(4).tolist(),
+                                     d.joint_pos_target[0, fid].cpu().numpy().round(4).tolist(),
+                                     d.applied_torque[0, fid].cpu().numpy().round(2).tolist()]
+        for k in ("joint_vel_limits", "joint_effort_limits", "joint_armature", "joint_friction_coeff", "joint_damping"):
+            if hasattr(d, k):
+                rep[k] = getattr(d, k)[0].cpu().numpy().round(4).tolist()
+        mim = []
+        for p in Usd.PrimRange(stage.GetPrimAtPath("/World/envs/env_0/Robot")):
+            if any("Mimic" in s for s in p.GetAppliedSchemas()):
+                mim.append([str(p.GetPath()), list(p.GetAppliedSchemas())])
+        rep["mimic"] = mim
     except Exception as ex:  # noqa: BLE001
         rep["planner_error"] = repr(ex)
     env.env.sim.render()

@@ -72,6 +72,9 @@ def franka_urdf_text(src: str, mesh_root: str) -> str:
     out, n = re.subn(r'<link name="panda_link8"\s*/>', f'<link name="panda_link8">{tiny}</link>', out)
     if n != 1:
         raise ValueError("panda_link8 not found as an empty link")
+    # the importer keeps <mimic> as a PhysX mimic constraint even with convert_mimic_joints_to_normal_joints (probe2:
+    # finger 2 held at -q1 against its drive, pad gap 9 mm when 80 mm was commanded): both fingers are driven instead
+    out = re.sub(r"\s*<mimic[^>]*/>", "", out)
     ee = (f'  <link name="{EE_BODY}">{tiny}</link>\n'
           f'  <joint name="{EE_BODY}_joint" type="fixed"><parent link="panda_hand"/><child link="{EE_BODY}"/>'
           f'<origin rpy="{math.pi:.9f} 0 0" xyz="0 0 0"/></joint>\n</robot>')
@@ -80,10 +83,12 @@ def franka_urdf_text(src: str, mesh_root: str) -> str:
 
 
 def ensure_franka_urdf(src_dir: str = FRANKA_SRC, dst_dir: str = FRANKA_DIR) -> str:
-    """(pod) Write the modified URDF once; -> its path."""
+    """(pod) Write the modified URDF once, named by its content hash (a changed URDF gets its own converted USD);
+    -> its path."""
+    import hashlib
     os.makedirs(dst_dir, exist_ok=True)
-    dst = os.path.join(dst_dir, FRANKA_URDF)
     txt = franka_urdf_text(open(os.path.join(src_dir, "robots", "panda_arm_hand.urdf")).read(), src_dir)
+    dst = os.path.join(dst_dir, FRANKA_URDF.replace(".urdf", f"_{hashlib.sha256(txt.encode()).hexdigest()[:8]}.urdf"))
     if not os.path.exists(dst) or open(dst).read() != txt:
         tmp = dst + f".tmp{os.getpid()}"
         open(tmp, "w").write(txt)
@@ -100,7 +105,8 @@ def franka_robot_cfg():
     from isaaclab.sim.converters import UrdfConverterCfg
     path = ensure_franka_urdf()
     spawn = sim_utils.UrdfFileCfg(
-        asset_path=path, usd_dir=os.path.join(FRANKA_DIR, "usd"), force_usd_conversion=False, fix_base=True,
+        asset_path=path, usd_dir=os.path.join(FRANKA_DIR, "usd_" + os.path.basename(path)[:-5]), force_usd_conversion=False,
+        fix_base=True,
         merge_fixed_joints=False, convert_mimic_joints_to_normal_joints=True, make_instanceable=False,
         joint_drive=UrdfConverterCfg.JointDriveCfg(gains=UrdfConverterCfg.JointDriveCfg.PDGainsCfg(
             stiffness=ARM_KP, damping=ARM_KD)),

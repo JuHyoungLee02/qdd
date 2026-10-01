@@ -12,6 +12,9 @@ URDF = """<?xml version="1.0" ?>
   <link name="panda_link8"/>
   <joint name="panda_joint8" type="fixed"><parent link="panda_link7"/><child link="panda_link8"/></joint>
   <link name="panda_hand"/>
+  <joint name="panda_finger_joint2" type="prismatic"><parent link="panda_hand"/><child link="f2"/>
+    <mimic joint="panda_finger_joint1"/>
+  </joint>
 </robot>
 """
 
@@ -21,6 +24,7 @@ def test_urdf_text_adds_ee_frame_and_absolute_meshes():
     assert "package://" not in t and "/isaac/franka_description/meshes/visual/link7.dae" in t
     assert '<link name="panda_link8"><inertial>' in t
     assert f'<link name="{R9.EE_BODY}">' in t and f'<child link="{R9.EE_BODY}"/>' in t
+    assert "<mimic" not in t
     assert 'rpy="3.141592654 0 0"' in t and t.rstrip().endswith("</robot>") and t.count("</robot>") == 1
     with pytest.raises(ValueError):
         R9.franka_urdf_text("<robot></robot>", "/x")

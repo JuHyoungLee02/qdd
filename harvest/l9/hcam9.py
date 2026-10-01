@@ -182,11 +182,12 @@ def ffw_pose(R0, t0, d: dict) -> tuple:
     return R, t
 
 
-def line(cam: dict, surface_z: float, source: str) -> str:
-    """The prereg §2 `camera:` text line from a cams.json head entry (W, H, fx, fy, cx, cy, R, t; R = optical
-    base_from_optical as recorded) and the work-surface height."""
+def line(cam: dict, source: str) -> str:
+    """The prereg §2 `camera:` text line (change 1) from a cams.json head entry (W, H, fx, fy, cx, cy, R, t; R =
+    optical base_from_optical as recorded): intrinsics, height above the floor (robot-frame z = 0), pitch, pan -- what
+    the robot knows at run time from camera_info and its joints; never the work-surface height (d-min hides it)."""
     from_opt = np.asarray(cam["R"], float) @ np.array([[0.0, 0.0, 1.0], [-1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]).T
-    r = realized(from_opt, cam["t"], surface_z)
+    r = realized(from_opt, cam["t"], 0.0)
     return (f"camera: head, {int(cam['W'])}x{int(cam['H'])} px, fx {round(cam['fx'])} fy {round(cam['fy'])} "
-            f"cx {round(cam['cx'])} cy {round(cam['cy'])}, {r['height_above_surface_m']:.2f} m above the work surface, "
+            f"cx {round(cam['cx'])} cy {round(cam['cy'])}, {r['height_floor_m']:.2f} m above the floor, "
             f"pitch {round(r['pitch_deg'])} deg down, pan {round(r['pan_deg'])} deg; source: {source}")

@@ -99,6 +99,6 @@ def test_camera_line_from_cams_json():
     Rwc = HC.look_R(45.0, -2.0)
     cam = {"W": 672, "H": 376, "fx": 367.0, "fy": 367.0, "cx": 336.0, "cy": 188.0,
            "R": (Rwc @ M).tolist(), "t": [0.05, 0.0, 1.34]}
-    s = HC.line(cam, 0.85, "l9/ffw_sg2")
-    assert s == ("camera: head, 672x376 px, fx 367 fy 367 cx 336 cy 188, 0.49 m above the work surface, "
+    s = HC.line(cam, "l9/ffw_sg2")
+    assert s == ("camera: head, 672x376 px, fx 367 fy 367 cx 336 cy 188, 1.34 m above the floor, "
                  "pitch 45 deg down, pan -2 deg; source: l9/ffw_sg2")

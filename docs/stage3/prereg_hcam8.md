@@ -78,3 +78,9 @@
 - 금지: heredoc·`python -`·`python -c`, 유료 호출. 모든 파일은 `/data`. 끝나면 카드 반납, events.log 기록.
 
 ## 변경 기록
+
+- **변경 1 (2026-10-01 23시대 KST, 데이터 생성·학습 전)**: `camera:` 줄의 높이는 '작업면 위'가 아니라 **'바닥 위'(로봇 좌표 z = 0)**로 한다.
+  - 이유: d-min 요청은 탁자 높이를 일부러 주지 않는다("The table height is not given", E-STRIP8). 작업면 위 높이를 적으면 탁자 높이가 새어 나가고, 런타임의 로봇은 작업면 높이를 모른다(camera_info + 관절로 아는 것은 바닥·기저 기준 높이뿐).
+  - 형식: `camera: head, 672x376 px, fx 367 fy 367 cx 336 cy 188, 1.34 m above the floor, pitch 45 deg down, pan -2 deg; source: l9/ffw_sg2` (`harvest/l9/hcam9.line`).
+  - 위치: d-min 요청의 `CAMERAS (directions are unit vectors in the robot frame)` 머리줄 바로 다음, `- Image 1:` 줄 앞.
+  - 무작위화 범위(작업면 위 0.35–0.80 m 등)는 데이터 생성 기준이라 그대로 둔다.
