@@ -68,7 +68,7 @@ def main():
     rng = random.Random(20261001)
     n = int(opt.get("--n", 10))
     if "--smoke" in sys.argv:
-        defs = pick_defs(prod, 2, rng)
+        defs = opt["--smoke-defs"].split(",") if "--smoke-defs" in opt else pick_defs(prod, 2, rng)
         f_rows, f_jobs = rows_for(prod, defs[:1], 2, ("right",), "ffw_sg2", "rand", rng, "sf")
         k_rows, k_jobs = rows_for(prod, defs[1:2], 2, ("right",), "franka_mast", None, rng, "sk")
     else:

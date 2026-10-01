@@ -29,9 +29,11 @@ H_HOLD = ((0.25, 0.35), (0.80, 0.90))
 PITCH_HOLD = ((22.0, 30.0), (62.0, 68.0))
 HFOV_HOLD = ((55.0, 65.0), (95.0, 105.0))
 
-# Franka head camera mast (spec §9.2): default and per-episode ranges, in the panda_link0 frame (x forward)
-MAST_DEFAULT = {"x": -0.15, "y": 0.0, "h": 0.55, "pitch": 45.0, "pan": 0.0}
-MAST_RANGE = {"x": (-0.25, -0.05), "y": (-0.05, 0.05), "h": (0.45, 0.70), "pitch": (38.0, 55.0), "pan": (-10.0, 10.0)}
+# Franka head camera mast (spec §9.2, rev. smoke 2): default and per-episode ranges, in the panda_link0 frame
+# (x forward, y left). Like a humanoid head between the shoulders: the mast stands 0.23 m to the arm's left (the
+# AI Worker head is at y 0, its right shoulder at y -0.23); behind the base the elbow filled the view (smoke 2).
+MAST_DEFAULT = {"x": -0.10, "y": 0.23, "h": 0.55, "pitch": 45.0, "pan": -10.0}
+MAST_RANGE = {"x": (-0.20, 0.0), "y": (0.15, 0.30), "h": (0.45, 0.70), "pitch": (38.0, 55.0), "pan": (-20.0, 0.0)}
 D435_HFOV = 69.0  # Intel RealSense D435 colour, horizontal (datasheet 69 x 42 deg)
 TRIES = 5
 

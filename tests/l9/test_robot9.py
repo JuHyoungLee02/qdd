@@ -47,8 +47,8 @@ def test_wrist_mount_looks_at_the_finger_tips():
 
 def test_head_mount_default_is_the_spec_default():
     pos, q = R9.head_mount_default()
-    assert pos == pytest.approx((-0.15, 0.0, 0.61))
-    assert HC.pitch_pan(HC.quat_to_R(q)) == pytest.approx((45.0, 0.0))
+    assert pos == pytest.approx((-0.10, 0.23, 0.61))
+    assert HC.pitch_pan(HC.quat_to_R(q)) == pytest.approx((45.0, -10.0))
 
 
 def test_prompt_swaps_hit_every_request_once():

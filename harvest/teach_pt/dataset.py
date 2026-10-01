@@ -49,7 +49,9 @@ XY_TAIL = '\nReturn JSON only: {"xy": [x, y]} in metres.'
 def _check(seed: int, split: str):
     from ..teach_l8.collect import DEV_SEEDS, TRAIN_SEEDS
     from .collect import OOD_D_SEEDS
-    if split == "x_val_l8s":  # E-C35 validation: episodes held out of the L8S training seeds (never G / OOD seeds)
+    if split.startswith("l9"):  # L9 generator episodes (prereg_hcam8): production 1e6+, pilots / hold-outs < 1e8
+        ok = range(1_000_000, 100_000_000)
+    elif split == "x_val_l8s":  # E-C35 validation: episodes held out of the L8S training seeds (never G / OOD seeds)
         ok = range(30000, 70000)
     elif split.startswith("x_"):  # L8-X evaluation sets (L8D): dev_x 34800-34999, protected OOD 70000-70999
         ok = range(34800, 35000) if split == "x_dev" else range(70000, 71000)
@@ -68,7 +70,10 @@ def load_rows(ep_dir: str, split: str) -> list:
         if x["drop"] is not None:
             continue
         c = os.path.join(ep_dir, "calls", f"c{x['call']:03d}")
-        rows.append(dict(x, id=f"{vdir}_{x['task']}_s{x['seed']}_c{x['call']:03d}",
+        rid = f"{vdir}_{x['task']}_s{x['seed']}_c{x['call']:03d}"
+        if split.startswith("l9"):  # every L9 episode has task l9_task: the folder (def_seed_arm[_robot]) names it
+            rid = f"l9_{os.path.basename(ep_dir)}_c{x['call']:03d}"
+        rows.append(dict(x, id=rid,
                          episode=os.path.basename(ep_dir) + "_" + vdir, call_dir=c, vdir=vdir,
                          depth_path=os.path.join(c, "head_depth.npz"), cams_path=os.path.join(c, "cams.json")))
     return rows
