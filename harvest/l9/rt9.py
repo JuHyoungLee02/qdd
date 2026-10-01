@@ -194,6 +194,12 @@ class Runtime:
     def arm_q(self) -> np.ndarray:
         return self.w.env.robot.data.joint_pos[0, self.sim_ids].cpu().numpy().astype(float)
 
+    def plan_start(self) -> np.ndarray:
+        """The measured arm state clipped 0.04 rad inside the sim range: cuRobo refuses a start state on a limit
+        (smoke 10-02: the L9 preroll pose has arm_r_joint7 = 1.82 = its upper limit -> 'Start or End state in
+        collision' for every plan)."""
+        return np.clip(self.arm_q(), self.q_lo + 0.03, self.q_hi - 0.03)
+
     def T_world_base(self) -> np.ndarray:
         d = self.w.env.robot.data
         return T_of(d.body_pos_w[0, self.base_idx].cpu().numpy(), d.body_quat_w[0, self.base_idx].cpu().numpy())
@@ -327,6 +333,7 @@ class Runtime:
                        cam=cam, depth=depth, allow_instruct=(len(self.picks) == 0 and not self.regrasp_n),
                        parts=parts, category=cat, height=2 * float(he[2]))
         if gc is not None:
+            self._exec_pose(gc)
             gc.meta.update(obj=k, tested=bool(C.get("tested", False)), n_candidates=int(len(C["w"])),
                            n_valid=int(ok.sum()), curobo=self.curobo, grip=self.grip)
             self._Cw, self._ok, self._margin = Cw, ok, margin
@@ -349,6 +356,25 @@ class Runtime:
                 T.TASKS[name] = dataclasses.replace(t, instruction=t.instruction + self.instruction_suffix)
                 if name in getattr(T, "X_TASKS", {}):
                     T.X_TASKS[name] = T.TASKS[name]
+
+    def _exec_pose(self, gc) -> None:
+        """Commanded TCP = the candidate frame moved back along the approach by the pad drop at the contact width:
+        the RH-P12-RN pads move on an arc and sit up to 2.8 cm further along the approach when closed (L9v2-GTEST
+        finger probe, gtest9.exec_pose); the Isaac test uses the same correction, so execution matches the test."""
+        try:
+            from . import gtest9 as GT
+        except ImportError:
+            return
+        f = getattr(GT, "exec_pose", None)
+        if f is None:
+            return
+        T0 = gc.T.copy()
+        try:
+            gc.T = np.asarray(f(T0, gc.w, self.grip), float)
+        except TypeError:
+            gc.T = np.asarray(f(T0, gc.w, self.grip, None), float)
+        gc.meta["pad_drop_m"] = round(float(np.linalg.norm(gc.T[:3, 3] - T0[:3, 3])), 4)
+        gc.meta["grasp_cmd_world"] = np.round(gc.T, 5).tolist()
 
     def next_fallback(self, gc):
         """Fallback order (spec §12.8): same family rot +-1, +-2 bins -> neighbour families -> None."""
@@ -425,7 +451,7 @@ class Runtime:
         tg = (self.choice_key or (None,))[0]
         st = self.w.status()
         hold = tg is not None and st["pred"].get(f"holding({tg})") is True
-        q0 = self.arm_q()
+        q0 = self.plan_start()
         width = None
         note = None
         if step == "above_target" and gc is not None:
