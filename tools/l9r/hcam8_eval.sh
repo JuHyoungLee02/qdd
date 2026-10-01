@@ -11,13 +11,14 @@ log() { echo "$(date -u +%FT%TZ) eval gpu$G $*" >> $L/hcam8.log; }
 for A in "$@"; do
   until grep -q "TRAIN_DONE $A " $L/hcam8.log; do [ -f $O/STOP_EVAL ] && exit 0; sleep 120; done
   [ -f $O/eval/$A/EVAL_DONE ] && continue
-  # the card must be empty (a training worker may have taken the next queue job on it)
+  # card lock (shared with hcam8_worker.sh) and an empty card
+  exec 9> $O/card_$G.lock; flock 9
   until [ "$(nvidia-smi -i $G --query-gpu=memory.used --format=csv,noheader,nounits | tr -d ' ')" -lt 2000 ]; do
     [ -f $O/STOP_EVAL ] && exit 0; sleep 120; done
   N=hc8_${A}_srv
   setsid nohup bash $C/tools/teach_pt/vllm.sh $G $O/merged_$A $N $PORT 0.60 < /dev/null > /dev/null 2>&1 &
   UP=0; for i in $(seq 1 90); do curl -s 127.0.0.1:$PORT/v1/models | grep -q $N && { UP=1; break; }; sleep 10; done
-  [ $UP = 0 ] && { log "VLLM_FAIL $A"; bash $C/tools/teach_pt/stop.sh $N >> $L/hcam8.log 2>&1; continue; }
+  [ $UP = 0 ] && { log "VLLM_FAIL $A"; bash $C/tools/teach_pt/stop.sh $N >> $L/hcam8.log 2>&1; flock -u 9; exec 9>&-; continue; }
   SUF=""; case "$A" in H1*) SUF="_cam";; esac
   G_DATA=$OP/g_eval.jsonl; [ -n "$SUF" ] && [ -f $O/data_eval/g_eval$SUF.jsonl ] && G_DATA=$O/data_eval/g_eval$SUF.jsonl
   bash $C/tools/teach_pt/py.sh vllm - geval_hc8_$A $C tools/teach_pt/geval.py --data $G_DATA --url http://127.0.0.1:$PORT \
@@ -34,4 +35,5 @@ for A in "$@"; do
   bash $C/tools/teach_pt/stop.sh $N >> $L/hcam8.log 2>&1
   mkdir -p $O/eval/$A && touch $O/eval/$A/EVAL_DONE
   log "EVAL_DONE $A"
+  flock -u 9; exec 9>&-
 done

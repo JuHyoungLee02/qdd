@@ -15,13 +15,23 @@ while true; do
   set -- $JOB; ARM=$1; SEED=$2; A=${ARM}_s$SEED
   S=$(grep "^$ARM " $O/steps.txt | tail -n 1 | cut -d' ' -f2)
   [ -z "$S" ] && { log "NO_STEPS $A"; continue; }
+  # card lock shared with hcam8_eval.sh: a vLLM eval server and a training run never share a card (H0_s3,
+  # 10-01 20:14Z: training started on GPU1 while the s1 eval server was loading there -> CUDA OOM)
+  exec 9> $O/card_$G.lock; flock 9
   log "START $A steps=$S"
   RES=""; [ -d $O/run_$A/state ] && RES="--resume"
   bash $C/tools/teach_pt/py.sh train $G train_hc8_$A $C harvest.teach_l8.train --data $O/train_$ARM.jsonl --out $O/run_$A \
     --epochs 3 --max-steps $S --micro 8 --accum 2 --log-every 10 --save-every 200 --seed $SEED $RES
   E=$(ls -d $O/run_$A/epoch* 2>/dev/null | sort -V | tail -1)
-  [ -z "$E" ] && { log "TRAIN_FAIL $A"; continue; }
+  if [ -z "$E" ]; then
+    log "TRAIN_FAIL $A"
+    if ! grep -q "RETRY $A" $L/hcam8.log; then  # one automatic retry at the end of the queue
+      flock $O/queue.lock bash -c "echo '$ARM $SEED' >> $Q"; log "RETRY $A queued"
+    fi
+    flock -u 9; exec 9>&-; continue
+  fi
   bash $C/tools/teach_pt/py.sh train $G merge_hc8_$A $C harvest.teach_l8.merge --adapter $E --out $O/merged_$A
   log "TRAIN_DONE $A $E"
+  flock -u 9; exec 9>&-
 done
 log "WORKER_END"
