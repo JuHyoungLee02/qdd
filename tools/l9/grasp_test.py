@@ -27,7 +27,8 @@ import time
 import numpy as np
 
 ROOT = "/data/harvest/l9v2"
-GRIP_FILES = {"ffw_sg2": "ffw_sg2_right", "franka": "franka_hand"}
+GRIP_FILES = {"ffw_sg2": "ffw_sg2_right", "franka": "franka_hand", "r1pro": "r1pro_right", "g1": "g1_right"}
+SYNERGY = {"g1": "g1_hand_synergy.json"}
 # finger joints that copy the measured position of another (emulates the hand's linkage / mimic)
 FOLLOW = {"ffw_sg2": {"gripper_r_joint2": "gripper_r_joint1", "gripper_r_joint4": "gripper_r_joint3"}}
 VIRT = ("vx", "vy", "vz", "vr", "vp", "vyaw")
@@ -160,11 +161,18 @@ def run(a):
         f"collider {a.collider}, boot {time.time() - t_boot:.0f}s")
 
     act = gj["actuation"]["sim"]
+    if not act:  # no sim actuator in the json (R1 Pro, G1): the production profile's finger drive (robot9.V2)
+        from harvest.l9 import robot9 as R9
+        v = R9.V2[a.grip]
+        act = {"finger_stiffness": v["finger_kp"], "finger_damping": v["finger_kd"], "finger_effort_limit_N": v["finger_effort"],
+               "source": f"robot9.V2[{a.grip!r}]"}
     fj = gj["finger_joints"]
-    fingers = list(fj["drive"]) + list(fj["followers"])
     follow = FOLLOW.get(a.grip, {})
-    q_close = GT.width_to_q(min(gj["width_to_joint"]["width_m"]), gj["width_to_joint"])  # FFW 1.1, Franka 0.0
-    q_closed = {j: q_close * float(fj["followers"].get(j, 1.0)) for j in fingers}
+    syn = json.load(open(os.path.join(gdir, SYNERGY[a.grip]))) if a.grip in SYNERGY else None
+    fj0 = list(fj.get("drive", [])) + list(fj.get("followers", {}))
+    hand = GT.Hand(gj, synergy=syn, ref=[j for j in fj0 if j not in follow] or None)
+    fingers = hand.fingers
+    q_closed = dict(zip(fingers, hand.q_closed.tolist()))
     tcp_in_base = np.asarray(gj["tcp_in_base"]["xyz"], float)
     R_tb = GT.rpy_R(gj["tcp_in_base"].get("rpy", (0.0, 0.0, 0.0)))
     # finger drive (json actuation.sim): FFW-SG2 revolute (N m, rad/s), Franka prismatic (N, no velocity cap)
@@ -249,6 +257,7 @@ def run(a):
     fids, _ = rob.find_joints(fingers, preserve_order=True)
     fol = [(fingers.index(c), fingers.index(p)) for c, p in follow.items()]
     prox = [fingers.index(j) for j in fingers if j not in follow]
+    log(f"hand {hand.kind}: fingers {fingers}, closed {[round(v, 3) for v in hand.q_closed]}, actuation {act}")
     tcp_b = rob.find_bodies([gj["tcp_link"]])[0][0]
     base_b = rob.find_bodies([gj["base_link"]])[0][0]
     origins = scene.env_origins.cpu().numpy().astype(float)
@@ -295,7 +304,7 @@ def run(a):
 
     def width_q(w):
         if w not in q_open_cache:
-            q_open_cache[w] = GT.width_to_q(w, table)
+            q_open_cache[w] = hand.q_open(w)
         return q_open_cache[w]
 
     def run_round(assign):
@@ -306,7 +315,7 @@ def run(a):
         mloc = np.zeros((n, 3))  # grasp centre in the object body frame
         cloc = np.zeros((n, 3))  # canonical centre in the body frame
         c0z = np.zeros(n)
-        qopen = np.zeros(n)
+        qopen = np.zeros((n, len(fingers)))
         active = np.array([x is not None for x in assign])
         for i, x in enumerate(assign):
             m, j = x if x is not None else (owner[i], 0)
@@ -336,7 +345,7 @@ def run(a):
         jp[:, vids] = traj_t[0]
         qo = torch.tensor(qopen, dtype=torch.float32, device=dev)
         for c_ in range(len(fids)):
-            jp[:, fids[c_]] = qo
+            jp[:, fids[c_]] = qo[:, c_]
         rob.write_joint_state_to_sim(jp, torch.zeros_like(jp))
         rob.set_joint_position_target(jp)
         mloc_t = torch.tensor(mloc, dtype=torch.float32, device=dev)
@@ -355,7 +364,7 @@ def run(a):
             mw = op + quat_apply(oq, mloc_t)
             cw = op + quat_apply(oq, cloc_t)
             mG = quat_apply_inverse(tq, mw - tp)
-            fq = rob.data.joint_pos[:, [fids[c_] for c_ in prox]].mean(1)
+            fq = rob.data.joint_pos[:, fids]
             return mG, cw[:, 2], fq
 
         for kstep in range(st["end"]):
@@ -390,14 +399,14 @@ def run(a):
         out = {}
         for key in ("close", "hold", "end"):
             mG, cz, fq = (v.cpu().numpy() for v in rec[key])
-            out[key] = (mG, cz - c0z, GT.q_to_width(fq, table), GT.pad_drop_q(fq, a.grip))
+            out[key] = (mG, cz - c0z, hand.width(fq), GT.pad_drop_q(hand.drive_q(fq), a.grip))
         sl = slip.cpu().numpy()
         for i, x in enumerate(assign):
             if x is None:
                 continue
             m, j = x
             # between the fingers: from the (arc-lowered) pad bottom up to the palm (PALM_Z above the TCP)
-            ins = lambda key: GT.inside(out[key][0][i], pad_w, max_open, (pad_z[0] - out[key][3][i], PALM_Z))
+            ins = lambda key: GT.inside(out[key][0][i], pad_w, max_open, (pad_z[0] - out[key][3][i], max(PALM_Z, pad_z[1])))
             v = GT.verdict(out["hold"][1][i], ins("hold"), out["hold"][2][i], out["end"][1][i], ins("end"),
                            out["end"][2][i], sl[i])
             r = res[m]

@@ -321,6 +321,67 @@ def exec_pose(T, w, grip: str, table=None, support_z=None) -> np.ndarray:
     return backoff(T, need / R[2, 2])
 
 
+class Hand:
+    """Finger command / read-out model of one gripper json (assets9/grippers): fingers (joint names), q_open(w) and
+    q_closed (per finger joint), width(Q) (pad gap from the finger joint positions (N, n_fingers)).
+      parallel grippers (width_to_joint drive_q): all finger joints = multiplier * drive q; the gap is read from
+        the mean of the `ref` joints (FFW-SG2: the two proximal joints) through the table;
+      synergy hands (width_to_joint q_by_joint, G1 Dex3-1): every joint interpolated from the width; closed = the
+        synergy table's narrowest row (synergy json, else the table's first row); the gap is read from the joint
+        with the largest range."""
+
+    def __init__(self, gj: dict, synergy: dict | None = None, ref=None):
+        t = gj["width_to_joint"]
+        self.table = t
+        if "q_by_joint" in t:
+            self.fingers = list(gj["finger_joints"]["synergy"])
+            W = list(t["width_m"])
+            Q = [[t["q_by_joint"][j][i] for j in self.fingers] for i in range(len(W))]
+            if synergy:
+                side = synergy.get(gj.get("arm", "right"), {})
+                order = [side["joints"].index(j) for j in self.fingers] if side.get("joints") else None
+                for row in side.get("table", []):
+                    if order and float(row["width"]) < min(W):
+                        W.append(float(row["width"]))
+                        Q.append([float(row["q"][k]) for k in order])
+            o = np.argsort(W)
+            self.W, self.Q = np.asarray(W, float)[o], np.asarray(Q, float)[o]
+            self.ref = int(np.argmax(np.ptp(self.Q, axis=0)))
+            self.kind = "synergy"
+        else:
+            fj = gj["finger_joints"]
+            self.fingers = list(fj["drive"]) + list(fj["followers"])
+            self.mult = np.array([float(fj["followers"].get(j, 1.0)) for j in self.fingers])
+            self.ref_idx = [self.fingers.index(j) for j in (ref or self.fingers)]
+            self.kind = "parallel"
+
+    def q_open(self, w) -> np.ndarray:
+        if self.kind == "synergy":
+            return np.array([np.interp(float(w), self.W, self.Q[:, k]) for k in range(len(self.fingers))])
+        return width_to_q(w, self.table) * self.mult
+
+    @property
+    def q_closed(self) -> np.ndarray:
+        if self.kind == "synergy":
+            return self.Q[0].copy()
+        return width_to_q(min(self.table["width_m"]), self.table) * self.mult
+
+    def drive_q(self, Qf) -> np.ndarray:
+        """(N,) drive joint value (parallel: mean of the ref joints / multiplier)."""
+        Qf = np.atleast_2d(np.asarray(Qf, float))
+        if self.kind == "synergy":
+            return Qf[:, self.ref]
+        return (Qf[:, self.ref_idx] / self.mult[self.ref_idx]).mean(1)
+
+    def width(self, Qf) -> np.ndarray:
+        q = self.drive_q(Qf)
+        if self.kind == "synergy":
+            col = self.Q[:, self.ref]
+            o = np.argsort(col)
+            return np.interp(q, col[o], self.W[o])
+        return q_to_width(q, self.table)
+
+
 def q_to_width(q, table):
     W, Q = np.asarray(table["width_m"], float), np.asarray(table["drive_q"], float)
     o = np.argsort(Q)

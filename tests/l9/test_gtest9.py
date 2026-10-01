@@ -178,3 +178,31 @@ def test_plan_round_rotated_tcp_in_base():
     assert np.allclose(T.fk(q[st["close"], 0]) @ Ttb, Tw[0], atol=1e-9)
     assert np.allclose(T.fk(q[0, 0]) @ Ttb, T.backoff(Tw[0]), atol=1e-9)
     assert np.allclose(T.base_from_tcp(Tw[0], tb, R_tb) @ Ttb, Tw[0], atol=1e-9)
+
+
+def _gj(name):
+    import json
+    import os
+    return json.load(open(os.path.join(G.DIR, name + ".json"), encoding="utf-8"))
+
+
+def test_hand_parallel_ffw_and_r1pro():
+    h = T.Hand(_gj("ffw_sg2_right"), ref=["gripper_r_joint1", "gripper_r_joint3"])
+    assert h.kind == "parallel" and len(h.fingers) == 4
+    assert np.allclose(h.q_open(0.107), 0.0) and np.allclose(h.q_closed, 1.1)
+    Qf = np.tile(h.q_open(0.05), (3, 1))
+    assert np.allclose(h.width(Qf), 0.05, atol=1e-6)
+    r = T.Hand(_gj("r1pro_right"))
+    assert np.allclose(r.q_closed, 0.0, atol=1e-3) and np.allclose(r.width(r.q_open(0.06)[None]), 0.06, atol=1e-6)
+
+
+def test_hand_synergy_g1():
+    import json
+    import os
+    syn = json.load(open(os.path.join(G.DIR, "g1_hand_synergy.json"), encoding="utf-8"))
+    h = T.Hand(_gj("g1_right"), synergy=syn)
+    assert h.kind == "synergy" and len(h.fingers) == 7
+    assert h.W[0] < 0.0215  # the closed synergy rows extend the pinch table
+    for w in (0.03, 0.06, 0.1):
+        assert abs(h.width(h.q_open(w)[None])[0] - w) < 1e-3
+    assert h.width(h.q_closed[None])[0] <= 0.0132
