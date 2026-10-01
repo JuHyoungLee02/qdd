@@ -4,8 +4,9 @@
 #  2. servers on x2 GPU0: arm A = JCR1-0P x 2 replicas (:8181-8182), arm B x 4 (:8171-8174)  [JCR_JOB=jv1_srv_*]
 #  3. latency bench (idle replicas, n = 100 each) -> eval/lat_A.json, lat_B.json -> the condition-R constants
 #  4. destination sensitivity A / B / C (n = 100, kinematic, no render) -> eval/sens_*.json
-#  5. writes eval/SERVERS.json + eval/jobs.txt (arms x conditions x sets x variants) and waits: lanes need render cards
-#     the USER approves (main writes the approval); start them with tools/jv1/start_lanes.sh on that pod
+#  5. writes eval/SERVERS.json + eval/jobs.txt (arms x conditions x sets x variants), servers DOWN (x2 GPU0 free), waits
+#     for eval/GO_LANES: render cards need the USER's approval (main touches GO_LANES), then servers up again and
+#     eval/READY_FOR_LANES; lanes start with tools/jv1/start_lanes.sh on the approved card's pod
 #  6. when all 400 episodes have ep.json (or eval/STOP_EVAL): servers down, summary -> eval/summary.json
 # usage: JCR_JOB=jv1_chain_eval nohup bash chain_eval.sh <code dir> &
 C=$1; Q=/data/harvest; O=$Q/out/jv1; E=$O/eval; P=$Q/venv_train/bin/python; SEL=$Q/out/jcr/d1_select.json
@@ -15,11 +16,16 @@ mkdir -p $E
 ev "chain_eval armed (code $C)"
 until [ -f $O/TRAIN_B_DONE ] && [ -f $CK_A/heads.pt ]; do [ -f $E/STOP_EVAL ] && exit 0; sleep 120; done
 cd $C
-for p in 8181 8182; do bash tools/jcr/train.sh $C 0 jv1_srv_A$p -m harvest.jcr.serve --ckpt $CK_A --port $p & done
-for p in 8171 8172 8173 8174; do bash tools/jcr/train.sh $C 0 jv1_srv_B$p -m harvest.jv1.serve --ckpt $CK_B --port $p & done
-for p in 8181 8182 8171 8172 8173 8174; do
-  for i in $(seq 90); do curl -s localhost:$p/health >/dev/null && break; sleep 10; done
-done
+up() {
+  for p in 8181 8182; do bash tools/jcr/train.sh $C 0 jv1_srv_A$p -m harvest.jcr.serve --ckpt $CK_A --port $p & done
+  for p in 8171 8172 8173 8174; do bash tools/jcr/train.sh $C 0 jv1_srv_B$p -m harvest.jv1.serve --ckpt $CK_B --port $p & done
+  for p in 8181 8182 8171 8172 8173 8174; do
+    for i in $(seq 90); do curl -s localhost:$p/health >/dev/null && break; sleep 10; done
+  done
+}
+down() { for p in 8181 8182; do bash tools/jcr/stop.sh jv1_srv_A$p; done >> $Q/logs/jcr/jv1_eval.log 2>&1
+  for p in 8171 8172 8173 8174; do bash tools/jcr/stop.sh jv1_srv_B$p; done >> $Q/logs/jcr/jv1_eval.log 2>&1; }
+up
 IP=$(hostname -i | awk '{print $1}')
 echo "{\"A\": [\"http://$IP:8181\", \"http://$IP:8182\"], \"B\": [\"http://$IP:8171\", \"http://$IP:8172\", \"http://$IP:8173\", \"http://$IP:8174\"]}" > $E/SERVERS.json
 ev "servers up on x2 GPU0 ($IP): A x2, B x2+2"
@@ -42,9 +48,14 @@ LB=$($P -c "import json;print(json.load(open('$E/lat_B.json'))['lat_s'])"); PB=$
       echo "A_R_$set $v jcr A $LA $PA $d"; echo "B_R_$set $v jcr B $LB $PB $d"
     done
   done; } > $E/jobs.txt
+down
+ev "PREP_DONE (servers down, x2 GPU0 free): jobs.txt 20 jobs x 20 episodes (A R: lat $LA s / every $PA dec, B R: lat $LB s / every $PB dec). Render cards need user approval -> touch $E/GO_LANES, then on the approved card's pod: bash $C/tools/jv1/start_lanes.sh $C <gpu> <n lanes>"
+until [ -f $E/GO_LANES ] || [ -f $E/STOP_EVAL ]; do sleep 60; done
+[ -f $E/STOP_EVAL ] && { ev "chain_eval stopped before lanes"; exit 0; }
+up
 touch $E/READY_FOR_LANES
-ev "READY_FOR_LANES: jobs.txt 20 jobs x 20 episodes (A R: lat $LA s / every $PA dec, B R: lat $LB s / every $PB dec). Render cards need user approval -> bash $C/tools/jv1/start_lanes.sh $C <gpu> <n lanes> on that pod"
+ev "READY_FOR_LANES: servers up again on x2 GPU0"
 until [ "$(ls $E/*/*/s*/ep.json 2>/dev/null | wc -l)" -ge 400 ] || [ -f $E/STOP_EVAL ]; do sleep 300; done
-for p in 8181 8182 8171 8172 8173 8174; do bash tools/jcr/stop.sh jv1_srv_$([ $p -gt 8180 ] && echo A || echo B)$p >> $Q/logs/jcr/jv1_eval.log 2>&1; done
+down
 PYTHONPATH=$C $P tools/jv1/summary.py --eval $E --out $E/summary.json >> $Q/logs/jcr/jv1_eval.log 2>&1
 ev "eval done: $(grep -o '"verdict": *"[A-Z_]*"' $E/summary.json) -> $E/summary.json"
