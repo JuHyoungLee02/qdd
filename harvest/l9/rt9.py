@@ -201,7 +201,13 @@ class Runtime:
         """The measured arm state clipped 0.04 rad inside the sim range: cuRobo refuses a start state on a limit
         (smoke 10-02: the L9 preroll pose has arm_r_joint7 = 1.82 = its upper limit -> 'Start or End state in
         collision' for every plan)."""
-        return np.clip(self.arm_q(), self.q_lo + 0.03, self.q_hi - 0.03)
+        q = self.arm_q()
+        if self.q_target is not None and np.abs(np.asarray(self.q_target) - q).max() < 0.15:
+            # continue from the last COMMANDED joints: the arm rests a few hundredths of a rad off its target (PD +
+            # gravity), and restarting from the measured joints made the command jump by that error (pilot 10-02:
+            # 22 of 49 episodes had a 0.05-0.16 rad step at a plan start)
+            q = np.asarray(self.q_target, float)
+        return np.clip(q, self.q_lo + 0.03, self.q_hi - 0.03)
 
     def T_world_base(self) -> np.ndarray:
         d = self.w.env.robot.data
@@ -447,6 +453,9 @@ class Runtime:
             if self.choice is not None:
                 self.picks.append(self.pick_record())
             self.choice, self.choice_key, self.segs, self.held = self.choose(tg, info), key, {}, None
+            if self.choice is None and self.failed:  # the re-grasp found no other candidate: the same ones again
+                self.failed = set()
+                self.choice = self.choose(tg, info)
             self.timeline = {}
         gc = self.choice
         if gc is None:
@@ -575,6 +584,10 @@ class Runtime:
         if out == "CONTACT":
             self._gap_before = gap
             return f"gripper closed on the object (gap {gap * 100:.1f} cm)"
+        tcp = np.asarray(self.w.status()["tcp"], float)
+        if float(np.linalg.norm(tcp - gc.pos)) > 0.02:  # closed away from the grasp pose (behaviour perturbation /
+            self.timeline["close_off_pose"] = self.timeline.get("close_off_pose", 0) + 1  # blocked move): not a
+            return f"gripper closed away from the grasp (gap {gap * 100:.1f} cm)"  # verdict on the candidate
         self.failed.add(gc.idx)
         self.regrasp_n += 1
         self.timeline.setdefault("regrasp_trace", []).append({"outcome": out, "gap": round(gap, 4), "idx": gc.idx})
