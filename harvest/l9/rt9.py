@@ -28,7 +28,7 @@ from . import v2plan as VP
 GRASP_DIR = os.environ.get("L9V2_GRASPS", "/data/harvest/l9v2/grasps")
 TESTED_DIR = os.environ.get("L9V2_TESTED", "/data/harvest/l9v2/tested")
 VERSION = "l9v2-1"
-GRIP_NAME = {"ffw_sg2": "ffw_sg2", "franka_mast": "franka"}
+GRIP_NAME = {"ffw_sg2": "ffw_sg2", "franka_mast": "franka", "r1pro": "r1pro", "g1": "g1"}
 EMPTY_M, CONTACT_TOL, CONTACT_TOL_HI, SLIP_GAP, SLIP_MOVE = 0.003, 0.008, 0.020, 0.003, 0.010
 LIMIT_MARGIN = 0.01
 TARGET_CORE = 0.5  # while approaching, the target is an obstacle at half its box: the fingers / palm around a grasp

@@ -47,7 +47,7 @@ _DEFAULTS = {
 }
 
 
-JSON_NAME = {"ffw_sg2": "ffw_sg2_right"}  # L9v2-ROBOT gripper files (the left gripper is the mirror)
+JSON_NAME = {"ffw_sg2": "ffw_sg2_right", "franka": "franka_hand", "r1pro": "r1pro_right", "g1": "g1_right"}  # L9v2-ROBOT gripper files (the left gripper is the mirror)
 
 
 def gripper(name: str) -> dict:
