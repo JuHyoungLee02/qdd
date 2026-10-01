@@ -24,6 +24,10 @@ def main():
     T[2, 3] += 0.02
     print("joints", pl.joint_names, "q", np.round(q, 3).tolist())
     print("base in world", np.round(Tb[:3, 3], 3).tolist())
+    lo, hi = pl._limits()
+    print("curobo lo", np.round(lo, 3).tolist())
+    print("curobo hi", np.round(hi, 3).tolist())
+    print("q outside", [(j, round(float(v), 3)) for j, v, a, b in zip(pl.joint_names, q, lo, hi) if v < a or v > b])
 
     def test(scene, name):
         pl.world(scene)
