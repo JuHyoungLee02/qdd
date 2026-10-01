@@ -324,6 +324,18 @@ class Runtime:
             r_ok, _, m = self.planner.ik(Tb)
             ok[idx] = r_ok
             margin[idx] = m
+            idx = np.flatnonzero(ok)
+        if len(idx):  # the pre-grasp too, with the target as a full obstacle (the transit checks every link)
+            sd = draws_standoff(int(getattr(self.w, "vseed", 0) or 0), len(self.picks))
+            Tp = []
+            for i in idx:
+                T = Cw["T"][i].copy()
+                T[:3, 3] = T[:3, 3] - Cw["a"][i] * sd
+                Tp.append(self.to_base(T))
+            self.refresh_world()
+            r_ok, _, _ = self.planner.ik(np.stack(Tp), contact_links_off=False)
+            ok[idx] = r_ok
+            self.refresh_world(exclude=(k,))
         vs["ik_ok"] = int(ok.sum())
         self._vstats = vs
         return ok, margin
@@ -490,9 +502,8 @@ class Runtime:
         width = None
         note = None
         if step == "above_target" and gc is not None:
-            self.refresh_world(shrink={tg: TARGET_CORE})  # the arm must not sweep through the target; its core only
             while gc is not None:
-                r = self._guard_grasp(self.planner.grasp(q0, self.to_base(gc.T), gc.standoff, gc.lift_dz))
+                r = self._guard_grasp(self._approach_plan(q0, gc, tg))
                 if r["ok"]:
                     self.segs = r
                     break
@@ -512,8 +523,7 @@ class Runtime:
         if step == "descend_close" and gc is not None:
             Q = self.segs.get("grasp")
             if Q is None or np.abs(Q[0] - q0).max() > 0.08:
-                self.refresh_world(shrink={tg: TARGET_CORE})
-                r = self._guard_grasp(self.planner.grasp(q0, self.to_base(gc.T), gc.standoff, gc.lift_dz))
+                r = self._guard_grasp(self._approach_plan(q0, gc, tg))
                 if not r["ok"]:
                     return None, "the grasp pose is out of reach from here", None
                 self.segs = r
@@ -556,6 +566,26 @@ class Runtime:
         if Q0 is not None:
             Q = np.concatenate([Q0, Q])
         return self._resample(Q), note, width
+
+    def _approach_plan(self, q0, gc, tg) -> dict:
+        """Transit to the pre-grasp with EVERY link checked against the full target box (plan_grasp frees the
+        gripper links for its whole first leg: the open fingers swept through the target and knocked it over in the
+        pilot), then straight lines pre-grasp -> grasp -> lift (IK per waypoint, the target is touched there by
+        design). -> {ok, status, approach, grasp, lift}."""
+        self.refresh_world()
+        T_pre = gc.T.copy()
+        T_pre[:3, 3] = gc.pre
+        Qa = self.planner.pose(q0, self.to_base(T_pre))
+        if Qa is None:
+            return {"ok": False, "status": "transit to the pre-grasp failed", "approach": None, "grasp": None,
+                    "lift": None}
+        Qg = self.planner.line(Qa[-1], self.to_base(T_pre), self.to_base(gc.T), 0.008)
+        if Qg is None:
+            return {"ok": False, "status": "straight approach failed", "approach": None, "grasp": None, "lift": None}
+        T_l = gc.T.copy()
+        T_l[2, 3] += gc.lift_dz
+        Ql = self.planner.line(Qg[-1], self.to_base(gc.T), self.to_base(T_l), 0.008)
+        return {"ok": True, "status": "ok", "approach": Qa, "grasp": Qg, "lift": Ql}
 
     def _guard(self, Q):
         """Reject a plan that leaves the SIM joint range (cuRobo's URDF limits may be wider: smoke 10-02, joint2 at
@@ -776,3 +806,7 @@ def tested_mask(r: dict, K: int) -> np.ndarray:
     if len(idx) == len(p) and len(idx):
         out[idx[idx < K]] = p[idx < K]
     return out
+
+
+def draws_standoff(seed: int, k: int) -> float:
+    return VP.draws(seed, k)["standoff"]
