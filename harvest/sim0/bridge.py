@@ -29,6 +29,7 @@ BRIDGE = {
                      max_steps=120),
 }
 OPEN_FINGER_M = 0.0736
+CLOSED_FINGER_M = 0.0303  # finger-link distance after a close on nothing (tools/sim0/widowx_geom.py)
 GAP_SCALE_W = 0.107 / OPEN_FINGER_M
 
 
@@ -58,7 +59,7 @@ class BridgeWorld(SimWorld):
         self.e = e
         self.env, self.opts, self.max_steps = make_env(e)
         self.dt = 1.0 / 5.0
-        self.w_close = 0.0
+        self.w_close = CLOSED_FINGER_M * GAP_SCALE_W  # change 1: measured close-on-nothing gap (was 0)
         self.table_z = None
         self.done = False
         self.quat0 = (1.0, 0.0, 0.0, 0.0)
