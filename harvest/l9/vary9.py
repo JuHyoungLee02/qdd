@@ -59,8 +59,37 @@ LIGHT_FAMILIES = {f.name: f for f in (
                 (2, 2), (0.40, 0.70), 0.0),
     LightFamily("kitchen_mixed", ("cylinder", "rect", "sphere"), (0.8, 1.3), (3000, 5500), (-120, 120), (45, 80),
                 (1.0, 2.5), (0.6, 1.0), (1, 2), (0.25, 0.55), 0.15),
+    # L9 v2 (spec §12.3, "every axis as wide as possible"): 12 more families; the shapes / ranges are our own
+    # [hypothesis, judged by the G4 v2 SigLIP spread], colour temperatures from common lamp types (1,800 K candle
+    # .. 7,500 K overcast sky).
+    LightFamily("golden_hour", ("distant",), (0.9, 1.5), (1900, 2900), (-180, 180), (5, 18), (0.3, 0.9), (0.5, 0.9),
+                (0, 1), (0.10, 0.30), 0.15, (0.08, 0.20)),
+    LightFamily("noon_skylight", ("distant", "rect"), (1.0, 1.6), (5600, 7000), (-180, 180), (75, 89), (0.4, 1.5),
+                (0.9, 1.4), (0, 1), (0.20, 0.40), 0.0),
+    LightFamily("night_led", ("disk", "rect"), (0.5, 1.0), (5500, 7000), (-120, 120), (60, 88), (0.6, 1.6),
+                (0.10, 0.30), (0, 2), (0.15, 0.40), 0.10, (0.05, 0.15)),
+    LightFamily("candle_dim", ("sphere",), (0.25, 0.55), (1800, 2300), (-180, 180), (20, 50), (0.4, 1.0),
+                (0.10, 0.25), (0, 1), (0.10, 0.30), 0.20, (0.10, 0.25)),
+    LightFamily("neon_mixed", ("rect", "cylinder", "sphere"), (0.6, 1.1), (3000, 7500), (-180, 180), (20, 70),
+                (0.6, 2.0), (0.3, 0.7), (2, 2), (0.40, 0.80), 1.0, (0.35, 0.60)),
+    LightFamily("clinical_bright", ("rect",), (1.2, 1.8), (5000, 6500), (-40, 40), (75, 89), (2.0, 3.0), (0.9, 1.3),
+                (2, 2), (0.50, 0.80), 0.0),
+    LightFamily("sodium_highbay", ("sphere", "disk"), (1.0, 1.6), (1900, 2400), (-180, 180), (70, 89), (0.4, 1.0),
+                (0.3, 0.6), (1, 2), (0.30, 0.60), 0.3, (0.10, 0.20)),
+    LightFamily("track_spots", ("disk", "sphere"), (1.3, 2.2), (2700, 4000), (-100, 100), (45, 75), (0.2, 0.5),
+                (0.3, 0.6), (2, 2), (0.40, 0.80), 0.05),
+    LightFamily("side_window", ("rect", "distant"), (0.9, 1.5), (5000, 7000), (60, 120), (10, 35), (1.0, 3.0),
+                (0.6, 1.0), (0, 1), (0.15, 0.35), 0.0),
+    LightFamily("rim_backlight", ("rect", "sphere"), (1.3, 2.0), (3500, 6500), (-25, 25), (25, 50), (0.4, 1.2),
+                (0.3, 0.6), (1, 1), (0.10, 0.25), 0.2, (0.10, 0.30)),
+    LightFamily("sunny_outdoor", ("distant",), (1.4, 2.2), (5200, 6500), (-180, 180), (30, 75), (0.2, 0.6),
+                (0.9, 1.5), (0, 1), (0.10, 0.25), 0.0),
+    LightFamily("outdoor_shade", ("rect", "distant"), (0.3, 0.7), (6500, 8000), (-180, 180), (40, 85), (2.0, 3.0),
+                (1.3, 1.9), (0, 1), (0.20, 0.50), 0.0),
 )}
 LIGHT_NAMES = tuple(LIGHT_FAMILIES)
+OUTDOOR_LIGHTS = ("sunny_outdoor", "outdoor_shade", "golden_hour", "overcast", "hard_shadow")
+INDOOR_LIGHTS = tuple(n for n in LIGHT_NAMES if n not in ("sunny_outdoor", "outdoor_shade"))
 
 
 def _r(v, n=4):
@@ -74,9 +103,12 @@ def _tint(rng, sat) -> list:
 
 
 def pick_light_family(seed: int, env_family: str) -> str:
-    """Seeded family choice (uniform over LIGHT_FAMILIES; every environment family sees every light family)."""
+    """Seeded family choice: uniform over INDOOR_LIGHTS (every indoor environment family sees every one), over
+    OUTDOOR_LIGHTS for the outdoor families (scene9.OUTDOOR)."""
+    from .scene9_more import OUTDOOR
+    names = OUTDOOR_LIGHTS if env_family in OUTDOOR else INDOOR_LIGHTS
     h = int(hashlib.sha256(f"l9-light:{int(seed)}:{env_family}".encode()).hexdigest()[:8], 16)
-    return LIGHT_NAMES[h % len(LIGHT_NAMES)]
+    return names[h % len(names)]
 
 
 def light_meta(meta: dict, family: str, seed: int, target, common: dict) -> dict:
@@ -122,17 +154,69 @@ def light_meta(meta: dict, family: str, seed: int, target, common: dict) -> dict
     return m
 
 
-def head_pose(seed: int, attempt: int = 0) -> dict:
-    """Every L9 episode moves the neck: tilt 45 deg +- 15 deg (clipped below the raised limit), pan +- 30 deg; later
-    attempts (the objects left the view) redraw; after HEAD_TRIES the caller uses head_default()."""
-    rng = np.random.default_rng([int(seed), 431, int(attempt)])
-    tilt = float(np.clip(HEAD_TILT0 + rng.uniform(-HEAD_TILT_RANGE, HEAD_TILT_RANGE), 0.40, HEAD_TILT_MAX))
+# head tilt (head_joint1, rad) per look mode, AI Worker FFW-SG2: ffw_sg2.xml head_joint1 range -0.2317..0.6951 (the
+# L8S worlds raise the USD upper limit to 57 deg, HEAD_TILT_MAX; the real robot works at 45 deg). "up": places above
+# eye level (scene9 place_class high) need a level / slightly lowered gaze; "down": low places (place_class low).
+# Ranges inside the joint limits are our own [hypothesis; the world's in-view check (target and place inside the
+# image by 5 %) still redraws]. Other robots: their own neck / mast rules (robot9 / hcam9, L9v2-ROBOT).
+LOOK = {"std": (HEAD_TILT0 - HEAD_TILT_RANGE, HEAD_TILT_MAX), "up": (-0.2317, 0.35), "down": (0.80, HEAD_TILT_MAX)}
+
+
+def head_pose(seed: int, attempt: int = 0, look: str = "std") -> dict:
+    """Every L9 episode moves the neck: std = tilt 45 deg +- 15 deg (clipped below the raised limit), pan +- 20 deg;
+    look "up" / "down" (high / low places) draw the tilt from LOOK; later attempts (the objects left the view)
+    redraw; after HEAD_TRIES the caller uses head_default()."""
+    if look == "std":
+        rng = np.random.default_rng([int(seed), 431, int(attempt)])
+        tilt = float(np.clip(HEAD_TILT0 + rng.uniform(-HEAD_TILT_RANGE, HEAD_TILT_RANGE), 0.40, HEAD_TILT_MAX))
+    else:
+        rng = np.random.default_rng([int(seed), 432, int(attempt), ("up", "down").index(look)])
+        tilt = float(rng.uniform(*LOOK[look]))
     pan = float(rng.uniform(-HEAD_PAN_RANGE, HEAD_PAN_RANGE))
-    return {"tilt": _r(tilt), "pan": _r(pan), "random": True, "attempt": int(attempt)}
+    return {"tilt": _r(tilt), "pan": _r(pan), "random": True, "attempt": int(attempt), "look": look}
+
+
+def _node_ids(x, out: set) -> set:
+    if isinstance(x, dict):
+        for k, v in x.items():
+            if k == "node" and isinstance(v, str):
+                out.add(v)
+            else:
+                _node_ids(v, out)
+    elif isinstance(x, (list, tuple)):
+        for v in x:
+            _node_ids(v, out)
+    return out
+
+
+def look_of(ep: dict, scene: dict) -> str:
+    """Head look mode of an episode: "up" when a node it uses is above eye level (place_class high), else "down"
+    when one is low, else "std"."""
+    cls = {n["id"]: n.get("place_class", "desk") for n in scene.get("nodes", [])}
+    used = {cls.get(i, "desk") for i in _node_ids(ep, set())}
+    return "up" if "high" in used else "down" if "low" in used else "std"
 
 
 def head_default() -> dict:
     return {"tilt": HEAD_TILT0, "pan": 0.0, "random": False, "fallback": True}
+
+
+UV_SCALE = (0.4, 3.0)  # texture tiles per metre (box-projected UVs are in metres) [hypothesis]
+TINT_P = {"furniture": 0.5, "wall": 0.6, "fabric": 0.6, "floor": 0.3}  # share of tinted slots per material role
+TINT_SAT = (0.05, 0.35)
+
+
+def material_look(vseed: int, slot: int, role: str) -> dict:
+    """Per-slot appearance draw on top of the texture choice: UV scale (log-uniform in UV_SCALE) and a diffuse tint
+    (UsdUVTexture scale; 1,1,1 = none) -> {uv, tint}. Seeded by (visual seed, slot)."""
+    rng = np.random.default_rng([int(vseed), 937, int(slot)])
+    uv = float(math.exp(rng.uniform(math.log(UV_SCALE[0]), math.log(UV_SCALE[1]))))
+    tint = [1.0, 1.0, 1.0]
+    if rng.random() < TINT_P.get(role, 0.4):
+        tint = _tint(rng, TINT_SAT)
+        v = float(rng.uniform(0.75, 1.0))  # also a little darker / lighter
+        tint = [_r(min(1.0, c * v), 3) for c in tint]
+    return {"uv": _r(uv, 3), "tint": tint}
 
 
 UNREAL_P = 0.0  # production default: off (spec §5; later_problems 22)

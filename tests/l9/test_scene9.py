@@ -13,7 +13,7 @@ def rm():
 
 
 def test_40_layouts_over_8_families():
-    assert len(S.FAMILIES) == 8 and all(len(r) >= 5 for _, r in S.FAMILIES.values())
+    assert len(S.FAMILIES) >= 8 and all(len(r) >= 5 for _, r in S.FAMILIES.values())
     assert len(S.all_rules()) >= 40
 
 

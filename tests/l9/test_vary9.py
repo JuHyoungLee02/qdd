@@ -76,4 +76,4 @@ def test_keep_named_colours():
 
 
 def test_pick_light_family_covers_all():
-    assert {V.pick_light_family(s, "dining") for s in range(400)} == set(V.LIGHT_NAMES)
+    assert {V.pick_light_family(s, "dining") for s in range(800)} == set(V.INDOOR_LIGHTS)

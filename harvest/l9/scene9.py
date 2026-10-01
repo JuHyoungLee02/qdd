@@ -178,6 +178,226 @@ def add_stands(b: _B, p: float = 0.7) -> int:
     return added
 
 
+DENSITY = {"sparse": (0, 0), "normal": (1, 2), "dense": (3, 5)}  # L9 v2 props per scene (min, max)
+DENSITY_P = (0.25, 0.45, 0.30)  # [hypothesis] judged by G2 frames / G4 v2
+PROP_SHAPES = (  # (name, x size, y size, height) ranges: book stack, box, jar / vase, tall bottle-like, flat tray-like
+    ("books", (0.14, 0.24), (0.18, 0.30), (0.04, 0.12)), ("box", (0.10, 0.22), (0.10, 0.24), (0.06, 0.16)),
+    ("vase", (0.07, 0.12), (0.07, 0.12), (0.14, 0.30)), ("bottle", (0.05, 0.08), (0.05, 0.08), (0.18, 0.30)),
+    ("slab", (0.18, 0.30), (0.20, 0.34), (0.01, 0.03)))
+PROP_PAL = WOOD + PAINT + METAL + FABRIC + MAT
+
+
+def add_props(b: _B) -> tuple:
+    """Static props (cuboids, role "prop") on flat top nodes away from the arm band (|y - yb| > 0.24, or the back:
+    x > 0.70; tall ones (> 12 cm) only past 0.32 of the band): visual density and obstacles (they block node points
+    through blocked_s). -> (density, n placed)."""
+    rng = b.rng
+    dens = tuple(DENSITY)[int(rng.choice(len(DENSITY), p=DENSITY_P))]
+    lo, hi = DENSITY[dens]
+    want = int(rng.integers(lo, hi + 1))
+    hosts = [n for n in b.nodes if n["kind"] == "top" and n["rim_z"] is None]
+    placed = 0
+    for i in range(want * 4):
+        if placed >= want or not hosts or len(b.parts) + 1 > N_SLOTS - 1:  # one slot kept for the ground
+            break
+        host = hosts[int(rng.integers(len(hosts)))]
+        (x0, x1), (y0, y1) = host["box"]
+        name, sx, sy, sz = PROP_SHAPES[int(rng.integers(len(PROP_SHAPES)))]
+        dx, dy, hz = rng.uniform(*sx), rng.uniform(*sy), rng.uniform(*sz)
+        if x1 - x0 < dx + 0.04 or y1 - y0 < dy + 0.04:
+            continue
+        cx, cy = rng.uniform(x0 + dx / 2 + 0.02, x1 - dx / 2 - 0.02), rng.uniform(y0 + dy / 2 + 0.02, y1 - dy / 2 - 0.02)
+        off = abs(cy - b.yb) - dy / 2
+        if not (off > 0.24 or cx - dx / 2 > 0.70):
+            continue
+        if hz > TALL and not (off > 0.32 or cx - dx / 2 > 0.70):
+            continue
+        if any(abs(cx - p["pos"][0]) < (dx + p["size"][0]) / 2 + 0.02 and abs(cy - p["pos"][1]) < (dy + p["size"][1]) / 2 + 0.02
+               and p["pos"][2] + p["size"][2] / 2 > host["top_z"] + 0.002 for p in b.parts):
+            continue
+        b.box(f"prop{placed}_{name}", cx - dx / 2, cx + dx / 2, cy - dy / 2, cy + dy / 2, host["top_z"], host["top_z"] + hz,
+              _c(rng, PROP_PAL), "prop")
+        placed += 1
+    return dens, placed
+
+
+FIXTURE_P = 0.6  # share of scenes with an extra place fixture (owner request 10-02: places beyond the desk top)
+FIXTURES = ("wall_shelf", "high_cubbies", "low_shelf", "gap", "slope")
+PLACE_CLASS = ((0.45, "low"), (1.10, "desk"), (9.0, "high"))  # node height above the floor -> class
+APPROACH_TOP_CLEAR = 1.00  # a part closer than this above half of a node's area: front / side approach [hypothesis]
+
+
+def _furniture_back(b: _B) -> float:
+    xs = [p["pos"][0] + p["size"][0] / 2 for p in b.parts if p["role"] in ("top", "body", "wall", "cabinet", "side")]
+    return min(max(xs, default=0.9), 1.25)
+
+
+def _fx_wall_shelf(b: _B, i: int) -> bool:
+    rng = b.rng
+    tops = [n["top_z"] for n in b.nodes]
+    z = max(rng.uniform(1.12, 1.55), max(tops, default=0.8) + 0.36)
+    dep, w = rng.uniform(0.16, 0.26), rng.uniform(0.50, 1.00)
+    x1 = _furniture_back(b)
+    x0 = x1 - dep
+    yc = b.yb + rng.uniform(-0.20, 0.20)
+    col = _c(rng, WOOD + PAINT + METAL)
+    b.box(f"fx{i}_wshelf", x0, x1, yc - w / 2, yc + w / 2, z - 0.025, z, col, "fixture", "top")
+    for k, yy in enumerate((yc - w / 2 + 0.06, yc + w / 2 - 0.08)):
+        b.box(f"fx{i}_bracket{k}", x1 - 0.12, x1, yy, yy + 0.02, z - 0.16, z - 0.025, _c(rng, METAL + WOOD), "fixture")
+    b.node("shelf_high", f"fx{i}_wshelf", z, x0, x1, yc - w / 2, yc + w / 2, fixture="wall_shelf")
+    return True
+
+
+def _fx_high_cubbies(b: _B, i: int) -> bool:
+    rng = b.rng
+    tops = [n["top_z"] for n in b.nodes]
+    z0 = max(rng.uniform(1.10, 1.45), max(tops, default=0.8) + 0.36)
+    n = int(rng.integers(2, 4))
+    cw, ch, dep, t = rng.uniform(0.22, 0.32), rng.uniform(0.18, 0.28), rng.uniform(0.25, 0.32), 0.018
+    if len(b.parts) + n + 4 > N_SLOTS - 1:
+        return False
+    x1 = _furniture_back(b)
+    x0 = x1 - dep
+    w = n * cw + (n + 1) * t
+    ya = b.yb + rng.uniform(-0.15, 0.15) - w / 2
+    col = _c(rng, WOOD + PAINT)
+    b.box(f"fx{i}_cfloor", x0, x1, ya, ya + w, z0 - t, z0, col, "fixture", "top")
+    b.box(f"fx{i}_cceil", x0, x1, ya, ya + w, z0 + ch, z0 + ch + t, col, "fixture")
+    b.box(f"fx{i}_cback", x1 - t, x1, ya, ya + w, z0, z0 + ch, col, "fixture")
+    for k in range(n + 1):
+        yy = ya + k * (cw + t)
+        b.box(f"fx{i}_cwall{k}", x0, x1 - t, yy, yy + t, z0, z0 + ch, col, "fixture")
+    for k in range(n):
+        yy = ya + t + k * (cw + t)
+        b.node("compartment", f"fx{i}_cfloor", z0, x0, x1 - t, yy, yy + cw, fixture="high_cubbies",
+               opening=[round(float(cw), 4), round(float(ch), 4)])
+    return True
+
+
+def _fx_low_shelf(b: _B, i: int) -> bool:
+    rng = b.rng
+    legged = [n for n in b.nodes if n["kind"] == "top" and any(p["id"] == n["part"] + "_leg0" for p in b.parts)
+              and n["top_z"] >= 0.55]
+    if not legged:
+        return False
+    host = legged[int(rng.integers(len(legged)))]
+    (x0, x1), (y0, y1) = host["box"]
+    z = rng.uniform(0.10, min(0.30, host["top_z"] - 0.30))
+    lo, hi = y0 + 0.06, y1 - 0.06
+    b.box(f"fx{i}_lshelf", x0 + 0.05, x1 - 0.06, lo, hi, z - 0.02, z, _c(rng, WOOD + METAL + PAINT), "fixture", "top")
+    b.node("shelf_low", f"fx{i}_lshelf", z, x0 + 0.05, x1 - 0.06, lo, hi, fixture="low_shelf")
+    return True
+
+
+def _flat_band_host(b: _B):
+    hosts = [n for n in b.nodes if n["kind"] in ("top", "zone") and n["rim_z"] is None
+             and n["box"][0][1] - n["box"][0][0] >= 0.30 and n["box"][1][0] <= b.yb <= n["box"][1][1]]
+    return hosts[int(b.rng.integers(len(hosts)))] if hosts else None
+
+
+def _fx_gap(b: _B, i: int) -> bool:
+    rng = b.rng
+    host = _flat_band_host(b)
+    if host is None:
+        return False
+    (x0, x1), _ = host["box"]
+    g, bw, bd, hz = rng.uniform(0.06, 0.12), rng.uniform(0.08, 0.14), rng.uniform(0.14, 0.22), rng.uniform(0.06, 0.12)
+    cx = float(np.clip(rng.uniform(0.42, 0.56), x0 + bd / 2 + 0.02, x1 - bd / 2 - 0.02))
+    cy = b.yb + rng.uniform(-0.08, 0.08)
+    col = _c(rng, WOOD + PAINT + FABRIC)
+    top = host["top_z"]
+    b.box(f"fx{i}_gapa", cx - bd / 2, cx + bd / 2, cy - g / 2 - bw, cy - g / 2, top, top + hz, col, "fixture")
+    b.box(f"fx{i}_gapb", cx - bd / 2, cx + bd / 2, cy + g / 2, cy + g / 2 + bw, top, top + hz, col, "fixture")
+    b.node("gap", host["part"], top, cx - bd / 2, cx + bd / 2, cy - g / 2, cy + g / 2, fixture="gap",
+           opening=[round(float(g), 4), round(float(hz), 4)])
+    return True
+
+
+def _fx_slope(b: _B, i: int) -> bool:
+    rng = b.rng
+    host = _flat_band_host(b)
+    if host is None:
+        return False
+    (x0, x1), _ = host["box"]
+    dd, w, th = rng.uniform(0.24, 0.32), rng.uniform(0.26, 0.36), rng.uniform(0.012, 0.02)
+    tilt = float(rng.uniform(8.0, 20.0))
+    rise = dd * math.sin(math.radians(tilt))
+    cx = float(np.clip(rng.uniform(0.44, 0.56), x0 + dd / 2 + 0.02, x1 - dd / 2 - 0.02))
+    cy = b.yb + rng.uniform(-0.06, 0.06)
+    top = host["top_z"]
+    zc = top + rise / 2 + th
+    p = b.box(f"fx{i}_slope", cx - dd / 2, cx + dd / 2, cy - w / 2, cy + w / 2, zc - th / 2 - rise / 2,
+              zc + th / 2 + rise / 2, _c(rng, WOOD + METAL + PAINT), "fixture", "top")
+    p["box_z"] = [round(float(zc - th / 2 - rise / 2), 4), round(float(zc + th / 2 + rise / 2), 4)]  # swept z range
+    p["size"][2] = round(float(th), 4)  # the collider is a thin board, pitched about its y axis (world9 writes it)
+    p["pos"][2] = round(float(zc), 4)
+    p["pitch"] = round(-math.radians(tilt), 6)  # back edge up
+    b.node("slope", f"fx{i}_slope", round(zc + th / 2, 4), cx - dd / 2, cx + dd / 2, cy - w / 2, cy + w / 2,
+           fixture="slope", tilt_deg=round(tilt, 2))
+    return True
+
+
+FX_FN = {"wall_shelf": _fx_wall_shelf, "high_cubbies": _fx_high_cubbies, "low_shelf": _fx_low_shelf, "gap": _fx_gap,
+         "slope": _fx_slope}
+
+
+def add_fixtures(b: _B, family: str) -> list:
+    """Extra place fixtures (role "fixture", nodes flagged fixture=...) beyond the furniture top: a wall shelf or open
+    compartments above eye level, a low shelf under a table, a narrow gap between two blocks, an inclined board.
+    Drawn after the v1 parts. -> names added."""
+    rng = b.rng
+    if rng.random() >= FIXTURE_P:
+        return []
+    out = []
+    for name in [FIXTURES[int(k)] for k in rng.permutation(len(FIXTURES))][: int(rng.integers(1, 3))]:
+        if len(b.parts) + 3 > N_SLOTS - 1:
+            break
+        n0 = len(b.nodes)
+        if FX_FN[name](b, len(out)):
+            for n in b.nodes[n0:]:
+                n["group"] = f"fx{len(out)}"
+            out.append(name)
+    return out
+
+
+def annotate_nodes(nodes: list, parts: list, grid: int = 5) -> None:
+    """Per node (in place): width / depth (m); overhead clearance = the smallest gap to a part above the node on the
+    covered points of a grid x grid sample of its box (2.0 = open above); approach = "front" when parts closer than
+    APPROACH_TOP_CLEAR cover at least half of the node (a top-down descent is blocked), else "top"; place class by
+    the node's height above the floor."""
+    for n in nodes:
+        (x0, x1), (y0, y1) = n["box"]
+        top = n["rim_z"] if n.get("rim_z") is not None else n["top_z"]
+        gaps = np.full((grid, grid), 9.0)
+        xs, ys = np.linspace(x0, x1, grid + 2)[1:-1], np.linspace(y0, y1, grid + 2)[1:-1]
+        for p in parts:
+            lo, hi = _bounds(p)
+            if lo[2] <= top + 0.005:
+                continue
+            mx = (xs > lo[0]) & (xs < hi[0])
+            my = (ys > lo[1]) & (ys < hi[1])
+            if mx.any() and my.any():
+                gaps[np.ix_(mx, my)] = np.minimum(gaps[np.ix_(mx, my)], float(lo[2] - n["top_z"]))
+        near = gaps < APPROACH_TOP_CLEAR
+        n["width"], n["depth"] = round(float(y1 - y0), 4), round(float(x1 - x0), 4)
+        n["clear_above"] = round(float(min(gaps.min(), 2.0)), 4)
+        n["approach"] = "front" if near.mean() >= 0.5 else "top"
+        n["place_class"] = next(c for z, c in PLACE_CLASS if n["top_z"] <= z)
+
+
+GROUND = ((-2.5, 4.0), (-3.5, 3.5), (-0.03, -0.001))  # S-frame slab under the scene (the floor / outdoor ground)
+
+
+def add_ground(b: _B) -> bool:
+    """A floor slab (role "ground", floor material in world9) when a slot is left: the floor without a room
+    background and the ground of outdoor families; under a room it sits 2 mm below the room's floor."""
+    if len(b.parts) + 1 > N_SLOTS:
+        return False
+    (x0, x1), (y0, y1), (z0, z1) = GROUND
+    b.box("ground", x0, x1, y0, y1, z0, z1, _c(b.rng, MAT + PAINT), "ground")
+    return True
+
+
 # ----------------------------------------------------------------------------------------------- families
 def _shelf_front(b: _B, rule: str, d: float, yc: float):
     rng = b.rng
@@ -558,11 +778,16 @@ FAMILIES = {
     "store": (_store, ("stepped_display", "gondola_baskets", "checkout", "crate_table", "case_top")),
     "workbench": (_workbench, ("two_height", "crates", "pegboard", "organiser", "tote_stack")),
 }
-FAMILY_NAMES = tuple(FAMILIES)
-FAMILY_CODE = {f: i + 1 for i, f in enumerate(FAMILY_NAMES)}
 ROOM_KINDS = {"shelf_front": ("living", "bedroom", "other"), "dining": ("kitchen", "living", "other"),
               "living_low": ("living", "bedroom"), "kitchen": ("kitchen",), "entrance": ("other", "living"),
               "office": ("bedroom", "other", "living"), "store": ("other", "kitchen"), "workbench": ("other",)}
+from .scene9_more import FORCED_HOLDERS, MORE_FAMILIES, MORE_ROOM_KINDS, OUTDOOR  # noqa: E402  (L9 v2, spec §12.3)
+
+FAMILIES.update(MORE_FAMILIES)  # appended: the v1 families keep their FAMILY_CODE (scene seeds)
+ROOM_KINDS.update(MORE_ROOM_KINDS)
+HOLDER_RULES = HOLDER_RULES + FORCED_HOLDERS
+FAMILY_NAMES = tuple(FAMILIES)
+FAMILY_CODE = {f: i + 1 for i, f in enumerate(FAMILY_NAMES)}
 
 
 # ----------------------------------------------------------------------------------------------- frames
@@ -621,7 +846,7 @@ def aabb_world(parts, yaw: float):
     return out
 
 
-DECOR = ("chair", "sofa")  # dropped when they would stand outside the room's clear zone
+DECOR = ("chair", "sofa", "decor")  # dropped when they would stand outside the room's clear zone
 ZONE = ((-0.50, 1.30), (-1.10, 0.90))  # = assets_x.rooms.ZONE (every room keeps this box clear around the robot)
 
 
@@ -743,7 +968,7 @@ def sample(family: str, rule: str, seed: int, arm: str, rm=None, tries: int = 24
             last = f"keep-out {bad}"
             continue
         b.parts = [p for p in b.parts if p["role"] not in DECOR or in_zone([p], yaw)]  # decor past the room zone
-        if not in_zone([p for p in b.parts if p["role"] != "room_wall"], yaw):
+        if not in_zone([p for p in b.parts if p["role"] not in ("room_wall", "ground")], yaw):
             last = "outside the room zone"
             continue
         sc = {"family": family, "rule": rule, "seed": int(seed), "arm": arm, "try": k, "yaw": round(yaw, 5),
@@ -753,10 +978,38 @@ def sample(family: str, rule: str, seed: int, arm: str, rm=None, tries: int = 24
         if max(per.values(), default=0) < 4:
             last = f"no usable node {per}"
             continue
+        lift, per = add_v2(b, sc, family, (int(seed), FAMILY_CODE[family], rules.index(rule), k), rm, lifts, (lift, per))
         sc.update(lift=round(float(lift), 4), usable_n=per,
                   furniture=[to_world_part(p, yaw) for p in b.parts], walls=[])
         return sc
     raise RuntimeError(f"{family}/{rule} seed {seed}: {last}")
+
+
+def add_v2(b: _B, sc: dict, family: str, key: tuple, rm, lifts, v1: tuple) -> tuple:
+    """L9 v2 additions to a valid v1-style scene, from their own rng (the v1 draw is unchanged): props, place
+    fixtures (pieces past the keep-out box / room zone are dropped with their nodes), the ground slab, node
+    annotations. Falls back to no props / fixtures when they leave no usable node. -> (lift, usable counts)."""
+    params, yaw = sc["params"], sc["yaw"]
+    n0p, n0n = len(b.parts), len(b.nodes)
+    b.rng = np.random.default_rng([key[0], 929, key[1], key[2], key[3]])
+    params["density"], params["props"] = add_props(b)
+    params["fixtures"] = add_fixtures(b, family)
+    new = b.parts[n0p:]
+    bad = set(keep_out_hits(new, yaw)) | {p["id"] for p in new if not in_zone([p], yaw)}
+    groups = {pid.split("_")[0] for pid in bad}
+    if groups:
+        b.parts[n0p:] = [p for p in new if p["id"].split("_")[0] not in groups]
+        b.nodes[n0n:] = [n for n in b.nodes[n0n:] if n.get("group") not in groups]
+        params["props"] = sum(p["id"].startswith("prop") for p in b.parts[n0p:])
+        params["fixtures"] = sorted({n["fixture"] for n in b.nodes[n0n:] if n.get("fixture")})
+    lift, per = choose_lift(sc, rm) if lifts is None else choose_lift(sc, rm, lifts=tuple(lifts))
+    if max(per.values(), default=0) < 4:
+        b.parts[n0p:], b.nodes[n0n:] = [], []
+        params["props"], params["fixtures"] = 0, []
+        lift, per = v1
+    add_ground(b)
+    annotate_nodes(b.nodes, b.parts)
+    return lift, per
 
 
 def usable_nodes(scene: dict, min_pts: int = 4) -> list:
