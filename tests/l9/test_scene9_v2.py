@@ -42,7 +42,7 @@ def test_v1_scenes_unchanged(rm):
     for key, h in gold.items():
         f, r, arm = key.split("/")
         sc = S.sample(f, r, 11, arm, rm)
-        furn = [p for p in sc["furniture"] if p["role"] not in NEW_ROLES]
+        furn = [{k: v for k, v in p.items() if k != "mat_hint"} for p in sc["furniture"] if p["role"] not in NEW_ROLES]
         nodes = [{k: v for k, v in n.items() if k not in NEW_NODE_KEYS + ("group",)} for n in sc["nodes"] if not n.get("fixture")]
         k = json.dumps([furn, nodes, _gold_lift(sc, rm), sc["robot_pose"]], sort_keys=True)
         assert hashlib.sha256(k.encode()).hexdigest()[:16] == h, key
@@ -107,3 +107,15 @@ def test_heldout_family_split():
     tr, ho = S.all_rules("train"), S.all_rules("heldout")
     assert ho and not {f for f, _ in tr} & set(S.HELDOUT_FAMILIES) and {f for f, _ in ho} == set(S.HELDOUT_FAMILIES)
     assert len(tr) + len(ho) == len(S.all_rules())
+
+
+def test_material_hints(rm):
+    seen = set()
+    for f in ("kitchen", "lab_bench", "laundry", "warehouse_rack", "office"):
+        for r in S.FAMILIES[f][1]:
+            sc = S.sample(f, r, 5, "right", rm)
+            for p in sc["parts_s"]:
+                if p["role"] == "prop":
+                    assert p["mat_hint"] == "paper"
+                seen.add(p.get("mat_hint"))
+    assert {"metal", "stone", "plastic", "wood", "paper"} <= seen

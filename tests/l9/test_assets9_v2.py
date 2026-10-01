@@ -27,3 +27,14 @@ def test_materials_v2_absolute():
     for r in t.values():
         assert all(os.path.isabs(v) or v.startswith("/") for v in r["files"].values())
         assert A9.licence_ok(r["license"])
+
+
+def test_hint_pools_non_empty():
+    import json
+    from harvest.l9 import world9 as W
+    cat = {}
+    for fn in ("materials_l9.json", "materials_l9v2.json"):
+        cat.update(json.load(open(os.path.join(A9.DIR, fn)))["materials"])
+    for h in W.HINT_GROUPS:
+        assert len(W.hint_pool(cat, h, "train")) >= 5, h
+    assert W.material_pool(cat, "floor", "train", "outdoor") and W.material_pool(cat, "floor", "train", "indoor")

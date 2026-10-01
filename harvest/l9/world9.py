@@ -182,6 +182,25 @@ MATERIAL_ROLE = {"room_wall": "wall", "wall": "wall", "mat": "fabric", "sofa": "
                  "ground": "floor"}  # other part roles: furniture (props: furniture or fabric by the draw)
 
 
+HINT_GROUPS = {  # scene9 mat_hint -> material groups (ambientCG displayCategory / Poly Haven first category, lower case,
+    # no spaces); fewer than 5 ids -> the role pool
+    "wood": {"wood", "planks", "paintedwood", "bamboo", "chipboard", "cork", "wicker", "woodsiding"},
+    "paint": {"paintedwood", "paintedmetal", "paintedplaster", "plastic", "wood", "planks"},
+    "metal": {"metal", "metalplates", "sheetmetal", "diamondplate", "corrugatedsteel", "paintedmetal", "rust",
+              "metalwalkway"},
+    "stone": {"marble", "granite", "onyx", "terrazzo", "travertine", "tiles", "concrete"},
+    "plastic": {"plastic", "porcelain", "paintedmetal", "rubber", "glazedterracotta"},
+    "paper": {"cardboard", "paper", "leather", "fabric", "plastic", "wicker"},
+}
+
+
+def hint_pool(cat: dict, hint: str, split: str) -> list:
+    from ..sim.assets_x import materials as M
+    want = HINT_GROUPS.get(hint, set())
+    return sorted(k for k, r in cat.items() if r["role"] != "env" and M.split_of(k) == split
+                  and str(r.get("group", "")).lower().replace(" ", "") in want and r.get("setting") != "outdoor")
+
+
 def material_pool(cat: dict, role: str, split: str, setting: str | None = None) -> list:
     """Sorted material ids of a role / split (materials.split_of); floors by setting: "outdoor" = ground-like
     floors (v1 Poly Haven floors not tagged indoor + v2 outdoor floors), else indoor floors."""
@@ -393,6 +412,12 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                 if key not in self._pools:
                     self._pools[key] = material_pool(cat, role, split, setting) or material_pool(cat, "furniture", split)
                 ids = self._pools[key]
+                h = p.get("mat_hint")
+                if h in HINT_GROUPS and role != "fabric":  # L9 v2: the part's palette kind (metal / stone / ...)
+                    if ("hint", h) not in self._pools:
+                        self._pools[("hint", h)] = hint_pool(cat, h, split)
+                    if len(self._pools[("hint", h)]) >= 5:
+                        ids = self._pools[("hint", h)]
                 h = int(hashlib.sha256(f"{role}:{int(vseed) * 131 + i}".encode()).hexdigest()[:8], 16)
                 out.append(ids[h % len(ids)])
             return out

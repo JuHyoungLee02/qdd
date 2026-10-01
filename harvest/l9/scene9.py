@@ -39,6 +39,31 @@ def _c(rng, pal):
     return tuple(pal[int(rng.integers(len(pal)))])
 
 
+# L9 v2: a part's palette names its material kind (world9 draws the texture from that kind: metal parts get metal
+# textures, appliances plastic / porcelain ...). scene9_more registers its palettes too. [hypothesis: realism]
+PALETTE_HINT = {}
+
+
+def register_palette(pal, hint: str) -> None:
+    for c in pal:
+        PALETTE_HINT.setdefault(tuple(round(float(v), 3) for v in c), hint)
+
+
+for _pal, _h in ((METAL, "metal"), (FABRIC, "fabric"), (MAT, "fabric"), (WOOD, "wood"), (PAINT, "paint")):
+    register_palette(_pal, _h)
+
+
+def hint_parts(parts: list) -> None:
+    """mat_hint per part from its colour's palette (props: "paper"; the ground: none)."""
+    for p in parts:
+        if p.get("role") == "prop":
+            p["mat_hint"] = "paper"
+        elif p.get("color") is not None and p.get("role") not in ("ground", "room_wall"):
+            h = PALETTE_HINT.get(tuple(round(float(v), 3) for v in p["color"]))
+            if h:
+                p["mat_hint"] = h
+
+
 class _B:
     """Part / node builder in the scene frame."""
 
@@ -1029,6 +1054,7 @@ def add_v2(b: _B, sc: dict, family: str, key: tuple, rm, lifts, v1: tuple) -> tu
         lift, per = v1
     add_ground(b)
     annotate_nodes(b.nodes, b.parts)
+    hint_parts(b.parts)
     return lift, per
 
 
