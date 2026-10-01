@@ -14,9 +14,14 @@ log() { echo "$(date -u +%FT%TZ) $LN $*" >> $L/jv1_lanes.log; }
 wanted() { [ -f $W2 ] && return 0; [ -f $W1 ] || return 1; [ -s $W1 ] || return 0
   grep -qiE "(^|[^a-z0-9-])($TAG:([0-9,]*,)?$G(,|[^0-9]|$)|all)" $W1; }
 url() {  # replica of arm $1 for this lane (SERVERS.json written by chain_eval.sh)
-  /data/harvest/venv_train/bin/python -c "import json,zlib;u=json.load(open('$E/SERVERS.json'))['$1'];print(u[zlib.crc32(b'$LN')%len(u)])"; }
+  /data/harvest/venv_train/bin/python -c "import json,zlib;u=json.load(open('$E/SERVERS.json'))['$1'];print(u[zlib.crc32(b'$LN')%len(u)])" < /dev/null; }
+# memory guard (x2 OOMKilled 10-01 18:44 with 6 servers + 4 render lanes + 2 L9 lanes): an Isaac run starts only while
+# the pod's cgroup memory + one Isaac (JV1_ISAAC_GB, 15) stays under JV1_MEM_BUDGET_GB (100)
+mem_ok() { local cur; cur=$(cat /sys/fs/cgroup/memory.current 2>/dev/null || echo 0)
+  [ $(( cur / 1073741824 + ${JV1_ISAAC_GB:-15} )) -le ${JV1_MEM_BUDGET_GB:-100} ]; }
 log "LANE_START gpu=$G code=$C"
-while read -r NAME V EXE ARM LAT PER DIS; do
+# jobs on fd 3: commands inside the loop must not eat the job lines (10-01 bug: names like '_Z_clean')
+while read -r NAME V EXE ARM LAT PER DIS <&3; do
   [ -z "$NAME" ] || [ "${NAME:0:1}" = "#" ] && continue
   for try in 1 2 3; do
     wanted && { echo "$POD:$G freed $(date -u +%FT%TZ) (jv1 $LN)" >> $Q/out/l9/GPU_FREED; log "YIELD_EXIT"; exit 0; }
@@ -24,9 +29,10 @@ while read -r NAME V EXE ARM LAT PER DIS; do
     X="--executor $EXE"; [ "$ARM" != - ] && X="$X --jcr-url $(url $ARM)"
     [ "$LAT" != - ] && X="$X --rt-lat $LAT --rt-period $PER"
     [ "$DIS" = 1 ] && X="$X --eval-disturb"
+    until mem_ok; do sleep 30; done
     bash $C/tools/teach_strip8/isaac.sh $C $G jcr_$LN harvest.jcr.record --mode eval --src truth --variant $V \
-      --seeds 0-19 --out $E/$NAME --vid-root $VID/$NAME --dist $DIST --envelope B $X --yield-files $W2 --owner $LN
+      --seeds 0-19 --out $E/$NAME --vid-root $VID/$NAME --dist $DIST --envelope B $X --yield-files $W2 --owner $LN       < /dev/null
     log "JOB $NAME/$V try=$try done=$(ls $E/$NAME/$V/s*/ep.json 2>/dev/null | wc -l)/20"
   done
-done < $E/jobs.txt
+done 3< $E/jobs.txt
 log "LANE_DONE"
