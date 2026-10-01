@@ -595,7 +595,10 @@ class Runtime:
         if hold:
             c_obj = np.asarray(self.w.env.object_pose(tg)[0], float)
             low = step in ("carry_up", "lower_open", None) or pos[2] < c_obj[2] + 0.05
-            self.refresh_world(holding=tg, below_z=min(c_obj[2], pos[2]) if low else None)
+            # placing next to / between objects (relations): neighbours at 0.8 of their box, else the attached
+            # object's spheres + padding + activation distance made every put pose a collision (pilot 10-02)
+            near = {k: 0.8 for k in self.w.env.present if k != tg} if step == "lower_open" else None
+            self.refresh_world(holding=tg, below_z=min(c_obj[2], pos[2]) if low else None, shrink=near)
         else:
             self.refresh_world(exclude=(tg,) if step in ("retreat",) else ())
         Q0 = None
