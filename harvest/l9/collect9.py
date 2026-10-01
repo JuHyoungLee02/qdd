@@ -53,7 +53,7 @@ def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 20, world=None) ->
         rp, hp = V.pose_key(sc["robot_pose"], head)
         parts = sc["furniture"]
         room = world.room_name(sd, sc["family"], parts) if world is not None else f"seed:{sd}"
-        hdr = world.hdr_name(sd) if world is not None else f"seed:{sd}"
+        hdr = world.hdr_name(sd, sc["family"]) if world is not None else f"seed:{sd}"
         mats = world.material_ids(sd, [p for p in parts if room is None or p["role"] != "room_wall"])             if world is not None else f"seed:{sd}"
         tag = combo_tag(row)
         if tag:  # spec §9: another robot / a drawn head camera is another combination (AI Worker std: unchanged)

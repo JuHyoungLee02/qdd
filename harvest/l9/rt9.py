@@ -369,6 +369,9 @@ class Runtime:
         self.w.observe(depth=True)
         info = self.w.task_info()
         self.choice, self.choice_key = self.choose(info["tgt"], info), (info["tgt"], info["place"])
+        if self.choice is None and os.environ.get("L9V2_SKIP_UNGRASPABLE", "1") == "1":
+            from ..teach_l8d.fx import SkipScene  # no valid grasp of the first target in this scene: redraw, do not
+            raise SkipScene("v2: no valid grasp of the first target " + str(info["tgt"]))  # fail an episode
         gc = self.choice
         if gc is not None and gc.instructed:
             self.instruction_suffix = VP.instruction_suffix(gc)
@@ -729,15 +732,17 @@ def has_candidates(profile: str, k: str, untested: bool = False, min_pass: int =
     t = os.path.join(TESTED_DIR, g, f"{k}.npz")
     if not os.path.exists(t):
         return False
-    r = np.load(t)
-    ok = r["pass"] if "pass" in r.files else (r["shake_ok"] if "shake_ok" in r.files else None)
-    return ok is not None and int(np.asarray(ok, bool).sum()) >= min_pass
+    K = int(np.load(os.path.join(GRASP_DIR, g, f"{k}.npz"))["w"].shape[0])
+    return int(tested_mask(dict(np.load(t)), K).sum()) >= min_pass
 
 
 def tested_mask(r: dict, K: int) -> np.ndarray:
     """Per-candidate pass mask (K) from a tested npz: 'pass' of length K (grasp_test >= v2), or 'pass'/'shake_ok' of
     the tested subset scattered by 'idx'; untested candidates are not valid."""
-    p = np.asarray(r.get("pass", r.get("shake_ok", np.zeros(0))), bool)
+    key = os.environ.get("L9V2_PASS_KEY", "pass_shake")  # catalog friction = the sim friction; mu 0.4 = stress test
+    p = np.asarray(r.get(key, r.get("pass", r.get("shake_ok", np.zeros(0)))), bool)
+    if key == "pass_shake" and key not in r and "shake_ok" in r and "idx" in r and len(r["shake_ok"]) == len(r["idx"]):
+        p = np.asarray(r["shake_ok"], bool)  # older chunks: the tested subset by idx
     if len(p) == K:
         return p
     out = np.zeros(K, bool)
