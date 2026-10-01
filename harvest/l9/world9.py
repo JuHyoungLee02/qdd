@@ -460,7 +460,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                 return  # unchanged (a std episode after std episodes writes nothing)
             import omni.usd
             import torch
-            from isaaclab.sensors.camera.utils import convert_camera_frame_orientation_convention
+            from isaaclab.utils.math import convert_camera_frame_orientation_convention
 
             from ..sim.randomize import _set_pose
             q = convert_camera_frame_orientation_convention(torch.tensor([mount[3:]], dtype=torch.float32),
