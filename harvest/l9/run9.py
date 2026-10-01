@@ -58,6 +58,7 @@ def main(argv=None):
     ap.add_argument("--out", default=OUT)
     ap.add_argument("--video-seeds", default="")
     ap.add_argument("--p", type=float, default=0.35)
+    ap.add_argument("--motion", action="store_true", help="spec §10 human-like motion (harvest.l9.motion9)")
     a = ap.parse_args(argv)
     code = 0
     try:
@@ -67,6 +68,9 @@ def main(argv=None):
         from .collect9 import NoEpisode, run_episode
         from .vary9 import ComboLedger
         from .world9 import make_world9
+        if a.motion:
+            from .motion9 import install
+            install()
         rows = [r for r in json.load(open(a.plan)) if str(r["job"]) == str(a.job)]
         if not rows:
             raise ValueError(f"no rows for job {a.job}")
@@ -105,7 +109,8 @@ def main(argv=None):
             od = ep_dir(a.out, r)
             t0 = time.perf_counter()
             try:
-                meta = run_episode(world, r, od, pool, rm, ledger, p=a.p, video=int(r["seed"]) in vids)
+                meta = run_episode(world, r, od, pool, rm, ledger, p=a.p, video=int(r["seed"]) in vids,
+                                   motion=a.motion or bool(r.get("motion")))
             except (SkipScene, NoEpisode, ValueError) as ex:
                 os.makedirs(od, exist_ok=True)
                 json.dump({"row": r, "reason": f"{type(ex).__name__}: {ex}"}, open(os.path.join(od, "skipped.json"), "w"))

@@ -433,7 +433,38 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
 
         def step(self, cmd_pos, width: float, quat=None) -> None:
             from ..teach_l8d.xart import l8s_step_band
-            l8s_step_band(self, cmd_pos, width, quat)
+            m = getattr(self, "motion", None)
+            if m and float(m.get("elbow", 0)) > 0:
+                self._step_elbow(cmd_pos, width, quat, float(m["elbow"]))
+            else:
+                l8s_step_band(self, cmd_pos, width, quat)
+            self._log_step()
+
+        def _step_elbow(self, cmd_pos, width, quat, gain):
+            """= xart.l8s_step_band (ARM_DQ / ARM_BAND clamps) with a null-space pull towards a comfortable posture
+            added to the unclamped IK target (spec §10 elbow; motion9.nullspace_pull)."""
+            from ..sim.planner import W_MAX, _slerp_step
+            from ..teach_l8d.clutter_x import ARM_BAND, ARM_DQ
+            from .motion9 import Q_MID, nullspace_pull
+            goal = self.pl.goal_quat if quat is None else np.asarray(quat, float)
+            self.cmd_quat = _slerp_step(self.cmd_quat, goal, W_MAX * self.dt)
+            env = self.env
+            rob, ids = env.robot, env.arm_ids
+            g = self.pl._gravity_offset()[0].cpu().numpy()
+            qd = self.pl._ik(np.asarray(cmd_pos, float), self.cmd_quat, 10.0) - g
+            qm = rob.data.joint_pos[0, ids].cpu().numpy()
+            J = rob.root_physx_view.get_jacobians()[0, env.ee_idx - 1, :, :][:, ids].cpu().numpy()
+            qmid = Q_MID if arm == "right" else A.mirror_q(Q_MID)
+            qd = qd + nullspace_pull(J, qm, qmid, gain)
+            if getattr(self, "_qcmd", None) is None:
+                self._qcmd = qm.copy()
+            self._qcmd = np.clip(self._qcmd + np.clip(qd - self._qcmd, -ARM_DQ, ARM_DQ), qm - ARM_BAND, qm + ARM_BAND)
+            env.step(np.concatenate([self._qcmd + g, [float(width)]]).astype(np.float32))
+            self._st = None
+            if hasattr(self, "_jlog"):
+                self._jlog.append(rob.data.joint_pos[0].cpu().numpy().copy())
+
+        def _log_step(self):
             if not hasattr(self, "_tlog"):
                 return
             d, ids_ = self.env.robot.data, self.env.arm_ids
