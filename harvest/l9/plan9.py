@@ -116,6 +116,7 @@ class Planner9:
         self.torch = __import__("torch")
         self.dev = device
         self.attached = None
+        self._planned = list(self.mp.joint_names)
 
     @property
     def joint_names(self):
@@ -142,11 +143,17 @@ class Planner9:
         q = self.torch.tensor(mat_quat(T[:3, :3]), dtype=self.torch.float32, device=self.dev).view(1, 1, 1, 1, 4)
         return GoalToolPose(tool_frames=self.mp.tool_frames, position=p, quaternion=q)
 
-    @staticmethod
-    def _pos(traj) -> np.ndarray | None:
+    def _pos(self, traj) -> np.ndarray | None:
         if traj is None:
             return None
         P = traj.position.reshape(-1, traj.position.shape[-1]).cpu().numpy()
+        names = list(getattr(traj, "joint_names", None) or [])
+        if names and P.shape[1] != len(names):
+            names = []
+        if names:  # interpolated plans may carry the locked joints too (fingers): keep the planned ones, in order
+            P = P[:, [names.index(n) for n in self._planned]]
+        else:
+            P = P[:, :len(self._planned)]
         keep = np.concatenate([[True], np.abs(np.diff(P, axis=0)).max(1) > 1e-6])  # drop padded repeats
         return P[keep]
 
