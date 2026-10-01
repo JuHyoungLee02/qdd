@@ -40,10 +40,10 @@ DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets9", "gripp
 #   max_open, pad_len (along a), finger_t (along y, behind the pad face), finger_w (along x), finger_len (tip ->
 #   knuckle along -a from the tip), palm = (x, y, z) half sizes of the palm box above the knuckles.
 _DEFAULTS = {
-    "ffw_sg2": {"max_open": 0.107, "pad_len": 0.030, "finger_t": 0.012, "finger_w": 0.022, "finger_len": 0.060,
-                "palm_half": (0.035, 0.075, 0.035), "source": "default (RH-P12-RN datasheet-like, hypothesis)"},
-    "franka": {"max_open": 0.080, "pad_len": 0.018, "finger_t": 0.010, "finger_w": 0.020, "finger_len": 0.054,
-               "palm_half": (0.030, 0.100, 0.030), "source": "default (franka_description hand, hypothesis)"},
+    "ffw_sg2": {"max_open": 0.107, "pad_len": 0.045, "finger_t": 0.012, "finger_w": 0.022, "finger_len": 0.0475,
+                "palm_half": (0.035, 0.075, 0.035), "source": "pads 4.5 cm, body 2.5 cm above TCP (robot9 _FFW_PADS); thickness/width hypothesis"},
+    "franka": {"max_open": 0.080, "pad_len": 0.020, "finger_t": 0.010, "finger_w": 0.020, "finger_len": 0.046,
+               "palm_half": (0.030, 0.100, 0.030), "source": "pads 2.0 cm, body 3.6 cm above TCP (robot9 PAD_LEN_M, BODY_ABOVE_TCP_M); thickness/width hypothesis"},
 }
 
 
