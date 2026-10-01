@@ -1,0 +1,147 @@
+{
+ "min_n": 8,
+ "pass": [
+  "block_restack",
+  "clear_colour",
+  "clear_to_back",
+  "clear_to_front_right",
+  "sort_size_sides"
+ ],
+ "fail": [
+  "clear_to_cubby"
+ ],
+ "short": [
+  "block_by_side",
+  "clear_two_aside",
+  "down_front_of",
+  "ins_from_block",
+  "rel_behind_container",
+  "set_pair",
+  "sort2_colour",
+  "sort_colour_front_back",
+  "sort_kind_mat"
+ ],
+ "n_pass": 5,
+ "pass_by_family": {
+  "stack": 1,
+  "clear": 3,
+  "sort": 1
+ },
+ "arm": {
+  "right": {
+   "n": 63,
+   "ok": 40
+  },
+  "left": {
+   "n": 52,
+   "ok": 29
+  }
+ },
+ "definitions": {
+  "block_by_side": {
+   "family": "stack",
+   "n": 7,
+   "ok": 3,
+   "skipped": 5,
+   "yield": 0.429
+  },
+  "block_restack": {
+   "family": "stack",
+   "n": 10,
+   "ok": 5,
+   "skipped": 2,
+   "yield": 0.5
+  },
+  "clear_colour": {
+   "family": "clear",
+   "n": 12,
+   "ok": 6,
+   "skipped": 0,
+   "yield": 0.5
+  },
+  "clear_to_back": {
+   "family": "clear",
+   "n": 12,
+   "ok": 10,
+   "skipped": 0,
+   "yield": 0.833
+  },
+  "clear_to_cubby": {
+   "family": "clear",
+   "n": 12,
+   "ok": 5,
+   "skipped": 0,
+   "yield": 0.417
+  },
+  "clear_to_front_right": {
+   "family": "clear",
+   "n": 11,
+   "ok": 8,
+   "skipped": 1,
+   "yield": 0.727
+  },
+  "clear_two_aside": {
+   "family": "clear",
+   "n": 7,
+   "ok": 4,
+   "skipped": 1,
+   "yield": 0.571
+  },
+  "down_front_of": {
+   "family": "height",
+   "n": 7,
+   "ok": 4,
+   "skipped": 5,
+   "yield": 0.571
+  },
+  "ins_from_block": {
+   "family": "insert",
+   "n": 4,
+   "ok": 4,
+   "skipped": 2,
+   "yield": 1.0
+  },
+  "rel_behind_container": {
+   "family": "relation",
+   "n": 4,
+   "ok": 3,
+   "skipped": 8,
+   "yield": 0.75
+  },
+  "set_pair": {
+   "family": "set",
+   "n": 2,
+   "ok": 0,
+   "skipped": 10,
+   "yield": 0.0
+  },
+  "sort2_colour": {
+   "family": "sort",
+   "n": 5,
+   "ok": 3,
+   "skipped": 7,
+   "yield": 0.6
+  },
+  "sort_colour_front_back": {
+   "family": "sort",
+   "n": 6,
+   "ok": 2,
+   "skipped": 1,
+   "yield": 0.333
+  },
+  "sort_kind_mat": {
+   "family": "sort",
+   "n": 6,
+   "ok": 5,
+   "skipped": 0,
+   "yield": 0.833
+  },
+  "sort_size_sides": {
+   "family": "sort",
+   "n": 10,
+   "ok": 7,
+   "skipped": 2,
+   "yield": 0.7
+  }
+ }
+}
