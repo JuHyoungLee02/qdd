@@ -27,3 +27,11 @@ def test_free_opening_clips_to_neighbour():
     # a neighbour hugging the object: nothing fits
     nb2 = (np.array([[0.5, 0.021 + 0.05, 0.80]]), np.array([[0.05, 0.05, 0.05]]), np.eye(3)[None])
     assert R.free_opening(T, gr, nb2, w, pre) is None
+
+
+def test_tested_mask():
+    full = {"pass": np.array([True, False, True])}
+    assert R.tested_mask(full, 3).tolist() == [True, False, True]
+    sub = {"pass": np.array([True, False]), "idx": np.array([4, 1])}
+    assert R.tested_mask(sub, 6).tolist() == [False, False, False, False, True, False]
+    assert R.tested_mask({}, 2).tolist() == [False, False]

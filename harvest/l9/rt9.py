@@ -258,7 +258,7 @@ class Runtime:
         t = os.path.join(TESTED_DIR, self.grip, f"{oid}.npz")
         if os.path.exists(t):
             r = dict(np.load(t))
-            ok = np.asarray(r.get("pass", r.get("shake_ok", ok)), bool)
+            ok = tested_mask(r, len(d["w"]))
             d["tested"] = True
         elif not self.allow_untested:
             ok[:] = False
@@ -708,3 +708,16 @@ def has_candidates(profile: str, k: str, untested: bool = False, min_pass: int =
     r = np.load(t)
     ok = r["pass"] if "pass" in r.files else (r["shake_ok"] if "shake_ok" in r.files else None)
     return ok is not None and int(np.asarray(ok, bool).sum()) >= min_pass
+
+
+def tested_mask(r: dict, K: int) -> np.ndarray:
+    """Per-candidate pass mask (K) from a tested npz: 'pass' of length K (grasp_test >= v2), or 'pass'/'shake_ok' of
+    the tested subset scattered by 'idx'; untested candidates are not valid."""
+    p = np.asarray(r.get("pass", r.get("shake_ok", np.zeros(0))), bool)
+    if len(p) == K:
+        return p
+    out = np.zeros(K, bool)
+    idx = np.asarray(r.get("idx", np.zeros(0)), int)
+    if len(idx) == len(p) and len(idx):
+        out[idx[idx < K]] = p[idx < K]
+    return out
