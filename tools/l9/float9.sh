@@ -38,7 +38,7 @@ while true; do
     n=0
     while [ -n "$(l9_pids)" ] && [ $n -lt 15 ]; do sleep 1; n=$((n + 1)); done  # Isaac ignores SIGTERM (test: 60 s)
     left=$(l9_pids); [ -n "$left" ] && { kill -9 $left 2>/dev/null; log "SIGKILL after 15 s: $left"; }
-    bash $L/release_claims.sh $R "$TAGS" >> $F/float9.log 2>&1  # x2 jobs back to the queue
+    bash $L/release_claims.sh $R "${L9_KEEP:-ka kb kc kd ke kf}"  # keep = the OTHER pods' lanes >> $F/float9.log 2>&1  # x2 jobs back to the queue
     n=0
     while [ "$(gpu_mem)" -gt 1000 ] && [ $n -lt 120 ]; do sleep 2; n=$((n + 2)); done
     bash $C/tools/l9/sem_reset.sh >> $F/float9.log 2>&1 || log "semaphore not reset (an Isaac runs on the pod)"
