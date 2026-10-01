@@ -1,0 +1,447 @@
+{
+ "min_n": 8,
+ "pass": [
+  "clear_one",
+  "clear_plate",
+  "down_into_container",
+  "down_to_lower",
+  "in_from_second",
+  "in_kind_food",
+  "ins_by_side",
+  "line2_y",
+  "restack",
+  "sort_left_right",
+  "stack2",
+  "stack_on_bigger",
+  "stack_on_second",
+  "up_into_container"
+ ],
+ "fail": [
+  "block_from_second",
+  "clear_two",
+  "gather_zone",
+  "in_second_container",
+  "in_two_same",
+  "ins_from_plate",
+  "ins_then_in",
+  "line_by_height",
+  "sort_cubbies",
+  "sort_odd_one",
+  "sort_same_colour",
+  "stack3",
+  "stack_then_in",
+  "up_two"
+ ],
+ "short": [
+  "block_by_side",
+  "block_restack",
+  "block_then_in",
+  "block_two",
+  "clear_colour",
+  "clear_three",
+  "clear_to_basket_second",
+  "clear_to_cubby",
+  "clear_to_second",
+  "clear_toy_bin",
+  "down_front_of",
+  "ins_jar",
+  "line3_y",
+  "rel_behind_container",
+  "rel_two_sides",
+  "set_pair",
+  "set_two_plates",
+  "sort2_colour",
+  "sort2_kind",
+  "sort3_two",
+  "sort_food_bowl_toy_side",
+  "sort_size",
+  "sort_size_sides",
+  "swap_levels"
+ ],
+ "n_pass": 14,
+ "pass_by_family": {
+  "clear": 2,
+  "height": 3,
+  "put_in": 2,
+  "insert": 1,
+  "arrange": 1,
+  "stack": 4,
+  "sort": 1
+ },
+ "arm": {
+  "right": {
+   "n": 196,
+   "ok": 84
+  },
+  "left": {
+   "n": 157,
+   "ok": 67
+  }
+ },
+ "definitions": {
+  "block_by_side": {
+   "family": "stack",
+   "n": 3,
+   "ok": 2,
+   "skipped": 7,
+   "yield": 0.667
+  },
+  "block_from_second": {
+   "family": "stack",
+   "n": 8,
+   "ok": 3,
+   "skipped": 0,
+   "yield": 0.375
+  },
+  "block_restack": {
+   "family": "stack",
+   "n": 5,
+   "ok": 3,
+   "skipped": 5,
+   "yield": 0.6
+  },
+  "block_then_in": {
+   "family": "stack",
+   "n": 4,
+   "ok": 1,
+   "skipped": 1,
+   "yield": 0.25
+  },
+  "block_two": {
+   "family": "stack",
+   "n": 5,
+   "ok": 1,
+   "skipped": 5,
+   "yield": 0.2
+  },
+  "clear_colour": {
+   "family": "clear",
+   "n": 5,
+   "ok": 4,
+   "skipped": 0,
+   "yield": 0.8
+  },
+  "clear_one": {
+   "family": "clear",
+   "n": 10,
+   "ok": 6,
+   "skipped": 0,
+   "yield": 0.6
+  },
+  "clear_plate": {
+   "family": "clear",
+   "n": 9,
+   "ok": 5,
+   "skipped": 1,
+   "yield": 0.556
+  },
+  "clear_three": {
+   "family": "clear",
+   "n": 7,
+   "ok": 0,
+   "skipped": 3,
+   "yield": 0.0
+  },
+  "clear_to_basket_second": {
+   "family": "clear",
+   "n": 4,
+   "ok": 0,
+   "skipped": 1,
+   "yield": 0.0
+  },
+  "clear_to_cubby": {
+   "family": "clear",
+   "n": 5,
+   "ok": 3,
+   "skipped": 0,
+   "yield": 0.6
+  },
+  "clear_to_second": {
+   "family": "clear",
+   "n": 6,
+   "ok": 2,
+   "skipped": 0,
+   "yield": 0.333
+  },
+  "clear_toy_bin": {
+   "family": "clear",
+   "n": 1,
+   "ok": 1,
+   "skipped": 9,
+   "yield": 1.0
+  },
+  "clear_two": {
+   "family": "clear",
+   "n": 10,
+   "ok": 1,
+   "skipped": 0,
+   "yield": 0.1
+  },
+  "down_front_of": {
+   "family": "height",
+   "n": 6,
+   "ok": 3,
+   "skipped": 4,
+   "yield": 0.5
+  },
+  "down_into_container": {
+   "family": "height",
+   "n": 9,
+   "ok": 7,
+   "skipped": 1,
+   "yield": 0.778
+  },
+  "down_to_lower": {
+   "family": "height",
+   "n": 10,
+   "ok": 7,
+   "skipped": 0,
+   "yield": 0.7
+  },
+  "gather_zone": {
+   "family": "arrange",
+   "n": 10,
+   "ok": 0,
+   "skipped": 0,
+   "yield": 0.0
+  },
+  "in_from_second": {
+   "family": "put_in",
+   "n": 10,
+   "ok": 6,
+   "skipped": 0,
+   "yield": 0.6
+  },
+  "in_kind_food": {
+   "family": "put_in",
+   "n": 10,
+   "ok": 6,
+   "skipped": 0,
+   "yield": 0.6
+  },
+  "in_second_container": {
+   "family": "put_in",
+   "n": 10,
+   "ok": 4,
+   "skipped": 0,
+   "yield": 0.4
+  },
+  "in_two_same": {
+   "family": "put_in",
+   "n": 10,
+   "ok": 0,
+   "skipped": 0,
+   "yield": 0.0
+  },
+  "ins_by_side": {
+   "family": "insert",
+   "n": 10,
+   "ok": 9,
+   "skipped": 0,
+   "yield": 0.9
+  },
+  "ins_from_plate": {
+   "family": "insert",
+   "n": 8,
+   "ok": 3,
+   "skipped": 2,
+   "yield": 0.375
+  },
+  "ins_jar": {
+   "family": null,
+   "n": 0,
+   "ok": 0,
+   "skipped": 10,
+   "yield": null
+  },
+  "ins_then_in": {
+   "family": "insert",
+   "n": 10,
+   "ok": 4,
+   "skipped": 0,
+   "yield": 0.4
+  },
+  "line2_y": {
+   "family": "arrange",
+   "n": 9,
+   "ok": 6,
+   "skipped": 1,
+   "yield": 0.667
+  },
+  "line3_y": {
+   "family": "arrange",
+   "n": 2,
+   "ok": 1,
+   "skipped": 8,
+   "yield": 0.5
+  },
+  "line_by_height": {
+   "family": "arrange",
+   "n": 10,
+   "ok": 3,
+   "skipped": 0,
+   "yield": 0.3
+  },
+  "rel_behind_container": {
+   "family": "relation",
+   "n": 6,
+   "ok": 6,
+   "skipped": 4,
+   "yield": 1.0
+  },
+  "rel_two_sides": {
+   "family": "relation",
+   "n": 2,
+   "ok": 2,
+   "skipped": 3,
+   "yield": 1.0
+  },
+  "restack": {
+   "family": "stack",
+   "n": 10,
+   "ok": 5,
+   "skipped": 0,
+   "yield": 0.5
+  },
+  "set_pair": {
+   "family": "set",
+   "n": 5,
+   "ok": 3,
+   "skipped": 5,
+   "yield": 0.6
+  },
+  "set_two_plates": {
+   "family": "set",
+   "n": 2,
+   "ok": 0,
+   "skipped": 8,
+   "yield": 0.0
+  },
+  "sort2_colour": {
+   "family": "sort",
+   "n": 3,
+   "ok": 2,
+   "skipped": 7,
+   "yield": 0.667
+  },
+  "sort2_kind": {
+   "family": "sort",
+   "n": 2,
+   "ok": 0,
+   "skipped": 8,
+   "yield": 0.0
+  },
+  "sort3_two": {
+   "family": null,
+   "n": 0,
+   "ok": 0,
+   "skipped": 10,
+   "yield": null
+  },
+  "sort_cubbies": {
+   "family": "sort",
+   "n": 10,
+   "ok": 2,
+   "skipped": 0,
+   "yield": 0.2
+  },
+  "sort_food_bowl_toy_side": {
+   "family": "sort",
+   "n": 1,
+   "ok": 0,
+   "skipped": 4,
+   "yield": 0.0
+  },
+  "sort_left_right": {
+   "family": "sort",
+   "n": 9,
+   "ok": 5,
+   "skipped": 1,
+   "yield": 0.556
+  },
+  "sort_odd_one": {
+   "family": "sort",
+   "n": 10,
+   "ok": 4,
+   "skipped": 0,
+   "yield": 0.4
+  },
+  "sort_same_colour": {
+   "family": "sort",
+   "n": 10,
+   "ok": 1,
+   "skipped": 0,
+   "yield": 0.1
+  },
+  "sort_size": {
+   "family": "sort",
+   "n": 1,
+   "ok": 0,
+   "skipped": 9,
+   "yield": 0.0
+  },
+  "sort_size_sides": {
+   "family": "sort",
+   "n": 5,
+   "ok": 4,
+   "skipped": 0,
+   "yield": 0.8
+  },
+  "stack2": {
+   "family": "stack",
+   "n": 10,
+   "ok": 7,
+   "skipped": 0,
+   "yield": 0.7
+  },
+  "stack3": {
+   "family": "stack",
+   "n": 10,
+   "ok": 0,
+   "skipped": 0,
+   "yield": 0.0
+  },
+  "stack_on_bigger": {
+   "family": "stack",
+   "n": 10,
+   "ok": 8,
+   "skipped": 0,
+   "yield": 0.8
+  },
+  "stack_on_second": {
+   "family": "stack",
+   "n": 10,
+   "ok": 5,
+   "skipped": 0,
+   "yield": 0.5
+  },
+  "stack_then_in": {
+   "family": "stack",
+   "n": 10,
+   "ok": 0,
+   "skipped": 0,
+   "yield": 0.0
+  },
+  "swap_levels": {
+   "family": "height",
+   "n": 4,
+   "ok": 0,
+   "skipped": 6,
+   "yield": 0.0
+  },
+  "up_into_container": {
+   "family": "height",
+   "n": 8,
+   "ok": 4,
+   "skipped": 2,
+   "yield": 0.5
+  },
+  "up_two": {
+   "family": "height",
+   "n": 9,
+   "ok": 2,
+   "skipped": 1,
+   "yield": 0.222
+  }
+ }
+}
