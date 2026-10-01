@@ -103,14 +103,18 @@ class Planner9:
             raise RuntimeError(f"cuRobo {curobo.__version__} < 0.8.0 (NC licence): refused")
         from curobo.motion_planner import MotionPlanner, MotionPlannerCfg
         self.version = str(curobo.__version__)
-        cfg = MotionPlannerCfg.create(robot=robot_cfg, scene_model={"cuboid": {"_floor": {
+        import copy
+        self._robot_cfg = copy.deepcopy(robot_cfg)
+        cp = (lambda: copy.deepcopy(self._robot_cfg)) if isinstance(robot_cfg, dict) else (lambda: robot_cfg)
+        cfg = MotionPlannerCfg.create(robot=cp(), scene_model={"cuboid": {"_floor": {
             "dims": [0.1, 0.1, 0.01], "pose": [5.0, 5.0, -5.0, 1, 0, 0, 0]}}},
             collision_cache={"cuboid": collision_cache}, max_goalset=1, num_ik_seeds=32, num_trajopt_seeds=4)
         self.mp = MotionPlanner(cfg)
+
         self.mp.warmup(enable_graph=True, num_warmup_iterations=3)
         from curobo.inverse_kinematics import InverseKinematics, InverseKinematicsCfg
         self.ikb = InverseKinematics(InverseKinematicsCfg.create(  # batched reach checks (candidate filtering)
-            robot=robot_cfg, scene_model={"cuboid": {"_floor": {"dims": [0.1, 0.1, 0.01],
+            robot=cp(), scene_model={"cuboid": {"_floor": {"dims": [0.1, 0.1, 0.01],
                                                                "pose": [5.0, 5.0, -5.0, 1, 0, 0, 0]}}},
             num_seeds=16, self_collision_check=True, max_batch_size=IK_BATCH, collision_cache={"cuboid": collision_cache}))
         self.torch = __import__("torch")
@@ -207,6 +211,47 @@ class Planner9:
         lo, hi = self._limits()
         margin = np.minimum(out_q - lo, hi - out_q).min(1) / np.maximum((hi - lo).min(), 1e-6)
         return out_ok, out_q, margin
+
+    def line(self, q0, T0_base, T1_base, step_m: float = 0.01):
+        """Straight tool move (short place descents, retreats, lifts) when plan_pose refuses near contact: IK per
+        waypoint (no world collision, self-collision on), each seeded with the previous solution. -> (N, dof) or
+        None when a waypoint has no solution or a joint jumps > 0.15 rad between waypoints."""
+        from curobo.inverse_kinematics import InverseKinematics, InverseKinematicsCfg
+        from curobo.types import GoalToolPose, JointState, Pose
+        from .grasp9 import mat_quat
+        if getattr(self, "ikl", None) is None:
+            self.ikl = InverseKinematics(InverseKinematicsCfg.create(
+                robot=__import__("copy").deepcopy(self._robot_cfg), scene_model={"cuboid": {"_floor": {"dims": [0.1, 0.1, 0.01],
+                                                                          "pose": [5.0, 5.0, -5.0, 1, 0, 0, 0]}}},
+                num_seeds=8, self_collision_check=True, max_batch_size=1))
+        T0, T1 = np.asarray(T0_base, float), np.asarray(T1_base, float)
+        n = max(2, int(np.ceil(np.linalg.norm(T1[:3, 3] - T0[:3, 3]) / step_m)) + 1)
+        q = np.asarray(q0, float)
+        out = [q]
+        q0q, q1q = mat_quat(T0[:3, :3]), mat_quat(T1[:3, :3])
+        if float(np.dot(q0q, q1q)) < 0:
+            q1q = -q1q
+        for s in np.linspace(0, 1, n)[1:]:
+            p = T0[:3, 3] + s * (T1[:3, 3] - T0[:3, 3])
+            qq = (1 - s) * q0q + s * q1q
+            qq = qq / np.linalg.norm(qq)
+            pos = self.torch.tensor(p[None], dtype=self.torch.float32, device=self.dev)
+            qt = self.torch.tensor(qq[None], dtype=self.torch.float32, device=self.dev)
+            g = GoalToolPose.from_poses({self.ikl.tool_frames[0]: Pose(position=pos, quaternion=qt)}, num_goalset=1)
+            cs = JointState.from_position(self.torch.tensor(q[None], dtype=self.torch.float32, device=self.dev),
+                                          joint_names=self.joint_names)
+            try:
+                r = self.ikl.solve_pose(g, current_state=cs)
+            except TypeError:
+                r = self.ikl.solve_pose(g)
+            if not bool(r.success.reshape(-1)[0]):
+                return None
+            qn = r.solution.reshape(-1, len(self.joint_names))[0].cpu().numpy()
+            if np.abs(qn - q).max() > 0.15:
+                return None
+            out.append(qn)
+            q = qn
+        return np.asarray(out)
 
     def _limits(self):
         jl = self.mp.kinematics.get_joint_limits()

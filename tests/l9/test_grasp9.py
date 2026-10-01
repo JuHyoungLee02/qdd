@@ -118,3 +118,15 @@ def test_fallback_order():
     assert order[:5] == [("side", 4), ("side", 3), ("side", 5), ("side", 2), ("side", 6)]
     fams = [f for f, _ in order]
     assert fams.index("oblique") < fams.index("top")  # neighbour family by angle: side -> front/oblique before top
+
+
+def test_obb_overlap():
+    R = np.eye(3)
+    C2 = np.array([[0.0, 0, 0], [0.25, 0, 0], [0.15, 0.15, 0], [0.0, 0.2, 0]])
+    H2 = np.full((4, 3), 0.1)
+    rz = G.qmat(G.yaw_quat(math.pi / 4))
+    R2 = np.stack([np.eye(3), np.eye(3), rz, np.eye(3)])
+    got = G.obb_overlap([0, 0, 0], [0.1, 0.1, 0.1], R, C2, H2, R2)
+    # same box / 0.25 apart on x (gap) / rotated 45 deg at (0.15, 0.15): corner reaches 0.15 - 0.141 = 0.009 < 0.1 /
+    # touching face at 0.2
+    assert got.tolist() == [True, False, True, True]

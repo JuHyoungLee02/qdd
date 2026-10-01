@@ -90,6 +90,14 @@ def register_task(ep: dict) -> None:
 T9_TASK = "l9_task"
 
 
+def _json_default(o):
+    if isinstance(o, np.ndarray):
+        return o.tolist()
+    if isinstance(o, (np.floating, np.integer, np.bool_)):
+        return o.item()
+    return str(o)
+
+
 def final_tilts(world, ep: dict) -> dict:
     from ..predicates import _tilt_deg
     out = {}
@@ -110,6 +118,9 @@ def run_episode(world, row: dict, out_dir: str, pool: dict, rm, ledger=None, p: 
         from .motion9 import sample_style
         mstyle = sample_style(int(row["seed"]))
     world.motion = mstyle
+    rt = getattr(world, "rt", None)
+    if rt is not None:  # spec §12 v2: the cuRobo executor's timing style
+        rt.style = mstyle
     style = "clean" if row.get("clean") else row.get("style", "")
     meta = collect_episode(world, int(row["seed"]), T9_TASK, "drf", row.get("split", "train"), out_dir,
                            0.0 if style == "clean" else p, 4, stop_calls, stop_motion_s, style, video=video)
@@ -133,8 +144,15 @@ def run_episode(world, row: dict, out_dir: str, pool: dict, rm, ledger=None, p: 
                 base=fs.get("base"),
                 motion_version=(mstyle or {}).get("version", MOTION_VERSION), motion_style=mstyle,
                 judge_l9=judge or None, plan_row=row)
+    if rt is not None:
+        from .rt9 import VERSION as V2_VERSION
+        gv = rt.episode_meta()
+        meta.update(grasp_v2=gv, motion_version=V2_VERSION, label_origin="l9v2", gen_version="v2",
+                    instruction=ep["instruction"] + gv.get("instruction_suffix", ""))
+    else:
+        meta.update(gen_version="v1", label_origin="v1")
     with open(os.path.join(out_dir, "meta.json"), "w") as f:
-        json.dump(meta, f)
+        json.dump(meta, f, default=_json_default)
     with open(os.path.join(out_dir, "episode9.json"), "w") as f:
         json.dump({"scene": {k: v for k, v in sc.items() if k != "parts_s"}, "episode": ep}, f, default=str)
     lab = os.path.join(out_dir, "labels.jsonl")

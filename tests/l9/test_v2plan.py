@@ -87,7 +87,7 @@ def test_plan_sequence_side_grasp(monkeypatch):
     ok[3] = True  # side only
     gc = P.choose(C, ok, np.ones(5), c, (0.0, 0.0), 5, 0, allow_instruct=False)
     assert gc.family == "side"
-    info = {"tgt": "o1", "place": "o2"}
+    info = {"tgt": "o1", "place": "o2", "sup_tgt": 0.75, "sup_place": 0.71, "place_top": 0.73}
     q0 = [1.0, 0, 0, 0]
     s, cmd = P.plan(_st([0.3, -0.3, 1.1], q0), info, 0.75, 0.107, gc, None)
     assert s == "above_target" and np.allclose(cmd["position_m"], gc.pre, atol=1e-3)

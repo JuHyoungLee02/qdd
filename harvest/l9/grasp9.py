@@ -480,3 +480,29 @@ def fallback_order(fam: str, rot_bin: int) -> list:
     for f in NEIGHBOURS[fam]:
         out.append((f, None))
     return out
+
+
+# ---------------------------------------------------------------------------------------------- box overlap (SAT)
+def obb_overlap(c1, h1, R1, C2, H2, R2) -> np.ndarray:
+    """Separating-axis test of one oriented box (centre c1, half sizes h1, rotation R1 with columns = box axes) against
+    N boxes (C2 (N,3), H2 (N,3), R2 (N,3,3)). -> (N,) bool overlap. Vectorised over the N boxes."""
+    c1, h1, R1 = np.asarray(c1, float), np.asarray(h1, float), np.asarray(R1, float)
+    C2, H2, R2 = np.atleast_2d(C2).astype(float), np.atleast_2d(H2).astype(float), np.asarray(R2, float)
+    if R2.ndim == 2:
+        R2 = R2[None]
+    n = len(C2)
+    A = np.repeat(R1.T[None], n, 0)  # (N, 3, 3) rows = axes of box 1
+    B = np.transpose(R2, (0, 2, 1))  # rows = axes of box 2
+    cr = np.cross(A[:, :, None, :], B[:, None, :, :]).reshape(n, 9, 3)
+    axes = np.concatenate([A, B, cr], 1)  # (N, 15, 3)
+    nrm = np.linalg.norm(axes, axis=2, keepdims=True)
+    axes = axes / np.maximum(nrm, 1e-12)
+    valid = nrm[..., 0] > 1e-9
+    d = C2 - c1
+    dist = np.abs(np.einsum("nij,nj->ni", axes, d))
+    r1 = np.einsum("nij,nkj->nik", axes, A)  # projections of box-1 axes
+    r1 = np.abs(r1) @ h1
+    r2 = np.abs(np.einsum("nij,nkj->nik", axes, B))
+    r2 = np.einsum("nik,nk->ni", r2, H2)
+    sep = (dist > r1 + r2 + 1e-9) & valid
+    return ~sep.any(1)

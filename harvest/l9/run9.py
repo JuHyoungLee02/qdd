@@ -75,6 +75,8 @@ def main(argv=None):
     ap.add_argument("--video-seeds", default="")
     ap.add_argument("--p", type=float, default=0.35)
     ap.add_argument("--motion", action="store_true", help="spec §10 human-like motion (harvest.l9.motion9)")
+    ap.add_argument("--v2", action="store_true", help="spec §12 L9 v2: real grasps + cuRobo (harvest.l9.rt9)")
+    ap.add_argument("--v2-untested", action="store_true", help="v2 smoke only: allow candidates without the Isaac test")
     a = ap.parse_args(argv)
     code = 0
     import faulthandler
@@ -90,6 +92,10 @@ def main(argv=None):
         from .world9 import make_world9
         if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(a.out)), "MOTION_ON")):
             a.motion = True  # run-level switch (spec §10 code swap: new episodes of a running production)
+        if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(a.out)), "V2_ON")):
+            a.v2 = True  # run-level switch (spec §12: L9 v2 code for new episodes after the pilot gate)
+        if a.v2:
+            a.motion = True  # the v2 executor takes its timing style from motion9
         if a.motion:
             from .motion9 import install
             install()
@@ -131,10 +137,16 @@ def main(argv=None):
             pool = {k: v for k, v in pool.items()
                     if v["role9"] != "target" or float(v.get("grasp_width") or 2 * float(v.get("footprint_r", 1)))
                     <= FRANKA_MAX_GRASP_W}
+        if a.v2:  # targets need cached grasp candidates (and the Isaac lift + shake test unless --v2-untested)
+            from . import rt9 as RT
+            pool = {k: v for k, v in pool.items() if v["role9"] != "target" or RT.has_candidates(robot, k, a.v2_untested)}
         rooms = rooms_for(int(rows[0]["rooms"]), "train" if split == "train" else "ood")
         mesh = A9.mesh_for(int(rows[0]["rooms"]), split="train" if split == "train" else "ood")
         world = make_world9(arm, pool, rooms, mesh=mesh, robot=robot, hcam=hcam)
         from ..teach_l8d import collect as _c  # noqa: F401  (load the episode modules, then rebind their copies)
+        if a.v2:
+            from .rt9 import install as v2_install
+            v2_install(world, robot, arm, allow_untested=a.v2_untested)
         print("WORKSPACE " + json.dumps({"arm": arm, "rebound": apply_arm_workspace(arm), "robot": robot, "hcam": hcam,
                                          "prompts": apply_prompts(robot)}), flush=True)
         rm = R9.load_default()
