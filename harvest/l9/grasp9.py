@@ -47,11 +47,32 @@ _DEFAULTS = {
 }
 
 
+JSON_NAME = {"ffw_sg2": "ffw_sg2_right"}  # L9v2-ROBOT gripper files (the left gripper is the mirror)
+
+
 def gripper(name: str) -> dict:
-    p = os.path.join(DIR, name + ".json")
+    """Coarse gripper model. The L9v2-ROBOT json (assets9/grippers) gives max opening, pad size, fingertip depth and
+    the palm box (from the URDF meshes); its per-width finger boxes are link bounding boxes that cover the space
+    between the pads, so the fingers stay modelled as pad-thick slabs (finger_t, hypothesis)."""
     g = dict(_DEFAULTS.get(name, _DEFAULTS["ffw_sg2"]))
+    p = os.path.join(DIR, JSON_NAME.get(name, name) + ".json")
     if os.path.exists(p):
-        g.update(json.load(open(p, encoding="utf-8")))
+        j = json.load(open(p, encoding="utf-8"))
+        g["json"] = os.path.basename(p)
+        if "max_opening_m" in j:
+            g["max_open"] = float(j["max_opening_m"])
+        if "pad_length_m" in j:
+            g["pad_len"] = float(j["pad_length_m"])
+        if "pad_width_m" in j:
+            g["finger_w"] = float(j["pad_width_m"])
+        if "finger_depth_m" in j:
+            g["tip"] = -float(j["finger_depth_m"])
+        palm = (j.get("boxes") or {}).get("palm")
+        if palm:
+            g["palm_center"] = [float(v) for v in palm["center"]]
+            g["palm_half"] = [float(v) / 2 for v in palm["size"]]
+            g["finger_len"] = float(palm["center"][2] - palm["size"][2] / 2) - g.get("tip", -g["pad_len"] / 2)
+        g["source"] = f"{g['json']} (L9v2-ROBOT, URDF meshes) + finger thickness hypothesis"
     g["name"] = name
     return g
 
@@ -223,7 +244,7 @@ def boxes(gr: dict, open_w: float, standoff: float = 0.0):
     """Gripper boxes in G (centre, half sizes): two fingers at the given opening + the palm; standoff > 0 extends
     them back along +z_G (the swept volume of the straight approach)."""
     pl, ft, fw, fl = gr["pad_len"], gr["finger_t"], gr["finger_w"], gr["finger_len"]
-    tip = -pl / 2  # fingertips: half a pad beyond the TCP along a (= -z_G)
+    tip = gr.get("tip", -pl / 2)  # fingertips beyond the TCP along a (= -z_G)
     knuckle = tip + fl
     out = []
     for s in (-1, 1):
@@ -231,8 +252,9 @@ def boxes(gr: dict, open_w: float, standoff: float = 0.0):
         z0, z1 = tip, knuckle + standoff
         out.append((np.array([0.0, y, (z0 + z1) / 2]), np.array([fw / 2, ft / 2, (z1 - z0) / 2])))
     ph = np.asarray(gr["palm_half"], float)
-    z0, z1 = knuckle, knuckle + 2 * ph[2] + standoff
-    out.append((np.array([0.0, 0.0, (z0 + z1) / 2]), np.array([ph[0], ph[1], (z1 - z0) / 2])))
+    pc = np.asarray(gr.get("palm_center", (0.0, 0.0, knuckle + ph[2])), float)
+    z0, z1 = pc[2] - ph[2], pc[2] + ph[2] + standoff
+    out.append((np.array([pc[0], pc[1], (z0 + z1) / 2]), np.array([ph[0], ph[1], (z1 - z0) / 2])))
     return out
 
 
