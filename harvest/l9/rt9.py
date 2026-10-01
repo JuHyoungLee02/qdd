@@ -29,7 +29,9 @@ GRASP_DIR = os.environ.get("L9V2_GRASPS", "/data/harvest/l9v2/grasps")
 TESTED_DIR = os.environ.get("L9V2_TESTED", "/data/harvest/l9v2/tested")
 VERSION = "l9v2-1"
 GRIP_NAME = {"ffw_sg2": "ffw_sg2", "franka_mast": "franka"}
-EMPTY_M, CONTACT_TOL, SLIP_GAP, SLIP_MOVE = 0.003, 0.008, 0.003, 0.010
+EMPTY_M, CONTACT_TOL, CONTACT_TOL_HI, SLIP_GAP, SLIP_MOVE = 0.003, 0.008, 0.020, 0.003, 0.010
+LIMIT_MARGIN = 0.01
+MAX_FALLBACK = 6
 SETTLE_DW, SETTLE_N, SETTLE_MAX_S, WIN_S = 0.001, 3, 0.6, 0.05
 REACH_TOL, HOLD_MAX_S = 0.012, 1.5
 CURRENT = None
@@ -39,7 +41,7 @@ def classify_close(gap: float, w_contact: float) -> str:
     """P2 judgement on the settled gap (thresholds = hypotheses, E-AP1 recalibrates once)."""
     if gap < EMPTY_M:
         return "EMPTY"
-    if abs(gap - w_contact) <= CONTACT_TOL:
+    if -CONTACT_TOL <= gap - w_contact <= CONTACT_TOL_HI:  # smoke 10-02: settled gaps run ~1.5 cm over the contact width
         return "CONTACT"
     return "WIDE"
 
@@ -173,6 +175,8 @@ class Runtime:
         self.sim_ids = [rob.joint_names.index(j) for j in self.joints]
         self.arm_ids = list(world.env.arm_ids)
         self.base_idx = rob.body_names.index(self.base_link)
+        lim = rob.data.soft_joint_pos_limits[0].cpu().numpy()
+        self.q_lo, self.q_hi = lim[self.sim_ids, 0] + LIMIT_MARGIN, lim[self.sim_ids, 1] - LIMIT_MARGIN
         self._cand = {}
         self.q_target = None
         self.reset_episode()
@@ -427,12 +431,13 @@ class Runtime:
         if step == "above_target" and gc is not None:
             self.refresh_world(exclude=(tg,))  # gripper vs target: grasp9 swept check; arm vs the rest: cuRobo
             while gc is not None:
-                r = self.planner.grasp(q0, self.to_base(gc.T), gc.standoff, gc.lift_dz)
+                r = self._guard_grasp(self.planner.grasp(q0, self.to_base(gc.T), gc.standoff, gc.lift_dz))
                 if r["ok"]:
                     self.segs = r
                     break
                 self.timeline.setdefault("fallback_trace", []).append({"family": gc.family, "status": r["status"]})
-                gc, n2 = self.next_fallback(gc)
+                gc, n2 = self.next_fallback(gc) if len(self.timeline["fallback_trace"]) < MAX_FALLBACK else (None,
+                    f"no plannable grasp after {MAX_FALLBACK} tries ({self.choice.meta.get('family')} first)")
                 note = n2
                 if gc is not None:
                     gc.meta["fallback_from"] = self.choice.meta.get("family")
@@ -447,7 +452,7 @@ class Runtime:
             Q = self.segs.get("grasp")
             if Q is None or np.abs(Q[0] - q0).max() > 0.08:
                 self.refresh_world(exclude=(tg,))
-                r = self.planner.grasp(q0, self.to_base(gc.T), gc.standoff, gc.lift_dz)
+                r = self._guard_grasp(self.planner.grasp(q0, self.to_base(gc.T), gc.standoff, gc.lift_dz))
                 if not r["ok"]:
                     return None, "the grasp pose is out of reach from here", None
                 self.segs = r
@@ -467,9 +472,9 @@ class Runtime:
             Q0 = self.segs["lift"]
             self.segs["lift"] = None
             q0 = Q0[-1]
-        Q = self.planner.pose(q0, self.to_base(T))
+        Q = self._guard(self.planner.pose(q0, self.to_base(T)))
         if Q is None and Q0 is None and step in ("lower_open", "retreat", "lift_clear", "carry_up", "reopen", None):
-            Q = self.planner.line(q0, self.to_base(self.tcp_T()), self.to_base(T))  # short straight moves near contact
+            Q = self._guard(self.planner.line(q0, self.to_base(self.tcp_T()), self.to_base(T)))  # short straight moves
             if Q is not None:
                 self.timeline.setdefault("line_moves", []).append(step)
         if Q is None:
@@ -479,6 +484,22 @@ class Runtime:
         if Q0 is not None:
             Q = np.concatenate([Q0, Q])
         return self._resample(Q), note, width
+
+    def _guard(self, Q):
+        """Reject a plan that leaves the SIM joint range (cuRobo's URDF limits may be wider: smoke 10-02, joint2 at
+        -3.17 vs the sim's -3.14 pinned the arm and the wrist jumped 0.25 rad)."""
+        if Q is None:
+            return None
+        Q = np.asarray(Q, float)
+        if (Q < self.q_lo).any() or (Q > self.q_hi).any():
+            self.timeline["limit_rejects"] = self.timeline.get("limit_rejects", 0) + 1
+            return None
+        return Q
+
+    def _guard_grasp(self, r: dict) -> dict:
+        if r.get("ok") and any(self._guard(r[k]) is None for k in ("approach", "grasp", "lift") if r.get(k) is not None):
+            return dict(r, ok=False, status="plan leaves the sim joint range")
+        return r
 
     def _resample(self, Q, slow: float = 1.0) -> np.ndarray:
         s = self.style or {}

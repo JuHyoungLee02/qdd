@@ -7,7 +7,7 @@ from harvest.l9 import rt9 as R
 def test_classify_close_and_lift():
     assert R.classify_close(0.001, 0.04) == "EMPTY"
     assert R.classify_close(0.036, 0.04) == "CONTACT"
-    assert R.classify_close(0.06, 0.04) == "WIDE"
+    assert R.classify_close(0.065, 0.04) == "WIDE"
     assert R.classify_lift(0.036, 0.0365, 0.002) == "SUCCESS"
     assert R.classify_lift(0.036, 0.030, 0.002) == "SLIP"
     assert R.classify_lift(0.036, 0.036, 0.02) == "SLIP"
