@@ -7,6 +7,7 @@ for J in "$@"; do
   [ -e $OUT/STOP ] && { echo "STOP $(date -u +%FT%TZ)" >> $OUT/chain.log; exit 0; }
   echo "JOB $J $(date -u +%FT%TZ)" >> $OUT/chain.log
   L9_TIMEOUT=3600 bash $C/tools/l9/isaac.sh $C 1 ${TAG}_$J tools.l9v2env.smoke_render --rows $ROWS --job $J --out $OUT
+  bash $C/tools/l9v2env/kill_inst.sh l9_${TAG}_$J  # P172: a hung Isaac survives the timeout (SIGTERM)
   echo "END $J $(date -u +%FT%TZ)" >> $OUT/chain.log
 done
 echo "CHAIN_DONE $(date -u +%FT%TZ)" >> $OUT/chain.log

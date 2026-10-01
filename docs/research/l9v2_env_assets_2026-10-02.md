@@ -13,8 +13,8 @@
 | Poly Haven HDRI | CC0 | 같음 | 997 (v1 501 + **v2 496**, 남은 실외 전부) | 2k .hdr → DomeLight | v2 +약 5 GB | **채택(전량)** |
 | Poly Haven 3D 모델 | CC0 | 같음 | 521 중 실내 범주 395 선별 → **373 변환**(바닥 214·탁자 위 159) | API `usd` 1k + 텍스처 → 감싸기 USD(/Piece/norm/yup, 바닥 중심 원점, Z-up) | 1.8 GB | **채택**(장식) |
 | ambientCG 재질 | CC0 1.0 ("copy, modify, distribute … even for commercial purposes") | https://docs.ambientcg.com/license/ | 2,013 중 표면 범주 **+1,326**(v1 450 → 1,776) | 1K-JPG zip → UsdPreviewSurface | v2 +약 2 GB | **채택(표면 범주 전량)** |
-| MolmoSpaces ProcTHOR-10k **train** 집 | 데이터 카드: "All other data subsets are licensed under CC BY 4.0"(AI2-THOR 자산), ProcTHOR-10k 배치 Apache-2.0(allenai/procthor-10k, 131★) | https://huggingface.co/datasets/allenai/molmospaces, https://github.com/allenai/procthor-10k | 10,000 집 중 900 시도(v1은 val 360 → 289) | Isaac USD → `make_visual` 평탄화(.usdc), 작업 구역 비움 검사(`tools/l9/assets/rooms9_table.py`) | 진행 중(집당 ≈30 MB) | **채택**(방 수 확대) |
-| Amazon Berkeley Objects(ABO) 3D | CC BY 4.0 ("All models are distributed under Creative Commons Attribution 4.0 International License", Amazon.com 표기) | https://amazon-berkeley-objects.s3.amazonaws.com/index.html | 7,953 중 4,500 선별(의자 780·소파 465·탁자 412·장식 332·러그 268·조명 243 …) | glTF 2.0(glb, 4K) → 자체 순수 파이썬 변환기(`tools/l9v2env/abo_decor.py`: 변환 굽기·Y→Z·텍스처 1k) | 진행 중 | **채택**(장식; 실제 제품 메시) |
+| MolmoSpaces ProcTHOR-10k **train** 집 | 데이터 카드: "All other data subsets are licensed under CC BY 4.0"(AI2-THOR 자산), ProcTHOR-10k 배치 Apache-2.0(allenai/procthor-10k, 131★) | https://huggingface.co/datasets/allenai/molmospaces, https://github.com/allenai/procthor-10k | 10,000 집 중 900 시도(v1은 val 360 → 289), 06:30 KST 기준 388/900 처리 중(파드 CPU 100 % 제한, ≈100집/h); test 260은 CPU 때문에 중지 | Isaac USD → `make_visual` 평탄화(.usdc), 작업 구역 비움 검사(`tools/l9/assets/rooms9_table.py`); 끝나면 `tools/l9v2env/merge_rooms.py`로 `assets9/rooms_l9.json`에 합침 | ≈9 GB(진행 중) | **채택**(방 수 확대) |
+| Amazon Berkeley Objects(ABO) 3D | CC BY 4.0 ("All models are distributed under Creative Commons Attribution 4.0 International License", Amazon.com 표기) | https://amazon-berkeley-objects.s3.amazonaws.com/index.html | 7,953 중 4,500 선별·**변환 4,500**(바닥 4,095·탁자 위 405; 의자 780·소파 465·탁자 412·장식 332·러그 268·조명 243 …) | glTF 2.0(glb, 4K) → 자체 순수 파이썬 변환기(`tools/l9v2env/abo_decor.py`: 변환 굽기·Y→Z·텍스처 1k) | 12 GB | **채택**(장식; 실제 제품 메시) |
 | MolmoSpaces THOR / Objaverse 가구(v1) | CC BY 4.0 / 물체별 CC0·CC BY·CC BY-SA | v1 표 | 862 | v1 그대로 | v1 | 유지 + **과제 가구로 승격**(mesh_furniture) |
 | Objaverse 1.0 (LVIS 등) | 전체 ODC-By 1.0, 물체별 CC-BY 721K / CC-BY-NC 25K / CC-BY-NC-SA 52K / CC-BY-SA 16K / CC0 3.5K | https://huggingface.co/datasets/allenai/objaverse | — | — | — | v1 물체 표(CC0·CC BY·CC BY-SA만) 유지, 이번 환경 확장에는 추가 안 함 |
 | Google Scanned Objects | CC BY 4.0 (v1·L8S 물체 출처) | v1 표 | — | — | — | 유지 |
@@ -36,8 +36,8 @@
 | 놓는 곳 높이 | 0.32–1.08 m(위 접근) | 0.10–1.60 m | 높은 곳 1.10–1.55, 낮은 곳 0.10–0.30 |
 | 장면 밀도 | 없음 | sparse / normal / dense (소품 0 / 1–2 / 3–5) | `add_props` |
 | 방 배경 | 289 + 38 | + ProcTHOR train (진행 중) | 실외 2계열은 방 없음 + 실외 HDRI + 바닥판 |
-| 메시 가구(배경) | 862 | 862 + PH 바닥 214 + ABO(진행 중) | 프로세스당 6(과제용, 범주별 1) + 14 |
-| 탁자 위 장식 | 0 | PH 159 + ABO(진행 중) | 프로세스당 8, 장면당 0–3, 팔 띠 밖 |
+| 메시 가구(배경) | 862 | 862 + PH 바닥 214 + ABO 4,095 (train 분할 3,793) | 프로세스당 6(과제용, 범주별 1) + 14 |
+| 탁자 위 장식 | 0 | PH 159 + ABO 405 (train 452) | 프로세스당 8, 장면당 0–3, 팔 띠 밖 |
 | 재질(텍스처) | 1,307 | **2,633** | 바닥 역할 새로 사용(바닥판), 실외 바닥 506 |
 | 재질 겉모습 | 고정 | UV 배율 0.4–3.0(로그 균등) × 색조(역할별 30–60 %) | `vary9.material_look` |
 | HDRI | 501 | **997** | 실외 계열은 실외 HDRI만 |
@@ -82,3 +82,21 @@
 - ABO: `tools/l9v2env/abo_decor.py` → `/data/harvest/assets_l9v2/abo/decor_abo.json`.
 - 방: `tools/l9/assets/rooms9_table.py --set procthor-10k-train --n 900` → `/data/harvest/assets_l9v2/rooms/rooms_procthor_train.json`.
 - 조사 API 수: `tools/l9v2env/survey_api.py` → `/data/harvest/assets_l9v2/survey/api.json`.
+
+## 7. 렌더 스모크·다양성 (2026-10-02 02:44–06:30 KST, 7a2a GPU 1, Isaac 1개씩)
+
+- 경로: `tools/l9v2env/smoke_rows.py` → `smoke_render.py`(collect9.draw → World9.prepare/reset → 머리 f0 저장, 편은 돌리지 않음) → `sheet.py`(접촉 시트로 직접 봄) → `diversity_smoke.py`(SigLIP + 축별 엔트로피). 결과 `/data/harvest/out/l9v2env/`(smoke1·smoke1b = 중간 코드 116장, smoke_v2 = 최종 코드 99장, smoke_v1 = v1 코드 106장, div_*.json).
+- 프레임 검수에서 고친 것: (1) Poly Haven USD의 MaterialX 그래프 → Isaac 시작 +4.4분·텍스처 누락 → glTF→UsdPreviewSurface 변환(P160), (2) 실외 계열 화면에 앞 편의 방이 남음(meta room=null) → 방 주차(P164, v1에도 있던 잠복 버그), (3) 가전·금속 부품에 나무 텍스처, 소품 상자가 대리석 덩어리처럼 보임 → 팔레트별 재질 종류(metal·stone·plastic·wood·paint·paper). 이후 최종 99장에서 Isaac 오류 0, 'can not be found' 0, 시작 시간 v1과 같은 수준(276–437 s, 파드 CPU 100 % 제한 중).
+- 열린 문제: Isaac 1개가 kitchen_island/bar_ledge 시드 7000043(왼팔) reset 뒤 48분 멈춤(원인 미확인, py-spy 권한 없음). `isaac.sh`의 `timeout`은 SIGTERM만 보내 Isaac이 살아남아 다음 작업과 2개가 겹침 → IR_INST로 찾아 SIGKILL(P172).
+- 일부 ProcTHOR 방 바닥은 원래 밝은 하늘색·노랑(방 자산 색) — 바닥판 문제 아님(재질 기록으로 확인).
+
+| 지표 (머리 f0, 같은 렌더 경로, n = 99) | v1 코드 | v2 최종 | 판정 |
+|---|---|---|---|
+| 무작위 쌍 코사인 거리 평균 | 0.201 | 0.195 | 넓어지지 않음 (n=106 중간판: 0.2025 대 0.2042 — 잡음 수준) |
+| 근접 중복(>0.95) 최근접 비율 | 0 % | 0 % | 같음 |
+| 최근접 유사도 중앙값 | 0.881 | 0.881 | 같음 |
+| k-means 유효 군집(k=12) | 8.5 | 9.4 | 약간 늘어남 |
+| 축 엔트로피(bit): 계열 / 규칙 / 조명 / 재질 / 방 / HDRI | 3.0 / 5.3 / 3.4 / 7.6 / 4.2 / 6.4 | 4.5 / 6.6 / 4.3 / 8.8 / 4.2 / 6.5 | 축 값은 고르게 넓어짐 |
+| 새 축: 밀도 / 고정물 / 놓는 곳 등급 / 시선 | — | 1.5 / 2.2 / 1.1 / 0.24 | 새로 생김 |
+
+- 해석(가설): 머리 f0는 집게·팔과 가까운 작업면이 화면 대부분이라 SigLIP 임베딩이 '탁자 위 로봇 팔' 구도에 묶인다. 환경 축을 넓혀도 쌍 거리는 0.20 근처에서 포화. 화면 구도를 바꾸는 축(E-HCAM8 카메라 기하, 높은·낮은 곳 과제의 시선 위·아래, 로봇 위치·방향 범위)이 다음 지렛대 — 과제 층이 새 놓는 곳을 쓰고 HCAM 무작위가 켜진 편으로 다시 잰다. G4 v2 (a) 기준은 이 측정으로는 **미통과**, (b) 0 %로 같음, (c) 약간 개선.
