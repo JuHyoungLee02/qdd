@@ -165,7 +165,8 @@ class Runtime:
         self.allow_untested = allow_untested
         self.base_link = C9.base_link(profile, arm)
         self.joints = C9.arm_joints(profile, arm)
-        self.planner = P9.Planner9(C9.load_config(profile, arm), device=device)
+        from .plan9_server import PlannerProxy  # cuRobo needs warp >= 1.14; the Isaac app holds warp 1.8.2
+        self.planner = PlannerProxy(C9.load_config(profile, arm), device=device)
         self.curobo = self.planner.version
         self.style = style
         rob = world.env.robot
