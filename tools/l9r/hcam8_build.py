@@ -175,8 +175,12 @@ def main():
         with open(out, "w", encoding="utf-8", newline="\n") as f:
             for r in rows:
                 f.write(json.dumps(r) + "\n")
+        steps = round(BASE_STEPS * len(rows) / BASE_ROWS)
         print(json.dumps({"out": out, "rows": len(rows), "base_rows": len(b), "l9_rows": len(rows) - len(b),
-                          "steps": round(BASE_STEPS * len(rows) / BASE_ROWS), "sha256": sha(out)}))
+                          "steps": steps, "sha256": sha(out)}))
+        if "--steps-out" in opt:
+            with open(opt["--steps-out"], "w") as f:
+                f.write(f"{steps}\n")
     else:
         raise SystemExit(__doc__)
 
