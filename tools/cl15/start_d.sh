@@ -3,7 +3,7 @@
 #   astra  : the T1 episodes Astra has not finished (jobs_astra.txt, ep1.5 call count ascending), ledger shared with
 #            cl15c, cumulative cap (default 30,000 KRW); after a budget stop the rest is left as 'not run (cap)'
 #   base35 : the base35 episodes missing from cl15b (jobs_base35.txt), server = vLLM Qwen3.5-35B-A3B on 7a2a GPU2
-# Steps: base35 server up -> <root>/READY_FOR_LANES -> wait <root>/LANES_GO_7a2a_<gpu> -> both lanes -> the last lane
+# Two Astra lanes + one base35 lane on the card. Steps: base35 server up -> <root>/READY_FOR_LANES -> wait <root>/LANES_GO_7a2a_<gpu> -> both lanes -> the last lane
 # writes <root>/DONE + GPU_FREED -> server down -> compare.py (3 arms x 10) + timing.py.
 # usage: start_d.sh <code dir> [gpu=3] [cap KRW=30000]
 C=$1; G=${2:-3}; CAP=${3:-30000}
