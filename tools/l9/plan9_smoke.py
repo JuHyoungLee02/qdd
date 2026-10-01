@@ -19,7 +19,7 @@ def main():
     pl = P.Planner9(robot)
     print("init", round(time.time() - t0, 1), "s cuRobo", pl.version, pl.joint_names)
     parts = [{"id": "table", "prim": "cuboid", "pos": [0.5, 0.0, -0.02], "size": [0.6, 0.8, 0.04], "yaw": 0.0}]
-    boxes = {"obj": ([0.45, 0.1, 0.05], [0.05, 0.05, 0.10], [1, 0, 0, 0])}
+    boxes = {"obj": ([0.45, 0.1, 0.05], [0.04, 0.04, 0.10], [1, 0, 0, 0])}
     pl.world(P.scene_cuboids(parts, boxes, np.eye(4)))
     q0 = pl.mp.default_joint_state.position.cpu().numpy().reshape(-1)[: len(pl.joint_names)]
     # franka tool z points along the fingers: approach a = +z_tool; a top grasp has z_tool = down
@@ -28,7 +28,8 @@ def main():
         R = frame_of(a, [0, 1.0, 0])
         R = R @ np.diag([1.0, -1.0, -1.0])  # G (z = -a) -> franka hand (z = +a)
         T = np.eye(4)
-        T[:3, :3], T[:3, 3] = R, [0.45, 0.1, 0.06]
+        T[:3, :3] = R
+        T[:3, 3] = np.array([0.45, 0.1, 0.06]) - 0.1034 * a  # panda_hand origin 10.3 cm behind the pad centre
         Ts.append(T)
     t0 = time.time()
     ok, q, margin = pl.ik(np.array(Ts))

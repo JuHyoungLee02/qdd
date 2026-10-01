@@ -17,6 +17,7 @@ import math
 import numpy as np
 
 DQ_MAX = 0.04
+IK_BATCH = 128
 CUROBO_MIN = (0, 8, 0)
 
 
@@ -107,6 +108,11 @@ class Planner9:
             collision_cache={"cuboid": collision_cache}, max_goalset=1, num_ik_seeds=32, num_trajopt_seeds=4)
         self.mp = MotionPlanner(cfg)
         self.mp.warmup(enable_graph=True, num_warmup_iterations=3)
+        from curobo.inverse_kinematics import InverseKinematics, InverseKinematicsCfg
+        self.ikb = InverseKinematics(InverseKinematicsCfg.create(  # batched reach checks (candidate filtering)
+            robot=robot_cfg, scene_model={"cuboid": {"_floor": {"dims": [0.1, 0.1, 0.01],
+                                                               "pose": [5.0, 5.0, -5.0, 1, 0, 0, 0]}}},
+            num_seeds=16, self_collision_check=True, max_batch_size=IK_BATCH, collision_cache={"cuboid": collision_cache}))
         self.torch = __import__("torch")
         self.dev = device
         self.attached = None
@@ -119,7 +125,9 @@ class Planner9:
         from curobo._src.geom.types import SceneCfg
         if self.attached:
             self.detach()
-        self.mp.update_world(SceneCfg.create(scene))
+        sc = SceneCfg.create(scene)
+        self.mp.update_world(sc)
+        self.ikb.update_world(sc)
 
     def _js(self, q):
         from curobo.types import JointState
@@ -161,26 +169,34 @@ class Planner9:
             return None
         return self._pos(r.get_interpolated_plan())
 
-    def ik(self, T_base_batch, q_seed=None):
-        """Batched reach test: -> (ok (N,), q (N, dof), margin (N,)) for world-collision-aware IK of N tool poses."""
-        from curobo.types import GoalToolPose
+    def ik(self, T_base_batch, contact_links_off: bool = True):
+        """Batched reach test: -> (ok (N,), q (N, dof), margin (N,)) for world-collision-aware IK of N tool poses.
+        The gripper contact links are not collision-checked (grasp9 already checked the gripper against the object
+        and the support; plan_grasp does the same)."""
+        from curobo.types import GoalToolPose, Pose
         from .grasp9 import mat_quat
         Ts = np.asarray(T_base_batch, float)
-        n = len(Ts)
-        p = self.torch.tensor(Ts[:, :3, 3], dtype=self.torch.float32, device=self.dev).view(n, 1, 1, 1, 3)
-        qq = np.stack([mat_quat(T[:3, :3]) for T in Ts])
-        q = self.torch.tensor(qq, dtype=self.torch.float32, device=self.dev).view(n, 1, 1, 1, 4)
-        g = GoalToolPose(tool_frames=self.mp.tool_frames, position=p, quaternion=q)
-        out_ok, out_q = np.zeros(n, bool), np.zeros((n, len(self.joint_names)))
+        n, dof = len(Ts), len(self.joint_names)
+        out_ok, out_q = np.zeros(n, bool), np.zeros((n, dof))
+        links = list(self.ikb.kinematics.config.kinematics_config.grasp_contact_link_names or [])             if contact_links_off else []
+        for l in links:
+            self.ikb.kinematics.config.kinematics_config.disable_link_spheres(l)
         try:
-            r = self.mp.ik_solver.solve_pose(g)
-            out_ok = r.success.view(n, -1)[:, 0].cpu().numpy().astype(bool)
-            out_q = r.solution.view(n, -1, len(self.joint_names))[:, 0].cpu().numpy()
-        except Exception:  # batch size above the solver's: fall back to one by one
-            for i in range(n):
-                r = self.mp.ik_solver.solve_pose(self._goal(Ts[i]))
-                out_ok[i] = bool(r.success.view(-1)[0])
-                out_q[i] = r.solution.view(-1, len(self.joint_names))[0].cpu().numpy()
+            for s0 in range(0, n, IK_BATCH):
+                T = Ts[s0:s0 + IK_BATCH]
+                m = len(T)
+                pad = np.concatenate([T, np.repeat(T[-1:], IK_BATCH - m, 0)]) if m < IK_BATCH else T
+                pos = self.torch.tensor(pad[:, :3, 3], dtype=self.torch.float32, device=self.dev)
+                qq = self.torch.tensor(np.stack([mat_quat(t[:3, :3]) for t in pad]), dtype=self.torch.float32,
+                                       device=self.dev)
+                g = GoalToolPose.from_poses({self.ikb.tool_frames[0]: Pose(position=pos, quaternion=qq)},
+                                            num_goalset=1)
+                r = self.ikb.solve_pose(g)
+                out_ok[s0:s0 + m] = r.success.reshape(IK_BATCH, -1)[:m, 0].cpu().numpy().astype(bool)
+                out_q[s0:s0 + m] = r.solution.reshape(IK_BATCH, -1, dof)[:m, 0].cpu().numpy()
+        finally:
+            for l in links:
+                self.ikb.kinematics.config.kinematics_config.enable_link_spheres(l)
         lo, hi = self._limits()
         margin = np.minimum(out_q - lo, hi - out_q).min(1) / np.maximum((hi - lo).min(), 1e-6)
         return out_ok, out_q, margin
