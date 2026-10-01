@@ -206,11 +206,23 @@ class Planner9:
         pos = jl.position.cpu().numpy()
         return pos[0], pos[1]
 
+    def _managers(self):
+        """cuRobo 0.8.0: MotionPlanner.attachment_manager raises AttributeError (TrajOptSolver has no such attribute;
+        the manager lives on each solver's core). Attach on every solver that plans (IK + trajopt)."""
+        out = []
+        for s in (self.mp.ik_solver, self.mp.trajopt_solver):
+            m = getattr(getattr(s, "core", s), "attachment_manager", None)
+            if m is not None and all(m is not o for o in out):
+                out.append(m)
+        return out
+
     def attach(self, q, names: list) -> None:
-        self.mp.attachment_manager.attach_from_scene(self._js(q), names)
+        for m in self._managers():
+            m.attach_from_scene(self._js(q), names)
         self.attached = names
 
     def detach(self) -> None:
         if self.attached:
-            self.mp.attachment_manager.detach()
+            for m in self._managers():
+                m.detach()
         self.attached = None
