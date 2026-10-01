@@ -195,11 +195,24 @@ def _q(q) -> list:
 
 
 NEAR_POS, NEAR_DEG = 0.015, 12.0
+NEAR_PUT = 0.03
 
 
 def ang_deg(q1, q2) -> float:
     d = abs(float(np.dot(np.asarray(q1, float), np.asarray(q2, float))))
     return math.degrees(2 * math.acos(min(1.0, d)))
+
+
+def put_pose(obj_quat_held, place_xy, centre_z: float, T_obj_G, yaw_delta: float = 0.0) -> np.ndarray:
+    """TCP pose that puts the held object down UPRIGHT (its held yaw + yaw_delta) with its centre at
+    (place_xy, centre_z); the hand keeps the grip measured at the lift (T_obj_G). Pilot 10-02: placing with the held
+    tilt tipped objects over."""
+    Rh = G.qmat(obj_quat_held)
+    yaw = math.atan2(Rh[1, 0], Rh[0, 0]) + float(yaw_delta)
+    T_w_obj = np.eye(4)
+    T_w_obj[:3, :3] = G.qmat(G.yaw_quat(yaw))
+    T_w_obj[:3, 3] = [place_xy[0], place_xy[1], centre_z]
+    return T_w_obj @ np.asarray(T_obj_G, float)
 
 
 def plan(st: dict, info: dict, table_z: float, w_open: float, gc: GraspChoice, held: dict | None):
@@ -231,14 +244,12 @@ def plan(st: dict, info: dict, table_z: float, w_open: float, gc: GraspChoice, h
     if hold:
         T_og = held["T_obj_G"] if held else None
         if T_og is not None:  # put TCP: object upright at the place (its current yaw), bottom place_dz above the top
-            T_w_obj = np.eye(4)
-            T_w_obj[:3, :3] = G.qmat(st["obj_quat"][tg])
-            T_w_obj[:3, 3] = [p[0], p[1], H["place_top"] + h / 2 + gc.place_dz]
-            put_T = T_w_obj @ T_og
+            put_T = put_pose(st["obj_quat"][tg], p, H["place_top"] + h / 2 + gc.place_dz, T_og,
+                             float((held or {}).get("yaw_delta", 0.0)))
             put, pq = put_T[:3, 3], G.mat_quat(put_T[:3, :3])
         else:
             put, pq = np.array([p[0], p[1], H["place_top"] + (tcp[2] - (c[2] - h / 2)) + gc.place_dz]), tq
-        if np.linalg.norm(tcp[:2] - put[:2]) < L.NEAR_XY:
+        if np.linalg.norm(tcp[:2] - put[:2]) < NEAR_PUT:  # carrying sags / lags 1-3 cm (L.NEAR_XY 1.5 cm looped)
             return "lower_open", {"mode": "eef", "position_m": _r(put), "gripper": "open", "quat_wxyz": _q(pq)}
         if tcp[2] >= zc - L.NEAR_XY:
             return "carry_over", {"mode": "eef", "position_m": _r([put[0], put[1], max(zc, put[2] + 0.05)]),

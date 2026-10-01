@@ -463,6 +463,42 @@ class Runtime:
         return dict(st, tcp_quat=np.asarray(q, float), obj_quat={k: np.asarray(env.object_pose(k)[1], float)
                                                                  for k in st["obj"]})
 
+    YAW_TRIES = (0.0, 0.5236, -0.5236, 1.0472, -1.0472, 1.5708, -1.5708, 3.1416)
+
+    def _place_yaw(self, st: dict, info: dict, table_z: float, gc) -> float:
+        """Yaw offset of the placed object (about the vertical) that makes the put pose and the pose above it
+        reachable for this arm (the held orientation is often unreachable at the place: pilot 10-02 carry loops).
+        0 first; definitions with an oriented place keep 0."""
+        from ..teach_l8d import xlabels as XL
+        from ..astra_motion.harness import obj_height
+        from ..teach_l8 import labels as L
+        if (info.get("place_pose") or {}).get("kind") == "oriented":
+            return 0.0
+        tg, pl = info["tgt"], info["place"]
+        H = XL.heights(info, table_z)
+        h = obj_height(tg)
+        p = np.asarray(st["obj"][pl], float)
+        if info.get("place_xy_offset"):
+            p = p + np.array([*info["place_xy_offset"], 0.0], float)
+        q_obj = np.asarray(self.w.env.object_pose(tg)[1], float)
+        zc = H["carry_base"] + L.CARRY_DZ
+        Ts = []
+        for d in self.YAW_TRIES:
+            T = VP.put_pose(q_obj, p, H["place_top"] + h / 2 + gc.place_dz, self.held["T_obj_G"], d)
+            Tu = T.copy()
+            Tu[2, 3] = max(zc, T[2, 3] + 0.05)
+            Ts += [self.to_base(T), self.to_base(Tu)]
+        try:
+            ok, _, _ = self.planner.ik(np.stack(Ts))
+        except Exception:  # noqa: BLE001
+            return 0.0
+        for i, d in enumerate(self.YAW_TRIES):
+            if ok[2 * i] and ok[2 * i + 1]:
+                self.timeline["place_yaw_delta"] = d
+                return d
+        self.timeline["place_yaw_delta"] = None
+        return 0.0
+
     def plan(self, st: dict, info: dict, table_z: float, w_open: float):
         tg = info["tgt"]
         hold = st["pred"].get(f"holding({tg})") is True
@@ -483,6 +519,7 @@ class Runtime:
         if hold and self.held is None:
             T_obj = T_of(*self.w.env.object_pose(tg))
             self.held = {"T_obj_G": P9.inv_T(T_obj) @ self.tcp_T()}
+            self.held["yaw_delta"] = self._place_yaw(st, info, table_z, gc)
         if not hold:
             self.held = None
         step, cmd = VP.plan(self.status2(st), info, table_z, w_open, gc, self.held)
