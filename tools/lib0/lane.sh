@@ -17,9 +17,10 @@ while IFS=$'\t' read -r -u 3 SUITE TASK KS; do
   [ -z "$SUITE" ] && continue
   mkdir $O/claims/${ARM}_${SUITE}_$TASK 2>/dev/null || continue
   log "RUN $ARM $SUITE $TASK ks=$KS"
-  if [ $ARM = A ]; then
+  if [ $ARM = A ] || [ $ARM = Ab ]; then
+    FB=""; [ $ARM = Ab ] && FB=--fix-b  # Ab = E-LIB0b (prereg change 2)
     nice -n 10 timeout 10800 $PY -m harvest.lib0.run_a --suite $SUITE --task $TASK --ks $KS --qwen-url $LIB0_QURL \
-      --qwen-name lib0_ep2_5 --out $O --vid-root $V --arm A --stop-files $O/STOP >> $L/lane_$LN.log 2>&1 < /dev/null
+      --qwen-name lib0_ep2_5 --out $O --vid-root $V --arm $ARM $FB --stop-files $O/STOP >> $L/lane_$LN.log 2>&1 < /dev/null
   else
     P=8702; [ $ARM = R ] && P=8701
     nice -n 10 timeout 10800 $PY -m harvest.lib0.run_pi --suite $SUITE --task $TASK --ks $KS --host $LIB0_PIHOST --port $P \
