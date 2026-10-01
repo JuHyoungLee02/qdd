@@ -62,3 +62,12 @@ def test_reach_lookup(tmp_path, monkeypatch):
     assert not C.reach_ok("ffw_sg2", "right", (0.0, 0.1, 0.1), "top")
     assert not C.reach_ok("ffw_sg2", "right", (0.5, 0.1, 0.1), "top")  # outside the grid
     C._REACH.clear()
+
+
+def test_ffw_reach_map_real():
+    if not os.path.exists(C.reach_path("ffw_sg2", "right")):
+        pytest.skip("reach map not built yet")
+    C._REACH.clear()
+    assert C.reach_ok("ffw_sg2", "right", (0.45, -0.25, -0.35), "top")  # the v1 top-down work zone
+    assert not C.reach_ok("ffw_sg2", "right", (0.85, -0.25, -0.85), "top")  # 1.2 m from the shoulder
+    assert not C.reach_ok("ffw_sg2", "right", (2.0, 0.0, 0.0), "top")  # outside the grid
