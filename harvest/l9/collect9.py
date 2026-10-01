@@ -90,7 +90,7 @@ def final_tilts(world, ep: dict) -> dict:
 def run_episode(world, row: dict, out_dir: str, pool: dict, rm, ledger=None, p: float = 0.35,
                 stop_calls: int = 30, stop_motion_s: float = 120.0, video: bool = False) -> dict:
     from ..teach_l8d.collect import collect_episode
-    sc, ep, light, head, h, sd = draw(row, pool, rm, ledger, world=world)
+    sc, ep, light, head, h, sd = draw(row, pool, rm, ledger, tries=int(row.get("draw_tries", 20)), world=world)
     register_task(ep)
     world.prepare(sc, ep, light, head, sd)
     style = "clean" if row.get("clean") else row.get("style", "")
