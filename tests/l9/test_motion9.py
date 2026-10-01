@@ -72,3 +72,11 @@ def test_nullspace_keeps_tcp():
     J = rng.normal(size=(6, 7))
     dq = M.nullspace_pull(J, np.zeros(7), M.Q_MID, 0.02)
     assert np.abs(J @ dq).max() < 1e-9 and np.abs(dq).max() > 0
+
+
+def test_collect_run_episode_names_do_not_clash():
+    import inspect
+
+    from harvest.l9 import collect9 as C
+    src = inspect.getsource(C.run_episode)
+    assert "mstyle" in src and "motion_style=mstyle" in src  # the plan's "style" (clean / perturbed) is another field

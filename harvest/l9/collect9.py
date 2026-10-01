@@ -93,11 +93,11 @@ def run_episode(world, row: dict, out_dir: str, pool: dict, rm, ledger=None, p: 
     sc, ep, light, head, h, sd = draw(row, pool, rm, ledger, tries=int(row.get("draw_tries", 20)), world=world)
     register_task(ep)
     world.prepare(sc, ep, light, head, sd)
-    style = None
+    mstyle = None
     if motion:  # spec §10 human-like motion (opt-in per process; harvest.l9.motion9)
         from .motion9 import sample_style
-        style = sample_style(int(row["seed"]))
-    world.motion = style
+        mstyle = sample_style(int(row["seed"]))
+    world.motion = mstyle
     style = "clean" if row.get("clean") else row.get("style", "")
     meta = collect_episode(world, int(row["seed"]), T9_TASK, "drf", row.get("split", "train"), out_dir,
                            0.0 if style == "clean" else p, 4, stop_calls, stop_motion_s, style, video=video)
@@ -118,7 +118,7 @@ def run_episode(world, row: dict, out_dir: str, pool: dict, rm, ledger=None, p: 
                 clutter=sorted(ep.get("clutter", {})), room=(fs.get("room") or {}).get("name"), hdr=fs.get("hdr"),
                 materials=sorted(set((fs.get("materials") or {}).values())), iso=fs.get("iso"),
                 decor=fs.get("decor"),
-                motion_version=(style or {}).get("version", MOTION_VERSION), motion_style=style,
+                motion_version=(mstyle or {}).get("version", MOTION_VERSION), motion_style=mstyle,
                 judge_l9=judge or None, plan_row=row)
     with open(os.path.join(out_dir, "meta.json"), "w") as f:
         json.dump(meta, f)
