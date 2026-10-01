@@ -146,6 +146,11 @@ def main(argv=None):
         rooms = rooms_for(int(rows[0]["rooms"]), "train" if split == "train" else "ood")
         mesh = A9.mesh_for(int(rows[0]["rooms"]), split="train" if split == "train" else "ood")
         ext_on = os.path.join(os.path.dirname(os.path.abspath(a.out)), "EXT_ON")  # run-level switch: "<p> [<n>]"
+        ext_rows = {r.get("ext_p") for r in rows}  # plan rows may carry ext_p (one value per job: ext lanes)
+        if len(ext_rows) != 1:
+            raise ValueError(f"job {a.job}: one ext_p per process, got {ext_rows}")
+        if a.ext_p <= 0 and next(iter(ext_rows)):
+            a.ext_p = float(next(iter(ext_rows)))
         if a.ext_p <= 0 and os.path.exists(ext_on):
             v = (open(ext_on).read().split() or ["0.3"])
             a.ext_p, a.ext_n = float(v[0]), int(v[1]) if len(v) > 1 else a.ext_n
