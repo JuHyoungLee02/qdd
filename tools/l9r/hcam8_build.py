@@ -130,15 +130,38 @@ def main():
             sys.exit(2)
         json.dump(eps, open(opt["--out"], "w"))
         print(json.dumps(dict(info, out=opt["--out"])))
-    elif cmd == "rows":
+    elif cmd == "rows":  # [--part k/n]: the k-th of n interleaved slices (parallel builds; merge with 'merge')
         from harvest.l9 import build9 as B9
         eps, out, tag = json.load(open(pos[0])), pos[1], pos[2]
-        c = B9.build([e["dir"] for e in eps], out, "l9train", f"l9_{tag}", train=True,
-                     camera_line="--camera-line" in a)
+        name = f"l9_{tag}"
+        if "--part" in opt:
+            k, n = (int(v) for v in opt["--part"].split("/"))
+            eps, name = eps[k::n], f"l9_{tag}.part{k:02d}"
+        c = B9.build([e["dir"] for e in eps], out, "l9train", name, train=True, camera_line="--camera-line" in a,
+                     seed=int(opt["--part"].split("/")[0]) if "--part" in opt else 0)
         rows = [json.loads(x) for x in open(c["path"], encoding="utf-8")]
         chk = B9.check_rows(rows, camera_line="--camera-line" in a, sample=2000)
-        json.dump(chk, open(os.path.join(out, f"l9_{tag}.check.json"), "w"), indent=1)
+        json.dump(chk, open(os.path.join(out, f"{name}.check.json"), "w"), indent=1)
         print(json.dumps(dict(c, rows=len(rows), sha256=sha(c["path"]), check_n=chk["n"], check_errors=chk["n_errors"])))
+        if chk["n_errors"]:
+            sys.exit(3)
+    elif cmd == "merge":  # merge <out dir> <tag> <n parts> [--camera-line]
+        from harvest.l9 import build9 as B9
+        out, tag, n = pos[0], pos[1], int(pos[2])
+        final = os.path.join(out, f"l9_{tag}.jsonl")
+        rows = []
+        for k in range(n):
+            rows += [json.loads(x) for x in open(os.path.join(out, f"l9_{tag}.part{k:02d}.jsonl"), encoding="utf-8")]
+        ctrl = [r for r in rows if r.get("kind") == "control"]
+        aux = [r for r in rows if r.get("kind") != "control"]
+        with open(final, "w", encoding="utf-8", newline="\n") as f:
+            for r in ctrl + aux:
+                f.write(json.dumps(r) + "\n")
+        chk = B9.check_rows(ctrl, camera_line="--camera-line" in a, sample=3000)
+        json.dump(chk, open(os.path.join(out, f"l9_{tag}.check.json"), "w"), indent=1)
+        print(json.dumps({"out": final, "rows": len(rows), "control": len(ctrl), "aux": len(aux), "sha256": sha(final),
+                          "robots": dict(Counter(r.get("robot") for r in ctrl)), "check_n": chk["n"],
+                          "check_errors": chk["n_errors"]}))
         if chk["n_errors"]:
             sys.exit(3)
     elif cmd == "combine":
