@@ -123,6 +123,14 @@ def run(a):
     gj = json.load(open(os.path.join(gdir, gname + ".json")))
     urdf = os.path.join(gdir, gname + ".urdf")
     tasks = load_tasks(a, gj)
+    od = os.path.join(a.out, a.grip)
+    os.makedirs(od, exist_ok=True)
+    for t in tasks:  # no candidates: an empty result (the queue must not pick the object again)
+        if not len(t[2]):
+            np.savez_compressed(os.path.join(od, t[0] + ".npz"), idx=np.zeros(0, int))
+            with open(os.path.join(od, "_log.jsonl"), "a") as f:
+                f.write(json.dumps({"id": t[0], "l9cat": t[1].get("l9cat"), "n": 0, "lift": 0, "shake": 0,
+                                    "lowfric": 0, "lowfric_run": bool(a.lowfric)}) + "\n")
     tasks = [t for t in tasks if len(t[2])]
     if not tasks:
         log("nothing to test")
