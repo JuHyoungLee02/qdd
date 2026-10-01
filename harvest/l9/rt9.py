@@ -31,6 +31,9 @@ VERSION = "l9v2-1"
 GRIP_NAME = {"ffw_sg2": "ffw_sg2", "franka_mast": "franka"}
 EMPTY_M, CONTACT_TOL, CONTACT_TOL_HI, SLIP_GAP, SLIP_MOVE = 0.003, 0.008, 0.020, 0.003, 0.010
 LIMIT_MARGIN = 0.01
+TARGET_CORE = 0.5  # while approaching, the target is an obstacle at half its box: the fingers / palm around a grasp
+#                    stay outside the core, the arm cannot pass through the object (smoke 10-02: full box -> no grasp
+#                    plannable; no box -> the arm knocked the target off the table)
 MAX_FALLBACK = 6
 SETTLE_DW, SETTLE_N, SETTLE_MAX_S, WIN_S = 0.001, 3, 0.6, 0.05
 REACH_TOL, HOLD_MAX_S = 0.012, 1.5
@@ -215,7 +218,7 @@ class Runtime:
         return float(self.choice.pre_open) if self.choice is not None else float(self.w.w_open)
 
     # ------------------------------------------------------------------ obstacles
-    def obstacle_boxes(self, exclude=()) -> dict:
+    def obstacle_boxes(self, exclude=(), shrink: dict | None = None) -> dict:
         from ..sim.scene import OBJ_GEOM
         env = self.w.env
         out = {}
@@ -224,16 +227,18 @@ class Runtime:
             if k in exclude or g.get("shape") in ("marker", "surface") or "half_extents" not in g:
                 continue
             c, q = env.object_pose(k)
-            out[f"obj_{k}"] = (np.asarray(c, float), [2 * float(v) for v in g["half_extents"]], np.asarray(q, float))
+            f = (shrink or {}).get(k, 1.0)
+            out[f"obj_{k}"] = (np.asarray(c, float), [2 * float(v) * f for v in g["half_extents"]], np.asarray(q, float))
         return out
 
-    def refresh_world(self, holding: str | None = None, exclude=(), below_z: float | None = None) -> None:
+    def refresh_world(self, holding: str | None = None, exclude=(), below_z: float | None = None,
+                      shrink: dict | None = None) -> None:
         """World cuboids for cuRobo. below_z: drop every cuboid whose top is below below_z + 3 cm (the support the
         held object leaves or reaches: lift-off and placement are vertical moves, and the attached object starting
         or ending on its support is a start / end collision for cuRobo; smoke 10-02, 2 of 8 episodes stuck)."""
         fs = getattr(self.w, "scene9", {}) or {}
         parts = [p for p in fs.get("furniture", []) if "size" in p and "pos" in p]
-        boxes = self.obstacle_boxes(exclude)
+        boxes = self.obstacle_boxes(exclude, shrink)
         if below_z is not None:
             lim = below_z + 0.03
             parts = [p for p in parts if float(p["pos"][2]) + float(p["size"][2]) / 2 > lim]
@@ -463,7 +468,7 @@ class Runtime:
         width = None
         note = None
         if step == "above_target" and gc is not None:
-            self.refresh_world()  # target stays an obstacle; plan_grasp frees the gripper contact links near it
+            self.refresh_world(shrink={tg: TARGET_CORE})  # the arm must not sweep through the target; its core only
             while gc is not None:
                 r = self._guard_grasp(self.planner.grasp(q0, self.to_base(gc.T), gc.standoff, gc.lift_dz))
                 if r["ok"]:
@@ -485,7 +490,7 @@ class Runtime:
         if step == "descend_close" and gc is not None:
             Q = self.segs.get("grasp")
             if Q is None or np.abs(Q[0] - q0).max() > 0.08:
-                self.refresh_world(exclude=(tg,))
+                self.refresh_world(shrink={tg: TARGET_CORE})
                 r = self._guard_grasp(self.planner.grasp(q0, self.to_base(gc.T), gc.standoff, gc.lift_dz))
                 if not r["ok"]:
                     return None, "the grasp pose is out of reach from here", None
