@@ -77,6 +77,10 @@ def main(argv=None):
     ap.add_argument("--motion", action="store_true", help="spec §10 human-like motion (harvest.l9.motion9)")
     a = ap.parse_args(argv)
     code = 0
+    import faulthandler
+    import signal
+    import sys
+    faulthandler.register(signal.SIGUSR1, file=sys.stderr, all_threads=True)  # `kill -USR1 <pid>`: stacks to the log
     try:
         from ..teach_l8d.fx import SkipScene
         from . import assets9 as A9
