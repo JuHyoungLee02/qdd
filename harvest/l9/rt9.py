@@ -185,6 +185,7 @@ class Runtime:
         self.picks, self.failed = [], set()
         self.regrasp_n, self.timeline = 0, {}
         self.instruction_suffix = ""
+        self.dead = False
 
     def arm_q(self) -> np.ndarray:
         return self.w.env.robot.data.joint_pos[0, self.sim_ids].cpu().numpy().astype(float)
@@ -219,7 +220,16 @@ class Runtime:
     def refresh_world(self, holding: str | None = None, exclude=()) -> None:
         fs = getattr(self.w, "scene9", {}) or {}
         parts = [p for p in fs.get("furniture", []) if "size" in p and "pos" in p]
-        self.planner.world(P9.scene_cuboids(parts, self.obstacle_boxes(exclude), self.T_world_base(), pad=0.005))
+        scene = P9.scene_cuboids(parts, self.obstacle_boxes(exclude), self.T_world_base(), pad=0.005)
+        self.planner.world(scene)
+        dbg = os.environ.get("L9V2_DEBUG_DIR")
+        if dbg and not getattr(self, "_dumped", False):  # one dump per process: scene + start state (diagnosis)
+            import json
+            os.makedirs(dbg, exist_ok=True)
+            json.dump({"scene": scene, "q": self.arm_q().tolist(), "joints": self.joints,
+                       "T_world_base": self.T_world_base().tolist(), "tcp_T": self.tcp_T().tolist(),
+                       "parts": parts}, open(os.path.join(dbg, f"scene_{os.getpid()}.json"), "w"), default=str)
+            self._dumped = True
         if holding:
             self.planner.attach(self.arm_q(), [f"obj_{holding}"])
 
@@ -386,6 +396,8 @@ class Runtime:
         gc = self.choice
         if gc is None:
             return "tipped", None
+        if getattr(self, "dead", False):
+            return "tipped", None
         if hold and self.held is None:
             T_obj = T_of(*self.w.env.object_pose(tg))
             self.held = {"T_obj_G": P9.inv_T(T_obj) @ self.tcp_T()}
@@ -426,6 +438,7 @@ class Runtime:
                     gc.meta["fallback_from"] = self.choice.meta.get("family")
                     self.choice = gc
             if gc is None:
+                self.dead = True  # no grasp is plannable: the next label ends the episode (no 30-call loop)
                 return None, note, None
             width = gc.pre_open
             self.timeline.update(open_set_at="standoff", pre_open_w=round(gc.pre_open, 4))
