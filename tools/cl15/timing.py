@@ -8,7 +8,7 @@ import os
 import statistics
 
 ARMS = [("ep1.5", "/data/harvest/out/cl15", "ep1.5"), ("base35", "/data/harvest/out/cl15b", "base35"),
-        ("astra", "/data/harvest/out/cl15c", "astra")]
+        ("astra", "/data/harvest/out/cl15c", "astra"), ("astra", "/data/harvest/out/cl15d", "astra")]
 KINDS = ("bottle_bin", "ov_basket", "ov_behind", "ov_front", "ov_left")
 OUT = "/data/harvest/out/cl15c"
 
@@ -30,7 +30,10 @@ def main():
                          lat_mean=round(sum(lat) / len(lat), 2) if lat else None, lat_max=max(lat) if lat else None,
                          lat_sum=round(sum(lat), 1), tok_in=d.get("tokens_in"), tok_out=d.get("tokens_out"),
                          cost_krw=d.get("cost_krw"))
-            rows.append(r)
+            done = {(x["arm"], x["kind"]) for x in rows if "success" in x}
+            if (arm, k) in done:
+                continue  # astra: cl15d (rerun) only adds episodes cl15c did not finish
+            rows = [x for x in rows if (x["arm"], x["kind"]) != (arm, k)] + [r]
     os.makedirs(OUT, exist_ok=True)
     json.dump(rows, open(os.path.join(OUT, "timing.json"), "w"), indent=1)
     md = ["| task | arm | success | fail | calls | requests | wall s | sim s | latency med / mean / max s | "

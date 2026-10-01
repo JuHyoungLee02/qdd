@@ -1,7 +1,7 @@
 """E-CL15c work list (prereg_cl15.md change 3): the 5 T1 episodes the user named (1 bottle_bin, 4 ov_basket,
 5 ov_behind, 7 ov_front, 9 ov_left), same seeds / held-out environment as the ep1.5 run, one Isaac process per
 episode (so the per-episode budget gate runs before each), cheapest first by the ep1.5 call count.
-usage: prep_c.py <root>   (reads /data/harvest/out/cl15/t1.json)"""
+usage: prep_c.py <root> [kind,kind,..]   (reads /data/harvest/out/cl15/t1.json)"""
 from __future__ import annotations
 
 import json
@@ -14,12 +14,13 @@ KINDS = ("bottle_bin", "ov_basket", "ov_behind", "ov_front", "ov_left")
 
 def main():
     root = sys.argv[1]
+    want = sys.argv[2].split(",") if len(sys.argv) > 2 else KINDS
     os.makedirs(root, exist_ok=True)
     t1 = json.load(open(os.path.join(SRC, "t1.json")))
     jobs = {ln.split("\t", 1)[0]: ln.rstrip("\n").split("\t", 1)[1] for ln in open(os.path.join(SRC, "jobs.txt"))}
     ep15 = json.load(open(os.path.join(SRC, "summary.json")))["rows"]
     calls = {r["kind"]: r.get("n_calls") or 30 for r in ep15}
-    kinds = {k: v for k, v in t1["kinds"].items() if k in KINDS}
+    kinds = {k: v for k, v in t1["kinds"].items() if k in KINDS and k in want}
     lines = []
     for k in sorted(kinds, key=lambda k: (calls.get(k, 30), k)):
         v = kinds[k]

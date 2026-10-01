@@ -20,9 +20,9 @@ while IFS=$'\t' read -r GID JOB; do
   log "RUN $GID"
   bash $C/tools/teach_strip8/isaac.sh $C $G $(basename $R)_$LN harvest.cl15.run_t1 --job "$JOB" --episodes $R/eps_$GID.json \
     --conds none --ckpt $CK --qwen-url $URL --qwen-name $NAME --out $R/res --vid-root $V --yield-files $R/STOP \
-    --owner $LN --loop-break --stall-n 3 $CL15_EXTRA
+    --owner $LN --loop-break --stall-n 3 $CL15_EXTRA < /dev/null
   log "END $GID $(tail -1 /data/harvest/logs/strip8/$(basename $R)_$LN.log)"
-done < $R/jobs.txt
+done 3< $R/jobs.txt
 rm -f $R/lanes/$LN.alive
 if [ -z "$(ls $R/lanes/*.alive 2>/dev/null)" ]; then
   /data/harvest/venv_train/bin/python $C/tools/cl15/summary.py $R $V $CK >> $L/lanes.log 2>&1
