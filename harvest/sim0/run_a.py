@@ -83,8 +83,18 @@ def episode_class():
 
 
 def block_of(world) -> str:
+    """TASK / Success / OBJECTS for the episode: the scene's actors except the arena; an actor whose name words appear
+    in the instruction = 'task object', the rest 'obstacle' (names: actor names without index / underscores)."""
     from ..lib0.run_a import OBJ_HEAD, SUCCESS_LINE
-    return f"TASK: {world.instruction}\n{SUCCESS_LINE}\n{OBJ_HEAD}\n- (see the images)\n"
+    from ..lib0.world import obj_name
+    names = [a.name for a in world.env.unwrapped._scene.get_all_actors() if a.name not in ("arena", "ground", "")]
+    ins = world.instruction.lower()
+    lines = []
+    for n in names:
+        nm = obj_name(n).replace("baked ", "").replace(" v2", "")
+        role = "task object" if any(w in ins for w in nm.lower().split() if len(w) > 3) else "obstacle"
+        lines.append(f"- {nm} ({role})")
+    return f"TASK: {world.instruction}\n{SUCCESS_LINE}\n{OBJ_HEAD}\n" + "\n".join(lines) + "\n"
 
 
 def make_mp4(frames_dir: str, out: str, fps: int = 3) -> bool:

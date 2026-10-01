@@ -72,3 +72,4 @@
   - **G1 통과**: 변환기 xy 오차 2.3·2.9·3.1·7.7·14.4 mm, 중앙 3.1 mm다.
   - B 정규화 통계: Octo 공개 fractal 행동 통계에는 분위수가 없다. pi05 분위수 정규화용 q01/q99 = 평균 ∓ 2.326 표준편차를 min/max로 자른 근사를 쓴다(`tools/sim0/fractal_norm.py`). 상태는 pi05가 읽지 않으므로 0/1이다.
   - B 서버는 x3 GPU0 :8703(`serve_pi.sh G`)이다. 영상은 3 fps 머리 RGB(A·B 같음)다.
+- 변경 1b (A 스모크 1편 뒤, 시범 전): OBJECTS 줄 코드 수정이 cd068f5에 빠져 있었다(스모크 프롬프트가 '- (see the images)'로 나감). 등록대로 액터 이름 줄로 고쳤다(예: move near 'blue plastic bottle (task object) / opened pepsi can (task object) / orange (obstacle)'). 스모크 1편은 결과에 넣지 않는다.
