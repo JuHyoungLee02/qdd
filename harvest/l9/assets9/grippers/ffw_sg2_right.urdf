@@ -1,0 +1,200 @@
+<?xml version="1.0"?>
+<robot name="ffw_sg2_right_floating">
+  <link name="world"/>
+  <link name="vx_link"><inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.05"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial></link>
+  <joint name="vx" type="prismatic"><parent link="world"/><child link="vx_link"/><origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="1 0 0"/><limit lower="-3.0" upper="3.0" effort="1000" velocity="5"/></joint>
+  <link name="vy_link"><inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.05"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial></link>
+  <joint name="vy" type="prismatic"><parent link="vx_link"/><child link="vy_link"/><origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="0 1 0"/><limit lower="-3.0" upper="3.0" effort="1000" velocity="5"/></joint>
+  <link name="vz_link"><inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.05"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial></link>
+  <joint name="vz" type="prismatic"><parent link="vy_link"/><child link="vz_link"/><origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="0 0 1"/><limit lower="-3.0" upper="3.0" effort="1000" velocity="5"/></joint>
+  <link name="vr_link"><inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.05"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial></link>
+  <joint name="vr" type="revolute"><parent link="vz_link"/><child link="vr_link"/><origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="1 0 0"/><limit lower="-6.2832" upper="6.2832" effort="1000" velocity="10"/></joint>
+  <link name="vp_link"><inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.05"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial></link>
+  <joint name="vp" type="revolute"><parent link="vr_link"/><child link="vp_link"/><origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="0 1 0"/><limit lower="-6.2832" upper="6.2832" effort="1000" velocity="10"/></joint>
+  <joint name="vyaw" type="revolute"><parent link="vp_link"/><child link="ffw_sg2_follower_arm_r_link7"/><origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="0 0 1"/><limit lower="-6.2832" upper="6.2832" effort="1000" velocity="10"/></joint>
+  <link name="ffw_sg2_follower_arm_r_link7">
+    <inertial>
+      <origin xyz="0.0238444 0.0004905 -0.0851253" rpy="0. 0. 0." />
+      <mass value="0.4748563" />
+      <inertia ixx="0.000001" ixy="0." ixz="-0." iyy="0.000001" iyz="-0." izz="0.000001" />
+    </inertial>
+    <visual>
+      <origin xyz="0. 0. -0." rpy="0. 0. 0." />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/ffw_sg2/meshes/ffw_sg2_follower_arm_r_link7_visuals_arm_r_link7_mesh.obj" scale="1. 1. 1." />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0. 0. -0.078" rpy="3.1415927 -0.0000001 0.0000001" />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/ffw_sg2/meshes/ffw_sg2_follower_arm_r_link7_visuals_base_mesh.obj" scale="1. 1. 1." />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0. 0. -0." rpy="0. 0. 0." />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/ffw_sg2/meshes/ffw_sg2_follower_arm_r_link7_collisions_arm_r_link7_mesh.obj" scale="1. 1. 1." />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0.1079437 -0. -0.065588 " rpy="1.5707966 1.4748032 -3.1415925" />
+      <geometry>
+        <box size="0.023 0.042 0.042" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0. 0. -0.078" rpy="3.1415927 -0.0000001 0.0000001" />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/ffw_sg2/meshes/ffw_sg2_follower_arm_r_link7_collisions_base_mesh.obj" scale="1. 1. 1." />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0. 0. -0." rpy="0. 0. 0." />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/ffw_sg2/meshes/ffw_sg2_follower_arm_r_link7_collisions_arm_r_link7_mesh.obj" scale="1. 1. 1." />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.1079437 -0. -0.065588 " rpy="1.5707966 1.4748032 -3.1415925" />
+      <geometry>
+        <box size="0.023 0.042 0.042" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0. 0. -0.078" rpy="3.1415927 -0.0000001 0.0000001" />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/ffw_sg2/meshes/ffw_sg2_follower_arm_r_link7_collisions_base_mesh.obj" scale="1. 1. 1." />
+      </geometry>
+    </collision>
+  </link>
+  <link name="gripper_r_rh_p12_rn_l1">
+    <inertial>
+      <origin xyz="0. -0.034 0.004" rpy="0. 0. 0." />
+      <mass value="0.068" />
+      <inertia ixx="0.000001" ixy="0." ixz="0." iyy="0.000001" iyz="0." izz="0.000001" />
+    </inertial>
+    <visual>
+      <origin xyz="-0. 0. -0." rpy="0. 0. 3.1415927" />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/ffw_sg2/meshes/gripper_r_rh_p12_rn_l1_visuals_l1_mesh.obj" scale="1. 1. 1." />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="-0. 0. -0." rpy="0. 0. 3.1415927" />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/ffw_sg2/meshes/gripper_r_rh_p12_rn_l1_collisions_l1_mesh.obj" scale="1. 1. 1." />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="-0. 0. -0." rpy="0. 0. 3.1415927" />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/ffw_sg2/meshes/gripper_r_rh_p12_rn_l1_collisions_l1_mesh.obj" scale="1. 1. 1." />
+      </geometry>
+    </collision>
+  </link>
+  <link name="gripper_r_rh_p12_rn_l2">
+    <inertial>
+      <origin xyz="0. -0.006 0.011" rpy="0. 0. 0." />
+      <mass value="0.022" />
+      <inertia ixx="0.000001" ixy="0." ixz="0." iyy="0.000001" iyz="0." izz="0.000001" />
+    </inertial>
+    <visual>
+      <origin xyz="0. 0. 0." rpy="0. 0. 0." />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/ffw_sg2/meshes/gripper_r_rh_p12_rn_l2_visuals_l2_mesh.obj" scale="1. 1. 1." />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0. 0. 0." rpy="0. 0. 0." />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/ffw_sg2/meshes/gripper_r_rh_p12_rn_l2_collisions_l2_mesh.obj" scale="1. 1. 1." />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0. 0. 0." rpy="0. 0. 0." />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/ffw_sg2/meshes/gripper_r_rh_p12_rn_l2_collisions_l2_mesh.obj" scale="1. 1. 1." />
+      </geometry>
+    </collision>
+  </link>
+  <link name="gripper_r_rh_p12_rn_r1">
+    <inertial>
+      <origin xyz="0. 0.034 0.004" rpy="0. 0. 0." />
+      <mass value="0.068" />
+      <inertia ixx="0.000001" ixy="0." ixz="0." iyy="0.000001" iyz="0." izz="0.000001" />
+    </inertial>
+    <visual>
+      <origin xyz="0. 0. -0." rpy="0. 0. 0." />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/ffw_sg2/meshes/gripper_r_rh_p12_rn_r1_visuals_r1_mesh.obj" scale="1. 1. 1." />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0. 0. -0." rpy="0. 0. 0." />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/ffw_sg2/meshes/gripper_r_rh_p12_rn_r1_collisions_r1_mesh.obj" scale="1. 1. 1." />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0. 0. -0." rpy="0. 0. 0." />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/ffw_sg2/meshes/gripper_r_rh_p12_rn_r1_collisions_r1_mesh.obj" scale="1. 1. 1." />
+      </geometry>
+    </collision>
+  </link>
+  <link name="gripper_r_rh_p12_rn_r2">
+    <inertial>
+      <origin xyz="0. 0.006 0.011" rpy="0. 0. 0." />
+      <mass value="0.022" />
+      <inertia ixx="0.000001" ixy="0." ixz="0." iyy="0.000001" iyz="0." izz="0.000001" />
+    </inertial>
+    <visual>
+      <origin xyz="0. 0. 0." rpy="0. 0. 3.1415927" />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/ffw_sg2/meshes/gripper_r_rh_p12_rn_r2_visuals_r2_mesh.obj" scale="1. 1. 1." />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0. 0. 0." rpy="0. 0. 3.1415927" />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/ffw_sg2/meshes/gripper_r_rh_p12_rn_r2_collisions_r2_mesh.obj" scale="1. 1. 1." />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0. 0. 0." rpy="0. 0. 3.1415927" />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/ffw_sg2/meshes/gripper_r_rh_p12_rn_r2_collisions_r2_mesh.obj" scale="1. 1. 1." />
+      </geometry>
+    </collision>
+  </link>
+  <link name="right_l9_tcp"><inertial><origin rpy="0 0 0" xyz="0 0 0" /><mass value="0.001" /><inertia ixx="1e-7" ixy="0" ixz="0" iyy="1e-7" iyz="0" izz="1e-7" /></inertial></link>
+  <joint name="gripper_r_joint1" type="revolute">
+    <origin xyz="0. -0.008 -0.126" rpy="3.1415927 -0.0000001 0.0000001" />
+    <parent link="ffw_sg2_follower_arm_r_link7" />
+    <child link="gripper_r_rh_p12_rn_r1" />
+    <axis xyz="1. 0. 0." />
+    <limit lower="0." upper="1.1" effort="60." velocity="6.4999996" />
+  </joint>
+  <joint name="gripper_r_joint2" type="revolute">
+    <origin xyz="0. 0.0493634 0.0285 " rpy="0. 0. 3.1415927" />
+    <parent link="gripper_r_rh_p12_rn_r1" />
+    <child link="gripper_r_rh_p12_rn_r2" />
+    <axis xyz="1. 0. 0." />
+    <limit lower="0." upper="1.1" effort="1000." velocity="6.4999996" />
+  </joint>
+  <joint name="gripper_r_joint3" type="revolute">
+    <origin xyz="0. 0.008 -0.126" rpy="-3.1415927 0.0000001 -3.1415925" />
+    <parent link="ffw_sg2_follower_arm_r_link7" />
+    <child link="gripper_r_rh_p12_rn_l1" />
+    <axis xyz="1. 0. 0." />
+    <limit lower="0." upper="1.1" effort="1000." velocity="6.4999996" />
+  </joint>
+  <joint name="gripper_r_joint4" type="revolute">
+    <origin xyz="-0. 0.0493634 0.0285 " rpy="0. 0. 3.1415927" />
+    <parent link="gripper_r_rh_p12_rn_l1" />
+    <child link="gripper_r_rh_p12_rn_l2" />
+    <axis xyz="1. 0. 0." />
+    <limit lower="0." upper="1.1" effort="1000." velocity="6.4999996" />
+  </joint>
+  <joint name="right_l9_tcp_joint" type="fixed"><parent link="ffw_sg2_follower_arm_r_link7" /><child link="right_l9_tcp" /><origin xyz="0.000000 0.000000 -0.167113" rpy="0.000000000 0.000000000 0.000000000" /></joint>
+</robot>

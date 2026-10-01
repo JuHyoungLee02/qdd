@@ -1,0 +1,510 @@
+{
+ "robot": "ffw_sg2",
+ "arms": {
+  "right": {
+   "tcp": {
+    "tcp": 0.16711283530610685,
+    "tip": 0.19450000548588822,
+    "finger_base": 0.13972566512632548
+   },
+   "finger_open_q": {
+    "gripper_r_joint1": 0.0,
+    "gripper_r_joint2": 0.0,
+    "gripper_r_joint3": 0.0,
+    "gripper_r_joint4": 0.0
+   },
+   "pad_gap_open_m": 0.10692679702391068,
+   "yml": "/data/harvest/l9v2robot/out/curobo/ffw_sg2_right.yml",
+   "n_spheres": 250,
+   "n_links": 25,
+   "ignored_touching_at_stow": [
+    [
+     "arm_base_link",
+     "ffw_sg2_follower_arm_l_link1"
+    ],
+    [
+     "arm_base_link",
+     "ffw_sg2_follower_arm_r_link1"
+    ],
+    [
+     "arm_base_link",
+     "ffw_sg2_follower_head_link1"
+    ],
+    [
+     "arm_base_link",
+     "ffw_sg2_follower_head_link2"
+    ],
+    [
+     "ffw_sg2_follower_arm_l_link1",
+     "ffw_sg2_follower_arm_l_link2"
+    ],
+    [
+     "ffw_sg2_follower_arm_l_link2",
+     "ffw_sg2_follower_arm_l_link3"
+    ],
+    [
+     "ffw_sg2_follower_arm_l_link3",
+     "ffw_sg2_follower_arm_l_link4"
+    ],
+    [
+     "ffw_sg2_follower_arm_l_link4",
+     "ffw_sg2_follower_arm_l_link5"
+    ],
+    [
+     "ffw_sg2_follower_arm_l_link5",
+     "ffw_sg2_follower_arm_l_link6"
+    ],
+    [
+     "ffw_sg2_follower_arm_l_link6",
+     "ffw_sg2_follower_arm_l_link7"
+    ],
+    [
+     "ffw_sg2_follower_arm_l_link7",
+     "gripper_l_rh_p12_rn_l1"
+    ],
+    [
+     "ffw_sg2_follower_arm_l_link7",
+     "gripper_l_rh_p12_rn_r1"
+    ],
+    [
+     "ffw_sg2_follower_arm_r_link1",
+     "ffw_sg2_follower_arm_r_link2"
+    ],
+    [
+     "ffw_sg2_follower_arm_r_link2",
+     "ffw_sg2_follower_arm_r_link3"
+    ],
+    [
+     "ffw_sg2_follower_arm_r_link3",
+     "ffw_sg2_follower_arm_r_link4"
+    ],
+    [
+     "ffw_sg2_follower_arm_r_link4",
+     "ffw_sg2_follower_arm_r_link5"
+    ],
+    [
+     "ffw_sg2_follower_arm_r_link5",
+     "ffw_sg2_follower_arm_r_link6"
+    ],
+    [
+     "ffw_sg2_follower_arm_r_link6",
+     "ffw_sg2_follower_arm_r_link7"
+    ],
+    [
+     "ffw_sg2_follower_arm_r_link7",
+     "gripper_r_rh_p12_rn_l1"
+    ],
+    [
+     "ffw_sg2_follower_arm_r_link7",
+     "gripper_r_rh_p12_rn_r1"
+    ],
+    [
+     "ffw_sg2_follower_head_link1",
+     "ffw_sg2_follower_head_link2"
+    ],
+    [
+     "gripper_l_rh_p12_rn_l1",
+     "gripper_l_rh_p12_rn_l2"
+    ],
+    [
+     "gripper_l_rh_p12_rn_r1",
+     "gripper_l_rh_p12_rn_r2"
+    ],
+    [
+     "gripper_r_rh_p12_rn_l1",
+     "gripper_r_rh_p12_rn_l2"
+    ],
+    [
+     "gripper_r_rh_p12_rn_r1",
+     "gripper_r_rh_p12_rn_r2"
+    ]
+   ],
+   "lock_joints": {
+    "head_joint1": 0.69,
+    "head_joint2": 0.0,
+    "gripper_r_joint1": 0.0,
+    "gripper_r_joint2": 0.0,
+    "gripper_r_joint3": 0.0,
+    "gripper_r_joint4": 0.0,
+    "gripper_l_joint1": 0.0,
+    "gripper_l_joint2": 0.0,
+    "gripper_l_joint3": 0.0,
+    "gripper_l_joint4": 0.0,
+    "arm_l_joint1": 0.75,
+    "arm_l_joint2": 0.0,
+    "arm_l_joint3": 0.0,
+    "arm_l_joint4": -2.3,
+    "arm_l_joint5": 0.0,
+    "arm_l_joint6": 0.0,
+    "arm_l_joint7": 0.0
+   },
+   "ik_smoke": {
+    "dof": 7,
+    "joints": [
+     "arm_r_joint1",
+     "arm_r_joint2",
+     "arm_r_joint3",
+     "arm_r_joint4",
+     "arm_r_joint5",
+     "arm_r_joint6",
+     "arm_r_joint7"
+    ],
+    "n": 200,
+    "ik_success": 190,
+    "pos_err_mm_mean": 0.026,
+    "stow_tcp_xyz": [
+     0.3332,
+     -0.2275,
+     -0.299
+    ],
+    "stow_tcp_quat_wxyz": [
+     0.7144,
+     -0.0,
+     -0.6997,
+     -0.0
+    ]
+   }
+  },
+  "left": {
+   "tcp": {
+    "tcp": 0.16711283530610685,
+    "tip": 0.19450000548588822,
+    "finger_base": 0.13972566512632548
+   },
+   "finger_open_q": {
+    "gripper_l_joint1": 0.0,
+    "gripper_l_joint2": 0.0,
+    "gripper_l_joint3": 0.0,
+    "gripper_l_joint4": 0.0
+   },
+   "pad_gap_open_m": 0.10692679702391068,
+   "yml": "/data/harvest/l9v2robot/out/curobo/ffw_sg2_left.yml",
+   "n_spheres": 250,
+   "n_links": 25,
+   "ignored_touching_at_stow": [
+    [
+     "arm_base_link",
+     "ffw_sg2_follower_arm_l_link1"
+    ],
+    [
+     "arm_base_link",
+     "ffw_sg2_follower_arm_r_link1"
+    ],
+    [
+     "arm_base_link",
+     "ffw_sg2_follower_head_link1"
+    ],
+    [
+     "arm_base_link",
+     "ffw_sg2_follower_head_link2"
+    ],
+    [
+     "ffw_sg2_follower_arm_l_link1",
+     "ffw_sg2_follower_arm_l_link2"
+    ],
+    [
+     "ffw_sg2_follower_arm_l_link2",
+     "ffw_sg2_follower_arm_l_link3"
+    ],
+    [
+     "ffw_sg2_follower_arm_l_link3",
+     "ffw_sg2_follower_arm_l_link4"
+    ],
+    [
+     "ffw_sg2_follower_arm_l_link4",
+     "ffw_sg2_follower_arm_l_link5"
+    ],
+    [
+     "ffw_sg2_follower_arm_l_link5",
+     "ffw_sg2_follower_arm_l_link6"
+    ],
+    [
+     "ffw_sg2_follower_arm_l_link6",
+     "ffw_sg2_follower_arm_l_link7"
+    ],
+    [
+     "ffw_sg2_follower_arm_l_link7",
+     "gripper_l_rh_p12_rn_l1"
+    ],
+    [
+     "ffw_sg2_follower_arm_l_link7",
+     "gripper_l_rh_p12_rn_r1"
+    ],
+    [
+     "ffw_sg2_follower_arm_r_link1",
+     "ffw_sg2_follower_arm_r_link2"
+    ],
+    [
+     "ffw_sg2_follower_arm_r_link2",
+     "ffw_sg2_follower_arm_r_link3"
+    ],
+    [
+     "ffw_sg2_follower_arm_r_link3",
+     "ffw_sg2_follower_arm_r_link4"
+    ],
+    [
+     "ffw_sg2_follower_arm_r_link4",
+     "ffw_sg2_follower_arm_r_link5"
+    ],
+    [
+     "ffw_sg2_follower_arm_r_link5",
+     "ffw_sg2_follower_arm_r_link6"
+    ],
+    [
+     "ffw_sg2_follower_arm_r_link6",
+     "ffw_sg2_follower_arm_r_link7"
+    ],
+    [
+     "ffw_sg2_follower_arm_r_link7",
+     "gripper_r_rh_p12_rn_l1"
+    ],
+    [
+     "ffw_sg2_follower_arm_r_link7",
+     "gripper_r_rh_p12_rn_r1"
+    ],
+    [
+     "ffw_sg2_follower_head_link1",
+     "ffw_sg2_follower_head_link2"
+    ],
+    [
+     "gripper_l_rh_p12_rn_l1",
+     "gripper_l_rh_p12_rn_l2"
+    ],
+    [
+     "gripper_l_rh_p12_rn_r1",
+     "gripper_l_rh_p12_rn_r2"
+    ],
+    [
+     "gripper_r_rh_p12_rn_l1",
+     "gripper_r_rh_p12_rn_l2"
+    ],
+    [
+     "gripper_r_rh_p12_rn_r1",
+     "gripper_r_rh_p12_rn_r2"
+    ]
+   ],
+   "lock_joints": {
+    "head_joint1": 0.69,
+    "head_joint2": 0.0,
+    "gripper_r_joint1": 0.0,
+    "gripper_r_joint2": 0.0,
+    "gripper_r_joint3": 0.0,
+    "gripper_r_joint4": 0.0,
+    "arm_r_joint1": 0.75,
+    "arm_r_joint2": 0.0,
+    "arm_r_joint3": 0.0,
+    "arm_r_joint4": -2.3,
+    "arm_r_joint5": 0.0,
+    "arm_r_joint6": 0.0,
+    "arm_r_joint7": 0.0,
+    "gripper_l_joint1": 0.0,
+    "gripper_l_joint2": 0.0,
+    "gripper_l_joint3": 0.0,
+    "gripper_l_joint4": 0.0
+   },
+   "ik_smoke": {
+    "dof": 7,
+    "joints": [
+     "arm_l_joint1",
+     "arm_l_joint2",
+     "arm_l_joint3",
+     "arm_l_joint4",
+     "arm_l_joint5",
+     "arm_l_joint6",
+     "arm_l_joint7"
+    ],
+    "n": 200,
+    "ik_success": 188,
+    "pos_err_mm_mean": 0.002,
+    "stow_tcp_xyz": [
+     0.3332,
+     0.2275,
+     -0.299
+    ],
+    "stow_tcp_quat_wxyz": [
+     0.7144,
+     -0.0,
+     -0.6997,
+     -0.0
+    ]
+   }
+  }
+ },
+ "sphere_metrics": {
+  "arm_base_link": {
+   "n": 21,
+   "cover": 0.962,
+   "protr": 0.132,
+   "prot_mm": 3.95,
+   "gap_mm": 1.42
+  },
+  "ffw_sg2_follower_arm_l_link1": {
+   "n": 5,
+   "cover": 0.942,
+   "protr": 0.307,
+   "prot_mm": 4.73,
+   "gap_mm": 0.34
+  },
+  "ffw_sg2_follower_arm_l_link2": {
+   "n": 28,
+   "cover": 0.937,
+   "protr": 0.169,
+   "prot_mm": 3.21,
+   "gap_mm": 0.49
+  },
+  "ffw_sg2_follower_arm_l_link3": {
+   "n": 4,
+   "cover": 0.953,
+   "protr": 0.43,
+   "prot_mm": 4.39,
+   "gap_mm": 0.35
+  },
+  "ffw_sg2_follower_arm_l_link4": {
+   "n": 14,
+   "cover": 0.943,
+   "protr": 0.276,
+   "prot_mm": 3.97,
+   "gap_mm": 0.48
+  },
+  "ffw_sg2_follower_arm_l_link5": {
+   "n": 2,
+   "cover": 0.932,
+   "protr": 0.61,
+   "prot_mm": 5.25,
+   "gap_mm": 0.45
+  },
+  "ffw_sg2_follower_arm_l_link6": {
+   "n": 13,
+   "cover": 0.98,
+   "protr": 0.26,
+   "prot_mm": 3.83,
+   "gap_mm": 0.3
+  },
+  "ffw_sg2_follower_arm_l_link7": {
+   "n": 14,
+   "cover": 0.936,
+   "protr": 0.381,
+   "prot_mm": 3.51,
+   "gap_mm": 0.53
+  },
+  "ffw_sg2_follower_arm_r_link1": {
+   "n": 7,
+   "cover": 0.955,
+   "protr": 0.317,
+   "prot_mm": 4.05,
+   "gap_mm": 0.23
+  },
+  "ffw_sg2_follower_arm_r_link2": {
+   "n": 40,
+   "cover": 0.944,
+   "protr": 0.114,
+   "prot_mm": 4.43,
+   "gap_mm": 0.45
+  },
+  "ffw_sg2_follower_arm_r_link3": {
+   "n": 3,
+   "cover": 0.971,
+   "protr": 0.537,
+   "prot_mm": 5.35,
+   "gap_mm": 0.25
+  },
+  "ffw_sg2_follower_arm_r_link4": {
+   "n": 14,
+   "cover": 0.94,
+   "protr": 0.306,
+   "prot_mm": 3.7,
+   "gap_mm": 0.55
+  },
+  "ffw_sg2_follower_arm_r_link5": {
+   "n": 3,
+   "cover": 0.913,
+   "protr": 0.407,
+   "prot_mm": 4.59,
+   "gap_mm": 0.6
+  },
+  "ffw_sg2_follower_arm_r_link6": {
+   "n": 14,
+   "cover": 0.974,
+   "protr": 0.289,
+   "prot_mm": 2.7,
+   "gap_mm": 0.39
+  },
+  "ffw_sg2_follower_arm_r_link7": {
+   "n": 13,
+   "cover": 0.967,
+   "protr": 0.388,
+   "prot_mm": 3.97,
+   "gap_mm": 0.34
+  },
+  "ffw_sg2_follower_head_link1": {
+   "n": 3,
+   "cover": 0.979,
+   "protr": 0.625,
+   "prot_mm": 4.82,
+   "gap_mm": 0.22
+  },
+  "ffw_sg2_follower_head_link2": {
+   "n": 31,
+   "cover": 0.982,
+   "protr": 0.1,
+   "prot_mm": 4.75,
+   "gap_mm": 0.36
+  },
+  "gripper_l_rh_p12_rn_l1": {
+   "n": 3,
+   "cover": 0.973,
+   "protr": 0.673,
+   "prot_mm": 3.43,
+   "gap_mm": 0.22
+  },
+  "gripper_l_rh_p12_rn_l2": {
+   "n": 2,
+   "cover": 0.979,
+   "protr": 0.837,
+   "prot_mm": 4.96,
+   "gap_mm": 0.1
+  },
+  "gripper_l_rh_p12_rn_r1": {
+   "n": 3,
+   "cover": 0.967,
+   "protr": 0.67,
+   "prot_mm": 3.27,
+   "gap_mm": 0.23
+  },
+  "gripper_l_rh_p12_rn_r2": {
+   "n": 2,
+   "cover": 0.964,
+   "protr": 0.792,
+   "prot_mm": 4.12,
+   "gap_mm": 0.22
+  },
+  "gripper_r_rh_p12_rn_l1": {
+   "n": 3,
+   "cover": 0.977,
+   "protr": 0.685,
+   "prot_mm": 3.66,
+   "gap_mm": 0.14
+  },
+  "gripper_r_rh_p12_rn_l2": {
+   "n": 2,
+   "cover": 0.976,
+   "protr": 0.812,
+   "prot_mm": 3.92,
+   "gap_mm": 0.14
+  },
+  "gripper_r_rh_p12_rn_r1": {
+   "n": 4,
+   "cover": 0.972,
+   "protr": 0.526,
+   "prot_mm": 3.39,
+   "gap_mm": 0.2
+  },
+  "gripper_r_rh_p12_rn_r2": {
+   "n": 2,
+   "cover": 0.959,
+   "protr": 0.8,
+   "prot_mm": 4.15,
+   "gap_mm": 0.22
+  }
+ }
+}

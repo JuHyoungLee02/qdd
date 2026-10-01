@@ -1,0 +1,236 @@
+{
+ "name": "ffw_sg2_right",
+ "robot": "ffw_sg2",
+ "arm": "right",
+ "base_link": "ffw_sg2_follower_arm_r_link7",
+ "tcp_link": "right_l9_tcp",
+ "frame": "TCP frame G: origin pad centre, z = -approach, y = closing axis, x = y cross z",
+ "tcp_in_base": {
+  "xyz": [
+   0.0,
+   0.0,
+   -0.16711
+  ],
+  "rpy": [
+   0.0,
+   -0.0,
+   0.0
+  ]
+ },
+ "max_opening_m": 0.107,
+ "min_opening_m": 0.0023,
+ "pad_length_m": 0.0426,
+ "pad_width_m": 0.026,
+ "pad_z_range_in_tcp": [
+  -0.0274,
+  0.0152
+ ],
+ "finger_depth_m": 0.0274,
+ "finger_joints": {
+  "drive": [
+   "gripper_r_joint1"
+  ],
+  "followers": {
+   "gripper_r_joint2": 1.0,
+   "gripper_r_joint3": 1.0,
+   "gripper_r_joint4": 1.0
+  },
+  "note": "follower q = multiplier * drive q; the floating URDF has no <mimic>: drive all"
+ },
+ "width_to_joint": {
+  "width_m": [
+   0.0023,
+   0.0137,
+   0.025,
+   0.0362,
+   0.0576,
+   0.077,
+   0.0937,
+   0.107
+  ],
+  "drive_q": [
+   1.1,
+   1.0,
+   0.9,
+   0.8,
+   0.6,
+   0.4,
+   0.2,
+   0.0
+  ],
+  "source": "harvest/sim/scene.py _GQ/_GW (sim probe2)"
+ },
+ "boxes": {
+  "palm": {
+   "center": [
+    0.0441,
+    0.0,
+    0.1072
+   ],
+   "size": [
+    0.1782,
+    0.08,
+    0.1541
+   ]
+  },
+  "palm_links": [
+   "ffw_sg2_follower_arm_r_link7"
+  ],
+  "by_width": [
+   {
+    "width": 0.107,
+    "q": 0.0,
+    "fingers": [
+     {
+      "center": [
+       -0.0,
+       0.0397,
+       0.0213
+      ],
+      "size": [
+       0.026,
+       0.0714,
+       0.0975
+      ]
+     },
+     {
+      "center": [
+       0.0,
+       -0.0397,
+       0.0213
+      ],
+      "size": [
+       0.026,
+       0.0714,
+       0.0975
+      ]
+     }
+    ]
+   },
+   {
+    "width": 0.0576,
+    "q": 0.6,
+    "fingers": [
+     {
+      "center": [
+       0.0,
+       0.0293,
+       -0.0021
+      ],
+      "size": [
+       0.026,
+       0.0507,
+       0.0964
+      ]
+     },
+     {
+      "center": [
+       0.0,
+       -0.0293,
+       -0.0021
+      ],
+      "size": [
+       0.026,
+       0.0507,
+       0.0964
+      ]
+     }
+    ]
+   },
+   {
+    "width": 0.0023,
+    "q": 1.1,
+    "fingers": [
+     {
+      "center": [
+       0.0,
+       0.0255,
+       -0.0053
+      ],
+      "size": [
+       0.026,
+       0.049,
+       0.1009
+      ]
+     },
+     {
+      "center": [
+       0.0,
+       -0.0255,
+       -0.0053
+      ],
+      "size": [
+       0.026,
+       0.049,
+       0.1009
+      ]
+     }
+    ]
+   }
+  ],
+  "note": "axis-aligned boxes in the TCP frame from the URDF meshes (coarse, conservative)"
+ },
+ "mesh_kind": "visual",
+ "actuation": {
+  "sim": {
+   "drive_effort_limit_Nm": 30.0,
+   "drive_stiffness": {
+    "right": 100.0,
+    "left": 300.0
+   },
+   "drive_damping": 4.0,
+   "drive_velocity_limit_rad_s": 2.2,
+   "full_close_s_at_vel_limit": 0.5,
+   "followers": {
+    "effort_limit_Nm": 20.0,
+    "stiffness": 2.0,
+    "damping": 0.5
+   },
+   "source": "third_party/humanoid_challenge_env/scripts/taskC/taskC_ffw_sg2.py gripper_master_r/l, gripper_slave (the L9 sim's actuators)"
+  },
+  "real": {
+   "servo": "Dynamixel ID 8 (right) / 38 (left)",
+   "operating_mode": 5,
+   "operating_mode_name": "current-based position control",
+   "profile_velocity": 0,
+   "goal_current": null,
+   "note": "Goal Current / Current Limit are not set in ros2_control (device default; value not in the repo -> unknown here). Stroke 0-107.6 mm, payload 5 kg (ROBOTIS spec page, docs/design/D21)",
+   "source": "ROBOTIS-GIT/ai_worker 9bc7f7b ffw_description/ros2_control/ffw_sg2_rev1_follower/ffw_sg2_follower.ros2_control.xacro (Apache-2.0)"
+  },
+  "urdf_limits": {
+   "gripper_r_joint1": {
+    "lower": 0.0,
+    "upper": 1.1,
+    "effort": 60.0,
+    "velocity": 6.4999996
+   },
+   "gripper_r_joint2": {
+    "lower": 0.0,
+    "upper": 1.1,
+    "effort": 1000.0,
+    "velocity": 6.4999996
+   },
+   "gripper_r_joint3": {
+    "lower": 0.0,
+    "upper": 1.1,
+    "effort": 1000.0,
+    "velocity": 6.4999996
+   },
+   "gripper_r_joint4": {
+    "lower": 0.0,
+    "upper": 1.1,
+    "effort": 1000.0,
+    "velocity": 6.4999996
+   }
+  }
+ },
+ "urdf": "/data/harvest/l9v2robot/out/grippers/ffw_sg2_right.urdf",
+ "virtual_joints": [
+  "vx",
+  "vy",
+  "vz",
+  "vr",
+  "vp",
+  "vyaw"
+ ]
+}
