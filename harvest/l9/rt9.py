@@ -227,10 +227,18 @@ class Runtime:
             out[f"obj_{k}"] = (np.asarray(c, float), [2 * float(v) for v in g["half_extents"]], np.asarray(q, float))
         return out
 
-    def refresh_world(self, holding: str | None = None, exclude=()) -> None:
+    def refresh_world(self, holding: str | None = None, exclude=(), below_z: float | None = None) -> None:
+        """World cuboids for cuRobo. below_z: drop every cuboid whose top is below below_z + 3 cm (the support the
+        held object leaves or reaches: lift-off and placement are vertical moves, and the attached object starting
+        or ending on its support is a start / end collision for cuRobo; smoke 10-02, 2 of 8 episodes stuck)."""
         fs = getattr(self.w, "scene9", {}) or {}
         parts = [p for p in fs.get("furniture", []) if "size" in p and "pos" in p]
-        scene = P9.scene_cuboids(parts, self.obstacle_boxes(exclude), self.T_world_base(), pad=0.005)
+        boxes = self.obstacle_boxes(exclude)
+        if below_z is not None:
+            lim = below_z + 0.03
+            parts = [p for p in parts if float(p["pos"][2]) + float(p["size"][2]) / 2 > lim]
+            boxes = {k: v for k, v in boxes.items() if k == f"obj_{holding}" or float(v[0][2]) + v[1][2] / 2 > lim}
+        scene = P9.scene_cuboids(parts, boxes, self.T_world_base(), pad=0.005)
         self.planner.world(scene)
         dbg = os.environ.get("L9V2_DEBUG_DIR")
         if dbg and not getattr(self, "_dumped", False):  # one dump per process: scene + start state (diagnosis)
@@ -333,7 +341,7 @@ class Runtime:
                        cam=cam, depth=depth, allow_instruct=(len(self.picks) == 0 and not self.regrasp_n),
                        parts=parts, category=cat, height=2 * float(he[2]))
         if gc is not None:
-            self._exec_pose(gc)
+            self._exec_pose(gc, float(c[2]) - float(he[2]))
             gc.meta.update(obj=k, tested=bool(C.get("tested", False)), n_candidates=int(len(C["w"])),
                            n_valid=int(ok.sum()), curobo=self.curobo, grip=self.grip)
             self._Cw, self._ok, self._margin = Cw, ok, margin
@@ -357,7 +365,7 @@ class Runtime:
                 if name in getattr(T, "X_TASKS", {}):
                     T.X_TASKS[name] = T.TASKS[name]
 
-    def _exec_pose(self, gc) -> None:
+    def _exec_pose(self, gc, support_z: float) -> None:
         """Commanded TCP = the candidate frame moved back along the approach by the pad drop at the contact width:
         the RH-P12-RN pads move on an arc and sit up to 2.8 cm further along the approach when closed (L9v2-GTEST
         finger probe, gtest9.exec_pose); the Isaac test uses the same correction, so execution matches the test."""
@@ -370,9 +378,9 @@ class Runtime:
             return
         T0 = gc.T.copy()
         try:
-            gc.T = np.asarray(f(T0, gc.w, self.grip), float)
+            gc.T = np.asarray(f(T0, gc.w, self.grip, None, support_z), float)
         except TypeError:
-            gc.T = np.asarray(f(T0, gc.w, self.grip, None), float)
+            gc.T = np.asarray(f(T0, gc.w, self.grip), float)
         gc.meta["pad_drop_m"] = round(float(np.linalg.norm(gc.T[:3, 3] - T0[:3, 3])), 4)
         gc.meta["grasp_cmd_world"] = np.round(gc.T, 5).tolist()
 
@@ -455,7 +463,7 @@ class Runtime:
         width = None
         note = None
         if step == "above_target" and gc is not None:
-            self.refresh_world(exclude=(tg,))  # gripper vs target: grasp9 swept check; arm vs the rest: cuRobo
+            self.refresh_world()  # target stays an obstacle; plan_grasp frees the gripper contact links near it
             while gc is not None:
                 r = self._guard_grasp(self.planner.grasp(q0, self.to_base(gc.T), gc.standoff, gc.lift_dz))
                 if r["ok"]:
@@ -490,7 +498,9 @@ class Runtime:
             np.asarray(self.w.pl.tcp_pose()[1], float)
         T = T_of(pos, quat)
         if hold:
-            self.refresh_world(holding=tg)
+            c_obj = np.asarray(self.w.env.object_pose(tg)[0], float)
+            low = step in ("carry_up", "lower_open", None) or pos[2] < c_obj[2] + 0.05
+            self.refresh_world(holding=tg, below_z=min(c_obj[2], pos[2]) if low else None)
         else:
             self.refresh_world(exclude=(tg,) if step in ("retreat",) else ())
         Q0 = None
