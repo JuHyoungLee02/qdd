@@ -54,9 +54,66 @@ def main():
                 rep[k] = getattr(d, k)[0].cpu().numpy().round(4).tolist()
         mim = []
         for p in Usd.PrimRange(stage.GetPrimAtPath("/World/envs/env_0/Robot")):
-            if any("Mimic" in s for s in p.GetAppliedSchemas()):
-                mim.append([str(p.GetPath()), list(p.GetAppliedSchemas())])
-        rep["mimic"] = mim
+            if any("Mimic" in s for s in p.GetAppliedSchemas()) or "finger_joint" in p.GetName():
+                mim.append([str(p.GetPath()), p.GetTypeName(), list(p.GetAppliedSchemas()),
+                            {a.GetName(): str(a.Get()) for a in p.GetAttributes()
+                             if any(t in a.GetName() for t in ("drive", "limit", "maxJointVelocity", "axis"))}])
+        rep["finger_joints"] = mim
+        trace = []
+        for i in range(40):
+            env.step(np.concatenate([env.arm_q(), [0.0 if i < 20 else 0.08]]))
+            if i % 4 == 3:
+                trace.append([i, d.joint_pos[0, fid].cpu().numpy().round(4).tolist(),
+                              d.joint_vel[0, fid].cpu().numpy().round(3).tolist()])
+        rep["finger_trace"] = trace
+        try:
+            sv = env.env.sim.physics_sim_view
+            cnt = {}
+            for b in ("panda_leftfinger", "panda_rightfinger", "panda_hand"):
+                cv = sv.create_rigid_contact_view(f"/World/envs/env_0/Robot/{b}",
+                                                  filter_patterns=["/World/envs/env_0/*"], max_contact_data_count=64)
+                cnt[b] = {"net": np.asarray(cv.get_net_contact_forces(0.05).cpu().numpy()).round(2).tolist()}
+                try:
+                    fm = np.asarray(cv.get_contact_force_matrix(0.05).cpu().numpy())
+                    cnt[b]["n_filter_nonzero"] = int((np.abs(fm) > 1e-3).any(-1).sum())
+                except Exception as ex:  # noqa: BLE001
+                    cnt[b]["fm_err"] = repr(ex)[:200]
+            rep["contacts"] = cnt
+        except Exception as ex:  # noqa: BLE001
+            rep["contacts"] = repr(ex)[:300]
+        import omni.physx
+        try:
+            from pxr import PhysxSchema, UsdPhysics
+            cols, fing = [], {}
+            for p in Usd.PrimRange(stage.GetPrimAtPath("/World/envs/env_0/Robot"), Usd.TraverseInstanceProxies()):
+                path = str(p.GetPath())
+                if p.HasAPI(UsdPhysics.CollisionAPI):
+                    cols.append([path, p.GetTypeName(),
+                                 str(p.GetAttribute("physics:approximation").Get()) if p.GetAttribute("physics:approximation") else None])
+                if path.endswith("finger") or path.endswith("panda_hand"):
+                    fing[path] = {a.GetName(): str(a.Get()) for a in p.GetAttributes()
+                                  if a.GetName().startswith(("physxRigidBody", "physics:", "physxContact"))}
+            rep["robot_colliders"] = cols[:60]
+            rep["finger_bodies"] = fing
+        except Exception as ex:  # noqa: BLE001
+            rep["robot_colliders"] = repr(ex)
+        v = env.robot.root_physx_view
+        for k in ("get_dof_max_velocities", "get_dof_max_forces", "get_dof_stiffnesses", "get_dof_dampings",
+                  "get_dof_armatures", "get_dof_friction_coefficients", "get_masses", "get_disable_gravities"):
+            if hasattr(v, k):
+                try:
+                    rep[k] = np.asarray(getattr(v, k)().cpu().numpy()).round(6).tolist()
+                except Exception as ex:  # noqa: BLE001
+                    rep[k] = repr(ex)
+        for k in ("get_dof_friction_properties", "get_dof_limits"):
+            if hasattr(v, k):
+                try:
+                    rep[k] = np.asarray(getattr(v, k)().cpu().numpy()).round(5).tolist()
+                except Exception as ex:  # noqa: BLE001
+                    rep[k] = repr(ex)
+        rp = stage.GetPrimAtPath("/World/envs/env_0/Robot")
+        rep["root_attrs"] = {a.GetName(): str(a.Get()) for p in Usd.PrimRange(rp) for a in p.GetAttributes()
+                             if "selfcollision" in a.GetName().lower() or "articulationEnabled" in a.GetName() or "collisionEnabled" in a.GetName()}
     except Exception as ex:  # noqa: BLE001
         rep["planner_error"] = repr(ex)
     env.env.sim.render()
