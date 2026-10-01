@@ -39,7 +39,31 @@ TEXT_B = (
      "its two fingers close along the robot y axis. TCP = the point midway between the finger pads. The pads are 1.7 cm "
      "long (from 1.2 cm above to 0.5 cm below the TCP); the fingertips end 1.0 cm below the TCP; the gripper body starts "
      "3.0 cm above the TCP."),
+    ("then apply gripper: close (0.6 s), open (0.5 s) or keep.",
+     "then apply gripper: close or open (the code waits until the fingers stop moving, at most 10 s) or keep."),
 )
+GRIP_MAX_S = 10.0  # change 2 (2b): the robosuite Panda gripper ramps its target 0.01 per step -> wait until it settles
+GRIP_STILL_M, GRIP_STILL_TICKS = 3e-4, 5
+
+
+def settle_exec(base, world):
+    """MinJerkExec whose open / close waits (trained 0.5 / 0.6 s) last until the pad gap stops changing (< 0.3 mm per
+    tick for 5 ticks), at least the trained time, at most GRIP_MAX_S (E-LIB0b change 2b)."""
+
+    class SettleGrip(base):
+        def _act(self, action, t, tcp):
+            self._w0, self._gl, self._still = t, None, 0
+            return super()._act(action, t, tcp)
+
+        def tick(self, t, tcp):
+            if self.wait_until is not None:
+                g = world._gap()
+                self._still = self._still + 1 if (self._gl is not None and abs(g - self._gl) < GRIP_STILL_M) else 0
+                self._gl = g
+                if t >= self.wait_until - 1e-9 and self._still < GRIP_STILL_TICKS and t < self._w0 + GRIP_MAX_S:
+                    return self.cmd.copy(), self.width, []
+            return super().tick(t, tcp)
+    return SettleGrip
 
 
 def patch_box(fix_b: bool = False):
@@ -124,6 +148,12 @@ def episode_class():
 
         def _score(self, cmd, truth, phase):
             return None
+
+        def make_exec(self, st):
+            ex = super().make_exec(st)
+            if self.fix_b:
+                ex.__class__ = settle_exec(type(ex), self.w)
+            return ex
 
         def _request(self, obs, i, statics):
             text, ims = super()._request(obs, i, statics)

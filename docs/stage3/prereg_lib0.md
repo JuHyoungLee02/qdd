@@ -114,4 +114,5 @@
     4. **집게 문구**(학습 고정 문구 → Franka 실측): '닫힘 축 x' → **y**, '패드 4.5 cm(TCP 위 2.25 ~ 아래 2.25 cm)' → **1.7 cm(위 1.2 ~ 아래 0.5 cm)**, '+ 손끝은 TCP 아래 1.0 cm', '집게 몸통은 TCP 위 2.5 cm부터' → **3.0 cm부터**.
     5. **로봇 이름 문장**: "You control the right arm of a humanoid robot (ROBOTIS AI Worker FFW-SG2) at a table, in simulation." → "You control a robot arm (Franka Emika Panda) at a table, in simulation."
   - 그대로 둔 것: 높이 의도 수치(above 8 cm, grasp 위 끝 아래 2 cm, place 1 cm, lift 22 cm)는 모델의 명령 정의라서 바꾸지 않는다. 작업 상자 x·y(변경 1, 이미 Franka 실측)도 그대로다. 영상 표식 'RIGHT wrist'는 답 형식(`right_wrist`)과 묶여 있어 그대로 둔다. 속도 8 cm/s, 도착·정착 규칙도 그대로다.
+    6. **(2b, Ab 스모크 1편을 본 뒤·본 실행 전 추가)** 집게 동작 시간: 학습 문구와 실행기는 '닫기 0.6 s, 열기 0.5 s'(AI Worker)다. robosuite Panda 집게는 목표를 걸음마다 0.01씩 옮기므로, 닫았다 연 뒤 0.5 s로는 덜 열린다(스모크: 다시 열 때마다 7.3 → 8.1 cm(척도 적용)로 조금씩만 늘어 반복 끊기로 끝남). 실행기는 패드 간격이 멈출 때까지(걸음당 < 0.3 mm가 5걸음) 기다린다. 최소는 학습 시간, 최대는 10 s다. 문구 "close (0.6 s), open (0.5 s)"는 "close or open (the code waits until the fingers stop moving, at most 10 s)"로 바꾼다.
   - 결과 루트는 같은 `/data/harvest/out/lib0/Ab/`, 영상은 `/data/harvest/videos/lib0/Ab/`, 코드 사본은 새 커밋으로 둔다.
