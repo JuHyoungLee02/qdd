@@ -364,17 +364,20 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             from ..sim.assets_x.isaac import ROOM_PARK, yaw_quat
             from ..sim.randomize import _set_pose
             name = self.room_name(seed, family, parts)
-            if name is None:
+            if name is None and not rooms:
                 return None
-            names = sorted(rooms)
+            names = sorted(rooms or {})
             stage = omni.usd.get_context().get_stage()
-            for j, rn in enumerate(names):
+            for j, rn in enumerate(names):  # no room: every room parked (smoke 2026-10-02: the previous episode's
+                # room stayed in place under an outdoor scene)
                 prim = stage.GetPrimAtPath(f"/World/envs/env_0/FR_{rn}")
                 if rn == name:
                     r = rooms[rn]
                     _set_pose(prim, (r["pos"][0], r["pos"][1], r["pos"][2] + 0.001), yaw_quat(r["yaw"]))
                 else:
                     _set_pose(prim, (ROOM_PARK[0] - 12.0 * j, ROOM_PARK[1], ROOM_PARK[2]), (1.0, 0.0, 0.0, 0.0))
+            if name is None:
+                return None
             r = rooms[name]
             return {"name": r.get("name0", name), "kind": r.get("kind"), "license": r.get("license"), "source": r.get("source")}
 
