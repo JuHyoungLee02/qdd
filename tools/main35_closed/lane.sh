@@ -21,7 +21,7 @@ l9_on_gpu() {  # an L9 process on this GPU (by its command line)
   done
 }
 # per-card yield (user approval 2026-10-01): L9 GPU_WANTED counts only when it lists this card, e.g. "7a2a:0,1,3"
-KEY=$(hostname | sed -E 's/.*7a2a-(x[0-9]+)$//; s/.*native-7a2a$/7a2a/')
+KEY=$(hostname | sed -E 's/.*7a2a-(x[0-9]+)$/\1/; s/.*native-7a2a$/7a2a/')
 listed() { [ -f "$1" ] && grep -oE "(^|[[:space:]])$KEY:[0-9,]+" "$1" | grep -qE "[:,]$G(,|$)"; }
 want() { listed $W1 && { echo GPU_WANTED; return; }; [ -f $W2 ] && { echo lane_WANTED; return; }
   local p; p=$(l9_on_gpu); [ -n "$p" ] && echo "l9_pid_$p"; }

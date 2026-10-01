@@ -14,7 +14,7 @@ VW=/data/harvest/out/vla/GPU_WANTED
 mkdir -p $L; IP=$(hostname -i | awk '{print $1}')
 log() { echo "$(date -u +%FT%TZ) serve $*" >> $L/serve.log; }
 # per-card yield (user approval 2026-10-01): VLA/JCR and L9 requests count only when they list this card
-KEY=$(hostname | sed -E 's/.*7a2a-(x[0-9]+)$//; s/.*native-7a2a$/7a2a/')
+KEY=$(hostname | sed -E 's/.*7a2a-(x[0-9]+)$/\1/; s/.*native-7a2a$/7a2a/')
 listed() { [ -f "$1" ] && grep -oE "(^|[[:space:]])$KEY:[0-9,]+" "$1" | grep -qE "[:,]$G(,|$)"; }
 lanes_alive() { find $R/lanes -name '*.alive' -mmin -10 2>/dev/null | grep -q .; }
 mem() { nvidia-smi -i $G --query-gpu=memory.used --format=csv,noheader,nounits; }
