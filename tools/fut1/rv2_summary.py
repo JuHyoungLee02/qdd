@@ -94,11 +94,16 @@ def judge_pair(root, x, y, out):
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default="/data/harvest/out/fut1")
+    ap.add_argument("--x0", default="F2rv", help="seed-0 candidate arm with the whole-pool 'roll' scores")
+    ap.add_argument("--x1", default="F2s1", help="seed-1 candidate arm")
+    ap.add_argument("--sx0", default=None, help="seed-0 arm with the static sets (default: x0, or F2 for F2rv)")
+    ap.add_argument("--out-name", default="summary_fut1_rv2.json")
     a = ap.parse_args(argv)
+    sx0 = a.sx0 or ("F2" if a.x0 == "F2rv" else a.x0)
     R = a.root
     rng = np.random.default_rng(0)
     seeds = []
-    for tag, rdir, f0, f2 in (("s0", "data_rv", "F0rv", "F2rv"), ("s1", "data_s1", "F0s1", "F2s1")):
+    for tag, rdir, f0, f2 in (("s0", "data_rv", "F0rv", a.x0), ("s1", "data_s1", "F0s1", a.x1)):
         rows = {**rows_of(os.path.join(R, rdir, "eval_cur.jsonl")), **rows_of(os.path.join(R, rdir, "eval_roll.jsonl"))}
         s0 = S.load(R, f0, "mm_cur")
         s2 = {i[: -len("roll")] + "cur": s for i, s in S.load(R, f2, "mm_roll").items()}
@@ -149,19 +154,25 @@ def main(argv=None):
     safe = [float(d) for d, v in curve.items() if v["verdict"] == "SAFE"]
     out["F2_curve_pooled"] = curve
     out["delta_star"] = max(safe) if safe else 0.0
-    st = {k: S.static(R, k) for k in ("F0", "F2", "F0s1", "F2s1")}
+    st = {k: S.static(R, k) for k in ("F0", sx0, "F0s1", a.x1)}
 
     def dif(key, x, y):
         return (st[x][key] - st[y][key]) * 100
 
-    sm = {key: round((dif(key, "F2", "F0") + dif(key, "F2s1", "F0s1")) / 2, 2)
+    sm = {key: round((dif(key, sx0, "F0") + dif(key, a.x1, "F0s1")) / 2, 2)
           for key in ("val_action_acc", "val_fail20", "val_open_hit")}
     r1 = json.load(open(os.path.join(R, "summary", "summary_fut1.json")))
-    j1 = r1["judge"].get("F2", {}).get("verdict")
-    od = os.path.join(R, "summary", "rv2")
+    od = os.path.join(R, "summary", a.out_name.replace(".json", ""))
     os.makedirs(od, exist_ok=True)
+    if sx0 == "F2":
+        j1 = r1["judge"].get("F2", {}).get("verdict")
+    else:
+        try:
+            j1 = judge_pair(R, sx0, "F0", od)["verdict"]
+        except Exception as ex:  # noqa: BLE001
+            j1 = "ERROR " + repr(ex)[:120]
     try:
-        js1 = judge_pair(R, "F2s1", "F0s1", od)
+        js1 = judge_pair(R, a.x1, "F0s1", od)
     except Exception as ex:  # noqa: BLE001
         js1 = {"verdict": "ERROR", "error": repr(ex)[:200]}
     out["static"] = {"per_arm": st, "mean_diff_pp": sm, "judge_s0": j1, "judge_s1": js1}
@@ -173,9 +184,10 @@ def main(argv=None):
            "P4b_l8s_val_acc": sm["val_action_acc"] >= -1, "P4c_l8s_val_fail20": sm["val_fail20"] <= 1,
            "P4d_g_val_hit": sm["val_open_hit"] >= -1,
            "P4e_judge": j1 == "NONINFERIOR" and js1.get("verdict") == "NONINFERIOR"}
+    out["arms"] = {"x0": a.x0, "x1": a.x1, "static_x0": sx0}
     out["verdict_F2"] = {"status": "PASS" if all(chk.values()) else "FAIL", **chk}
-    out["adopted"] = "F2" if all(chk.values()) else None
-    json.dump(out, open(os.path.join(R, "summary", "summary_fut1_rv2.json"), "w"), indent=1)
+    out["adopted"] = a.x0.replace("rv", "") if all(chk.values()) else None
+    json.dump(out, open(os.path.join(R, "summary", a.out_name), "w"), indent=1)
     print(json.dumps({"adopted": out["adopted"], "verdict_F2": out["verdict_F2"], "P4a_d0_pooled": p["d0"],
                       "per_seed_d0": {t: v["d0"] for t, v in out["per_seed"].items()},
                       "d1": p["d1"], "d0.5": p["d0.5"], "delta_star": out["delta_star"],
