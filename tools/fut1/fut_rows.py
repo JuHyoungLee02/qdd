@@ -113,8 +113,8 @@ def window_ok(ticks, tk_t, t_a, t_b, dist, held_obj) -> bool:
     if ia is None or ib is None:
         return False
     A, B = ticks[ia], ticks[ib]
-    if bool(A.get("holding")) != bool(B.get("holding")):
-        return False
+    if bool(A.get("holding")) != bool(B.get("holding")) or set(A["obj"]) != set(B["obj"]):
+        return False  # grasp state changed or an object appeared (obstacle disturbance) inside the window
     for k, p in A["obj"].items():
         if k == held_obj and A.get("holding"):
             continue
@@ -167,8 +167,9 @@ def build_episode(d: str, out_img: str, want_variants=VARIANTS, deltas=ALL_DELTA
         cams = json.load(open(os.path.join(cd, "cams.json")))
         head, wrist0 = Cam.from_json(cams["head"]), Cam.from_json(cams["wrist"])
         tc = t0 + c["t_sim"]
-        present = list(ticks[nearest(tk_t, tc, 0.06) or 0]["obj"].keys())
-        info["present"] = present
+        # the runtime request lists the objects present at reset (env.present); an 'obstacle' disturbance appends
+        # o10 to the ticks later but never to the request (diag_rebuild: 1,479/1,479 rebuild failures, change 1)
+        info["present"] = list(ticks[0]["obj"].keys())
         tcp_c, gap_c = c["truth"]["tcp"], c["truth"]["grip_w"]
         table_z = float((c.get("resolved") or {}).get("plane") or 0.85)
         h_before = hist[:c["site"] - 1]
