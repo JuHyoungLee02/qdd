@@ -296,16 +296,19 @@ class Runtime:
         boxes = (np.array([b[0] for b in bl]).reshape(-1, 3), np.array([b[1] for b in bl]).reshape(-1, 3),
                  np.array([b[2] for b in bl]).reshape(-1, 3, 3))
         pre = np.asarray(Cw["pre_open"], float).copy()
+        vs = {"candidates": int(len(ok)), "test_ok": int(ok.sum()), "support_ok": 0, "free_ok": 0, "ik_ok": 0}
         for i in np.flatnonzero(ok):
             T = Cw["T"][i]
             if G.lowest_point(T, self.gr, pre[i]) < sup + G.SUPPORT_CLEAR:
                 ok[i] = False
                 continue
+            vs["support_ok"] += 1
             w_free = free_opening(T, self.gr, boxes, float(Cw["w"][i]), pre[i])
             if w_free is None:
                 ok[i] = False
             else:
                 pre[i] = w_free
+                vs["free_ok"] += 1
         Cw["pre_open"] = pre
         margin = np.zeros(len(ok))
         idx = np.flatnonzero(ok)
@@ -314,11 +317,14 @@ class Runtime:
             r_ok, _, m = self.planner.ik(Tb)
             ok[idx] = r_ok
             margin[idx] = m
+        vs["ik_ok"] = int(ok.sum())
+        self._vstats = vs
         return ok, margin
 
     def choose(self, k: str, info: dict):
         C = self._load(k)
         if C is None or not len(C["w"]):
+            self.picks.append({"obj": k, "choice_fail": "no candidate file" if C is None else "no candidates"})
             return None
         c, q = self.w.env.object_pose(k)
         Cw = G.to_world(C, c, q)
@@ -345,7 +351,10 @@ class Runtime:
         gc = VP.choose(Cw, ok, margin, c, robot_xy, seed, len(self.picks), constraint=info.get("constraint"),
                        cam=cam, depth=depth, allow_instruct=(len(self.picks) == 0 and not self.regrasp_n),
                        parts=parts, category=cat, height=2 * float(he[2]))
+        if gc is None:
+            self.picks.append({"obj": k, "choice_fail": "no valid candidate", "valid_stats": getattr(self, "_vstats", None)})
         if gc is not None:
+            gc.meta["valid_stats"] = getattr(self, "_vstats", None)
             self._exec_pose(gc, float(c[2]) - float(he[2]))
             gc.meta.update(obj=k, tested=bool(C.get("tested", False)), n_candidates=int(len(C["w"])),
                            n_valid=int(ok.sum()), curobo=self.curobo, grip=self.grip)
