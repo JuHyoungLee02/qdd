@@ -84,7 +84,7 @@ def decor_parts(mesh: dict, vseed: int, furniture: list, room: bool, arm: str | 
     boxes = S9.aabb_world([p for p in furniture if p.get("role") != "room_wall"], 0.0)
     (fx0, fx1) = (min(b[0][0] for b in boxes), max(b[0][1] for b in boxes)) if boxes else (0.3, 1.0)
     (fy0, fy1) = (min(b[1][0] for b in boxes), max(b[1][1] for b in boxes)) if boxes else (-0.5, 0.5)
-    names = sorted(mesh)
+    names = sorted(k for k in mesh if not any(p.get("asset") == k for p in furniture))  # not the task piece
     out = []
     (zx0, zx1), (zy0, zy1) = S9.ZONE if room else ((-0.5, 2.5), (-2.0, 2.0))
 
@@ -225,6 +225,8 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
         from . import assets9 as A9
         k = int(hashlib.sha256("|".join(sorted(mesh)).encode()).hexdigest()[:6], 16)
         mesh = {**mesh, **A9.tabletop_for(k, split=split)}
+        from . import scene9 as S9
+        S9.MESH_POOL = {n: r for n, r in mesh.items() if r.get("surfaces")}  # mesh_furniture draws loaded pieces only
     undo = FX.without_table(mesh, rooms)
 
     class World9(IsaacWorld):

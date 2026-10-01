@@ -222,11 +222,25 @@ def furniture_mesh(split: str = "train") -> dict:
     return out
 
 
-def mesh_for(idx: int, n: int = 10, split: str = "train") -> dict:
-    """The idx-th subset of n mesh furniture pieces (rotating through the catalog)."""
+MESH_TASK_CATS = ("table", "counter", "shelf", "side_table", "low_table", "seat")  # = scene9_more.MESH_RULES
+
+
+def mesh_for(idx: int, n: int = 14, split: str = "train") -> dict:
+    """The idx-th subset of mesh furniture pieces: one task-usable piece (with measured surfaces) per
+    MESH_TASK_CATS category (L9 v2 mesh_furniture family), then n more rotating through the whole catalog (decor)."""
+    from .scene9_more import _open_top
     cat = furniture_mesh(split)
+    out = {}
+    for c in MESH_TASK_CATS:
+        ks = sorted((k for k, r in cat.items() if r.get("category") == c and _open_top(r)),
+                    key=lambda k: hashlib.sha256(f"l9mesh:{c}:{k}".encode()).hexdigest())
+        if ks:
+            out[ks[idx % len(ks)]] = cat[ks[idx % len(ks)]]
     order = sorted(cat, key=lambda k: hashlib.sha256(f"l9mesh:{k}".encode()).hexdigest())
-    return {order[(idx * n + j) % len(order)]: cat[order[(idx * n + j) % len(order)]] for j in range(n)}
+    for j in range(n):
+        k = order[(idx * n + j) % len(order)]
+        out[k] = cat[k]
+    return out
 
 
 def gate_pass():
