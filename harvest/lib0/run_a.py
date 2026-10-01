@@ -140,6 +140,25 @@ def episode_class():
         vid_dir = None
         block = None
         fix_b = False
+        fix_c = False  # E-LIB0c (prereg change 3): rim grasp for hollow objects (harvest.lib0.rim)
+
+        def resolve(self, cmd: dict, st: dict) -> dict:
+            res = super().resolve(cmd, st)
+            if not (self.fix_c and cmd.get("height") == "grasp" and res.get("kind") == "object"
+                    and res.get("goal") is not None and cmd.get("point_2d") is not None and self.depth is not None):
+                return res
+            from .rim import region_points, rim_of
+            P, _plane, _r = region_points(self.head, self.depth, self.w.table_z, cmd["point_2d"], tcp=st["tcp"])
+            v = rim_of(P, st["tcp"])
+            self.rim_log = getattr(self, "rim_log", []) + [dict(v, call=len(self.calls))]
+            if not v["hollow"]:
+                return res
+            return dict(res, goal=[float(v["xy"][0]), float(v["xy"][1]), float(v["z"])], goal_centre=res["goal"],
+                        rim=True)
+
+        def _save(self, res):
+            res["rim"] = getattr(self, "rim_log", [])
+            super()._save(res)
 
         def _truth(self) -> dict:
             st = self.w.status()
@@ -198,7 +217,9 @@ def main(argv=None):
     ap.add_argument("--stop-calls", type=int, default=30)
     ap.add_argument("--stop-motion", type=float, default=120.0)
     ap.add_argument("--fix-b", action="store_true", help="E-LIB0b adapter fixes (prereg change 2)")
+    ap.add_argument("--fix-c", action="store_true", help="E-LIB0c: + rim grasp for hollow objects (change 3)")
     a = ap.parse_args(argv)
+    a.fix_b = a.fix_b or a.fix_c
     patch_box(a.fix_b)
     from ..astra_solo import pt_episode as PE
     from ..astra_solo import resolve as RS
@@ -236,7 +257,7 @@ def main(argv=None):
                     stop_motion_s=a.stop_motion, mem_points=True, fix_loop=True, loop_break=True, stall_n=3,
                     corrupt=None)
             ep.vid_dir = vd
-            ep.fix_b = a.fix_b
+            ep.fix_b, ep.fix_c = a.fix_b, a.fix_c
             world.table_z = None  # re-measured at this episode's reset
             ep.block = lib_block(world)
             res = ep.run()
@@ -252,7 +273,7 @@ def main(argv=None):
         mp4 = os.path.join(a.vid_root, a.arm, a.suite, name + ".mp4")
         ok = make_mp4(vd, mp4)
         lat = res.get("latency_s") or []
-        row = {"arm": a.arm, "fix_b": a.fix_b, "suite": a.suite, "task": a.task, "k": k, "language": world.task.language,
+        row = {"arm": a.arm, "fix_b": a.fix_b, "fix_c": a.fix_c, "suite": a.suite, "task": a.task, "k": k, "language": world.task.language,
                "success": bool(res.get("success")), "t_success": res.get("t_success"),
                "success_in_budget": bool(res.get("success")) and res.get("t_success") is not None
                and float(res["t_success"]) <= budget_s + 1e-9, "budget_s": budget_s,

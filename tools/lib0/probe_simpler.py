@@ -22,8 +22,10 @@ for cam, d in obs.get("image", {}).items():
     print(cam, {k: np.asarray(v).shape for k, v in d.items()})
 print("camera_param", json.dumps({c: {k: np.round(np.asarray(v), 4).tolist() for k, v in d.items()}
                                   for c, d in obs.get("camera_param", {}).items()})[:1500])
-print("agent", {k: np.round(np.asarray(v), 4).tolist() for k, v in obs.get("agent", {}).items()})
-print("extra", {k: np.round(np.asarray(v), 4).tolist() for k, v in obs.get("extra", {}).items()})
+def sh(d):
+    return {k: (sh(v) if isinstance(v, dict) else np.round(np.asarray(v, float), 4).tolist()) for k, v in d.items()}
+print("agent", sh(obs.get("agent", {})))
+print("extra", sh(obs.get("extra", {})))
 print("control_mode", getattr(env.unwrapped, "_control_mode", None), "action_space", env.action_space)
 img = get_image_from_maniskill2_obs_dict(env, obs)
 Image.fromarray(img).save(os.path.join(out, f"probe_{task}.png"))

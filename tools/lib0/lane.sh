@@ -3,7 +3,7 @@
 # Jobs: tab-separated "<suite> <task> <ks>" lines; claimed with mkdir <out>/claims/<arm>_<suite>_<task>.
 # Servers: arm A -> LIB0_QURL (vLLM, served name lib0_ep2_5); arms B / R -> LIB0_PIHOST:8702 (B) / 8701 (R).
 # Stop: touch /data/harvest/out/lib0/STOP (between jobs; the runner also checks it between episodes).
-# usage: lane.sh <code dir> <arm A|Ab|B|R> <lane name> <jobs file>   log -> /data/harvest/logs/lib0/lanes.log + lane_<name>.log
+# usage: lane.sh <code dir> <arm A|Ab|Ac|B|R> <lane name> <jobs file>   log -> /data/harvest/logs/lib0/lanes.log + lane_<name>.log
 C=$1; ARM=$2; LN=$3; J=$4
 O=/data/harvest/out/lib0; V=/data/harvest/videos/lib0; L=/data/harvest/logs/lib0
 mkdir -p $O/claims $O/lanes $V $L
@@ -17,8 +17,9 @@ while IFS=$'\t' read -r -u 3 SUITE TASK KS; do
   [ -z "$SUITE" ] && continue
   mkdir $O/claims/${ARM}_${SUITE}_$TASK 2>/dev/null || continue
   log "RUN $ARM $SUITE $TASK ks=$KS"
-  if [ $ARM = A ] || [ $ARM = Ab ]; then
+  if [ $ARM = A ] || [ $ARM = Ab ] || [ $ARM = Ac ]; then
     FB=""; [ $ARM = Ab ] && FB=--fix-b  # Ab = E-LIB0b (prereg change 2)
+    [ $ARM = Ac ] && FB=--fix-c  # Ac = E-LIB0c (change 3: b + rim grasp)
     nice -n 10 timeout 10800 $PY -m harvest.lib0.run_a --suite $SUITE --task $TASK --ks $KS --qwen-url $LIB0_QURL \
       --qwen-name lib0_ep2_5 --out $O --vid-root $V --arm $ARM $FB --stop-files $O/STOP >> $L/lane_$LN.log 2>&1 < /dev/null
   else
