@@ -64,6 +64,9 @@ def _overlay(t: str) -> str:
     raise ValueError("strip: no overlay legend found")
 
 
+_L9_LINE_RE = re.compile(r"^- ([^:]+): (.+?)( \((?:the object to move|where to put it|obstacle)\))?$")
+
+
 def _sizes(t: str) -> str:
     if _OBJ_HEAD_V2 not in t:
         if _OBJ_HEAD_MIN in t:
@@ -81,9 +84,14 @@ def _sizes(t: str) -> str:
                     break
             else:
                 m = _RING_DESC_RE.search(ln)  # xring.py sets the ring description at run time (generator only)
-                if not m:
-                    raise ValueError(f"strip: unknown object line {ln!r}")
-                ln = ln[:m.start()] + ln[m.end():]
+                if m:
+                    ln = ln[:m.start()] + ln[m.end():]
+                else:  # L9 (prereg_hcam8): per-episode catalog / furniture descriptions set at run time (world9);
+                    # "- name: description (role)" -> "- name (role)", same form as the known-description lines
+                    g = _L9_LINE_RE.match(ln)
+                    if not g:
+                        raise ValueError(f"strip: unknown object line {ln!r}")
+                    ln = "- " + g.group(1) + (g.group(3) or "")
         lines.append(ln)
     return head + _OBJ_HEAD_MIN + "\n".join(lines) + sep + tail
 

@@ -1,5 +1,6 @@
 """E-HCAM8 data builds (prereg_hcam8 §3; pod, venv python, PYTHONPATH = code dir).
   select  <collect root>... --out <episodes.json> --mode std|rand [--n 2000] [--match <episodes.json>]
+          [--plan <production plan.json> --done <run done dir>]  (only strata still ahead in production)
           successful L9 AI Worker episodes (success, max_dq_rad <= 0.04, motion l9m-2, head camera mode),
           stratified by (definition, arm): equal share per stratum, seed order; --match takes exactly the strata
           counts of another selection (H1 matched to H0).
@@ -38,10 +39,16 @@ def eligible(d, mode):
             and (d.get("robot") or "ffw_sg2") == "ffw_sg2" and m == mode and d.get("task_id") != "gate_move")
 
 
-def select(roots, mode, n, match=None):
+def plan_strata(plan_path, done_dir):
+    """(definition, arm) strata of the production plan rows whose jobs are not done yet (H1 can still be matched)."""
+    done = set(os.listdir(done_dir)) if done_dir and os.path.isdir(done_dir) else set()
+    return {(r["def"], r["arm"]) for r in json.load(open(plan_path)) if r["job"] not in done}
+
+
+def select(roots, mode, n, match=None, strata=None):
     by = defaultdict(list)
     for ep, d in _metas(roots):
-        if eligible(d, mode):
+        if eligible(d, mode) and (strata is None or (d["task_id"], d["arm"]) in strata):
             by[(d["task_id"], d["arm"])].append((int(d["seed"]), ep, d["env_family"]))
     for k in by:
         by[k].sort()
@@ -126,7 +133,8 @@ def main():
     pos = [x for i, x in enumerate(a[1:], 1) if not x.startswith("--") and not a[i - 1].startswith("--")]
     if cmd == "select":
         match = json.load(open(opt["--match"])) if "--match" in opt else None
-        eps, info = select(pos, opt["--mode"], int(opt.get("--n", 2000)), match)
+        strata = plan_strata(opt["--plan"], opt.get("--done")) if "--plan" in opt else None
+        eps, info = select(pos, opt["--mode"], int(opt.get("--n", 2000)), match, strata)
         if eps is None:
             print(json.dumps(info))
             sys.exit(2)
