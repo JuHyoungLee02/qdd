@@ -4,10 +4,13 @@
 #   arm B: pi05_base params + the LIBERO action-normalisation stats of pi05_libero (data statistics, no weights)
 #          assembled in /data/harvest/lib0/ckpt/pi05_base_liberonorm (params = symlink to the base checkpoint)
 # JAX memory share XLA_PYTHON_CLIENT_MEM_FRACTION=0.3 (two servers on one card). Process tag LIB0_JOB=pi_<arm>.
-# usage: serve_pi.sh <arm B|R> <gpu> <port>   log -> /data/harvest/logs/lib0/serve_<arm>.log
+# usage: serve_pi.sh <arm B|R|G> <gpu> <port>   log -> /data/harvest/logs/lib0/serve_<arm>.log
 A=$1; G=$2; PORT=$3
 R=/data/harvest/lib0; CK=$R/openpi_data/openpi-assets/checkpoints; L=/data/harvest/logs/lib0; mkdir -p $L
-if [ $A = R ]; then D=$CK/pi05_libero; else
+if [ $A = R ]; then D=$CK/pi05_libero
+elif [ $A = G ]; then  # E-SIM0 arm B: pi05_base + fractal action stats (tools/sim0/fractal_norm.py), prepared beforehand
+  D=$R/ckpt/pi05_base_fractalnorm; [ -e $D/params ] || ln -s $CK/pi05_base/params $D/params
+else
   D=$R/ckpt/pi05_base_liberonorm
   mkdir -p $D/assets/physical-intelligence/libero
   [ -e $D/params ] || ln -s $CK/pi05_base/params $D/params
