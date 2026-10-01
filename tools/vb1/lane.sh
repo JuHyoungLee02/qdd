@@ -30,7 +30,19 @@ while true; do
     ALERT*) ev "lane $LANE stops: $gid"; break;;
   esac
   rm -f $LN/$LANE.WANTED; echo $CARD > $LN/$LANE.run
-  ( while true; do sleep 30; eps touch $gid; busy > /dev/null || touch $LN/$LANE.WANTED; done ) &
+  ( last=$(date +%s); sz=-1   # watchdog: yield file when the card turns busy; an episode that makes no log
+    # progress is killed (busy card: 5 min, else 30 min; one episode takes ~1-2 min) -> the lane goes on / yields
+    while true; do
+      sleep 30; eps touch $gid; busy > /dev/null || touch $LN/$LANE.WANTED
+      n=$(stat -c %s $Q/logs/vb1/${LANE}_$gid.log 2> /dev/null || echo 0); now=$(date +%s)
+      [ "$n" != "$sz" ] && { sz=$n; last=$now; }
+      lim=1800; [ -f $LN/$LANE.WANTED ] && lim=300
+      if [ $((now - last)) -ge $lim ]; then
+        for p in $(ps -eo pid,args | awk -v l="--lane $LANE " '!/awk/ && /tools[.]vb1[.]rec --group/ && index($0, l) {print $1}'); do kill $p; done
+        echo "$(TZ=Asia/Seoul date '+%F %H:%M') KST | VB1 | lane $LANE watchdog: no progress for $((now - last)) s in $gid -> killed" >> $R/events.log
+        last=$now
+      fi
+    done ) &
   wp=$!
   bash $C/tools/vb1/isaac.sh $C $G ${LANE}_$gid --group $gid --card $CARD --lane $LANE --yield-file $LN/$LANE.WANTED
   rc=$?
