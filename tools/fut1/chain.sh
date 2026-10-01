@@ -29,7 +29,9 @@ run_arm() {  # <key> <gpu> <arm> <base> <variants>; retries after a yield
     until [ "$(mem $g)" -lt 1000 ] && ! others_want $k $g; do sleep 120; done
     bash $C/tools/fut1/arm.sh $C $k $g $arm $4 "$5"; rc=$?
     [ $rc = 1 ] && { echo "$arm" > $F/ALERT_$arm; ev "ALERT $arm failed (see events)"; return 1; }
-  done; }
+  done
+  return 0; }  # fix (change 4): the until loop's status was that of '[ $rc = 1 ]' (1), so '|| exit 1' ended the
+               # per-card list after its first arm (x3 '0:F4 0:Zb' never ran Zb, the summary waited for Zb)
 vars_of() { case $1 in F0) echo "cur roll";; F1) echo cur;; F2|F4) echo roll;; F3) echo rt;; Z*) echo "cur roll rt";; esac; }
 
 case $ROLE in
@@ -86,10 +88,17 @@ b)
   [ $KEY = x3 ] && { drop_line x3:0; echo "x3:0 freed by FUT1 stage B $(date -u +%FT%TZ)" >> $Q/out/vla/GPU_FREED; }
   ev "stage B on $KEY finished"
   if [ -f $F/arms/F0/DONE ] && [ -f $F/arms/F1/DONE ] && [ -f $F/arms/F2/DONE ] && [ -f $F/arms/F3/DONE ] && \
-     [ -f $F/arms/F4/DONE ] && [ -f $F/arms/Zb/DONE ] && mkdir $F/summary_lock 2>/dev/null; then
+     [ -f $F/arms/F4/DONE ] && mkdir $F/summary_lock 2>/dev/null; then  # Zb is reported, not judged (change 4)
     PYTHONPATH=$C $P $C/tools/fut1/fut_summary.py --root $F >> $L/summary.log 2>&1
     ev "SUMMARY: $(tail -1 $L/summary.log | cut -c1-500)"
     touch $F/ALL_DONE
   fi
+  ;;
+z)  # change 4: Zb only (x3 GPU0), then refresh the summary with the Zb curves
+  KEY=$3; G=$4
+  best=$($P -c "import json;print(json.load(open('$Q/out/main35/verdict/verdict_summary.json'))['best'])")
+  run_arm $KEY $G Zb $Q/out/main35/merged_ep$best "$(vars_of Zb)" || exit 1
+  PYTHONPATH=$C $P $C/tools/fut1/fut_summary.py --root $F >> $L/summary.log 2>&1
+  ev "SUMMARY (with Zb): $(tail -1 $L/summary.log | cut -c1-500)"
   ;;
 esac
