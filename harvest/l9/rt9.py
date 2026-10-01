@@ -337,7 +337,7 @@ class Runtime:
                 T = Cw["T"][i].copy()
                 T[:3, 3] = T[:3, 3] - Cw["a"][i] * sd
                 Tp.append(self.to_base(T))
-            self.refresh_world()
+            self.refresh_world(below_z=self._bottom_z(k) - 0.02)
             r_ok, _, _ = self.planner.ik(np.stack(Tp), contact_links_off=False)
             ok[idx] = r_ok
             self.refresh_world(exclude=(k,))
@@ -523,6 +523,14 @@ class Runtime:
         if not hold:
             self.held = None
         step, cmd = VP.plan(self.status2(st), info, table_z, w_open, gc, self.held)
+        if step == "reopen" and getattr(self, "_last_step", None) == "reopen":
+            # the fingers could not open (blocked by the object / a neighbour): back off upward with the gripper
+            # open instead of repeating 'reopen' (pilot 10-02: 38 reopens in a row until the call limit)
+            tcp = np.asarray(st["tcp"], float)
+            step, cmd = "lift_clear", {"mode": "eef", "position_m": [round(float(v), 4) for v in tcp + [0, 0, 0.05]],
+                                       "gripper": "open", "quat_wxyz": [round(float(v), 5) for v in
+                                                                        self.status2(st)["tcp_quat"]]}
+        self._last_step = step
         self.last_label = (step, cmd)
         if cmd is None:
             return step, None
@@ -614,8 +622,8 @@ class Runtime:
         gripper links for its whole first leg: the open fingers swept through the target and knocked it over in the
         pilot), then straight lines pre-grasp -> grasp -> lift (IK per waypoint, the target is touched there by
         design). -> {ok, status, approach, grasp, lift}."""
-        self.refresh_world()
-        T_pre = gc.T.copy()
+        self.refresh_world(below_z=self._bottom_z(tg) - 0.02)  # not the support: padded + activation distance it
+        T_pre = gc.T.copy()                                     # collided with fingertips 4 mm above it (pilot)
         T_pre[:3, 3] = gc.pre
         Qa = self.planner.pose(q0, self.to_base(T_pre))
         if Qa is None:
@@ -629,6 +637,11 @@ class Runtime:
         T_l[2, 3] += gc.lift_dz
         Ql = self.planner.line(Qg[-1], self.to_base(gc.T), self.to_base(T_l), 0.008)
         return {"ok": True, "status": "ok", "approach": Qa, "grasp": Qg, "lift": Ql}
+
+    def _bottom_z(self, k: str) -> float:
+        from ..sim.scene import OBJ_GEOM
+        c, _ = self.w.env.object_pose(k)
+        return float(c[2]) - float(OBJ_GEOM[k]["half_extents"][2])
 
     def _dump_fail(self, what: str, q0, T_world) -> None:
         """L9V2_DEBUG_DIR: the scene, start joints and goal of a failed plan (<= 6 per process) for
