@@ -9,6 +9,8 @@ over the back half where possible. Heights 0.40-1.06 m (reachable through the li
 Choices of shapes / ranges are our own [hypothesis, judged by the G2 frame check and the G4 v2 diversity numbers]."""
 from __future__ import annotations
 
+import math
+
 import numpy as np
 
 from . import scene9 as S
@@ -242,6 +244,8 @@ def _cafe_counter(b, rule, d, yc):
 # ----------------------------------------------------------------------------------------------- 13 warehouse rack
 def _warehouse_rack(b, rule, d, yc):
     rng = b.rng
+    if rule == "floor_crate":
+        return _floor_crate(b, d, yc)
     w = rng.uniform(1.10, 1.80)
     y0, y1 = yc - w / 2, yc + w / 2
     top, dep = rng.uniform(0.70, 0.95), rng.uniform(0.60, 0.85)
@@ -762,12 +766,91 @@ def _library_study(b, rule, d, yc):
     raise ValueError(rule)
 
 
+# ----------------------------------------------------------------------------------------------- 25 mesh furniture
+MESH_RULES = ("table", "counter", "shelf", "side_table", "low_table", "seat")
+MESH_YAW = -math.pi / 2  # = assets_x.furniture.MESH_YAW: THOR fronts turn to face the robot
+
+
+def _mesh_furniture(b, rule, d, yc):
+    """A licensed mesh piece (MolmoSpaces THOR / Objaverse CC BY rows of furniture_mesh, the L8S mesh kinds) as the
+    task furniture: its measured support surfaces become nodes (open -> top, open container -> container with the
+    rim, covered -> compartment: front approach). The pool is scene9.mesh_pool() (the process's loaded pieces in a
+    world, the whole train catalog otherwise)."""
+    from ..sim.assets_x import surfaces as SU
+    rng = b.rng
+    pool = S.mesh_pool()
+    names = sorted(n for n, a in pool.items() if a.get("category") == rule and _open_top(a))
+    if not names:
+        raise S.NoMesh(f"no mesh piece of category {rule}")
+    name = names[int(rng.integers(len(names)))]
+    a = pool[name]
+    yaw = float(a.get("yaw", MESH_YAW))
+    k = round(yaw / (math.pi / 2))
+    yaw = k * math.pi / 2
+    sx, sy, sz = a["collider_size"]
+    dx, dy = (sx, sy) if k % 2 == 0 else (sy, sx)
+    base = [d + dx / 2, yc, 0.0]
+    b.parts.append({"id": name, "usd": a["dst"], "asset": name, "prim": "mesh", "size": [round(dx, 4), round(dy, 4),
+                    round(sz, 4)], "pos": [round(base[0], 4), round(base[1], 4), round(sz / 2, 4)],
+                    "base_pos": [round(v, 4) for v in base], "yaw": round(yaw, 6), "static": True, "color": None,
+                    "role": "mesh", "surface_kind": a.get("top_kind"), "category": rule, "license": a.get("license"),
+                    "source": a.get("source"), "split": a.get("split", "train")})
+    n_nodes = 0
+    for s in a["surfaces"]:
+        t = SU.transform_surface(s, pos=base, yaw=yaw)
+        (x0, x1), (y0, y1) = t["xy_box"]
+        if x1 - x0 < 0.10 or y1 - y0 < 0.10:
+            continue
+        if t.get("container"):
+            if t.get("covered_above") is not None:
+                continue
+            b.node("container", name, t["top_z"], x0, x1, y0, y1, rim=t["rim_z"], mesh=name)
+        elif t.get("covered_above") is not None:
+            b.node("compartment", name, t["top_z"], x0, x1, y0, y1, mesh=name,
+                   covered_above=round(float(t["covered_above"]), 4))
+        else:
+            b.node("top", name, t["top_z"], x0, x1, y0, y1, mesh=name)
+        n_nodes += 1
+    return {"asset": a.get("name0", name), "category": rule, "yaw": round(yaw, 4), "nodes": n_nodes}
+
+
+def _open_top(a: dict) -> bool:
+    """A mesh piece with an open (not covered, not container) surface of >= 0.25 x 0.25 m at a reachable height."""
+    for s in a.get("surfaces") or []:
+        (x0, x1), (y0, y1) = s["xy_box"]
+        if s.get("covered_above") is None and not s.get("container") and 0.38 <= s["top_z"] <= 1.06 \
+                and x1 - x0 >= 0.25 and y1 - y0 >= 0.25:
+            return True
+    return False
+
+
+def _floor_crate(b, d, yc):
+    """L8S floor_bin: an open crate on a solid base standing on the floor (floor 0.28-0.40 m, the lift down), a rack
+    deck behind it."""
+    rng = b.rng
+    fz, wh, t = rng.uniform(0.28, 0.40), rng.uniform(0.10, 0.16), 0.015
+    bx, by = rng.uniform(0.30, 0.38), rng.uniform(0.24, 0.32)
+    x0 = max(d, 0.29) + rng.uniform(0.0, 0.02)
+    cy = b.yb + rng.uniform(-0.05, 0.05)
+    b.box("crate_base", x0, x0 + bx, cy - by / 2, cy + by / 2, 0.0, fz, _c(rng, S.WOOD + OUTDOOR_WOOD), "body")
+    b.open_box("fcrate", x0, x0 + bx, cy - by / 2, cy + by / 2, fz, wh, _c(rng, PLASTIC + S.WOOD), t=t)
+    rd = x0 + bx + 0.06
+    dep = min(rng.uniform(0.45, 0.60), 1.25 - rd)
+    top = rng.uniform(0.75, 0.95)
+    w = rng.uniform(1.0, 1.5)
+    steel = _c(rng, S.METAL)
+    _posts(b, "rackb", rd, rd + dep, yc - w / 2, yc + w / 2, top + 0.6, steel, t=0.05)
+    b.box("deckb", rd, rd + dep, yc - w / 2 + 0.05, yc + w / 2 - 0.05, top - 0.02, top, _c(rng, S.WOOD + S.METAL), "top", "top")
+    b.node("top", "deckb", top, rd, rd + dep, yc - w / 2 + 0.05, yc + w / 2 - 0.05)
+    return {"floor": round(fz, 3), "wall": round(wh, 3)}
+
+
 MORE_FAMILIES = {
     "kitchen_island": (_kitchen_island, ("slab", "board", "bowl", "bar_ledge", "prep_sink")),
     "pantry_shelf": (_pantry_shelf, ("open", "baskets", "jars", "riser", "bins")),
     "bathroom_vanity": (_bathroom_vanity, ("basin", "vessel", "double", "toiletry_tray", "towel_shelf")),
     "cafe_counter": (_cafe_counter, ("pickup", "pastry_case", "condiments", "tray_return", "two_level")),
-    "warehouse_rack": (_warehouse_rack, ("beam", "totes", "cartons", "wire_bins", "picking_cart")),
+    "warehouse_rack": (_warehouse_rack, ("beam", "totes", "cartons", "wire_bins", "picking_cart", "floor_crate")),
     "lab_bench": (_lab_bench, ("reagent_shelf", "tube_rack", "lab_sink", "hood", "tray_bins")),
     "craft_workshop": (_craft_workshop, ("trestle", "vise", "tool_wall", "bins_row", "cutting_mat")),
     "bedside": (_bedside, ("nightstand", "dresser", "vanity", "stand_tray", "lamp")),
@@ -779,12 +862,14 @@ MORE_FAMILIES = {
     "garage_cart": (_garage_cart, ("tool_cart", "shelf_unit", "workbench_low", "bucket_bins", "paint_cans")),
     "potting_bench": (_potting_bench, ("plain", "soil_tray", "pots", "upper_shelf", "seed_trays")),
     "library_study": (_library_study, ("reading_table", "carrel", "stacks", "lamp_desk", "book_cart")),
+    "mesh_furniture": (_mesh_furniture, MESH_RULES),
 }
 MORE_ROOM_KINDS = {"kitchen_island": ("kitchen",), "pantry_shelf": ("kitchen", "other"),
                    "bathroom_vanity": ("bathroom", "other"), "cafe_counter": ("other", "kitchen"),
                    "warehouse_rack": ("other",), "lab_bench": ("other",), "craft_workshop": ("other",),
                    "bedside": ("bedroom",), "laundry": ("bathroom", "other"), "kids_play": ("living", "bedroom"),
                    "picnic_outdoor": (), "conference": ("other", "living"), "reception": ("other", "living"),
-                   "garage_cart": ("other",), "potting_bench": (), "library_study": ("living", "bedroom", "other")}
+                   "garage_cart": ("other",), "potting_bench": (), "library_study": ("living", "bedroom", "other"),
+                   "mesh_furniture": ("living", "kitchen", "bedroom", "other")}
 OUTDOOR = ("picnic_outdoor", "potting_bench")  # no room background: an outdoor HDRI + a ground slab
 FORCED_HOLDERS = ("jars", "condiments", "tube_rack", "brochure")

@@ -178,6 +178,20 @@ def add_stands(b: _B, p: float = 0.7) -> int:
     return added
 
 
+class NoMesh(RuntimeError):
+    """No mesh piece of the asked category in the pool (mesh_furniture)."""
+
+
+MESH_POOL = None  # world9 sets the process's loaded mesh pieces (with surfaces); None = the whole train catalog
+
+
+def mesh_pool() -> dict:
+    if MESH_POOL is not None:
+        return MESH_POOL
+    from . import assets9 as A9
+    return {k: r for k, r in A9.furniture_mesh("train").items() if r.get("surfaces")}
+
+
 DENSITY = {"sparse": (0, 0), "normal": (1, 2), "dense": (3, 5)}  # L9 v2 props per scene (min, max)
 DENSITY_P = (0.25, 0.45, 0.30)  # [hypothesis] judged by G2 frames / G4 v2
 PROP_SHAPES = (  # (name, x size, y size, height) ranges: book stack, box, jar / vase, tall bottle-like, flat tray-like
@@ -223,12 +237,13 @@ def add_props(b: _B) -> tuple:
 
 FIXTURE_P = 0.6  # share of scenes with an extra place fixture (owner request 10-02: places beyond the desk top)
 FIXTURES = ("wall_shelf", "high_cubbies", "low_shelf", "gap", "slope")
+FRONT_FIXTURES = ("wall_shelf", "high_cubbies", "low_shelf")  # above eye level / under a table: front approach
 PLACE_CLASS = ((0.45, "low"), (1.10, "desk"), (9.0, "high"))  # node height above the floor -> class
 APPROACH_TOP_CLEAR = 1.00  # a part closer than this above half of a node's area: front / side approach [hypothesis]
 
 
 def _furniture_back(b: _B) -> float:
-    xs = [p["pos"][0] + p["size"][0] / 2 for p in b.parts if p["role"] in ("top", "body", "wall", "cabinet", "side")]
+    xs = [p["pos"][0] + p["size"][0] / 2 for p in b.parts if p["role"] in ("top", "body", "wall", "cabinet", "side", "mesh")]
     return min(max(xs, default=0.9), 1.25)
 
 
@@ -378,6 +393,8 @@ def annotate_nodes(nodes: list, parts: list, grid: int = 5) -> None:
             my = (ys > lo[1]) & (ys < hi[1])
             if mx.any() and my.any():
                 gaps[np.ix_(mx, my)] = np.minimum(gaps[np.ix_(mx, my)], float(lo[2] - n["top_z"]))
+        if n.get("covered_above") is not None:  # a mesh piece's covered surface (inside a shelf / cabinet)
+            gaps[:] = min(gaps.min(), float(n["covered_above"]) - n["top_z"])
         near = gaps < APPROACH_TOP_CLEAR
         n["width"], n["depth"] = round(float(y1 - y0), 4), round(float(x1 - x0), 4)
         n["clear_above"] = round(float(min(gaps.min(), 2.0)), 4)
@@ -808,6 +825,9 @@ def to_world_part(p: dict, yaw: float) -> dict:
     q = dict(p)
     c = world_of(p["pos"][:2], yaw)
     q["pos"] = [round(float(c[0]), 4), round(float(c[1]), 4), p["pos"][2]]
+    if p.get("base_pos") is not None:  # mesh pieces (L9 v2 mesh_furniture): FX places them by base_pos
+        bw = world_of(p["base_pos"][:2], yaw)
+        q["base_pos"] = [round(float(bw[0]), 4), round(float(bw[1]), 4), p["base_pos"][2]]
     q["yaw"] = round(float(p.get("yaw", 0.0) + yaw), 6)
     return q
 
@@ -904,8 +924,8 @@ def usable(node: dict, scene: dict, rm, lift: float, reach: bool = True) -> np.n
     """World points of the node the arm can use at this lift (reach + view + free of parts); reach=False: every
     visible, free point of the node (objects that are only looked at: references, decoys, distractors)."""
     W, S = node_points(node, scene["yaw"])
-    if len(W) == 0:
-        return W
+    if len(W) == 0 or node.get("covered_above") is not None or node.get("fixture") in FRONT_FIXTURES:
+        return W[:0]  # covered / front-approach places: not usable by the top-down reach model (L9 v2)
     m = rm.at_lift(lift)
     own = {node["part"]}
     if reach:

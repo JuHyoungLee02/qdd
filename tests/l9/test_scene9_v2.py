@@ -90,7 +90,8 @@ def test_fixture_places_and_annotations(rm):
                 if n.get("fixture"):
                     kinds.add(n["kind"])
                 if n["kind"] == "compartment":
-                    assert n["approach"] == "front" and n["place_class"] == "high" and len(n["opening"]) == 2
+                    assert n["approach"] == "front"
+                    assert not n.get("fixture") or (n["place_class"] == "high" and len(n["opening"]) == 2)
                 if n["kind"] == "shelf_low":
                     assert n["approach"] == "front" and n["place_class"] == "low"
                 if n["kind"] == "slope":

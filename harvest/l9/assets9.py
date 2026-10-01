@@ -214,6 +214,10 @@ def furniture_mesh(split: str = "train") -> dict:
         if max(sx, sy) > 2.2 or sz > 2.3:
             continue
         out[re.sub(r"[^A-Za-z0-9_]", "_", k)] = dict(r, name0=k)
+    for k, r in _ph_decor(split).items():  # L9 v2: Poly Haven floor pieces (render only), front (-y) to the robot
+        sx, sy, sz = r["collider_size"]
+        if r.get("kind") == "floor" and max(sx, sy) <= 2.2 and sz <= 2.3:
+            out[k] = dict(r, yaw=-1.5707963)
     _CACHE[key] = out
     return out
 
@@ -232,3 +236,32 @@ def gate_pass():
         p = os.path.join(DIR, "gate_targets.json")
         _CACHE["gate"] = set(json.load(open(p))["pass"]) if os.path.exists(p) else None
     return _CACHE["gate"]
+
+
+# ----------------------------------------------------------------------------------------------- L9 v2 decor
+TABLETOP_N = 8  # tabletop pieces per process (render-only mesh slots)
+
+
+def _ph_decor(split: str) -> dict:
+    """Poly Haven decor rows (assets9/decor_ph.json, tools/l9v2env/ph_models.py; CC0) of a split, prim-safe names."""
+    import re
+    key = f"ph:{split}"
+    if key not in _CACHE:
+        p = os.path.join(DIR, "decor_ph.json")
+        rows = json.load(open(p, encoding="utf-8"))["assets"] if os.path.exists(p) else {}
+        _CACHE[key] = {re.sub(r"[^A-Za-z0-9_]", "_", k): dict(r, name0=k) for k, r in rows.items()
+                       if r.get("split", "train") == split and licence_ok(r.get("license", ""))}
+    return _CACHE[key]
+
+
+def tabletop_decor(split: str = "train") -> dict:
+    return {k: r for k, r in _ph_decor(split).items() if r.get("kind") == "tabletop"}
+
+
+def tabletop_for(idx: int, n: int = TABLETOP_N, split: str = "train") -> dict:
+    """The idx-th subset of n tabletop pieces (rotating through the pool)."""
+    cat = tabletop_decor(split)
+    if not cat:
+        return {}
+    order = sorted(cat, key=lambda k: hashlib.sha256(f"l9top:{k}".encode()).hexdigest())
+    return {order[(idx * n + j) % len(order)]: cat[order[(idx * n + j) % len(order)]] for j in range(min(n, len(order)))}

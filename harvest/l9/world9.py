@@ -68,12 +68,18 @@ def register_pool(pool: dict) -> list:
     return sorted(ids)
 
 
-def decor_parts(mesh: dict, vseed: int, furniture: list, room: bool) -> list:
+def decor_parts(mesh: dict, vseed: int, furniture: list, room: bool, arm: str | None = None) -> list:
     """1-2 mesh furniture pieces beside the task furniture (background: chairs, shelves, side tables ...), facing
-    the robot, outside the robot keep-out box, inside the room's clear zone when a room is used. Pure."""
+    the robot, outside the robot keep-out box, inside the room's clear zone when a room is used; with `arm` (L9 v2)
+    also 0-3 tabletop pieces (rows kind "tabletop": Poly Haven props / plants / lamps ...) on top parts away from
+    the arm band. Pure."""
     from . import scene9 as S9
     if not mesh:
         return []
+    floor_mesh = {k: r for k, r in mesh.items() if r.get("kind") != "tabletop"}
+    top = tabletop_parts({k: r for k, r in mesh.items() if r.get("kind") == "tabletop"}, vseed, furniture, arm) \
+        if arm is not None else []
+    mesh = floor_mesh
     rng = np.random.default_rng([int(vseed), 917])
     boxes = S9.aabb_world([p for p in furniture if p.get("role") != "room_wall"], 0.0)
     (fx0, fx1) = (min(b[0][0] for b in boxes), max(b[0][1] for b in boxes)) if boxes else (0.3, 1.0)
@@ -106,7 +112,90 @@ def decor_parts(mesh: dict, vseed: int, furniture: list, room: bool) -> list:
         out.append({"id": a, "usd": r["dst"], "asset": a, "prim": "mesh", "size": [dx, dy, sz],
                     "pos": [x, y, sz / 2], "base_pos": [x, y, 0.0], "yaw": yaw, "role": "decor",
                     "category": r.get("category"), "license": r.get("license"), "source": r.get("source")})
+    return out + top
+
+
+TOP_DECOR_N = (0, 3)
+TOP_DECOR_MAX = (0.35, 0.35, 0.45)  # footprint x / y, height (m) of a tabletop piece
+
+
+def tabletop_parts(mesh: dict, vseed: int, furniture: list, arm: str) -> list:
+    """0-3 render-only tabletop pieces on cuboid top parts (world frame), outside the arm's band (|y - y_arm| > 0.28
+    or x > 0.72: the task objects and the arm stay inside it), not overlapping other parts above the top. Pure."""
+    from . import arm as AR
+    if not mesh:
+        return []
+    rng = np.random.default_rng([int(vseed), 919])
+    yb = AR.side(arm) * -0.23
+    tops = [p for p in furniture if p.get("usd") is None and p.get("role") in ("top", "fixture") and p["size"][0] >= 0.2
+            and p["size"][1] >= 0.2 and not p.get("pitch")]
+    names = sorted(k for k, r in mesh.items() if all(v <= m for v, m in zip(r["collider_size"], TOP_DECOR_MAX)))
+    out = []
+    for _ in range(int(rng.integers(TOP_DECOR_N[0], TOP_DECOR_N[1] + 1)) * 6):
+        if len(out) >= TOP_DECOR_N[1] or not tops or not names:
+            break
+        p = tops[int(rng.integers(len(tops)))]
+        a = names[int(rng.integers(len(names)))]
+        if any(o["asset"] == a for o in out):
+            continue
+        sx, sy, sz = mesh[a]["collider_size"]
+        yaw = float(rng.uniform(-math.pi, math.pi))
+        dx = abs(math.cos(yaw)) * sx + abs(math.sin(yaw)) * sy
+        dy = abs(math.sin(yaw)) * sx + abs(math.cos(yaw)) * sy
+        (bx0, bx1), (by0, by1) = _world_box(p)
+        if bx1 - bx0 < dx + 0.04 or by1 - by0 < dy + 0.04:
+            continue
+        x, y = rng.uniform(bx0 + dx / 2 + 0.02, bx1 - dx / 2 - 0.02), rng.uniform(by0 + dy / 2 + 0.02, by1 - dy / 2 - 0.02)
+        if not (x - dx / 2 > 0.72 or abs(y - yb) - dy / 2 > 0.28):
+            continue
+        ztop = p["pos"][2] + p["size"][2] / 2
+        clash = False
+        for q in furniture + out:
+            if q is p:
+                continue
+            (qx0, qx1), (qy0, qy1) = _world_box(q)
+            qz0 = q["pos"][2] - q["size"][2] / 2
+            qz1 = q["pos"][2] + q["size"][2] / 2
+            if qz1 > ztop + 0.002 and qz0 < ztop + sz and qx0 < x + dx / 2 + 0.02 and qx1 > x - dx / 2 - 0.02 \
+                    and qy0 < y + dy / 2 + 0.02 and qy1 > y - dy / 2 - 0.02:
+                clash = True
+                break
+        if clash:
+            continue
+        r = mesh[a]
+        out.append({"id": a, "usd": r["dst"], "asset": a, "prim": "mesh", "size": [dx, dy, sz],
+                    "pos": [x, y, ztop + sz / 2], "base_pos": [x, y, ztop], "yaw": yaw, "role": "decor_top",
+                    "category": r.get("category"), "license": r.get("license"), "source": r.get("source")})
     return out
+
+
+def _world_box(p: dict) -> tuple:
+    """World xy AABB of a part (cuboid / mesh with yaw)."""
+    yaw = float(p.get("yaw", 0.0))
+    sx, sy = p["size"][0], p["size"][1]
+    dx = abs(math.cos(yaw)) * sx + abs(math.sin(yaw)) * sy
+    dy = abs(math.sin(yaw)) * sx + abs(math.cos(yaw)) * sy
+    return (p["pos"][0] - dx / 2, p["pos"][0] + dx / 2), (p["pos"][1] - dy / 2, p["pos"][1] + dy / 2)
+
+
+MATERIAL_ROLE = {"room_wall": "wall", "wall": "wall", "mat": "fabric", "sofa": "fabric", "chair": "furniture",
+                 "ground": "floor"}  # other part roles: furniture (props: furniture or fabric by the draw)
+
+
+def material_pool(cat: dict, role: str, split: str, setting: str | None = None) -> list:
+    """Sorted material ids of a role / split (materials.split_of); floors by setting: "outdoor" = ground-like
+    floors (v1 Poly Haven floors not tagged indoor + v2 outdoor floors), else indoor floors."""
+    from ..sim.assets_x import materials as M
+    ids = []
+    for k, r in cat.items():
+        if r["role"] != role or M.split_of(k) != split:
+            continue
+        if role == "floor" and setting is not None:
+            out = r.get("setting") == "outdoor" or (r.get("setting") is None and not r.get("indoor", True))
+            if out != (setting == "outdoor"):
+                continue
+        ids.append(k)
+    return sorted(ids)
 
 
 def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "train", mesh: dict | None = None,
@@ -132,6 +221,10 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
     keys = {"cam_head": "head", "cam_wrist_right": "wrist", "cam_wrist_left": "wrist_left"}
     register_l9_ids()
     ids = register_pool(pool)
+    if mesh is not None:  # L9 v2: Poly Haven tabletop pieces join the process's mesh slots (render only)
+        from . import assets9 as A9
+        k = int(hashlib.sha256("|".join(sorted(mesh)).encode()).hexdigest()[:6], 16)
+        mesh = {**mesh, **A9.tabletop_for(k, split=split)}
     undo = FX.without_table(mesh, rooms)
 
     class World9(IsaacWorld):
@@ -187,8 +280,15 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             from ..teach_l8d.clutter_x import material_ok
             stage = omni.usd.get_context().get_stage()
             import json
-            tab = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets9", "materials_l9.json")))
-            cat = {k: r for k, r in M.usable(tab["materials"]).items() if material_ok(k, r)}
+            here = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets9")
+            tab = json.load(open(os.path.join(here, "materials_l9.json")))
+            raw = dict(tab["materials"])
+            if os.path.exists(os.path.join(here, "materials_l9v2.json")):  # L9 v2: absolute file paths
+                raw.update(json.load(open(os.path.join(here, "materials_l9v2.json")))["materials"])
+            cat = {k: r for k, r in M.usable(raw).items() if material_ok(k, r)}
+            # outdoor ground (picnic / potting families): the ground-like floors usable() drops
+            cat.update({k: r for k, r in raw.items() if r.get("complete") and r["role"] == "floor" and k not in cat
+                        and (r.get("setting") == "outdoor" or not r.get("indoor", True))})
             paths = {}
             first = M.pick(cat, "furniture", 0)
             for i in range(FX.N_SLOTS):
@@ -200,19 +300,28 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                 paths[i] = mp
             hdrs = sorted(k for k, r in cat.items() if r["role"] == "env" and M.split_of(k) == split)
             self._mats = (cat, paths, hdrs)
+            self._pools = {}
             return self._mats
 
         def _retexture(self, seed: int, parts: list) -> dict:
-            """One material per used slot by role (furniture / wall / fabric) -> {slot: material id}."""
+            """One material per used slot by role (furniture / wall / fabric / floor) + the L9 v2 appearance draw
+            (vary9.material_look: UV scale, diffuse tint) -> {slot: material id}; self.mat_looks = the draws."""
             import omni.usd
+            from pxr import Gf, Sdf, UsdShade
 
             from ..sim.assets_x import materials as M
             cat, paths, _ = self._materials()
             stage = omni.usd.get_context().get_stage()
-            used = {}
+            used, looks = {}, {}
             for i, mid in enumerate(self.material_ids(seed, parts)):
-                M.retexture(stage, paths[i], cat[mid], root=MAT_ROOT)
-                used[i] = mid
+                lk = V.material_look(seed, i, self._role_of(parts[i], seed, i))
+                M.retexture(stage, paths[i], cat[mid], root=MAT_ROOT, uv_scale=(lk["uv"], lk["uv"]))
+                sh = UsdShade.Shader.Get(stage, paths[i] + "/diff")
+                if sh:
+                    inp = sh.GetInput("scale") or sh.CreateInput("scale", Sdf.ValueTypeNames.Float4)
+                    inp.Set(Gf.Vec4f(*[float(c) for c in lk["tint"]], 1.0))
+                used[i], looks[i] = mid, lk
+            self.mat_looks = looks
             return used
 
         def _place_room(self, seed: int, parts: list, family: str):
@@ -244,7 +353,9 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
 
         def room_name(self, vseed: int, family: str, parts: list):
             from . import scene9 as S9
-            if not rooms or not S9.in_zone([p for p in parts if p["role"] != "room_wall"], 0.0):
+            if family in S9.OUTDOOR:  # L9 v2: outdoor families have no room (outdoor HDRI + ground slab)
+                return None
+            if not rooms or not S9.in_zone([p for p in parts if p["role"] not in ("room_wall", "ground")], 0.0):
                 return None
             want = S9.ROOM_KINDS.get(family, ())
             names = sorted(rooms)
@@ -252,24 +363,36 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             h = int(hashlib.sha256(f"l9-room:{int(vseed)}".encode()).hexdigest()[:8], 16)
             return pref[h % len(pref)]
 
-        def hdr_name(self, vseed: int) -> str:
-            hdrs = self._materials()[2]
+        def hdr_name(self, vseed: int, family: str | None = None) -> str:
+            """Seeded HDRI; outdoor families (scene9.OUTDOOR) draw from the outdoor HDRIs only."""
+            from . import scene9 as S9
+            cat, _, hdrs = self._materials()
+            if family in S9.OUTDOOR:
+                hdrs = [h for h in hdrs if cat[h].get("setting") == "outdoor"] or hdrs
             return hdrs[int(hashlib.sha256(f"l9-hdr:{int(vseed)}".encode()).hexdigest()[:8], 16) % len(hdrs)]
 
+        def _role_of(self, p: dict, vseed: int, i: int) -> str:
+            r = MATERIAL_ROLE.get(p.get("role"))
+            if r is None and p.get("role") == "prop":
+                r = "fabric" if (int(vseed) * 131 + i) % 3 == 0 else "furniture"
+            return r or "furniture"
+
         def material_ids(self, vseed: int, parts: list) -> list:
-            from ..sim.assets_x import materials as M
+            """One material per used slot: the part's role (MATERIAL_ROLE), the ground slab by its setting
+            (outdoor ground / indoor floor), seeded by (visual seed, slot)."""
             cat, paths, _ = self._materials()
             out = []
             for i, p in enumerate(parts):
                 if i not in paths:
                     continue
-                role = {"room_wall": "wall", "wall": "wall", "mat": "fabric", "sofa": "fabric",
-                        "chair": "furniture"}.get(p.get("role"), "furniture")
-                try:
-                    rec = M.pick(cat, role, int(vseed) * 131 + i, split)
-                except ValueError:
-                    rec = M.pick(cat, "furniture", int(vseed) * 131 + i, split)
-                out.append(rec["id"])
+                role = self._role_of(p, vseed, i)
+                setting = p.get("setting", "indoor") if role == "floor" else None
+                key = (role, setting)
+                if key not in self._pools:
+                    self._pools[key] = material_pool(cat, role, split, setting) or material_pool(cat, "furniture", split)
+                ids = self._pools[key]
+                h = int(hashlib.sha256(f"{role}:{int(vseed) * 131 + i}".encode()).hexdigest()[:8], 16)
+                out.append(ids[h % len(ids)])
             return out
 
         def reset(self, seed, task=L9_TASK):
@@ -286,8 +409,9 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             room = self._place_room(seed, parts, sc["family"])
             if room is not None:
                 parts = [p for p in parts if p["role"] != "room_wall"]
-            decor = decor_parts(mesh, seed, parts, room is not None)
+            decor = decor_parts(mesh, seed, parts, room is not None, arm=arm)
             FX.author_scene(env, {"furniture": parts + decor, "walls": [], "room": None}, mesh, None)
+            self._pitch_parts(parts)
             mats = self._retexture(seed, parts)
             if room is None:
                 from ..teach_l8d.xart import hide_ground_grid
@@ -300,7 +424,8 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                 # lift + head (cfg.init_state too: the hard reset re-reads it, P131)
                 li = rob.joint_names.index("lift_joint")
                 env.lift = float(sc["lift"])
-                head = dict(self._head0 or V.head_pose(seed))
+                look = V.look_of(ep, sc)  # L9 v2: high / low places tilt the gaze up / down
+                head = dict(self._head0 or V.head_pose(seed)) if look == "std" else V.head_pose(seed, 0, look)
                 for jn, v in (("lift_joint", env.lift), ("head_joint1", head["tilt"]), ("head_joint2", head["pan"])):
                     if jn in rob.joint_names:
                         rob.data.default_joint_pos[0, rob.joint_names.index(jn)] = v
@@ -368,7 +493,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             while not self._head_sees() and att < V.HEAD_TRIES:
                 att += 1
                 if not franka:
-                    head = V.head_pose(seed, att) if att < V.HEAD_TRIES else V.head_default()
+                    head = V.head_pose(seed, att, V.look_of(ep, sc)) if att < V.HEAD_TRIES else V.head_default()
                     for jn, v in (("head_joint1", head["tilt"]), ("head_joint2", head["pan"])):
                         rob.data.default_joint_pos[0, rob.joint_names.index(jn)] = v
                         rob.cfg.init_state.joint_pos[jn] = v
@@ -400,8 +525,43 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                                     "robot": robot, "head_cam": self.head_cam, "base": getattr(self, "base", None),
                                     "surface": nodes[ep["main"]]["kind"],
                                     "decor": [{"asset": mesh[p["asset"]].get("name0", p["asset"]),
-                                               "category": p.get("category")} for p in decor]}
+                                               "category": p.get("category"), "role": p.get("role")} for p in decor],
+                                    "env_axes": self._env_axes(sc, room, mats, decor, head)}
             self.clutter_scene = {"n": len(ep.get("clutter", {})), "ids": sorted(ep.get("clutter", {}))}
+
+        def _pitch_parts(self, parts: list) -> None:
+            """L9 v2 inclined boards: cuboid parts with a "pitch" (rad, about the part's own y axis after its yaw)
+            get that orientation on their slot prim (collider + visual; physical from the next hard reset)."""
+            import omni.usd
+
+            from ..sim.randomize import _set_pose
+            stage = omni.usd.get_context().get_stage()
+            cub = [p for p in parts if p.get("usd") is None]
+            for i, p in enumerate(cub[:FX.N_SLOTS]):
+                if not p.get("pitch"):
+                    continue
+                cy, sy = math.cos(p.get("yaw", 0.0) / 2), math.sin(p.get("yaw", 0.0) / 2)
+                cp, sp = math.cos(p["pitch"] / 2), math.sin(p["pitch"] / 2)
+                q = (cy * cp, -sy * sp, cy * sp, sy * cp)  # q_yaw(z) * q_pitch(y), wxyz
+                _set_pose(stage.GetPrimAtPath(FX._slot_path(i)), tuple(p["pos"]), q)
+
+        def _env_axes(self, sc: dict, room, mats: dict, decor: list, head: dict) -> dict:
+            """Spec §12.11 principle 7: the environment axis values of the episode (reduced-diversity subsets are cut
+            from meta): family / layout / density / props / fixtures / place classes / room kind / materials (+ UV,
+            tint) / HDRI setting / light family / decor / head look."""
+            from . import scene9 as S9
+            cat = self._materials()[0]
+            pr = sc.get("params") or {}
+            return {"family": sc["family"], "rule": sc["rule"], "density": pr.get("density"), "props": pr.get("props"),
+                    "fixtures": pr.get("fixtures"), "n_parts": len(sc.get("parts_s") or []),
+                    "place_classes": sorted({n.get("place_class", "desk") for n in sc["nodes"]}),
+                    "node_kinds": sorted({n["kind"] for n in sc["nodes"]}),
+                    "room_kind": None if room is None else room.get("kind"), "outdoor": sc["family"] in S9.OUTDOOR,
+                    "material_roles": {str(i): cat[m]["role"] for i, m in mats.items()},
+                    "material_looks": getattr(self, "mat_looks", {}), "hdr_setting": cat.get(self.hdr, {}).get("setting"),
+                    "light_family": self.light_family, "decor_n": sum(p.get("role") == "decor" for p in decor),
+                    "decor_top_n": sum(p.get("role") == "decor_top" for p in decor), "head_look": head.get("look", "std"),
+                    "split": split}
 
         # ------------------------------------------------------------------ robot base (Franka) / head camera
         def _place_base(self, seed: int, tz: float) -> None:
@@ -559,7 +719,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             from ..sim.assets_x import materials as M
             cat, _, hdrs = self._materials()
             # (make_env variant drf already ran randomize.setup_visuals: dome, key / fill lights)
-            h = self.hdr_name(seed)
+            h = self.hdr_name(seed, self.scene9["family"] if self.scene9 else None)
             m = R.sample_randomization(seed, "drf", self.env.layout)
             m["distractors"] = []
             if m.get("hdr"):
