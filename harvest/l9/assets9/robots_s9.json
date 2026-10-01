@@ -10,21 +10,21 @@
       "head_camera": {
         "defined": "mast fixed to panda_link0 (robot body), not official",
         "default": {
-          "x_m": -0.15,
-          "y_m": 0.0,
+          "x_m": -0.1,
+          "y_m": 0.23,
           "height_above_surface_m": 0.55,
           "pitch_deg": 45,
-          "pan_deg": 0,
+          "pan_deg": -10,
           "model": "RealSense D435 colour, hfov 69 deg, rendered 672x376, fx=fy=489"
         },
         "per_episode": {
           "x_m": [
-            -0.25,
-            -0.05
+            -0.2,
+            0.0
           ],
           "y_m": [
-            -0.05,
-            0.05
+            0.15,
+            0.3
           ],
           "height_above_surface_m": [
             0.45,
@@ -35,13 +35,14 @@
             55
           ],
           "pan_deg": [
-            -10,
-            10
+            -20,
+            0
           ]
-        }
+        },
+        "note": "mast between the shoulders like a humanoid head (behind the base the elbow filled the view, smoke 2)"
       },
       "wrist_cameras": [
-        "D405 on panda_hand (hfov 87 deg, 424x240), beside the hand looking at the finger tips"
+        "D405 on panda_hand 9 cm beside the hand looking at the finger tips (hfov 87 deg, 424x240)"
       ],
       "arm_dof": "7",
       "hand": "Franka Hand parallel gripper, 0.08 m max opening",
