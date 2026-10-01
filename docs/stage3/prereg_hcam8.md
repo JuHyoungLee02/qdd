@@ -84,3 +84,11 @@
   - 형식: `camera: head, 672x376 px, fx 367 fy 367 cx 336 cy 188, 1.34 m above the floor, pitch 45 deg down, pan -2 deg; source: l9/ffw_sg2` (`harvest/l9/hcam9.line`).
   - 위치: d-min 요청의 `CAMERAS (directions are unit vectors in the robot frame)` 머리줄 바로 다음, `- Image 1:` 줄 앞.
   - 무작위화 범위(작업면 위 0.35–0.80 m 등)는 데이터 생성 기준이라 그대로 둔다.
+
+- **변경 2 (2026-10-02 00:48 KST, H0 학습 시작 전·결과 보기 전)**: H0 빌드 명세와 편 수.
+  - **편 수 2,000 → 1,800**: 가용 표준 편(성공·관절 ≤ 0.04 rad·동작 l9m-2·AI Worker)이 1,944편뿐이다. 양산 계획에 남은 (정의, 팔) 134층으로 한정하고, 층마다 고르게(라운드 로빈, 층당 최대 17편) 1,800편을 뽑았다. 파일은 `/data/harvest/out/hcam8/episodes_H0.json`이다. H1·H2의 무작위 쪽 편은 같은 134층에 같은 편 수로 맞춘다(`tools/l9r/hcam8_build.py select --match episodes_H0.json`). 양산을 기다려 2,000편을 채우면 H1이 맞출 층이 생산 순서에 묶이므로, 편 수를 줄인다.
+  - **L9 → d-min 빌드**(`harvest/l9/build9.py`, 처음 쓰는 경로): control 행(검증된 점 라벨, L8 반복)과 aux 가리키기 행을 만든다. aux의 물체 이름은 그 호출의 요청 OBJECTS 줄에서 읽는다. L9 물체 줄 처리를 고쳤다(`strip.py`: 실행 중에 정해진 설명을 알려진 접두사 'object'에서 자르지 않음. 고치기 전에는 크기 문구가 남았다). L8S d-min 결과가 바뀌지 않음은 e9fd82c로 만든 기준 텍스트 시험으로 고정했다.
+  - `/data/harvest/out/hcam8/build_H0/l9_H0.jsonl`: 27,981행(control 17,117 / aux 10,864, 상태 13,562), sha256 `e827d6977a8b378407635e08daaad0de3b2274a03802599bebe34c0275bb2b40`. 행 검사(로봇·요청 문구·카메라 줄·손·이미지) 3,000행에서 오류 0.
+  - `train_H0.jsonl`: E-VIEW8 A0 116,235행 + L9 27,981행 = 144,216행, sha256 `7d5ad4b51d9695576ef98752a2e9976a43d4221c2c9472092c90020200687e92`, 걸음 2,989(= round(1,632 × 144,216 / 78,745)).
+  - `camera:` 줄(H1)은 control 행의 요청에만 넣는다. aux 가리키기 행은 질문만 있는 짧은 글이라 넣지 않는다.
+  - 카드: 78dc GPU0–2에서 시드 0·1·2를 동시에, 시드 3은 먼저 끝난 카드에서 돌린다. GPU3은 벤치 평가용으로 비운다(메인 배분 10-02 01시). 큐는 `/data/harvest/out/hcam8/queue.txt`, 기록은 `/data/harvest/logs/hcam8/hcam8.log`.
