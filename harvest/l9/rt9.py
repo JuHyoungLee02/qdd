@@ -582,6 +582,7 @@ class Runtime:
         T_pre[:3, 3] = gc.pre
         Qa = self.planner.pose(q0, self.to_base(T_pre))
         if Qa is None:
+            self._dump_fail("transit", q0, T_pre)
             return {"ok": False, "status": "transit to the pre-grasp failed", "approach": None, "grasp": None,
                     "lift": None}
         Qg = self.planner.line(Qa[-1], self.to_base(T_pre), self.to_base(gc.T), 0.008)
@@ -591,6 +592,23 @@ class Runtime:
         T_l[2, 3] += gc.lift_dz
         Ql = self.planner.line(Qg[-1], self.to_base(gc.T), self.to_base(T_l), 0.008)
         return {"ok": True, "status": "ok", "approach": Qa, "grasp": Qg, "lift": Ql}
+
+    def _dump_fail(self, what: str, q0, T_world) -> None:
+        """L9V2_DEBUG_DIR: the scene, start joints and goal of a failed plan (<= 6 per process) for
+        tools/l9/v2_collide_dbg.py."""
+        dbg = os.environ.get("L9V2_DEBUG_DIR")
+        self._n_dump = getattr(self, "_n_dump", 0)
+        if not dbg or self._n_dump >= 6:
+            return
+        import json
+        self._n_dump += 1
+        os.makedirs(dbg, exist_ok=True)
+        fs = getattr(self.w, "scene9", {}) or {}
+        parts = [p for p in fs.get("furniture", []) if "size" in p and "pos" in p]
+        scene = P9.scene_cuboids(parts, self.obstacle_boxes(), self.T_world_base(), pad=0.005)
+        json.dump({"what": what, "scene": scene, "q": np.asarray(q0).tolist(), "joints": self.joints,
+                   "T_world_base": self.T_world_base().tolist(), "tcp_T": np.asarray(T_world).tolist(),
+                   "goal_is_tcp_T": True}, open(os.path.join(dbg, f"fail_{os.getpid()}_{self._n_dump}.json"), "w"))
 
     def _guard(self, Q):
         """Reject a plan that leaves the SIM joint range (cuRobo's URDF limits may be wider: smoke 10-02, joint2 at
