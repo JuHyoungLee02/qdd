@@ -95,6 +95,7 @@ def cmd_train(a):
     m.save(os.path.join(a.out, "last"), {"step": a.steps, "data": a.data, "n_train": len(tr), "args": vars(a),
                                          "gpu_s": round(time.time() - t0, 1)})
     if va:
+        m.backbone = m.backbone.merge_and_unload()  # saved above; merged for the (inference-only) offline pass
         res = offline(m, va[:a.max_val] if a.max_val else va, device, mode, a.label)
         json.dump(res, open(os.path.join(a.out, "last", "offline.json"), "w"), indent=1)
         print("OFFLINE " + json.dumps(res), flush=True)

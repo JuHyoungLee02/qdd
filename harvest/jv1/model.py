@@ -132,5 +132,6 @@ def load(d, model_dir, device, dtype=torch.bfloat16):
     from ..train.stageb_train import load_backbone
     cfg = json.load(open(os.path.join(d, "jv1.json")))
     bb, proc, _ = load_backbone("qwen", model_dir, device, adapter=os.path.join(d, "adapter"), dtype=dtype)
+    bb = bb.merge_and_unload()  # inference only: LoRA merged into the base weights (smoke: 1.08 -> 0.52 s per answer)
     bb.eval()
     return JV1(bb, proc, cfg["label"]), None
