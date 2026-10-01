@@ -163,8 +163,16 @@ def run(a):
     fj = gj["finger_joints"]
     fingers = list(fj["drive"]) + list(fj["followers"])
     follow = FOLLOW.get(a.grip, {})
-    q_closed = {j: float(gj["actuation"]["urdf_limits"][j]["upper"]) for j in fingers}
+    q_close = GT.width_to_q(min(gj["width_to_joint"]["width_m"]), gj["width_to_joint"])  # FFW 1.1, Franka 0.0
+    q_closed = {j: q_close * float(fj["followers"].get(j, 1.0)) for j in fingers}
     tcp_in_base = np.asarray(gj["tcp_in_base"]["xyz"], float)
+    R_tb = GT.rpy_R(gj["tcp_in_base"].get("rpy", (0.0, 0.0, 0.0)))
+    # finger drive (json actuation.sim): FFW-SG2 revolute (N m, rad/s), Franka prismatic (N, no velocity cap)
+    f_stiff = act.get("drive_stiffness", act.get("finger_stiffness"))
+    f_stiff = float(f_stiff.get("right", 100.0)) if isinstance(f_stiff, dict) else float(f_stiff)
+    f_damp = float(act.get("drive_damping", act.get("finger_damping", 4.0)))
+    f_eff = float(act.get("drive_effort_limit_Nm", act.get("finger_effort_limit_N")))
+    f_vel = act.get("drive_velocity_limit_rad_s")
     table = gj["width_to_joint"]
     pad_z = gj.get("pad_z_range_in_tcp", (-0.03, 0.02))
     pad_w, max_open = float(gj["pad_width_m"]), float(gj["max_opening_m"])
@@ -192,12 +200,9 @@ def run(a):
                                                 effort_limit_sim=1e4),
                 "virt_rot": ImplicitActuatorCfg(joint_names_expr=["vr", "vp", "vyaw"], stiffness=1e4, damping=2e2,
                                                 effort_limit_sim=1e4),
-                "fingers": ImplicitActuatorCfg(joint_names_expr=fingers,
-                                               stiffness=float(act["drive_stiffness"].get("right", 100.0))
-                                               if isinstance(act["drive_stiffness"], dict) else float(act["drive_stiffness"]),
-                                               damping=float(act.get("drive_damping", 4.0)),
-                                               effort_limit_sim=float(act["drive_effort_limit_Nm"]),
-                                               velocity_limit_sim=float(act.get("drive_velocity_limit_rad_s", 2.2)))},
+                "fingers": ImplicitActuatorCfg(joint_names_expr=fingers, stiffness=f_stiff, damping=f_damp,
+                                               effort_limit_sim=f_eff,
+                                               **({"velocity_limit_sim": float(f_vel)} if f_vel else {}))},
             soft_joint_pos_limit_factor=1.0)
 
     sim = sim_utils.SimulationContext(sim_utils.SimulationCfg(
@@ -321,7 +326,7 @@ def run(a):
             cloc[i] = Rb.T @ (c - rp)
             c0z[i] = c[2]
             qopen[i] = width_q(float(pre[j]))
-        traj, st = GT.plan_round(Tw, origins, tcp_in_base, DT)
+        traj, st = GT.plan_round(Tw, origins, tcp_in_base, DT, R_tb=R_tb)
         traj_t = torch.tensor(traj, dtype=torch.float32, device=dev)
         # reset states
         obj.write_root_pose_to_sim(torch.tensor(root, dtype=torch.float32,

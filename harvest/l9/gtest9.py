@@ -107,9 +107,17 @@ def backoff(T_tcp, d: float = BACKOFF) -> np.ndarray:
     return T
 
 
-def base_from_tcp(T_tcp, tcp_in_base) -> np.ndarray:
-    """Gripper base link pose from the TCP pose (tcp_in_base = TCP position in the base, no rotation)."""
+def rpy_R(rpy) -> np.ndarray:
+    """URDF rpy -> rotation (Rz(y) Ry(p) Rx(r))."""
+    r, p, y = (float(v) for v in rpy)
+    return rz(y) @ ry(p) @ rx(r)
+
+
+def base_from_tcp(T_tcp, tcp_in_base, R_tb=None) -> np.ndarray:
+    """Gripper base link pose from the TCP pose (tcp_in_base = TCP position in the base, R_tb its rotation)."""
     T = np.array(T_tcp, float)
+    if R_tb is not None:
+        T[:3, :3] = T[:3, :3] @ np.asarray(R_tb, float).T
     T[:3, 3] = T[:3, 3] - T[:3, :3] @ np.asarray(tcp_in_base, float)
     return T
 
@@ -160,16 +168,17 @@ def euler_batch(R, ref=None) -> np.ndarray:
 
 
 def plan_round(Tw, origins, tcp_in_base, dt: float, backoff_d: float = BACKOFF, lift: float = LIFT,
-               shake_deg: float = SHAKE_DEG, cycles: int = 2):
+               shake_deg: float = SHAKE_DEG, cycles: int = 2, R_tb=None):
     """Virtual joint targets (K, N, 6) of one round for N grasp poses Tw (N, 4, 4) (TCP, world) of grippers whose
-    articulation roots stand at origins (N, 3), and the step index where each phase starts {name: k}."""
+    articulation roots stand at origins (N, 3), and the step index where each phase starts {name: k}.
+    tcp_in_base / R_tb: the TCP in the gripper base link (R_tb None = same orientation)."""
     Tw = np.asarray(Tw, float)
     origins = np.asarray(origins, float)
     N = len(Tw)
-    R = Tw[:, :3, :3]
+    zg = Tw[:, :3, 2]  # back-off direction (against the approach)
+    R = Tw[:, :3, :3] if R_tb is None else Tw[:, :3, :3] @ np.asarray(R_tb, float).T  # base rotation
     tb = np.asarray(tcp_in_base, float)
     pg = Tw[:, :3, 3] - R @ tb  # base position at the grasp
-    zg = R[:, :, 2]
     e0 = euler_batch(R)
     starts, ks = {}, 0
     steps = []

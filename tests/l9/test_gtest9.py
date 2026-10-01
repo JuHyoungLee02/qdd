@@ -165,3 +165,16 @@ def test_exec_pose_raises_only_for_support_clearance():
     assert np.allclose(Te[:3, 3], [0.0, 0.0, 0.0274 + d + 0.004]) and np.allclose(Te[:3, :3], Tg[:3, :3])
     assert T.pad_drop(0.03, "franka", TABLE) == 0.0
     assert np.allclose(T.exec_pose(Tg, 0.03, "franka", support_z=0.0), Tg)
+
+
+def test_plan_round_rotated_tcp_in_base():
+    """Franka hand: the TCP frame is the base turned by rpy (-pi, 0, 0) and 10.2 cm along base z."""
+    R_tb = T.rpy_R((-math.pi, 0.0, 0.0))
+    tb = (0.0, 0.0, 0.10225)
+    a = np.array([0.0, 0.6, -0.8])
+    Tw = T.pose(G.frame_of(a, [1.0, 0.0, 0.0]), [0.0, 0.0, 0.05])[None]
+    q, st = T.plan_round(Tw, np.zeros((1, 3)), tb, 0.01, R_tb=R_tb)
+    Ttb = T.pose(R_tb, tb)
+    assert np.allclose(T.fk(q[st["close"], 0]) @ Ttb, Tw[0], atol=1e-9)
+    assert np.allclose(T.fk(q[0, 0]) @ Ttb, T.backoff(Tw[0]), atol=1e-9)
+    assert np.allclose(T.base_from_tcp(Tw[0], tb, R_tb) @ Ttb, Tw[0], atol=1e-9)
