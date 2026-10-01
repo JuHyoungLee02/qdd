@@ -143,9 +143,26 @@ def main():
         cnt = {}
         for r in recs.values():
             cnt[r.get("verdict", "err")] = cnt.get(r.get("verdict", "err"), 0) + 1
+        # collider override (catalog field row['collider'], gtest9.apply_collider): SDF of the render meshes for every
+        # object with an open cavity (verdict ok / bad) or a hollow-kind name (GT.HOLLOW_WORDS; e.g. cups whose
+        # collider is one filled hull). Grasp test 10-02 (11 objects): cup shake 0 -> 37/48, mugs +0..+11, bottle
+        # (not hollow) lowfric 33 -> 20, so solid objects keep their hulls.
+        from harvest.l9 import gtest9 as GT
+        rows = json.load(open(a.rows))
+        over = {}
+        for k, r in recs.items():
+            row = rows.get(k, {})
+            cat = f"{row.get('category', '')} {row.get('name', '')} {row.get('l9cat', '')}".lower()
+            if r.get("verdict") in ("ok", "bad") or any(x in cat for x in GT.HOLLOW_WORDS):
+                over[k] = "sdf"
+                r["collider"] = "sdf"
         with open(os.path.join(a.out, "collider_report.json"), "w") as f:
-            json.dump({"rule": __doc__.split("\n\n")[1], "counts": cnt, "objects": recs}, f)
-        print(json.dumps(cnt))
+            json.dump({"rule": __doc__.split("\n\n")[1], "counts": cnt, "collider_field": "collider",
+                       "n_override": len(over), "objects": recs}, f)
+        with open(os.path.join(a.out, "collider_override.json"), "w") as f:
+            json.dump({"field": "collider", "rule": "sdf for open cavity (verdict ok/bad) or hollow-kind name",
+                       "objects": over}, f)
+        print(json.dumps(dict(cnt, override_sdf=len(over))))
         return
     i, n = (int(v) for v in a.shard.split("/"))
     rows = json.load(open(a.rows))
