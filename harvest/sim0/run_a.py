@@ -29,15 +29,33 @@ WRIST_NOTE = "\nNOTE: this robot has no wrist camera: image 2 is blank."
 VID_EVERY = 1  # 3 Hz control -> 3 fps video
 
 
+# E-SIM1 (prereg_sim1.md): SimplerEnv WidowX + Bridge facts (tools/sim0/widowx_geom.py)
+BOX_W = ((0.15, 0.55), (-0.30, 0.30), (0.005, 0.40))
+TEXT_W = (
+    ("You control the right arm of a humanoid robot (ROBOTIS AI Worker FFW-SG2) at a table, in simulation.",
+     "You control a robot arm (WidowX 250) at a table, in simulation."),
+    ("its two fingers close along the robot x axis. TCP = the point midway between the finger pads. The pads are 4.5 cm "
+     "long (from 2.25 cm above to 2.25 cm below the TCP); the gripper body starts 2.5 cm above the TCP.",
+     "its two fingers close along the robot y axis. TCP = the point midway between the fingertips. The fingers reach "
+     "about 3 cm above the TCP; the gripper body starts 3 cm above the TCP."),
+    ("then apply gripper: close (0.6 s), open (0.5 s) or keep.",
+     "then apply gripper: close or open (the code waits until the fingers stop moving, at most 10 s) or keep."),
+)
+BENCH = "gr"
+
+
 def patch():
     from ..astra_motion import executor as EX
-    EX.SAFE_X, EX.SAFE_Y, EX.SAFE_DZ = BOX_X, BOX_Y, DZ
+    if BENCH == "bridge":
+        EX.SAFE_X, EX.SAFE_Y, EX.SAFE_DZ = BOX_W
+    else:
+        EX.SAFE_X, EX.SAFE_Y, EX.SAFE_DZ = BOX_X, BOX_Y, DZ
     from ..lib0 import rim
     rim.OPEN_M = 0.15  # Google Robot open fingertip span (tools/sim0/robot_geom.py), minus a little
 
 
 def text_g(text: str) -> str:
-    for old, new in TEXT_G:
+    for old, new in (TEXT_W if BENCH == "bridge" else TEXT_G):
         if text.count(old) != 1:
             raise ValueError(f"E-SIM0: fixed sentence not found once: {old[:60]!r}")
         text = text.replace(old, new)
@@ -115,7 +133,8 @@ def g0(world) -> dict:
     from ..astra_motion.geometry import pixel_of
     from ..astra_solo import resolve as RS
     u = world.env.unwrapped
-    p = world.to_base(u.obj.pose.p)
+    src = getattr(u, "obj", None) or getattr(u, "episode_source_obj", None)
+    p = world.to_base(src.pose.p)
     st = world.status()
     o = world.observe(depth=True)  # G1: the resolver on the can's projected centre vs the sim truth
     iu, iv, ins = pixel_of(o.cams["head"], p)
@@ -149,13 +168,20 @@ def main(argv=None):
     ap.add_argument("--arm", default="A")
     ap.add_argument("--stop-files", default="")
     ap.add_argument("--g0", action="store_true")
+    ap.add_argument("--bench", default="gr", choices=("gr", "bridge"))
     a = ap.parse_args(argv)
+    global BENCH
+    BENCH = a.bench
     patch()
     from ..astra_solo import pt_episode as PE
     from ..astra_solo import resolve as RS
     from ..lib0.run_a import LibMonitor
     from ..teach_pt.run_closed_l8s import ErrCount, claim, yield_reason
-    from .world import SimWorld, ep_name, episodes
+    if a.bench == "bridge":
+        from .bridge import BridgeWorld as SimWorld
+        from .bridge import ep_name, episodes
+    else:
+        from .world import SimWorld, ep_name, episodes
     RS.robot_mask = lambda hgt, plane, tcp: np.zeros(np.shape(hgt), bool)
     PE.Monitor = LibMonitor
     want = set(a.eps.split(","))

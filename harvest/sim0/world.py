@@ -88,6 +88,8 @@ def rotvec(R: np.ndarray) -> np.ndarray:
 
 
 class SimWorld:
+    CAM = "overhead_camera"
+
     def __init__(self, e: dict):
         self.e = e
         self.env, self.opts, self.max_steps = make_env(e)
@@ -112,13 +114,13 @@ class SimWorld:
         return Rb.T @ R, Rb.T @ (t - tb)
 
     def head_cam(self) -> Cam:
-        cp = self.obs["camera_param"]["overhead_camera"]
+        cp = self.obs["camera_param"][self.CAM]
         K, E = np.asarray(cp["intrinsic_cv"], float), np.asarray(cp["extrinsic_cv"], float)
         Rcw, tcw = E[:3, :3], E[:3, 3]
         Rwc, pw = Rcw.T, -Rcw.T @ tcw
         Rb, tb = self._base_Rt()
-        H, W = self.obs["image"]["overhead_camera"]["rgb"].shape[:2]
-        return Cam(name="overhead_camera", W=W, H=H, fx=K[0, 0], fy=K[1, 1], cx=K[0, 2], cy=K[1, 2], R=Rb.T @ Rwc,
+        H, W = self.obs["image"][self.CAM]["rgb"].shape[:2]
+        return Cam(name=self.CAM, W=W, H=H, fx=K[0, 0], fy=K[1, 1], cx=K[0, 2], cy=K[1, 2], R=Rb.T @ Rwc,
                    t=Rb.T @ (pw - tb))
 
     def _robot_ids(self):
@@ -176,7 +178,7 @@ class SimWorld:
         return {"t": self.t, "tcp": t, "grip_w": self._gap(), "obj": {}, "pred": {}}
 
     def observe(self, depth: bool = False) -> Obs:
-        im = self.obs["image"]["overhead_camera"]
+        im = self.obs["image"][self.CAM]
         rgb = np.ascontiguousarray(im["rgb"][..., :3]).astype(np.uint8)
         d = None
         if depth:
@@ -192,7 +194,7 @@ class SimWorld:
                    tcp=st["tcp"], grip_w=st["grip_w"])
 
     def frame(self) -> dict:
-        rgb = np.ascontiguousarray(self.obs["image"]["overhead_camera"]["rgb"][..., :3]).astype(np.uint8)
+        rgb = np.ascontiguousarray(self.obs["image"][self.CAM]["rgb"][..., :3]).astype(np.uint8)
         return {"head": rgb, "wrist": None}
 
     def action_of(self, cmd_b, width: float) -> np.ndarray:

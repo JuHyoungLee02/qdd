@@ -48,6 +48,7 @@ def main(argv=None):
     ap.add_argument("--out", required=True)
     ap.add_argument("--vid-root", required=True)
     ap.add_argument("--stop-files", default="")
+    ap.add_argument("--bench", default="gr", choices=("gr", "bridge"))
     a = ap.parse_args(argv)
     import imageio
     from openpi_client import image_tools
@@ -55,7 +56,12 @@ def main(argv=None):
     from transforms3d.euler import euler2axangle
 
     from ..teach_pt.run_closed_l8s import claim, yield_reason
-    from .world import ep_name, episodes, make_env
+    if a.bench == "bridge":  # E-SIM1: WidowX + Bridge (prereg_sim1.md)
+        from .bridge import ep_name, episodes, make_env
+        cam = "3rd_view_camera"
+    else:
+        from .world import ep_name, episodes, make_env
+        cam = "overhead_camera"
     want = set(a.eps.split(","))
     stops = [f for f in a.stop_files.split(",") if f]
     client = wcp.WebsocketClientPolicy(a.host, a.port)
@@ -76,7 +82,7 @@ def main(argv=None):
         succ, steps, err = False, 0, None
         try:
             while steps < max_steps and not succ:
-                img = np.ascontiguousarray(obs["image"]["overhead_camera"]["rgb"][..., :3]).astype(np.uint8)
+                img = np.ascontiguousarray(obs["image"][cam]["rgb"][..., :3]).astype(np.uint8)
                 frames.append(img)
                 if not plan:
                     el = {"observation/image": image_tools.convert_to_uint8(image_tools.resize_with_pad(img, RESIZE, RESIZE)),
@@ -88,7 +94,8 @@ def main(argv=None):
                     plan.extend(chunk[:REPLAN])
                 r = np.asarray(plan.popleft(), float)
                 ax, ang = euler2axangle(*r[3:6])
-                act = np.concatenate([r[:3], np.asarray(ax) * ang, [conv(float(r[6]))]])
+                gr = (1.0 if r[6] > 0.5 else -1.0) if a.bench == "bridge" else conv(float(r[6]))  # Octo wrappers
+                act = np.concatenate([r[:3], np.asarray(ax) * ang, [gr]])
                 obs, _rw, done, trunc, info = env.step(act)
                 steps += 1
                 succ = bool(info.get("success", done))
@@ -102,7 +109,7 @@ def main(argv=None):
         mp4 = os.path.join(a.vid_root, a.arm, name + ".mp4")
         os.makedirs(os.path.dirname(mp4), exist_ok=True)
         try:
-            imageio.mimwrite(mp4, frames, fps=3)
+            imageio.mimwrite(mp4, frames, fps=3 if a.bench == "gr" else 5)
         except Exception:  # noqa: BLE001
             mp4 = None
         row = {"arm": a.arm, "ep": name, "task": e["task"], "instruction": ins, "success": succ, "steps": steps,

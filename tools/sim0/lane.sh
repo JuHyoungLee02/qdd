@@ -1,9 +1,10 @@
 #!/bin/bash
 # E-SIM0 sim lane (docs/stage3/prereg_sim0.md): SAPIEN 2.2.2 with CPU Vulkan (Mesa lavapipe; the pods' NVIDIA Vulkan
 # hangs in take_picture), 78dc CPU. Jobs: one line per episode-name list (comma); claimed with mkdir.
-# usage: lane.sh <code dir> <arm A|B> <lane name> <jobs file>   env: SIM0_QURL (A), SIM0_PIHOST (B, port 8703)
-C=$1; ARM=$2; LN=$3; J=$4
-O=/data/harvest/out/sim0; V=/data/harvest/videos/sim0; L=/data/harvest/logs/sim0; S=/data/harvest/simpler
+# usage: [SIM_BENCH=gr|bridge SIM_OUT=.. SIM_VID=.. SIM_PIPORT=..] lane.sh <code dir> <arm A|B> <lane name> <jobs file>
+#   env: SIM0_QURL (A), SIM0_PIHOST (B)
+C=$1; ARM=$2; LN=$3; J=$4; BENCH=${SIM_BENCH:-gr}; PORT=${SIM_PIPORT:-8703}
+O=${SIM_OUT:-/data/harvest/out/sim0}; V=${SIM_VID:-/data/harvest/videos/sim0}; L=/data/harvest/logs/$(basename $O); S=/data/harvest/simpler
 mkdir -p $O/claims $O/lanes $V $L
 export LD_LIBRARY_PATH=$S/vk/lib:/data/harvest/lib0/mesa/lib VK_ICD_FILENAMES=/data/harvest/lib0/mesa/share/vulkan/icd.d/lvp_icd.x86_64.json
 export XDG_RUNTIME_DIR=/data/harvest/tmp/xdg HOME=/data/harvest/home XDG_CACHE_HOME=$S/cache TMPDIR=/data/harvest/tmp
@@ -18,10 +19,10 @@ while IFS= read -r -u 3 EPS; do
   log "RUN $ARM job $n"
   if [ $ARM = A ]; then
     nice -n 10 timeout 14400 $S/venv/bin/python -m harvest.sim0.run_a --eps $EPS --qwen-url $SIM0_QURL --qwen-name lib0_ep2_5 \
-      --out $O --vid-root $V --arm A --stop-files $O/STOP >> $L/lane_$LN.log 2>&1 < /dev/null
+      --bench $BENCH --out $O --vid-root $V --arm A --stop-files $O/STOP >> $L/lane_$LN.log 2>&1 < /dev/null
   else
-    nice -n 10 timeout 14400 $S/venv/bin/python -m harvest.sim0.run_pi --eps $EPS --host $SIM0_PIHOST --port 8703 --arm B \
-      --out $O --vid-root $V --stop-files $O/STOP >> $L/lane_$LN.log 2>&1 < /dev/null
+    nice -n 10 timeout 14400 $S/venv/bin/python -m harvest.sim0.run_pi --eps $EPS --host $SIM0_PIHOST --port $PORT --arm B \
+      --bench $BENCH --out $O --vid-root $V --stop-files $O/STOP >> $L/lane_$LN.log 2>&1 < /dev/null
   fi
   log "END $ARM job $n rc=$?"
 done 3< $J

@@ -29,11 +29,19 @@ def wilson(k, n, z=1.96):
     return round(max(0.0, c - h), 3), round(min(1.0, c + h), 3)
 
 
+BRIDGE_GROUPS = {"spoon on towel": lambda n: n.startswith("spoon_"), "carrot on plate": lambda n: n.startswith("carrot_"),
+                 "stack blocks": lambda n: n.startswith("stack_"), "eggplant in basket": lambda n: n.startswith("eggplant_"),
+                 "all": lambda n: True}
+
+
 def main(root="/data/harvest/out/sim0"):
+    global GROUPS
     rows = [json.load(open(p)) for p in glob.glob(os.path.join(root, "*", "*", "row.json"))]
+    if any(r["ep"].startswith(("spoon_", "carrot_", "stack_", "eggplant_")) for r in rows):  # E-SIM1
+        GROUPS = BRIDGE_GROUPS
     by = {(r["arm"], r["ep"]): r for r in rows}
-    out, md = {}, ["# E-SIM0 결과 (시범, 보고 전용)", "",
-                   "| 묶음 | A 본 35B ep2.5 (무학습) | B π0.5 base (무학습) | A − B (짝) | A, 표준 80걸음 안 |", "|---|---|---|---|---|"]
+    out, md = {}, [f"# {os.path.basename(root).upper()} 결과 (시범, 보고 전용)", "",
+                   "| 묶음 | A 본 35B ep2.5 (무학습) | B π0.5 base (무학습) | A − B (짝) | A, 표준 걸음 예산 안 |", "|---|---|---|---|---|"]
     for g, f in GROUPS.items():
         cells = {}
         for arm in ("A", "B"):

@@ -2,14 +2,15 @@
 (rail-berkeley/octo-base-1.5 dataset_statistics.json, MIT): actions mean / std as given; q01 / q99 (pi05 quantile
 normalisation) = mean -+ 2.326 std clipped to min / max (Octo publishes no quantiles: an approximation, prereg change 1);
 state (8 dims, unused by pi05 without discrete state input) mean 0 / std 1 / q -1..1.
-usage: fractal_norm.py <octo stats json> <out dir: .../assets/physical-intelligence/libero>"""
+usage: fractal_norm.py <octo stats json> <out dir: .../assets/physical-intelligence/libero> [dataset key]"""
 import json
 import os
 import sys
 
 import numpy as np
 
-d = json.load(open(sys.argv[1]))["fractal20220817_data"]["action"]
+key = sys.argv[3] if len(sys.argv) > 3 else "fractal20220817_data"  # E-SIM1: bridge_dataset
+d = json.load(open(sys.argv[1]))[key]["action"]
 m, s = np.array(d["mean"]), np.array(d["std"])
 q01 = np.maximum(m - 2.326 * s, np.array(d["min"]))
 q99 = np.minimum(m + 2.326 * s, np.array(d["max"]))
