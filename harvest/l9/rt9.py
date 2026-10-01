@@ -298,8 +298,19 @@ class Runtime:
         depth = (obs.depth or {}).get("head") if obs is not None and getattr(obs, "depth", None) else None
         seed = int(getattr(self.w, "vseed", 0) or 0)
         robot_xy = self.T_world_base()[:2, 3]
+        from ..sim.scene import OBJ_GEOM
+        g = OBJ_GEOM.get(k, {})
+        he = np.asarray(g.get("half_extents", (0.03, 0.03, 0.05)), float)
+        cat = f"{g.get('category', '')} {g.get('name', '')}".lower()
+        hollow = bool(g.get("inside")) or any(x in cat for x in ("cup", "mug", "bowl", "glass", "vase", "pot", "jar",
+                                                                 "basket", "bucket", "pitcher"))
+        elong = float(max(he[:2])) > 2.5 * float(min(he[:2]))
+        parts = np.array([G.part_of(C["c1"][i], C["c2"][i], float(C["w"][i]), he, hollow, elong)
+                          for i in range(len(C["w"]))])
+        Cw["part"] = parts
         gc = VP.choose(Cw, ok, margin, c, robot_xy, seed, len(self.picks), constraint=info.get("constraint"),
-                       cam=cam, depth=depth, allow_instruct=(len(self.picks) == 0 and not self.regrasp_n))
+                       cam=cam, depth=depth, allow_instruct=(len(self.picks) == 0 and not self.regrasp_n),
+                       parts=parts, category=cat, height=2 * float(he[2]))
         if gc is not None:
             gc.meta.update(obj=k, tested=bool(C.get("tested", False)), n_candidates=int(len(C["w"])),
                            n_valid=int(ok.sum()), curobo=self.curobo, grip=self.grip)

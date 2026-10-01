@@ -506,3 +506,93 @@ def obb_overlap(c1, h1, R1, C2, H2, R2) -> np.ndarray:
     r2 = np.einsum("nik,nk->ni", r2, H2)
     sep = (dist > r1 + r2 + 1e-9) & valid
     return ~sep.any(1)
+
+
+# ---------------------------------------------------------------------------------------------- natural grasps
+# Natural grasp preference by object kind (user 10-02 03h: "물체를 다양하게 자연스럽게 잡으라는것"; main: no top-centre
+# first rule). Hypothesis table from human grasp studies (GRASP taxonomy, Feix et al. 2016 [기초]: cylinders / bottles
+# by a lateral power grasp around the body, plates / bowls by the rim, tools by the handle) and task-oriented grasp
+# data (GraspMolmo PRISM, CoRL 2025: per-object part labels). (family, part) in order of preference.
+NATURAL = (
+    (("bottle", "can", "cup", "glass", "jar", "vase", "tumbler", "flask", "thermos", "carton of", "soda", "spray"),
+     (("side", "body"), ("front", "body"), ("oblique", "body"), ("top", "rim"))),
+    (("mug",), (("side", "handle"), ("side", "body"), ("front", "body"), ("oblique", "body"), ("top", "rim"))),
+    (("bowl", "plate", "dish", "tray", "pot", "pan", "basket", "saucer", "lid"),
+     (("top", "rim"), ("oblique", "rim"), ("side", "rim"), ("top", "edge"))),
+    (("pen", "pencil", "spoon", "fork", "knife", "spatula", "brush", "tool", "screwdriver", "wrench", "remote",
+      "marker", "scissors", "utensil", "chopstick"),
+     (("top", "handle"), ("oblique", "handle"), ("top", "body"), ("oblique", "body"))),
+    (("book", "box", "carton", "block", "package", "case", "phone", "tablet", "wallet"),
+     (("top", "body"), ("side", "body"), ("front", "body"), ("oblique", "body"))),
+    (("fruit", "apple", "orange", "lemon", "vegetable", "bread", "ball", "toy", "potato", "onion", "tomato"),
+     (("oblique", "body"), ("top", "body"), ("side", "body"), ("front", "body"))),
+)
+DEFAULT_NATURAL = (("oblique", "body"), ("side", "body"), ("top", "body"), ("front", "body"))
+TALL_H, FLAT_H = 0.14, 0.03
+
+
+def natural_order(category: str, height: float, constraint: str | None = None) -> tuple:
+    """(family, part) preference for one object: the kind table, then size rules (tall -> body from the side first,
+    flat -> top / oblique edges), then the scene constraint (blocked above: no top / oblique)."""
+    c = (category or "").lower()
+    order = DEFAULT_NATURAL
+    for keys, pref in NATURAL:
+        if any(k in c for k in keys):
+            order = pref
+            break
+    if height >= TALL_H and order is not NATURAL[2][1]:
+        order = tuple(x for x in order if x[0] in ("side", "front")) + tuple(x for x in order if x[0] not in
+                                                                              ("side", "front"))
+    if height <= FLAT_H:
+        order = (("top", "edge"), ("oblique", "edge"), ("top", "body"), ("oblique", "body"))
+    if constraint == "blocked_above":
+        order = tuple(x for x in order if x[0] in ("front", "side")) or (("front", "body"), ("side", "body"))
+    elif constraint == "tall":
+        order = tuple(x for x in order if x[0] in ("side", "front")) + tuple(x for x in order
+                                                                              if x[0] not in ("side", "front"))
+    return order
+
+
+def part_of(c1, c2, w: float, obj_half, hollow: bool, elongated: bool) -> str:
+    """Grasped part from the contacts in the object frame: rim (wall pinch or contacts at the top of a hollow
+    object), edge (contacts at the outline of a flat object), handle (elongated: away from the centre along the long
+    axis), else body."""
+    m = (np.asarray(c1) + np.asarray(c2)) / 2
+    he = np.asarray(obj_half, float)
+    if hollow and (w < 0.012 or m[2] > he[2] - 0.02):
+        return "rim"
+    if he[2] * 2 <= FLAT_H and np.max(np.abs(m[:2]) / np.maximum(he[:2], 1e-6)) > 0.6:
+        return "edge"
+    if elongated:
+        L = int(np.argmax(he[:2]))
+        if abs(m[L]) > 0.25 * he[L]:
+            return "handle"
+    return "body"
+
+
+def select_natural(fam, part, robot_d, margin, ok, order, instructed=None):
+    """Deterministic natural label (label_rule natural_v1): the first (family, part) of `order` with a valid
+    candidate; inside it robot side (2 cm steps) -> largest reach margin. Instructed rows: the instructed family,
+    its natural parts first. -> (index | None, rule_step, preference rank)."""
+    fam, part, ok = np.asarray(fam), np.asarray(part), np.asarray(ok, bool)
+
+    def best(mask):
+        idx = np.flatnonzero(mask & ok)
+        if not len(idx):
+            return None
+        return int(sorted(idx, key=lambda i: (round(float(robot_d[i]) / 0.02), -float(margin[i]), i))[0])
+    if instructed is not None:
+        for r, (f, p) in enumerate([x for x in order if x[0] == instructed] + [(instructed, None)]):
+            i = best((fam == f) & ((part == p) if p else True))
+            if i is not None:
+                return i, 2, r
+        return None, 2, None
+    for r, (f, p) in enumerate(order):
+        i = best((fam == f) & (part == p))
+        if i is not None:
+            return i, (0 if r == 0 else 1), r
+    for r, f in enumerate(FAMILIES):  # nothing natural is reachable: any valid grasp, natural families first
+        i = best(fam == f)
+        if i is not None:
+            return i, 3, len(order) + r
+    return None, 3, None

@@ -112,9 +112,12 @@ def label_point(cam, depth, c1, c2) -> dict:
 
 
 def choose(C_world: dict, ok: np.ndarray, margin: np.ndarray, obj_centre, robot_xy, seed: int, k: int,
-           constraint: str | None = None, cam=None, depth=None, allow_instruct: bool = True):
+           constraint: str | None = None, cam=None, depth=None, allow_instruct: bool = True, parts=None,
+           category: str = "", height: float = 0.0):
     """-> GraspChoice | None for one pick (k = step index). C_world = grasp9.to_world(...) of the cached candidates;
-    ok / margin per candidate (validity incl. reach; reach margin)."""
+    ok / margin per candidate (validity incl. reach; reach margin). With `parts` (per-candidate grasped part) the
+    natural rule (natural_v1: the object kind's natural (family, part) order, spec §12.8 rev. 10-02 03h) picks the
+    label; without it the older deterministic_v1 rule (tests / fallbacks)."""
     d = draws(seed, k)
     a = C_world["a"]
     m = (C_world["c1"] + C_world["c2"]) / 2
@@ -125,14 +128,25 @@ def choose(C_world: dict, ok: np.ndarray, margin: np.ndarray, obj_centre, robot_
     robot_d = np.hypot(m[:, 0] - robot_xy[0], m[:, 1] - robot_xy[1])
     instructed = None
     fams_ok = sorted({f for f, o in zip(fam, ok) if o})
+    order = G.natural_order(category, height, constraint) if parts is not None else None
     if allow_instruct and d["instructed"] and len(fams_ok) > 1:
-        pref = [f for f in ("side", "front", "oblique", "top") if f in fams_ok]
-        instructed = pref[d["alt"] % len(pref)]
-    i, step, why = G.select_label(fam, centre_d, robot_d, margin, ok, constraint=constraint, instructed=instructed)
+        first = order[0][0] if order else None
+        pref = [f for f in ("side", "front", "oblique", "top") if f in fams_ok and f != first]
+        instructed = pref[d["alt"] % len(pref)] if pref else None
+    rank = None
+    if parts is not None:
+        i, step, rank = G.select_natural(fam, parts, robot_d, margin, ok, order, instructed=instructed)
+        why = "instructed" if instructed else (f"scene_constraint:{constraint}" if constraint else "natural")
+        rule = "natural_v1"
+    else:
+        i, step, why = G.select_label(fam, centre_d, robot_d, margin, ok, constraint=constraint, instructed=instructed)
+        rule = "deterministic_v1"
     if i is None:
         return None
     T = C_world["T"][i]
-    meta = {"label_rule": "deterministic_v1", "rule_step": step, "approach_reason": why,
+    meta = {"label_rule": rule, "rule_step": step, "approach_reason": why, "natural_rank": rank,
+            "natural_order": [list(x) for x in order] if order else None,
+            "part": None if parts is None else str(parts[i]), "category": category,
             "instructed_approach": instructed, "family": str(fam[i]),
             "ik_ok_by_family": {f: bool(((fam == f) & ok).any()) for f in G.FAMILIES},
             "n_valid_by_family": {f: int(((fam == f) & ok).sum()) for f in G.FAMILIES},

@@ -130,3 +130,27 @@ def test_obb_overlap():
     # same box / 0.25 apart on x (gap) / rotated 45 deg at (0.15, 0.15): corner reaches 0.15 - 0.141 = 0.009 < 0.1 /
     # touching face at 0.2
     assert got.tolist() == [True, False, True, True]
+
+
+def test_natural_order_and_select():
+    assert G.natural_order("plastic bottle", 0.2)[0] == ("side", "body")
+    assert G.natural_order("ceramic bowl", 0.06)[0] == ("top", "rim")
+    assert G.natural_order("cardboard box", 0.08)[0] == ("top", "body")
+    assert G.natural_order("cardboard box", 0.20)[0][0] in ("side", "front")  # tall -> from the side
+    assert all(f in ("front", "side") for f, _ in G.natural_order("apple", 0.08, "blocked_above"))
+    assert G.natural_order("coaster", 0.01)[0] == ("top", "edge")
+    fam = np.array(["top", "side", "side", "oblique"])
+    part = np.array(["body", "body", "body", "body"])
+    rd = np.array([0.4, 0.42, 0.30, 0.35])
+    ok = np.ones(4, bool)
+    i, step, r = G.select_natural(fam, part, rd, np.ones(4), ok, G.natural_order("bottle", 0.2))
+    assert i == 2 and step == 0  # side body, robot side first
+    i, step, r = G.select_natural(fam, part, rd, np.ones(4), ok, G.natural_order("bottle", 0.2), instructed="top")
+    assert i == 0 and step == 2
+
+
+def test_part_of():
+    he = (0.04, 0.04, 0.05)
+    assert G.part_of([0.036, 0, 0.04], [0.04, 0, 0.04], 0.004, he, True, False) == "rim"
+    assert G.part_of([-0.04, 0, 0.0], [0.04, 0, 0.0], 0.08, he, True, False) == "body"
+    assert G.part_of([0.08, -0.01, 0], [0.08, 0.01, 0], 0.02, (0.1, 0.015, 0.01), False, True) in ("edge", "handle")
