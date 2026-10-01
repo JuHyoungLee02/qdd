@@ -861,7 +861,8 @@ def spawn_usd_collider(prim_path, cfg, translation=None, orientation=None, **kwa
     stage = omni.usd.get_context().get_stage()
     mode = _COLLIDERS[prim_path.rsplit("/", 1)[-1]]
     for path in find_matching_prim_paths(prim_path):
-        apply_collider(stage, path, mode)
+        n = apply_collider(stage, path, mode)
+        print(f"[l9v2 collider] {path} {mode} render meshes {n}", flush=True)
     return prim
 
 
