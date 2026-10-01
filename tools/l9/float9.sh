@@ -11,6 +11,7 @@
 G=$1; TAGS=$2
 F=/data/harvest/out/render_float
 L=/data/harvest/out/l9
+R=${L9_RUN:-$L/prod1}  # run dir of the lanes on the card (L9 v2: /data/harvest/l9v2/<run>)
 Y=$L/yield/$(hostname)_$G
 C=$(dirname $(dirname $(dirname $(readlink -f $0))))
 mkdir -p $F $L/yield
@@ -31,13 +32,13 @@ while true; do
     t0=$(date +%s)
     log "WANTED: $(tr '\n' ' ' < $F/WANTED | cut -c1-200)"
     touch $Y
-    for t in $TAGS; do [ -f $L/prod1/pids/$t ] && kill $(cat $L/prod1/pids/$t) 2>/dev/null; done  # lanes: no next job
+    for t in $TAGS; do [ -f $R/pids/$t ] && kill $(cat $R/pids/$t) 2>/dev/null; done  # lanes: no next job
     pids=$(l9_pids)
     [ -n "$pids" ] && kill $pids 2>/dev/null
     n=0
     while [ -n "$(l9_pids)" ] && [ $n -lt 15 ]; do sleep 1; n=$((n + 1)); done  # Isaac ignores SIGTERM (test: 60 s)
     left=$(l9_pids); [ -n "$left" ] && { kill -9 $left 2>/dev/null; log "SIGKILL after 15 s: $left"; }
-    bash $L/release_claims.sh $L/prod1 "ka kb kc kd ke kf" >> $F/float9.log 2>&1  # x2 jobs back to the queue
+    bash $L/release_claims.sh $R "$TAGS" >> $F/float9.log 2>&1  # x2 jobs back to the queue
     n=0
     while [ "$(gpu_mem)" -gt 1000 ] && [ $n -lt 120 ]; do sleep 2; n=$((n + 2)); done
     bash $C/tools/l9/sem_reset.sh >> $F/float9.log 2>&1 || log "semaphore not reset (an Isaac runs on the pod)"
