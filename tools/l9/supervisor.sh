@@ -37,8 +37,15 @@ while true; do
     age=$(( $(date +%s) - $(stat -c %Y "$f") ))
     if [ $age -gt 1200 ]; then
       inst=$(basename $f .log)
-      for p in /proc/[0-9]*; do tr '\0' '\n' < $p/environ 2>/dev/null | grep -q "^IR_INST=l9_${inst}$" && kill -9 ${p#/proc/} 2>/dev/null; done
-      log "watchdog: $inst silent ${age}s, Isaac killed (the lane resumes the job)"
+      pids=""
+      for p in /proc/[0-9]*; do tr '\0' '\n' < $p/environ 2>/dev/null | grep -q "^IR_INST=l9_${inst}$" && pids="$pids ${p#/proc/}"; done
+      # SIGTERM first: an Isaac killed with SIGKILL while holding carb's global semaphore blocks every later start (P149)
+      [ -n "$pids" ] && kill $pids 2>/dev/null; sleep 30
+      for q in $pids; do [ -d /proc/$q ] && kill -9 $q 2>/dev/null; done
+      log "watchdog: $inst silent ${age}s, Isaac stopped (the lane gives the job back)"
+      if grep -q 'may be in a stuck state' "$f"; then
+        touch $R/ALERT_SEM; log "ALERT: carb semaphore stuck (P149): run tools/l9/sem_reset.sh with no Isaac running"
+      fi
     fi
   done
   if [ $((n % 10)) -eq 0 ]; then
