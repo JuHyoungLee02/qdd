@@ -672,7 +672,13 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             self.ext_cams = got
             self.ext_info = {"version": E9.VERSION, "p": float(ext.get("p", E9.P_DEFAULT)), "coin": True,
                              "n_drawn": n, "n_ok": len(got), "tries": tries,
-                             "setup_s": round(time.perf_counter() - t0, 3)}
+                             "setup_s": round(time.perf_counter() - t0, 3),
+                             "ctx": {"ws_pts": [[round(float(v), 3) for v in p] for p in ctx.ws_pts],
+                                     "robot_pts": [[round(float(v), 3) for v in p] for p in ctx.robot_pts],
+                                     "boxes": [{k: [round(float(v), 3) for v in b[k]] if k != "yaw"
+                                                else round(float(b[k]), 4) for k in ("pos", "size", "yaw")}
+                                               for b in ctx.boxes],
+                                     "zone": ctx.zone}}
 
         def _ext_capture(self) -> None:
             """After the head render of a call: the external cameras' images of the same render."""
