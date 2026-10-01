@@ -58,7 +58,7 @@ def episode_class():
     Base = lib_class()
 
     class SimEpisode(Base):
-        fix_b, fix_c = False, True
+        fix_b, fix_c = False, False  # change 2: no grasp-location rule (user 10-02 02시: current model as is)
 
         def _request(self, obs, i, statics):
             text, ims = super()._request(obs, i, statics)
