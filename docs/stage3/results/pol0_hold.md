@@ -12,3 +12,8 @@
 - 원인 후보(미검증): Isaac Sim 5.1이 파드 이미지(NVIDIA 드라이버 그래픽 구성요소, glvnd 판)와 맞지 않는다. 같은 파드의 L9 Isaac(다른 판본)은 렌더된다.
 - 다음에 다시 할 때: L9의 Isaac 판본과 맞는 Isaac Lab 2.x로 PolaRiS를 맞추거나, PolaRiS가 Isaac Sim 5.1을 요구하면 그 판을 지원하는 파드 이미지를 사용자에게 요청한다.
 - 카드는 반납했다(float9: 1,611 s 대여, L9 5 s 만에 복귀).
+
+## 다시 할 때의 길(06:5x 확인, 미시험)
+- L9 양산은 같은 파드에서 `/data/harvest/ir/ir_run.sh`(unshare + chroot)로 Isaac을 돌린다.
+- 루트 파일 시스템은 `/data/juhyoung_infra/rootfs/cyclo-lab-2.0.0`이고, **Isaac Sim 5.1.0 + Isaac Lab 2.3.0**(PolaRiS가 요구하는 판)이다. NVIDIA 그래픽 라이브러리는 `/data/juhyoung_infra/nvidia_libs`에서 바인드된다.
+- 그래서 PolaRiS(파이썬 패키지 + 스플랫 확장)를 이 루트 파일 시스템의 파이썬에 얹어 `IR_ROOT=cyclo ir_run.sh`로 돌리면 Vulkan 문제를 피할 가능성이 높다. L9 v2 책임자와 맞춘 뒤 한다.
