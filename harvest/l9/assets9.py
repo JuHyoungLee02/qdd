@@ -257,12 +257,16 @@ TABLETOP_N = 8  # tabletop pieces per process (render-only mesh slots)
 
 
 def _ph_decor(split: str) -> dict:
-    """Poly Haven decor rows (assets9/decor_ph.json, tools/l9v2env/ph_models.py; CC0) of a split, prim-safe names."""
+    """Render-only decor rows of a split, prim-safe names: Poly Haven (assets9/decor_ph.json, tools/l9v2env/
+    ph_models.py; CC0) + Amazon Berkeley Objects (assets9/decor_abo.json, tools/l9v2env/abo_decor.py; CC BY 4.0)."""
     import re
     key = f"ph:{split}"
     if key not in _CACHE:
-        p = os.path.join(DIR, "decor_ph.json")
-        rows = json.load(open(p, encoding="utf-8"))["assets"] if os.path.exists(p) else {}
+        rows = {}
+        for fn in ("decor_ph.json", "decor_abo.json"):
+            p = os.path.join(DIR, fn)
+            if os.path.exists(p):
+                rows.update(json.load(open(p, encoding="utf-8"))["assets"])
         _CACHE[key] = {re.sub(r"[^A-Za-z0-9_]", "_", k): dict(r, name0=k) for k, r in rows.items()
                        if r.get("split", "train") == split and licence_ok(r.get("license", ""))}
     return _CACHE[key]

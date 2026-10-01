@@ -101,3 +101,9 @@ def test_fixture_places_and_annotations(rm):
                     assert p["role"] == "fixture" and abs(p["pitch"]) < 0.4
     assert {"shelf_high", "compartment", "shelf_low", "gap", "slope"} <= kinds
     assert classes == {"low", "desk", "high"} and approach == {"top", "front"}
+
+
+def test_heldout_family_split():
+    tr, ho = S.all_rules("train"), S.all_rules("heldout")
+    assert ho and not {f for f, _ in tr} & set(S.HELDOUT_FAMILIES) and {f for f, _ in ho} == set(S.HELDOUT_FAMILIES)
+    assert len(tr) + len(ho) == len(S.all_rules())

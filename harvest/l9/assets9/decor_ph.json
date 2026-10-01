@@ -1,9 +1,9 @@
 {
  "license": "CC0 1.0 (Poly Haven, https://polyhaven.com/license)",
- "source": "Poly Haven models API (usd 1k)",
+ "source": "Poly Haven models API (gltf 1k -> usd, tools/l9v2env/ph_gltf.py)",
  "assets": {
   "ph_ArmChair_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/ArmChair_01/ArmChair_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/ArmChair_01/ArmChair_01.usdc",
    "collider_size": [
     0.8484,
     0.7658,
@@ -34,10 +34,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5626
   },
   "ph_BarberShopChair_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/BarberShopChair_01/BarberShopChair_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/BarberShopChair_01/BarberShopChair_01.usdc",
    "collider_size": [
     0.7565,
     1.3279,
@@ -68,10 +70,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4280
   },
   "ph_Barrel_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/Barrel_01/Barrel_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/Barrel_01/Barrel_01.usdc",
    "collider_size": [
     0.563,
     0.563,
@@ -102,10 +106,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2682
   },
   "ph_Barrel_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/Barrel_02/Barrel_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/Barrel_02/Barrel_02.usdc",
    "collider_size": [
     0.4882,
     0.4846,
@@ -137,10 +143,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2688
   },
   "ph_Camera_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/Camera_01/Camera_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/Camera_01/Camera_01.usdc",
    "collider_size": [
     0.2139,
     0.2628,
@@ -171,10 +179,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 26987
   },
   "ph_CashRegister_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/CashRegister_01/CashRegister_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/CashRegister_01/CashRegister_01.usdc",
    "collider_size": [
     0.6005,
     0.6242,
@@ -205,10 +215,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 9927
   },
   "ph_Chandelier_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/Chandelier_01/Chandelier_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/Chandelier_01/Chandelier_01.usdc",
    "collider_size": [
     0.7465,
     0.8155,
@@ -239,10 +251,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 26860
   },
   "ph_Chandelier_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/Chandelier_02/Chandelier_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/Chandelier_02/Chandelier_02.usdc",
    "collider_size": [
     0.679,
     0.6191,
@@ -272,10 +286,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 21514
   },
   "ph_Chandelier_03": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/Chandelier_03/Chandelier_03_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/Chandelier_03/Chandelier_03.usdc",
    "collider_size": [
     0.7804,
     0.7855,
@@ -306,19 +322,21 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 29301
   },
   "ph_CheeseBox_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/CheeseBox_01/CheeseBox_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/CheeseBox_01/CheeseBox_01.usdc",
    "collider_size": [
     0.2404,
-    0.1356,
-    0.0927
+    0.1066,
+    0.066
    ],
    "render_size": [
     0.2404,
-    0.1356,
-    0.0927
+    0.1066,
+    0.066
    ],
    "origin_offset": [
     0.0,
@@ -341,10 +359,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 884
   },
   "ph_ClassicConsole_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/ClassicConsole_01/ClassicConsole_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/ClassicConsole_01/ClassicConsole_01.usdc",
    "collider_size": [
     1.543,
     0.5893,
@@ -375,10 +395,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 7566
   },
   "ph_ClassicNightstand_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/ClassicNightstand_01/ClassicNightstand_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/ClassicNightstand_01/ClassicNightstand_01.usdc",
    "collider_size": [
     0.5678,
     0.4242,
@@ -409,10 +431,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2002
   },
   "ph_CoffeeCart_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/CoffeeCart_01/CoffeeCart_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/CoffeeCart_01/CoffeeCart_01.usdc",
    "collider_size": [
     2.1676,
     1.0733,
@@ -445,10 +469,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 27659
   },
   "ph_CoffeeTable_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/CoffeeTable_01/CoffeeTable_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/CoffeeTable_01/CoffeeTable_01.usdc",
    "collider_size": [
     1.54,
     0.9728,
@@ -479,10 +505,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 10404
   },
   "ph_Drill_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/Drill_01/Drill_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/Drill_01/Drill_01.usdc",
    "collider_size": [
     0.1829,
     0.0524,
@@ -515,10 +543,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2926
   },
   "ph_GothicBed_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/GothicBed_01/GothicBed_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/GothicBed_01/GothicBed_01.usdc",
    "collider_size": [
     1.4938,
     2.04,
@@ -549,18 +579,20 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 18745
   },
   "ph_GothicCabinet_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/GothicCabinet_01/GothicCabinet_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/GothicCabinet_01/GothicCabinet_01.usdc",
    "collider_size": [
     1.7191,
-    1.1287,
+    1.1165,
     2.3609
    ],
    "render_size": [
     1.7191,
-    1.1287,
+    1.1165,
     2.3609
    ],
    "origin_offset": [
@@ -583,10 +615,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 12170
   },
   "ph_GothicCommode_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/GothicCommode_01/GothicCommode_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/GothicCommode_01/GothicCommode_01.usdc",
    "collider_size": [
     1.2014,
     0.5807,
@@ -617,10 +651,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3897
   },
   "ph_GreenChair_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/GreenChair_01/GreenChair_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/GreenChair_01/GreenChair_01.usdc",
    "collider_size": [
     0.6731,
     0.6644,
@@ -651,10 +687,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4213
   },
   "ph_Lantern_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/Lantern_01/Lantern_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/Lantern_01/Lantern_01.usdc",
    "collider_size": [
     0.1221,
     0.0972,
@@ -685,10 +723,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 33902
   },
   "ph_Megaphone_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/Megaphone_01/Megaphone_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/Megaphone_01/Megaphone_01.usdc",
    "collider_size": [
     0.3707,
     0.2285,
@@ -720,10 +760,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 15814
   },
   "ph_Ottoman_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/Ottoman_01/Ottoman_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/Ottoman_01/Ottoman_01.usdc",
    "collider_size": [
     0.8846,
     0.6211,
@@ -754,10 +796,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4240
   },
   "ph_Rockingchair_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/Rockingchair_01/Rockingchair_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/Rockingchair_01/Rockingchair_01.usdc",
    "collider_size": [
     0.7081,
     0.8335,
@@ -788,10 +832,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 11866
   },
   "ph_SchoolChair_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/SchoolChair_01/SchoolChair_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/SchoolChair_01/SchoolChair_01.usdc",
    "collider_size": [
     0.5659,
     0.6753,
@@ -822,10 +868,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5072
   },
   "ph_SchoolDesk_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/SchoolDesk_01/SchoolDesk_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/SchoolDesk_01/SchoolDesk_01.usdc",
    "collider_size": [
     0.7118,
     0.546,
@@ -855,10 +903,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4162
   },
   "ph_Shelf_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/Shelf_01/Shelf_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/Shelf_01/Shelf_01.usdc",
    "collider_size": [
     1.0034,
     0.257,
@@ -889,10 +939,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 182
   },
   "ph_Sofa_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/Sofa_01/Sofa_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/Sofa_01/Sofa_01.usdc",
    "collider_size": [
     1.5715,
     0.658,
@@ -923,10 +975,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4101
   },
   "ph_Television_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/Television_01/Television_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/Television_01/Television_01.usdc",
    "collider_size": [
     0.6,
     0.4708,
@@ -958,10 +1012,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 1918
   },
   "ph_Ukulele_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/Ukulele_01/Ukulele_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/Ukulele_01/Ukulele_01.usdc",
    "collider_size": [
     0.1779,
     0.0508,
@@ -992,10 +1048,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8912
   },
   "ph_WetFloorSign_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/WetFloorSign_01/WetFloorSign_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/WetFloorSign_01/WetFloorSign_01.usdc",
    "collider_size": [
     0.3001,
     0.3585,
@@ -1027,10 +1085,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 228
   },
   "ph_WoodenChair_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/WoodenChair_01/WoodenChair_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/WoodenChair_01/WoodenChair_01.usdc",
    "collider_size": [
     0.6882,
     0.6585,
@@ -1061,10 +1121,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 19992
   },
   "ph_WoodenTable_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/WoodenTable_01/WoodenTable_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/WoodenTable_01/WoodenTable_01.usdc",
    "collider_size": [
     1.7996,
     0.6572,
@@ -1094,10 +1156,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 952
   },
   "ph_WoodenTable_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/WoodenTable_02/WoodenTable_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/WoodenTable_02/WoodenTable_02.usdc",
    "collider_size": [
     0.3007,
     0.3007,
@@ -1128,18 +1192,20 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 1514
   },
   "ph_WoodenTable_03": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/WoodenTable_03/WoodenTable_03_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/WoodenTable_03/WoodenTable_03.usdc",
    "collider_size": [
     1.3269,
-    0.5617,
+    0.5753,
     0.8301
    ],
    "render_size": [
     1.3269,
-    0.5617,
+    0.5753,
     0.8301
    ],
    "origin_offset": [
@@ -1162,10 +1228,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2298
   },
   "ph_adjustable_wrench": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/adjustable_wrench/adjustable_wrench_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/adjustable_wrench/adjustable_wrench.usdc",
    "collider_size": [
     0.0683,
     0.0306,
@@ -1198,19 +1266,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5390
   },
   "ph_alarm_clock_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/alarm_clock_01/alarm_clock_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/alarm_clock_01/alarm_clock_01.usdc",
    "collider_size": [
     0.1317,
-    0.0991,
-    0.2177
+    0.0667,
+    0.1742
    ],
    "render_size": [
     0.1317,
-    0.0991,
-    0.2177
+    0.0667,
+    0.1742
    ],
    "origin_offset": [
     0.0,
@@ -1234,10 +1304,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8985
   },
   "ph_all_purpose_cleaner": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/all_purpose_cleaner/all_purpose_cleaner_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/all_purpose_cleaner/all_purpose_cleaner.usdc",
    "collider_size": [
     0.1568,
     0.1174,
@@ -1269,10 +1341,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4624
   },
   "ph_american_football": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/american_football/american_football_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/american_football/american_football.usdc",
    "collider_size": [
     0.4533,
     0.2558,
@@ -1302,10 +1376,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4480
   },
   "ph_ammo_box": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/ammo_box/ammo_box_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/ammo_box/ammo_box.usdc",
    "collider_size": [
     0.0866,
     0.2579,
@@ -1337,10 +1413,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4382
   },
   "ph_antique_ceramic_vase_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/antique_ceramic_vase_01/antique_ceramic_vase_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/antique_ceramic_vase_01/antique_ceramic_vase_01.usdc",
    "collider_size": [
     0.255,
     0.255,
@@ -1372,10 +1450,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 9408
   },
   "ph_antique_estoc": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/antique_estoc/antique_estoc_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/antique_estoc/antique_estoc.usdc",
    "collider_size": [
     0.3715,
     0.1491,
@@ -1406,10 +1486,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8246
   },
   "ph_antique_katana_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/antique_katana_01/antique_katana_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/antique_katana_01/antique_katana_01.usdc",
    "collider_size": [
     0.0934,
     0.0934,
@@ -1439,10 +1521,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6670
   },
   "ph_bananas": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/bananas/bananas_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/bananas/bananas.usdc",
    "collider_size": [
     0.6,
     0.2441,
@@ -1474,10 +1558,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 46868
   },
   "ph_bar_chair_round_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/bar_chair_round_01/bar_chair_round_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/bar_chair_round_01/bar_chair_round_01.usdc",
    "collider_size": [
     0.4832,
     0.486,
@@ -1508,10 +1594,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 14373
   },
   "ph_barrel_03": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/barrel_03/barrel_03_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/barrel_03/barrel_03.usdc",
    "collider_size": [
     0.6339,
     0.6386,
@@ -1542,10 +1630,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 1473
   },
   "ph_barrel_stove": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/barrel_stove/barrel_stove_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/barrel_stove/barrel_stove.usdc",
    "collider_size": [
     0.5926,
     0.5926,
@@ -1577,19 +1667,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 9216
   },
   "ph_baseball_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/baseball_01/baseball_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/baseball_01/baseball_01.usdc",
    "collider_size": [
-    0.0756,
-    0.0756,
-    0.0756
+    0.0735,
+    0.0752,
+    0.0753
    ],
    "render_size": [
-    0.0756,
-    0.0756,
-    0.0756
+    0.0735,
+    0.0752,
+    0.0753
    ],
    "origin_offset": [
     0.0,
@@ -1610,10 +1702,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 10848
   },
   "ph_baseball_bat": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/baseball_bat/baseball_bat_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/baseball_bat/baseball_bat.usdc",
    "collider_size": [
     0.0635,
     0.0635,
@@ -1644,19 +1738,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2672
   },
   "ph_bench_vice_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/bench_vice_01/bench_vice_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/bench_vice_01/bench_vice_01.usdc",
    "collider_size": [
-    0.3787,
-    0.5668,
-    0.4723
+    0.2005,
+    0.3957,
+    0.2851
    ],
    "render_size": [
-    0.3787,
-    0.5668,
-    0.4723
+    0.2005,
+    0.3957,
+    0.2851
    ],
    "origin_offset": [
     0.0,
@@ -1681,10 +1777,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2864
   },
   "ph_binder_notebook": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/binder_notebook/binder_notebook_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/binder_notebook/binder_notebook.usdc",
    "collider_size": [
     0.584,
     0.2,
@@ -1716,19 +1814,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 18077
   },
   "ph_binoculars": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/binoculars/binoculars_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/binoculars/binoculars.usdc",
    "collider_size": [
     0.1669,
-    0.2881,
-    0.0766
+    0.2879,
+    0.0662
    ],
    "render_size": [
     0.1669,
-    0.2881,
-    0.0766
+    0.2879,
+    0.0662
    ],
    "origin_offset": [
     0.0,
@@ -1751,10 +1851,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 19248
   },
   "ph_bleach_bottle": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/bleach_bottle/bleach_bottle_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/bleach_bottle/bleach_bottle.usdc",
    "collider_size": [
     0.0884,
     0.0612,
@@ -1786,19 +1888,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4052
   },
   "ph_bolt_cutters_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/bolt_cutters_01/bolt_cutters_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/bolt_cutters_01/bolt_cutters_01.usdc",
    "collider_size": [
-    0.1829,
-    0.0882,
-    0.8366
+    0.151,
+    0.036,
+    0.8026
    ],
    "render_size": [
-    0.1829,
-    0.0882,
-    0.8366
+    0.151,
+    0.036,
+    0.8026
    ],
    "origin_offset": [
     0.0,
@@ -1824,10 +1928,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3410
   },
   "ph_book_encyclopedia_set_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/book_encyclopedia_set_01/book_encyclopedia_set_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/book_encyclopedia_set_01/book_encyclopedia_set_01.usdc",
    "collider_size": [
     0.5513,
     0.1631,
@@ -1859,10 +1965,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 67306
   },
   "ph_boombox": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/boombox/boombox_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/boombox/boombox.usdc",
    "collider_size": [
     0.7238,
     0.1865,
@@ -1894,10 +2002,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 10168
   },
   "ph_brass_blowtorch": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/brass_blowtorch/brass_blowtorch_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/brass_blowtorch/brass_blowtorch.usdc",
    "collider_size": [
     0.1294,
     0.2593,
@@ -1928,10 +2038,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 11750
   },
   "ph_brass_candleholders": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/brass_candleholders/brass_candleholders_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/brass_candleholders/brass_candleholders.usdc",
    "collider_size": [
     1.0529,
     0.3647,
@@ -1962,10 +2074,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 41936
   },
   "ph_brass_diya_lantern": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/brass_diya_lantern/brass_diya_lantern_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/brass_diya_lantern/brass_diya_lantern.usdc",
    "collider_size": [
     0.123,
     0.123,
@@ -1996,10 +2110,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 12742
   },
   "ph_brass_goblets": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/brass_goblets/brass_goblets_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/brass_goblets/brass_goblets.usdc",
    "collider_size": [
     0.4534,
     0.2976,
@@ -2032,10 +2148,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 9600
   },
   "ph_brass_pan_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/brass_pan_01/brass_pan_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/brass_pan_01/brass_pan_01.usdc",
    "collider_size": [
     0.1913,
     0.4497,
@@ -2068,10 +2186,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4340
   },
   "ph_brass_pot_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/brass_pot_01/brass_pot_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/brass_pot_01/brass_pot_01.usdc",
    "collider_size": [
     0.3019,
     0.3017,
@@ -2103,10 +2223,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3760
   },
   "ph_brass_pot_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/brass_pot_02/brass_pot_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/brass_pot_02/brass_pot_02.usdc",
    "collider_size": [
     0.3667,
     0.3023,
@@ -2139,10 +2261,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3344
   },
   "ph_brass_vase_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/brass_vase_01/brass_vase_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/brass_vase_01/brass_vase_01.usdc",
    "collider_size": [
     0.2273,
     0.2273,
@@ -2173,10 +2297,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 21440
   },
   "ph_brass_vase_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/brass_vase_02/brass_vase_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/brass_vase_02/brass_vase_02.usdc",
    "collider_size": [
     0.2102,
     0.2102,
@@ -2207,10 +2333,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6890
   },
   "ph_brass_vase_03": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/brass_vase_03/brass_vase_03_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/brass_vase_03/brass_vase_03.usdc",
    "collider_size": [
     0.0825,
     0.0825,
@@ -2243,10 +2371,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2616
   },
   "ph_brass_vase_04": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/brass_vase_04/brass_vase_04_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/brass_vase_04/brass_vase_04.usdc",
    "collider_size": [
     0.082,
     0.061,
@@ -2279,10 +2409,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2760
   },
   "ph_bronze_ray_statue": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/bronze_ray_statue/bronze_ray_statue_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/bronze_ray_statue/bronze_ray_statue.usdc",
    "collider_size": [
     0.7075,
     0.5355,
@@ -2313,10 +2445,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 1844
   },
   "ph_bronze_shark_statue": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/bronze_shark_statue/bronze_shark_statue_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/bronze_shark_statue/bronze_shark_statue.usdc",
    "collider_size": [
     0.352,
     0.7598,
@@ -2347,10 +2481,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 7334
   },
   "ph_bronze_whale_statue": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/bronze_whale_statue/bronze_whale_statue_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/bronze_whale_statue/bronze_whale_statue.usdc",
    "collider_size": [
     0.932,
     1.3659,
@@ -2381,10 +2517,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3816
   },
   "ph_bull_head": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/bull_head/bull_head_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/bull_head/bull_head.usdc",
    "collider_size": [
     0.3064,
     0.2807,
@@ -2414,10 +2552,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 17148
   },
   "ph_bunsen_burner": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/bunsen_burner/bunsen_burner_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/bunsen_burner/bunsen_burner.usdc",
    "collider_size": [
     0.1389,
     0.1389,
@@ -2450,10 +2590,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8434
   },
   "ph_caged_hanging_light": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/caged_hanging_light/caged_hanging_light_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/caged_hanging_light/caged_hanging_light.usdc",
    "collider_size": [
     1.1618,
     0.3149,
@@ -2485,10 +2627,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 22893
   },
   "ph_can_rusted": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/can_rusted/can_rusted_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/can_rusted/can_rusted.usdc",
    "collider_size": [
     0.1245,
     0.1247,
@@ -2519,10 +2663,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3520
   },
   "ph_cardboard_box_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/cardboard_box_01/cardboard_box_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/cardboard_box_01/cardboard_box_01.usdc",
    "collider_size": [
     0.387,
     0.5159,
@@ -2554,10 +2700,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 16952
   },
   "ph_carrot_cake": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/carrot_cake/carrot_cake_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/carrot_cake/carrot_cake.usdc",
    "collider_size": [
     0.2254,
     0.2254,
@@ -2589,10 +2737,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 13790
   },
   "ph_carved_wooden_elephant": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/carved_wooden_elephant/carved_wooden_elephant_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/carved_wooden_elephant/carved_wooden_elephant.usdc",
    "collider_size": [
     0.1092,
     0.0576,
@@ -2623,10 +2773,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2752
   },
   "ph_carved_wooden_plate": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/carved_wooden_plate/carved_wooden_plate_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/carved_wooden_plate/carved_wooden_plate.usdc",
    "collider_size": [
     0.2718,
     0.2688,
@@ -2658,10 +2810,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2112
   },
   "ph_cassette_player": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/cassette_player/cassette_player_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/cassette_player/cassette_player.usdc",
    "collider_size": [
     0.1295,
     0.0489,
@@ -2692,10 +2846,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4830
   },
   "ph_ceiling_fan": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/ceiling_fan/ceiling_fan_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/ceiling_fan/ceiling_fan.usdc",
    "collider_size": [
     1.4629,
     1.4629,
@@ -2726,10 +2882,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 16356
   },
   "ph_cement_bag": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/cement_bag/cement_bag_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/cement_bag/cement_bag.usdc",
    "collider_size": [
     0.4625,
     0.6996,
@@ -2760,10 +2918,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 844
   },
   "ph_ceramic_pot": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/ceramic_pot/ceramic_pot_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/ceramic_pot/ceramic_pot.usdc",
    "collider_size": [
     0.6563,
     0.5018,
@@ -2797,19 +2957,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3592
   },
   "ph_ceramic_vase_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/ceramic_vase_01/ceramic_vase_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/ceramic_vase_01/ceramic_vase_01.usdc",
    "collider_size": [
-    0.2049,
-    0.2064,
-    0.4014
+    0.2036,
+    0.2036,
+    0.4003
    ],
    "render_size": [
-    0.2049,
-    0.2064,
-    0.4014
+    0.2036,
+    0.2036,
+    0.4003
    ],
    "origin_offset": [
     0.0,
@@ -2832,19 +2994,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 10296
   },
   "ph_ceramic_vase_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/ceramic_vase_02/ceramic_vase_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/ceramic_vase_02/ceramic_vase_02.usdc",
    "collider_size": [
-    0.2198,
-    0.2215,
-    0.3093
+    0.2184,
+    0.2184,
+    0.3092
    ],
    "render_size": [
-    0.2198,
-    0.2215,
-    0.3093
+    0.2184,
+    0.2184,
+    0.3092
    ],
    "origin_offset": [
     0.0,
@@ -2867,10 +3031,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 11128
   },
   "ph_ceramic_vase_03": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/ceramic_vase_03/ceramic_vase_03_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/ceramic_vase_03/ceramic_vase_03.usdc",
    "collider_size": [
     0.1122,
     0.1122,
@@ -2902,10 +3068,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 11136
   },
   "ph_ceramic_vase_04": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/ceramic_vase_04/ceramic_vase_04_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/ceramic_vase_04/ceramic_vase_04.usdc",
    "collider_size": [
     0.1811,
     0.1811,
@@ -2937,10 +3105,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 9000
   },
   "ph_chemistry_set": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/chemistry_set/chemistry_set_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/chemistry_set/chemistry_set.usdc",
    "collider_size": [
     1.0784,
     0.3539,
@@ -2973,10 +3143,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 41958
   },
   "ph_chess_set": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/chess_set/chess_set_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/chess_set/chess_set.usdc",
    "collider_size": [
     0.5532,
     0.5532,
@@ -3007,10 +3179,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 76920
   },
   "ph_chinese_armchair": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/chinese_armchair/chinese_armchair_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/chinese_armchair/chinese_armchair.usdc",
    "collider_size": [
     0.8483,
     0.7887,
@@ -3041,10 +3215,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2675
   },
   "ph_chinese_chandelier": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/chinese_chandelier/chinese_chandelier_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/chinese_chandelier/chinese_chandelier.usdc",
    "collider_size": [
     0.8784,
     0.8787,
@@ -3075,10 +3251,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 7828
   },
   "ph_chinese_console_table": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/chinese_console_table/chinese_console_table_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/chinese_console_table/chinese_console_table.usdc",
    "collider_size": [
     1.7196,
     0.3388,
@@ -3109,10 +3287,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 13648
   },
   "ph_chinese_screen_panels": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/chinese_screen_panels/chinese_screen_panels_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/chinese_screen_panels/chinese_screen_panels.usdc",
    "collider_size": [
     1.294,
     0.3769,
@@ -3142,10 +3322,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 784
   },
   "ph_chinese_sofa": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/chinese_sofa/chinese_sofa_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/chinese_sofa/chinese_sofa.usdc",
    "collider_size": [
     2.2854,
     0.9689,
@@ -3176,10 +3358,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 704
   },
   "ph_chinese_stool": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/chinese_stool/chinese_stool_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/chinese_stool/chinese_stool.usdc",
    "collider_size": [
     0.599,
     0.5064,
@@ -3210,10 +3394,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 1090
   },
   "ph_chinese_tea_table": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/chinese_tea_table/chinese_tea_table_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/chinese_tea_table/chinese_tea_table.usdc",
    "collider_size": [
     0.8413,
     0.8356,
@@ -3244,10 +3430,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2508
   },
   "ph_cigarette_case": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/cigarette_case/cigarette_case_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/cigarette_case/cigarette_case.usdc",
    "collider_size": [
     0.3233,
     0.1007,
@@ -3278,19 +3466,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 16912
   },
   "ph_cigarette_pack": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/cigarette_pack/cigarette_pack_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/cigarette_pack/cigarette_pack.usdc",
    "collider_size": [
-    0.1866,
-    0.1866,
-    0.1866
+    0.0556,
+    0.0295,
+    0.1027
    ],
    "render_size": [
-    0.1866,
-    0.1866,
-    0.1866
+    0.0556,
+    0.0295,
+    0.1027
    ],
    "origin_offset": [
     0.0,
@@ -3313,10 +3503,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 11956
   },
   "ph_circuit_board": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/circuit_board/circuit_board_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/circuit_board/circuit_board.usdc",
    "collider_size": [
     0.4035,
     0.3974,
@@ -3347,10 +3539,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 14430
   },
   "ph_classic_laptop": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/classic_laptop/classic_laptop_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/classic_laptop/classic_laptop.usdc",
    "collider_size": [
     0.6519,
     0.4859,
@@ -3382,10 +3576,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 14450
   },
   "ph_cleaner_tin_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/cleaner_tin_01/cleaner_tin_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/cleaner_tin_01/cleaner_tin_01.usdc",
    "collider_size": [
     0.0876,
     0.0875,
@@ -3418,10 +3614,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3560
   },
   "ph_clipboard": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/clipboard/clipboard_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/clipboard/clipboard.usdc",
    "collider_size": [
     0.2286,
     0.3366,
@@ -3453,10 +3651,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6176
   },
   "ph_coffee_table_round_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/coffee_table_round_01/coffee_table_round_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/coffee_table_round_01/coffee_table_round_01.usdc",
    "collider_size": [
     1.3013,
     1.3013,
@@ -3487,10 +3687,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4044
   },
   "ph_combination_wrench": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/combination_wrench/combination_wrench_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/combination_wrench/combination_wrench.usdc",
    "collider_size": [
     0.0566,
     0.337,
@@ -3522,10 +3724,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 1986
   },
   "ph_compost_bag_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/compost_bag_02/compost_bag_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/compost_bag_02/compost_bag_02.usdc",
    "collider_size": [
     0.5393,
     0.4705,
@@ -3557,19 +3761,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 12096
   },
   "ph_compost_bags": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/compost_bags/compost_bags_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/compost_bags/compost_bags.usdc",
    "collider_size": [
-    1.8473,
-    0.9464,
-    0.768
+    1.8281,
+    0.9259,
+    0.7073
    ],
    "render_size": [
-    1.8473,
-    0.9464,
-    0.768
+    1.8281,
+    0.9259,
+    0.7073
    ],
    "origin_offset": [
     0.0,
@@ -3591,10 +3797,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 18708
   },
   "ph_concrete_cat_statue": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/concrete_cat_statue/concrete_cat_statue_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/concrete_cat_statue/concrete_cat_statue.usdc",
    "collider_size": [
     0.153,
     0.25,
@@ -3625,10 +3833,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 11950
   },
   "ph_croissant": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/croissant/croissant_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/croissant/croissant.usdc",
    "collider_size": [
     0.2,
     0.0755,
@@ -3660,10 +3870,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 1990
   },
   "ph_cross_pein_hammer": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/cross_pein_hammer/cross_pein_hammer_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/cross_pein_hammer/cross_pein_hammer.usdc",
    "collider_size": [
     0.0991,
     0.0243,
@@ -3695,10 +3907,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2124
   },
   "ph_crowbar_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/crowbar_01/crowbar_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/crowbar_01/crowbar_01.usdc",
    "collider_size": [
     0.0404,
     0.1276,
@@ -3731,10 +3945,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2300
   },
   "ph_dartboard": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/dartboard/dartboard_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/dartboard/dartboard.usdc",
    "collider_size": [
     0.4507,
     0.0398,
@@ -3767,19 +3983,21 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6800
   },
   "ph_desk_lamp_arm_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/desk_lamp_arm_01/desk_lamp_arm_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/desk_lamp_arm_01/desk_lamp_arm_01.usdc",
    "collider_size": [
-    0.9562,
-    0.7343,
-    1.3367
+    0.2017,
+    0.6139,
+    0.8926
    ],
    "render_size": [
-    0.9562,
-    0.7343,
-    1.3367
+    0.2017,
+    0.6139,
+    0.8926
    ],
    "origin_offset": [
     0.0,
@@ -3803,18 +4021,20 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 24102
   },
   "ph_digital_wrist_watch": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/digital_wrist_watch/digital_wrist_watch_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/digital_wrist_watch/digital_wrist_watch.usdc",
    "collider_size": [
     0.0365,
-    0.2141,
+    0.2172,
     0.0083
    ],
    "render_size": [
     0.0365,
-    0.2141,
+    0.2172,
     0.0083
    ],
    "origin_offset": [
@@ -3838,10 +4058,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 10390
   },
   "ph_dining_chair_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/dining_chair_02/dining_chair_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/dining_chair_02/dining_chair_02.usdc",
    "collider_size": [
     0.4336,
     0.5764,
@@ -3872,10 +4094,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 22013
   },
   "ph_dining_table": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/dining_table/dining_table_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/dining_table/dining_table.usdc",
    "collider_size": [
     2.2559,
     1.3902,
@@ -3907,10 +4131,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 1048
   },
   "ph_dirty_football": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/dirty_football/dirty_football_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/dirty_football/dirty_football.usdc",
    "collider_size": [
     0.2214,
     0.22,
@@ -3940,10 +4166,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 19998
   },
   "ph_drain_cleaner": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/drain_cleaner/drain_cleaner_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/drain_cleaner/drain_cleaner.usdc",
    "collider_size": [
     0.1654,
     0.0563,
@@ -3975,10 +4203,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4338
   },
   "ph_drawer_cabinet": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/drawer_cabinet/drawer_cabinet_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/drawer_cabinet/drawer_cabinet.usdc",
    "collider_size": [
     1.1411,
     0.4881,
@@ -4008,19 +4238,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 26406
   },
   "ph_drill_press_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/drill_press_01/drill_press_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/drill_press_01/drill_press_01.usdc",
    "collider_size": [
-    0.3659,
+    0.3543,
     0.5988,
-    0.9016
+    0.9011
    ],
    "render_size": [
-    0.3659,
+    0.3543,
     0.5988,
-    0.9016
+    0.9011
    ],
    "origin_offset": [
     0.0,
@@ -4045,10 +4277,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 58526
   },
   "ph_dustpan": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/dustpan/dustpan_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/dustpan/dustpan.usdc",
    "collider_size": [
     0.3321,
     0.368,
@@ -4080,19 +4314,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4332
   },
   "ph_electric_stove": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/electric_stove/electric_stove_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/electric_stove/electric_stove.usdc",
    "collider_size": [
-    0.8918,
-    0.9047,
-    1.3885
+    0.5026,
+    0.6476,
+    0.8587
    ],
    "render_size": [
-    0.8918,
-    0.9047,
-    1.3885
+    0.5026,
+    0.6476,
+    0.8587
    ],
    "origin_offset": [
     0.0,
@@ -4116,10 +4352,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 13914
   },
   "ph_exterior_aircon_unit": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/exterior_aircon_unit/exterior_aircon_unit_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/exterior_aircon_unit/exterior_aircon_unit.usdc",
    "collider_size": [
     1.8,
     0.3742,
@@ -4152,10 +4390,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 18986
   },
   "ph_fancy_picture_frame_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/fancy_picture_frame_01/fancy_picture_frame_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/fancy_picture_frame_01/fancy_picture_frame_01.usdc",
    "collider_size": [
     0.603,
     0.02,
@@ -4187,10 +4427,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 938
   },
   "ph_fancy_picture_frame_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/fancy_picture_frame_02/fancy_picture_frame_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/fancy_picture_frame_02/fancy_picture_frame_02.usdc",
    "collider_size": [
     0.6606,
     0.089,
@@ -4222,10 +4464,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 35102
   },
   "ph_fern_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/fern_02/fern_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/fern_02/fern_02.usdc",
    "collider_size": [
     1.9725,
     1.724,
@@ -4259,10 +4503,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6232
   },
   "ph_fire_alarm": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/fire_alarm/fire_alarm_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/fire_alarm/fire_alarm.usdc",
    "collider_size": [
     0.0994,
     0.0264,
@@ -4295,19 +4541,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2705
   },
   "ph_fish_knife": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/fish_knife/fish_knife_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/fish_knife/fish_knife.usdc",
    "collider_size": [
     0.029,
     0.0162,
-    0.2159
+    0.2157
    ],
    "render_size": [
     0.029,
     0.0162,
-    0.2159
+    0.2157
    ],
    "origin_offset": [
     0.0,
@@ -4329,10 +4577,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2736
   },
   "ph_fishermans_hat": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/fishermans_hat/fishermans_hat_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/fishermans_hat/fishermans_hat.usdc",
    "collider_size": [
     0.3236,
     0.35,
@@ -4363,10 +4613,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 10304
   },
   "ph_flathead_screwdriver": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/flathead_screwdriver/flathead_screwdriver_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/flathead_screwdriver/flathead_screwdriver.usdc",
    "collider_size": [
     0.03,
     0.03,
@@ -4399,10 +4651,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2300
   },
   "ph_flower_stinkkruid": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/flower_stinkkruid/flower_stinkkruid_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/flower_stinkkruid/flower_stinkkruid.usdc",
    "collider_size": [
     1.7054,
     0.3005,
@@ -4436,10 +4690,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 80716
   },
   "ph_folding_wooden_stool": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/folding_wooden_stool/folding_wooden_stool_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/folding_wooden_stool/folding_wooden_stool.usdc",
    "collider_size": [
     0.5278,
     0.5471,
@@ -4470,10 +4726,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6324
   },
   "ph_food_apple_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/food_apple_01/food_apple_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/food_apple_01/food_apple_01.usdc",
    "collider_size": [
     0.0976,
     0.0959,
@@ -4504,10 +4762,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 7012
   },
   "ph_food_avocado_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/food_avocado_01/food_avocado_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/food_avocado_01/food_avocado_01.usdc",
    "collider_size": [
     0.0952,
     0.0946,
@@ -4538,10 +4798,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 7743
   },
   "ph_food_ginger_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/food_ginger_01/food_ginger_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/food_ginger_01/food_ginger_01.usdc",
    "collider_size": [
     0.2399,
     0.1474,
@@ -4572,10 +4834,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 7205
   },
   "ph_food_kiwi_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/food_kiwi_01/food_kiwi_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/food_kiwi_01/food_kiwi_01.usdc",
    "collider_size": [
     0.0695,
     0.0686,
@@ -4606,10 +4870,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 7748
   },
   "ph_food_lime_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/food_lime_01/food_lime_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/food_lime_01/food_lime_01.usdc",
    "collider_size": [
     0.0601,
     0.0613,
@@ -4640,10 +4906,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8100
   },
   "ph_food_lychee_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/food_lychee_01/food_lychee_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/food_lychee_01/food_lychee_01.usdc",
    "collider_size": [
     0.0409,
     0.042,
@@ -4674,19 +4942,21 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6783
   },
   "ph_food_pears_asian_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/food_pears_asian_01/food_pears_asian_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/food_pears_asian_01/food_pears_asian_01.usdc",
    "collider_size": [
-    0.1558,
-    0.1779,
-    0.1096
+    0.1261,
+    0.1669,
+    0.0712
    ],
    "render_size": [
-    0.1558,
-    0.1779,
-    0.1096
+    0.1261,
+    0.1669,
+    0.0712
    ],
    "origin_offset": [
     0.0,
@@ -4708,10 +4978,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 12572
   },
   "ph_food_pomegranate_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/food_pomegranate_01/food_pomegranate_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/food_pomegranate_01/food_pomegranate_01.usdc",
    "collider_size": [
     0.1143,
     0.1154,
@@ -4742,10 +5014,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8142
   },
   "ph_football": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/football/football_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/football/football.usdc",
    "collider_size": [
     0.5089,
     0.2222,
@@ -4776,10 +5050,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4296
   },
   "ph_gallinera_chair": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/gallinera_chair/gallinera_chair_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/gallinera_chair/gallinera_chair.usdc",
    "collider_size": [
     0.5808,
     0.6039,
@@ -4810,10 +5086,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 11560
   },
   "ph_gallinera_table": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/gallinera_table/gallinera_table_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/gallinera_table/gallinera_table.usdc",
    "collider_size": [
     0.8301,
     0.5183,
@@ -4844,10 +5122,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5528
   },
   "ph_gamepad": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/gamepad/gamepad_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/gamepad/gamepad.usdc",
    "collider_size": [
     0.4041,
     0.435,
@@ -4877,10 +5157,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 9546
   },
   "ph_gaming_console": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/gaming_console/gaming_console_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/gaming_console/gaming_console.usdc",
    "collider_size": [
     0.325,
     0.3185,
@@ -4911,10 +5193,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 31710
   },
   "ph_garden_gloves_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/garden_gloves_01/garden_gloves_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/garden_gloves_01/garden_gloves_01.usdc",
    "collider_size": [
     0.2266,
     0.299,
@@ -4945,10 +5229,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6822
   },
   "ph_garden_gnome": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/garden_gnome/garden_gnome_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/garden_gnome/garden_gnome.usdc",
    "collider_size": [
     0.2579,
     0.2097,
@@ -4979,10 +5265,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 28858
   },
   "ph_garden_hose_wall_mounted_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/garden_hose_wall_mounted_01/garden_hose_wall_mounted_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/garden_hose_wall_mounted_01/garden_hose_wall_mounted_01.usdc",
    "collider_size": [
     0.4667,
     0.2503,
@@ -5014,19 +5302,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 11684
   },
   "ph_garden_sprinkler_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/garden_sprinkler_01/garden_sprinkler_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/garden_sprinkler_01/garden_sprinkler_01.usdc",
    "collider_size": [
-    0.3596,
+    0.3508,
     0.2491,
-    0.2156
+    0.203
    ],
    "render_size": [
-    0.3596,
+    0.3508,
     0.2491,
-    0.2156
+    0.203
    ],
    "origin_offset": [
     0.0,
@@ -5049,10 +5339,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8192
   },
   "ph_gothic_coffee_table": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/gothic_coffee_table/gothic_coffee_table_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/gothic_coffee_table/gothic_coffee_table.usdc",
    "collider_size": [
     1.4431,
     1.4431,
@@ -5083,10 +5375,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 23836
   },
   "ph_gothic_statue": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/gothic_statue/gothic_statue_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/gothic_statue/gothic_statue.usdc",
    "collider_size": [
     1.4775,
     1.5638,
@@ -5117,10 +5411,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 27739
   },
   "ph_hamburger_buns": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/hamburger_buns/hamburger_buns_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/hamburger_buns/hamburger_buns.usdc",
    "collider_size": [
     0.3972,
     0.1138,
@@ -5152,10 +5448,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 11588
   },
   "ph_hand_plane_no4": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/hand_plane_no4/hand_plane_no4_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/hand_plane_no4/hand_plane_no4.usdc",
    "collider_size": [
     0.3308,
     0.0843,
@@ -5186,10 +5484,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8220
   },
   "ph_hand_truck": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/hand_truck/hand_truck_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/hand_truck/hand_truck.usdc",
    "collider_size": [
     0.5933,
     0.6925,
@@ -5221,10 +5521,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 13220
   },
   "ph_handsaw_wood": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/handsaw_wood/handsaw_wood_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/handsaw_wood/handsaw_wood.usdc",
    "collider_size": [
     0.0408,
     0.633,
@@ -5257,10 +5559,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2548
   },
   "ph_hanging_industrial_lamp": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/hanging_industrial_lamp/hanging_industrial_lamp_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/hanging_industrial_lamp/hanging_industrial_lamp.usdc",
    "collider_size": [
     0.5496,
     0.5496,
@@ -5290,10 +5594,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 9530
   },
   "ph_hanging_picture_frame_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/hanging_picture_frame_01/hanging_picture_frame_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/hanging_picture_frame_01/hanging_picture_frame_01.usdc",
    "collider_size": [
     0.594,
     0.0157,
@@ -5324,10 +5630,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2586
   },
   "ph_hanging_picture_frame_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/hanging_picture_frame_02/hanging_picture_frame_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/hanging_picture_frame_02/hanging_picture_frame_02.usdc",
    "collider_size": [
     0.7518,
     0.0331,
@@ -5358,10 +5666,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3678
   },
   "ph_hanging_picture_frame_03": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/hanging_picture_frame_03/hanging_picture_frame_03_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/hanging_picture_frame_03/hanging_picture_frame_03.usdc",
    "collider_size": [
     0.385,
     0.0318,
@@ -5392,10 +5702,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 24348
   },
   "ph_hatchet": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/hatchet/hatchet_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/hatchet/hatchet.usdc",
    "collider_size": [
     0.026,
     0.1043,
@@ -5426,10 +5738,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5250
   },
   "ph_horse_head": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/horse_head/horse_head_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/horse_head/horse_head.usdc",
    "collider_size": [
     0.2149,
     0.3341,
@@ -5459,19 +5773,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 12068
   },
   "ph_horse_statue_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/horse_statue_01/horse_statue_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/horse_statue_01/horse_statue_01.usdc",
    "collider_size": [
-    0.44,
-    0.44,
-    0.44
+    0.163,
+    0.1078,
+    0.22
    ],
    "render_size": [
-    0.44,
-    0.44,
-    0.44
+    0.163,
+    0.1078,
+    0.22
    ],
    "origin_offset": [
     0.0,
@@ -5493,10 +5809,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 22388
   },
   "ph_industrial_caged_sconce": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/industrial_caged_sconce/industrial_caged_sconce_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/industrial_caged_sconce/industrial_caged_sconce.usdc",
    "collider_size": [
     1.2102,
     0.3894,
@@ -5528,10 +5846,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 26576
   },
   "ph_industrial_coffee_table": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/industrial_coffee_table/industrial_coffee_table_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/industrial_coffee_table/industrial_coffee_table.usdc",
    "collider_size": [
     0.7783,
     0.7579,
@@ -5562,10 +5882,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 41300
   },
   "ph_industrial_microscope": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/industrial_microscope/industrial_microscope_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/industrial_microscope/industrial_microscope.usdc",
    "collider_size": [
     0.2145,
     0.4981,
@@ -5598,19 +5920,21 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 16598
   },
   "ph_industrial_pastic_container": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/industrial_pastic_container/industrial_pastic_container_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/industrial_pastic_container/industrial_pastic_container.usdc",
    "collider_size": [
-    0.476,
+    0.4572,
     0.6315,
-    0.4231
+    0.4188
    ],
    "render_size": [
-    0.476,
+    0.4572,
     0.6315,
-    0.4231
+    0.4188
    ],
    "origin_offset": [
     0.0,
@@ -5634,10 +5958,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 7118
   },
   "ph_industrial_pipe_lamp": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/industrial_pipe_lamp/industrial_pipe_lamp_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/industrial_pipe_lamp/industrial_pipe_lamp.usdc",
    "collider_size": [
     0.183,
     0.2621,
@@ -5669,10 +5995,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8626
   },
   "ph_industrial_storage_cart": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/industrial_storage_cart/industrial_storage_cart_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/industrial_storage_cart/industrial_storage_cart.usdc",
    "collider_size": [
     1.6033,
     1.1027,
@@ -5705,10 +6033,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 18902
   },
   "ph_industrial_wall_lamp": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/industrial_wall_lamp/industrial_wall_lamp_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/industrial_wall_lamp/industrial_wall_lamp.usdc",
    "collider_size": [
     0.2735,
     0.1404,
@@ -5738,10 +6068,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4446
   },
   "ph_industrial_wall_sconce": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/industrial_wall_sconce/industrial_wall_sconce_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/industrial_wall_sconce/industrial_wall_sconce.usdc",
    "collider_size": [
     0.1503,
     0.2516,
@@ -5772,10 +6104,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 9826
   },
   "ph_jug_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/jug_01/jug_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/jug_01/jug_01.usdc",
    "collider_size": [
     0.2753,
     0.1675,
@@ -5808,10 +6142,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5770
   },
   "ph_katana_stand_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/katana_stand_01/katana_stand_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/katana_stand_01/katana_stand_01.usdc",
    "collider_size": [
     0.2958,
     0.0535,
@@ -5842,10 +6178,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3780
   },
   "ph_kite_shield": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/kite_shield/kite_shield_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/kite_shield/kite_shield.usdc",
    "collider_size": [
     0.5432,
     0.1347,
@@ -5876,10 +6214,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 10306
   },
   "ph_korean_fire_extinguisher_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/korean_fire_extinguisher_01/korean_fire_extinguisher_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/korean_fire_extinguisher_01/korean_fire_extinguisher_01.usdc",
    "collider_size": [
     0.28,
     0.3674,
@@ -5910,10 +6250,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 9913
   },
   "ph_korean_public_payphone_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/korean_public_payphone_01/korean_public_payphone_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/korean_public_payphone_01/korean_public_payphone_01.usdc",
    "collider_size": [
     0.4006,
     0.3012,
@@ -5943,10 +6285,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 48132
   },
   "ph_ladder_sectioned_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/ladder_sectioned_01/ladder_sectioned_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/ladder_sectioned_01/ladder_sectioned_01.usdc",
    "collider_size": [
     0.6615,
     0.1776,
@@ -5978,10 +6322,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 29140
   },
   "ph_lambis_shell": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/lambis_shell/lambis_shell_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/lambis_shell/lambis_shell.usdc",
    "collider_size": [
     0.1395,
     0.0745,
@@ -6012,10 +6358,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 12498
   },
   "ph_lantern_chandelier_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/lantern_chandelier_01/lantern_chandelier_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/lantern_chandelier_01/lantern_chandelier_01.usdc",
    "collider_size": [
     0.5792,
     0.5746,
@@ -6045,10 +6393,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5971
   },
   "ph_leather_cleaner_can": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/leather_cleaner_can/leather_cleaner_can_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/leather_cleaner_can/leather_cleaner_can.usdc",
    "collider_size": [
     0.0704,
     0.0704,
@@ -6080,10 +6430,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2296
   },
   "ph_leipoldtia_schultzei": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/leipoldtia_schultzei/leipoldtia_schultzei_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/leipoldtia_schultzei/leipoldtia_schultzei.usdc",
    "collider_size": [
     2.3118,
     0.8098,
@@ -6114,10 +6466,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 385504
   },
   "ph_lemon": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/lemon/lemon_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/lemon/lemon.usdc",
    "collider_size": [
     0.0687,
     0.0683,
@@ -6148,10 +6502,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4012
   },
   "ph_life_jacket": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/life_jacket/life_jacket_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/life_jacket/life_jacket.usdc",
    "collider_size": [
     0.6956,
     0.1842,
@@ -6182,10 +6538,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8968
   },
   "ph_lightbulb_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/lightbulb_01/lightbulb_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/lightbulb_01/lightbulb_01.usdc",
    "collider_size": [
     0.06,
     0.06,
@@ -6216,10 +6574,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4372
   },
   "ph_lightbulb_led": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/lightbulb_led/lightbulb_led_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/lightbulb_led/lightbulb_led.usdc",
    "collider_size": [
     0.0614,
     0.0614,
@@ -6251,10 +6611,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6420
   },
   "ph_lion_head": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/lion_head/lion_head_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/lion_head/lion_head.usdc",
    "collider_size": [
     0.3208,
     0.2066,
@@ -6284,10 +6646,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 47214
   },
   "ph_long_life_food": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/long_life_food/long_life_food_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/long_life_food/long_life_food.usdc",
    "collider_size": [
     0.5238,
     0.1136,
@@ -6320,10 +6684,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4712
   },
   "ph_lubricant_spray": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/lubricant_spray/lubricant_spray_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/lubricant_spray/lubricant_spray.usdc",
    "collider_size": [
     0.067,
     0.0646,
@@ -6357,10 +6723,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5476
   },
   "ph_machete": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/machete/machete_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/machete/machete.usdc",
    "collider_size": [
     0.0444,
     0.0611,
@@ -6391,10 +6759,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3032
   },
   "ph_magnifying_glass_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/magnifying_glass_01/magnifying_glass_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/magnifying_glass_01/magnifying_glass_01.usdc",
    "collider_size": [
     0.1321,
     0.0267,
@@ -6425,19 +6795,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 7240
   },
   "ph_mantel_clock_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/mantel_clock_01/mantel_clock_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/mantel_clock_01/mantel_clock_01.usdc",
    "collider_size": [
-    0.3633,
-    0.4075,
-    0.5046
+    0.3423,
+    0.1262,
+    0.1605
    ],
    "render_size": [
-    0.3633,
-    0.4075,
-    0.5046
+    0.3423,
+    0.1262,
+    0.1605
    ],
    "origin_offset": [
     0.0,
@@ -6461,10 +6833,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 25721
   },
   "ph_marble_bust_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/marble_bust_01/marble_bust_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/marble_bust_01/marble_bust_01.usdc",
    "collider_size": [
     0.2717,
     0.2997,
@@ -6494,10 +6868,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 17456
   },
   "ph_measuring_tape_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/measuring_tape_01/measuring_tape_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/measuring_tape_01/measuring_tape_01.usdc",
    "collider_size": [
     0.0406,
     0.1694,
@@ -6530,10 +6906,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2868
   },
   "ph_medical_box": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/medical_box/medical_box_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/medical_box/medical_box.usdc",
    "collider_size": [
     0.5255,
     0.3502,
@@ -6565,10 +6943,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3718
   },
   "ph_medical_tape": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/medical_tape/medical_tape_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/medical_tape/medical_tape.usdc",
    "collider_size": [
     0.0453,
     0.0452,
@@ -6601,19 +6981,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 1408
   },
   "ph_metal_detector": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/metal_detector/metal_detector_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/metal_detector/metal_detector.usdc",
    "collider_size": [
-    0.2891,
-    1.1899,
-    1.1219
+    0.2379,
+    0.8611,
+    0.9617
    ],
    "render_size": [
-    0.2891,
-    1.1899,
-    1.1219
+    0.2379,
+    0.8611,
+    0.9617
    ],
    "origin_offset": [
     0.0,
@@ -6635,10 +7017,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 15518
   },
   "ph_metal_jerrycan": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/metal_jerrycan/metal_jerrycan_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/metal_jerrycan/metal_jerrycan.usdc",
    "collider_size": [
     0.3503,
     0.1717,
@@ -6670,19 +7054,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 20022
   },
   "ph_metal_jerrycan_green": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/metal_jerrycan_green/metal_jerrycan_green_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/metal_jerrycan_green/metal_jerrycan_green.usdc",
    "collider_size": [
-    0.3739,
+    0.3604,
     0.1709,
-    0.5009
+    0.4999
    ],
    "render_size": [
-    0.3739,
+    0.3604,
     0.1709,
-    0.5009
+    0.4999
    ],
    "origin_offset": [
     0.0,
@@ -6705,10 +7091,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 9636
   },
   "ph_metal_jug": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/metal_jug/metal_jug_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/metal_jug/metal_jug.usdc",
    "collider_size": [
     0.1968,
     0.1955,
@@ -6740,10 +7128,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6040
   },
   "ph_metal_office_desk": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/metal_office_desk/metal_office_desk_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/metal_office_desk/metal_office_desk.usdc",
    "collider_size": [
     2.0,
     0.9472,
@@ -6776,10 +7166,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6898
   },
   "ph_metal_stool_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/metal_stool_01/metal_stool_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/metal_stool_01/metal_stool_01.usdc",
    "collider_size": [
     0.352,
     0.3546,
@@ -6811,10 +7203,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8334
   },
   "ph_metal_stool_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/metal_stool_02/metal_stool_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/metal_stool_02/metal_stool_02.usdc",
    "collider_size": [
     0.4481,
     0.4731,
@@ -6846,10 +7240,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6532
   },
   "ph_metal_stool_03": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/metal_stool_03/metal_stool_03_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/metal_stool_03/metal_stool_03.usdc",
    "collider_size": [
     0.4606,
     0.4706,
@@ -6881,19 +7277,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6576
   },
   "ph_metal_tool_chest": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/metal_tool_chest/metal_tool_chest_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/metal_tool_chest/metal_tool_chest.usdc",
    "collider_size": [
-    1.0245,
-    0.6793,
-    0.8285
+    0.6854,
+    0.4072,
+    0.6518
    ],
    "render_size": [
-    1.0245,
-    0.6793,
-    0.8285
+    0.6854,
+    0.4072,
+    0.6518
    ],
    "origin_offset": [
     0.0,
@@ -6920,19 +7318,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 13360
   },
   "ph_metal_toolbox": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/metal_toolbox/metal_toolbox_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/metal_toolbox/metal_toolbox.usdc",
    "collider_size": [
     0.4,
-    0.2923,
-    0.3471
+    0.2705,
+    0.3047
    ],
    "render_size": [
     0.4,
-    0.2923,
-    0.3471
+    0.2705,
+    0.3047
    ],
    "origin_offset": [
     0.0,
@@ -6956,17 +7356,19 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 14228
   },
   "ph_metal_trash_can": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/metal_trash_can/metal_trash_can_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/metal_trash_can/metal_trash_can.usdc",
    "collider_size": [
-    1.8469,
+    1.778,
     0.5563,
     0.9062
    ],
    "render_size": [
-    1.8469,
+    1.778,
     0.5563,
     0.9062
    ],
@@ -6991,10 +7393,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 13960
   },
   "ph_mid_century_lounge_chair": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/mid_century_lounge_chair/mid_century_lounge_chair_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/mid_century_lounge_chair/mid_century_lounge_chair.usdc",
    "collider_size": [
     1.0086,
     1.1903,
@@ -7025,10 +7429,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6148
   },
   "ph_modern_arm_chair_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/modern_arm_chair_01/modern_arm_chair_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/modern_arm_chair_01/modern_arm_chair_01.usdc",
    "collider_size": [
     0.8203,
     0.9866,
@@ -7060,10 +7466,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8916
   },
   "ph_modern_ceiling_lamp_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/modern_ceiling_lamp_01/modern_ceiling_lamp_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/modern_ceiling_lamp_01/modern_ceiling_lamp_01.usdc",
    "collider_size": [
     0.4316,
     0.4317,
@@ -7093,18 +7501,20 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5602
   },
   "ph_modern_coffee_table_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/modern_coffee_table_01/modern_coffee_table_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/modern_coffee_table_01/modern_coffee_table_01.usdc",
    "collider_size": [
-    1.2018,
     0.6,
+    1.2018,
     0.39
    ],
    "render_size": [
-    1.2018,
     0.6,
+    1.2018,
     0.39
    ],
    "origin_offset": [
@@ -7127,10 +7537,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4504
   },
   "ph_modern_coffee_table_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/modern_coffee_table_02/modern_coffee_table_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/modern_coffee_table_02/modern_coffee_table_02.usdc",
    "collider_size": [
     1.1991,
     1.1997,
@@ -7161,10 +7573,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 13645
   },
   "ph_modified_thermos": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/modified_thermos/modified_thermos_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/modified_thermos/modified_thermos.usdc",
    "collider_size": [
     0.1427,
     0.1011,
@@ -7196,10 +7610,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 11576
   },
   "ph_mounted_fluorescent_lights": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/mounted_fluorescent_lights/mounted_fluorescent_lights_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/mounted_fluorescent_lights/mounted_fluorescent_lights.usdc",
    "collider_size": [
     0.9122,
     0.6454,
@@ -7231,10 +7647,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 17820
   },
   "ph_mousetrap": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/mousetrap/mousetrap_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/mousetrap/mousetrap.usdc",
    "collider_size": [
     0.055,
     0.1004,
@@ -7264,10 +7682,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5136
   },
   "ph_multi_cleaner_5_litre": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/multi_cleaner_5_litre/multi_cleaner_5_litre_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/multi_cleaner_5_litre/multi_cleaner_5_litre.usdc",
    "collider_size": [
     0.2193,
     0.1058,
@@ -7300,10 +7720,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4332
   },
   "ph_multi_cleaner_bottle": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/multi_cleaner_bottle/multi_cleaner_bottle_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/multi_cleaner_bottle/multi_cleaner_bottle.usdc",
    "collider_size": [
     0.0885,
     0.0898,
@@ -7335,10 +7757,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6792
   },
   "ph_office_notepads": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/office_notepads/office_notepads_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/office_notepads/office_notepads.usdc",
    "collider_size": [
     1.1028,
     0.6598,
@@ -7370,10 +7794,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 666
   },
   "ph_oil_tin": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/oil_tin/oil_tin_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/oil_tin/oil_tin.usdc",
    "collider_size": [
     0.1147,
     0.1535,
@@ -7406,10 +7832,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2834
   },
   "ph_old_bed_frame": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/old_bed_frame/old_bed_frame_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/old_bed_frame/old_bed_frame.usdc",
    "collider_size": [
     0.9047,
     2.0017,
@@ -7441,10 +7869,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 49990
   },
   "ph_old_drill_press": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/old_drill_press/old_drill_press_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/old_drill_press/old_drill_press.usdc",
    "collider_size": [
     0.5272,
     0.6095,
@@ -7476,10 +7906,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 21842
   },
   "ph_old_gas_mask": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/old_gas_mask/old_gas_mask_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/old_gas_mask/old_gas_mask.usdc",
    "collider_size": [
     0.2105,
     0.3087,
@@ -7512,10 +7944,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 18900
   },
   "ph_old_military_compressor": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/old_military_compressor/old_military_compressor_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/old_military_compressor/old_military_compressor.usdc",
    "collider_size": [
     0.5983,
     1.6755,
@@ -7547,18 +7981,20 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 79042
   },
   "ph_old_military_crate": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/old_military_crate/old_military_crate_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/old_military_crate/old_military_crate.usdc",
    "collider_size": [
     1.8154,
-    0.9791,
+    0.9757,
     0.3009
    ],
    "render_size": [
     1.8154,
-    0.9791,
+    0.9757,
     0.3009
    ],
    "origin_offset": [
@@ -7582,10 +8018,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 20952
   },
   "ph_old_tyre": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/old_tyre/old_tyre_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/old_tyre/old_tyre.usdc",
    "collider_size": [
     0.6,
     0.165,
@@ -7617,10 +8055,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2880
   },
   "ph_ornate_medieval_dagger": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/ornate_medieval_dagger/ornate_medieval_dagger_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/ornate_medieval_dagger/ornate_medieval_dagger.usdc",
    "collider_size": [
     0.1201,
     0.025,
@@ -7650,10 +8090,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6290
   },
   "ph_ornate_medieval_mace": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/ornate_medieval_mace/ornate_medieval_mace_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/ornate_medieval_mace/ornate_medieval_mace.usdc",
    "collider_size": [
     0.0949,
     0.1017,
@@ -7683,19 +8125,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 14762
   },
   "ph_ornate_mirror_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/ornate_mirror_01/ornate_mirror_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/ornate_mirror_01/ornate_mirror_01.usdc",
    "collider_size": [
-    0.4863,
-    0.0256,
-    0.7441
+    0.4865,
+    0.026,
+    0.7442
    ],
    "render_size": [
-    0.4863,
-    0.0256,
-    0.7441
+    0.4865,
+    0.026,
+    0.7442
    ],
    "origin_offset": [
     0.0,
@@ -7718,10 +8162,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 14246
   },
   "ph_ornate_war_hammer": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/ornate_war_hammer/ornate_war_hammer_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/ornate_war_hammer/ornate_war_hammer.usdc",
    "collider_size": [
     0.1441,
     0.0348,
@@ -7752,18 +8198,20 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5192
   },
   "ph_outdoor_table_chair_set_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/outdoor_table_chair_set_01/outdoor_table_chair_set_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/outdoor_table_chair_set_01/outdoor_table_chair_set_01.usdc",
    "collider_size": [
-    0.776,
-    1.831,
+    0.7417,
+    1.7173,
     0.8586
    ],
    "render_size": [
-    0.776,
-    1.831,
+    0.7417,
+    1.7173,
     0.8586
    ],
    "origin_offset": [
@@ -7786,10 +8234,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 9828
   },
   "ph_painted_wooden_bench": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/painted_wooden_bench/painted_wooden_bench_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/painted_wooden_bench/painted_wooden_bench.usdc",
    "collider_size": [
     1.1649,
     0.4965,
@@ -7820,10 +8270,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 630
   },
   "ph_painted_wooden_cabinet": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/painted_wooden_cabinet/painted_wooden_cabinet_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/painted_wooden_cabinet/painted_wooden_cabinet.usdc",
    "collider_size": [
     1.1947,
     0.6166,
@@ -7854,10 +8306,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2227
   },
   "ph_painted_wooden_chair_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/painted_wooden_chair_01/painted_wooden_chair_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/painted_wooden_chair_01/painted_wooden_chair_01.usdc",
    "collider_size": [
     0.4318,
     0.5398,
@@ -7888,10 +8342,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 724
   },
   "ph_painted_wooden_chair_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/painted_wooden_chair_02/painted_wooden_chair_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/painted_wooden_chair_02/painted_wooden_chair_02.usdc",
    "collider_size": [
     0.6394,
     0.6621,
@@ -7922,10 +8378,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 1246
   },
   "ph_painted_wooden_nightstand": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/painted_wooden_nightstand/painted_wooden_nightstand_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/painted_wooden_nightstand/painted_wooden_nightstand.usdc",
    "collider_size": [
     0.5046,
     0.5087,
@@ -7956,10 +8414,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 470
   },
   "ph_painted_wooden_shelves": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/painted_wooden_shelves/painted_wooden_shelves_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/painted_wooden_shelves/painted_wooden_shelves.usdc",
    "collider_size": [
     0.5111,
     0.3671,
@@ -7990,10 +8450,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 524
   },
   "ph_painted_wooden_stool": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/painted_wooden_stool/painted_wooden_stool_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/painted_wooden_stool/painted_wooden_stool.usdc",
    "collider_size": [
     0.3848,
     0.4061,
@@ -8024,10 +8486,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 676
   },
   "ph_pastic_torch_6v": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/pastic_torch_6v/pastic_torch_6v_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/pastic_torch_6v/pastic_torch_6v.usdc",
    "collider_size": [
     0.1369,
     0.2242,
@@ -8061,10 +8525,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4352
   },
   "ph_picke_dirty_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/picke_dirty_01/picke_dirty_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/picke_dirty_01/picke_dirty_01.usdc",
    "collider_size": [
     0.5498,
     0.0691,
@@ -8096,10 +8562,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6196
   },
   "ph_pipe_wrench": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/pipe_wrench/pipe_wrench_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/pipe_wrench/pipe_wrench.usdc",
    "collider_size": [
     0.084,
     0.0343,
@@ -8131,10 +8599,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 10746
   },
   "ph_planter_box_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/planter_box_01/planter_box_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/planter_box_01/planter_box_01.usdc",
    "collider_size": [
     0.9126,
     0.4137,
@@ -8167,10 +8637,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8094
   },
   "ph_planter_box_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/planter_box_02/planter_box_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/planter_box_02/planter_box_02.usdc",
    "collider_size": [
     1.2516,
     0.4672,
@@ -8203,10 +8675,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 10944
   },
   "ph_planter_box_03": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/planter_box_03/planter_box_03_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/planter_box_03/planter_box_03.usdc",
    "collider_size": [
     0.9143,
     0.6555,
@@ -8239,10 +8713,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 13112
   },
   "ph_planter_pot_clay": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/planter_pot_clay/planter_pot_clay_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/planter_pot_clay/planter_pot_clay.usdc",
    "collider_size": [
     0.266,
     0.2635,
@@ -8274,10 +8750,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3080
   },
   "ph_plastic_bottle_gallon": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/plastic_bottle_gallon/plastic_bottle_gallon_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/plastic_bottle_gallon/plastic_bottle_gallon.usdc",
    "collider_size": [
     0.1663,
     0.1264,
@@ -8308,10 +8786,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 13728
   },
   "ph_plastic_broom": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/plastic_broom/plastic_broom_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/plastic_broom/plastic_broom.usdc",
    "collider_size": [
     0.4164,
     0.5666,
@@ -8343,10 +8823,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 18736
   },
   "ph_plastic_container": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/plastic_container/plastic_container_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/plastic_container/plastic_container.usdc",
    "collider_size": [
     0.8951,
     0.6264,
@@ -8378,10 +8860,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4070
   },
   "ph_plastic_crate_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/plastic_crate_01/plastic_crate_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/plastic_crate_01/plastic_crate_01.usdc",
    "collider_size": [
     0.298,
     0.408,
@@ -8413,10 +8897,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 18320
   },
   "ph_plastic_crate_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/plastic_crate_02/plastic_crate_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/plastic_crate_02/plastic_crate_02.usdc",
    "collider_size": [
     0.5055,
     0.4055,
@@ -8448,10 +8934,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5840
   },
   "ph_plastic_crate_03": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/plastic_crate_03/plastic_crate_03_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/plastic_crate_03/plastic_crate_03.usdc",
    "collider_size": [
     0.4811,
     0.265,
@@ -8483,10 +8971,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 21740
   },
   "ph_plastic_jerrycan": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/plastic_jerrycan/plastic_jerrycan_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/plastic_jerrycan/plastic_jerrycan.usdc",
    "collider_size": [
     0.268,
     0.3409,
@@ -8518,10 +9008,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 7348
   },
   "ph_plastic_monobloc_chair_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/plastic_monobloc_chair_01/plastic_monobloc_chair_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/plastic_monobloc_chair_01/plastic_monobloc_chair_01.usdc",
    "collider_size": [
     0.6419,
     0.6276,
@@ -8553,10 +9045,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3356
   },
   "ph_plastic_thermos": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/plastic_thermos/plastic_thermos_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/plastic_thermos/plastic_thermos.usdc",
    "collider_size": [
     0.1406,
     0.1093,
@@ -8588,10 +9082,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5514
   },
   "ph_pliers": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/pliers/pliers_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/pliers/pliers.usdc",
    "collider_size": [
     0.0553,
     0.018,
@@ -8624,10 +9120,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4540
   },
   "ph_plunger": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/plunger/plunger_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/plunger/plunger.usdc",
    "collider_size": [
     0.1721,
     0.1721,
@@ -8657,10 +9155,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3278
   },
   "ph_pocket_watch": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/pocket_watch/pocket_watch_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/pocket_watch/pocket_watch.usdc",
    "collider_size": [
     0.0577,
     0.0156,
@@ -8691,10 +9191,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 15615
   },
   "ph_portable_cassette_player": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/portable_cassette_player/portable_cassette_player_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/portable_cassette_player/portable_cassette_player.usdc",
    "collider_size": [
     0.1723,
     0.0397,
@@ -8726,10 +9228,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 13307
   },
   "ph_portable_generator": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/portable_generator/portable_generator_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/portable_generator/portable_generator.usdc",
    "collider_size": [
     0.8183,
     0.564,
@@ -8761,10 +9265,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 26419
   },
   "ph_portable_searchlight": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/portable_searchlight/portable_searchlight_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/portable_searchlight/portable_searchlight.usdc",
    "collider_size": [
     0.1653,
     0.2534,
@@ -8798,10 +9304,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 18802
   },
   "ph_portable_welding_cart": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/portable_welding_cart/portable_welding_cart_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/portable_welding_cart/portable_welding_cart.usdc",
    "collider_size": [
     0.8383,
     0.6549,
@@ -8833,10 +9341,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 29418
   },
   "ph_postcard_set_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/postcard_set_01/postcard_set_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/postcard_set_01/postcard_set_01.usdc",
    "collider_size": [
     0.6767,
     0.0001,
@@ -8867,10 +9377,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2720
   },
   "ph_pot_enamel_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/pot_enamel_01/pot_enamel_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/pot_enamel_01/pot_enamel_01.usdc",
    "collider_size": [
     0.2629,
     0.1805,
@@ -8902,10 +9414,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 11416
   },
   "ph_potted_plant_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/potted_plant_01/potted_plant_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/potted_plant_01/potted_plant_01.usdc",
    "collider_size": [
     0.5874,
     0.6336,
@@ -8938,10 +9452,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 176226
   },
   "ph_potted_plant_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/potted_plant_02/potted_plant_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/potted_plant_02/potted_plant_02.usdc",
    "collider_size": [
     0.7012,
     0.6574,
@@ -8974,19 +9490,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 69806
   },
   "ph_potted_plant_04": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/potted_plant_04/potted_plant_04_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/potted_plant_04/potted_plant_04.usdc",
    "collider_size": [
-    0.1703,
-    0.1859,
-    0.2676
+    0.1679,
+    0.1848,
+    0.2675
    ],
    "render_size": [
-    0.1703,
-    0.1859,
-    0.2676
+    0.1679,
+    0.1848,
+    0.2675
    ],
    "origin_offset": [
     0.0,
@@ -9011,19 +9529,21 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8929
   },
   "ph_power_box_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/power_box_01/power_box_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/power_box_01/power_box_01.usdc",
    "collider_size": [
-    0.5124,
-    0.3618,
-    0.5064
+    0.4613,
+    0.399,
+    0.5031
    ],
    "render_size": [
-    0.5124,
-    0.3618,
-    0.5064
+    0.4613,
+    0.399,
+    0.5031
    ],
    "origin_offset": [
     0.0,
@@ -9050,10 +9570,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 21272
   },
   "ph_projector_screen": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/projector_screen/projector_screen_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/projector_screen/projector_screen.usdc",
    "collider_size": [
     1.0936,
     0.9158,
@@ -9084,10 +9606,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8727
   },
   "ph_propane_tank": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/propane_tank/propane_tank_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/propane_tank/propane_tank.usdc",
    "collider_size": [
     0.3374,
     0.3374,
@@ -9119,10 +9643,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5238
   },
   "ph_propane_torch": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/propane_torch/propane_torch_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/propane_torch/propane_torch.usdc",
    "collider_size": [
     0.068,
     0.0579,
@@ -9154,10 +9680,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4848
   },
   "ph_propane_torch_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/propane_torch_02/propane_torch_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/propane_torch_02/propane_torch_02.usdc",
    "collider_size": [
     0.0724,
     0.0677,
@@ -9190,10 +9718,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2960
   },
   "ph_pull_chain_light_socket": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/pull_chain_light_socket/pull_chain_light_socket_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/pull_chain_light_socket/pull_chain_light_socket.usdc",
    "collider_size": [
     0.1103,
     0.1103,
@@ -9224,19 +9754,21 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 10902
   },
   "ph_ratchet_wrench": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/ratchet_wrench/ratchet_wrench_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/ratchet_wrench/ratchet_wrench.usdc",
    "collider_size": [
-    0.444,
-    0.4072,
-    0.4281
+    0.0441,
+    0.0434,
+    0.2462
    ],
    "render_size": [
-    0.444,
-    0.4072,
-    0.4281
+    0.0441,
+    0.0434,
+    0.2462
    ],
    "origin_offset": [
     0.0,
@@ -9261,10 +9793,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8796
   },
   "ph_retro_multimeter": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/retro_multimeter/retro_multimeter_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/retro_multimeter/retro_multimeter.usdc",
    "collider_size": [
     0.216,
     0.2026,
@@ -9299,10 +9833,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8948
   },
   "ph_round_spectacles": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/round_spectacles/round_spectacles_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/round_spectacles/round_spectacles.usdc",
    "collider_size": [
     0.1578,
     0.149,
@@ -9333,10 +9869,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 11810
   },
   "ph_round_wooden_table_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/round_wooden_table_01/round_wooden_table_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/round_wooden_table_01/round_wooden_table_01.usdc",
    "collider_size": [
     1.3993,
     1.3993,
@@ -9367,10 +9905,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8640
   },
   "ph_round_wooden_table_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/round_wooden_table_02/round_wooden_table_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/round_wooden_table_02/round_wooden_table_02.usdc",
    "collider_size": [
     0.7962,
     0.7962,
@@ -9401,10 +9941,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4254
   },
   "ph_rubber_boots": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/rubber_boots/rubber_boots_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/rubber_boots/rubber_boots.usdc",
    "collider_size": [
     0.8907,
     0.2662,
@@ -9435,10 +9977,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 56128
   },
   "ph_rubber_duck_toy": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/rubber_duck_toy/rubber_duck_toy_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/rubber_duck_toy/rubber_duck_toy.usdc",
    "collider_size": [
     0.2135,
     0.3,
@@ -9470,10 +10014,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4288
   },
   "ph_russian_food_cans_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/russian_food_cans_01/russian_food_cans_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/russian_food_cans_01/russian_food_cans_01.usdc",
    "collider_size": [
     0.1424,
     0.0462,
@@ -9505,10 +10051,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 1348
   },
   "ph_rusted_hacksaw": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/rusted_hacksaw/rusted_hacksaw_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/rusted_hacksaw/rusted_hacksaw.usdc",
    "collider_size": [
     0.4964,
     0.0328,
@@ -9540,10 +10088,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6546
   },
   "ph_rusted_spade_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/rusted_spade_01/rusted_spade_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/rusted_spade_01/rusted_spade_01.usdc",
    "collider_size": [
     0.1681,
     0.0456,
@@ -9575,18 +10125,20 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 11436
   },
   "ph_rusted_wheel_rim_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/rusted_wheel_rim_01/rusted_wheel_rim_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/rusted_wheel_rim_01/rusted_wheel_rim_01.usdc",
    "collider_size": [
     0.4049,
-    0.4049,
+    0.15,
     0.4049
    ],
    "render_size": [
     0.4049,
-    0.4049,
+    0.15,
     0.4049
    ],
    "origin_offset": [
@@ -9610,18 +10162,20 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 16440
   },
   "ph_rusted_wheel_rim_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/rusted_wheel_rim_02/rusted_wheel_rim_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/rusted_wheel_rim_02/rusted_wheel_rim_02.usdc",
    "collider_size": [
     0.3383,
-    0.3383,
+    0.1188,
     0.3383
    ],
    "render_size": [
     0.3383,
-    0.3383,
+    0.1188,
     0.3383
    ],
    "origin_offset": [
@@ -9645,10 +10199,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 15256
   },
   "ph_scandinavian_masonry_heater": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/scandinavian_masonry_heater/scandinavian_masonry_heater_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/scandinavian_masonry_heater/scandinavian_masonry_heater.usdc",
    "collider_size": [
     1.1677,
     1.3353,
@@ -9678,10 +10234,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 9350
   },
   "ph_screwdriver": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/screwdriver/screwdriver_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/screwdriver/screwdriver.usdc",
    "collider_size": [
     0.0271,
     0.0267,
@@ -9713,10 +10271,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3412
   },
   "ph_screwdrivers_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/screwdrivers_02/screwdrivers_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/screwdrivers_02/screwdrivers_02.usdc",
    "collider_size": [
     0.1005,
     0.2699,
@@ -9748,19 +10308,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3548
   },
   "ph_seadogs_compass": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/seadogs_compass/seadogs_compass_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/seadogs_compass/seadogs_compass.usdc",
    "collider_size": [
     0.0813,
-    0.1501,
-    0.0872
+    0.1441,
+    0.0866
    ],
    "render_size": [
     0.0813,
-    0.1501,
-    0.0872
+    0.1441,
+    0.0866
    ],
    "origin_offset": [
     0.0,
@@ -9784,19 +10346,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 11645
   },
   "ph_security_camera_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/security_camera_01/security_camera_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/security_camera_01/security_camera_01.usdc",
    "collider_size": [
     0.1696,
-    0.8752,
-    0.3573
+    0.5537,
+    0.286
    ],
    "render_size": [
     0.1696,
-    0.8752,
-    0.3573
+    0.5537,
+    0.286
    ],
    "origin_offset": [
     0.0,
@@ -9822,19 +10386,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 13571
   },
   "ph_security_camera_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/security_camera_02/security_camera_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/security_camera_02/security_camera_02.usdc",
    "collider_size": [
     0.1407,
-    0.5626,
-    0.2581
+    0.3938,
+    0.2086
    ],
    "render_size": [
     0.1407,
-    0.5626,
-    0.2581
+    0.3938,
+    0.2086
    ],
    "origin_offset": [
     0.0,
@@ -9860,10 +10426,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 12477
   },
   "ph_security_light": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/security_light/security_light_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/security_light/security_light.usdc",
    "collider_size": [
     0.3231,
     0.4172,
@@ -9895,10 +10463,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4668
   },
   "ph_seeding_tray_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/seeding_tray_01/seeding_tray_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/seeding_tray_01/seeding_tray_01.usdc",
    "collider_size": [
     0.2202,
     0.2202,
@@ -9929,10 +10499,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8334
   },
   "ph_shrub_sorrel_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/shrub_sorrel_01/shrub_sorrel_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/shrub_sorrel_01/shrub_sorrel_01.usdc",
    "collider_size": [
     0.3521,
     0.1464,
@@ -9965,10 +10537,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3319
   },
   "ph_side_table_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/side_table_01/side_table_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/side_table_01/side_table_01.usdc",
    "collider_size": [
     0.55,
     0.45,
@@ -9999,10 +10573,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2756
   },
   "ph_side_table_tall_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/side_table_tall_01/side_table_tall_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/side_table_tall_01/side_table_tall_01.usdc",
    "collider_size": [
     0.384,
     0.384,
@@ -10033,10 +10609,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6408
   },
   "ph_signal_flashlight": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/signal_flashlight/signal_flashlight_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/signal_flashlight/signal_flashlight.usdc",
    "collider_size": [
     0.071,
     0.0445,
@@ -10068,10 +10646,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 9730
   },
   "ph_sledgehammer_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/sledgehammer_01/sledgehammer_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/sledgehammer_01/sledgehammer_01.usdc",
    "collider_size": [
     0.2085,
     0.0905,
@@ -10104,10 +10684,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2596
   },
   "ph_small_lpg_tank": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/small_lpg_tank/small_lpg_tank_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/small_lpg_tank/small_lpg_tank.usdc",
    "collider_size": [
     0.41,
     0.4092,
@@ -10139,10 +10721,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 15042
   },
   "ph_small_oil_can_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/small_oil_can_01/small_oil_can_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/small_oil_can_01/small_oil_can_01.usdc",
    "collider_size": [
     0.2661,
     0.1038,
@@ -10175,10 +10759,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 16746
   },
   "ph_small_plastic_torch": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/small_plastic_torch/small_plastic_torch_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/small_plastic_torch/small_plastic_torch.usdc",
    "collider_size": [
     0.0998,
     0.2275,
@@ -10210,10 +10796,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 13252
   },
   "ph_small_wooden_table_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/small_wooden_table_01/small_wooden_table_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/small_wooden_table_01/small_wooden_table_01.usdc",
    "collider_size": [
     0.9162,
     0.44,
@@ -10244,10 +10832,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3410
   },
   "ph_sofa_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/sofa_02/sofa_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/sofa_02/sofa_02.usdc",
    "collider_size": [
     1.8072,
     0.8178,
@@ -10278,10 +10868,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2728
   },
   "ph_spinning_wheel_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/spinning_wheel_01/spinning_wheel_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/spinning_wheel_01/spinning_wheel_01.usdc",
    "collider_size": [
     0.4894,
     1.0249,
@@ -10312,10 +10904,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 52023
   },
   "ph_spray_paint_bottles": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/spray_paint_bottles/spray_paint_bottles_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/spray_paint_bottles/spray_paint_bottles.usdc",
    "collider_size": [
     0.1582,
     0.0656,
@@ -10348,10 +10942,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5040
   },
   "ph_spray_paint_bottles_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/spray_paint_bottles_02/spray_paint_bottles_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/spray_paint_bottles_02/spray_paint_bottles_02.usdc",
    "collider_size": [
     0.1955,
     0.0773,
@@ -10384,10 +10980,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6576
   },
   "ph_standing_chalkboard_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/standing_chalkboard_01/standing_chalkboard_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/standing_chalkboard_01/standing_chalkboard_01.usdc",
    "collider_size": [
     0.9195,
     0.7587,
@@ -10417,18 +11015,20 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2372
   },
   "ph_standing_picture_frame_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/standing_picture_frame_01/standing_picture_frame_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/standing_picture_frame_01/standing_picture_frame_01.usdc",
    "collider_size": [
-    0.2008,
     0.1003,
+    0.2008,
     0.2497
    ],
    "render_size": [
-    0.2008,
     0.1003,
+    0.2008,
     0.2497
    ],
    "origin_offset": [
@@ -10450,18 +11050,20 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 1634
   },
   "ph_standing_picture_frame_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/standing_picture_frame_02/standing_picture_frame_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/standing_picture_frame_02/standing_picture_frame_02.usdc",
    "collider_size": [
-    0.2169,
     0.1023,
+    0.2169,
     0.2664
    ],
    "render_size": [
-    0.2169,
     0.1023,
+    0.2169,
     0.2664
    ],
    "origin_offset": [
@@ -10483,10 +11085,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2986
   },
   "ph_stationery_supplies": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/stationery_supplies/stationery_supplies_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/stationery_supplies/stationery_supplies.usdc",
    "collider_size": [
     0.3019,
     0.0837,
@@ -10518,19 +11122,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4412
   },
   "ph_steel_frame_shelves_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/steel_frame_shelves_01/steel_frame_shelves_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/steel_frame_shelves_01/steel_frame_shelves_01.usdc",
    "collider_size": [
-    1.0974,
-    0.5021,
-    2.1405
+    10.9741,
+    5.0212,
+    21.405
    ],
    "render_size": [
-    1.0974,
-    0.5021,
-    2.1405
+    10.9741,
+    5.0212,
+    21.405
    ],
    "origin_offset": [
     0.0,
@@ -10554,10 +11160,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4348
   },
   "ph_steel_frame_shelves_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/steel_frame_shelves_02/steel_frame_shelves_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/steel_frame_shelves_02/steel_frame_shelves_02.usdc",
    "collider_size": [
     0.5933,
     0.5024,
@@ -10590,10 +11198,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4348
   },
   "ph_steel_frame_shelves_03": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/steel_frame_shelves_03/steel_frame_shelves_03_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/steel_frame_shelves_03/steel_frame_shelves_03.usdc",
    "collider_size": [
     2.3511,
     0.7212,
@@ -10624,10 +11234,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8396
   },
   "ph_strawberry_chocolate_cake": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/strawberry_chocolate_cake/strawberry_chocolate_cake_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/strawberry_chocolate_cake/strawberry_chocolate_cake.usdc",
    "collider_size": [
     0.2443,
     0.2403,
@@ -10658,10 +11270,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 27054
   },
   "ph_street_lamp_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/street_lamp_02/street_lamp_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/street_lamp_02/street_lamp_02.usdc",
    "collider_size": [
     0.3865,
     0.8068,
@@ -10693,10 +11307,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 20338
   },
   "ph_sungka_board": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/sungka_board/sungka_board_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/sungka_board/sungka_board.usdc",
    "collider_size": [
     0.14,
     0.6006,
@@ -10728,10 +11344,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 7304
   },
   "ph_sungka_board_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/sungka_board_02/sungka_board_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/sungka_board_02/sungka_board_02.usdc",
    "collider_size": [
     0.9317,
     0.1757,
@@ -10762,10 +11380,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 42558
   },
   "ph_sweet_potato": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/sweet_potato/sweet_potato_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/sweet_potato/sweet_potato.usdc",
    "collider_size": [
     0.0581,
     0.061,
@@ -10796,10 +11416,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2042
   },
   "ph_tea_set_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/tea_set_01/tea_set_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/tea_set_01/tea_set_01.usdc",
    "collider_size": [
     0.9185,
     0.4839,
@@ -10832,10 +11454,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 40296
   },
   "ph_television_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/television_02/television_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/television_02/television_02.usdc",
    "collider_size": [
     0.3997,
     0.3502,
@@ -10866,18 +11490,20 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2310
   },
   "ph_throw_pillows_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/throw_pillows_01/throw_pillows_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/throw_pillows_01/throw_pillows_01.usdc",
    "collider_size": [
-    1.0216,
-    0.6275,
+    0.9401,
+    0.4519,
     0.4502
    ],
    "render_size": [
-    1.0216,
-    0.6275,
+    0.9401,
+    0.4519,
     0.4502
    ],
    "origin_offset": [
@@ -10899,10 +11525,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6362
   },
   "ph_tire_pump": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/tire_pump/tire_pump_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/tire_pump/tire_pump.usdc",
    "collider_size": [
     0.2549,
     0.101,
@@ -10934,10 +11562,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6572
   },
   "ph_tongue_groove_pliers": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/tongue_groove_pliers/tongue_groove_pliers_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/tongue_groove_pliers/tongue_groove_pliers.usdc",
    "collider_size": [
     0.0625,
     0.2444,
@@ -10968,10 +11598,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2694
   },
   "ph_tool_cart": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/tool_cart/tool_cart_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/tool_cart/tool_cart.usdc",
    "collider_size": [
     1.2734,
     0.7536,
@@ -11004,10 +11636,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 29394
   },
   "ph_trashbag": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/trashbag/trashbag_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/trashbag/trashbag.usdc",
    "collider_size": [
     0.5281,
     0.4629,
@@ -11038,10 +11672,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4482
   },
   "ph_treasure_chest": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/treasure_chest/treasure_chest_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/treasure_chest/treasure_chest.usdc",
    "collider_size": [
     0.959,
     0.5229,
@@ -11074,10 +11710,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 103330
   },
   "ph_trowel_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/trowel_01/trowel_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/trowel_01/trowel_01.usdc",
    "collider_size": [
     0.0991,
     0.3469,
@@ -11109,10 +11747,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5242
   },
   "ph_vintage_binocular": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_binocular/vintage_binocular_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_binocular/vintage_binocular.usdc",
    "collider_size": [
     0.194,
     0.1992,
@@ -11144,10 +11784,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 19362
   },
   "ph_vintage_cabinet_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_cabinet_01/vintage_cabinet_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_cabinet_01/vintage_cabinet_01.usdc",
    "collider_size": [
     2.0218,
     0.6698,
@@ -11178,19 +11820,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 61096
   },
   "ph_vintage_crutches_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_crutches_01/vintage_crutches_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_crutches_01/vintage_crutches_01.usdc",
    "collider_size": [
-    0.3994,
-    0.2166,
-    1.6149
+    0.3838,
+    0.2036,
+    1.605
    ],
    "render_size": [
-    0.3994,
-    0.2166,
-    1.6149
+    0.3838,
+    0.2036,
+    1.605
    ],
    "origin_offset": [
     0.0,
@@ -11212,10 +11856,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 10628
   },
   "ph_vintage_day_bed": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_day_bed/vintage_day_bed_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_day_bed/vintage_day_bed.usdc",
    "collider_size": [
     1.9726,
     0.8548,
@@ -11248,10 +11894,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2715
   },
   "ph_vintage_electric_kettle": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_electric_kettle/vintage_electric_kettle_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_electric_kettle/vintage_electric_kettle.usdc",
    "collider_size": [
     0.3209,
     0.2486,
@@ -11283,10 +11931,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 14838
   },
   "ph_vintage_flashlight": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_flashlight/vintage_flashlight_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_flashlight/vintage_flashlight.usdc",
    "collider_size": [
     0.0959,
     0.3055,
@@ -11320,19 +11970,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 10562
   },
   "ph_vintage_hand_drill": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_hand_drill/vintage_hand_drill_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_hand_drill/vintage_hand_drill.usdc",
    "collider_size": [
-    0.2653,
-    0.2846,
-    0.5434
+    0.1312,
+    0.1251,
+    0.4857
    ],
    "render_size": [
-    0.2653,
-    0.2846,
-    0.5434
+    0.1312,
+    0.1251,
+    0.4857
    ],
    "origin_offset": [
     0.0,
@@ -11357,19 +12009,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8338
   },
   "ph_vintage_lighter": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_lighter/vintage_lighter_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_lighter/vintage_lighter.usdc",
    "collider_size": [
-    0.0819,
+    0.0796,
     0.014,
-    0.0661
+    0.065
    ],
    "render_size": [
-    0.0819,
+    0.0796,
     0.014,
-    0.0661
+    0.065
    ],
    "origin_offset": [
     0.0,
@@ -11392,10 +12046,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3366
   },
   "ph_vintage_microscope": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_microscope/vintage_microscope_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_microscope/vintage_microscope.usdc",
    "collider_size": [
     0.1068,
     0.1819,
@@ -11428,10 +12084,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 20631
   },
   "ph_vintage_microwave": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_microwave/vintage_microwave_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_microwave/vintage_microwave.usdc",
    "collider_size": [
     1.0737,
     0.7456,
@@ -11463,10 +12121,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8120
   },
   "ph_vintage_oil_lamp": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_oil_lamp/vintage_oil_lamp_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_oil_lamp/vintage_oil_lamp.usdc",
    "collider_size": [
     0.22,
     0.22,
@@ -11497,10 +12157,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 7208
   },
   "ph_vintage_pocket_watch": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_pocket_watch/vintage_pocket_watch_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_pocket_watch/vintage_pocket_watch.usdc",
    "collider_size": [
     0.0613,
     0.0136,
@@ -11530,19 +12192,21 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 16098
   },
   "ph_vintage_radio_transceiver": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_radio_transceiver/vintage_radio_transceiver_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_radio_transceiver/vintage_radio_transceiver.usdc",
    "collider_size": [
-    2.0981,
-    2.0,
-    2.0
+    0.574,
+    0.4131,
+    0.4344
    ],
    "render_size": [
-    2.0981,
-    2.0,
-    2.0
+    0.574,
+    0.4131,
+    0.4344
    ],
    "origin_offset": [
     0.0,
@@ -11565,10 +12229,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 42350
   },
   "ph_vintage_spacecraft_instrument": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_spacecraft_instrument/vintage_spacecraft_instrument_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_spacecraft_instrument/vintage_spacecraft_instrument.usdc",
    "collider_size": [
     0.4103,
     0.2044,
@@ -11601,10 +12267,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 13279
   },
   "ph_vintage_stapler": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_stapler/vintage_stapler_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_stapler/vintage_stapler.usdc",
    "collider_size": [
     0.2085,
     0.0474,
@@ -11637,10 +12305,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4370
   },
   "ph_vintage_suitcase": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_suitcase/vintage_suitcase_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_suitcase/vintage_suitcase.usdc",
    "collider_size": [
     1.6082,
     0.2392,
@@ -11671,10 +12341,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 16474
   },
   "ph_vintage_telephone_wall_clock": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_telephone_wall_clock/vintage_telephone_wall_clock_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_telephone_wall_clock/vintage_telephone_wall_clock.usdc",
    "collider_size": [
     0.3428,
     0.1926,
@@ -11707,10 +12379,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 15864
   },
   "ph_vintage_video_camera": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_video_camera/vintage_video_camera_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_video_camera/vintage_video_camera.usdc",
    "collider_size": [
     0.0712,
     0.1326,
@@ -11742,10 +12416,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 18682
   },
   "ph_vintage_wooden_drawer_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/vintage_wooden_drawer_01/vintage_wooden_drawer_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/vintage_wooden_drawer_01/vintage_wooden_drawer_01.usdc",
    "collider_size": [
     0.8576,
     0.4574,
@@ -11777,10 +12453,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5184
   },
   "ph_wall_clock": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wall_clock/wall_clock_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wall_clock/wall_clock.usdc",
    "collider_size": [
     0.3205,
     0.0472,
@@ -11812,10 +12490,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3658
   },
   "ph_watering_can_metal_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/watering_can_metal_01/watering_can_metal_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/watering_can_metal_01/watering_can_metal_01.usdc",
    "collider_size": [
     0.191,
     0.4523,
@@ -11848,10 +12528,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 11837
   },
   "ph_wheelchair_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wheelchair_01/wheelchair_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wheelchair_01/wheelchair_01.usdc",
    "collider_size": [
     0.8241,
     1.0909,
@@ -11881,10 +12563,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 40252
   },
   "ph_wicker_basket_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wicker_basket_01/wicker_basket_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wicker_basket_01/wicker_basket_01.usdc",
    "collider_size": [
     0.3832,
     0.295,
@@ -11916,19 +12600,21 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 22276
   },
   "ph_wicker_basket_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wicker_basket_02/wicker_basket_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wicker_basket_02/wicker_basket_02.usdc",
    "collider_size": [
-    0.3747,
-    0.2707,
-    0.2182
+    0.3469,
+    0.2545,
+    0.2005
    ],
    "render_size": [
-    0.3747,
-    0.2707,
-    0.2182
+    0.3469,
+    0.2545,
+    0.2005
    ],
    "origin_offset": [
     0.0,
@@ -11950,10 +12636,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 17850
   },
   "ph_wild_rooibos_bush": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wild_rooibos_bush/wild_rooibos_bush_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wild_rooibos_bush/wild_rooibos_bush.usdc",
    "collider_size": [
     2.2789,
     0.8434,
@@ -11986,10 +12674,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 27519
   },
   "ph_wine_barrel_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wine_barrel_01/wine_barrel_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wine_barrel_01/wine_barrel_01.usdc",
    "collider_size": [
     0.7419,
     0.756,
@@ -12019,10 +12709,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 10820
   },
   "ph_wine_bottles_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wine_bottles_01/wine_bottles_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wine_bottles_01/wine_bottles_01.usdc",
    "collider_size": [
     0.6763,
     0.0806,
@@ -12055,10 +12747,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 28848
   },
   "ph_wooden_axe": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_axe/wooden_axe_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_axe/wooden_axe.usdc",
    "collider_size": [
     0.0472,
     0.2143,
@@ -12088,10 +12782,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3348
   },
   "ph_wooden_axe_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_axe_02/wooden_axe_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_axe_02/wooden_axe_02.usdc",
    "collider_size": [
     0.0509,
     0.2257,
@@ -12121,10 +12817,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 2218
   },
   "ph_wooden_axe_03": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_axe_03/wooden_axe_03_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_axe_03/wooden_axe_03.usdc",
    "collider_size": [
     0.0505,
     0.1583,
@@ -12155,10 +12853,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3886
   },
   "ph_wooden_bookshelf_worn": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_bookshelf_worn/wooden_bookshelf_worn_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_bookshelf_worn/wooden_bookshelf_worn.usdc",
    "collider_size": [
     1.374,
     0.5813,
@@ -12190,10 +12890,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 10106
   },
   "ph_wooden_bowl_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_bowl_01/wooden_bowl_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_bowl_01/wooden_bowl_01.usdc",
    "collider_size": [
     0.3131,
     0.3091,
@@ -12225,10 +12927,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 14122
   },
   "ph_wooden_bowl_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_bowl_02/wooden_bowl_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_bowl_02/wooden_bowl_02.usdc",
    "collider_size": [
     0.1307,
     0.1245,
@@ -12260,10 +12964,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4666
   },
   "ph_wooden_broom": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_broom/wooden_broom_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_broom/wooden_broom.usdc",
    "collider_size": [
     0.4902,
     0.1125,
@@ -12295,10 +13001,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 14258
   },
   "ph_wooden_bucket_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_bucket_01/wooden_bucket_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_bucket_01/wooden_bucket_01.usdc",
    "collider_size": [
     0.367,
     0.3422,
@@ -12330,10 +13038,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5116
   },
   "ph_wooden_bucket_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_bucket_02/wooden_bucket_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_bucket_02/wooden_bucket_02.usdc",
    "collider_size": [
     0.6153,
     0.6163,
@@ -12365,18 +13075,20 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 7252
   },
   "ph_wooden_candlestick": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_candlestick/wooden_candlestick_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_candlestick/wooden_candlestick.usdc",
    "collider_size": [
-    0.0983,
-    0.0999,
+    0.0972,
+    0.0987,
     0.2197
    ],
    "render_size": [
-    0.0983,
-    0.0999,
+    0.0972,
+    0.0987,
     0.2197
    ],
    "origin_offset": [
@@ -12399,10 +13111,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 212992
   },
   "ph_wooden_crate_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_crate_01/wooden_crate_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_crate_01/wooden_crate_01.usdc",
    "collider_size": [
     0.8253,
     0.409,
@@ -12433,18 +13147,20 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6576
   },
   "ph_wooden_crate_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_crate_02/wooden_crate_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_crate_02/wooden_crate_02.usdc",
    "collider_size": [
-    1.1663,
     0.5291,
+    1.1663,
     0.464
    ],
    "render_size": [
-    1.1663,
     0.5291,
+    1.1663,
     0.464
    ],
    "origin_offset": [
@@ -12469,10 +13185,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5176
   },
   "ph_wooden_cutting_board": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_cutting_board/wooden_cutting_board_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_cutting_board/wooden_cutting_board.usdc",
    "collider_size": [
     0.4499,
     0.2467,
@@ -12503,18 +13221,20 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3520
   },
   "ph_wooden_display_shelves_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_display_shelves_01/wooden_display_shelves_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_display_shelves_01/wooden_display_shelves_01.usdc",
    "collider_size": [
-    1.0778,
     0.3715,
+    1.0778,
     1.5562
    ],
    "render_size": [
-    1.0778,
     0.3715,
+    1.0778,
     1.5562
    ],
    "origin_offset": [
@@ -12537,10 +13257,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3174
   },
   "ph_wooden_hammer_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_hammer_01/wooden_hammer_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_hammer_01/wooden_hammer_01.usdc",
    "collider_size": [
     0.1118,
     0.0234,
@@ -12573,10 +13295,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 3617
   },
   "ph_wooden_handle_saber": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_handle_saber/wooden_handle_saber_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_handle_saber/wooden_handle_saber.usdc",
    "collider_size": [
     0.0257,
     0.1228,
@@ -12607,10 +13331,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 4031
   },
   "ph_wooden_ladder": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_ladder/wooden_ladder_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_ladder/wooden_ladder.usdc",
    "collider_size": [
     0.9592,
     0.5,
@@ -12642,10 +13368,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8492
   },
   "ph_wooden_ladder_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_ladder_02/wooden_ladder_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_ladder_02/wooden_ladder_02.usdc",
    "collider_size": [
     0.9895,
     0.6181,
@@ -12676,10 +13404,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6126
   },
   "ph_wooden_lantern_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_lantern_01/wooden_lantern_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_lantern_01/wooden_lantern_01.usdc",
    "collider_size": [
     0.221,
     0.2347,
@@ -12711,10 +13441,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 8321
   },
   "ph_wooden_military_crate": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_military_crate/wooden_military_crate_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_military_crate/wooden_military_crate.usdc",
    "collider_size": [
     1.2421,
     0.5198,
@@ -12745,10 +13477,12 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 22986
   },
   "ph_wooden_spoon": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_spoon/wooden_spoon_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_spoon/wooden_spoon.usdc",
    "collider_size": [
     0.0867,
     0.2776,
@@ -12779,10 +13513,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6576
   },
   "ph_wooden_stool_01": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_stool_01/wooden_stool_01_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_stool_01/wooden_stool_01.usdc",
    "collider_size": [
     0.4254,
     0.4424,
@@ -12814,10 +13550,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 10946
   },
   "ph_wooden_stool_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_stool_02/wooden_stool_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_stool_02/wooden_stool_02.usdc",
    "collider_size": [
     0.2652,
     0.1831,
@@ -12848,10 +13586,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 11146
   },
   "ph_wooden_table_02": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/wooden_table_02/wooden_table_02_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/wooden_table_02/wooden_table_02.usdc",
    "collider_size": [
     1.1344,
     0.706,
@@ -12882,10 +13622,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 196
   },
   "ph_worn_metal_rack": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/worn_metal_rack/worn_metal_rack_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/worn_metal_rack/worn_metal_rack.usdc",
    "collider_size": [
     0.9154,
     0.6,
@@ -12918,10 +13660,12 @@
    "split": "train",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 6372
   },
   "ph_yellow_onion": {
-   "dst": "/data/harvest/assets_l9v2/decor/models/yellow_onion/yellow_onion_1k_piece.usda",
+   "dst": "/data/harvest/assets_l9v2/decor/models_gltf/yellow_onion/yellow_onion.usdc",
    "collider_size": [
     0.0725,
     0.0686,
@@ -12952,7 +13696,9 @@
    "split": "ood",
    "visual_only": true,
    "meters_per_unit": 1.0,
-   "up_axis": "Z"
+   "up_axis": "Z",
+   "converted": "gltf->usd (abo_decor.convert)",
+   "tris": 5444
   }
  },
  "dropped": {

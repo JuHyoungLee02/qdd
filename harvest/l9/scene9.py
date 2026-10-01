@@ -1036,8 +1036,13 @@ def usable_nodes(scene: dict, min_pts: int = 4) -> list:
     return [n for n in scene["nodes"] if scene["usable_n"].get(n["id"], 0) >= min_pts]
 
 
-def all_rules() -> list:
-    return [(f, r) for f, (_, rs) in FAMILIES.items() for r in rs]
+HELDOUT_FAMILIES = ("laundry",)  # spec §12.11 principle 6: one whole family never used for training (1 of 25 = 4 %)
+
+
+def all_rules(split: str | None = None) -> list:
+    """(family, rule) pairs; split "train" leaves out HELDOUT_FAMILIES, "heldout" = only them, None = all."""
+    fams = [f for f in FAMILIES if split is None or (f in HELDOUT_FAMILIES) == (split == "heldout")]
+    return [(f, r) for f in fams for r in FAMILIES[f][1]]
 
 
 def tall_parts(scene: dict, top: float) -> list:
