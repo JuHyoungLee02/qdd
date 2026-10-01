@@ -1033,6 +1033,11 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
     except KeyError as ex:
         raise Fail(f"template key {ex}")
     instr = instr[0].upper() + instr[1:]
+    if not spots:  # the episode's reference height = its lowest used surface: the monitor ends an episode as
+        # "off_table" when the object goes 5 cm below it (pilot G1: 10/12 down_to_lower placements ended that way);
+        # spots stay on the main surface, so episodes with spots keep it
+        used = [nodes[o["node"]][0]["top_z"] for o in ep["objects"].values()] + [v["top"] for v in surfs.values()]
+        ep["table_z"] = float(min(used + [mz]))
     ep.update(steps=steps, spots={sid[d]: v for d, v in spots.items()}, surfaces={vid[d]: v for d, v in surfs.items()},
               roles={on: k for on, k in chosen.items()}, names=names, instruction=instr, template=ti,
               judge=dict(defn.judge), lift=scene["lift"])

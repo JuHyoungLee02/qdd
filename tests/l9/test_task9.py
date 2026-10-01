@@ -70,3 +70,13 @@ def test_draw_combo_hash_unique(rm, tmp_path):
     led.add(h)
     sc2, ep2, _, _, h2, sd2 = C9.draw(row, A9.pool_for(3), rm, led)  # the same row: the used combination is redrawn
     assert h2 != h and sd2 != sd
+
+
+def test_container_support_top_from_bottom():
+    from harvest.l9 import world9 as W
+    from harvest.sim import scene as SC
+    c = A9.containers()
+    k = sorted(c)[0]
+    W.register_pool({k: c[k]})
+    assert SC.SUPPORT_TOP[k] == pytest.approx(c[k]["inside"]["inner_floor_z"])
+    assert 0.0 <= SC.SUPPORT_TOP[k] <= c[k]["height"]

@@ -16,7 +16,7 @@ import numpy as np
 from . import arm as A
 from . import vary9 as V
 
-N_SPOTS, N_SURF, N_SUPP = 6, 3, 6
+N_SPOTS, N_SURF, N_SUPP = 6, 3, 12
 SPOT_IDS = tuple(f"s9_{i}" for i in range(N_SPOTS))
 SURF_IDS = tuple(f"v9_{i}" for i in range(N_SURF))
 SUPP_IDS = tuple(f"b9_{i}" for i in range(N_SUPP))
@@ -60,6 +60,11 @@ def register_pool(pool: dict) -> list:
         for k, r in con.items():
             if r.get("spawn_scale"):
                 SC.OBJ_GEOM[k]["spawn_scale"] = tuple(r["spawn_scale"])
+            # L9 rows: inside.inner_floor_z is measured from the container's BOTTOM and the USD root sits at its
+            # centre (root_above_bottom = h / 2), so register_containers' "inner_floor_z - root_above_bottom" (right
+            # for L8S rows, root at the bottom) put the place surface h / 2 too low (pilot G1: releases pressed into
+            # bowls, objects started inside containers tipped). SUPPORT_TOP is "above the bottom".
+            SC.SUPPORT_TOP[k] = float(r["inside"]["inner_floor_z"])
     return sorted(ids)
 
 
