@@ -50,6 +50,7 @@ def main(argv=None):
     ap.add_argument("--lowfric", action="store_true")
     ap.add_argument("--neg", action="store_true", help="smoke: add 2 negatives per object (90 deg turn, 8 cm shift)")
     ap.add_argument("--spacing", type=float, default=1.2)
+    ap.add_argument("--device", default="cuda:0", help="physics device (production L9 worlds run PhysX on cpu)")
     ap.add_argument("--no-pad-drop", dest="pad_drop", action="store_false",
                     help="command T as is (default: back off by the arc drop of the pads, gtest9.exec_pose)")
     ap.add_argument("--collider", default="none", choices=("none", "sdf", "cd"),
@@ -131,7 +132,7 @@ def run(a):
     os.makedirs(od, exist_ok=True)
     for t in tasks:  # no candidates: an empty result (the queue must not pick the object again)
         if not len(t[2]):
-            np.savez_compressed(os.path.join(od, t[0] + ".npz"), idx=np.zeros(0, int))
+            np.savez_compressed(os.path.join(od, t[0] + ".npz"), idx=np.zeros(0, int), **{"pass": np.zeros(0, bool)})
             with open(os.path.join(od, "_log.jsonl"), "a") as f:
                 f.write(json.dumps({"id": t[0], "l9cat": t[1].get("l9cat"), "n": 0, "lift": 0, "shake": 0,
                                     "lowfric": 0, "lowfric_run": bool(a.lowfric)}) + "\n")
@@ -197,7 +198,7 @@ def run(a):
             soft_joint_pos_limit_factor=1.0)
 
     sim = sim_utils.SimulationContext(sim_utils.SimulationCfg(
-        dt=DT, device="cuda:0", render_interval=1000,
+        dt=DT, device=a.device, render_interval=1000,
         physx=sim_utils.PhysxCfg(bounce_threshold_velocity=0.01, friction_correlation_distance=0.00625,
                                  gpu_max_rigid_contact_count=2 ** 24, gpu_max_rigid_patch_count=2 ** 22,
                                  gpu_found_lost_pairs_capacity=2 ** 24, gpu_found_lost_aggregate_pairs_capacity=2 ** 25,
@@ -430,7 +431,16 @@ def run(a):
                     f"gap_end={r['gap_end'][j] * 100:5.1f} rise={r['rise_end'][j] * 100:5.1f}cm slip={r['slip_mm'][j]:6.1f}mm "
                     f"lift={int(r['lift_ok'][j])} shake={int(r['shake_ok'][j])} lowfric={int(r['lowfric_ok'][j])}")
         keep = ~neg
+        # 'pass' over ALL candidates of the grasps npz (its order): tested, shake ok at catalog friction and (when
+        # the low-friction pair ran) shake ok at friction 0.4; untested candidates are False (rt9 reads it)
+        K = int(np.load(os.path.join(a.grasps, a.grip, k + ".npz"))["w"].shape[0])
+        ok = r["shake_ok"][keep] & (r["lowfric_ok"][keep] != 0)
+        pas = np.zeros(K, bool)
+        pas[idx[keep]] = ok
+        tested = np.zeros(K, bool)
+        tested[idx[keep]] = True
         np.savez_compressed(os.path.join(od, k + ".npz"), idx=idx[keep], lift_ok=r["lift_ok"][keep],
+                            **{"pass": pas}, tested=tested, pad_drop=bool(a.pad_drop), collider=str(a.collider),
                             shake_ok=r["shake_ok"][keep], lowfric_ok=r["lowfric_ok"][keep],
                             final_gap=r["final_gap"][keep], gap_hold=r["gap_hold"][keep], gap_end=r["gap_end"][keep],
                             slip_mm=r["slip_mm"][keep], rise_end=r["rise_end"][keep], w=w[keep], pre_open=pre[keep],

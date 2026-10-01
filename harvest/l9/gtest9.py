@@ -267,14 +267,32 @@ def pad_drop_q(q, grip: str):
     return np.interp(np.asarray(q, float), d["q"], d["dz"])
 
 
-def pad_drop(w, grip: str, table) -> float:
-    """Pad drop (m) when the hand is closed to the pad gap w."""
+_TABLES = {}
+
+
+def width_table(grip: str):
+    """width_to_joint of the gripper json (assets9/grippers, grasp9.JSON_NAME), None when there is none."""
+    if grip not in _TABLES:
+        import json
+        import os
+        from . import grasp9 as G
+        p = os.path.join(G.DIR, G.JSON_NAME.get(grip, grip) + ".json")
+        _TABLES[grip] = json.load(open(p, encoding="utf-8")).get("width_to_joint") if os.path.exists(p) else None
+    return _TABLES[grip]
+
+
+def pad_drop(w, grip: str, table=None) -> float:
+    """Pad drop (m) when the hand is closed to the pad gap w (0 for grippers without a PAD_DROP entry)."""
+    if grip not in PAD_DROP:
+        return 0.0
+    table = table or width_table(grip)
     return float(pad_drop_q(width_to_q(w, table), grip))
 
 
-def exec_pose(T, w, grip: str, table) -> np.ndarray:
-    """Hand TCP pose to command for a candidate T (TCP = contact centre) of contact width w: backed off along the
-    approach by the pad drop at w, so the closed pads meet the object at the planned contacts."""
+def exec_pose(T, w, grip: str, table=None) -> np.ndarray:
+    """Hand TCP pose to command for a candidate T (4x4, TCP = contact centre, any frame) of contact width w (m):
+    T backed off along the approach (+z_G) by the pad drop at w, so the closed pads meet the object at the planned
+    contacts. Same frame as T."""
     return backoff(T, pad_drop(w, grip, table))
 
 

@@ -161,3 +161,5 @@ def test_exec_pose_backs_off_by_pad_drop():
     Te = T.exec_pose(Tg, 0.025, "ffw_sg2", TABLE)
     assert np.allclose(Te[:3, 3], [0.0, 0.0, 0.05 + d]) and np.allclose(Te[:3, :3], Tg[:3, :3])
     assert T.pad_drop(0.03, "franka", TABLE) == 0.0
+    assert T.pad_drop(0.025, "ffw_sg2") == d  # table from assets9/grippers/ffw_sg2_right.json
+    assert np.allclose(T.exec_pose(Tg, 0.03, "franka"), Tg)
