@@ -199,6 +199,7 @@ def main():
     ap.add_argument("robot", choices=sorted(RV.ROBOTS))
     ap.add_argument("--out", default=OUT_DEFAULT)
     ap.add_argument("--density", type=float, default=1.0)
+    ap.add_argument("--reuse-spheres", action="store_true", help="take the spheres of the previous <out>/<robot>_<arm>.yml")
     ap.add_argument("--g1-tcp", default="", help="g1 only: json from hands_v2.py with per-arm TCP + open posture")
     a = ap.parse_args()
     robot = a.robot
@@ -230,7 +231,13 @@ def main():
         spheres, base_ign, buf = franka_spheres()
         metrics = {"source": "cuRobo v0.8.0 franka.yml"}
     else:
-        spheres, metrics = fit_spheres(robot, links, a.density)
+        prev = os.path.join(a.out, f"{robot}_{next(iter(s['arms']))}.yml")
+        if a.reuse_spheres and os.path.exists(prev):
+            import yaml
+            spheres = yaml.safe_load(open(prev))["robot_cfg"]["kinematics"]["collision_spheres"]
+            metrics = {"source": f"reused from {prev}"}
+        else:
+            spheres, metrics = fit_spheres(robot, links, a.density)
         base_ign, buf = {}, {}
     sph_links = set(spheres)
     act = actuated_in(u, links)

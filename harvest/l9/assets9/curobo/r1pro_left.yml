@@ -1,0 +1,1034 @@
+# L9 v2 cuRobo v0.8.0 config: r1pro left arm (tools/l9/v2robot/build_curobo9.py)
+# base torso_link4, tool frame left_l9_tcp = executor TCP (pad centre, z = -approach, y = closing axis); gripper locked open
+robot_cfg:
+  kinematics:
+    format_version: 2.0
+    base_link: torso_link4
+    tool_frames: [left_l9_tcp]
+    urdf_path: /data/harvest/assets_l9v2/robots/r1pro/r1pro_l9v2.urdf
+    asset_root_path: /data/harvest/assets_l9v2/robots/r1pro
+    collision_link_names: [left_arm_base_link, left_arm_link1, left_arm_link2, left_arm_link3,
+      left_arm_link4, left_arm_link5, left_arm_link6, left_arm_link7, left_gripper_finger_link1,
+      left_gripper_finger_link2, left_gripper_link, left_realsense_link, right_arm_base_link,
+      right_arm_link1, right_arm_link2, right_arm_link3, right_arm_link4, right_arm_link5,
+      right_arm_link6, right_arm_link7, right_gripper_finger_link1, right_gripper_finger_link2,
+      right_gripper_link, right_realsense_link, torso_link4, zed_link, attached_object]
+    collision_spheres:
+      left_arm_base_link:
+      - center: [-0.01901, 0.03443, 0.01951]
+        radius: 0.05234
+      - center: [-0.01755, 0.03667, -0.02361]
+        radius: 0.0547
+      - center: [0.02273, 0.03639, 0.02138]
+        radius: 0.05248
+      - center: [0.0246, 0.04064, -0.01535]
+        radius: 0.03996
+      - center: [0.04379, 0.06709, -0.01982]
+        radius: 0.00373
+      - center: [0.02508, 0.00984, -0.0608]
+        radius: 0.00281
+      - center: [0.04098, 0.01537, -0.04196]
+        radius: 0.02135
+      - center: [0.0569, 0.00949, -0.02067]
+        radius: 0.00882
+      - center: [-0.05023, 0.00581, 0.0526]
+        radius: 0.00589
+      - center: [0.05632, 0.00434, -0.00241]
+        radius: 0.00734
+      left_arm_link1:
+      - center: [0.01505, 0.09568, 0.01119]
+        radius: 0.01035
+      - center: [-0.0114, 0.05354, -0.02914]
+        radius: 0.01494
+      - center: [0.0002, 0.05012, 0.01546]
+        radius: 0.02824
+      - center: [0.00683, 0.01119, 0.01166]
+        radius: 0.01144
+      - center: [-0.00703, 0.0708, 0.0062]
+        radius: 0.01919
+      - center: [-0.01593, 0.05226, -0.01128]
+        radius: 0.00953
+      - center: [0.01205, 0.11046, -0.0238]
+        radius: 0.01602
+      - center: [0.00687, 0.04523, -0.01809]
+        radius: 0.01965
+      - center: [0.01308, 0.09081, 0.03692]
+        radius: 0.01631
+      - center: [-0.01063, 0.0771, -0.00981]
+        radius: 0.01276
+      - center: [0.0145, 0.08965, -0.0107]
+        radius: 0.01181
+      - center: [-0.01036, 0.10173, 0.03187]
+        radius: 0.0173
+      - center: [0.01194, 0.06325, -0.00731]
+        radius: 0.01374
+      - center: [-0.01022, 0.09149, 0.00509]
+        radius: 0.01575
+      - center: [0.01406, 0.08336, 0.00699]
+        radius: 0.01257
+      - center: [-0.01416, 0.10624, -0.03208]
+        radius: 0.01052
+      - center: [0.01325, 0.04778, -0.0285]
+        radius: 0.01248
+      - center: [0.01021, 0.0306, 0.01964]
+        radius: 0.01246
+      - center: [0.01664, 0.05122, 0.03324]
+        radius: 0.00892
+      - center: [0.00077, 0.02327, -0.00224]
+        radius: 0.02864
+      - center: [-0.00969, 0.11507, -0.01575]
+        radius: 0.01759
+      - center: [0.01245, 0.117, 0.01431]
+        radius: 0.01449
+      - center: [-0.01318, 0.06954, -0.03734]
+        radius: 0.01278
+      - center: [-0.01334, 0.0668, 0.03715]
+        radius: 0.01281
+      - center: [0.00948, 0.07384, 0.03439]
+        radius: 0.0171
+      - center: [-0.01099, 0.03786, -0.02224]
+        radius: 0.01435
+      - center: [0.0148, 0.02912, -0.02498]
+        radius: 0.00603
+      - center: [-0.00329, 0.01832, 0.00891]
+        radius: 0.01917
+      - center: [-0.01657, 0.05335, 0.03415]
+        radius: 0.00804
+      - center: [0.01074, 0.06639, -0.03326]
+        radius: 0.01797
+      - center: [0.02178, 0.0439, 0.00871]
+        radius: 0.00332
+      - center: [-0.01202, 0.0317, 0.02277]
+        radius: 0.0103
+      - center: [-0.01338, 0.09183, -0.03899]
+        radius: 0.01287
+      - center: [-0.01053, 0.08263, 0.03702]
+        radius: 0.01595
+      - center: [0.01578, 0.10145, -0.00102]
+        radius: 0.01036
+      - center: [0.00887, 0.08757, -0.0331]
+        radius: 0.02118
+      - center: [0.01243, 0.11684, -0.00761]
+        radius: 0.01683
+      - center: [-0.01003, 0.09243, -0.01985]
+        radius: 0.01576
+      - center: [0.01214, 0.1061, 0.02767]
+        radius: 0.01565
+      - center: [-0.00897, 0.11434, 0.01201]
+        radius: 0.02004
+      - center: [-0.01322, 0.07692, -0.02069]
+        radius: 0.01067
+      - center: [0.02006, 0.07634, -0.01638]
+        radius: 0.00498
+      - center: [0.02073, 0.07065, 0.01494]
+        radius: 0.00458
+      left_arm_link2:
+      - center: [-0.0268, -0.00782, -0.00926]
+        radius: 0.0703
+      - center: [0.02445, -0.04866, -0.00977]
+        radius: 0.00602
+      - center: [-0.03966, 0.01685, -0.06172]
+        radius: 0.0361
+      - center: [-0.05239, -0.03489, 0.03047]
+        radius: 0.02635
+      - center: [-0.01201, -0.03037, 0.02758]
+        radius: 0.03196
+      - center: [-0.06539, 0.00779, -0.08947]
+        radius: 0.00522
+      - center: [-0.03992, -0.01696, -0.05877]
+        radius: 0.04172
+      - center: [-0.06668, 0.01854, -0.04164]
+        radius: 0.00217
+      - center: [-0.0653, 0.02222, 0.00621]
+        radius: 0.00454
+      - center: [0.01965, -0.04246, -0.03877]
+        radius: 0.00495
+      - center: [-0.06867, -0.0504, -0.03755]
+        radius: 0.00369
+      - center: [0.00916, -0.04873, 0.03634]
+        radius: 0.01202
+      - center: [-0.01106, 0.0156, -0.06124]
+        radius: 0.03809
+      - center: [-0.0069, -0.01679, -0.06744]
+        radius: 0.03613
+      - center: [0.01022, 0.01207, -0.08441]
+        radius: 0.01123
+      - center: [-0.05183, -0.03389, -0.02199]
+        radius: 0.01916
+      - center: [0.00137, -0.01188, 0.01296]
+        radius: 0.02323
+      - center: [-0.06029, 0.00423, 0.03266]
+        radius: 0.00797
+      left_arm_link3:
+      - center: [0.00191, -0.0233, -0.00208]
+        radius: 0.02971
+      - center: [-0.00265, -7.0e-05, -0.05928]
+        radius: 0.05366
+      - center: [-0.022, -0.01824, -0.08929]
+        radius: 0.02016
+      - center: [0.01659, 0.01755, -0.09451]
+        radius: 0.02671
+      - center: [0.03209, -0.00741, -0.02192]
+        radius: 0.01522
+      - center: [-0.0147, 0.02392, -0.05332]
+        radius: 0.01545
+      - center: [-0.03351, 0.00746, -0.05992]
+        radius: 0.01144
+      - center: [-0.01946, -0.00961, -0.00406]
+        radius: 0.03392
+      - center: [-0.00364, 0.01558, -0.00774]
+        radius: 0.04275
+      - center: [0.03141, 0.01372, 0.00908]
+        radius: 0.01479
+      - center: [0.01693, -0.00156, -0.00884]
+        radius: 0.03403
+      - center: [-0.02581, 0.00711, -0.11045]
+        radius: 0.01954
+      - center: [-0.01139, 0.01273, -0.10928]
+        radius: 0.03221
+      - center: [0.0182, -0.00747, -0.11062]
+        radius: 0.02588
+      - center: [-0.01076, -0.01099, -0.12228]
+        radius: 0.03562
+      - center: [-0.03079, 0.0283, -0.12102]
+        radius: 0.00907
+      - center: [0.01437, 0.0132, -0.12637]
+        radius: 0.03037
+      - center: [0.02073, -0.02179, -0.10699]
+        radius: 0.02473
+      - center: [-0.03127, -0.03205, -0.14334]
+        radius: 0.00613
+      - center: [-0.02289, -0.00592, -0.13411]
+        radius: 0.01721
+      - center: [0.03018, 0.02781, -0.15259]
+        radius: 0.00881
+      - center: [0.03536, -0.01701, -0.13477]
+        radius: 0.00718
+      - center: [-0.0208, 0.02074, -0.14328]
+        radius: 0.02108
+      - center: [0.01696, -0.02205, -0.14905]
+        radius: 0.02134
+      - center: [0.01041, 0.02958, -0.16226]
+        radius: 0.00935
+      - center: [-0.00172, 0.02826, -0.22052]
+        radius: 0.00986
+      - center: [-0.0238, 0.02018, -0.21266]
+        radius: 0.00773
+      - center: [0.02377, -0.01142, -0.19902]
+        radius: 0.01195
+      - center: [-0.0005, 0.00094, -0.18922]
+        radius: 0.05401
+      - center: [-0.034, 0.02451, -0.15541]
+        radius: 0.00304
+      - center: [0.03272, -0.01589, 0.0125]
+        radius: 0.01397
+      - center: [-0.03462, -0.00813, -0.14682]
+        radius: 0.00335
+      - center: [0.02996, 0.0257, -0.12178]
+        radius: 0.00429
+      - center: [0.00622, -0.0375, -0.08846]
+        radius: 0.00342
+      - center: [-0.00548, -0.03643, -0.13326]
+        radius: 0.00293
+      left_arm_link4:
+      - center: [-0.0197, -0.01159, -0.02928]
+        radius: 0.02327
+      - center: [-0.00937, -0.06077, -0.01798]
+        radius: 0.01725
+      - center: [0.0256, -0.01994, -0.0322]
+        radius: 0.01768
+      - center: [0.02427, -0.05556, -0.05844]
+        radius: 0.0117
+      - center: [-0.00523, -0.03678, -0.11128]
+        radius: 0.00365
+      - center: [-0.00119, -0.07033, -0.08649]
+        radius: 0.00739
+      - center: [0.02571, -0.05918, -0.10467]
+        radius: 0.00637
+      - center: [-0.01441, -0.07301, 0.00777]
+        radius: 0.0055
+      - center: [0.02248, -0.00421, -0.10026]
+        radius: 0.00207
+      - center: [0.00085, -0.03478, -0.07169]
+        radius: 0.05687
+      - center: [0.00271, -0.05047, -0.10596]
+        radius: 0.00694
+      - center: [0.0166, -0.06593, -0.02031]
+        radius: 0.01225
+      - center: [-0.00356, -0.01766, 0.00312]
+        radius: 0.03836
+      - center: [-0.00042, -0.04354, -0.00438]
+        radius: 0.04964
+      - center: [0.01765, -0.00617, 0.00545]
+        radius: 0.01954
+      - center: [0.026, -0.00405, -0.02115]
+        radius: 0.01344
+      - center: [0.0338, 0.0005, -0.01592]
+        radius: 0.00449
+      - center: [0.02958, 0.00058, -0.00308]
+        radius: 0.00649
+      left_arm_link5:
+      - center: [0.0006, -0.00091, -0.04585]
+        radius: 0.04689
+      - center: [-0.01348, -0.0388, -0.07596]
+        radius: 0.00259
+      - center: [-0.00074, 6.0e-05, -0.09718]
+        radius: 0.04609
+      - center: [0.00082, -0.01621, -0.1325]
+        radius: 0.03327
+      - center: [-0.01272, -0.03052, -0.16415]
+        radius: 0.0117
+      - center: [-0.01454, 0.02597, -0.07448]
+        radius: 0.01617
+      - center: [0.01055, -0.02831, -0.16292]
+        radius: 0.01429
+      - center: [0.00047, 0.00156, -0.00047]
+        radius: 0.03741
+      - center: [-0.007, -0.03528, -0.1776]
+        radius: 0.00957
+      - center: [0.0051, -0.03649, -0.17725]
+        radius: 0.00665
+      left_arm_link6:
+      - center: [0.00062, 0.02816, 0.00034]
+        radius: 0.0384
+      left_arm_link7:
+      - center: [-0.02819, -0.00091, -0.05819]
+        radius: 0.03716
+      - center: [0.00224, -0.00986, 0.01086]
+        radius: 0.01177
+      - center: [-0.00966, -0.00105, -0.01874]
+        radius: 0.02788
+      - center: [0.00325, 0.01198, 0.00832]
+        radius: 0.01035
+      left_gripper_finger_link1:
+      - center: [0.00422, -0.01133, 0.02187]
+        radius: 0.02247
+      - center: [0.01365, -0.04231, 0.03631]
+        radius: 0.01757
+      - center: [0.00906, -0.03626, 0.01192]
+        radius: 0.00994
+      - center: [0.00194, -0.01305, -0.01076]
+        radius: 0.01721
+      - center: [0.00712, -0.02933, -0.00039]
+        radius: 0.00961
+      - center: [0.01564, -0.05768, 0.04204]
+        radius: 0.00833
+      - center: [0.01545, -0.02084, 0.04161]
+        radius: 0.01145
+      - center: [0.0014, -0.01246, -0.03095]
+        radius: 0.00857
+      - center: [0.0123, -0.04572, 0.01927]
+        radius: 0.00625
+      left_gripper_finger_link2:
+      - center: [-0.00232, 0.0114, 0.02346]
+        radius: 0.0206
+      - center: [-0.01214, 0.02606, 0.0364]
+        radius: 0.01778
+      - center: [-0.01152, 0.04066, 0.02083]
+        radius: 0.01128
+      - center: [-0.00371, 0.01264, -0.00716]
+        radius: 0.01852
+      - center: [-0.01576, 0.05328, 0.0398]
+        radius: 0.01332
+      - center: [-0.0001, 0.01244, -0.03038]
+        radius: 0.01059
+      - center: [-0.00753, 0.03241, 0.00542]
+        radius: 0.01105
+      left_gripper_link:
+      - center: [0.00137, 0.02438, 0.02473]
+        radius: 0.03585
+      - center: [-0.00071, -0.00042, 0.04685]
+        radius: 0.03907
+      - center: [-0.00202, -0.02266, 0.02276]
+        radius: 0.03387
+      - center: [-0.01691, 0.04689, 0.00853]
+        radius: 0.00821
+      - center: [0.01967, -0.04594, 0.00735]
+        radius: 0.00957
+      left_realsense_link:
+      - center: [0.00117, -0.05854, -0.01433]
+        radius: 0.01883
+      - center: [0.00455, -0.0343, -0.01273]
+        radius: 0.02217
+      - center: [0.01092, -0.00767, -0.01272]
+        radius: 0.02703
+      right_arm_base_link:
+      - center: [0.02502, -0.03212, -0.02475]
+        radius: 0.04952
+      - center: [-0.02271, -0.03418, 0.02477]
+        radius: 0.05096
+      - center: [-0.02087, -0.03769, -0.02196]
+        radius: 0.05203
+      - center: [0.02085, -0.03801, 0.01934]
+        radius: 0.04684
+      - center: [0.0541, -0.00685, 0.01559]
+        radius: 0.00858
+      - center: [0.0428, -0.04633, -0.04039]
+        radius: 0.00221
+      - center: [-0.00061, -0.0686, 0.05227]
+        radius: 0.00688
+      - center: [0.04543, -0.01467, 0.04453]
+        radius: 0.01858
+      - center: [-0.04398, -0.00764, -0.0452]
+        radius: 0.01478
+      - center: [-0.05931, -0.01881, -0.02442]
+        radius: 0.00247
+      - center: [-0.03446, -0.06756, 0.02423]
+        radius: 0.00272
+      - center: [0.03652, -0.01026, -0.03885]
+        radius: 0.00726
+      - center: [0.00063, -0.00395, -0.06157]
+        radius: 0.00359
+      - center: [0.00854, -0.00513, 0.05936]
+        radius: 0.00765
+      - center: [0.02762, -0.00592, 0.05595]
+        radius: 0.00854
+      - center: [0.0098, -0.00131, -0.06134]
+        radius: 0.00381
+      right_arm_link1:
+      - center: [0.00018, -0.09531, 0.02132]
+        radius: 0.03448
+      - center: [-0.01603, -0.05202, -0.02459]
+        radius: 0.00674
+      - center: [0.01339, -0.07001, 0.03806]
+        radius: 0.01416
+      - center: [-0.01589, -0.06964, 0.04212]
+        radius: 0.00844
+      - center: [-0.00217, -0.08312, 0.01328]
+        radius: 0.02158
+      - center: [-0.01787, -0.07613, -0.03812]
+        radius: 0.00909
+      - center: [0.02201, -0.05659, 0.01112]
+        radius: 0.00303
+      - center: [0.0057, -0.08937, 0.00475]
+        radius: 0.01376
+      - center: [0.01945, -0.06178, 0.0253]
+        radius: 0.00483
+      - center: [0.00773, -0.10986, 0.03121]
+        radius: 0.00629
+      - center: [0.0088, -0.11387, 0.00187]
+        radius: 0.02172
+      - center: [0.02191, -0.09776, 0.01141]
+        radius: 0.0019
+      - center: [-0.01827, -0.03429, -0.03022]
+        radius: 0.00316
+      - center: [0.0006, -0.06239, 0.02305]
+        radius: 0.03073
+      - center: [-0.01305, -0.1202, 0.00339]
+        radius: 0.01425
+      - center: [0.01823, -0.09056, -0.0433]
+        radius: 0.00528
+      - center: [-0.00993, -0.05233, 0.03016]
+        radius: 0.00903
+      - center: [0.00618, -0.1144, 0.01101]
+        radius: 0.00796
+      - center: [-0.00519, -0.11586, -0.00394]
+        radius: 0.00999
+      - center: [-0.00195, -0.09912, -0.02055]
+        radius: 0.03442
+      - center: [-0.0193, -0.07886, 0.03702]
+        radius: 0.00594
+      - center: [0.00177, -0.04263, 0.03011]
+        radius: 0.00654
+      - center: [-0.00119, -0.06458, -0.023]
+        radius: 0.03383
+      - center: [-0.00973, -0.04337, 0.00142]
+        radius: 0.01397
+      - center: [-0.00058, -0.02617, 0.00185]
+        radius: 0.03436
+      - center: [-0.00151, -0.07914, -0.02687]
+        radius: 0.02133
+      - center: [-0.00941, -0.10292, 0.03701]
+        radius: 0.00756
+      - center: [-0.01784, -0.02304, -0.02607]
+        radius: 0.00184
+      - center: [-0.021, -0.10465, -0.00379]
+        radius: 0.00188
+      - center: [0.01031, -0.11268, 0.01013]
+        radius: 0.00858
+      right_arm_link2:
+      - center: [-0.02458, 0.00505, -0.01636]
+        radius: 0.06831
+      - center: [0.00221, -0.00619, 0.03856]
+        radius: 0.01052
+      - center: [-0.02585, 0.01901, -0.08446]
+        radius: 0.00805
+      - center: [-0.0685, 0.04456, -0.04535]
+        radius: 0.00297
+      - center: [-0.00715, 0.00592, 0.0261]
+        radius: 0.0324
+      - center: [-0.01381, 0.02021, -0.06133]
+        radius: 0.0423
+      - center: [-0.06139, -0.02765, -0.0618]
+        radius: 0.00482
+      - center: [-0.04463, 0.01698, -0.0654]
+        radius: 0.0315
+      - center: [0.02601, 0.05227, -0.0008]
+        radius: 0.00469
+      - center: [-0.05008, -0.0435, -0.05948]
+        radius: 0.00274
+      - center: [0.00627, -0.04638, -0.03531]
+        radius: 0.00343
+      - center: [-0.04348, 0.02701, 0.02498]
+        radius: 0.03812
+      - center: [-0.00892, 0.03341, 0.02898]
+        radius: 0.03002
+      - center: [-0.00854, -0.01649, -0.06685]
+        radius: 0.03781
+      - center: [0.01119, 0.00313, -0.08373]
+        radius: 0.00863
+      - center: [0.00951, -0.02557, -0.01635]
+        radius: 0.006
+      - center: [0.00565, -0.03449, -0.0434]
+        radius: 0.00843
+      - center: [-0.03909, 0.00765, 0.02558]
+        radius: 0.03223
+      - center: [-0.03404, -0.04841, -0.04572]
+        radius: 0.00382
+      - center: [0.02108, 0.04287, 0.00307]
+        radius: 0.00557
+      - center: [0.01702, -0.02733, -0.03408]
+        radius: 0.00437
+      - center: [-0.06357, -0.02527, 0.01816]
+        radius: 0.00259
+      - center: [-0.03944, -0.0263, -0.07612]
+        radius: 0.02113
+      - center: [-0.05632, -0.01375, 0.03799]
+        radius: 0.00489
+      - center: [-0.0598, -0.00917, -0.08053]
+        radius: 0.01517
+      - center: [-0.05564, -0.02519, -0.08577]
+        radius: 0.00936
+      - center: [0.01883, 0.04676, 0.01671]
+        radius: 0.0116
+      - center: [-0.06876, 0.04699, 0.00498]
+        radius: 0.0137
+      - center: [0.00684, 0.01785, 0.04131]
+        radius: 0.00743
+      - center: [0.02693, 0.05222, -0.01985]
+        radius: 0.00317
+      - center: [-0.0631, -0.01548, -0.05153]
+        radius: 0.00608
+      right_arm_link3:
+      - center: [0.01703, -0.01655, -0.13472]
+        radius: 0.02479
+      - center: [-0.02761, 0.021, -0.07233]
+        radius: 0.01375
+      - center: [0.00071, 0.00078, -0.09846]
+        radius: 0.05213
+      - center: [0.01166, 0.00121, 0.00276]
+        radius: 0.01777
+      - center: [-0.02184, -0.02148, -0.07531]
+        radius: 0.01674
+      - center: [0.03442, -0.02665, -0.14515]
+        radius: 0.00312
+      - center: [-0.0016, -0.00026, -0.02267]
+        radius: 0.06109
+      - center: [-0.00227, 0.039, 0.01638]
+        radius: 0.00417
+      - center: [-0.02723, 0.01082, -0.01609]
+        radius: 0.01731
+      - center: [0.00331, -0.02541, -0.02522]
+        radius: 0.02052
+      - center: [0.02972, -0.02035, -0.06172]
+        radius: 0.0105
+      - center: [0.00567, -0.03371, -0.13107]
+        radius: 0.00877
+      - center: [0.01607, -0.0141, -0.15807]
+        radius: 0.02554
+      - center: [-0.01798, 0.00865, -0.1319]
+        radius: 0.02261
+      - center: [-0.02767, 0.02889, -0.14262]
+        radius: 0.01239
+      - center: [0.01609, 0.01588, -0.1344]
+        radius: 0.02566
+      - center: [-0.02539, 0.02868, -0.08561]
+        radius: 0.00935
+      - center: [0.00494, -0.03083, -0.18718]
+        radius: 0.00752
+      - center: [-0.01461, 0.01643, -0.13504]
+        radius: 0.02608
+      - center: [0.01399, 0.01498, -0.14508]
+        radius: 0.02069
+      - center: [0.01929, -0.01453, -0.15398]
+        radius: 0.01934
+      - center: [-0.018, -0.02434, -0.13844]
+        radius: 0.0193
+      - center: [-0.00374, 0.02941, -0.15453]
+        radius: 0.01128
+      - center: [0.03065, 0.01887, -0.1924]
+        radius: 0.00593
+      - center: [0.02156, 0.02796, -0.12702]
+        radius: 0.01083
+      - center: [-0.01717, -0.01259, -0.14772]
+        radius: 0.02611
+      - center: [0.00608, -0.02465, -0.19908]
+        radius: 0.01233
+      - center: [0.00024, -0.00131, -0.18675]
+        radius: 0.05297
+      - center: [-0.00265, 0.0145, -0.21794]
+        radius: 0.01245
+      - center: [0.03537, -0.02365, -0.10462]
+        radius: 0.00293
+      - center: [0.01364, 0.03554, -0.1038]
+        radius: 0.00349
+      - center: [-0.02177, 0.02805, -0.18233]
+        radius: 0.00683
+      - center: [0.02915, -0.03143, -0.13638]
+        radius: 0.00774
+      - center: [0.03435, 0.02061, -0.07761]
+        radius: 0.00535
+      - center: [0.03052, 0.03063, -0.14923]
+        radius: 0.00786
+      right_arm_link4:
+      - center: [-0.01005, -0.01462, -0.0515]
+        radius: 0.02086
+      - center: [0.01418, -0.01927, -0.0279]
+        radius: 0.03168
+      - center: [0.01037, -0.01514, -0.10398]
+        radius: 0.00892
+      - center: [-0.01952, -0.06002, -0.08078]
+        radius: 0.01312
+      - center: [-0.01787, -0.0132, -0.02723]
+        radius: 0.02462
+      - center: [0.02142, -0.0539, -0.03615]
+        radius: 0.02256
+      - center: [-0.01274, -0.01313, 0.00697]
+        radius: 0.03012
+      - center: [0.00019, -0.00611, -0.08708]
+        radius: 0.01508
+      - center: [0.03524, -0.01057, -0.06044]
+        radius: 0.00464
+      - center: [-0.00162, -0.03738, -0.07553]
+        radius: 0.05622
+      - center: [0.01056, -0.04758, -0.09929]
+        radius: 0.01737
+      - center: [-0.02229, -0.06204, -0.02666]
+        radius: 0.01573
+      - center: [0.00068, -0.04728, -0.00254]
+        radius: 0.04644
+      - center: [0.0114, -0.00678, 0.00979]
+        radius: 0.02339
+      - center: [0.00789, -0.06848, -0.06315]
+        radius: 0.00858
+      - center: [0.02644, -0.00353, -0.01519]
+        radius: 0.01498
+      right_arm_link5:
+      - center: [0.00094, -0.00075, -0.03769]
+        radius: 0.04466
+      - center: [-0.00646, -0.03226, -0.08738]
+        radius: 0.00562
+      - center: [0.00116, -0.00161, -0.07979]
+        radius: 0.04539
+      - center: [-0.00677, -0.00528, -0.02103]
+        radius: 0.02246
+      - center: [-0.00056, 0.00597, -0.10843]
+        radius: 0.04081
+      - center: [-0.01043, 0.02356, -0.14776]
+        radius: 0.02122
+      - center: [0.00998, 0.02127, -0.14519]
+        radius: 0.02233
+      - center: [0.01081, 0.03125, -0.17031]
+        radius: 0.01119
+      - center: [-0.00546, 0.03207, -0.1715]
+        radius: 0.01547
+      right_arm_link6:
+      - center: [0.00146, -0.02767, 0.00038]
+        radius: 0.03833
+      right_arm_link7:
+      - center: [-0.02874, 0.00057, -0.06138]
+        radius: 0.03449
+      - center: [-0.01342, 0.00046, -0.03143]
+        radius: 0.02943
+      - center: [-0.0026, 0.00071, -0.00146]
+        radius: 0.02266
+      right_gripper_finger_link1:
+      - center: [0.00624, -0.01425, 0.02792]
+        radius: 0.02553
+      - center: [0.01242, -0.04246, 0.02248]
+        radius: 0.00949
+      - center: [0.00272, -0.01329, -0.00536]
+        radius: 0.01968
+      - center: [0.01445, -0.04622, 0.04012]
+        radius: 0.01814
+      - center: [0.00125, -0.01265, -0.02939]
+        radius: 0.00992
+      - center: [0.00924, -0.03619, 0.00732]
+        radius: 0.00934
+      right_gripper_finger_link2:
+      - center: [-0.00355, 0.01208, 0.02358]
+        radius: 0.02161
+      - center: [-0.00939, 0.03178, 0.03253]
+        radius: 0.01271
+      - center: [-0.01059, 0.04079, 0.01674]
+        radius: 0.01315
+      - center: [-0.00093, 0.01039, -0.00076]
+        radius: 0.015
+      - center: [-0.01422, 0.04971, 0.03903]
+        radius: 0.01592
+      - center: [-0.01526, 0.02227, 0.04316]
+        radius: 0.01129
+      - center: [0.0003, 0.01433, -0.02557]
+        radius: 0.01448
+      - center: [-0.01834, 0.00843, 0.04224]
+        radius: 0.00202
+      - center: [-0.00602, 0.02522, -0.00221]
+        radius: 0.01227
+      right_gripper_link:
+      - center: [0.00046, 0.02582, 0.02153]
+        radius: 0.034
+      - center: [-0.00162, 0.00032, 0.04788]
+        radius: 0.03849
+      - center: [-0.00148, -0.02279, 0.02551]
+        radius: 0.03792
+      right_realsense_link:
+      - center: [0.00455, -0.0347, -0.01341]
+        radius: 0.0227
+      - center: [0.00831, -0.00481, -0.01183]
+        radius: 0.02694
+      - center: [-0.00168, -0.05941, -0.01338]
+        radius: 0.01817
+      torso_link4:
+      - center: [-0.00612, 0.04197, 0.31937]
+        radius: 0.09739
+      - center: [0.0001, -0.05855, 0.31276]
+        radius: 0.09908
+      - center: [-0.04358, -0.00265, 0.2544]
+        radius: 0.05186
+      - center: [-0.03609, 0.04443, 0.23691]
+        radius: 0.05452
+      - center: [-0.03879, 0.02, 0.15854]
+        radius: 0.04931
+      - center: [-0.03632, -0.03907, 0.17674]
+        radius: 0.05129
+      - center: [0.0489, -0.02782, 0.21049]
+        radius: 0.06713
+      - center: [0.04409, 0.01271, 0.25053]
+        radius: 0.06705
+      - center: [0.05112, 0.06376, 0.22487]
+        radius: 0.06424
+      - center: [0.02809, -0.04649, 0.13964]
+        radius: 0.07063
+      - center: [0.007, -0.1016, 0.30701]
+        radius: 0.08415
+      - center: [0.00041, 0.10219, 0.31065]
+        radius: 0.09208
+      - center: [-0.02169, -0.02791, 0.11851]
+        radius: 0.06277
+      - center: [0.00435, 0.04751, 0.10324]
+        radius: 0.08403
+      - center: [-0.01091, 0.1023, 0.22548]
+        radius: 0.06648
+      - center: [-0.00637, -0.10732, 0.24759]
+        radius: 0.07247
+      - center: [0.02439, -0.10724, 0.25631]
+        radius: 0.06419
+      - center: [0.01997, 0.10535, 0.2567]
+        radius: 0.06972
+      - center: [0.04484, 0.02666, 0.15097]
+        radius: 0.06346
+      - center: [0.02818, -0.01712, 0.10891]
+        radius: 0.06638
+      - center: [-0.00895, 0.09261, 0.15696]
+        radius: 0.05972
+      - center: [-0.0088, -0.09211, 0.16283]
+        radius: 0.06779
+      - center: [0.0361, 0.09054, 0.34164]
+        radius: 0.0415
+      - center: [0.05423, -0.01953, 0.26825]
+        radius: 0.05233
+      - center: [-0.0161, -0.02179, 0.04843]
+        radius: 0.05913
+      - center: [-0.01854, 0.01498, 0.04983]
+        radius: 0.05922
+      - center: [0.00198, 0.09314, 0.14305]
+        radius: 0.05391
+      - center: [0.0019, -0.06762, 0.11685]
+        radius: 0.07262
+      - center: [0.03108, 0.09345, 0.1655]
+        radius: 0.05019
+      - center: [0.02278, -0.10303, 0.20179]
+        radius: 0.05196
+      - center: [0.05844, 0.00282, 0.32122]
+        radius: 0.04112
+      - center: [0.03906, -0.13106, 0.27723]
+        radius: 0.04074
+      - center: [0.02739, 0.03642, 0.03976]
+        radius: 0.0575
+      - center: [0.02393, -0.03832, 0.05464]
+        radius: 0.06575
+      - center: [0.00271, 0.10175, 0.06846]
+        radius: 0.02417
+      - center: [-0.02347, -0.09943, 0.07492]
+        radius: 0.01794
+      - center: [-0.03635, 0.15071, 0.25902]
+        radius: 0.02182
+      - center: [-0.01521, 0.1322, 0.3554]
+        radius: 0.02387
+      - center: [-0.04501, -0.15133, 0.27802]
+        radius: 0.02001
+      - center: [-0.03636, -0.14745, 0.34207]
+        radius: 0.02877
+      - center: [0.04259, 0.14333, 0.34466]
+        radius: 0.01772
+      - center: [0.0401, -0.13299, 0.21206]
+        radius: 0.02555
+      - center: [0.03144, 0.14037, 0.26538]
+        radius: 0.02994
+      - center: [0.03428, -0.15388, 0.34061]
+        radius: 0.02875
+      - center: [-0.08217, 0.00051, 0.29601]
+        radius: 0.01263
+      - center: [-0.0728, -0.00197, 0.33236]
+        radius: 0.02025
+      - center: [-0.077, 0.01259, 0.21057]
+        radius: 0.0152
+      - center: [-0.07099, -0.06303, 0.24431]
+        radius: 0.01322
+      - center: [0.00189, 0.08556, 0.05095]
+        radius: 0.03192
+      - center: [0.00366, -0.08308, 0.05191]
+        radius: 0.03262
+      - center: [-0.03409, -0.04141, 0.39141]
+        radius: 0.01862
+      - center: [-0.01492, -0.00053, 0.39272]
+        radius: 0.01549
+      - center: [0.09355, -0.03399, 0.17904]
+        radius: 0.01594
+      - center: [0.09853, -0.01037, 0.17661]
+        radius: 0.0119
+      - center: [-0.07501, -0.00615, 0.21304]
+        radius: 0.01309
+      - center: [-0.05404, 0.06537, 0.16177]
+        radius: 0.02157
+      - center: [0.10617, 0.02739, 0.21674]
+        radius: 0.01013
+      - center: [0.09445, -0.07245, 0.24583]
+        radius: 0.01143
+      - center: [-0.05658, 0.09607, 0.36077]
+        radius: 0.01872
+      - center: [0.05656, 0.04107, -0.00852]
+        radius: 0.01772
+      - center: [0.05921, 0.00588, -0.00481]
+        radius: 0.01433
+      - center: [0.05334, 0.06158, 0.01086]
+        radius: 0.00998
+      - center: [0.00047, -0.10937, 0.05757]
+        radius: 0.01539
+      - center: [-0.06866, 0.01742, 0.17492]
+        radius: 0.01882
+      - center: [-0.05598, -0.00326, 0.37831]
+        radius: 0.01154
+      - center: [-0.02672, -0.03594, 0.39728]
+        radius: 0.01152
+      - center: [-0.07332, 0.05112, 0.18373]
+        radius: 0.01201
+      - center: [-0.07262, -0.0483, 0.23417]
+        radius: 0.01311
+      - center: [-0.02782, 0.14017, 0.18424]
+        radius: 0.01354
+      - center: [-0.02784, -0.12928, 0.18419]
+        radius: 0.02577
+      - center: [-0.04856, -0.13974, 0.2581]
+        radius: 0.01774
+      - center: [0.0364, 0.15088, 0.20168]
+        radius: 0.00767
+      - center: [0.07261, 0.09808, 0.20407]
+        radius: 0.01329
+      - center: [0.08047, -0.08144, 0.26761]
+        radius: 0.01251
+      - center: [0.08532, 0.01965, 0.15194]
+        radius: 0.01931
+      - center: [0.09542, -0.03587, 0.23413]
+        radius: 0.01777
+      - center: [-0.04024, -0.01565, 0.39952]
+        radius: 0.00988
+      - center: [0.07387, 0.08186, 0.16451]
+        radius: 0.01332
+      - center: [0.0758, -0.08215, 0.1791]
+        radius: 0.02034
+      - center: [-0.04026, 0.05611, 0.02293]
+        radius: 0.01099
+      - center: [0.05905, 0.00301, -0.0149]
+        radius: 0.01309
+      - center: [0.05604, -0.04319, -0.00423]
+        radius: 0.01935
+      - center: [-0.03855, -0.1641, 0.28474]
+        radius: 0.01411
+      - center: [-0.05074, 0.14346, 0.26793]
+        radius: 0.01378
+      zed_link:
+      - center: [0.02022, 0.01654, -0.10118]
+        radius: 0.06959
+      - center: [0.09961, 0.01773, -0.08907]
+        radius: 0.07679
+      - center: [0.09256, 0.03626, -0.03278]
+        radius: 0.04873
+      - center: [0.02849, 0.04253, -0.02779]
+        radius: 0.04305
+      - center: [-0.00745, 0.03415, -0.13146]
+        radius: 0.01233
+      - center: [0.09537, -0.00206, -0.13259]
+        radius: 0.02071
+      - center: [0.08335, 0.04547, -0.14146]
+        radius: 0.00837
+      - center: [0.00021, -0.01069, -0.12355]
+        radius: 0.01279
+      - center: [0.0646, -0.01319, -0.03247]
+        radius: 0.04288
+      - center: [0.12836, 0.00651, -0.07812]
+        radius: 0.02735
+      - center: [0.01638, 0.0024, -0.04523]
+        radius: 0.06585
+      - center: [0.11358, 0.00946, -0.03541]
+        radius: 0.05046
+      - center: [0.00165, 0.04252, -0.1187]
+        radius: 0.01956
+      - center: [0.10851, -0.03358, -0.02244]
+        radius: 0.02763
+      - center: [0.05916, 0.05005, -0.04943]
+        radius: 0.06458
+      - center: [0.04082, 0.05821, -0.0649]
+        radius: 0.04463
+      - center: [0.067, 0.0638, -0.0544]
+        radius: 0.03687
+      - center: [0.08988, 0.07307, -0.03992]
+        radius: 0.02677
+      - center: [-0.01036, -0.03865, -0.01626]
+        radius: 0.0078
+      - center: [0.07789, -0.04541, -0.03638]
+        radius: 0.00622
+      - center: [0.00813, 0.0431, -0.00748]
+        radius: 0.02192
+      - center: [0.13513, -0.02416, -0.0222]
+        radius: 0.01449
+      - center: [0.14323, -0.00568, -0.09505]
+        radius: 0.0114
+      - center: [-0.01371, -0.00951, -0.01068]
+        radius: 0.00885
+      - center: [0.00515, 0.03714, -0.14203]
+        radius: 0.00969
+      - center: [0.12498, 0.03236, -0.13517]
+        radius: 0.01459
+      - center: [0.14013, 0.01587, -0.12821]
+        radius: 0.01161
+      - center: [0.00564, 0.01612, -0.14778]
+        radius: 0.01218
+      - center: [0.13048, 0.06687, -0.09581]
+        radius: 0.0035
+      - center: [0.13145, -0.02175, -0.10859]
+        radius: 0.00772
+      - center: [0.01547, 0.03533, -0.15326]
+        radius: 0.0041
+      - center: [-0.00269, -0.02542, -0.00305]
+        radius: 0.00772
+      - center: [0.114, 0.05766, 0.00728]
+        radius: 0.00523
+      - center: [-0.00675, 0.04125, 0.00366]
+        radius: 0.01031
+      - center: [-0.01951, 0.03217, -6.0e-05]
+        radius: 0.00745
+      - center: [0.13855, 0.02597, -0.00271]
+        radius: 0.01313
+      - center: [0.1303, 0.03788, 0.00612]
+        radius: 0.00488
+      - center: [0.02382, -0.0313, -0.01395]
+        radius: 0.01409
+      - center: [-0.02824, 0.00548, -0.038]
+        radius: 0.01274
+      - center: [0.07027, 0.01848, 0.00633]
+        radius: 0.00356
+      - center: [0.04825, -0.01684, -0.0035]
+        radius: 0.00618
+      - center: [0.0648, 0.01131, 0.0071]
+        radius: 0.00428
+      - center: [0.05548, -0.04633, -0.01395]
+        radius: 0.01375
+      - center: [0.1217, -0.04347, -0.01053]
+        radius: 0.01207
+      - center: [0.03312, 0.09743, -0.02859]
+        radius: 0.01106
+      - center: [0.13169, -0.00596, -0.13867]
+        radius: 0.00557
+      - center: [-0.03224, -0.0141, -0.02886]
+        radius: 0.00555
+      - center: [0.14552, -0.01172, -0.00607]
+        radius: 0.01146
+      - center: [-0.02686, 0.01824, -0.00275]
+        radius: 0.01416
+      - center: [0.12582, 0.04532, -0.00283]
+        radius: 0.01201
+      - center: [-0.02787, -0.00499, 0.00058]
+        radius: 0.00626
+      - center: [0.14565, 0.00881, -0.0073]
+        radius: 0.01492
+      - center: [-0.01477, -0.01701, -0.00265]
+        radius: 0.00427
+      - center: [0.08454, -0.04727, -0.00935]
+        radius: 0.00759
+      - center: [-0.00462, -0.0203, -0.01067]
+        radius: 0.0113
+    collision_sphere_buffer: 0.0
+    self_collision_buffer: {}
+    self_collision_ignore:
+      right_arm_base_link: [torso_link4, right_arm_link2]
+      right_arm_link1: [right_arm_base_link, torso_link4]
+      right_arm_link2: [right_arm_link1, torso_link4]
+      right_arm_link3: [right_arm_link2]
+      right_arm_link4: [right_arm_link3]
+      right_arm_link5: [right_arm_link4, right_arm_link7]
+      right_arm_link6: [right_arm_link5]
+      right_arm_link7: [right_arm_link6]
+      right_gripper_link: [right_arm_link7]
+      right_gripper_finger_link2: [right_gripper_link]
+      right_gripper_finger_link1: [right_gripper_link, right_gripper_finger_link2,
+        right_realsense_link]
+      right_realsense_link: [right_gripper_link]
+      left_arm_base_link: [torso_link4, left_arm_link2]
+      left_arm_link1: [left_arm_base_link, torso_link4]
+      left_arm_link2: [left_arm_link1, torso_link4]
+      left_arm_link3: [left_arm_link2]
+      left_arm_link4: [left_arm_link3]
+      left_arm_link5: [left_arm_link4, left_arm_link7]
+      left_arm_link6: [left_arm_link5]
+      left_arm_link7: [left_arm_link6]
+      left_gripper_link: [left_arm_link7]
+      left_gripper_finger_link2: [left_gripper_link]
+      left_gripper_finger_link1: [left_gripper_link, left_gripper_finger_link2]
+      left_realsense_link: [left_gripper_link]
+      zed_link: [torso_link4]
+    mesh_link_names: [left_arm_base_link, left_arm_link1, left_arm_link2, left_arm_link3,
+      left_arm_link4, left_arm_link5, left_arm_link6, left_arm_link7, left_gripper_finger_link1,
+      left_gripper_finger_link2, left_gripper_link, left_realsense_link, right_arm_base_link,
+      right_arm_link1, right_arm_link2, right_arm_link3, right_arm_link4, right_arm_link5,
+      right_arm_link6, right_arm_link7, right_gripper_finger_link1, right_gripper_finger_link2,
+      right_gripper_link, right_realsense_link, torso_link4, zed_link]
+    grasp_contact_link_names: [left_gripper_link, left_gripper_finger_link1, left_gripper_finger_link2,
+      attached_object]
+    lock_joints: {right_gripper_finger_joint1: 0.05, right_gripper_finger_joint2: 0.05,
+      right_arm_joint1: 0.0, right_arm_joint2: 0.0, right_arm_joint3: 0.0, right_arm_joint4: 0.0,
+      right_arm_joint5: 0.0, right_arm_joint6: 0.0, right_arm_joint7: 0.0, left_gripper_finger_joint1: 0.05,
+      left_gripper_finger_joint2: 0.05}
+    extra_links:
+      attached_object:
+        parent_link_name: left_l9_tcp
+        link_name: attached_object
+        joint_name: attach_joint
+        joint_type: FIXED
+        fixed_transform: [0, 0, 0, 1, 0, 0, 0]
+    extra_collision_spheres: {attached_object: 16}
+    cspace:
+      joint_names: [left_arm_joint1, left_arm_joint2, left_arm_joint3, left_arm_joint4,
+        left_arm_joint5, left_arm_joint6, left_arm_joint7, left_gripper_finger_joint1,
+        left_gripper_finger_joint2, right_arm_joint1, right_arm_joint2, right_arm_joint3,
+        right_arm_joint4, right_arm_joint5, right_arm_joint6, right_arm_joint7, right_gripper_finger_joint1,
+        right_gripper_finger_joint2]
+      default_joint_position: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.05, 0.05, 0.0,
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.05, 0.05]
+      null_space_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+        1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+      cspace_distance_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+        1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+      max_acceleration: 15.0
+      max_jerk: 500.0
+      position_limit_clip: 0.03

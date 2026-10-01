@@ -144,7 +144,8 @@ class Urdf:
                 out.append((None, [1, 1, 1], T, prim))
         return out
 
-    def link_points(self, link: str, frame: str, q: dict | None = None, kind: str = "visual") -> np.ndarray:
+    def link_points(self, link: str, frame: str, q: dict | None = None, kind: str = "visual",
+                    sample: int = 0) -> np.ndarray:
         """Mesh vertices of `link` (all its `kind` meshes) expressed in `frame` (N x 3)."""
         import trimesh
         T = self.T_rel(link, frame, q)
@@ -153,7 +154,8 @@ class Urdf:
             if fn is None:
                 continue
             m = trimesh.load(fn, force="mesh", process=False)
-            v = np.asarray(m.vertices, float) * np.asarray(sc, float)
+            v = np.asarray(m.vertices if not sample else trimesh.sample.sample_surface(m, sample, seed=0)[0],
+                           float) * np.asarray(sc, float)
             v = (Tg[:3, :3] @ v.T).T + Tg[:3, 3]
             pts.append((T[:3, :3] @ v.T).T + T[:3, 3])
         return np.concatenate(pts) if pts else np.zeros((0, 3))

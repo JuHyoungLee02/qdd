@@ -1,0 +1,396 @@
+{
+ "robot": "r1pro",
+ "arms": {
+  "right": {
+   "tcp": {
+    "tcp": 0.04333330670713867,
+    "tip": 0.07833330670713867,
+    "pad_from": 0.008333306707138666,
+    "pad_to": 0.07833330670713867,
+    "pad_width": 0.01998704267803845
+   },
+   "finger_open_q": {
+    "right_gripper_finger_joint1": 0.05,
+    "right_gripper_finger_joint2": 0.05
+   },
+   "pad_gap_open_m": 0.09992496785391541,
+   "yml": "/data/harvest/l9v2robot/out/curobo/r1pro_right.yml",
+   "n_spheres": 464,
+   "n_links": 26,
+   "ignored_touching_at_stow": [
+    [
+     "left_arm_base_link",
+     "left_arm_link1"
+    ],
+    [
+     "left_arm_base_link",
+     "left_arm_link2"
+    ],
+    [
+     "left_arm_base_link",
+     "torso_link4"
+    ],
+    [
+     "left_arm_link1",
+     "left_arm_link2"
+    ],
+    [
+     "left_arm_link1",
+     "torso_link4"
+    ],
+    [
+     "left_arm_link2",
+     "left_arm_link3"
+    ],
+    [
+     "left_arm_link2",
+     "torso_link4"
+    ],
+    [
+     "left_arm_link3",
+     "left_arm_link4"
+    ],
+    [
+     "left_arm_link4",
+     "left_arm_link5"
+    ],
+    [
+     "left_arm_link5",
+     "left_arm_link6"
+    ],
+    [
+     "left_arm_link5",
+     "left_arm_link7"
+    ],
+    [
+     "left_arm_link6",
+     "left_arm_link7"
+    ],
+    [
+     "left_arm_link7",
+     "left_gripper_link"
+    ],
+    [
+     "left_gripper_finger_link1",
+     "left_gripper_link"
+    ],
+    [
+     "left_gripper_finger_link2",
+     "left_gripper_link"
+    ],
+    [
+     "left_gripper_link",
+     "left_realsense_link"
+    ],
+    [
+     "right_arm_base_link",
+     "right_arm_link1"
+    ],
+    [
+     "right_arm_base_link",
+     "right_arm_link2"
+    ],
+    [
+     "right_arm_base_link",
+     "torso_link4"
+    ],
+    [
+     "right_arm_link1",
+     "right_arm_link2"
+    ],
+    [
+     "right_arm_link1",
+     "torso_link4"
+    ],
+    [
+     "right_arm_link2",
+     "right_arm_link3"
+    ],
+    [
+     "right_arm_link2",
+     "torso_link4"
+    ],
+    [
+     "right_arm_link3",
+     "right_arm_link4"
+    ],
+    [
+     "right_arm_link4",
+     "right_arm_link5"
+    ],
+    [
+     "right_arm_link5",
+     "right_arm_link6"
+    ],
+    [
+     "right_arm_link5",
+     "right_arm_link7"
+    ],
+    [
+     "right_arm_link6",
+     "right_arm_link7"
+    ],
+    [
+     "right_arm_link7",
+     "right_gripper_link"
+    ],
+    [
+     "right_gripper_finger_link1",
+     "right_gripper_link"
+    ],
+    [
+     "right_gripper_finger_link1",
+     "right_realsense_link"
+    ],
+    [
+     "right_gripper_finger_link2",
+     "right_gripper_link"
+    ],
+    [
+     "right_gripper_link",
+     "right_realsense_link"
+    ],
+    [
+     "torso_link4",
+     "zed_link"
+    ]
+   ],
+   "lock_joints": {
+    "right_gripper_finger_joint1": 0.05,
+    "right_gripper_finger_joint2": 0.05,
+    "left_gripper_finger_joint1": 0.05,
+    "left_gripper_finger_joint2": 0.05,
+    "left_arm_joint1": 0.0,
+    "left_arm_joint2": 0.0,
+    "left_arm_joint3": 0.0,
+    "left_arm_joint4": 0.0,
+    "left_arm_joint5": 0.0,
+    "left_arm_joint6": 0.0,
+    "left_arm_joint7": 0.0
+   },
+   "ik_smoke": {
+    "dof": 7,
+    "joints": [
+     "right_arm_joint1",
+     "right_arm_joint2",
+     "right_arm_joint3",
+     "right_arm_joint4",
+     "right_arm_joint5",
+     "right_arm_joint6",
+     "right_arm_joint7"
+    ],
+    "n": 200,
+    "ik_success": 199,
+    "pos_err_mm_mean": 0.016,
+    "stow_tcp_xyz": [
+     -0.0005,
+     -0.252,
+     -0.469
+    ],
+    "stow_tcp_quat_wxyz": [
+     1.0,
+     -0.0,
+     -0.0,
+     -0.0
+    ]
+   }
+  },
+  "left": {
+   "tcp": {
+    "tcp": 0.04333330670713867,
+    "tip": 0.07833330670713867,
+    "pad_from": 0.008333306707138666,
+    "pad_to": 0.07833330670713867,
+    "pad_width": 0.01998704267803845
+   },
+   "finger_open_q": {
+    "left_gripper_finger_joint1": 0.05,
+    "left_gripper_finger_joint2": 0.05
+   },
+   "pad_gap_open_m": 0.09992496785391541,
+   "yml": "/data/harvest/l9v2robot/out/curobo/r1pro_left.yml",
+   "n_spheres": 464,
+   "n_links": 26,
+   "ignored_touching_at_stow": [
+    [
+     "left_arm_base_link",
+     "left_arm_link1"
+    ],
+    [
+     "left_arm_base_link",
+     "left_arm_link2"
+    ],
+    [
+     "left_arm_base_link",
+     "torso_link4"
+    ],
+    [
+     "left_arm_link1",
+     "left_arm_link2"
+    ],
+    [
+     "left_arm_link1",
+     "torso_link4"
+    ],
+    [
+     "left_arm_link2",
+     "left_arm_link3"
+    ],
+    [
+     "left_arm_link2",
+     "torso_link4"
+    ],
+    [
+     "left_arm_link3",
+     "left_arm_link4"
+    ],
+    [
+     "left_arm_link4",
+     "left_arm_link5"
+    ],
+    [
+     "left_arm_link5",
+     "left_arm_link6"
+    ],
+    [
+     "left_arm_link5",
+     "left_arm_link7"
+    ],
+    [
+     "left_arm_link6",
+     "left_arm_link7"
+    ],
+    [
+     "left_arm_link7",
+     "left_gripper_link"
+    ],
+    [
+     "left_gripper_finger_link1",
+     "left_gripper_link"
+    ],
+    [
+     "left_gripper_finger_link2",
+     "left_gripper_link"
+    ],
+    [
+     "left_gripper_link",
+     "left_realsense_link"
+    ],
+    [
+     "right_arm_base_link",
+     "right_arm_link1"
+    ],
+    [
+     "right_arm_base_link",
+     "right_arm_link2"
+    ],
+    [
+     "right_arm_base_link",
+     "torso_link4"
+    ],
+    [
+     "right_arm_link1",
+     "right_arm_link2"
+    ],
+    [
+     "right_arm_link1",
+     "torso_link4"
+    ],
+    [
+     "right_arm_link2",
+     "right_arm_link3"
+    ],
+    [
+     "right_arm_link2",
+     "torso_link4"
+    ],
+    [
+     "right_arm_link3",
+     "right_arm_link4"
+    ],
+    [
+     "right_arm_link4",
+     "right_arm_link5"
+    ],
+    [
+     "right_arm_link5",
+     "right_arm_link6"
+    ],
+    [
+     "right_arm_link5",
+     "right_arm_link7"
+    ],
+    [
+     "right_arm_link6",
+     "right_arm_link7"
+    ],
+    [
+     "right_arm_link7",
+     "right_gripper_link"
+    ],
+    [
+     "right_gripper_finger_link1",
+     "right_gripper_link"
+    ],
+    [
+     "right_gripper_finger_link1",
+     "right_realsense_link"
+    ],
+    [
+     "right_gripper_finger_link2",
+     "right_gripper_link"
+    ],
+    [
+     "right_gripper_link",
+     "right_realsense_link"
+    ],
+    [
+     "torso_link4",
+     "zed_link"
+    ]
+   ],
+   "lock_joints": {
+    "right_gripper_finger_joint1": 0.05,
+    "right_gripper_finger_joint2": 0.05,
+    "right_arm_joint1": 0.0,
+    "right_arm_joint2": 0.0,
+    "right_arm_joint3": 0.0,
+    "right_arm_joint4": 0.0,
+    "right_arm_joint5": 0.0,
+    "right_arm_joint6": 0.0,
+    "right_arm_joint7": 0.0,
+    "left_gripper_finger_joint1": 0.05,
+    "left_gripper_finger_joint2": 0.05
+   },
+   "ik_smoke": {
+    "dof": 7,
+    "joints": [
+     "left_arm_joint1",
+     "left_arm_joint2",
+     "left_arm_joint3",
+     "left_arm_joint4",
+     "left_arm_joint5",
+     "left_arm_joint6",
+     "left_arm_joint7"
+    ],
+    "n": 200,
+    "ik_success": 198,
+    "pos_err_mm_mean": 0.041,
+    "stow_tcp_xyz": [
+     -0.0005,
+     0.252,
+     -0.469
+    ],
+    "stow_tcp_quat_wxyz": [
+     1.0,
+     -0.0,
+     -0.0,
+     -0.0
+    ]
+   }
+  }
+ },
+ "sphere_metrics": {
+  "source": "reused from /data/harvest/l9v2robot/out/curobo/r1pro_right.yml"
+ }
+}

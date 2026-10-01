@@ -1,0 +1,117 @@
+<?xml version="1.0"?>
+<robot name="r1pro_left_floating">
+  <link name="world"/>
+  <link name="vx_link"><inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.05"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial></link>
+  <joint name="vx" type="prismatic"><parent link="world"/><child link="vx_link"/><origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="1 0 0"/><limit lower="-3.0" upper="3.0" effort="1000" velocity="5"/></joint>
+  <link name="vy_link"><inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.05"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial></link>
+  <joint name="vy" type="prismatic"><parent link="vx_link"/><child link="vy_link"/><origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="0 1 0"/><limit lower="-3.0" upper="3.0" effort="1000" velocity="5"/></joint>
+  <link name="vz_link"><inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.05"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial></link>
+  <joint name="vz" type="prismatic"><parent link="vy_link"/><child link="vz_link"/><origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="0 0 1"/><limit lower="-3.0" upper="3.0" effort="1000" velocity="5"/></joint>
+  <link name="vr_link"><inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.05"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial></link>
+  <joint name="vr" type="revolute"><parent link="vz_link"/><child link="vr_link"/><origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="1 0 0"/><limit lower="-6.2832" upper="6.2832" effort="1000" velocity="10"/></joint>
+  <link name="vp_link"><inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.05"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial></link>
+  <joint name="vp" type="revolute"><parent link="vr_link"/><child link="vp_link"/><origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="0 1 0"/><limit lower="-6.2832" upper="6.2832" effort="1000" velocity="10"/></joint>
+  <joint name="vyaw" type="revolute"><parent link="vp_link"/><child link="left_gripper_link"/><origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="0 0 1"/><limit lower="-6.2832" upper="6.2832" effort="1000" velocity="10"/></joint>
+  <link name="left_gripper_link">
+    <inertial>
+      <origin xyz="-2.2589E-07 -5.2175E-08 0.031107" rpy="0 0 0" />
+      <mass value="0.24625" />
+      <inertia ixx="0.00016511" ixy="9.5318E-07" ixz="5.0942E-10" iyy="9.8651E-05" iyz="-1.8604E-10" izz="0.00017588" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/r1pro/meshes/left_gripper_link.obj" />
+      </geometry>
+      
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/r1pro/meshes/left_gripper_link_collision.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="left_realsense_link">
+    <inertial>
+      <origin xyz="0.0058264 -0.02222 -0.017353" rpy="0 0 0" />
+      <mass value="0.042603" />
+      <inertia ixx="2.3234E-05" ixy="-2.801E-06" ixz="-1.4377E-06" iyy="7.0119E-06" iyz="-1.2674E-06" izz="2.5513E-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/r1pro/meshes/left_realsense_link.obj" />
+      </geometry>
+      
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/r1pro/meshes/left_realsense_link_collision.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="left_gripper_finger_link1">
+    <inertial>
+      <origin xyz="0.0056571 -0.015027 0.01959" rpy="0 0 0" />
+      <mass value="0.020196" />
+      <inertia ixx="6.4827E-06" ixy="7.3969E-08" ixz="-4.4977E-08" iyy="5.7129E-06" iyz="-3.9973E-07" izz="2.4057E-06" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/r1pro/meshes/left_gripper_finger_link1.obj" />
+      </geometry>
+      
+    </visual>
+    <collision>
+      <origin xyz="0 -0.009999999999999998 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.06 0.01 0.04" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="left_gripper_finger_link2">
+    <inertial>
+      <origin xyz="-0.0056573 0.015027 0.01959" rpy="0 0 0" />
+      <mass value="0.020196" />
+      <inertia ixx="6.4827E-06" ixy="7.3965E-08" ixz="4.5014E-08" iyy="5.7129E-06" iyz="3.9974E-07" izz="2.4057E-06" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/r1pro/meshes/left_gripper_finger_link2.obj" />
+      </geometry>
+      
+    </visual>
+    <collision>
+      <origin xyz="0 0.009999999999999998 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.06 0.01 0.04" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="left_l9_tcp"><inertial><origin rpy="0 0 0" xyz="0 0 0" /><mass value="0.001" /><inertia ixx="1e-7" ixy="0" ixz="0" iyy="1e-7" iyz="0" izz="1e-7" /></inertial></link>
+  <joint name="left_realsense_joint" type="fixed">
+    <origin xyz="0.05051 0.0028934 0.0051317" rpy="-3.1376 -0.43631 3.1399" />
+    <parent link="left_gripper_link" />
+    <child link="left_realsense_link" />
+    <axis xyz="0 0 0" />
+  </joint>
+  <joint name="left_gripper_finger_joint1" type="prismatic">
+    <origin xyz="-8.8709E-05 0.013453 -0.03689" rpy="0 0 0" />
+    <parent link="left_gripper_link" />
+    <child link="left_gripper_finger_link1" />
+    <axis xyz="0 1 0" />
+    <limit lower="0" upper="0.05" effort="100" velocity="0.25" />
+  </joint>
+  <joint name="left_gripper_finger_joint2" type="prismatic">
+    <origin xyz="8.9046E-05 -0.013453 -0.03689" rpy="0 0 0" />
+    <parent link="left_gripper_link" />
+    <child link="left_gripper_finger_link2" />
+    <axis xyz="0 -1 0" />
+    <limit lower="0" upper="0.05" effort="100" velocity="0.25" />
+  </joint>
+  <joint name="left_l9_tcp_joint" type="fixed"><parent link="left_gripper_link" /><child link="left_l9_tcp" /><origin xyz="0.000000 0.000000 -0.043333" rpy="0.000000000 0.000000000 0.000000000" /></joint>
+</robot>

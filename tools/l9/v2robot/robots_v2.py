@@ -163,6 +163,37 @@ def distal(p: np.ndarray, ap, frac: float = 0.5) -> np.ndarray:
     return p[d >= d.max() - frac * (d.max() - d.min())]
 
 
+def pad_extent(p: np.ndarray, ap, closing=(0, 1, 0), slab: float = 0.005, tol: float = 0.002,
+               max_span: float = 0.025) -> dict:
+    """Flat inner pad of one finger from surface samples p (parent frame): walk 5 mm slabs from the finger tip back
+    along the approach axis ap while the slab's inner-most point (along the closing axis, toward the other finger)
+    stays within `tol` of the tip region's and the slab is narrower than `max_span` across (stops at the carriage).
+    -> {from, to} along ap (pad = [from, to], to = tip side), tip, width (mean extent normal to both axes)."""
+    ap = np.asarray(ap, float)
+    cl = np.asarray(closing, float)
+    d, c = p @ ap, p @ cl
+    tip = d.max()
+    tipreg = (d > tip - slab)
+    inward = -1.0 if c[tipreg].mean() > 0 else 1.0  # the other finger is on the opposite side of the axis
+    ci = c * -inward  # larger = farther from the centre plane; the inner face = minimum of ci
+    inner0 = ci[tipreg].min()
+    lo = tip
+    widths = []
+    k = 0
+    while True:
+        s = (d <= tip - k * slab) & (d > tip - (k + 1) * slab)
+        if not s.any():
+            break
+        if abs(ci[s].min() - inner0) > tol or np.ptp(c[s]) > max_span:
+            break
+        n = np.cross(ap, cl)
+        widths.append(float(np.ptp(p[s] @ n)))
+        lo = tip - (k + 1) * slab
+        k += 1
+    return {"from": float(lo), "to": float(tip), "tip": float(tip),
+            "width": float(np.mean(widths)) if widths else 0.0}
+
+
 def pad_gap(u, arm_spec: dict, q: dict, kind: str = "visual") -> float:
     """Gap between the two fingers' distal inner faces along the parent's y axis (closing axis), m."""
     f = arm_spec["fingers"]
@@ -194,15 +225,12 @@ def measure_tcp(u, robot: str, arm: str, q: dict | None = None) -> dict:
     if rule == "pad":
         out = {}
         for f in a_spec["fingers"]:
-            p = distal(u.link_points(f, a_spec["parent"], q, kind), ap)
-            side = np.sign(p[:, 1].mean())
-            inner = p[np.abs(p[:, 1] - (p[:, 1].min() if side > 0 else p[:, 1].max())) < 0.003]
-            out[f] = (float((inner @ ap).min()), float((inner @ ap).max()))
-        lo = np.mean([v[0] for v in out.values()])
-        hi = np.mean([v[1] for v in out.values()])
-        allp = np.concatenate([u.link_points(f, a_spec["parent"], q, kind) for f in a_spec["fingers"]])
-        return {"tcp": float((lo + hi) / 2), "tip": float((allp @ ap).max()), "pad_from": float(lo),
-                "pad_to": float(hi)}
+            p = u.link_points(f, a_spec["parent"], q, kind, sample=20000)
+            out[f] = pad_extent(p, ap)
+        lo = float(np.mean([v["from"] for v in out.values()]))
+        hi = float(np.mean([v["to"] for v in out.values()]))
+        return {"tcp": (lo + hi) / 2, "tip": float(np.mean([v["tip"] for v in out.values()])), "pad_from": lo,
+                "pad_to": hi, "pad_width": float(np.mean([v["width"] for v in out.values()]))}
     raise ValueError(rule)
 
 
