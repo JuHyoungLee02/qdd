@@ -25,6 +25,11 @@ while true; do
     [ -f /data/harvest/out/l9/yield/$(hostname)_$g ] && continue  # card lent (tools/l9/lend9.sh)
     p=$(cat $R/pids/$t 2>/dev/null)
     if [ -z "$p" ] || ! kill -0 $p 2>/dev/null; then
+      # memory guard (x2 OOMKilled 2026-10-01 with Isaac lanes + vLLM): start a lane only with >= MEM_FREE_GB left
+      mx=$(cat /sys/fs/cgroup/memory.max 2>/dev/null); cu=$(cat /sys/fs/cgroup/memory.current 2>/dev/null)
+      if [ -n "$cu" ] && [ "$mx" != "max" ] && [ $(( (mx - cu) / 1073741824 )) -lt ${MEM_FREE_GB:-24} ]; then
+        log "lane $t not started: $(( (mx - cu) / 1073741824 )) GiB free < ${MEM_FREE_GB:-24}"; continue
+      fi
       if [ -n "$p" ]; then log "lane $t (pid $p) not running: restart"; fi
       nohup setsid bash $C/tools/l9/lane.sh $C $g $R $t >> $L/lane_$t.log 2>&1 < /dev/null &
       echo $! > $R/pids/$t
