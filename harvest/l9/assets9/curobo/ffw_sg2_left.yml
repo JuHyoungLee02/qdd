@@ -600,11 +600,13 @@ robot_cfg:
         arm_r_joint5, arm_r_joint6, arm_r_joint7, gripper_l_joint1, gripper_l_joint2,
         gripper_l_joint3, gripper_l_joint4, gripper_r_joint1, gripper_r_joint2, gripper_r_joint3,
         gripper_r_joint4, head_joint1, head_joint2]
-      default_joint_position: [-1.0511, 1.0975, -1.2281, -2.3934, -0.4838, 1.2356, -1.8, 0.75, 0.0, 0.0,
-        -2.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.69, 0.0]
+      default_joint_position: [-1.0511, 1.0975, -1.2281, -2.3934, -0.4838, 1.2356,
+        -1.78, 0.75, 0.0, 0.0, -2.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.69, 0.0]
       null_space_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
         1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
       cspace_distance_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
         1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
       max_acceleration: 15.0
       max_jerk: 500.0
+      position_limit_clip: 0.03

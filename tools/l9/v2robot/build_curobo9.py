@@ -65,6 +65,9 @@ def merge(ign: dict, pairs) -> dict:
     return ign
 
 
+LIMIT_MARGIN = 0.03  # rad (m for prismatic): planned arm joints stay this far inside the sim joint limits
+
+
 def kin_dict(robot: str, arm: str, spheres: dict, ignore: dict, lock: dict, cspace_names: list,
              cspace_default: list, buffer: dict) -> dict:
     s = RV.ROBOTS[robot]
@@ -91,7 +94,9 @@ def kin_dict(robot: str, arm: str, spheres: dict, ignore: dict, lock: dict, cspa
         "cspace": {"joint_names": cspace_names, "default_joint_position": cspace_default,
                    "null_space_weight": [1.0] * len(cspace_names),
                    "cspace_distance_weight": [1.0] * len(cspace_names),
-                   "max_acceleration": 15.0, "max_jerk": 500.0},
+                   "max_acceleration": 15.0, "max_jerk": 500.0,
+                   # sim limits (USD = URDF, checked) minus LIMIT_MARGIN on the planned arm joints (owner 10-02)
+                   "position_limit_clip": LIMIT_MARGIN},  # scalar: applied to the active (unlocked) joints
     }
 
 
@@ -216,7 +221,7 @@ def main():
             tcps[arm] = m["tcp"]
             hand_open[arm] = q0
             report["arms"][arm] = {"tcp": m, "finger_open_q": q0,
-                                   "pad_gap_open_m": RV.pad_gap(src, sa, q0) if sa["grip_lock"] else None}
+                                   "pad_gap_open_m": RV.pad_gap(src, sa, q0, s.get("mesh_kind", "visual")) if sa["grip_lock"] else None}
     path = RV.write_prepared(robot, tcps)
     u = Urdf(path)
     links = subtree_links(u, s["base"])

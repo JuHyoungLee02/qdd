@@ -81,7 +81,12 @@ GRIPPERS = {
                     "drive": ["right_gripper_finger_joint1"], "followers": {"right_gripper_finger_joint2": 1.0},
                     "fingers": [["right_gripper_finger_link1"], ["right_gripper_finger_link2"]],
                     "pads": ["right_gripper_finger_link1", "right_gripper_finger_link2"], "table": "fk",
-                    "q_range": (0.0, 0.05)},
+                    "q_range": (0.0, 0.05), "distal": 0.5},  # pad = distal half (the proximal carriage is wide)
+    "r1pro_left": {"robot": "r1pro", "arm": "left", "base": "left_gripper_link",
+                   "drive": ["left_gripper_finger_joint1"], "followers": {"left_gripper_finger_joint2": 1.0},
+                   "fingers": [["left_gripper_finger_link1"], ["left_gripper_finger_link2"]],
+                   "pads": ["left_gripper_finger_link1", "left_gripper_finger_link2"], "table": "fk",
+                   "q_range": (0.0, 0.05), "distal": 0.5},
 }
 
 
@@ -142,8 +147,8 @@ def qmap(g: dict, qd: float) -> dict:
 
 
 def pad_gap_tcp(u: Urdf, g: dict, tcp: str, q: dict, kind: str) -> float:
-    a = u.link_points(g["pads"][0], tcp, q, kind)
-    b = u.link_points(g["pads"][1], tcp, q, kind)
+    a = RV.distal(u.link_points(g["pads"][0], tcp, q, kind), (0, 0, -1), g.get("distal", 1.0))
+    b = RV.distal(u.link_points(g["pads"][1], tcp, q, kind), (0, 0, -1), g.get("distal", 1.0))
     if a[:, 1].mean() > b[:, 1].mean():
         a, b = b, a
     return float(b[:, 1].min() - a[:, 1].max())
@@ -170,7 +175,7 @@ def facts(g: dict, name: str) -> dict:
     # pad facts at the open posture, in the TCP frame (z = -approach, so the approach coordinate is -z)
     pad = {}
     for k in g["pads"]:
-        p = u.link_points(k, tcp, qo, kind)
+        p = RV.distal(u.link_points(k, tcp, qo, kind), (0, 0, -1), g.get("distal", 1.0))
         side = np.sign(p[:, 1].mean())
         inner = p[np.abs(p[:, 1] - (p[:, 1].min() if side > 0 else p[:, 1].max())) < 0.003]
         pad[k] = {"len": float(inner[:, 2].max() - inner[:, 2].min()), "wid": float(np.ptp(inner[:, 0])),

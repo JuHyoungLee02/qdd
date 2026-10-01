@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<robot name="franka_hand_floating">
+  <link name="world"/>
+  <link name="vx_link"><inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.05"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial></link>
+  <joint name="vx" type="prismatic"><parent link="world"/><child link="vx_link"/><origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="1 0 0"/><limit lower="-3.0" upper="3.0" effort="1000" velocity="5"/></joint>
+  <link name="vy_link"><inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.05"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial></link>
+  <joint name="vy" type="prismatic"><parent link="vx_link"/><child link="vy_link"/><origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="0 1 0"/><limit lower="-3.0" upper="3.0" effort="1000" velocity="5"/></joint>
+  <link name="vz_link"><inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.05"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial></link>
+  <joint name="vz" type="prismatic"><parent link="vy_link"/><child link="vz_link"/><origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="0 0 1"/><limit lower="-3.0" upper="3.0" effort="1000" velocity="5"/></joint>
+  <link name="vr_link"><inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.05"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial></link>
+  <joint name="vr" type="revolute"><parent link="vz_link"/><child link="vr_link"/><origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="1 0 0"/><limit lower="-6.2832" upper="6.2832" effort="1000" velocity="10"/></joint>
+  <link name="vp_link"><inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.05"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial></link>
+  <joint name="vp" type="revolute"><parent link="vr_link"/><child link="vp_link"/><origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="0 1 0"/><limit lower="-6.2832" upper="6.2832" effort="1000" velocity="10"/></joint>
+  <joint name="vyaw" type="revolute"><parent link="vp_link"/><child link="panda_hand"/><origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="0 0 1"/><limit lower="-6.2832" upper="6.2832" effort="1000" velocity="10"/></joint>
+  <link name="panda_hand">
+    <visual>
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/franka/meshes/visual/hand.dae" />
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/franka/meshes/collision/hand.obj" />
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.00089 0.0 0.05" />
+      <mass value="1.0" />
+      <inertia ixx="0.00019541063" ixy="0.00000165231" ixz="0.00000148826" iyy="0.00019210361" iyz="-0.00000131132" izz="0.00017936256" />
+    </inertial>
+  </link>
+  <link name="panda_leftfinger">
+    <visual>
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/franka/meshes/visual/finger.dae" />
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/franka/meshes/collision/finger.obj" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="panda_rightfinger">
+    <visual>
+      <origin rpy="0 0 3.14159265359" xyz="0 0 0" />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/franka/meshes/visual/finger.dae" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 3.14159265359" xyz="0 0 0" />
+      <geometry>
+        <mesh filename="/data/harvest/assets_l9v2/robots/franka/meshes/collision/finger.obj" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="ee_link" />
+  <link name="right_l9_tcp"><inertial><origin rpy="0 0 0" xyz="0 0 0" /><mass value="0.001" /><inertia ixx="1e-7" ixy="0" ixz="0" iyy="1e-7" iyz="0" izz="1e-7" /></inertial></link>
+  <joint name="panda_finger_joint1" type="prismatic">
+    <parent link="panda_hand" />
+    <child link="panda_leftfinger" />
+    <origin rpy="0 0 0" xyz="0 0 0.0584" />
+    <axis xyz="0 1 0" />
+    <dynamics damping="10.0" />
+    <limit effort="20" lower="0.0" upper="0.04" velocity="0.2" />
+  </joint>
+  <joint name="panda_finger_joint2" type="prismatic">
+    <parent link="panda_hand" />
+    <child link="panda_rightfinger" />
+    <origin rpy="0 0 0" xyz="0 0 0.0584" />
+    <axis xyz="0 -1 0" />
+    <dynamics damping="10.0" />
+    <limit effort="20" lower="0.0" upper="0.04" velocity="0.2" />
+  </joint>
+  <joint name="ee_fixed_joint" type="fixed">
+    <parent link="panda_hand" />
+    <child link="ee_link" />
+    <origin rpy="0 0.0 0" xyz="0.0 0. 0.1" />
+  </joint>
+  <joint name="right_l9_tcp_joint" type="fixed"><parent link="panda_hand" /><child link="right_l9_tcp" /><origin xyz="0.000000 0.000000 0.102249" rpy="3.141592654 0.000000000 0.000000000" /></joint>
+</robot>

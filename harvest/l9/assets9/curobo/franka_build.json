@@ -1,0 +1,103 @@
+{
+ "robot": "franka",
+ "arms": {
+  "right": {
+   "tcp": {
+    "tcp": 0.10224900000000002,
+    "tip": 0.11224900000000002,
+    "pad_len_assumed": 0.02
+   },
+   "finger_open_q": {
+    "panda_finger_joint1": 0.04,
+    "panda_finger_joint2": 0.04
+   },
+   "pad_gap_open_m": 0.0797340000000018,
+   "yml": "/data/harvest/l9v2robot/out/curobo/franka_right.yml",
+   "n_spheres": 61,
+   "n_links": 11,
+   "ignored_touching_at_stow": [
+    [
+     "panda_hand",
+     "panda_leftfinger"
+    ],
+    [
+     "panda_hand",
+     "panda_link5"
+    ],
+    [
+     "panda_hand",
+     "panda_link7"
+    ],
+    [
+     "panda_hand",
+     "panda_rightfinger"
+    ],
+    [
+     "panda_link0",
+     "panda_link1"
+    ],
+    [
+     "panda_link1",
+     "panda_link2"
+    ],
+    [
+     "panda_link2",
+     "panda_link3"
+    ],
+    [
+     "panda_link3",
+     "panda_link4"
+    ],
+    [
+     "panda_link4",
+     "panda_link5"
+    ],
+    [
+     "panda_link5",
+     "panda_link6"
+    ],
+    [
+     "panda_link5",
+     "panda_rightfinger"
+    ],
+    [
+     "panda_link6",
+     "panda_link7"
+    ]
+   ],
+   "lock_joints": {
+    "panda_finger_joint1": 0.04,
+    "panda_finger_joint2": 0.04
+   },
+   "ik_smoke": {
+    "dof": 7,
+    "joints": [
+     "panda_joint1",
+     "panda_joint2",
+     "panda_joint3",
+     "panda_joint4",
+     "panda_joint5",
+     "panda_joint6",
+     "panda_joint7"
+    ],
+    "n": 200,
+    "ik_success": 193,
+    "pos_err_mm_mean": 0.0,
+    "stow_tcp_xyz": [
+     0.088,
+     -0.0,
+     0.8238
+    ],
+    "stow_tcp_quat_wxyz": [
+     0.9239,
+     0.0,
+     0.0,
+     0.3827
+    ]
+   }
+  }
+ },
+ "sphere_metrics": {
+  "source": "cuRobo v0.8.0 franka.yml"
+ }
+}

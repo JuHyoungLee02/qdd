@@ -33,12 +33,12 @@ ROBOTS = {
                       "tcp_rpy": (0.0, 0.0, 0.0), "fingers": ("gripper_r_rh_p12_rn_l2", "gripper_r_rh_p12_rn_r2"),
                       "grip_lock": {f"gripper_r_joint{i}": 0.0 for i in range(1, 5)},
                       "stow": {"arm_r_joint1": 0.75, "arm_r_joint4": -2.30},
-                      "init": (-1.0511, -1.0975, 1.2281, -2.3934, 0.4838, 1.2356, 1.80)},  # scene.INIT_R_ARM
+                      "init": (-1.0511, -1.0975, 1.2281, -2.3934, 0.4838, 1.2356, 1.78)},  # scene.INIT_R_ARM, j7 inside the 0.03 margin
             "left": {"joints": _L7, "parent": "ffw_sg2_follower_arm_l_link7", "approach": (0, 0, -1),
                      "tcp_rpy": (0.0, 0.0, 0.0), "fingers": ("gripper_l_rh_p12_rn_l2", "gripper_l_rh_p12_rn_r2"),
                      "grip_lock": {f"gripper_l_joint{i}": 0.0 for i in range(1, 5)},
                      "stow": {"arm_l_joint1": 0.75, "arm_l_joint4": -2.30},
-                     "init": (-1.0511, 1.0975, -1.2281, -2.3934, -0.4838, 1.2356, -1.80)}},  # arm.INIT_L_ARM
+                     "init": (-1.0511, 1.0975, -1.2281, -2.3934, -0.4838, 1.2356, -1.78)}},  # arm.INIT_L_ARM (j7 margin)
         "tcp_rule": "ffw",  # = harvest.sim.scene._measure_finger_offsets: (tip + base) / 2 of the finger link2 bboxes
     },
     "franka": {
@@ -69,6 +69,8 @@ ROBOTS = {
                      "grip_lock": {"left_gripper_finger_joint1": None, "left_gripper_finger_joint2": None},
                      "stow": {}}},
         "tcp_rule": "pad",  # pad centre: middle of the inner finger faces along the approach axis
+        # finger prismatic axes are 0.45 deg off y in the source; cuRobo only takes axis-aligned joints
+        "axis_fix": {"-0.0077873 0.99997 0": "0 1 0", "0.0077873 -0.99997 0": "0 -1 0"},
     },
     "g1": {
         "src_dir": f"{CUROBO_ASSETS}/g1", "src_urdf": "g1_29dof_with_hand_rev_1_0.urdf", "mesh_subdir": "meshes",
@@ -155,14 +157,21 @@ def finger_open_q(u, arm_spec: dict) -> dict:
     return out
 
 
-def pad_gap(u, arm_spec: dict, q: dict) -> float:
-    """Gap between the two finger links' inner faces along the parent's y axis (closing axis), m."""
+def distal(p: np.ndarray, ap, frac: float = 0.5) -> np.ndarray:
+    """Points in the distal `frac` of a finger along the approach axis ap (the pad, not the carriage / knuckle)."""
+    d = p @ np.asarray(ap, float)
+    return p[d >= d.max() - frac * (d.max() - d.min())]
+
+
+def pad_gap(u, arm_spec: dict, q: dict, kind: str = "visual") -> float:
+    """Gap between the two fingers' distal inner faces along the parent's y axis (closing axis), m."""
     f = arm_spec["fingers"]
-    a = u.link_points(f[0], arm_spec["parent"], q, kind="visual")
-    b = u.link_points(f[1], arm_spec["parent"], q, kind="visual")
+    a = distal(u.link_points(f[0], arm_spec["parent"], q, kind=kind), arm_spec["approach"])
+    b = distal(u.link_points(f[1], arm_spec["parent"], q, kind=kind), arm_spec["approach"])
     if a[:, 1].mean() > b[:, 1].mean():
         a, b = b, a
     return float(b[:, 1].min() - a[:, 1].max())
+
 
 
 def measure_tcp(u, robot: str, arm: str, q: dict | None = None) -> dict:
@@ -185,7 +194,7 @@ def measure_tcp(u, robot: str, arm: str, q: dict | None = None) -> dict:
     if rule == "pad":
         out = {}
         for f in a_spec["fingers"]:
-            p = u.link_points(f, a_spec["parent"], q, kind)
+            p = distal(u.link_points(f, a_spec["parent"], q, kind), ap)
             side = np.sign(p[:, 1].mean())
             inner = p[np.abs(p[:, 1] - (p[:, 1].min() if side > 0 else p[:, 1].max())) < 0.003]
             out[f] = (float((inner @ ap).min()), float((inner @ ap).max()))
@@ -207,6 +216,8 @@ def write_prepared(robot: str, tcps: dict, extra_links: dict | None = None) -> s
     s = ROBOTS[robot]
     txt = open(os.path.join(s["src_dir"], s["src_urdf"])).read()
     txt = txt.replace("package://franka_description/", "")
+    for a, b in s.get("axis_fix", {}).items():  # cuRobo needs axis-aligned joints (P156)
+        txt = txt.replace(f'xyz="{a}"', f'xyz="{b}"')
     links = {tcp_link(arm): (s["arms"][arm]["parent"], tcp_xyz(robot, arm, d), s["arms"][arm]["tcp_rpy"])
              for arm, d in tcps.items()}
     links.update(extra_links or {})

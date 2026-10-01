@@ -1,0 +1,211 @@
+{
+ "name": "franka_hand",
+ "robot": "franka",
+ "arm": "right",
+ "base_link": "panda_hand",
+ "tcp_link": "right_l9_tcp",
+ "frame": "TCP frame G: origin pad centre, z = -approach, y = closing axis, x = y cross z",
+ "tcp_in_base": {
+  "xyz": [
+   0.0,
+   0.0,
+   0.10225
+  ],
+  "rpy": [
+   -3.141593,
+   -0.0,
+   0.0
+  ]
+ },
+ "max_opening_m": 0.0797,
+ "min_opening_m": -0.0003,
+ "pad_length_m": 0.0176,
+ "pad_width_m": 0.0174,
+ "pad_z_range_in_tcp": [
+  -0.0099,
+  0.0077
+ ],
+ "finger_depth_m": 0.01,
+ "finger_joints": {
+  "drive": [
+   "panda_finger_joint1"
+  ],
+  "followers": {
+   "panda_finger_joint2": 1.0
+  },
+  "note": "follower q = multiplier * drive q; the floating URDF has no <mimic>: drive all"
+ },
+ "width_to_joint": {
+  "width_m": [
+   -0.0003,
+   0.0097,
+   0.0197,
+   0.0297,
+   0.0397,
+   0.0497,
+   0.0597,
+   0.0697,
+   0.0797
+  ],
+  "drive_q": [
+   0.0,
+   0.005,
+   0.01,
+   0.015,
+   0.02,
+   0.025,
+   0.03,
+   0.035,
+   0.04
+  ],
+  "source": "FK of the URDF finger meshes (inner pad gap along the TCP y axis)"
+ },
+ "boxes": {
+  "palm": {
+   "center": [
+    -0.0,
+    0.0018,
+    0.0822
+   ],
+   "size": [
+    0.0633,
+    0.2044,
+    0.0919
+   ]
+  },
+  "palm_links": [
+   "panda_hand"
+  ],
+  "by_width": [
+   {
+    "width": 0.0797,
+    "q": 0.04,
+    "fingers": [
+     {
+      "center": [
+       0.0,
+       -0.0531,
+       0.0169
+      ],
+      "size": [
+       0.021,
+       0.0265,
+       0.0537
+      ]
+     },
+     {
+      "center": [
+       -0.0,
+       0.0531,
+       0.0169
+      ],
+      "size": [
+       0.021,
+       0.0265,
+       0.0537
+      ]
+     }
+    ]
+   },
+   {
+    "width": 0.0397,
+    "q": 0.02,
+    "fingers": [
+     {
+      "center": [
+       0.0,
+       -0.0331,
+       0.0169
+      ],
+      "size": [
+       0.021,
+       0.0265,
+       0.0537
+      ]
+     },
+     {
+      "center": [
+       -0.0,
+       0.0331,
+       0.0169
+      ],
+      "size": [
+       0.021,
+       0.0265,
+       0.0537
+      ]
+     }
+    ]
+   },
+   {
+    "width": -0.0003,
+    "q": 0.0,
+    "fingers": [
+     {
+      "center": [
+       0.0,
+       -0.0131,
+       0.0169
+      ],
+      "size": [
+       0.021,
+       0.0265,
+       0.0537
+      ]
+     },
+     {
+      "center": [
+       -0.0,
+       0.0131,
+       0.0169
+      ],
+      "size": [
+       0.021,
+       0.0265,
+       0.0537
+      ]
+     }
+    ]
+   }
+  ],
+  "note": "axis-aligned boxes in the TCP frame from the URDF meshes (coarse, conservative)"
+ },
+ "mesh_kind": "collision",
+ "actuation": {
+  "sim": {
+   "finger_effort_limit_N": 70.0,
+   "finger_stiffness": 2000.0,
+   "finger_damping": 100.0,
+   "source": "harvest/l9/robot9.py FINGER_KP/KD/EFFORT (Franka Hand continuous grasp force 70 N)"
+  },
+  "real": {
+   "grasp_action": "franka_gripper Grasp(width, epsilon_inner, epsilon_outer, speed, force)",
+   "epsilon_default_m": 0.005,
+   "continuous_force_N": 70.0,
+   "source": "Franka Hand / franka_gripper docs as cited in docs/research/grip_aperture_2026-10-02.md \u00a73.1 (not re-checked here)"
+  },
+  "urdf_limits": {
+   "panda_finger_joint1": {
+    "lower": 0.0,
+    "upper": 0.04,
+    "effort": 20.0,
+    "velocity": 0.2
+   },
+   "panda_finger_joint2": {
+    "lower": 0.0,
+    "upper": 0.04,
+    "effort": 20.0,
+    "velocity": 0.2
+   }
+  }
+ },
+ "urdf": "/data/harvest/l9v2robot/out/grippers/franka_hand.urdf",
+ "virtual_joints": [
+  "vx",
+  "vy",
+  "vz",
+  "vr",
+  "vp",
+  "vyaw"
+ ]
+}
