@@ -18,7 +18,7 @@ VW=$Q/out/vla/GPU_WANTED; M35L=$Q/logs/main35/main35.log
 mkdir -p $F $L
 ev() { echo "$(TZ=Asia/Seoul date '+%F %H:%M') KST | FUT1 | $*" >> $F/events.log; }
 mem() { nvidia-smi -i $1 --query-gpu=memory.used --format=csv,noheader,nounits; }
-want_line() { touch $VW; grep -q "^$1 FUT1" $VW || echo "$1 FUT1 $(date -u +%FT%TZ)" >> $VW; }
+want_line() { mkdir -p $(dirname $VW); touch $VW; grep -q "^$1 FUT1" $VW || echo "$1 FUT1 $(date -u +%FT%TZ)" >> $VW; }
 drop_line() { [ -f $VW ] && sed -i "/^$1 FUT1/d" $VW; }
 others_want() {  # <key> <gpu>: a GPU_WANTED line without FUT1 lists this card
   for w in $Q/out/l9/GPU_WANTED $VW; do
@@ -37,7 +37,7 @@ data)
   until grep -q "d1 complete" $Q/out/jcr/chain_events.log 2>/dev/null; do sleep 300; done
   ev "data build start (d1 complete)"
   PYTHONPATH=$C $P $C/tools/fut1/fut_rows.py --data $Q/out/jcr/d1 --mm1 $Q/out/deploy/mm1/rows.jsonl \
-    --replay $Q/out/main35/data/train_main35.jsonl --out $F/data --workers 8 >> $L/data.log 2>&1 \
+    --replay $Q/out/main35/data/train_main35.jsonl --out $F/data --workers 8 --eval-sites 600 >> $L/data.log 2>&1 \
     || { ev "ALERT data build failed"; echo data > $F/ALERT_data; exit 1; }
   PYTHONPATH=$C $P $C/tools/fut1/visual_sheet.py --data $F/data --out $F/data/visual_check.png >> $L/data.log 2>&1
   if ! $P -c "import json,sys;sys.exit(0 if json.load(open('$F/data/rows_stats.json'))['gate']['pass'] else 1)"; then

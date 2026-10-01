@@ -51,6 +51,7 @@ ALL_DELTAS = tuple(sorted(set(TRAIN_DELTAS) | set(EVAL_DELTAS)))
 VARIANTS = ("cur", "roll", "rt")
 OBJ_MOVE_M = 0.010
 ISSUE_GAP_S = 0.3
+MOVING_MIN_M = 0.005  # change 2: TCP at least 5 mm from the in-flight goal at t - delta
 ARMS = ("F0", "F1", "F2", "F3", "F4")
 ARM_VARIANT = {"F0": "cur", "F1": "cur", "F2": "roll", "F3": "rt", "F4": "roll"}
 CMD_KEYS = ("mode", "point_2d", "height", "delta_m", "gripper")
@@ -218,6 +219,11 @@ def build_episode(d: str, out_img: str, want_variants=VARIANTS, deltas=ALL_DELTA
             s = img_s[ki]
             tcp_now = np.asarray(ticks[ti]["tcp"], float)
             gap_now = float(ticks[ti]["grip_w"])
+            if dl > 0:  # change 2: the in-flight move is still running (the overlap runtime asks only then)
+                left_m = float(np.linalg.norm(tcp_now - np.asarray(fl["goal_cmd"], float)))
+                if not ticks[ti].get("busy") or left_m < MOVING_MIN_M:
+                    info_ep["not_moving"] = info_ep.get("not_moving", 0) + 1
+                    continue
             hr = np.asarray(Image.open(os.path.join(d, "img", s["img"] + "_head_raw.jpg")).convert("RGB"))
             wr_p = os.path.join(out_img, f"{site['id']}_d{dl}_wrist.png")
             if dl == 0:
@@ -240,7 +246,8 @@ def build_episode(d: str, out_img: str, want_variants=VARIANTS, deltas=ALL_DELTA
                 if v == "rt" and dl > 0:
                     lines = text.split("\n")
                     k = next(i for i, x in enumerate(lines) if x.startswith("- TCP at ("))
-                    lines.insert(k + 1, RT_LINE.format(s=dl))
+                    # change 2: the runtime only knows its estimate (harvest.deploy.runner._t_left), not the true delta
+                    lines.insert(k + 1, RT_LINE.format(s=float(np.linalg.norm(tcp_now - goal)) / 0.08 + 0.3))
                     text = "\n".join(lines)
                 ring_p = os.path.join(out_img, f"{site['id']}_d{dl}_ring_{key}.png")
                 if not os.path.exists(ring_p):
@@ -343,6 +350,7 @@ def main(argv=None):
         stats["calls"] = stats.get("calls", 0) + inf["calls"]
         stats["rebuild_fail"] += inf["rebuild_fail"]
         stats["no_step"] += inf["no_step"]
+        stats["not_moving_rows"] = stats.get("not_moving_rows", 0) + inf.get("not_moving", 0)
         ok = []
         for s in sites:
             if validate(s["rows"][0.0]["cur"]["answer"], allow_eef=True)[0] is None:
