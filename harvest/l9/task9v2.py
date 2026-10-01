@@ -193,7 +193,7 @@ B_ = {"role": "base"}
 W_ = {"role": "container", "kind": "wide"}
 WB = {"role": "container", "kind": "wide", "big": True}
 PL = {"role": "container", "kind": "flat"}
-BIN = {"role": "container", "kind": "wide", "cats": ("bin", "basket", "box")}
+BIN = {"role": "container", "kind": "wide"}  # any wide container (diag: a pool rarely has a bin that fits; names come from the catalog)
 BOWL = {"role": "container", "kind": "wide", "cats": ("bowl",)}
 NAR = {"role": "container", "kind": "narrow"}
 FOOD, TOY, DRINK = T9.FOOD, T9.TOYISH, T9.DRINK
@@ -404,11 +404,11 @@ add("tall_to_back", "tall", {"A": TALL}, [("A", "P")],
 
 # 13. hollow: bowls / mugs / cups moved by rim or wall grasps (scene constraint wide_hollow / handle) — LIBERO, RoboTwin
 HM = ("mug", "cup")
-add("hol_bowl_on_plate", "hollow", {"A": hollow(("bowl",)), "H": PL}, [("A", "H")],
-    _t("Put the {A} on the {H}.", "Place the {A} onto the {H}.", "Set the {A} on top of the {H}.",
-       "Move the {A} to the {H}.", "The {A} goes on the {H}."),
-    [("LIB", "put_the_bowl_on_the_plate"), ("LIB", "pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate")],
-    req=("exec:movable_container",))
+add("hol_bowl_next_to", "hollow", {"A": hollow(("bowl",)), "R": T}, [("A", "P")],
+    _t("Put the {A} to the left of the {R}.", "Move the {A} beside the {R}, on its left.", "Set the {A} left of the {R}.",
+       "Place the {A} next to the {R}, on the left.", "The {A} goes on the left of the {R}."),
+    [("LIB", "pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate"), ("RT2", "place_container_plate")],
+    dst={"P": {"type": "spot", "rel": "left", "ref": "R"}}, req=("exec:movable_container",))
 add("hol_mug_on_plate", "hollow", {"A": hollow(HM), "H": PL}, [("A", "H")],
     _t("Put the {A} on the {H}.", "Place the {A} onto the {H}.", "Set the {A} down on the {H}.",
        "Move the {A} to the {H}.", "The {A} goes on the {H}."),
@@ -417,12 +417,10 @@ add("hol_bowl_nest2", "hollow", {"A": hollow(("bowl",)), "B": dict(BOWL, nest=Tr
     _t("Stack the {A} into the {B}.", "Nest the {A} inside the {B}.", "Put the {A} in the {B}.",
        "Place the {A} into the {B} to stack them.", "Stack the two bowls: {A} into {B}."),
     [("RT2", "stack_bowls_two"), ("RC", "organizing_dishes_and_containers")], req=("exec:movable_container",))
-add("hol_bowl_nest3", "hollow", {"A": hollow(("bowl",)), "B": dict(BOWL, nest=True), "C": hollow(("bowl",))},
-    [("A", "B"), ("C", "A")],
-    _t("Stack the three bowls: the {A} into the {B}, then the {C} on top.", "Nest the {A} in the {B} and the {C} in the {A}.",
-       "Put the {A} into the {B}, then the {C} into the {A}.", "Make a stack of bowls: {B}, {A}, {C}.",
-       "First the {A} into the {B}; then the {C} into the {A}."),
-    [("RT2", "stack_bowls_three")], req=("exec:movable_container",))
+add("hol_mug_in_bowl", "hollow", {"A": hollow(HM), "H": BOWL}, [("A", "H")],
+    _t("Put the {A} into the {H}.", "Place the {A} inside the {H}.", "Set the {A} down in the {H}.",
+       "Move the {A} into the {H}.", "The {A} goes in the {H}."),
+    [("RC", "organizing_dishes_and_containers"), ("RT2", "stack_bowls_two")], req=("exec:movable_container",))
 add("hol_mug_next_to", "hollow", {"A": hollow(HM), "R": T}, [("A", "P")],
     _t("Put the {A} to the right of the {R}.", "Move the {A} beside the {R}, on the right.", "Set the {A} right of the {R}.",
        "Place the {A} next to the {R}, on its right.", "The {A} goes on the right of the {R}."),
@@ -438,12 +436,13 @@ add("hol_bowl_to_zone", "hollow", {"A": hollow(("bowl",))}, [("A", "V")],
        "Set the {A} down on the {V}.", "The {A} goes on the {V}."),
     [("LIB", "put_the_bowl_on_the_stove"), ("RC", "PickPlaceCounterToStove")], dst={"V": ZN},
     needs=("node:zone|seat",), req=("exec:movable_container",))
-add("hol_two_mugs_plates", "hollow", {"A": hollow(HM), "B": hollow(HM), "H": PL, "G": PL}, [("A", "H"), ("B", "G")],
-    _t("Put the {A} on the {H} and the {B} on the {G}.", "Place one mug on each plate: {A} on the {H}, {B} on the {G}.",
-       "First the {A} onto the {H}, then the {B} onto the {G}.", "Set the {A} on the {H}; set the {B} on the {G}.",
-       "The {A} goes on the {H}, the {B} on the {G}."),
+add("hol_two_mugs_row", "hollow", {"A": hollow(HM), "B": hollow(HM)}, [("A", "P1"), ("B", "P2")],
+    _t("Put the {A} on the left and the {B} on the right, side by side.", "Line up the two mugs: {A} left, {B} right.",
+       "First the {A} to the left spot, then the {B} next to it on the right.", "Set the {A} and the {B} in a row.",
+       "Arrange the {A} and the {B} next to each other, {A} on the left."),
     [("LIB", "put_the_white_mug_on_the_left_plate_and_put_the_yellow_and_white_mug_on_the_right_plate")],
-    req=("exec:movable_container",))
+    dst={"P1": {"type": "spot", "line": ("y", 0, 2), "spacing": 0.20},
+         "P2": {"type": "spot", "line": ("y", 1, 2), "spacing": 0.20}}, req=("exec:movable_container",))
 add("hol_bowl_up", "hollow", {"A": hollow(("bowl",))}, [("A", "V")],
     _t("Put the {A} up on the {V}.", "Lift the {A} onto the higher {V}.", "Place the {A} on top of the {V}.",
        "Move the {A} up onto the {V}.", "The {A} goes up on the {V}."),
@@ -559,7 +558,7 @@ add("kit_can_next_pot", "kitchen", {"A": dict(T, cats=("can", "bottle")), "H": B
        "Set the {A} on the left of the {H}.", "Place the {A} left of the {H}, close to it.",
        "The {A} goes left of the {H}."),
     [("RT2", "move_can_pot"), ("RC", "arranging_condiments")], dst={"P": {"type": "spot", "rel": "left", "ref": "H"}})
-add("kit_serve_two", "kitchen", {"A": dict(T, cats=FOOD), "B": dict(T, cats=FOOD), "H": BOWL, "G": PL},
+add("kit_serve_two", "kitchen", {"A": dict(T, cats=FOOD), "B": dict(T, cats=FOOD), "H": BOWL, "G": dict(PL, on="second")},
     [("A", "H"), ("B", "G")],
     _t("Put the {A} in the {H} and the {B} on the {G}.", "Serve the {A} in the {H}, then the {B} on the {G}.",
        "Plate the food: {A} into the {H}, {B} onto the {G}.", "First the {A} into the {H}, then the {B} onto the {G}.",
@@ -596,12 +595,12 @@ add("tidy_gift_basket", "tidy", {"A": T, "B": T, "H": dict(WB, cats=("basket", "
        "Assemble the gift: {A} then {B} into the {H}.", "Place the {A} and the {B} in the {H}.",
        "Add the {A} and the {B} to the {H}."),
     [("B1K", "assembling_gift_baskets"), ("B1K", "filling_an_Easter_basket")])
-add("tidy_trash_two", "tidy", {"A": T, "B": T, "H": dict(WB, cats=("bin",))}, [("A", "H"), ("B", "H")],
+add("tidy_trash_two", "tidy", {"A": T, "B": T, "H": WB}, [("A", "H"), ("B", "H")],
     _t("Throw the {A} and the {B} in the {H}.", "Pick up the trash: {A} and {B} into the {H}.",
        "Put the {A} in the {H}, then the {B}.", "Clean up by dropping the {A} and the {B} into the {H}.",
-       "The {A} and the {B} go in the trash {H}."),
+       "The {A} and the {B} go in the {H}."),
     [("B1K", "picking_up_trash"), ("B1K", "throwing_away_leftovers")])
-add("tidy_toys_away", "tidy", {"A": dict(T, cats=TOY), "B": dict(T, cats=TOY), "H": dict(WB, cats=("bin", "basket", "box"))},
+add("tidy_toys_away", "tidy", {"A": dict(T, cats=TOY), "B": dict(T, cats=TOY), "H": WB},
     [("A", "H"), ("B", "H")],
     _t("Put the toys away: {A} and {B} into the {H}.", "Tidy the {A} and the {B} into the {H}.",
        "Put the {A} in the {H}, then the {B}.", "Both toys go in the {H}: the {A} and the {B}.",
@@ -668,7 +667,7 @@ add("tr_slot_to_slot", "transfer", {"A": dict(SL, on="node:slot")}, [("A", "V")]
     _t("Move the {A} to the other holder.", "Take the {A} out and stand it in the {V}.", "Put the {A} in the other holder.",
        "Shift the {A} into the {V}.", "Swap the {A} over to the other holder."),
     [("B1K", "organizing_school_stuff")], dst={"V": dict(HV, not_obj_node="A")}, judge=UP, needs=("node2:slot",))
-add("tr_out_two_containers", "transfer", {"H": W_, "A": dict(T, on="on:H"), "G": W_, "B": dict(T, on="on:G")},
+add("tr_out_two_containers", "transfer", {"H": W_, "A": dict(T, on="on:H"), "G": dict(W_, on="second"), "B": dict(T, on="on:G")},
     [("A", "P1"), ("B", "P2")],
     _t("Take the {A} out of the {H} and the {B} out of the {G}, and line them up.",
        "Unpack both: {A} from the {H}, {B} from the {G}.", "Empty the {H} and the {G} onto the {Msurf}, side by side.",
@@ -704,9 +703,9 @@ for _rel, _w in (("front_right", ("in front of and to the right of", "front-righ
            f"Move the {{A}} so it ends up {_w[1]} the {{R}}.", f"Set the {{A}} diagonally {_w[0]} the {{R}}.",
            f"The {{A}} goes {_w[1]} the {{R}}."),
         [("LIB", "libero_spatial"), ("VIMA", "rearrange")], dst={"P": {"type": "spot", "rel": _rel, "ref": "R"}})
-add("rel_between_containers", "relation", {"A": T, "H": W_, "G": W_}, [("A", "P")],
+add("rel_between_containers", "relation", {"A": T, "H": W_, "G": T}, [("A", "P")],
     _t("Put the {A} between the {H} and the {G}.", "Place the {A} in the middle of the {H} and the {G}.",
-       "Set the {A} halfway between the {H} and the {G}.", "Move the {A} in between the two containers.",
+       "Set the {A} halfway between the {H} and the {G}.", "Move the {A} in between the {H} and the {G}.",
        "The {A} goes between the {H} and the {G}."),
     [("LIB", "pick_up_the_black_bowl_between_the_plate_and_the_ramekin"), ("VIMA", "rearrange")],
     dst={"P": {"type": "spot", "between": ("H", "G")}})
@@ -724,13 +723,15 @@ add("arr_gap_narrow", "arrange", {"A": T, "R": T, "Q": dict(T, beside={"ref": "R
        "The {A} goes into the gap between the {R} and the {Q}."),
     [("LIB", "pick_up_the_black_bowl_between_the_plate_and_the_ramekin"), ("VIMA", "rearrange")],
     dst={"P": {"type": "spot", "between": ("R", "Q")}})
-add("arr_line3_x", "arrange", {"A": T, "B": T, "C": T}, [("A", "P1"), ("B", "P2"), ("C", "P3")],
-    _t("Line up the {A}, the {B} and the {C} from front to back.", "Make a front-to-back row: {A}, {B}, {C}.",
-       "Put the {A} nearest to me, then the {B}, then the {C} behind.", "Arrange the {A}, {B} and {C} one behind the other.",
-       "Set the {A}, the {B} and the {C} in a line going away from me."),
+add("arr_three_corners", "arrange", {"A": T, "B": T, "C": T}, [("A", "P1"), ("B", "P2"), ("C", "P3")],
+    _t("Spread them out: {A} front left, {B} back right, {C} front right.",
+       "Put the {A} at the front left, the {B} at the back right and the {C} at the front right.",
+       "First the {A} to the near left corner, then the {B} to the far right, then the {C} to the near right.",
+       "Move the {A}, the {B} and the {C} to three corners: front left, back right, front right.",
+       "Corners, in order: {A} front left, {B} back right, {C} front right."),
     [("VIMA", "rearrange"), ("B1K", "collect_misplaced_items")],
-    dst={"P1": {"type": "spot", "line": ("x", 0, 3), "spacing": 0.10}, "P2": {"type": "spot", "line": ("x", 1, 3), "spacing": 0.10},
-         "P3": {"type": "spot", "line": ("x", 2, 3), "spacing": 0.10}})
+    dst={"P1": {"type": "spot", "corner": "front_left"}, "P2": {"type": "spot", "corner": "back_right"},
+         "P3": {"type": "spot", "corner": "front_right"}})
 add("arr_diag", "arrange", {"A": T, "B": T}, [("A", "P1"), ("B", "P2")],
     _t("Put the {A} at the front left and the {B} at the back right.", "Move the {A} to the near left and the {B} to the far right.",
        "Place the {A} front-left, then the {B} back-right.", "Spread them out: {A} front left, {B} back right.",
@@ -797,29 +798,30 @@ add("ins_from_bin", "insert", {"H": W_, "A": dict(SL, on="on:H")}, [("A", "V")],
        "The {A} in the {H} goes into the {V}."),
     [("B1K", "organizing_school_stuff"), ("B1K", "unpacking_suitcase")], dst={"V": HV}, judge=UP, needs=("node:slot",))
 add("sort_colour3_bins", "sort", {"A": dict(T, colour_named=True), "B": dict(T, colour_named=True, other_colour="A"),
-                                  "C": dict(T, same_colour="A"), "H": W_, "G": W_},
+                                  "C": dict(T, same_colour="A"), "H": W_, "G": dict(W_, on="second")},
     [("A", "H"), ("B", "G"), ("C", "H")],
     _t("Sort by colour: the {Acol} things into the {H}, the {Bcol} one into the {G}.",
        "Put the {A} and the {C} in the {H}, and the {B} in the {G}.", "{Acol} goes in the {H}, {Bcol} in the {G}: {A}, {B}, {C}.",
        "Place the {A} in the {H}, the {B} in the {G}, then the {C} in the {H}.",
        "Separate the three by colour into the {H} and the {G}."),
     [("VIMA", "rearrange"), ("RT2", "blocks_ranking_rgb")])
-add("sort_drink_food", "sort", {"A": dict(T, cats=("can", "bottle")), "B": dict(T, cats=FOOD), "H": PL, "G": BOWL},
+add("sort_drink_food", "sort", {"A": dict(T, cats=("can", "bottle")), "B": dict(T, cats=FOOD), "H": PL, "G": dict(BOWL, on="second")},
     [("A", "H"), ("B", "G")],
     _t("Drinks on the {H}, food in the {G}: sort the {A} and the {B}.", "Put the {A} on the {H} and the {B} in the {G}.",
        "Sort the groceries: {A} onto the {H}, {B} into the {G}.", "The drink goes on the {H}, the food in the {G}.",
        "Place the {A} on the {H}, then the {B} in the {G}."),
     [("B1K", "sorting_groceries"), ("RC", "sorting_ingredients")])
-add("sort_recycle", "sort", {"A": dict(T, cats=("can", "bottle")), "B": dict(T, cats=FOOD), "H": BIN, "G": BOWL},
+add("sort_recycle", "sort", {"A": dict(T, cats=("can", "bottle")), "B": dict(T, cats=FOOD), "H": BIN, "G": dict(BOWL, on="second")},
     [("A", "H"), ("B", "G")],
     _t("Recycle the {A} in the {H} and keep the {B} in the {G}.", "Put the {A} in the {H} and the {B} in the {G}.",
        "Sort: the drink container into the {H}, the food into the {G}.", "The {A} goes to recycling ({H}), the {B} into the {G}.",
        "First the {A} into the {H}, then the {B} into the {G}."),
     [("B1K", "collecting_aluminum_cans"), ("RC", "organizing_recycling")])
-add("sort_book_toy", "sort", {"A": dict(T, cats=("book",)), "B": dict(T, cats=TOY), "H": BIN}, [("A", "V"), ("B", "H")],
-    _t("Put the book on the {V} and the toy in the {H}.", "Sort: {A} onto the {V}, {B} into the {H}.",
-       "The {A} goes on the {V}, the {B} in the {H}.", "First the book on the {V}, then the toy in the {H}.",
-       "Separate the {A} and the {B}: block for books, {H} for toys."),
+add("sort_book_toy", "sort", {"A": dict(T, cats=("book", "box", "block")), "B": dict(T, cats=TOY), "H": BIN},
+    [("A", "V"), ("B", "H")],
+    _t("Put the {A} on the {V} and the toy in the {H}.", "Sort: {A} onto the {V}, {B} into the {H}.",
+       "The {A} goes on the {V}, the {B} in the {H}.", "First the {A} on the {V}, then the toy in the {H}.",
+       "Separate the {A} and the {B}: the {A} on the block, the toy in the {H}."),
     [("B1K", "sorting_books"), ("B1K", "putting_away_toys")], dst={"V": SV}, needs=("node:stand",))
 add("sort_shelf_bin", "sort", {"A": dict(T, cats=FOOD), "B": dict(T, cats=TOY), "H": BIN}, [("A", "V"), ("B", "H")],
     _t("Food on the shelf, toys in the {H}: sort the {A} and the {B}.", "Put the {A} in the {V} and the {B} in the {H}.",
@@ -827,7 +829,7 @@ add("sort_shelf_bin", "sort", {"A": dict(T, cats=FOOD), "B": dict(T, cats=TOY), 
        "First the {A} onto the shelf, then the {B} into the {H}."),
     [("B1K", "storing_the_groceries"), ("B1K", "putting_away_toys")], dst={"V": SH}, needs=(SHELF_NEED,), req=FRONT)
 add("set_place_three", "set", {"A": dict(T, cats=FOOD), "H": PL, "B": dict(T, cats=("can", "bottle")),
-                               "C": dict(T, cats=FOOD), "G": BOWL}, [("A", "H"), ("B", "P"), ("C", "G")],
+                               "C": dict(T, cats=FOOD), "G": dict(BOWL, on="second")}, [("A", "H"), ("B", "P"), ("C", "G")],
     _t("Set the place: {A} on the {H}, {B} to its right, {C} in the {G}.",
        "Put the {A} on the {H}, the {B} right of the {H}, and the {C} in the {G}.",
        "Serve a meal: first the {A} onto the {H}, then the {B} beside it, then the {C} into the {G}.",
@@ -854,7 +856,7 @@ add("set_coaster", "set", {"A": dict(T, cats=DRINK)}, [("A", "V")],
     _t("Put the {A} on the {V}.", "Set the drink down on the {V}.", "Place the {A} onto the {V}.",
        "Move the {A} to the {V} so it does not mark the table.", "The {A} goes on the {V}."),
     [("RT2", "place_empty_cup"), ("RC", "serving_beverages")], dst={"V": ZN}, needs=("node:zone|seat",))
-add("clear_after_meal", "clear", {"P0": PL, "A": dict(T, on="on:P0"), "H": BIN, "B": dict(T, cats=DRINK)},
+add("clear_after_meal", "clear", {"P0": PL, "A": dict(T, on="on:P0"), "H": dict(BIN, on="second"), "B": dict(T, cats=DRINK)},
     [("A", "H"), ("B", "P")],
     _t("Clear up: the {A} from the {P0} into the {H}, the {B} to the back right.",
        "Throw the {A} on the {P0} in the {H}, then move the {B} to the back right.",
@@ -899,7 +901,7 @@ add("down_onto_plate", "height", {"A": dict(T, on="higher"), "H": PL}, [("A", "H
     needs=("higher",))
 
 # ordered 3-object episodes (owner 10-02: more post-grasp steps; LIBERO failures came after the grasp)
-add("tidy_three_places", "tidy", {"A": T, "B": T, "C": T, "H": W_}, [("A", "H"), ("B", "V"), ("C", "P")],
+add("tidy_three_places", "tidy", {"A": T, "B": T, "C": T, "H": dict(W_, on="second")}, [("A", "H"), ("B", "V"), ("C", "P")],
     _t("Put everything where it belongs: {A} in the {H}, {B} on the {V}, {C} to the back right.",
        "First the {A} into the {H}, then the {B} onto the {V}, then the {C} to the back right.",
        "Tidy up three things: {A} into the {H}, {B} on the {V}, {C} at the back right.",
@@ -907,14 +909,14 @@ add("tidy_three_places", "tidy", {"A": T, "B": T, "C": T, "H": W_}, [("A", "H"),
        "One at a time: the {A} goes in the {H}, the {B} on the {V}, the {C} back right."),
     [("B1K", "collect_misplaced_items"), ("B1K", "cleaning_bedroom")],
     dst={"V": SV, "P": {"type": "spot", "corner": "back_right"}}, needs=("node:stand",))
-add("tr_swap_containers", "transfer", {"H": W_, "A": dict(T, on="on:H"), "G": W_, "B": T}, [("A", "G"), ("B", "H")],
+add("tr_swap_containers", "transfer", {"H": W_, "A": dict(T, on="on:H"), "G": dict(W_, on="second"), "B": T}, [("A", "G"), ("B", "H")],
     _t("Move the {A} from the {H} to the {G}, then put the {B} in the {H}.",
        "Swap things around: {A} into the {G}, then {B} into the emptied {H}.",
        "First take the {A} out of the {H} into the {G}; then the {B} goes into the {H}.",
        "Put the {A} in the {G} and the {B} in the {H}, in that order.",
        "Empty the {H} into the {G}, then fill the {H} with the {B}."),
     [("B1K", "storing_food"), ("RC", "organizing_dishes_and_containers")])
-add("set_two_plates_drink", "set", {"A": dict(T, cats=FOOD), "H": PL, "B": dict(T, cats=FOOD), "G": PL,
+add("set_two_plates_drink", "set", {"A": dict(T, cats=FOOD), "H": PL, "B": dict(T, cats=FOOD), "G": dict(PL, on="second"),
                                     "C": dict(T, cats=DRINK)}, [("A", "H"), ("B", "G"), ("C", "P")],
     _t("Serve two places: {A} on the {H}, {B} on the {G}, and the {C} right of the {H}.",
        "Put the {A} on the {H}, the {B} on the {G}, then set the {C} beside the {H} on the right.",
@@ -922,7 +924,7 @@ add("set_two_plates_drink", "set", {"A": dict(T, cats=FOOD), "H": PL, "B": dict(
        "Lay out the meal: {A} on the {H}, {B} on the {G}, {C} next to the {H}.",
        "Plate the {A} and the {B}, then put the {C} on the right of the {H}."),
     [("B1K", "serving_a_meal"), ("RLB", "set_the_table")], dst={"P": {"type": "spot", "rel": "right", "ref": "H"}})
-add("clear_three_mixed", "clear", {"A": T, "H": BIN, "B": dict(T, cats=FOOD), "G": BOWL, "C": T},
+add("clear_three_mixed", "clear", {"A": T, "H": BIN, "B": dict(T, cats=FOOD), "G": dict(BOWL, on="second"), "C": T},
     [("A", "H"), ("B", "G"), ("C", "P")],
     _t("Clean up: {A} in the {H}, {B} in the {G}, {C} to the back left.",
        "Throw the {A} in the {H}, put the {B} in the {G}, and move the {C} to the back left.",
@@ -930,16 +932,16 @@ add("clear_three_mixed", "clear", {"A": T, "H": BIN, "B": dict(T, cats=FOOD), "G
        "Clear three things: {A} into the {H}, {B} into the {G}, {C} back left.",
        "After the meal: trash {A} into the {H}, food {B} into the {G}, and {C} to the back left."),
     [("B1K", "cleaning_up_after_a_meal"), ("RC", "clearing_table")], dst={"P": {"type": "spot", "corner": "back_left"}})
-add("rel_chain3", "relation", {"A": T, "B": T, "C": T, "R": T}, [("A", "P1"), ("B", "P2"), ("C", "P3")],
-    _t("Around the {R}: the {A} on its left, the {B} on its right, the {C} behind it.",
-       "Put the {A} left of the {R}, the {B} right of it, then the {C} behind it.",
-       "First the {A} to the {R}'s left, then the {B} to its right, then the {C} behind it.",
-       "Arrange the {A}, {B} and {C} around the {R}: left, right, behind.",
-       "Surround the {R}: {A} left, {B} right, {C} behind."),
+add("rel_chain3", "relation", {"A": T, "B": T, "C": T, "R": T}, [("A", "P1"), ("B", "P2"), ("C", "V")],
+    _t("Put the {A} left of the {R} and the {B} right of it, then move the {C} onto the {V}.",
+       "First the {A} to the {R}'s left, then the {B} to its right, then the {C} over to the {V}.",
+       "Flank the {R} with the {A} (left) and the {B} (right); the {C} goes on the {V}.",
+       "{A} left of the {R}, {B} right of the {R}, {C} onto the {V}.",
+       "Arrange the {A} and the {B} around the {R}, then clear the {C} onto the {V}."),
     [("VIMA", "rearrange"), ("LIB", "libero_spatial")],
     dst={"P1": {"type": "spot", "rel": "left", "ref": "R"}, "P2": {"type": "spot", "rel": "right", "ref": "R"},
-         "P3": {"type": "spot", "rel": "behind", "ref": "R"}})
-add("stack_then_two_in", "stack", {"A": T, "B": B_, "C": T, "D": T, "H": WB}, [("A", "B"), ("C", "H"), ("D", "H")],
+         "V": {"type": "node", "kinds": ("top", "zone"), "second": True}}, needs=("second",))
+add("stack_then_two_in", "stack", {"A": T, "B": B_, "C": T, "D": T, "H": dict(WB, on="second")}, [("A", "B"), ("C", "H"), ("D", "H")],
     _t("Stack the {A} on the {B}, then put the {C} and the {D} in the {H}.",
        "First the {A} onto the {B}; then the {C} and the {D} into the {H}.",
        "Put the {A} on top of the {B}, and drop the {C} and then the {D} into the {H}.",

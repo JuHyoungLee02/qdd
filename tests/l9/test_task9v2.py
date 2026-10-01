@@ -212,7 +212,7 @@ def test_constraint_rules():
 def test_benchmark_instructions_never_verbatim():
     assert V2.bench_clash("Put the bowl on the plate.") and V2.bench_clash("put  the BOWL on the plate")
     assert not V2.bench_clash("Put the red bowl on the plate.")
-    d = V2.DEFS_V2["hol_bowl_on_plate"]
+    d = V2.DEFS_V2["hol_mug_on_plate"]
     fmt = {"A": "bowl", "H": "plate", "Msurf": "table"}
     ep = {"instruction": "Put the bowl on the plate.", "template": 0}
     text, clash = V2.avoid_bench(d, ep, fmt)
@@ -281,6 +281,13 @@ def test_holdout_definitions():
     rows = AL.plan_rows({k: al[k] for k in ho[:1] + ["rel_left"]}, pairs, holdout=ho)
     assert {r["split"] for r in rows if r["def"] == ho[0]} == {"holdout"}
     assert {r["split"] for r in rows if r["def"] == "rel_left"} == {"train"}
+
+
+def test_unhostable_from_report():
+    rep = {"a": {"ffw_sg2": {"ok": 0, "n": 5}, "franka_mast": {"ok": 2, "n": 5}},
+           "b": {"ffw_sg2": {"ok": 3, "n": 5}}, "c": {"ffw_sg2": {"ok": 0, "n": 0}}}
+    assert AL.unhostable(rep) == ["a", "c"]
+    assert AL.unhostable(rep, robots=("franka_mast",)) == []
 
 
 def test_plan_rows_v2():

@@ -170,7 +170,8 @@ def main():
 def plan_v2(out: str, lanes: int, arg, ft: dict, pod: str) -> dict:
     """--total 15000 --min-per-def 60 --caps a,b (task9v2.CAPS_ALL available) --defs gate.json (its "pass" list)
     --yields g1.json (definitions.<id>.yield) --exclude ex.json ([[robot, def], ...]) --no-holdout --start 3000000
-    --job-size 30 --pool0 3000. Writes plan_v2.json, jobs_<k>.txt and alloc_v2.json (allocation, held-out
+    --hostable v2_hostable.json (leave out definitions that never instantiated) --job-size 30 --pool0 3000.
+    Writes plan_v2.json, jobs_<k>.txt and alloc_v2.json (allocation, held-out
     definitions, definitions without a compatible scene)."""
     from harvest.l9 import alloc9 as AL
     from harvest.l9 import task9v2 as V2
@@ -181,7 +182,8 @@ def plan_v2(out: str, lanes: int, arg, ft: dict, pod: str) -> dict:
         use = {k: d for k, d in use.items() if k in keep}
     pairs = {k: [fr for fr in S9.all_rules() if compat(d, ft[fr])] for k, d in use.items()}
     unhosted = sorted(k for k, p in pairs.items() if not p)
-    defmap = {k: d.family for k, d in use.items() if pairs[k]}
+    unhost = AL.unhostable(json.load(open(arg("--hostable", "")))) if "--hostable" in sys.argv else []
+    defmap = {k: d.family for k, d in use.items() if pairs[k] and k not in unhost}
     holdout = [] if "--no-holdout" in sys.argv else AL.holdout_defs(defmap)
     exclude = {tuple(x) for x in json.load(open(arg("--exclude", "")))} if "--exclude" in sys.argv else set()
     yields = {}
@@ -192,7 +194,8 @@ def plan_v2(out: str, lanes: int, arg, ft: dict, pod: str) -> dict:
     rows = AL.plan_rows(al, pairs, arg("--start", 3000000), yields, holdout)
     ch = AL.jobs_v2(rows, arg("--job-size", 30), arg("--pool0", 3000))
     os.makedirs(out, exist_ok=True)
-    json.dump({"alloc": al, "holdout": holdout, "caps": caps, "unhosted": unhosted, "robot_share": AL.ROBOT_SHARE,
+    json.dump({"alloc": al, "holdout": holdout, "caps": caps, "unhosted": unhosted, "unhostable": unhost,
+               "robot_share": AL.ROBOT_SHARE,
                "total": arg("--total", 15000), "min_per_def": arg("--min-per-def", 60)},
               open(os.path.join(out, "alloc_v2.json"), "w"), indent=1)
     res = write(out, rows, ch, lanes, "plan_v2.json", pod)

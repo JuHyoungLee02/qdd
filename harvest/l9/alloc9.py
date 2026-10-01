@@ -56,6 +56,17 @@ def _round_to(vals: dict, total: int) -> dict:
     return fl
 
 
+def unhostable(report: dict, robots=("ffw_sg2",)) -> list:
+    """Definitions that never instantiated in a tools/l9/v2_hostable.py report for any of `robots` (the plan leaves
+    them out: their rows would only redraw)."""
+    out = []
+    for k, v in report.items():
+        rs = [r for r in robots if isinstance(v.get(r), dict)]
+        if rs and not any(v[r].get("ok", 0) > 0 for r in rs):
+            out.append(k)
+    return sorted(out)
+
+
 def holdout_defs(defs: dict, share: float = HOLDOUT_SHARE) -> list:
     """~share of the definitions, at most one per family (families in a hashed order), the hashed-first definition
     of each: deterministic."""
