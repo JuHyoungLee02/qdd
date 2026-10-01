@@ -850,7 +850,7 @@ def install(world, profile: str = "ffw_sg2", arm: str = "right", device: str = "
     return rt
 
 
-def has_candidates(profile: str, k: str, untested: bool = False, min_pass: int = 8) -> bool:
+def has_candidates(profile: str, k: str, untested: bool = False, min_pass: int | None = None) -> bool:
     """A target is usable by v2 when its candidate cache exists and (unless untested) its Isaac test file has at
     least min_pass passing candidates (spec §12.4)."""
     g = GRIP_NAME.get(profile, profile)
@@ -862,7 +862,8 @@ def has_candidates(profile: str, k: str, untested: bool = False, min_pass: int =
     if not os.path.exists(t):
         return False
     K = int(np.load(os.path.join(GRASP_DIR, g, f"{k}.npz"))["w"].shape[0])
-    return int(tested_mask(dict(np.load(t)), K).sum()) >= min_pass
+    mp = int(os.environ.get("L9V2_MIN_PASS", "15")) if min_pass is None else min_pass  # few valid -> SkipScene often
+    return int(tested_mask(dict(np.load(t)), K).sum()) >= mp
 
 
 def tested_mask(r: dict, K: int) -> np.ndarray:
