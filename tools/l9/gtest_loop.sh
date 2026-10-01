@@ -8,13 +8,15 @@ C=$1; G=$2; M=$3; N=$4; shift 4
 W=/data/harvest/l9v2gt
 mkdir -p $W
 cd /data/harvest/ir
+T0=$(date -u +%FT%TZ)  # only a generation DONE line written after this counts (older lines are from earlier runs)
 while true; do
   [ -f $W/stop_$G ] && { echo "STOP $(date -u +%FT%TZ)"; break; }
   IR_ROOT=cyclo IR_INST=l9v2gt_q ./ir_run.sh env HOME=/data/harvest/home PYTHONPATH=$C CUDA_VISIBLE_DEVICES= \
     /isaac-sim/python.sh $C/tools/l9/grasp_test_queue.py --grip $G --n $M --out $W/ids_$G.txt > $W/q_$G.log 2>&1
   echo "QUEUE $(date -u +%FT%TZ) $(tail -1 $W/q_$G.log)"
   if [ ! -s $W/ids_$G.txt ]; then
-    grep -q "DONE $G" /data/harvest/l9v2/grasps_done.log 2>/dev/null && { echo "ALL DONE $(date -u +%FT%TZ)"; break; }
+    awk -v g=$G -v t=$T0 '$1 == "DONE" && $2 == g && $3 > t {f = 1} END {exit !f}' /data/harvest/l9v2/grasps_done.log 2>/dev/null \
+      && { echo "ALL DONE $(date -u +%FT%TZ)"; break; }
     sleep 120
     continue
   fi
