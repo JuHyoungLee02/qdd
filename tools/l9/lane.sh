@@ -13,7 +13,8 @@ run_job() {
   local line="$1" j="$2" t0=$(date +%s)
   bash $C/tools/l9/isaac.sh $C $G ${T}_$j harvest.l9.run9 $line --out $R/collect --video-seeds "$(cat $R/video_seeds 2>/dev/null)"
   if grep -q '^RUN_DONE' /data/harvest/logs/l9/${T}_$j.log; then touch $R/done/$j; FAST=0; return; fi
-  if [ $(( $(date +%s) - t0 )) -lt 120 ]; then  # failed at start (P148): give the job back, back off, give up after 3
+  [ -f $Y ] || [ -f /data/harvest/out/l9/STOP ] || rm -rf $R/claim/$j  # unfinished (crash / watchdog): give it back
+  if [ $(( $(date +%s) - t0 )) -lt 120 ]; then  # failed at start (P148): back off, give up after 3
     rm -rf $R/claim/$j; FAST=$((FAST + 1))
     echo "FAST_FAIL lane $T job $j ($FAST)"
     [ $FAST -ge 3 ] && { echo "LANE_STOP $T: 3 jobs failed at start $(date -u +%FT%TZ)" >> $R/lanes.log; exit 1; }
