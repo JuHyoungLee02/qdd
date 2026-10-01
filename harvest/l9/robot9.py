@@ -185,6 +185,197 @@ def franka_camera_cfgs(names, depth: bool) -> dict:
     return out
 
 
+# ---------------------------------------------------------------------------------------------- L9 v2: R1 Pro, G1
+# spec §12.2. These profiles are NOT in PROFILES yet (world9 / scene.py treat every non-Franka profile as the AI
+# Worker): the owner adds them to the executor; V2_PROFILES lists them. Assets: the prepared URDFs of
+# tools/l9/v2robot/robots_v2.py (TCP links "<arm>_l9_tcp" = the cuRobo tool frame = grasp frame G), converted
+# once to USD by Isaac Lab's UrdfConverter under V2_ROOT/<robot>/usd_<hash>.
+V2_PROFILES = ("r1pro", "g1")
+V2_ROOT = "/data/harvest/assets_l9v2/robots"
+_D405 = {"width": 424, "height": 240, "hfov": 87.0}  # = the AI Worker / Franka wrist cameras (D405)
+
+
+def _rpy_R(r: float, p: float, y: float) -> np.ndarray:
+    return HC.axis_angle_R((0, 0, 1), y) @ HC.axis_angle_R((0, 1, 0), p) @ HC.axis_angle_R((1, 0, 0), r)
+
+
+def _look_mount(pos, look_at, up) -> tuple:
+    """(pos, world-convention quat) of a camera at pos (parent frame) whose optical axis (+X) points at look_at and
+    whose +Z is as close as possible to `up`."""
+    p = np.asarray(pos, float)
+    f = np.asarray(look_at, float) - p
+    f /= np.linalg.norm(f)
+    u = np.asarray(up, float)
+    z = u - f * float(u @ f)
+    z /= np.linalg.norm(z)
+    return tuple(float(v) for v in p), HC.R_to_quat(np.column_stack([f, np.cross(z, f), z]))
+
+
+# Galaxea R1 Pro (GalaxeaManipSim galaxea_sim/robots/r1_pro.py, Apache-2.0, abe7f51): SAPIEN cameras use the same
+# x-forward / y-left / z-up convention as our "world" camera mounts, so their local poses are taken as they are.
+# head: zed_link, quat [1, 1, -1, 1] / 2, fovx 100.837 fovy 68.998 deg (1280 x 720); wrist: <arm>_realsense_link,
+# rpy(-10 deg, 0, -90 deg) * quat [0.5, 0.5, -0.5, 0.5], fovx 55.70 (right) / 54.39 (left) deg at 320 x 240.
+R1_HEAD_HFOV = 100.837
+R1_WRIST = {"right": 55.703, "left": 54.393}
+
+
+def _r1_wrist_quat() -> tuple:
+    R = _rpy_R(math.radians(-10.0), 0.0, -math.pi / 2) @ HC.quat_to_R((0.5, 0.5, -0.5, 0.5))
+    return HC.R_to_quat(R)
+
+
+V2 = {
+    "r1pro": {
+        "name": "Galaxea R1 Pro", "urdf": f"{V2_ROOT}/r1pro/r1pro_l9v2.urdf",
+        "licence": "Apache-2.0 (OpenGalaxea/GalaxeaManipSim galaxea_sim/assets/r1_pro/robot.urdf, abe7f51)",
+        "root_link": "base_link", "base_z": 0.0,  # base_link origin on the floor (GalaxeaManipSim robot_origin 0)
+        "torso": ("torso_joint1", "torso_joint2", "torso_joint3", "torso_joint4"),
+        "arms": {s: {"joints": tuple(f"{s}_arm_joint{i}" for i in range(1, 8)),
+                     "fingers": (f"{s}_gripper_finger_joint1", f"{s}_gripper_finger_joint2"),
+                     "ee": f"{s}_gripper_link", "tcp": f"{s}_l9_tcp",
+                     "finger_bodies": (f"{s}_gripper_finger_link1", f"{s}_gripper_finger_link2")}
+                 for s in ("right", "left")},
+        "grip_max_w": 0.0999, "finger_q_max": 0.05,  # w = 2 q (grippers/r1pro_*.json, FK of the finger faces)
+        "pad_len_m": 0.070, "finger_depth_m": 0.035,
+        # drives: GalaxeaManipSim joint_stiffness 1000 / damping 200 (all joints, SAPIEN); gripper effort 100 N
+        # (URDF limit). Gravity off on the robot like the Franka high-PD profile.
+        "kp": 1000.0, "kd": 200.0, "finger_kp": 2.0e3, "finger_kd": 1.0e2, "finger_effort": 100.0,
+        "cameras": {"cam_head": {"parent": "zed_link", "pos": (0.0, 0.0, 0.0), "quat": (0.5, 0.5, -0.5, 0.5),
+                                 "width": HC.W, "height": HC.H, "hfov": R1_HEAD_HFOV,
+                                 "model": "ZED on torso_link4 (GalaxeaManipSim head camera, 100.8 x 69.0 deg)"},
+                    **{f"cam_wrist_{s}": {"parent": f"{s}_realsense_link", "pos": (0.0, 0.0, 0.0),
+                                          "quat": _r1_wrist_quat(), "width": 320, "height": 240,
+                                          "hfov": R1_WRIST[s],
+                                          "model": "RealSense on the gripper (GalaxeaManipSim wrist camera)"}
+                       for s in ("right", "left")}},
+    },
+    "g1": {
+        "name": "Unitree G1 (29 DoF, Dex3-1 hands)", "urdf": f"{V2_ROOT}/g1/g1_l9v2.urdf",
+        "licence": "BSD-3-Clause (unitreerobotics/unitree_ros g1_description via cuRobo v0.8.0 content)",
+        "root_link": "pelvis", "base_z": 0.793,  # [hypothesis] pelvis height standing with straight legs; smoke
+        "torso": ("waist_yaw_joint", "waist_roll_joint", "waist_pitch_joint"),
+        "arms": {s: {"joints": tuple(f"{s}_{n}_joint" for n in ("shoulder_pitch", "shoulder_roll", "shoulder_yaw",
+                                                                 "elbow", "wrist_roll", "wrist_pitch", "wrist_yaw")),
+                     "fingers": tuple(f"{s}_hand_{j}_joint" for j in ("thumb_0", "thumb_1", "thumb_2", "index_0",
+                                                                     "index_1", "middle_0", "middle_1")),
+                     "ee": f"{s}_hand_palm_link", "tcp": f"{s}_l9_tcp",
+                     "finger_bodies": (f"{s}_hand_thumb_2_link", f"{s}_hand_index_1_link")}
+                 for s in ("right", "left")},
+        "grip_max_w": 0.1131, "grip_min_w": 0.0215,  # Dex3-1 thumb-index pinch band (tools/l9/v2robot/hands_v2.py)
+        "pad_len_m": 0.015, "finger_depth_m": 0.0345,
+        # [hypothesis] drives; URDF hand joint effort 2.45 N m. Legs + waist are held at 0 by the body drives.
+        "kp": 400.0, "kd": 80.0, "finger_kp": 20.0, "finger_kd": 1.0, "finger_effort": 2.45,
+        "cameras": {"cam_head": {"parent": "d435_link", "pos": (0.0, 0.0, 0.0), "quat": (1.0, 0.0, 0.0, 0.0),
+                                 "width": HC.W, "height": HC.H, "hfov": HC.D435_HFOV,
+                                 "model": "Intel RealSense D435 on torso_link (unitree_ros d435_joint, 47.6 deg down)"},
+                    # no official wrist camera (spec §9.2: wrist mount): a D405 on the palm looking at the pinch
+                    **{f"cam_wrist_{s}": {"parent": f"{s}_hand_palm_link",
+                                          "look": ((0.0, 0.0, 0.09 if s == "right" else -0.09),
+                                                   (0.074, 0.056 if s == "right" else -0.056, 0.014),
+                                                   (-1.0, 0.0, 0.0)),
+                                          **_D405, "model": "D405 on a wrist mount above the index finger [hypothesis]"}
+                       for s in ("right", "left")}},
+    },
+}
+
+
+def r1_torso_q(theta: float) -> tuple:
+    """R1 Pro torso squat keeping torso_link4 upright: joint1 = theta, joint2 = -2 theta, joint3 = -theta (axes y, y,
+    -y), joint4 (yaw) = 0. torso_link4 height above base_link = 0.34265 + 0.7 cos(theta) + 0.09962 m, 0.1 sin(theta)
+    forward (URDF origins)."""
+    return (float(theta), float(-2.0 * theta), float(-theta), 0.0)
+
+
+def r1_theta_for_surface(surface_z: float, shoulder_above: float = 0.50) -> float:
+    """Squat angle putting the R1 Pro arm bases (torso_link4 + 0.303) shoulder_above over the work surface (analogue of
+    the AI Worker lift rule: its shoulders are 0.48 above the table) [hypothesis: same clearance]; clipped to
+    [0, 1.0] rad (joint limits allow 1.0: j2 -2.0 > -2.79, j3 -1.0 > -1.83)."""
+    c = (float(surface_z) + shoulder_above - 0.303 - 0.34265 - 0.09962) / 0.7
+    return float(np.clip(math.acos(float(np.clip(c, -1.0, 1.0))), 0.0, 1.0))
+
+
+def v2_width_to_joints(profile: str, arm: str, w: float) -> dict:
+    """Finger joint targets for a pad gap w (m). R1 Pro: both prismatic fingers q = w / 2. G1: the Dex3-1 pinch
+    table (assets9/grippers/g1_<arm>.json width_to_joint.q_by_joint), clipped to its usable band."""
+    a = V2[profile]["arms"][arm]
+    if profile == "r1pro":
+        q = float(np.clip(float(w) / 2.0, 0.0, V2[profile]["finger_q_max"]))
+        return {j: q for j in a["fingers"]}
+    t = _g1_table(arm)
+    return {j: float(np.interp(w, t["width_m"], t["q_by_joint"][j])) for j in a["fingers"]}
+
+
+_G1_TABLE = {}
+
+
+def _g1_table(arm: str) -> dict:
+    if arm not in _G1_TABLE:
+        import json
+        p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets9", "grippers", f"g1_{arm}.json")
+        _G1_TABLE[arm] = json.load(open(p))["width_to_joint"]
+    return _G1_TABLE[arm]
+
+
+def v2_mount(profile: str, cam: str) -> tuple:
+    c = V2[profile]["cameras"][cam]
+    if "look" in c:
+        return _look_mount(*c["look"])
+    return tuple(c["pos"]), tuple(c["quat"])
+
+
+def v2_robot_cfg(profile: str, init_joints: dict | None = None):
+    """(pod) ArticulationCfg of an L9 v2 robot: its prepared URDF converted once (hash-named USD dir), fixed root,
+    gravity off, contact sensors on, no self-collision (cuRobo plans self-collision free), drives from V2."""
+    import hashlib
+
+    import isaaclab.sim as sim_utils
+    from isaaclab.actuators import ImplicitActuatorCfg
+    from isaaclab.assets.articulation import ArticulationCfg
+    from isaaclab.sim.converters import UrdfConverterCfg
+    s = V2[profile]
+    h = hashlib.sha256(open(s["urdf"], "rb").read()).hexdigest()[:8]
+    spawn = sim_utils.UrdfFileCfg(
+        asset_path=s["urdf"], usd_dir=os.path.join(os.path.dirname(s["urdf"]), f"usd_{h}"), force_usd_conversion=False,
+        fix_base=True, merge_fixed_joints=False, convert_mimic_joints_to_normal_joints=True, make_instanceable=False,
+        joint_drive=UrdfConverterCfg.JointDriveCfg(gains=UrdfConverterCfg.JointDriveCfg.PDGainsCfg(
+            stiffness=s["kp"], damping=s["kd"])),
+        activate_contact_sensors=True,
+        rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=True, max_depenetration_velocity=5.0),
+        articulation_props=sim_utils.ArticulationRootPropertiesCfg(
+            enabled_self_collisions=False, solver_position_iteration_count=8, solver_velocity_iteration_count=0,
+            fix_root_link=True))
+    fingers = [j for a in s["arms"].values() for j in a["fingers"]]
+    return ArticulationCfg(
+        prim_path="{ENV_REGEX_NS}/Robot", spawn=spawn,
+        init_state=ArticulationCfg.InitialStateCfg(pos=(0.0, 0.0, s["base_z"]), joint_pos=dict(init_joints or {})),
+        actuators={
+            "body": ImplicitActuatorCfg(joint_names_expr=[f"^(?!({'|'.join(fingers)})$).*"], stiffness=s["kp"],
+                                        damping=s["kd"]),
+            "fingers": ImplicitActuatorCfg(joint_names_expr=fingers, effort_limit_sim=s["finger_effort"],
+                                           stiffness=s["finger_kp"], damping=s["finger_kd"])},
+        soft_joint_pos_limit_factor=1.0)
+
+
+def v2_camera_cfgs(profile: str, names, depth: bool = False) -> dict:
+    """(pod) CameraCfg per camera name (scene key = name), prims under the parent link of the URDF articulation."""
+    import isaaclab.sim as sim_utils
+    from isaaclab.sensors import CameraCfg
+    out = {}
+    for n in names:
+        c = V2[profile]["cameras"][n]
+        pos, quat = v2_mount(profile, n)
+        fx = HC.fx_from_hfov(c["hfov"], c["width"])
+        out[n] = CameraCfg(
+            prim_path=f"{{ENV_REGEX_NS}}/Robot/{c['parent']}/{n}", update_period=0.0, height=c["height"],
+            width=c["width"], data_types=["rgb", "distance_to_image_plane"] if depth else ["rgb"],
+            update_latest_camera_pose=True,
+            spawn=sim_utils.PinholeCameraCfg(focal_length=fx * H_APERTURE / c["width"], focus_distance=200.0,
+                                             horizontal_aperture=H_APERTURE,
+                                             clipping_range=WRIST_CLIP if "wrist" in n else HEAD_CLIP),
+            offset=CameraCfg.OffsetCfg(pos=tuple(pos), rot=tuple(quat), convention="world"))
+    return out
+
+
 # ---------------------------------------------------------------------------------------------- prompts
 _FFW_ROBOT = "the right arm of a humanoid robot (ROBOTIS AI Worker FFW-SG2)"
 _FFW_PADS = ("The pads are 4.5 cm long (from 2.25 cm above to 2.25 cm below the TCP); the gripper body starts 2.5 cm "
