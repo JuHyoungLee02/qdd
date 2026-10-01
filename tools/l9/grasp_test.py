@@ -32,6 +32,7 @@ GRIP_FILES = {"ffw_sg2": "ffw_sg2_right", "franka": "franka_hand"}
 FOLLOW = {"ffw_sg2": {"gripper_r_joint2": "gripper_r_joint1", "gripper_r_joint4": "gripper_r_joint3"}}
 VIRT = ("vx", "vy", "vz", "vr", "vp", "vyaw")
 DT = 0.01
+PALM_Z = 0.03  # the proximal links / palm close the space between the fingers above +3 cm (gtest_fingerprobe)
 
 
 def log(*a):
@@ -52,9 +53,11 @@ def main(argv=None):
     ap.add_argument("--spacing", type=float, default=1.2)
     ap.add_argument("--device", default="cuda:0", help="physics device (production L9 worlds run PhysX on cpu)")
     ap.add_argument("--no-pad-drop", dest="pad_drop", action="store_false",
-                    help="command T as is (default: back off by the arc drop of the pads, gtest9.exec_pose)")
-    ap.add_argument("--collider", default="none", choices=("none", "sdf", "cd"),
-                    help="object collider override (gtest9.apply_collider): render meshes as SDF / fine convex decomposition")
+                    help="command T as is (default: gtest9.exec_pose, raised only when the closed fingertips would hit the ground)")
+    ap.add_argument("--collider", default="none", choices=("none", "sdf", "cd", "auto"),
+                    help="object collider override (gtest9.apply_collider): render meshes as SDF / fine convex "
+                         "decomposition; auto = per object from row['collider'] or --collider-map")
+    ap.add_argument("--collider-map", default=f"{ROOT}/collider_override.json", help="{'objects': {id: mode}}")
     a = ap.parse_args(argv)
     code = 0
     try:
@@ -209,6 +212,9 @@ def run(a):
     # finger material (production taskC_ffw_sg2.py _SG2_GRIPPER_MATERIAL: 2.0 / 1.8, combine max) on every gripper
     # collider; objects: catalog friction set after start through the physx view
     t_obj = time.time()
+    cmap, obj_mode = {}, {}
+    if a.collider == "auto" and os.path.exists(a.collider_map):
+        cmap = json.load(open(a.collider_map)).get("objects", {})
     for i in range(n_env):
         k, row = tasks[owner[i]][0], tasks[owner[i]][1]
         pp = f"/World/envs/env_{i}/Obj"
@@ -217,8 +223,10 @@ def run(a):
         body = f"{pp}/{row['body_rel']}"
         sim_utils.modify_rigid_body_properties(body, sim_utils.RigidBodyPropertiesCfg(max_depenetration_velocity=1.0))
         sim_utils.modify_mass_properties(body, sim_utils.MassPropertiesCfg(mass=float(row.get("mass", 0.3))))
-        if a.collider != "none":
-            GT.apply_collider(stage, pp, a.collider)
+        mode = (row.get("collider") or cmap.get(k)) if a.collider == "auto" else a.collider
+        obj_mode[k] = mode or "none"
+        if mode and mode != "none":
+            GT.apply_collider(stage, pp, mode)
     obj = RigidObject(RigidObjectCfg(prim_path="/World/envs/env_.*/Obj/Geometry/obja_.*", spawn=None))
     log(f"authored {n_env} objects in {time.time() - t_obj:.0f}s")
     t_reset = time.time()
@@ -306,7 +314,7 @@ def run(a):
             else:
                 Tg = GT.tcp_world(T[j], yaw, c)
                 mw = Tg[:3, 3].copy()  # planned contact centre
-                Tw[i] = GT.exec_pose(Tg, float(w[j]), a.grip, table) if a.pad_drop else Tg
+                Tw[i] = GT.exec_pose(Tg, float(w[j]), a.grip, table, support_z=float(origins[i][2])) if a.pad_drop else Tg
             root[i, :3], root[i, 3:] = rp, rq
             Rb = qmat(rq)
             mloc[i] = Rb.T @ (mw - rp)
@@ -377,15 +385,14 @@ def run(a):
         out = {}
         for key in ("close", "hold", "end"):
             mG, cz, fq = (v.cpu().numpy() for v in rec[key])
-            if a.pad_drop:  # grasp centre relative to the (lowered) pads: TCP frame z + pad drop
-                mG = mG + np.c_[np.zeros((len(fq), 2)), GT.pad_drop_q(fq, a.grip)]
-            out[key] = (mG, cz - c0z, GT.q_to_width(fq, table))
+            out[key] = (mG, cz - c0z, GT.q_to_width(fq, table), GT.pad_drop_q(fq, a.grip))
         sl = slip.cpu().numpy()
         for i, x in enumerate(assign):
             if x is None:
                 continue
             m, j = x
-            ins = lambda key: GT.inside(out[key][0][i], pad_w, max_open, pad_z)
+            # between the fingers: from the (arc-lowered) pad bottom up to the palm (PALM_Z above the TCP)
+            ins = lambda key: GT.inside(out[key][0][i], pad_w, max_open, (pad_z[0] - out[key][3][i], PALM_Z))
             v = GT.verdict(out["hold"][1][i], ins("hold"), out["hold"][2][i], out["end"][1][i], ins("end"),
                            out["end"][2][i], sl[i])
             r = res[m]
@@ -440,7 +447,7 @@ def run(a):
         tested = np.zeros(K, bool)
         tested[idx[keep]] = True
         np.savez_compressed(os.path.join(od, k + ".npz"), idx=idx[keep], lift_ok=r["lift_ok"][keep],
-                            **{"pass": pas}, tested=tested, pad_drop=bool(a.pad_drop), collider=str(a.collider),
+                            **{"pass": pas}, tested=tested, pad_drop=bool(a.pad_drop), collider=str(obj_mode.get(k, "none")),
                             shake_ok=r["shake_ok"][keep], lowfric_ok=r["lowfric_ok"][keep],
                             final_gap=r["final_gap"][keep], gap_hold=r["gap_hold"][keep], gap_end=r["gap_end"][keep],
                             slip_mm=r["slip_mm"][keep], rise_end=r["rise_end"][keep], w=w[keep], pre_open=pre[keep],

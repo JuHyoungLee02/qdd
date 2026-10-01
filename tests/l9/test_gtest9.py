@@ -152,14 +152,16 @@ def test_parts_and_natural_rank():
     assert r[("top", "rim")] == 0 and r[("horizontal", "rim")] == 2
 
 
-def test_exec_pose_backs_off_by_pad_drop():
+def test_exec_pose_raises_only_for_support_clearance():
     a = np.array([0.0, 0.0, -1.0])
     Tg = T.pose(G.frame_of(a, [1.0, 0.0, 0.0]), [0.0, 0.0, 0.05])
     assert T.pad_drop(0.107, "ffw_sg2", TABLE) == 0.0
     d = T.pad_drop(0.025, "ffw_sg2", TABLE)
     assert abs(d - 0.0279) < 1e-9
-    Te = T.exec_pose(Tg, 0.025, "ffw_sg2", TABLE)
-    assert np.allclose(Te[:3, 3], [0.0, 0.0, 0.05 + d]) and np.allclose(Te[:3, :3], Tg[:3, :3])
-    assert T.pad_drop(0.03, "franka", TABLE) == 0.0
     assert T.pad_drop(0.025, "ffw_sg2") == d  # table from assets9/grippers/ffw_sg2_right.json
-    assert np.allclose(T.exec_pose(Tg, 0.03, "franka"), Tg)
+    assert np.allclose(T.exec_pose(Tg, 0.025, "ffw_sg2"), Tg)  # no support given: unchanged
+    assert np.allclose(T.exec_pose(Tg, 0.025, "ffw_sg2", support_z=-0.2), Tg)  # far above the support
+    Te = T.exec_pose(Tg, 0.025, "ffw_sg2", TABLE, support_z=0.0)  # closed tips at 0.05 - 0.0274 - d < 0.004
+    assert np.allclose(Te[:3, 3], [0.0, 0.0, 0.0274 + d + 0.004]) and np.allclose(Te[:3, :3], Tg[:3, :3])
+    assert T.pad_drop(0.03, "franka", TABLE) == 0.0
+    assert np.allclose(T.exec_pose(Tg, 0.03, "franka", support_z=0.0), Tg)

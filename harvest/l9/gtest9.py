@@ -289,11 +289,27 @@ def pad_drop(w, grip: str, table=None) -> float:
     return float(pad_drop_q(width_to_q(w, table), grip))
 
 
-def exec_pose(T, w, grip: str, table=None) -> np.ndarray:
-    """Hand TCP pose to command for a candidate T (4x4, TCP = contact centre, any frame) of contact width w (m):
-    T backed off along the approach (+z_G) by the pad drop at w, so the closed pads meet the object at the planned
-    contacts. Same frame as T."""
-    return backoff(T, pad_drop(w, grip, table))
+FINGER = {"ffw_sg2": {"depth": 0.0274, "half_w": 0.013, "t": 0.012}}  # fingertip below the q=0 TCP, pad half width, finger thickness
+SUPPORT_CLEAR = 0.004
+
+
+def exec_pose(T, w, grip: str, table=None, support_z=None) -> np.ndarray:
+    """Hand TCP pose to command for a candidate T (4x4, world frame, TCP = contact centre) of contact width w (m).
+    The pads drop along the approach while closing (PAD_DROP), so the closed pads grip up to 2.8 cm below the
+    planned centre (deeper = steadier on rims and bodies: smoke 10-02, pad drop compensation lost 12 of 13 mug
+    passes). The hand is only backed off along the approach when the closed fingertips would go below
+    support_z + 4 mm (support_z = world z of the surface the object stands on; None -> T unchanged)."""
+    T = np.asarray(T, float)
+    f = FINGER.get(grip)
+    if support_z is None or f is None:
+        return T.copy()
+    R = T[:3, :3]
+    reach = f["depth"] + pad_drop(w, grip, table)
+    low = T[2, 3] - reach * R[2, 2] - abs(R[2, 0]) * f["half_w"] - abs(R[2, 1]) * (w / 2 + f["t"])
+    need = float(support_z) + SUPPORT_CLEAR - low
+    if need <= 0 or R[2, 2] < 0.1:
+        return T.copy()
+    return backoff(T, need / R[2, 2])
 
 
 def q_to_width(q, table):

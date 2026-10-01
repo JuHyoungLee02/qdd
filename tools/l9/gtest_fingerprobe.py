@@ -39,6 +39,15 @@ def main():
                 m = (P[:, 2] >= z0) & (P[:, 2] < z1) & (np.abs(P[:, 0]) < 0.02)
                 pos, neg = P[m & (P[:, 1] > 0), 1], P[m & (P[:, 1] < 0), 1]
                 row.append(f"{(pos.min() - neg.max()) * 100:6.2f}" if len(pos) and len(neg) else "   -  ")
+            for l in links:  # per finger link: centroid and the inner face (points within 2 mm of the min |y|)
+                Q = u.link_points(l, tcp, qd, kind)
+                if not len(Q):
+                    continue
+                ay = np.abs(Q[:, 1])
+                inner = Q[ay <= ay.min() + 0.002]
+                print(f"    {l:28s} centroid z {Q[:, 2].mean() * 100:6.2f} y {Q[:, 1].mean() * 100:6.2f} | inner face "
+                      f"|y| {ay.min() * 100:5.2f} z [{inner[:, 2].min() * 100:6.2f}, {inner[:, 2].max() * 100:6.2f}] "
+                      f"| z range [{Q[:, 2].min() * 100:6.2f}, {Q[:, 2].max() * 100:6.2f}]")
             print(f"  q={q:4.2f} table w={w * 100:5.2f} cm | gap by z band {bands}: " + " ".join(row)
                   + f" | finger z min {P[:, 2].min() * 100:6.2f} cm, |y| max {np.abs(P[:, 1]).max() * 100:5.2f} cm")
 
