@@ -66,7 +66,7 @@ L8S 기준값은 `harvest/sim/assets_x/*.json`, `harvest/sim/tasks.py`, `docs/st
 - 접근 방향: `top` 기본, 선반 칸·용기 옆 입구는 `front`(서랍 과제 b3d에서 쓴 앞 접근). 칸 안 충돌은 시범에서 먼저 확인(§6 관문).
 - 상위 출력 D: 기존 점(0–1000)·높이 의도에 `hand: left|right` 한 필드. 라벨·런타임 파서·d-min 변환에 더하고, 필드가 없으면 right(L8S 행 호환).
 - 영상 입력: 머리(원 표시) + **쓰는 팔의 손목** 한 장. 이름표는 기존 규칙대로 `right wrist camera` / `left wrist camera`. L8S 행은 그대로(머리 + 오른손목).
-- 목: 모든 편에서 흔든다. 기본 45°(실로봇) 중심으로 tilt ±15°, pan ±30°(대상이 화면 밖이면 다시 뽑기, 최대 5회 뒤 기본값). 카메라 내부 파라미터는 실로봇 값 고정(실물과 맞추기).
+- 목: 모든 편에서 흔든다. 기본 45°(실로봇) 중심으로 tilt ±15°, pan ±30°(대상이 화면 밖이면 다시 뽑기, 최대 5회 뒤 기본값). 카메라 내부 파라미터는 실로봇 값 고정(실물과 맞추기) — 단 §9.3(E-HCAM8)의 무작위 기하 편은 예외로, 실제로 쓴 값을 meta·cams.json에 남긴다.
 
 ## 5. 다양화 층·에셋
 
@@ -95,14 +95,46 @@ L8S 기준값은 `harvest/sim/assets_x/*.json`, `harvest/sim/tasks.py`, `docs/st
 ## 8. 2단계 (별도 설계)
 
 두 팔 협업 15~20 %: 쟁반 두 손으로 들기, 꽂이 잡고 꽂기, 그릇 들고 담기 등. 상위 출력(두 팔 목표 동시), 실행기 두 팔 동시 제어, 라벨 형식이 바뀌므로 1단계 대량 생산이 돈 뒤 따로 설계한다.
-## 9. 다른 로봇으로 같은 시드 (1단계 양산 기동 뒤)
+## 9. 다른 로봇·머리 카메라 기하 (1단계 양산 기동 뒤; 2026-10-01 23시대 개정)
 
-- 사용자 승인(2026-10-01): 공개 URDF·허용 라이선스(CC0·CC BY·CC BY-SA·Apache·MIT, NC·ND 제외) 로봇 가운데 **로봇 몸에 달린 머리(에고) 카메라가 공식 설명에 있는 로봇만** 쓴다. 후보: Unitree G1/H1, Fourier GR1, Galaxea R1 등 휴머노이드·머리캠 로봇.
-- **3인칭·어안 영상은 만들지도 기록하지도 않는다.** 머리캠 없이 외부 카메라만 있는 팔(Franka·UR5e·Kinova·xArm)과 프레임에 고정된 위 카메라(ALOHA cam_high)는 제외.
-- 기록 카메라 = 머리 + 쓰는 팔 손목. 각 로봇 URDF/공식 설명의 카메라 정의를 그대로 쓰고 출처·라이선스를 기록.
-- L9 시드의 약 10 %를 골라 같은 장면·과제를 로봇만 바꿔 재생성(짝 비교). 상위 출력 D는 그대로, 로봇마다 IK 실행기만 추가, meta에 robot 필드. 관문(시범 수율·관절 걸음·프레임 검수)은 같다.
-- 순서: AI Worker 좌·우 1단계 양산 기동을 늦추지 않고 그 뒤에 진행.
+- 개정 경과: 사용자 2026-10-01 user-log 236 "카메라 상하나 카메라 위치나 이런거 다 있기는 해야함", user-log 237 "A가 맞겠네"(조사 문서 `docs/research/generalist_crossview_2026-10-01.md` 권장 A). 옛 조항('머리캠 없이 외부 카메라만 있는 팔은 제외')을 아래로 바꾼다.
+- **허용 조건**: 기록 카메라 = 로봇 몸에 고정된 머리 카메라 + 쓰는 팔 손목.
+  - 머리 카메라가 공식 설명에 있는 로봇은 공식 위치·각도·화각을 쓴다.
+  - 머리 카메라가 없는 팔(Franka·UR5e·Kinova·xArm·WidowX)은 **로봇 몸(받침대·기저)에 고정한 머리 카메라 받침대**가 있으면 허용한다. 장착 부모 링크, 위치, 피치·팬, 내부 파라미터(해상도·fx·fy·cx·cy)를 명시하고, 현실적인 범위 안에서 편마다 변주하며 기록한다.
+  - 3인칭(로봇 밖에 고정된 카메라: 삼각대·벽·천장, ALOHA cam_high 같은 프레임 고정 카메라)과 어안 렌즈는 만들지도 기록하지도 않는다.
+- **기록**: meta `robot`(프로필 이름)과 `head_cam`(§9.3), 호출마다 `calls/cXXX/cams.json`(W·H·fx·fy·cx·cy·R·t). 데이터 생성 프롬프트의 로봇 이름·그리퍼 치수·머리 카메라 설명은 프로필 값으로 채운다. 상위 출력 D 형식은 그대로.
+- **같은 시드 짝**: L9 시드의 약 10 %를 같은 장면·과제로 로봇만 바꿔 재생성한다. 관문은 같다(G1 수율, 관절 걸음 ≤ 0.04 rad, 프레임 직접 검수).
 
+### 9.1 로봇 프로필 층 (`harvest/l9/robot9.py`)
+- 프로필 = 로봇 이름(프롬프트 문구), 팔 관절·그리퍼 관절·끝 링크·손가락 링크, 그리퍼 치수(최대 벌림·패드 길이·몸체 위치), 폭↔관절 사상, 초기 자세, 머리·손목 카메라 정의(부모 링크·마운트·내부값), 기저 배치 규칙.
+- FFW-SG2 프로필은 지금 값 그대로다. 공용 코드(`harvest/sim/scene.py` 등)는 프로필을 주지 않으면(`robot=None`) 지금과 같은 경로를 타고, 시험으로 고정한다(L8S·L9 동작 불변).
+
+### 9.2 후보 로봇 (라이선스·자산·카메라; 2026-10-01 GitHub API·원문 확인)
+
+| 순서 | 로봇 | 공식 자산 · 라이선스 | Isaac 자산 | 머리 카메라 | 손목 카메라 | 판정 |
+|---|---|---|---|---|---|---|
+| ① | Franka Emika Panda + 머리 카메라 받침대 | franka_description(frankarobotics/franka_ros ★490, Apache-2.0). Isaac Sim 5.1 URDF 가져오기 확장에 같은 사본이 동봉(package.xml `Apache 2.0`). MuJoCo Menagerie panda도 Apache-2.0 | URDF → Isaac Lab UrdfConverter로 `/data`에 USD 생성(Nucleus의 Franka USD는 쓰지 않음) | 공식 없음 → 받침대(아래) | 손에 고정 D405(가로 87°, 424×240), 손 옆에서 손가락 끝을 향함(DROID 손목 카메라 배치 관례) | **사용(1번째)** |
+| ② | Fourier GR1(T2) | 공식 URDF Wiki-GRx-Models는 GPL-3.0(★43). Apache-2.0인 Wiki-GRx-MJCF에는 N1만 있음. Isaac Sim GR-1 USD는 "3D Content Sharing Agreement" | 허용 목록 밖 | — | — | **제외(라이선스)** → 대체: Unitree G1 |
+| ③ | Galaxea R1 Pro | OpenGalaxea/GalaxeaManipSim(공식 조직, Apache-2.0, ★46) `galaxea_sim/assets/r1_pro/robot.urdf`. (userguide-galaxea/URDF는 LICENSE 없음 → 안 씀) | URDF 변환 | ZED(`zed_link`, `torso_link4`에 고정 xyz 0.066 0.060 0.476, rpy −1.92 0 −1.57). 몸통 관절 4개로 높이·기울기가 바뀜 | 양손 RealSense(`left/right_realsense_joint`) | **사용(2번째)** |
+| 대체 | Unitree G1 | unitree_ros BSD-3(★1,578). Isaac Sim G1 USD BSD-3 | 있음 | D435 머리(몸통 고정, 목 없음) | 공식 없음 → 손목 받침 | GR1 대체 1순위 |
+| 대체 | Booster T1 | booster_assets BSD-3(★35). Isaac Sim USD Apache-2.0 | 있음 | 2자유도 목의 RealSense | 공식 없음 → 손목 받침 | 후보 |
+| 대체 | PAL TIAGo | tiago_robot Apache-2.0(★73) | 없음(URDF 변환) | 팬·틸트 머리 RGBD | 공식 없음 → 손목 받침 | 후보(한 팔) |
+| 그다음 | Google Robot | SimplerEnv MIT(★1,174). 로봇 메시의 출처 라이선스는 미확인 | — | 머리 카메라 | — | 라이선스 확인 뒤 |
+
+- **Franka 머리 카메라 받침대(기본값 / 편마다 변주)**: 부모 = `panda_link0`(로봇 기저에 고정, 로봇과 함께 움직임).
+  - 위치: 기저 원점에서 x −0.15 m / U[−0.25, −0.05], y 0 / U[−0.05, +0.05], 높이는 작업면 위 0.55 m / U[0.45, 0.70].
+  - 각도: 피치 45° 아래 / U[38°, 55°], 팬 0° / U[−10°, +10°], 롤 0.
+  - 카메라: RealSense D435 컬러 가로 69°·세로 42°(Intel 데이터시트), 렌더 672×376(16:9 같은 비율) → fx = fy = 489, cx 336, cy 188.
+  - 근거: AI Worker 실로봇 머리 1.40 m·탁자 0.85 m → 작업면 위 0.55 m, 45°(NOW §4); L9 지금 머리 실측 작업면 위 0.42–0.68 m, 피치 29–56°; RoboCasa(RSS 2024 [기초])의 PandaOmron은 시점 카메라를 로봇 기저에 달아 함께 움직인다; DROID(2024 [기초])는 Franka 손목 ZED Mini + 외부 카메라 2대인데, 외부 카메라(3인칭)는 따르지 않는다. 범위의 폭 자체는 **[가설]**(E-HCAM8 보류 세트와 프레임 검수로 확인).
+- **Franka 기저 배치**: 오른팔 행은 기저 원점을 AI Worker 오른어깨 xy(0, −0.23)에, 높이 = 주 작업면 − U[0, 0.12] m(AI Worker 리프트를 작업면에 맞추는 규칙과 같음). 기저 아래 받침대 상자(0.20 × 0.20 m). 한 팔 로봇이라 1단계는 오른팔 행만 쓴다(왼팔 행은 같은 규칙을 y로 거울한 기저로, 시범 뒤).
+- **Franka 제어**: 로봇 중력 끔 + 높은 PD(Isaac Lab FRANKA_PANDA_HIGH_PD_CFG와 같은 방식, 관절 강성 400·감쇠 80), 그리퍼 최대 벌림 0.08 m(손가락 관절 2개, 각 = 폭/2). IK·관절 걸음 제한(≤ 0.04 rad)·동작 판(l9m-2)은 AI Worker와 같은 실행기. 손 끝 링크에 회전 고정 프레임을 붙여 '위에서 잡기' 자세 표현을 AI Worker와 같게 둔다(손가락이 닫히는 축 = 같은 yaw에서 같은 방향).
+- **Franka 그리퍼 제약**: 벌림 8 cm라 너비가 6.6 cm(= 8 cm − 여유 1.4 cm)를 넘는 대상은 Franka 편에서 다시 뽑는다.
+
+### 9.3 머리 카메라 기하 무작위화 (E-HCAM8, `harvest/l9/hcam9.py`)
+- FFW-SG2: 편의 50 %는 표준(지금), 50 %는 무작위. 무작위 범위: 작업면 위 높이 0.35–0.80 m(목 자세 뒤 마운트를 세로로 dz ±0.15 m), 피치 30–62°(목 + 마운트 회전), 가로 화각 65–95°(해상도 672×376 고정). 범위·근거·판정은 `docs/stage3/prereg_hcam8.md`.
+- meta `head_cam` = {mode, robot, parent, mount_pos, mount_quat, height_above_surface_m, height_floor_m, pitch_deg, pan_deg, hfov_deg, W, H, fx, fy, cx, cy, draw, redraws}.
+- 학습에 쓸지는 E-HCAM8 판정 뒤에 정한다. 무작위 쪽 편은 meta로 걸러낼 수 있다.
+- `camera:` 글 줄은 생성 때가 아니라 빌드 때 cams.json·meta로 만든다(prereg_hcam8 §2).
 ## 10. 사람 같은 동작 (1단계 양산 기동 뒤 코드 교체로, 새 편부터)
 
 - 사용자 승인(2026-10-01). 딱딱하고 정형화된 움직임 대신 자연스럽고 다양한 동작.

@@ -1,13 +1,88 @@
 {
   "robots": [
     {
+      "name": "Franka Emika Panda + head camera mast (spec §9 rev. 2026-10-01)",
+      "source_url": "https://github.com/frankarobotics/franka_ros (franka_description); same copy bundled in Isaac Sim 5.1 isaacsim.asset.importer.urdf/data/urdf/robots/franka_description (package.xml <license>Apache 2.0</license>)",
+      "commit_or_date": "franka_ros pushed 2025-10-24; Isaac Sim 5.1 bundle",
+      "stars": 490,
+      "licence": "Apache-2.0",
+      "licence_ok": true,
+      "head_camera": {
+        "defined": "mast fixed to panda_link0 (robot body), not official",
+        "default": {
+          "x_m": -0.15,
+          "y_m": 0.0,
+          "height_above_surface_m": 0.55,
+          "pitch_deg": 45,
+          "pan_deg": 0,
+          "model": "RealSense D435 colour, hfov 69 deg, rendered 672x376, fx=fy=489"
+        },
+        "per_episode": {
+          "x_m": [
+            -0.25,
+            -0.05
+          ],
+          "y_m": [
+            -0.05,
+            0.05
+          ],
+          "height_above_surface_m": [
+            0.45,
+            0.7
+          ],
+          "pitch_deg": [
+            38,
+            55
+          ],
+          "pan_deg": [
+            -10,
+            10
+          ]
+        }
+      },
+      "wrist_cameras": [
+        "D405 on panda_hand (hfov 87 deg, 424x240), beside the hand looking at the finger tips"
+      ],
+      "arm_dof": "7",
+      "hand": "Franka Hand parallel gripper, 0.08 m max opening",
+      "isaac_asset": "URDF -> Isaac Lab UrdfConverter (USD made on /data); the Nucleus Franka USD is not used",
+      "verdict": "use",
+      "order": 1,
+      "why": "user-log 236/237: arms without an official head camera are allowed with a body-fixed head camera mount whose pose / angles / intrinsics are stated and recorded per episode"
+    },
+    {
+      "name": "Galaxea R1 Pro (GalaxeaManipSim)",
+      "source_url": "https://github.com/OpenGalaxea/GalaxeaManipSim (galaxea_sim/assets/r1_pro/robot.urdf)",
+      "commit_or_date": "repo pushed 2025-08-18",
+      "stars": 46,
+      "licence": "Apache-2.0",
+      "licence_ok": true,
+      "head_camera": {
+        "defined": true,
+        "link": "zed_link, fixed to torso_link4 (xyz 0.065511 0.060003 0.47598, rpy -1.9199 0 -1.5708); 4 torso joints move it"
+      },
+      "wrist_cameras": [
+        "left_realsense_joint",
+        "right_realsense_joint"
+      ],
+      "arm_dof": "7 x2",
+      "hand": "parallel 2-finger grippers",
+      "isaac_asset": "URDF conversion",
+      "verdict": "use",
+      "order": 2,
+      "why": "official Galaxea organisation repo with an Apache-2.0 LICENSE; ZED head + two wrist RealSense in the URDF"
+    },
+    {
       "name": "Unitree G1",
       "source_url": "https://github.com/unitreerobotics/unitree_ros (robots/g1_description)",
       "commit_or_date": "repo pushed 2026-09-30",
       "stars": 1577,
       "licence": "BSD 3-Clause License, Copyright (c) 2016-2022 HangZhou YuShu TECHNOLOGY CO.,LTD. (\"Unitree Robotics\")",
       "licence_ok": true,
-      "head_camera": {"defined": true, "link": "d435_link (+ mid360_link lidar), fixed joint parented to torso_link; NOTE: no separate neck/head DOF, camera is rigidly head-height-mounted on torso"},
+      "head_camera": {
+        "defined": true,
+        "link": "d435_link (+ mid360_link lidar), fixed joint parented to torso_link; NOTE: no separate neck/head DOF, camera is rigidly head-height-mounted on torso"
+      },
       "wrist_cameras": [],
       "arm_dof": "7 DOF x2 (g1_29dof variant); 5 DOF x2 (g1_23dof variant)",
       "hand": "variant-dependent: Dex3 3-finger hand, Inspire/Dex1 5-finger hand, or no hand (bare wrist flange); Dex3/Inspire variants support top-down pinch grasp",
@@ -22,7 +97,10 @@
       "stars": 1577,
       "licence": "BSD 3-Clause License, Copyright (c) 2016-2022 HangZhou YuShu TECHNOLOGY CO.,LTD.",
       "licence_ok": true,
-      "head_camera": {"defined": true, "link": "d435_left_imager_link / d435_rgb_module_link + mid360_link, fixed to torso_link; no neck DOF"},
+      "head_camera": {
+        "defined": true,
+        "link": "d435_left_imager_link / d435_rgb_module_link + mid360_link, fixed to torso_link; no neck DOF"
+      },
       "wrist_cameras": [],
       "arm_dof": "4 DOF per arm, ends in bare flange (no gripper) in the base h1.urdf",
       "hand": "none in official base URDF -> top-down pinch NOT feasible without an unverified/unofficial hand add-on",
@@ -37,7 +115,10 @@
       "stars": 1577,
       "licence": "BSD 3-Clause License, Copyright (c) 2016-2022 HangZhou YuShu TECHNOLOGY CO.,LTD.",
       "licence_ok": true,
-      "head_camera": {"defined": true, "link": "camera_link, fixed joint parented to torso_link; no separate neck DOF"},
+      "head_camera": {
+        "defined": true,
+        "link": "camera_link, fixed joint parented to torso_link; no separate neck DOF"
+      },
       "wrist_cameras": [],
       "arm_dof": "7 DOF per arm (h1_2_with_FTP_hand.urdf variant); handless variant also provided",
       "hand": "FTP dexterous hand (with-hand variant) enables top-down pinch grasp",
@@ -52,13 +133,16 @@
       "stars": 43,
       "licence": "GNU General Public License v3.0 (GPL-3.0)",
       "licence_ok": false,
-      "head_camera": {"defined": "unknown", "link": null},
+      "head_camera": {
+        "defined": "unknown",
+        "link": null
+      },
       "wrist_cameras": "unknown - not verified because the only official GR1/GR2 description repo fails the license gate",
       "arm_dof": "unknown (not verified)",
       "hand": "unknown (not verified)",
       "isaac_asset": "unknown",
       "verdict": "exclude",
-      "why": "The only official GR1/GR2 URDF/MJCF repo (Wiki-GRx-Models) is GPL-3.0, which is copyleft and not on the approved licence list; the Apache-2.0 Wiki-GRx-MJCF repo only covers the N1 model, not GR1/GR2, so no in-list licence covers GR1/GR2"
+      "why": "The only official GR1/GR2 URDF/MJCF repo (Wiki-GRx-Models) is GPL-3.0, which is copyleft and not on the approved licence list; the Apache-2.0 Wiki-GRx-MJCF repo only covers the N1 model, not GR1/GR2, so no in-list licence covers GR1/GR2; re-checked 2026-10-01: the Isaac Sim GR-1 USD is under the '3D Content Sharing Agreement' (not on the list) -> still excluded, replacement = Unitree G1"
     },
     {
       "name": "Galaxea R1",
@@ -67,13 +151,18 @@
       "stars": 27,
       "licence": "No LICENSE file found in repo root or default branch; GitHub license API returns no match",
       "licence_ok": false,
-      "head_camera": {"defined": "likely (per official hardware guide: 1x ZED2 binocular depth head camera), exact URDF link name not verified because the repo fails the licence gate", "link": null},
-      "wrist_cameras": ["per official hardware guide: 2x RealSense D405/D435i monocular depth wrist cameras (one per arm); exact URDF link names not verified"],
+      "head_camera": {
+        "defined": "likely (per official hardware guide: 1x ZED2 binocular depth head camera), exact URDF link name not verified because the repo fails the licence gate",
+        "link": null
+      },
+      "wrist_cameras": [
+        "per official hardware guide: 2x RealSense D405/D435i monocular depth wrist cameras (one per arm); exact URDF link names not verified"
+      ],
       "arm_dof": "unknown (not verified in detail)",
       "hand": "unknown (not verified in detail)",
       "isaac_asset": "unknown",
       "verdict": "exclude",
-      "why": "Hardware design (head + dual wrist cameras) looks ideal, but the official URDF repo has no LICENSE file / terms anywhere -> unclear licence, fails the hard requirement"
+      "why": "Hardware design (head + dual wrist cameras) looks ideal, but the official URDF repo has no LICENSE file / terms anywhere -> unclear licence, fails the hard requirement; see 'Galaxea R1 Pro (GalaxeaManipSim)' for an Apache-2.0 official source"
     },
     {
       "name": "Booster T1",
@@ -82,7 +171,10 @@
       "stars": 35,
       "licence": "BSD 3-Clause License, Copyright (c) 2025, BoosterRobotics",
       "licence_ok": true,
-      "head_camera": {"defined": true, "link": "head_realsense_rgb_link, parented to aahead_pitch_link (which hangs off aahead_yaw_link) - a genuine 2-DOF articulated neck"},
+      "head_camera": {
+        "defined": true,
+        "link": "head_realsense_rgb_link, parented to aahead_pitch_link (which hangs off aahead_yaw_link) - a genuine 2-DOF articulated neck"
+      },
       "wrist_cameras": [],
       "arm_dof": "~7 DOF per arm (shoulder x3, elbow x2, wrist x2-3 identified in T1_29dof.urdf)",
       "hand": "parallel 2-finger gripper available (T1_23dof_parallel variant); top-down pinch feasible",
@@ -97,7 +189,10 @@
       "stars": 73,
       "licence": "Apache License, Version 2.0",
       "licence_ok": true,
-      "head_camera": {"defined": true, "link": "head_front_camera (Asus Xtion Pro Live or Orbbec Astra RGBD, selectable), parented to head_2_link, a 2-DOF pan/tilt head"},
+      "head_camera": {
+        "defined": true,
+        "link": "head_front_camera (Asus Xtion Pro Live or Orbbec Astra RGBD, selectable), parented to head_2_link, a 2-DOF pan/tilt head"
+      },
       "wrist_cameras": [],
       "arm_dof": "7 DOF, single arm",
       "hand": "PAL parallel 2-finger gripper, or Hey5 underactuated hand variant; top-down pinch feasible",
@@ -112,7 +207,10 @@
       "stars": 26,
       "licence": "Apache License, Version 2.0",
       "licence_ok": true,
-      "head_camera": {"defined": true, "link": "rgbd sensor (Orbbec Astra Pro, name '${name}_2' i.e. head_2) parented to head_2_link, a 2-DOF neck; optional Intel D435 / T265 / OS1-64 lidar also definable on the same link"},
+      "head_camera": {
+        "defined": true,
+        "link": "rgbd sensor (Orbbec Astra Pro, name '${name}_2' i.e. head_2) parented to head_2_link, a 2-DOF neck; optional Intel D435 / T265 / OS1-64 lidar also definable on the same link"
+      },
       "wrist_cameras": [],
       "arm_dof": "7 DOF x2 arms",
       "hand": "PAL parallel 1-DOF gripper per arm (urdf/gripper folder); top-down pinch feasible, bimanual",
@@ -127,7 +225,10 @@
       "stars": 16,
       "licence": "The Clear BSD License, Copyright (c) 2021-2024 Hello Robot Inc. (BSD-family permissive licence; adds an explicit no-patent-grant clause beyond plain BSD-3-Clause, commercial use allowed)",
       "licence_ok": true,
-      "head_camera": {"defined": true, "link": "D435i camera mounted on the articulated pan/tilt head (head_pan / head_tilt joints); official link commonly named camera_link / camera_bottom_screw_frame"},
+      "head_camera": {
+        "defined": true,
+        "link": "D435i camera mounted on the articulated pan/tilt head (head_pan / head_tilt joints); official link commonly named camera_link / camera_bottom_screw_frame"
+      },
       "wrist_cameras": [],
       "arm_dof": "1 telescoping arm: 4-DOF lift/reach (prismatic) + 3-DOF wrist (yaw/pitch/roll)",
       "hand": "parallel 1-DOF gripper; top-down pinch grasp is Stretch's standard manipulation mode",
@@ -142,7 +243,10 @@
       "stars": 67,
       "licence": "Apache License, Version 2.0",
       "licence_ok": true,
-      "head_camera": {"defined": false, "link": null},
+      "head_camera": {
+        "defined": false,
+        "link": null
+      },
       "wrist_cameras": "unknown - not verified; likely added by integrators only, not official",
       "arm_dof": "7 DOF x2 arms",
       "hand": "various end-effector examples (gripper models included); top-down pinch feasible",
@@ -157,7 +261,10 @@
       "stars": "unknown",
       "licence": "unknown",
       "licence_ok": false,
-      "head_camera": {"defined": "unknown", "link": null},
+      "head_camera": {
+        "defined": "unknown",
+        "link": null
+      },
       "wrist_cameras": "unknown",
       "arm_dof": "unknown",
       "hand": "unknown",
@@ -172,7 +279,10 @@
       "stars": 11,
       "licence": "Mulan Permissive Software License v2 (木兰宽松许可证，第2版) - OSI-approved, Apache-2.0-like permissive grant of copyright + patent, no copyleft",
       "licence_ok": false,
-      "head_camera": {"defined": "not verified in this pass (time-boxed); not confirmed", "link": null},
+      "head_camera": {
+        "defined": "not verified in this pass (time-boxed); not confirmed",
+        "link": null
+      },
       "wrist_cameras": "unknown - not verified",
       "arm_dof": "unknown - not verified in detail",
       "hand": "unknown - not verified in detail",
@@ -187,7 +297,10 @@
       "stars": 47,
       "licence": "CC BY-SA 4.0",
       "licence_ok": true,
-      "head_camera": {"defined": false, "link": null},
+      "head_camera": {
+        "defined": false,
+        "link": null
+      },
       "wrist_cameras": "unknown - not verified",
       "arm_dof": "~7 DOF x2 arms (iCub has dual arms with multi-finger hands)",
       "hand": "iCub underactuated multi-finger hand; top-down pinch plausible",
@@ -196,5 +309,5 @@
       "why": "Found during search, not in the original list. Licence is fine (CC BY-SA 4.0) and it has a moving head + dual hands, but the official model.urdf does not define an explicit camera/eye link - it only references an external YARP sensor config file ('gazebo_icub_head_without_eyes.ini') outside the URDF, so no head camera frame is defined in the URDF itself per the spec's requirement. Excluded rather than guessed."
     }
   ],
-  "checked": "2026-10-01 13:37 KST"
+  "checked": "2026-10-01 23:30 KST (rev. hcam8)"
 }
