@@ -201,6 +201,51 @@ def plan_round(Tw, origins, tcp_in_base, dt: float, backoff_d: float = BACKOFF, 
     return np.asarray(steps).reshape(ks, N, 6), starts
 
 
+# ---------------------------------------------------------------------------------------------- collider override
+SDF_RES = 256
+CD = {"max_hulls": 64, "hull_verts": 64, "voxel_res": 1_000_000, "error_pct": 1.0}
+
+
+def apply_collider(stage, prim_path: str, row_or_mode) -> int:
+    """(pod, pxr) Replace the physics collider of a spawned mesh object (prim_path = its USD root) by its render
+    meshes: mode 'sdf' (PhysX SDF triangle mesh, resolution SDF_RES) or 'cd' (fine convex decomposition, CD).
+    The explicit collider meshes of the physics USD are switched off. row_or_mode: a catalog row (uses
+    row['collider'], absent -> nothing changes) or the mode string. -> number of render meshes made colliders."""
+    mode = row_or_mode.get("collider") if isinstance(row_or_mode, dict) else row_or_mode
+    if not mode or mode == "none":
+        return 0
+    if mode not in ("sdf", "cd"):
+        raise ValueError(f"collider mode {mode!r}")
+    from pxr import PhysxSchema, Usd, UsdGeom, UsdPhysics
+    root = stage.GetPrimAtPath(prim_path)
+    if not root or not root.IsValid():
+        raise ValueError(f"no prim {prim_path}")
+    n = 0
+    for p in Usd.PrimRange(root):
+        if not p.IsA(UsdGeom.Mesh):
+            continue
+        if p.HasAPI(UsdPhysics.CollisionAPI):
+            UsdPhysics.CollisionAPI(p).CreateCollisionEnabledAttr().Set(False)
+            continue
+        if UsdGeom.Imageable(p).ComputeVisibility() == UsdGeom.Tokens.invisible:
+            continue
+        UsdPhysics.CollisionAPI.Apply(p)
+        mc = UsdPhysics.MeshCollisionAPI.Apply(p)
+        if mode == "sdf":
+            mc.CreateApproximationAttr().Set("sdf")
+            PhysxSchema.PhysxSDFMeshCollisionAPI.Apply(p).CreateSdfResolutionAttr().Set(SDF_RES)
+        else:
+            mc.CreateApproximationAttr().Set("convexDecomposition")
+            c = PhysxSchema.PhysxConvexDecompositionCollisionAPI.Apply(p)
+            c.CreateMaxConvexHullsAttr().Set(CD["max_hulls"])
+            c.CreateHullVertexLimitAttr().Set(CD["hull_verts"])
+            c.CreateVoxelResolutionAttr().Set(CD["voxel_res"])
+            c.CreateErrorPercentageAttr().Set(CD["error_pct"])
+            c.CreateShrinkWrapAttr().Set(True)
+        n += 1
+    return n
+
+
 # ---------------------------------------------------------------------------------------------- gripper width
 def width_to_q(w, table) -> float:
     W, Q = np.asarray(table["width_m"], float), np.asarray(table["drive_q"], float)

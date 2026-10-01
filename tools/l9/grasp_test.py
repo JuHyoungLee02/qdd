@@ -50,6 +50,8 @@ def main(argv=None):
     ap.add_argument("--lowfric", action="store_true")
     ap.add_argument("--neg", action="store_true", help="smoke: add 2 negatives per object (90 deg turn, 8 cm shift)")
     ap.add_argument("--spacing", type=float, default=1.2)
+    ap.add_argument("--collider", default="none", choices=("none", "sdf", "cd"),
+                    help="object collider override (gtest9.apply_collider): render meshes as SDF / fine convex decomposition")
     a = ap.parse_args(argv)
     code = 0
     try:
@@ -135,15 +137,21 @@ def run(a):
     if not tasks:
         log("nothing to test")
         return
-    # env assignment: object m gets E_m envs (>= 1) proportional to its candidate count
+    # env assignment: object m gets slots = min(E, its candidates); with --lowfric every slot is a pair of envs
+    # (catalog friction, friction 0.4) testing the same candidate in the same round
     M = len(tasks)
-    E = max(1, a.envs // M)
-    n_env = min(a.envs, sum(min(E, len(t[2])) for t in tasks))
-    owner = []
+    per = 2 if a.lowfric else 1
+    E = max(1, a.envs // (M * per))
+    owner, lowenv, slot = [], [], []
     for m, t in enumerate(tasks):
-        owner += [m] * min(E, len(t[2]))
-    owner = np.asarray(owner[:n_env])
-    log(f"objects {M}, envs {n_env}, envs/object <= {E}, boot {time.time() - t_boot:.0f}s")
+        for s_ in range(min(E, len(t[2]))):
+            owner += [m] * per
+            lowenv += [False, True][:per]
+            slot += [s_] * per
+    owner, lowenv, slot = np.asarray(owner), np.asarray(lowenv), np.asarray(slot)
+    n_env = len(owner)
+    log(f"objects {M}, envs {n_env}, slots/object <= {E}, lowfric pairs {bool(a.lowfric)}, "
+        f"collider {a.collider}, boot {time.time() - t_boot:.0f}s")
 
     act = gj["actuation"]["sim"]
     fj = gj["finger_joints"]
@@ -206,6 +214,8 @@ def run(a):
         body = f"{pp}/{row['body_rel']}"
         sim_utils.modify_rigid_body_properties(body, sim_utils.RigidBodyPropertiesCfg(max_depenetration_velocity=1.0))
         sim_utils.modify_mass_properties(body, sim_utils.MassPropertiesCfg(mass=float(row.get("mass", 0.3))))
+        if a.collider != "none":
+            GT.apply_collider(stage, pp, a.collider)
     obj = RigidObject(RigidObjectCfg(prim_path="/World/envs/env_.*/Obj/Geometry/obja_.*", spawn=None))
     log(f"authored {n_env} objects in {time.time() - t_obj:.0f}s")
     t_reset = time.time()
@@ -239,9 +249,10 @@ def run(a):
     if obj_mu.shape[1] == 1:
         obj_mu = np.repeat(obj_mu, 2, 1)
 
-    def set_fric(lowfric):
+    def set_fric():
         mo, mg = mats0.clone(), gm0.clone()
         for i in range(n_env):
+            lowfric = bool(lowenv[i])
             fs, fd = (0.4, 0.4) if lowfric else (float(obj_mu[i, 0]), float(obj_mu[i, 1]))
             ts, td = (0.4, 0.4) if lowfric else (2.0, 1.8)
             mo[i, :, 0], mo[i, :, 1], mo[i, :, 2] = fs, fd, 0.0
@@ -249,10 +260,11 @@ def run(a):
         obj.root_physx_view.set_material_properties(mo, allidx)
         rob.root_physx_view.set_material_properties(mg, allidx)
         chk = rob.root_physx_view.get_material_properties()
-        log(f"friction set (lowfric={lowfric}): finger env0 {chk[0, 0, :2].tolist()} object env0 "
-            f"{obj.root_physx_view.get_material_properties()[0, 0, :2].tolist()}")
+        oc = obj.root_physx_view.get_material_properties()
+        log(f"friction set: finger env0 {chk[0, 0, :2].tolist()} object env0 {oc[0, 0, :2].tolist()}"
+            + (f" | low env1 finger {chk[1, 0, :2].tolist()} object {oc[1, 0, :2].tolist()}" if n_env > 1 else ""))
 
-    set_fric(False)
+    set_fric()
     log(f"object shapes per env: max {int(nsh.max())}, per object " +
         str({tasks[m][0][-6:]: int(nsh[np.flatnonzero(owner == m)[0]]) for m in range(min(M, 12))}))
 
@@ -270,7 +282,7 @@ def run(a):
             q_open_cache[w] = GT.width_to_q(w, table)
         return q_open_cache[w]
 
-    def run_round(assign, lowfric):
+    def run_round(assign):
         """assign: list per env of (m, j) or None. Runs one test on every env, fills res."""
         n = n_env
         Tw = np.tile(np.eye(4), (n, 1, 1))
@@ -370,7 +382,7 @@ def run(a):
             v = GT.verdict(out["hold"][1][i], ins("hold"), out["hold"][2][i], out["end"][1][i], ins("end"),
                            out["end"][2][i], sl[i])
             r = res[m]
-            if lowfric:
+            if lowenv[i]:
                 r["lowfric_ok"][j] = int(v["shake_ok"])
             else:
                 r["lift_ok"][j], r["shake_ok"][j] = v["lift_ok"], v["shake_ok"]
@@ -378,25 +390,23 @@ def run(a):
                 r["slip_mm"][j], r["rise_end"][j] = sl[i] * 1000, out["end"][1][i]
         return rec["fk"], int(active.sum())
 
-    def rounds(lowfric):
-        qs = {m: (list(range(len(t[2]))) if not lowfric else [j for j in range(len(t[2])) if res[m]["shake_ok"][j]])
-              for m, t in enumerate(tasks)}
+    def rounds():
+        qs = {m: list(range(len(t[2]))) for m, t in enumerate(tasks)}
         r_i = 0
         while any(qs.values()):
-            assign = []
+            assign, took = [], {}
             for i in range(n_env):
-                m = owner[i]
-                assign.append((m, qs[m].pop(0)) if qs[m] else None)
+                m, key = owner[i], (owner[i], slot[i])
+                if key not in took:
+                    took[key] = qs[m].pop(0) if qs[m] else None
+                assign.append(None if took[key] is None else (m, took[key]))
             t0 = time.time()
-            fk, na = run_round(assign, lowfric)
-            log(f"round {r_i}{' lowfric' if lowfric else ''}: {na} tests {time.time() - t0:.1f}s fk_pos_err {fk[0]:.2e} m rot_err {fk[1]:.2e}")
+            fk, na = run_round(assign)
+            log(f"round {r_i}: {na} envs {time.time() - t0:.1f}s fk_pos_err {fk[0]:.2e} m rot_err {fk[1]:.2e}")
             r_i += 1
 
     t_run = time.time()
-    rounds(False)
-    if a.lowfric:
-        set_fric(True)
-        rounds(True)
+    rounds()
     dt_run = time.time() - t_run
     od = os.path.join(a.out, a.grip)
     os.makedirs(od, exist_ok=True)
