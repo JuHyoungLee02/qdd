@@ -36,13 +36,10 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     P = R9.V2[a.profile]
     ready = json.load(open(a.ready))
-    init = {}
-    if a.profile == "r1pro":
-        init.update(dict(zip(P["torso"], R9.r1_torso_q(R9.r1_theta_for_surface(a.surface)))))
-    for arm, r in ready.items():
-        init.update(r["q"])
-    for arm in P["arms"]:
-        init.update(R9.v2_width_to_joints(a.profile, arm, a.width))
+    r = ready[a.arm]
+    init = R9.v2_init_joints(a.profile, a.arm, a.surface,
+                             ready={a.arm: tuple(r["q"][j] for j in P["arms"][a.arm]["joints"])})
+    init.update(R9.v2_width_to_joints(a.profile, a.arm, a.width))
     cams = ["cam_head", f"cam_wrist_{a.arm}"]
     cfg = InteractiveSceneCfg(num_envs=1, env_spacing=4.0)
     cfg.ground = AssetBaseCfg(prim_path="/World/ground", spawn=sim_utils.GroundPlaneCfg())
@@ -71,7 +68,7 @@ def main():
     missing = [k for k in init if k not in jn]
     q0 = rob.data.default_joint_pos.clone()
     rob.set_joint_position_target(q0)
-    for _ in range(60):
+    for _ in range(int(os.environ.get("SMOKE_STEPS", "300"))):
         scene.write_data_to_sim()
         sim.step()
         scene.update(0.01)
@@ -93,7 +90,8 @@ def main():
     Rrel = Rb.T @ HC.quat_to_R(qt)
     rep["tcp_rel_base"] = rel.round(4).tolist()
     rep["tcp_err_mm"] = round(float(np.linalg.norm(rel - np.array(r["target_base"]))) * 1e3, 2)
-    rep["tcp_rot_err_deg"] = round(math.degrees(math.acos(max(-1.0, min(1.0, (np.trace(Rrel) - 1) / 2)))), 2)
+    Rd = HC.quat_to_R(r.get("quat_base", (1.0, 0.0, 0.0, 0.0))).T @ Rrel
+    rep["tcp_rot_err_deg"] = round(math.degrees(math.acos(max(-1.0, min(1.0, (np.trace(Rd) - 1) / 2)))), 2)
     rep["base_world"] = pb.round(4).tolist()
     rep["tcp_world"] = pt.round(4).tolist()
     rep["tcp_above_surface_m"] = round(float(pt[2] - tz), 4)
@@ -104,7 +102,11 @@ def main():
     got = rob.data.joint_pos[0, fid].cpu().numpy()
     rep["finger_err_max"] = round(float(np.max(np.abs(got - np.array([want[j] for j in fj])))), 4)
     arm_id = [jn.index(j) for j in P["arms"][a.arm]["joints"]]
+    rep["arm_q_err"] = [round(float(v), 4) for v in (rob.data.joint_pos[0, arm_id] - q0[0, arm_id])]
     rep["arm_q_err_max"] = round(float((rob.data.joint_pos[0, arm_id] - q0[0, arm_id]).abs().max()), 4)
+    body = [jn.index(j) for j in P["torso"]]
+    rep["body_q_err"] = [round(float(v), 4) for v in (rob.data.joint_pos[0, body] - q0[0, body])]
+    rep["tcp_quat_base"] = [round(float(v), 4) for v in HC.R_to_quat(Rrel)]
     from PIL import Image
     for n in cams:
         img = scene[n].data.output["rgb"][0].cpu().numpy()[..., :3].astype(np.uint8)
@@ -122,5 +124,5 @@ if __name__ == "__main__":
         import traceback
         traceback.print_exc()
         c = 1
-    app.close()
+    # no app.close(): it hangs in the kit shutdown (smoke 10-02); os._exit like tools/l9r
     os._exit(c)

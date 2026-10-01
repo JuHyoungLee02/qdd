@@ -88,6 +88,7 @@ ROBOTS = {
                      "fingers": ("left_hand_thumb_2_link", "left_hand_index_1_link", "left_hand_middle_1_link"),
                      "grip_lock": None, "stow": {}}},
         "tcp_rule": "g1",  # Dex3-1 pinch synergy (hands_v2.py): TCP = pinch point at the synergy's open posture
+        "ignore_hops": 2,
     },
 }
 

@@ -26,4 +26,4 @@ json.dump(out, open(sys.argv[2], "w"), indent=1)
 for k in sorted(out):
     if "arm" in k or "gripper" in k or "lift" in k or "head" in k:
         print(k, round(out[k]["lower"], 5), round(out[k]["upper"], 5))
-app.close()
+os._exit(0)  # app.close() hangs in the kit shutdown

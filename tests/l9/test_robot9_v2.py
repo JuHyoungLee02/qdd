@@ -13,14 +13,16 @@ def test_v2_profiles_not_in_executor_profiles():
     assert set(R9.V2_PROFILES) == {"r1pro", "g1"} and not set(R9.V2_PROFILES) & set(R9.PROFILES)
 
 
-def test_r1_torso_squat_keeps_torso_upright_and_lowers():
-    q = R9.r1_torso_q(0.6)
-    assert q[0] + q[1] - q[2] == pytest.approx(0.0)  # pitch axes y, y, -y
-    hi, lo = R9.r1_theta_for_surface(1.0), R9.r1_theta_for_surface(0.7)
-    assert 0.0 <= hi < lo <= 1.0
-    th = R9.r1_theta_for_surface(0.75)
-    shoulder = 0.34265 + 0.7 * math.cos(th) + 0.09962 + 0.303
-    assert shoulder == pytest.approx(0.75 + 0.50, abs=1e-6)
+def test_r1_torso_lean_and_surface_rule():
+    q = R9.r1_torso_q(0.3, -0.2)
+    assert q[0] + q[1] - q[2] == pytest.approx(R9.R1_LEAN)  # pitch axes y, y, -y: torso_link4 leans by R1_LEAN
+    (j1, j2, j3, j4), err = R9.r1_torso_for_surface(0.70)
+    p1, p2 = j1, j2 + j1
+    z = 0.34265 + 0.4 * math.cos(p1) + 0.3 * math.cos(p2) + 0.09962 * math.cos(R9.R1_LEAN)
+    assert z == pytest.approx(0.70 + R9.R1_T4_ABOVE, abs=0.01) and abs(err) < 0.01
+    assert abs(0.4 * math.sin(p1) + 0.3 * math.sin(p2)) < 0.03 and j3 > -1.83
+    _, err_hi = R9.r1_torso_for_surface(0.95)
+    assert err_hi < -0.1  # too high a surface: the torso stays at its top
 
 
 def test_r1_width_map():
@@ -62,3 +64,21 @@ def test_g1_wrist_looks_at_the_pinch():
     f = HC.quat_to_R(q)[:, 0]
     d = np.array([0.074, 0.056, 0.014]) - np.array(pos)
     assert np.allclose(f, d / np.linalg.norm(d))
+
+
+@pytest.mark.parametrize("name", ["r1pro", "g1"])
+def test_v2_prompt_swaps_hit_the_requests(name):
+    from harvest.astra_solo import prompts as V2
+    from harvest.astra_solo import pt_prompts as PT
+    sw = R9.prompt_swaps(name)
+    for text in (V2.STATIC, PT.STATIC):
+        for a, b in sw:
+            assert text.count(a) == 1, a[:40]
+        out = R9.swap_text(text, name)
+        assert R9.V2[name]["name"].split(" (")[0].split()[-1] in out
+
+
+def test_v2_init_joints_inside_limits_and_g1_band():
+    j = R9.v2_init_joints("r1pro", "right", 0.75)
+    assert j["torso_joint3"] < 0 and j["right_gripper_finger_joint1"] == pytest.approx(0.04995)
+    assert R9.g1_surface_ok(0.70) and not R9.g1_surface_ok(0.95) and not R9.g1_surface_ok(0.40)

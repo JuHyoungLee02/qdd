@@ -268,9 +268,10 @@ V2 = {
         "cameras": {"cam_head": {"parent": "d435_link", "pos": (0.0, 0.0, 0.0), "quat": (1.0, 0.0, 0.0, 0.0),
                                  "width": HC.W, "height": HC.H, "hfov": HC.D435_HFOV,
                                  "model": "Intel RealSense D435 on torso_link (unitree_ros d435_joint, 47.6 deg down)"},
-                    # no official wrist camera (spec §9.2: wrist mount): a D405 on the palm looking at the pinch
+                    # no official wrist camera (spec §9.2: wrist mount): a D405 on the palm looking at the pinch; 9 cm
+                    # above the index finger the hand filled half the frame (smoke 10-02) -> 13 cm, 3 cm back
                     **{f"cam_wrist_{s}": {"parent": f"{s}_hand_palm_link",
-                                          "look": ((0.0, 0.0, 0.09 if s == "right" else -0.09),
+                                          "look": ((-0.03, 0.0, 0.13 if s == "right" else -0.13),
                                                    (0.074, 0.056 if s == "right" else -0.056, 0.014),
                                                    (-1.0, 0.0, 0.0)),
                                           **_D405, "model": "D405 on a wrist mount above the index finger [hypothesis]"}
@@ -279,19 +280,33 @@ V2 = {
 }
 
 
-def r1_torso_q(theta: float) -> tuple:
-    """R1 Pro torso squat keeping torso_link4 upright: joint1 = theta, joint2 = -2 theta, joint3 = -theta (axes y, y,
-    -y), joint4 (yaw) = 0. torso_link4 height above base_link = 0.34265 + 0.7 cos(theta) + 0.09962 m, 0.1 sin(theta)
-    forward (URDF origins)."""
-    return (float(theta), float(-2.0 * theta), float(-theta), 0.0)
+R1_LEAN = 0.80  # rad, torso_link4 pitched forward [hypothesis, smoke 10-02]: upright the ZED looks 20 deg down and the
+# table filled only the bottom rows; 0.40 still put objects at x 0.40 on the bottom edge (r1_posture.py: v 349 of 376);
+# 0.80 gives a 66 deg view with objects at x 0.4-0.6 at rows 195-280
+R1_T4_ABOVE = 0.36  # torso_link4 origin above the work surface: the cuRobo top-down sweep (lean 0.80, world-aligned)
+# reaches x 0.1-0.6 m ahead of torso_link4 at 0.33-0.40 m below it (grasps) and 0.5-0.7 m ahead at 0.1-0.3 m below
 
 
-def r1_theta_for_surface(surface_z: float, shoulder_above: float = 0.50) -> float:
-    """Squat angle putting the R1 Pro arm bases (torso_link4 + 0.303) shoulder_above over the work surface (analogue of
-    the AI Worker lift rule: its shoulders are 0.48 above the table) [hypothesis: same clearance]; clipped to
-    [0, 1.0] rad (joint limits allow 1.0: j2 -2.0 > -2.79, j3 -1.0 > -1.83)."""
-    c = (float(surface_z) + shoulder_above - 0.303 - 0.34265 - 0.09962) / 0.7
-    return float(np.clip(math.acos(float(np.clip(c, -1.0, 1.0))), 0.0, 1.0))
+def r1_torso_q(p1: float, p2: float, lean: float = R1_LEAN) -> tuple:
+    """R1 Pro torso from link pitches: torso_link1 pitch p1 (hip), torso_link2 pitch p2, torso_link3/4 pitch `lean`
+    (all forward-positive about y): joint1 = p1, joint2 = p2 - p1, joint3 = p2 - lean (axis -y), joint4 (yaw) = 0."""
+    return (float(p1), float(p2 - p1), float(p2 - lean), 0.0)
+
+
+def r1_torso_for_surface(surface_z: float, lean: float = R1_LEAN) -> tuple:
+    """Torso pitches putting torso_link4 R1_T4_ABOVE over the surface with joint3 straight above the hip joint
+    (x of joint3 = that of joint1, so the reach band stays in front of the base): grid search over p1 in [0, 1],
+    p2 in [-1.0, 0.5] (joint3 limit -1.83: p2 >= -1.03 at lean 0.8). Joint3 = 0.34265 + 0.4 cos p1 + 0.3 cos p2 above
+    base_link, torso_link4 0.09962 further along the leaned axis (URDF origins). Surfaces above ~0.75 m leave the
+    torso at its top (p1 = p2 = 0). -> (joint values, height error m)."""
+    p1 = np.linspace(0.0, 1.0, 101)[:, None]
+    p2 = np.linspace(-1.0, 0.5, 151)[None, :]
+    z = 0.34265 + 0.4 * np.cos(p1) + 0.3 * np.cos(p2) + 0.09962 * math.cos(lean)
+    x = 0.4 * np.sin(p1) + 0.3 * np.sin(p2)
+    cost = (z - (float(surface_z) + R1_T4_ABOVE)) ** 2 + 4.0 * x ** 2
+    i, j = np.unravel_index(int(np.argmin(cost)), cost.shape)
+    err = float(z[i, j] - (float(surface_z) + R1_T4_ABOVE))
+    return r1_torso_q(float(p1[i, 0]), float(p2[0, j]), lean), err
 
 
 def v2_width_to_joints(profile: str, arm: str, w: float) -> dict:
@@ -314,6 +329,83 @@ def _g1_table(arm: str) -> dict:
         p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets9", "grippers", f"g1_{arm}.json")
         _G1_TABLE[arm] = json.load(open(p))["width_to_joint"]
     return _G1_TABLE[arm]
+
+
+# start arm poses (7 values, V2 arms[arm].joints order). STOW = the unused arm; READY = the used arm before the
+# preroll, from tools/l9/v2robot/ready_pose.py (cuRobo IK, top-down TCP 0.20 m over a surface in front of the arm).
+V2_STOW = {"r1pro": {"right": (0.0,) * 7, "left": (0.0,) * 7},  # R1: arms hang at 0
+           # G1: at 0 the forearms point forward over the table (smoke 10-02) -> upper arm out, elbow open [hypothesis]
+           # elbow -0.9 lifted the forearm to the face (smoke 2): +1.4 lets it hang
+           "g1": {"right": (0.2, -0.25, 0.0, 1.4, 0.0, 0.0, 0.0), "left": (0.2, 0.25, 0.0, 1.4, 0.0, 0.0, 0.0)}}
+V2_READY = {  # ready_pose.py 10-02: R1 TCP (0.542, -+0.20, 0.169) in torso_link4 (leaned 0.80; world 0.50 ahead, 0.27 below),
+    # world top-down yaw +-pi/2;
+    # G1 (0.30, -+0.20, 0) in torso_link,
+    # yaw -pi/2 (the right-arm reach sweep found top-down only at that yaw for x 0.1-0.4)
+    "r1pro": {"right": (0.87431, -3.07854, -0.2803, -1.58941, -1.51053, 0.2809, -0.10471),
+              "left": (0.87437, 3.07831, 0.28057, -1.58942, 1.51029, 0.28117, 0.10469)},
+    "g1": {"right": (-0.30265, -0.76872, 0.61976, -0.1309, -0.88791, 0.69321, 0.59968),
+           "left": (-0.20483, 0.01847, 0.32992, -0.08547, 1.68825, -0.23174, -0.83459)}}
+
+
+def v2_joints_to_width(profile: str, arm: str, q) -> float:
+    """Measured pad gap from the finger joint values (order = V2 arms[arm].fingers). R1 Pro: q1 + q2 (each finger
+    moves w / 2); G1: the width of the nearest row of the pinch table (joint-space distance)."""
+    q = np.asarray(q, float)
+    if profile == "r1pro":
+        return float(max(q[0] + q[1], 0.0))
+    t = _g1_table(arm)
+    Q = np.array([t["q_by_joint"][j] for j in V2[profile]["arms"][arm]["fingers"]]).T
+    return float(t["width_m"][int(np.argmin(np.linalg.norm(Q - q[None], axis=1)))])
+
+
+def v2_contact_bodies(profile: str, arm: str) -> tuple:
+    """Finger bodies the object contact sensors filter on (G1: thumb, index and middle distal links)."""
+    a = V2[profile]["arms"][arm]
+    if profile == "g1":
+        return (f"{arm}_hand_thumb_2_link", f"{arm}_hand_index_1_link", f"{arm}_hand_middle_1_link")
+    return tuple(a["finger_bodies"])
+
+
+# per-episode body placement (spec §9.1 base placement rule), root pose in the env frame
+V2_BASE_X = {"r1pro": -0.05, "g1": -0.02}  # [hypothesis] root x so the arm bases sit where the AI Worker shoulders do
+G1_SHOULDER_ABOVE = (0.30, 0.55)  # [hypothesis] usable G1 shoulder height over the work surface (no squat model)
+# gripper body (housing / palm) above the TCP along the approach: R1 Pro finger root 0.008 m below gripper_link,
+# TCP 0.0433 below it -> 0.035; G1 palm origin 0.088 behind the pinch point along the approach, palm 0.02 thick
+# [hypothesis: 0.04]
+V2_BODY_ABOVE_TCP = {"r1pro": 0.035, "g1": 0.040}
+
+
+def v2_body_joints(profile: str, table_z: float) -> dict:
+    """Joints that put the robot at the work surface: R1 Pro torso (r1_torso_for_surface); G1 standing straight
+    (waist + legs 0)."""
+    if profile == "r1pro":
+        return dict(zip(V2["r1pro"]["torso"], r1_torso_for_surface(table_z)[0]))
+    return {j: 0.0 for j in V2["g1"]["torso"]}
+
+
+def v2_root_pos(profile: str) -> tuple:
+    return (V2_BASE_X[profile], 0.0, V2[profile]["base_z"])
+
+
+def g1_surface_ok(table_z: float) -> bool:
+    """G1 stands straight: its shoulders (pelvis 0.793 + 0.044 + 0.248 m) must be 0.30-0.55 m over the surface."""
+    s = V2["g1"]["base_z"] + 0.044 + 0.248 - float(table_z)
+    return G1_SHOULDER_ABOVE[0] <= s <= G1_SHOULDER_ABOVE[1]
+
+
+def v2_init_joints(profile: str, arm: str, table_z: float, ready: dict | None = None) -> dict:
+    """Start joints: body for the surface, the used arm at its ready pose (V2_READY, inside the limits by >= 0.03),
+    the other arm at its stow pose, every finger open."""
+    out = v2_body_joints(profile, table_z)
+    for s, a in V2[profile]["arms"].items():
+        q = (ready or V2_READY[profile]).get(s) if s == arm else V2_STOW[profile].get(s)
+        if q:
+            out.update(dict(zip(a["joints"], q)))
+        if profile == "r1pro":
+            out.update(v2_width_to_joints(profile, s, V2["r1pro"]["grip_max_w"]))
+        else:
+            out.update(v2_width_to_joints(profile, s, V2["g1"]["grip_max_w"]))
+    return out
 
 
 def v2_mount(profile: str, cam: str) -> tuple:
@@ -388,6 +480,19 @@ def prompt_swaps(name: str) -> list:
     arm works)."""
     if name == DEFAULT:
         return []
+    if name in V2_PROFILES:  # L9 v2: robot name + gripper geometry (gripper json facts); head camera wording kept
+        s = V2[name]
+        p = s["pad_len_m"] * 100
+        gripper = ("a parallel gripper" if name == "r1pro" else
+                   "a three-finger hand (Unitree Dex3-1) used as a thumb-index pinch")
+        robot_txt = ("the right arm of a wheeled humanoid robot (Galaxea R1 Pro)" if name == "r1pro" else
+                     "the right arm of a humanoid robot (Unitree G1)")
+        tail = (f" ({gripper}); it cannot close on things thinner than {s['grip_min_w'] * 100:.1f} cm"
+                if "grip_min_w" in s else f" ({gripper})")
+        return [(_FFW_ROBOT, robot_txt),
+                (_FFW_PADS, f"The pads are {p:.1f} cm long (from {p / 2:.1f} cm above to {p / 2:.1f} cm below the TCP); "
+                            f"the gripper body starts {V2_BODY_ABOVE_TCP[name] * 100:.1f} cm above the TCP. Fully open "
+                            f"pad gap {s['grip_max_w'] * 100:.1f} cm{tail}")]
     if name != "franka_mast":
         raise ValueError(name)
     h = PAD_LEN_M * 100 / 2

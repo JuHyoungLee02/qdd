@@ -232,15 +232,18 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
     from . import robot9 as R9
 
     A.check_arm(arm)
-    if robot not in R9.PROFILES:
+    if robot not in R9.PROFILES and robot not in R9.V2_PROFILES:
         raise ValueError(f"robot {robot!r}")
     if hcam not in (None, "coin", "rand", "hold"):
         raise ValueError(f"hcam {hcam!r}")
     franka = robot == "franka_mast"
+    v2r = robot in R9.V2_PROFILES  # L9 v2 R1 Pro / G1 (robot9.V2): either arm, its own head + used-arm wrist camera
     if franka and arm != "right":
         raise NotImplementedError("franka_mast: right-arm rows only (spec §9.2)")
-    cams = R9.CAMERAS if franka else CAMS
+    cams = R9.CAMERAS if franka else (("cam_head", A.wrist_camera(arm)) if v2r else CAMS)
     keys = {"cam_head": "head", "cam_wrist_right": "wrist", "cam_wrist_left": "wrist_left"}
+    if v2r:  # one wrist camera: the used arm's is "wrist"
+        keys = {"cam_head": "head", A.wrist_camera(arm): "wrist"}
     register_l9_ids()
     ids = register_pool(pool)
     if mesh is not None:  # L9 v2: Poly Haven tabletop pieces join the process's mesh slots (render only)
@@ -262,7 +265,8 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             xc = {"extra_cameras": self._ext_cfgs()} if ext_names else {}
             try:
                 self.env = make_env(0, headless=True, cameras=cams, depth=True, render_interval=NO_RENDER,
-                                    variant="drf", objset="x", arm=arm, **({"robot": robot} if franka else {}), **xc)
+                                    variant="drf", objset="x", arm=arm, **({"robot": robot} if franka or v2r else {}),
+                                    **xc)
             finally:
                 undo()
             env = self.env
@@ -272,15 +276,19 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             self._ext_ms = {"render": [], "capture": [], "save": []}
             self.arm, self.pool_ids = arm, ids
             env.present_ids = tuple(env.present_ids) + SPOT_IDS + SURF_IDS  # Env.reset rebuilds present from these
-            self.dt, self.w_open = float(env.step_dt), float(R9.GRIP_MAX_W if franka else GRIP_MAX_W)
+            self.dt, self.w_open = float(env.step_dt), float(R9.GRIP_MAX_W if franka else (
+                R9.V2[robot]["grip_max_w"] if v2r else GRIP_MAX_W))
             self.robot_profile, self.hcam_mode, self.cam_names = robot, hcam, cams
             self.joint_prefixes = ("panda_joint", "panda_finger") if franka else None
+            if v2r:  # collect.py max_dq over the used arm's joints / fingers (str.startswith takes a tuple)
+                self.joint_prefixes = ((f"{arm}_arm_joint",), f"{arm}_gripper_finger") if robot == "r1pro" else (
+                    (f"{arm}_shoulder", f"{arm}_elbow", f"{arm}_wrist"), f"{arm}_hand")
             self._mounts, self._K = {}, {}  # per-episode camera mounts / intrinsics written to the stage
             self.head_cam = None
             self.table_z = float(env.table_top_z)
             self._st, self.last_obs, self.furniture_scene, self.clutter_scene = None, None, None, None
             self.ep, self.scene9, self.light = None, None, None
-            if not franka:
+            if not franka and not v2r:
                 self._head_limit()
 
         # ------------------------------------------------------------------ setup helpers
@@ -468,6 +476,9 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             if franka:  # base on the stand: main work surface - U[0, 0.12] m (spec §9.2), no lift / neck
                 self._place_base(seed, tz)
                 head = {"tilt": None, "pan": None, "random": False}
+            elif v2r:  # R1 Pro torso squat / G1 standing for this surface (robot9 rules), no neck
+                self._place_v2(tz)
+                head = {"tilt": None, "pan": None, "random": False}
             else:
                 # lift + head (cfg.init_state too: the hard reset re-reads it, P131)
                 li = rob.joint_names.index("lift_joint")
@@ -529,6 +540,8 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             env.reset()
             if franka:
                 self._check_base()
+            elif v2r:
+                self._check_v2()
             else:
                 fx.check_lift(env.lift, float(rob.data.joint_pos[0, li]))  # SkipScene past 4 cm (P131)
             perturb(env, "P0", seed)
@@ -540,7 +553,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             att = 0
             while not self._head_sees() and att < V.HEAD_TRIES:
                 att += 1
-                if not franka:
+                if not franka and not v2r:
                     head = V.head_pose(seed, att, V.look_of(ep, sc)) if att < V.HEAD_TRIES else V.head_default()
                     for jn, v in (("head_joint1", head["tilt"]), ("head_joint2", head["pan"])):
                         rob.data.default_joint_pos[0, rob.joint_names.index(jn)] = v
@@ -552,7 +565,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                     env.env.sim.render()
             self.head = head
             self.pl = OraclePlanner(env)
-            if franka:
+            if franka or v2r:
                 self.pl.w_open = self.w_open
                 self.pl.cmd_w = min(float(self.pl.cmd_w), self.w_open)
             if arm == "left":  # mirrored top-down grasp orientation (fingers still close along world x)
@@ -804,6 +817,37 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             _set_pose(stage.GetPrimAtPath("/World/envs/env_0/Stand"), (pos[0], pos[1], z - 1.0), (1.0, 0.0, 0.0, 0.0))
             self.base = {"pos": [round(v, 4) for v in pos], "drop_m": round(tz - z, 4), "stand_xy_m": R9.STAND_XY}
 
+        def _place_v2(self, tz: float) -> None:
+            """R1 Pro / G1: body joints for the work surface (robot9.v2_body_joints: R1 torso squat, G1 straight) +
+            the used arm's ready pose + open fingers, written to the default joint state and cfg.init_state (the hard
+            reset re-reads it, P131); root pose = robot9.v2_root_pos. G1 skips surfaces it cannot work at."""
+            import torch
+
+            from ..teach_l8d.fx import SkipScene
+            if robot == "g1" and not R9.g1_surface_ok(tz):
+                raise SkipScene(f"g1: surface {tz:.2f} m outside its standing reach band")
+            rob = self.env.robot
+            joints = R9.v2_init_joints(robot, arm, tz)
+            for jn, v in joints.items():
+                rob.data.default_joint_pos[0, rob.joint_names.index(jn)] = float(v)
+                rob.cfg.init_state.joint_pos[jn] = float(v)
+            pos = R9.v2_root_pos(robot)
+            rob.data.default_root_state[0, :3] = torch.tensor(pos, dtype=rob.data.default_root_state.dtype,
+                                                              device=rob.data.default_root_state.device)
+            rob.cfg.init_state.pos = pos
+            body = R9.v2_body_joints(robot, tz)
+            self.base = {"pos": [round(v, 4) for v in pos], "body_joints": {k: round(v, 4) for k, v in body.items()},
+                         "surface_z": round(tz, 4)}
+
+        def _check_v2(self, tol: float = 0.05) -> None:  # 0.03 skipped a scene on 0.030 (contact sag, 10-02)
+            from ..teach_l8d.fx import SkipScene
+            rob = self.env.robot
+            got = {k: float(rob.data.joint_pos[0, rob.joint_names.index(k)]) for k in self.base["body_joints"]}
+            err = max((abs(got[k] - v) for k, v in self.base["body_joints"].items()), default=0.0)
+            self.base["body_measured"] = {k: round(v, 4) for k, v in got.items()}
+            if err > tol:
+                raise SkipScene(f"{robot} body joints {err:.3f} rad off (P131)")
+
         def _check_base(self, tol: float = 0.01) -> None:
             from ..teach_l8d.fx import SkipScene
             got = self.env.robot.data.root_pos_w[0].cpu().numpy() - self.env.scene.env_origins[0].cpu().numpy()
@@ -815,12 +859,15 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
         def _cam_prim(self, name: str) -> str:
             if franka:
                 return f"/World/envs/env_0/Robot/{R9.CAM_SPECS[name]['parent']}/{name}"
+            if v2r:
+                return f"/World/envs/env_0/Robot/{R9.V2[robot]['cameras'][name]['parent']}/{name}"
             from ..sim.scene import load_realcam
             return f"/World/envs/env_0/Robot/ffw_sg2_follower/{load_realcam().CAMERA_SPECS[name]['prim']}"
 
         def _parent_pose(self, name: str):
             rob = self.env.robot
-            par = R9.CAM_SPECS[name]["parent"] if franka else self._realcam().CAMERA_SPECS[name]["parent"]
+            par = R9.CAM_SPECS[name]["parent"] if franka else (R9.V2[robot]["cameras"][name]["parent"] if v2r else
+                                                                  self._realcam().CAMERA_SPECS[name]["parent"])
             bi = rob.body_names.index(par)
             return (rob.data.body_pos_w[0, bi].cpu().numpy().astype(float),  # as world_isaac.camera_pose (env 0)
                     rob.data.body_quat_w[0, bi].cpu().numpy().astype(float))
@@ -830,6 +877,9 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             return load_realcam()
 
         def _default_mount(self, name: str) -> list:
+            if v2r:
+                p, q = R9.v2_mount(robot, name)
+                return [*p, *q]
             return R9.mount_of(name) if franka else list(self._realcam().mount_transform(name))
 
         def _write_mount(self, name: str, mount) -> None:
@@ -855,9 +905,10 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                 return
             import torch
             K = HC.K_of(hfov, W, H)
-            spec = R9.CAM_SPECS[name] if franka else None
-            ap = R9.H_APERTURE if franka else self._realcam().H_APERTURE
-            f0 = (HC.fx_from_hfov(spec["hfov"], W) if franka else float(self._realcam().CAMERA_SPECS[name]["fx"])) * ap / W
+            spec = R9.CAM_SPECS[name] if franka else (R9.V2[robot]["cameras"][name] if v2r else None)
+            ap = R9.H_APERTURE if franka or v2r else self._realcam().H_APERTURE
+            f0 = (HC.fx_from_hfov(spec["hfov"], W) if franka or v2r else
+                  float(self._realcam().CAMERA_SPECS[name]["fx"])) * ap / W
             cam.set_intrinsic_matrices(torch.tensor(K[None], dtype=torch.float32), focal_length=f0)
             self._K[name] = float(hfov)
 
@@ -879,12 +930,15 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                 mode = HC.coin(seed) if mode == "coin" else (mode or "std")
                 if attempt >= V.HEAD_TRIES:
                     mode = "std"
-                std = list(self._realcam().mount_transform("cam_head"))
+                std = self._default_mount("cam_head") if v2r else list(self._realcam().mount_transform("cam_head"))
+                std_hfov = float(R9.V2[robot]["cameras"]["cam_head"]["hfov"]) if v2r else HC.STD_HFOV
                 if mode == "std":
-                    d = HC.std_ffw()
+                    d = dict(HC.std_ffw(), hfov=round(std_hfov, 2))
                     self._write_mount("cam_head", std)
                     if "cam_head" in self._K:  # only after a drawn episode changed it
-                        self._write_K("cam_head", HC.STD_HFOV)
+                        self._write_K("cam_head", std_hfov)
+                    if v2r:  # the used arm's wrist camera (its default mount; nothing written when unchanged)
+                        self._write_mount(A.wrist_camera(arm), self._default_mount(A.wrist_camera(arm)))
                 else:
                     pp, pq = self._parent_pose("cam_head")
                     Rp = HC.quat_to_R(pq)
@@ -900,8 +954,10 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             Rwc = np.asarray(cam.R, float) @ WORLD_CONV_TO_OPTICAL.T
             m = self._mounts.get("cam_head") or self._default_mount("cam_head")
             self.head_cam = {"mode": d["mode"], "robot": robot,
-                             "parent": R9.CAM_SPECS["cam_head"]["parent"] if franka else "head_link2",
-                             "model": R9.CAM_SPECS["cam_head"]["model"] if franka else "Stereolabs ZED Mini (left)",
+                             "parent": R9.CAM_SPECS["cam_head"]["parent"] if franka else (
+                                 R9.V2[robot]["cameras"]["cam_head"]["parent"] if v2r else "head_link2"),
+                             "model": R9.CAM_SPECS["cam_head"]["model"] if franka else (
+                                 R9.V2[robot]["cameras"]["cam_head"]["model"] if v2r else "Stereolabs ZED Mini (left)"),
                              "mount_pos": [round(v, 5) for v in m[:3]], "mount_quat": [round(v, 6) for v in m[3:]],
                              **HC.realized(Rwc, cam.t, tz), "hfov_deg": round(HC.hfov_from_fx(cam.fx, cam.W), 2),
                              "W": cam.W, "H": cam.H, "fx": round(cam.fx, 3), "fy": round(cam.fy, 3),
@@ -976,7 +1032,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
 
         def _preroll_arm(self, tz, steps: int = 200) -> dict:
             from ..teach_l8d.clutter_x import set_arm_inertia
-            if not franka:
+            if not franka and not v2r:
                 set_arm_inertia(self.env.robot, A.LEFT_HEAD_INERTIA)  # right (change 27) + left + head (later_problems 11)
             # (no PhysX joint velocity cap: L8S defines _arm_vel_limit but never calls it -- change 25's command
             # rate limit replaced it; with the cap the L9 gate froze the arm mid-carry, diag 2026-10-01)
@@ -988,6 +1044,9 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                 self.step(goal, self.w_open, None)
             for _ in range(10):
                 self.step(goal, self.w_open, None)
+            if v2r:  # arm joints by index (G1 names share no prefix)
+                return {"tcp": [round(float(v), 4) for v in self.status()["tcp"]],
+                        "q_arm": [round(float(v), 4) for v in self.env.arm_q()]}
             jp = "panda_joint" if franka else A.joint_prefix(arm)
             return {"tcp": [round(float(v), 4) for v in self.status()["tcp"]],
                     "q_arm": [round(float(v), 4) for v, n in zip(self.env.robot.data.joint_pos[0].cpu().numpy(),
@@ -996,7 +1055,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
         def step(self, cmd_pos, width: float, quat=None) -> None:
             from ..teach_l8d.xart import l8s_step_band
             m = getattr(self, "motion", None)
-            if m and float(m.get("elbow", 0)) > 0 and not franka:  # the null-space posture is the AI Worker's
+            if m and float(m.get("elbow", 0)) > 0 and not franka and not v2r:  # the null-space posture is the AI Worker's
                 self._step_elbow(cmd_pos, width, quat, float(m["elbow"]))
             else:
                 l8s_step_band(self, cmd_pos, width, quat)
@@ -1043,7 +1102,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             return obs
 
         def _observe(self, depth: bool = False):
-            if franka:
+            if franka or v2r:
                 from ..astra_motion.harness import Obs
                 self._render()
                 st = self.status()

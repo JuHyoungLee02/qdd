@@ -37,21 +37,22 @@ def actuated_in(u: Urdf, links: list) -> list:
             and j["type"] in ("revolute", "continuous", "prismatic") and j["mimic"] is None]
 
 
-def neighbours(u: Urdf, links: list, sph_links: set) -> dict:
-    """Ignore pairs between each sphere link and its nearest sphere-carrying ancestor (through sphere-less links)."""
+def neighbours(u: Urdf, links: list, sph_links: set, hops: int = 1) -> dict:
+    """Ignore pairs between each sphere link and its `hops` nearest sphere-carrying ancestors (through sphere-less
+    links). hops 2 (G1): the short wrist roll / pitch / yaw links overlap their grandparents in normal poses."""
     ign = {}
     ls = set(links)
     for k in links:
         if k not in sph_links:
             continue
-        p = k
-        while p in u.child_joint:
+        p, n = k, 0
+        while p in u.child_joint and n < hops:
             p = u.joints[u.child_joint[p]]["parent"]
             if p not in ls:
                 break
             if p in sph_links:
                 ign.setdefault(k, []).append(p)
-                break
+                n += 1
     return ign
 
 
@@ -255,7 +256,7 @@ def main():
         stow_q = {j: float(sa["stow"].get(j, 0.0)) for j in sa["joints"]}
         init_q = dict(zip(sa["joints"], sa["init"])) if sa.get("init") else stow_q  # retract / null-space pose
         default = [init_q.get(j, lock.get(j, 0.0)) for j in names]
-        ign = merge(copy.deepcopy(base_ign) if base_ign else neighbours(u, links, sph_links), [])
+        ign = merge(copy.deepcopy(base_ign) if base_ign else neighbours(u, links, sph_links, s.get("ignore_hops", 1)), [])
         grip = [sa["parent"], *sa["fingers"]]
         for oarm, osa in s["arms"].items():
             g = [x for x in [osa["parent"], *osa["fingers"]] if x in sph_links]

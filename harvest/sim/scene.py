@@ -358,14 +358,16 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
         raise NotImplementedError(f"arm {arm!r}")
     if robot is not None:  # L9 spec §9.1 (opt-in robot profile; None = the AI Worker, unchanged)
         from ..l9 import robot9 as R9
-        if robot != "franka_mast" or arm != "right":
+        if not (robot == "franka_mast" and arm == "right") and robot not in R9.V2_PROFILES:
             raise NotImplementedError(f"robot {robot!r} arm {arm!r}")
+    v2r = robot in ("r1pro", "g1")  # L9 v2 profiles (robot9.V2): R1 Pro / G1, either arm
     from .tasks import task_layout
     layout = task_layout(seed, task, ws=ws)  # mug_tray = sample_layout(seed)
     robot_prefix = "{ENV_REGEX_NS}/Robot/ffw_sg2_follower"
     finger_paths = [f"{robot_prefix}/{GRIPPER_PRIM[arm]}/{b}" for b in FINGER_BODIES[arm]]
     if robot is not None:
-        finger_paths = [f"{{ENV_REGEX_NS}}/Robot/{b}" for b in R9.FINGER_BODIES]
+        bodies = R9.v2_contact_bodies(robot, arm) if v2r else R9.FINGER_BODIES
+        finger_paths = [f"{{ENV_REGEX_NS}}/Robot/{b}" for b in bodies]
     obj_ids = ["o3", "o5", "o8", "o9", "o10"] + (list(X_RIGID) + list(OBJV_IDS) if objset == "x" else [])
 
     def obj_cfg(k):
@@ -411,7 +413,10 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
         return ContactSensorCfg(prim_path=body_path(k), update_period=0.0, history_length=0,
                                 filter_prim_paths_expr=finger_paths + others)
 
-    if robot is not None:
+    if v2r:
+        robot_name, robot = robot, R9.v2_robot_cfg(robot, R9.v2_init_joints(robot, arm, table_z))
+        robot = robot.replace(init_state=robot.init_state.replace(pos=R9.v2_root_pos(robot_name)))
+    elif robot is not None:
         robot_name, robot = robot, R9.franka_robot_cfg()
     else:
         robot_name = None
@@ -447,7 +452,10 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
         spawn=sim_utils.CylinderCfg(radius=mk["radius"], height=mk["height"], axis="Z",
                                     visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=mk["color"])),
         init_state=AssetBaseCfg.InitialStateCfg(pos=(*PARK_XY["o11"], mk["height"] / 2)))
-    if robot_name is not None:  # profile cameras + the stand under the arm base (static collider, moved per episode)
+    if v2r:  # L9 v2 profile cameras (robot9.V2), no stand
+        for n, c in R9.v2_camera_cfgs(robot_name, cameras, depth).items():
+            scene_attrs[n] = c
+    elif robot_name is not None:  # profile cameras + the stand under the arm base (static collider, moved per episode)
         for n, c in R9.franka_camera_cfgs(cameras, depth).items():
             scene_attrs[n] = c
         scene_attrs["stand"] = AssetBaseCfg(
@@ -470,7 +478,9 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
 
     arm_joints, gj = ARM_JOINTS[arm], GRIP_JOINT[arm]
     grip_all = GRIP_ALL[arm]
-    if robot_name is not None:
+    if v2r:
+        arm_joints, grip_all = list(R9.V2[robot_name]["arms"][arm]["joints"]), list(R9.V2[robot_name]["arms"][arm]["fingers"])
+    elif robot_name is not None:
         arm_joints, grip_all = list(R9.ARM), list(R9.FINGERS)
 
     @configclass
@@ -616,6 +626,16 @@ class Env:
             self.grip_id = jn.index(GRIP_JOINT[arm])
             self.ee_idx = self.robot.body_names.index(EE_BODY[arm])
             self.finger_idx = [self.robot.body_names.index(b) for b in FINGER_BODIES[arm]]
+        elif robot in ("r1pro", "g1"):  # L9 v2 profile: EE = the TCP link (pad centre, grasp frame G), offset 0
+            from ..l9 import robot9 as R9
+            a = R9.V2[robot]["arms"][arm]
+            self.arm_ids = [jn.index(n) for n in a["joints"]]
+            self.grip_ids = [jn.index(n) for n in a["fingers"]]
+            self.grip_id = self.grip_ids[0]
+            self.ee_idx = self.robot.body_names.index(a["tcp"])
+            self.finger_bodies = tuple(a["finger_bodies"])
+            self.finger_idx = [self.robot.body_names.index(b) for b in self.finger_bodies]
+            self.pad_pair, self.pad_inset = (0, 1), 0.0
         else:  # L9 profile: its joints / links; finger_mid and gripper_width read pad_pair / pad_inset
             from ..l9 import robot9 as R9
             self.arm_ids = [jn.index(n) for n in R9.ARM]
@@ -628,7 +648,11 @@ class Env:
         self._steps = 0
         self.perturb_state = None
         self.table_top_z = tz
-        self.tcp_offset, self.tip_offset = _measure_finger_offsets(arm, robot) if robot else _measure_finger_offsets(arm)
+        if robot in ("r1pro", "g1"):  # the EE body is the TCP itself; tip = the gripper json's finger depth
+            from ..l9 import robot9 as R9
+            self.tcp_offset, self.tip_offset = 0.0, float(R9.V2[robot]["finger_depth_m"])
+        else:
+            self.tcp_offset, self.tip_offset = _measure_finger_offsets(arm, robot) if robot else _measure_finger_offsets(arm)
         if self.variant != "standard":
             randomize.setup_visuals(self)
             self.rand_mesh_fit = dict(randomize.MESH_FIT)
@@ -747,11 +771,19 @@ class Env:
         if getattr(self, "robot_name", None) is None:
             return GRIP_MAX_W
         from ..l9 import robot9 as R9
+        if self.robot_name in R9.V2_PROFILES:
+            return float(R9.V2[self.robot_name]["grip_max_w"])
         return R9.GRIP_MAX_W
 
     def step(self, q_target: np.ndarray) -> None:
         q_target = np.asarray(q_target, dtype=np.float32)
-        if getattr(self, "robot_name", None) is not None:  # L9 profile: two symmetric prismatic fingers
+        if getattr(self, "robot_name", None) in ("r1pro", "g1"):  # L9 v2: arm joints + the profile's width map
+            from ..l9 import robot9 as R9
+            n = len(self.arm_ids)
+            w = R9.v2_width_to_joints(self.robot_name, self.arm, float(q_target[n]))
+            g = [w[j] for j in R9.V2[self.robot_name]["arms"][self.arm]["fingers"]]
+            a = np.concatenate([q_target[:n], g]).astype(np.float32)
+        elif getattr(self, "robot_name", None) is not None:  # L9 profile: two symmetric prismatic fingers
             from ..l9 import robot9 as R9
             g = R9.franka_width_to_joint(float(q_target[7]))
             a = np.concatenate([q_target[:7], [g, g]]).astype(np.float32)
@@ -780,6 +812,10 @@ class Env:
 
     def gripper_width(self) -> float:
         """Measured pad gap: finger link2 origin distance minus the pad inset (not the joint1 map)."""
+        if getattr(self, "robot_name", None) in ("r1pro", "g1"):  # L9 v2: from the measured finger joints
+            from ..l9 import robot9 as R9
+            q = self.robot.data.joint_pos[0, self.grip_ids].cpu().numpy()
+            return R9.v2_joints_to_width(self.robot_name, self.arm, q)
         a, b = getattr(self, "pad_pair", (1, 3))
         d = self.robot.data.body_pos_w[0, self.finger_idx[a]] - self.robot.data.body_pos_w[0, self.finger_idx[b]]
         return max(float(d.norm()) - getattr(self, "pad_inset", PAD_INSET_M), 0.0)

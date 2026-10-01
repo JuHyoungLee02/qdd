@@ -140,6 +140,13 @@ def main(argv=None):
             pool = {k: v for k, v in pool.items()
                     if v["role9"] != "target" or float(v.get("grasp_width") or 2 * float(v.get("footprint_r", 1)))
                     <= FRANKA_MAX_GRASP_W}
+        elif robot in ("r1pro", "g1"):  # L9 v2 R1 Pro / G1: targets their gripper can close on (opening - 1.4 cm)
+            from . import robot9 as R9v
+            from . import task9 as T9
+            T9.FINGER_OPEN = float(R9v.V2[robot]["grip_max_w"])
+            pool = {k: v for k, v in pool.items()
+                    if v["role9"] != "target" or float(v.get("grasp_width") or 2 * float(v.get("footprint_r", 1)))
+                    <= T9.FINGER_OPEN - 0.014}
         if a.v2:  # targets need cached grasp candidates (and the Isaac lift + shake test unless --v2-untested)
             from . import rt9 as RT
             pool = {k: v for k, v in pool.items() if v["role9"] != "target" or RT.has_candidates(robot, k, a.v2_untested)}
