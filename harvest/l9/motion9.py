@@ -20,7 +20,7 @@ import numpy as np
 from ..astra_solo.executor import EXTRA_S, MIN_T, MinJerkExec, min_jerk
 from ..astra_motion.executor import BLOCKED_M, REACH_TOL_M, clip_box
 
-MOTION_VERSION = "l9m-1"
+MOTION_VERSION = "l9m-2"  # l9m-1 -> -2 (motion1 pilot, 127 eps: 64.6 % vs 73.6 % baseline): arc <= 0.12, wider pre-shape margin, gentler two-phase homing
 PROFILES = ("minjerk", "two_phase")
 
 
@@ -30,12 +30,12 @@ def sample_style(seed: int) -> dict:
     prof = PROFILES[int(rng.integers(len(PROFILES)))]
     return {"version": MOTION_VERSION, "profile": prof,
             "v_avg": round(float(rng.uniform(0.06, 0.11)), 4),
-            "caution": round(float(rng.uniform(0.0, 1.0)), 3),
+            "caution": round(float(rng.uniform(0.0, 0.5)), 3),
             "split": round(float(rng.uniform(0.70, 0.85)), 3),
-            "arc": round(float(rng.uniform(0.0, 0.25)), 3),
+            "arc": round(float(rng.uniform(0.0, 0.12)), 3),
             "side": round(float(rng.uniform(-0.12, 0.12)), 3),
             "preshape": bool(rng.random() < 0.8),
-            "preshape_margin": round(float(rng.uniform(0.015, 0.035)), 4),
+            "preshape_margin": round(float(rng.uniform(0.025, 0.04)), 4),
             "preshape_at": round(float(rng.uniform(0.6, 0.8)), 3),
             "pause_s": round(float(rng.uniform(0.15, 0.6)), 3),
             "settle_s": round(float(rng.uniform(0.0, 0.3)), 3),
