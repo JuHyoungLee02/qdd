@@ -259,6 +259,32 @@ def convert(glb: bytes, dst_dir: str, name: str) -> dict:
     return {"dst": dst, "size": [round(float(v), 4) for v in hi - lo], "tris": int(nt)}
 
 
+def row_of(mid: str, r: dict, pt: dict) -> dict:
+    sx, sy, sz = r["size"]
+    typ, name = pt.get(mid, ("", ""))
+    floor = sz >= 0.40 or max(sx, sy) >= 0.60
+    split = "ood" if int(hashlib.sha256(f"l9v2abo:{mid}".encode()).hexdigest()[:8], 16) % 5 == 0 else "train"
+    return {"dst": r["dst"], "collider_size": r["size"], "render_size": r["size"], "origin_offset": [0.0, 0.0, 0.0],
+            "yaw": 0.0, "kind": "floor" if floor else "tabletop", "category": (typ or "abo").lower(), "item_name": name,
+            "license": LIC, "source": f"{BASE}/3dmodels/original/ (ABO 3dmodel_id {mid})",
+            "attribution": "Amazon Berkeley Objects, Amazon.com", "split": split, "visual_only": True,
+            "tris": r["tris"]}
+
+
+def table(out: str) -> dict:
+    """The decor table from the per-model row.json files written so far (resumable / partial)."""
+    import glob
+    pt = json.load(open(os.path.join(out, "product_types.json")))
+    rows = {}
+    for f in glob.glob(os.path.join(out, "models", "*", "row.json")):
+        mid = os.path.basename(os.path.dirname(f))
+        r = json.load(open(f))
+        sx, sy, sz = r["size"]
+        if max(sx, sy, sz) <= 2.4 and "error" not in r:
+            rows[f"abo_{mid}"] = row_of(mid, r, pt)
+    return rows
+
+
 def one(args):
     mid, path, out = args
     d = os.path.join(out, "models", mid)
@@ -277,8 +303,15 @@ def main(argv=None):
     ap.add_argument("--out", required=True)
     ap.add_argument("--max", type=int, default=3000)
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--table-only", action="store_true", help="write decor_abo.json from the models converted so far")
     a = ap.parse_args(argv)
     os.makedirs(a.out, exist_ok=True)
+    if a.table_only:
+        rows = table(a.out)
+        json.dump({"license": LIC, "source": "Amazon Berkeley Objects 3D models (glb -> usd, tools/l9v2env/abo_decor.py)",
+                   "assets": rows, "partial": True}, open(os.path.join(a.out, "decor_abo.json"), "w"), indent=1)
+        print("TABLE", len(rows), Counter(r["kind"] for r in rows.values()))
+        return
     meta = gzip.decompress(get(f"{BASE}/3dmodels/metadata/3dmodels.csv.gz")).decode().splitlines()
     head = meta[0].split(",")
     rows = [dict(zip(head, ln.split(","))) for ln in meta[1:] if ln.strip()]
@@ -301,16 +334,7 @@ def main(argv=None):
             if "error" in r:
                 drop[mid] = r["error"]
                 continue
-            sx, sy, sz = r["size"]
-            typ, name = pt.get(mid, ("", ""))
-            floor = sz >= 0.40 or max(sx, sy) >= 0.60
-            split = "ood" if int(hashlib.sha256(f"l9v2abo:{mid}".encode()).hexdigest()[:8], 16) % 5 == 0 else "train"
-            out[f"abo_{mid}"] = {"dst": r["dst"], "collider_size": r["size"], "render_size": r["size"],
-                                 "origin_offset": [0.0, 0.0, 0.0], "yaw": 0.0, "kind": "floor" if floor else "tabletop",
-                                 "category": (typ or "abo").lower(), "item_name": name, "license": LIC,
-                                 "source": f"{BASE}/3dmodels/original/ (ABO 3dmodel_id {mid})",
-                                 "attribution": "Amazon Berkeley Objects, Amazon.com", "split": split,
-                                 "visual_only": True, "tris": r["tris"]}
+            out[f"abo_{mid}"] = row_of(mid, r, pt)
             if n % 100 == 0:
                 print("progress", n, len(sel), flush=True)
     json.dump({"license": LIC, "source": "Amazon Berkeley Objects 3D models (glb -> usd, tools/l9v2env/abo_decor.py)",

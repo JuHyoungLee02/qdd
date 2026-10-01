@@ -38,3 +38,15 @@ def test_hint_pools_non_empty():
     for h in W.HINT_GROUPS:
         assert len(W.hint_pool(cat, h, "train")) >= 5, h
     assert W.material_pool(cat, "floor", "train", "outdoor") and W.material_pool(cat, "floor", "train", "indoor")
+
+
+def test_import_order_fresh(tmp_path):
+    """assets9.mesh_for / vary9 light pick before scene9 is imported (no circular import with scene9_more)."""
+    import subprocess
+    import sys
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    f = tmp_path / "imp.py"
+    f.write_text("import sys\nsys.path.insert(0, %r)\nfrom harvest.l9 import assets9 as A9\nassert len(A9.mesh_for(1)) > 6\n"
+                 "from harvest.l9 import vary9 as V\nprint(V.pick_light_family(1, 'picnic_outdoor'))\n" % root)
+    r = subprocess.run([sys.executable, str(f)], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr[-500:]

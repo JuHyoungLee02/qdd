@@ -105,7 +105,7 @@ def _tint(rng, sat) -> list:
 def pick_light_family(seed: int, env_family: str) -> str:
     """Seeded family choice: uniform over INDOOR_LIGHTS (every indoor environment family sees every one), over
     OUTDOOR_LIGHTS for the outdoor families (scene9.OUTDOOR)."""
-    from .scene9_more import OUTDOOR
+    from .scene9 import OUTDOOR
     names = OUTDOOR_LIGHTS if env_family in OUTDOOR else INDOOR_LIGHTS
     h = int(hashlib.sha256(f"l9-light:{int(seed)}:{env_family}".encode()).hexdigest()[:8], 16)
     return names[h % len(names)]

@@ -228,7 +228,7 @@ MESH_TASK_CATS = ("table", "counter", "shelf", "side_table", "low_table", "seat"
 def mesh_for(idx: int, n: int = 14, split: str = "train") -> dict:
     """The idx-th subset of mesh furniture pieces: one task-usable piece (with measured surfaces) per
     MESH_TASK_CATS category (L9 v2 mesh_furniture family), then n more rotating through the whole catalog (decor)."""
-    from .scene9_more import _open_top
+    from .scene9 import mesh_open_top as _open_top  # (import scene9 first: scene9_more is loaded by it)
     cat = furniture_mesh(split)
     out = {}
     for c in MESH_TASK_CATS:

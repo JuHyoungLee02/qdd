@@ -823,7 +823,7 @@ FAMILIES = {
 ROOM_KINDS = {"shelf_front": ("living", "bedroom", "other"), "dining": ("kitchen", "living", "other"),
               "living_low": ("living", "bedroom"), "kitchen": ("kitchen",), "entrance": ("other", "living"),
               "office": ("bedroom", "other", "living"), "store": ("other", "kitchen"), "workbench": ("other",)}
-from .scene9_more import FORCED_HOLDERS, MORE_FAMILIES, MORE_ROOM_KINDS, OUTDOOR  # noqa: E402  (L9 v2, spec §12.3)
+from .scene9_more import FORCED_HOLDERS, MORE_FAMILIES, MORE_ROOM_KINDS, OUTDOOR, _open_top as mesh_open_top  # noqa: E402  (L9 v2, spec §12.3)
 
 FAMILIES.update(MORE_FAMILIES)  # appended: the v1 families keep their FAMILY_CODE (scene seeds)
 ROOM_KINDS.update(MORE_ROOM_KINDS)
