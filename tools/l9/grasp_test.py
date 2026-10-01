@@ -113,7 +113,6 @@ def run(a):
     from isaaclab.scene import InteractiveScene, InteractiveSceneCfg
     from isaaclab.sim.converters import UrdfConverterCfg
     from isaaclab.utils import configclass
-    from pxr import UsdPhysics
 
     from harvest.l9 import gtest9 as GT
     from harvest.l9.grasp9 import qmat
@@ -155,7 +154,8 @@ def run(a):
         grip = ArticulationCfg(
             prim_path="{ENV_REGEX_NS}/Grip",
             spawn=sim_utils.UrdfFileCfg(
-                asset_path=urdf, usd_dir=f"{ROOT}/gtest_usd/{gname}", force_usd_conversion=False,
+                asset_path=urdf, usd_dir=f"{ROOT}/gtest_usd/{gname}_cd", force_usd_conversion=False,
+                collider_type="convex_decomposition",  # convex hulls of the curved finger links touch ~5 mm early
                 fix_base=True, merge_fixed_joints=False, make_instanceable=False,
                 convert_mimic_joints_to_normal_joints=True,
                 joint_drive=UrdfConverterCfg.JointDriveCfg(gains=UrdfConverterCfg.JointDriveCfg.PDGainsCfg(
@@ -189,18 +189,6 @@ def run(a):
     stage = omni.usd.get_context().get_stage()
     # finger material (production taskC_ffw_sg2.py _SG2_GRIPPER_MATERIAL: 2.0 / 1.8, combine max) on every gripper
     # collider; objects: catalog friction set after start through the physx view
-    mat = "/World/Materials/finger"
-    sim_utils.RigidBodyMaterialCfg(static_friction=2.0, dynamic_friction=1.8, restitution=0.0,
-                                   friction_combine_mode="max", restitution_combine_mode="min").func(
-        mat, sim_utils.RigidBodyMaterialCfg(static_friction=2.0, dynamic_friction=1.8, restitution=0.0,
-                                            friction_combine_mode="max", restitution_combine_mode="min"))
-    from pxr import Usd
-    nb = 0
-    for i in range(n_env):
-        for p in Usd.PrimRange(stage.GetPrimAtPath(f"/World/envs/env_{i}/Grip")):
-            if p.HasAPI(UsdPhysics.RigidBodyAPI):  # links (colliders below may be instance proxies; binding inherits)
-                sim_utils.bind_physics_material(str(p.GetPath()), mat)
-                nb += 1
     t_obj = time.time()
     for i in range(n_env):
         k, row = tasks[owner[i]][0], tasks[owner[i]][1]
@@ -211,7 +199,7 @@ def run(a):
         sim_utils.modify_rigid_body_properties(body, sim_utils.RigidBodyPropertiesCfg(max_depenetration_velocity=1.0))
         sim_utils.modify_mass_properties(body, sim_utils.MassPropertiesCfg(mass=float(row.get("mass", 0.3))))
     obj = RigidObject(RigidObjectCfg(prim_path="/World/envs/env_.*/Obj/Geometry/obja_.*", spawn=None))
-    log(f"authored {n_env} objects in {time.time() - t_obj:.0f}s, gripper bodies with the finger material {nb}")
+    log(f"authored {n_env} objects in {time.time() - t_obj:.0f}s")
     t_reset = time.time()
     sim.reset()
     scene.update(DT)
@@ -234,24 +222,31 @@ def run(a):
     mats0 = obj.root_physx_view.get_material_properties()
     allidx = torch.arange(n_env, dtype=torch.int32)
 
-    def set_obj_fric(mu=None):
-        m = mats0.clone()
-        for i in range(n_env):
-            f = tasks[owner[i]][1].get("friction", (0.8, 0.8)) if mu is None else (mu, mu)
-            m[i, :, 0], m[i, :, 1], m[i, :, 2] = float(f[0]), float(f[1]), 0.0
-        obj.root_physx_view.set_material_properties(m, allidx)
-
+    # friction. Production: finger material 2.0 / 1.8 with combine mode max (taskC_ffw_sg2.py _SG2_GRIPPER_MATERIAL)
+    # -> effective = the finger value. The tensor API sets per-shape values only (combine mode stays average), so the
+    # finger shapes get 2 * target - object value (average = target). Low friction: both 0.4.
     gm0 = rob.root_physx_view.get_material_properties()
-    log(f"gripper shape friction env0 {gm0[0, :, 0].tolist()} | object env0 {mats0[0, :4].tolist()}")
+    nsh = (mats0[:, :, 0] > 0).sum(1).numpy()
+    obj_mu = np.array([tasks[owner[i]][1].get("friction", (0.8, 0.8)) for i in range(n_env)], float).reshape(n_env, -1)
+    if obj_mu.shape[1] == 1:
+        obj_mu = np.repeat(obj_mu, 2, 1)
 
-    def set_grip_fric(mu=None):
-        m = gm0.clone()
-        if mu is not None:
-            m[..., 0], m[..., 1] = mu, mu
-        rob.root_physx_view.set_material_properties(m, allidx)
+    def set_fric(lowfric):
+        mo, mg = mats0.clone(), gm0.clone()
+        for i in range(n_env):
+            fs, fd = (0.4, 0.4) if lowfric else (float(obj_mu[i, 0]), float(obj_mu[i, 1]))
+            ts, td = (0.4, 0.4) if lowfric else (2.0, 1.8)
+            mo[i, :, 0], mo[i, :, 1], mo[i, :, 2] = fs, fd, 0.0
+            mg[i, :, 0], mg[i, :, 1], mg[i, :, 2] = 2 * ts - fs, 2 * td - fd, 0.0
+        obj.root_physx_view.set_material_properties(mo, allidx)
+        rob.root_physx_view.set_material_properties(mg, allidx)
+        chk = rob.root_physx_view.get_material_properties()
+        log(f"friction set (lowfric={lowfric}): finger env0 {chk[0, 0, :2].tolist()} object env0 "
+            f"{obj.root_physx_view.get_material_properties()[0, 0, :2].tolist()}")
 
-    set_obj_fric()
-    log(f"object shapes per env max {mats0.shape[1]}")
+    set_fric(False)
+    log(f"object shapes per env: max {int(nsh.max())}, per object " +
+        str({tasks[m][0][-6:]: int(nsh[np.flatnonzero(owner == m)[0]]) for m in range(min(M, 12))}))
 
     # queue of (env-local) tests per object
     queues = {m: list(range(len(t[2]))) for m, t in enumerate(tasks)}
@@ -392,8 +387,7 @@ def run(a):
     t_run = time.time()
     rounds(False)
     if a.lowfric:
-        set_obj_fric(0.4)
-        set_grip_fric(0.4)
+        set_fric(True)
         rounds(True)
     dt_run = time.time() - t_run
     od = os.path.join(a.out, a.grip)
