@@ -36,7 +36,8 @@ BRIDGE_GROUPS = {"spoon on towel": lambda n: n.startswith("spoon_"), "carrot on 
 
 def main(root="/data/harvest/out/sim0"):
     global GROUPS
-    rows = [json.load(open(p)) for p in glob.glob(os.path.join(root, "*", "*", "row.json"))]
+    rows = [r for p in glob.glob(os.path.join(root, "*", "*", "row.json"))
+            for r in [json.load(open(p))] if p.split(os.sep)[-3] == r["arm"]]  # skip kept invalid runs (A_v1)
     if any(r["ep"].startswith(("spoon_", "carrot_", "stack_", "eggplant_")) for r in rows):  # E-SIM1
         GROUPS = BRIDGE_GROUPS
     by = {(r["arm"], r["ep"]): r for r in rows}
