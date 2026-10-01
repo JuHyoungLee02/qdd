@@ -20,13 +20,15 @@ def last_lines(ep: str, k: int = 2) -> list:
 def main():
     root = sys.argv[1]
     arm = sys.argv[sys.argv.index("--arm") + 1] if "--arm" in sys.argv else None
+    clean = "--clean" in sys.argv
+    since = float(sys.argv[sys.argv.index("--since") + 1]) if "--since" in sys.argv else 0.0
     n_show = int(sys.argv[sys.argv.index("--n") + 1]) if "--n" in sys.argv else 15
     ends, notes, outc, fails, steps = Counter(), Counter(), Counter(), Counter(), Counter()
     n = ok = jump = 0
     by_arm = Counter()
     for m in glob.glob(os.path.join(root, "**", "meta.json"), recursive=True):
         meta = json.load(open(m))
-        if meta.get("grasp_v2") is None or (arm and meta.get("arm") != arm):
+        if meta.get("grasp_v2") is None or (arm and meta.get("arm") != arm) or os.path.getmtime(m) < since \n                or (clean and meta.get("style") != "clean"):
             continue
         n += 1
         s = bool(meta["success"]) and (meta.get("max_dq_rad") or 0) <= 0.04
