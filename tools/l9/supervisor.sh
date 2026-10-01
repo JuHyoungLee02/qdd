@@ -30,6 +30,17 @@ while true; do
       echo $! > $R/pids/$t
     fi
   done
+  for spec in $LANES; do  # hung episode watchdog: a job log silent for 20 min = a hung Isaac (2.3 h seen on x2)
+    t=${spec##*:}; f=$(ls -t /data/harvest/logs/l9/${t}_*.log 2>/dev/null | head -1)
+    [ -n "$f" ] || continue
+    tail -1 "$f" | grep -q '^EXIT' && continue
+    age=$(( $(date +%s) - $(stat -c %Y "$f") ))
+    if [ $age -gt 1200 ]; then
+      inst=$(basename $f .log)
+      for p in /proc/[0-9]*; do tr '\0' '\n' < $p/environ 2>/dev/null | grep -q "^IR_INST=l9_${inst}$" && kill -9 ${p#/proc/} 2>/dev/null; done
+      log "watchdog: $inst silent ${age}s, Isaac killed (the lane resumes the job)"
+    fi
+  done
   if [ $((n % 10)) -eq 0 ]; then
     bash $C/tools/l9/shm_clean.sh >> $R/supervisor_$(hostname).log 2>&1  # stale carb shm on the 64 MB /dev (P148)
     /data/harvest/venv_train/bin/python $C/tools/l9/progress.py $R > $R/progress_$(hostname).json 2>> $R/supervisor_$(hostname).log
