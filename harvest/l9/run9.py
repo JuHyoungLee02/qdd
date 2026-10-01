@@ -77,6 +77,9 @@ def main(argv=None):
     ap.add_argument("--motion", action="store_true", help="spec §10 human-like motion (harvest.l9.motion9)")
     ap.add_argument("--v2", action="store_true", help="spec §12 L9 v2: real grasps + cuRobo (harvest.l9.rt9)")
     ap.add_argument("--v2-untested", action="store_true", help="v2 smoke only: allow candidates without the Isaac test")
+    ap.add_argument("--ext-p", type=float, default=0.0,
+                    help="share of episodes paired with world-fixed external cameras (harvest.l9.ext9); 0 = none")
+    ap.add_argument("--ext-n", type=int, default=1, help="external cameras per paired episode (1 or 2)")
     a = ap.parse_args(argv)
     code = 0
     import faulthandler
@@ -142,12 +145,17 @@ def main(argv=None):
             pool = {k: v for k, v in pool.items() if v["role9"] != "target" or RT.has_candidates(robot, k, a.v2_untested)}
         rooms = rooms_for(int(rows[0]["rooms"]), "train" if split == "train" else "ood")
         mesh = A9.mesh_for(int(rows[0]["rooms"]), split="train" if split == "train" else "ood")
-        world = make_world9(arm, pool, rooms, mesh=mesh, robot=robot, hcam=hcam)
+        ext_on = os.path.join(os.path.dirname(os.path.abspath(a.out)), "EXT_ON")  # run-level switch: "<p> [<n>]"
+        if a.ext_p <= 0 and os.path.exists(ext_on):
+            v = (open(ext_on).read().split() or ["0.3"])
+            a.ext_p, a.ext_n = float(v[0]), int(v[1]) if len(v) > 1 else a.ext_n
+        ext = {"p": a.ext_p, "n": a.ext_n} if a.ext_p > 0 else None
+        world = make_world9(arm, pool, rooms, mesh=mesh, robot=robot, hcam=hcam, ext=ext)
         from ..teach_l8d import collect as _c  # noqa: F401  (load the episode modules, then rebind their copies)
         if a.v2:
             from .rt9 import install as v2_install
             v2_install(world, robot, arm, allow_untested=a.v2_untested)
-        print("WORKSPACE " + json.dumps({"arm": arm, "rebound": apply_arm_workspace(arm), "robot": robot, "hcam": hcam,
+        print("WORKSPACE " + json.dumps({"arm": arm, "rebound": apply_arm_workspace(arm), "robot": robot, "hcam": hcam, "ext": ext,
                                          "prompts": apply_prompts(robot)}), flush=True)
         rm = R9.load_default()
         led_dir = os.path.join(a.out, "ledger")

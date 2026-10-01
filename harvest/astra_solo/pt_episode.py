@@ -120,6 +120,9 @@ class PtEpisode(Episode):
         if self.save_nd and self.ring_png is not None:
             with open(os.path.join(d, "img1_head_ring.png"), "wb") as f:
                 f.write(self.ring_png)
+        ext_save = getattr(self.w, "ext_save", None)  # L9 v2 paired external cameras (harvest.l9.ext9); no-op else
+        if ext_save is not None:
+            ext_save(d, idx)
 
     # ------------------------------------------------------------------ point -> target
     def holding(self, st) -> bool:

@@ -218,10 +218,13 @@ def material_pool(cat: dict, role: str, split: str, setting: str | None = None) 
 
 
 def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "train", mesh: dict | None = None,
-                robot: str = "ffw_sg2", hcam: str | None = None):
+                robot: str = "ffw_sg2", hcam: str | None = None, ext: dict | None = None):
     """robot: robot9 profile ("ffw_sg2" = the AI Worker, unchanged; "franka_mast"). hcam (spec §9.3, E-HCAM8):
     None = the standard head camera every episode (unchanged); "coin" = hcam9.coin(seed) picks std / rand per seed;
-    "rand" / "hold" = every episode. The Franka mast camera is drawn per episode whatever hcam says."""
+    "rand" / "hold" = every episode. The Franka mast camera is drawn per episode whatever hcam says.
+    ext (user 10-02, ext9): None = no external camera (unchanged); {"p": share, "n": 1 | 2} = 1-2 world-fixed
+    external cameras rendered with the head at every call of the episodes whose ext9.coin is on (they render
+    in every episode: switching their render products off breaks them; only paired episodes save them)."""
     from ..astra_motion.world_isaac import CAMS, KEYS, NO_RENDER, PRE_RENDER, IsaacWorld, WORLD_CONV_TO_OPTICAL
     from ..sim import scene as SC
     from ..sim.assets_x import isaac as FX
@@ -247,16 +250,26 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
         from . import scene9 as S9
         S9.MESH_POOL = {n: r for n, r in mesh.items() if r.get("surfaces")}  # mesh_furniture draws loaded pieces only
     undo = FX.without_table(mesh, rooms)
+    from . import ext9 as E9
+    ext_names = tuple(f"cam_ext{i}" for i in range(int(ext.get("n", 1)))) if ext else ()
+    timing = bool(ext_names) or os.environ.get("IR_L9_EXT_TIMING") == "1"  # per-call render ms (ext9 cost)
 
     class World9(IsaacWorld):
         def __init__(self):
-            from ..sim.scene import GRIP_MAX_W, make_env
+            from ..sim.scene import GRIP_MAX_W, _ensure_app, make_env
+            if ext_names:
+                _ensure_app(True, True)  # the Isaac Lab sim modules (camera cfgs) import only inside the app
+            xc = {"extra_cameras": self._ext_cfgs()} if ext_names else {}
             try:
                 self.env = make_env(0, headless=True, cameras=cams, depth=True, render_interval=NO_RENDER,
-                                    variant="drf", objset="x", arm=arm, **({"robot": robot} if franka else {}))
+                                    variant="drf", objset="x", arm=arm, **({"robot": robot} if franka else {}), **xc)
             finally:
                 undo()
             env = self.env
+            # (the external render products always render: switching their HydraTexture updates off and on again
+            # leaves the annotators empty, smoke 10-02)
+            self.ext_cams, self._ext_now, self._ext_pairs, self._ext_K = None, None, [], {}
+            self._ext_ms = {"render": [], "capture": [], "save": []}
             self.arm, self.pool_ids = arm, ids
             env.present_ids = tuple(env.present_ids) + SPOT_IDS + SURF_IDS  # Env.reset rebuilds present from these
             self.dt, self.w_open = float(env.step_dt), float(R9.GRIP_MAX_W if franka else GRIP_MAX_W)
@@ -431,6 +444,11 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             from . import task9 as T9
             env, sc, ep = self.env, self.scene9, self.ep
             rob = env.robot
+            row_seed = int(seed)  # the episode seed (ext9 coin)
+            if timing:
+                self._ext_ms = {"render": [], "capture": [], "save": []}
+            if ext_names:
+                self.ext_cams = None
             seed = int(self.vseed if getattr(self, "vseed", None) is not None else seed)  # the drawn visual seed
             parts = [p for p in sc["furniture"]]
             room = self._place_room(seed, parts, sc["family"])
@@ -555,6 +573,171 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                                                "category": p.get("category"), "role": p.get("role")} for p in decor],
                                     "env_axes": self._env_axes(sc, room, mats, decor, head)}
             self.clutter_scene = {"n": len(ep.get("clutter", {})), "ids": sorted(ep.get("clutter", {}))}
+            if ext_names:
+                self._apply_ext(row_seed, tz, parts + decor, room is not None)
+
+        # ------------------------------------------------------------------ external cameras (ext9, user 10-02)
+        def _ext_cfgs(self) -> dict:
+            """World-fixed pinhole cameras under the env (parked below the floor until a paired episode)."""
+            import isaaclab.sim as sim_utils
+            from isaaclab.sensors import CameraCfg
+            ap = 20.955
+            f = HC.fx_from_hfov(70.0, E9.W) * ap / E9.W
+            return {n: CameraCfg(prim_path=f"{{ENV_REGEX_NS}}/{n.replace('cam_', 'Cam_')}", update_period=0.0,
+                                 height=E9.H, width=E9.W, data_types=["rgb", "distance_to_image_plane"],
+                                 update_latest_camera_pose=True,
+                                 spawn=sim_utils.PinholeCameraCfg(focal_length=f, focus_distance=200.0,
+                                                                  horizontal_aperture=ap, clipping_range=(0.05, 30.0)),
+                                 offset=CameraCfg.OffsetCfg(pos=(-3.0, 3.0 + i, -5.0), rot=(1.0, 0.0, 0.0, 0.0),
+                                                            convention="world"))
+                    for i, n in enumerate(ext_names)}
+
+        def _ext_write(self, name: str, d: dict) -> None:
+            import omni.usd
+            import torch
+            from isaaclab.utils.math import convert_camera_frame_orientation_convention
+
+            from ..sim.randomize import _set_pose
+            R, t, K = E9.pose_of(d)
+            q = convert_camera_frame_orientation_convention(torch.tensor([HC.R_to_quat(R)], dtype=torch.float32),
+                                                            origin="world", target="opengl")[0].tolist()
+            path = f"/World/envs/env_0/{name.replace('cam_', 'Cam_')}"
+            _set_pose(omni.usd.get_context().get_stage().GetPrimAtPath(path), tuple(float(v) for v in t), tuple(q))
+            if abs(self._ext_K.get(name, -1.0) - d["hfov"]) > 1e-6:
+                cam = self.env.scene[name]
+                f0 = HC.fx_from_hfov(70.0, E9.W) * 20.955 / E9.W
+                cam.set_intrinsic_matrices(torch.tensor(K[None], dtype=torch.float32), focal_length=f0)
+                self._ext_K[name] = float(d["hfov"])
+
+        def _ext_ctx(self, tz: float, parts: list, in_room: bool):
+            from . import scene9 as S9
+            org = self.env.scene.env_origins[0].cpu().numpy()
+            ws = []
+            for a, p, _ in self.ep["steps"]:
+                for k in (a, p):
+                    ws.append(np.asarray(self.env.object_pose(k)[0], float) - org)
+            head = self._cam("cam_head", "head")
+            robot_pts = [np.asarray(head.t, float), np.asarray(self.status()["tcp"], float)]
+            boxes = [{"pos": p["pos"], "size": p["size"], "yaw": 0.0 if p.get("role") == "decor" else p.get("yaw", 0.0)}
+                     for p in parts if p.get("size") is not None]
+            zone = None
+            if in_room:
+                (x0, x1), (y0, y1) = S9.ZONE
+                zone = ((x0 + 0.05, x1 - 0.05), (y0 + 0.05, y1 - 0.05))
+            return E9.Ctx(look_ws=np.mean(ws, axis=0), robot_pts=robot_pts, ws_pts=ws, boxes=boxes, zone=zone,
+                          surface_z=tz)
+
+        def _apply_ext(self, seed: int, tz: float, parts: list, in_room: bool) -> None:
+            """Paired episode (ext9.coin): draw each camera's pose, render, check the rendered depth (nothing right in
+            front, no hidden must-see point), redraw up to ext9.TRIES; cameras without a valid pose are left out.
+            Other episodes: nothing written or recorded."""
+            from ..astra_motion.world_isaac import PRE_RENDER
+            self._ext_now, self._ext_pairs = None, []
+            if not E9.coin(seed, float(ext.get("p", E9.P_DEFAULT))):
+                self.ext_cams = None
+                return
+            import time
+            t0 = time.perf_counter()
+            ctx = self._ext_ctx(tz, parts, in_room)
+            n = E9.n_cams(seed, len(ext_names))
+            got, tries = [], []
+            for i, name in enumerate(ext_names[:n]):
+                rec = None
+                for att in range(E9.TRIES):
+                    d = E9.draw(seed, att, ctx, cam=i, avoid=[g["pose_draw"] for g in got])
+                    if d is None:
+                        tries.append({"cam": i, "attempt": att, "why": "no_pose"})
+                        continue
+                    try:
+                        self._ext_write(name, d)
+                        for _ in range(PRE_RENDER):
+                            self.env.env.sim.render()
+                        cam = self.env.scene[name]
+                        cam.update(0.0, force_recompute=True)
+                        depth = cam.data.output["distance_to_image_plane"][0, ..., 0].cpu().numpy()
+                        R, t, K = E9.pose_of(d)
+                        ok, why = E9.depth_ok(depth, R, t, K, ctx.ws_pts + ctx.robot_pts)
+                    except Exception as ex:  # noqa: BLE001  (an external camera never stops the episode)
+                        ok, why = False, f"error: {type(ex).__name__}: {str(ex)[:160]}"
+                        print("EXT " + why, flush=True)
+                    tries.append({"cam": i, "attempt": att, "why": why})
+                    if ok:
+                        rec = dict(E9.record(name, d), scene_name=name)
+                        break
+                if rec is not None:
+                    got.append(rec)
+            self.ext_cams = got
+            self.ext_info = {"version": E9.VERSION, "p": float(ext.get("p", E9.P_DEFAULT)), "coin": True,
+                             "n_drawn": n, "n_ok": len(got), "tries": tries,
+                             "setup_s": round(time.perf_counter() - t0, 3)}
+
+        def _ext_capture(self) -> None:
+            """After the head render of a call: the external cameras' images of the same render."""
+            if not self.ext_cams:
+                return
+            import time
+            t0 = time.perf_counter()
+            now = {}
+            try:
+                for rec in self.ext_cams:
+                    cam = self.env.scene[rec["scene_name"]]
+                    cam.update(0.0, force_recompute=True)
+                    out = cam.data.output
+                    now[rec["name"]] = (out["rgb"][0, ..., :3].cpu().numpy().astype(np.uint8),
+                                        out["distance_to_image_plane"][0, ..., 0].cpu().numpy().astype(np.float32))
+            except Exception as ex:  # noqa: BLE001  (stop pairing this episode, keep the head data)
+                print(f"EXT capture error: {type(ex).__name__}: {str(ex)[:160]}", flush=True)
+                self.ext_info["capture_error"] = f"{type(ex).__name__}: {str(ex)[:160]}"
+                self.ext_cams, now = [], None
+            self._ext_now = now
+            self._ext_ms["capture"].append((time.perf_counter() - t0) * 1e3)
+
+        def ext_save(self, call_dir: str, idx: int) -> None:
+            """Episode-writer hook (pt_episode._save_call, attempt 0, after cams.json): img1_external<k>.png,
+            external<k>_depth.npz (uint16 mm, ext9.load_depth) and the cams.json entries "external<k>" with the pair id. No-op unless paired."""
+            if not self.ext_cams or not self._ext_now:
+                return
+            import json
+            import time
+
+            from ..astra_solo.overlay import png_bytes
+            t0 = time.perf_counter()
+            pair = f"{os.path.basename(os.path.dirname(os.path.dirname(call_dir)))}/c{int(idx):03d}"
+            cj = os.path.join(call_dir, "cams.json")
+            cams_j = json.load(open(cj)) if os.path.exists(cj) else {}
+            for k, rec in enumerate(self.ext_cams):
+                rgb, depth = self._ext_now[rec["name"]]
+                with open(os.path.join(call_dir, f"img1_external{k}.png"), "wb") as f:
+                    f.write(png_bytes(rgb))
+                np.savez_compressed(os.path.join(call_dir, f"external{k}_depth.npz"), depth_mm=E9.depth_to_mm(depth))
+                cams_j[f"external{k}"] = dict({x: v for x, v in rec.items() if x != "scene_name"}, pair=pair)
+                gc = getattr(getattr(self, "rt", None), "choice", None)  # v2: this call's grasp (format v2 `rot`)
+                if gc is not None:
+                    cams_j[f"external{k}"]["grasp_rot"] = E9.grasp_rot(rec, gc.c1, gc.c2)
+            with open(cj, "w") as f:
+                json.dump(cams_j, f)
+            self._ext_pairs.append(int(idx))
+            self._ext_now = None
+            self._ext_ms["save"].append((time.perf_counter() - t0) * 1e3)
+
+        def ext_timing(self) -> dict:
+            """Per-episode timing (IR_L9_EXT_TIMING=1 log lines; isaac.sh passes only IR_* / CUDA_* variables):
+            calls' render ms, external capture / save ms."""
+            v = self._ext_ms
+            return {"paired": bool(self.ext_cams), "n_ext": len(self.ext_cams or []), "n_render": len(v["render"]),
+                    **{f"{k}_ms": (round(float(np.mean(x)), 2) if x else None) for k, x in v.items()},
+                    **{f"{k}_ms_sum": round(float(np.sum(x)), 1) for k, x in v.items()},
+                    "setup_s": (getattr(self, "ext_info", None) or {}).get("setup_s") if self.ext_cams else None}
+
+        def ext_meta(self) -> dict:
+            """meta keys of a paired episode ({} otherwise: unpaired episodes are byte-identical)."""
+            if self.ext_cams is None:
+                return {}
+            ms = {k: (round(float(np.mean(v)), 2) if v else None) for k, v in self._ext_ms.items()}
+            return {"external": dict(self.ext_info, pairs=list(self._ext_pairs), ms=ms,
+                                     n_render=len(self._ext_ms["render"])),
+                    "external_cams": [{"name": r["name"], "K": r["K"], "R": r["R"], "t": r["t"], "W": r["W"],
+                                       "H": r["H"], "pose_draw": r["pose_draw"]} for r in self.ext_cams]}
 
         def _pitch_parts(self, parts: list) -> None:
             """L9 v2 inclined boards: cuboid parts with a "pitch" (rad, about the part's own y axis after its yaw)
@@ -728,9 +911,14 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             return G.Cam(label, int(W), int(H), float(K[0, 0]), float(K[1, 1]), float(K[0, 2]), float(K[1, 2]), R, t)
 
         def _render(self):
+            if timing:  # render time per call (ext9 cost measurement)
+                import time
+                t0 = time.perf_counter()
             self.env.env.sim.render()
             for n in cams:
                 self.env.scene[n].update(0.0, force_recompute=True)
+            if timing:
+                self._ext_ms["render"].append((time.perf_counter() - t0) * 1e3)
 
         def _obj_yaw(self, k):
             from ..sim import objv as OV
@@ -840,6 +1028,11 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
 
         # ------------------------------------------------------------------ observation (the used arm's wrist)
         def observe(self, depth: bool = False):
+            obs = self._observe(depth)
+            self._ext_capture()  # paired episodes: the external views of the same render
+            return obs
+
+        def _observe(self, depth: bool = False):
             if franka:
                 from ..astra_motion.harness import Obs
                 self._render()

@@ -157,6 +157,12 @@ def run_episode(world, row: dict, out_dir: str, pool: dict, rm, ledger=None, p: 
         meta.update({k: ep.get(k) for k in ("step_info", "done", "instr_meta", "movable_containers", "start_poses",
                                               "recovery_candidate",
                                               "requires")})
+    xm =world.ext_meta() if hasattr(world, "ext_meta") else {}
+    if xm:  # paired external cameras (ext9); unpaired episodes get no key
+        meta.update(xm)
+    if os.environ.get("IR_L9_EXT_TIMING") == "1" and hasattr(world, "ext_timing"):
+        print("EXTT " + json.dumps(dict(world.ext_timing(), seed=row["seed"], n_calls=meta.get("n_calls"),
+                                        wall_s=meta.get("wall_s"))), flush=True)
     with open(os.path.join(out_dir, "meta.json"), "w") as f:
         json.dump(meta, f, default=_json_default)
     with open(os.path.join(out_dir, "episode9.json"), "w") as f:

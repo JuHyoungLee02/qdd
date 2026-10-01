@@ -4,9 +4,10 @@
           successful L9 AI Worker episodes (success, max_dq_rad <= 0.04, motion l9m-2, head camera mode),
           stratified by (definition, arm): equal share per stratum, seed order; --match takes exactly the strata
           counts of another selection (H1 matched to H0).
-  rows    <episodes.json> <out dir> <tag> [--camera-line]
+  rows    <episodes.json> <out dir> <tag> [--camera-line] [--external]
           symlinked stage -> harvest.teach_pt.min_format.build(split 'l9train', d-min) -> <out>/l9train_d-min.jsonl;
           --camera-line: every row's prompt gets the prereg change-1 `camera:` line (new prompt files).
+          --external: + the paired external-view rows of paired episodes (harvest.l9.ext9; default: head only).
   combine <base train jsonl> <l9 rows jsonl> <out train jsonl> [--camera-line-base] [--trim-to N]
           base (E-VIEW8 A0) + L9 rows; optional camera lines on the base rows (cams.json when the row has one,
           else 'camera: head, unknown'); prints rows, steps = round(1632 x rows / 78745), sha256."""
@@ -138,6 +139,7 @@ def main():
             k, n = (int(v) for v in opt["--part"].split("/"))
             eps, name = eps[k::n], f"l9_{tag}.part{k:02d}"
         c = B9.build([e["dir"] for e in eps], out, "l9train", name, train=True, camera_line="--camera-line" in a,
+                     external="--external" in a,
                      seed=int(opt["--part"].split("/")[0]) if "--part" in opt else 0)
         rows = [json.loads(x) for x in open(c["path"], encoding="utf-8")]
         chk = B9.check_rows(rows, camera_line="--camera-line" in a, sample=2000)

@@ -118,9 +118,64 @@ def camera_of(r: dict, robot: str) -> str:
     return HC.line(cam, f"l9/{robot}")
 
 
+def external_rows(r: dict, x: dict, base_prompt: str, robot: str, out_dir: str) -> tuple:
+    """Paired external-view control rows of one head row x (ext9): same state, same answer except point_2d = the
+    head label's 3D point (head depth) projected into the external camera, kept only when the external depth shows
+    it. Image 1 = the external image with the TCP ring, image 2 = the same wrist image; the request names the
+    external camera (Image 1 line + `camera: external` line). -> (rows, Counter)."""
+    from ..astra_motion.geometry import Cam
+    from ..astra_solo import nd as ND
+    from ..astra_solo.overlay import png_bytes
+    from . import ext9 as E9
+    c = Counter()
+    cams = json.load(open(r["cams_path"]))
+    keys = sorted(k for k in cams if k.startswith("external"))
+    if not keys or x.get("label_missing"):
+        return [], c
+    head = cams["head"]
+    cmd = json.loads(x["answer"]).get("command") or {}
+    hd = np.load(r["depth_path"])["depth"] if cmd.get("point_2d") is not None else None
+    text0 = open(base_prompt, encoding="utf-8").read()
+    out = []
+    for k in keys:
+        ext = cams[k]
+        ed = E9.load_depth(os.path.join(r["call_dir"], f"{k}_depth.npz"))
+        pt, rot = None, None
+        if cmd.get("rot") is not None:  # format v2: the closing-axis angle as seen by this camera (ext_save)
+            rot = (ext.get("grasp_rot") or {}).get("rot_bin_img")
+            if rot is None:
+                c["external_no_rot"] += 1
+                continue
+        if cmd.get("point_2d") is not None:
+            pt, info = E9.external_point(head, hd, cmd["point_2d"], ext, ed)
+            if pt is None:
+                c[f"external_{info['why']}"] += 1
+                continue
+        from PIL import Image
+        rgb = np.asarray(Image.open(os.path.join(r["call_dir"], f"img1_{k}.png")).convert("RGB"))
+        ring, drawn = ND.ring_overlay(rgb, Cam.from_json(ext), r["gt"]["tcp"])
+        rid = f"{x['id']}_ext{k[len('external'):]}"
+        ip = os.path.join(out_dir, "external_img", f"{rid}.png")
+        os.makedirs(os.path.dirname(ip), exist_ok=True)
+        with open(ip, "wb") as f:
+            f.write(png_bytes(ring))
+        line = E9.line(ext, f"l9/{robot}")
+        pp = os.path.join(out_dir, "prompts_min", "d_ext", rid + ".txt")
+        os.makedirs(os.path.dirname(pp), exist_ok=True)
+        with open(pp, "w", encoding="utf-8", newline="\n") as f:
+            f.write(add_camera_line(E9.external_text(text0, ext, "tcp" in drawn), line))
+        out.append(dict(x, id=rid, view="external", external_cam=k, pair_of=x["id"], pair_id=ext.get("pair"),
+                        camera=line, camera_line=True, prompt_path=pp, images=[ip] + list(x["images"][1:]),
+                        answer=E9.external_answer(x["answer"], pt, rot),
+                        depth_path=os.path.join(r["call_dir"], f"{k}_depth.npz")))
+        c["external_rows"] += 1
+    return out, c
+
+
 def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera_line: bool = False,
-                 grasp_format: bool = True) -> tuple:
-    """-> (control rows, aux rows, counts) of one L9 episode."""
+                 grasp_format: bool = True, external: bool = False) -> tuple:
+    """-> (control rows, aux rows, counts) of one L9 episode. external=True adds the paired external-view rows of
+    paired episodes (ext9; default off = the head-only build, unchanged)."""
     from ..teach_l8.dataset import repeat_of
     from ..teach_pt import dataset as DS
     from ..teach_pt import min_format as MF
@@ -149,6 +204,10 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera
                     f.write(add_grasp_format(open(p, encoding="utf-8").read(), rl))
             elif not x["label_missing"]:
                 x["answer"] = strip_grasp_fields(x["answer"])
+        ext_rows = []
+        if external and meta.get("external_cams"):
+            ext_rows, ce = external_rows(r, x, x["prompt_path"], robot, out_dir)
+            c.update(ce)
         if camera_line:
             p = x["prompt_path"]
             dst = p[:-4] + "_cam.txt"
@@ -156,6 +215,8 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera
                 f.write(add_camera_line(open(p, encoding="utf-8").read(), line))
             x.update(prompt_path=dst, camera_line=True)
         ctrl += [x] * (repeat_of(x) if train else 1)
+        for e in ext_rows:  # right after their head row, same repeats
+            ctrl += [e] * (repeat_of(x) if train else 1)
         if train and named:
             a = MF._aux(x, "d-min", rng)
             if a is not None:
@@ -164,13 +225,14 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera
 
 
 def build(ep_dirs, out_dir: str, split: str, name: str, train: bool = True, camera_line: bool = False,
-          seed: int = 0, grasp_format: bool = True) -> dict:
+          seed: int = 0, grasp_format: bool = True, external: bool = False) -> dict:
+    """external=True: + the paired external-view rows (ext9; main compares builds with and without them)."""
     prepare(("train", "ood_o"))
     os.makedirs(out_dir, exist_ok=True)
     rng = np.random.default_rng([seed, 9, 29])
     ctrl, aux, c = [], [], Counter()
     for d in ep_dirs:
-        a, b, k = episode_rows(d, out_dir, split, train, rng, camera_line, grasp_format)
+        a, b, k = episode_rows(d, out_dir, split, train, rng, camera_line, grasp_format, external)
         ctrl += a
         aux += b
         c.update(k)
@@ -181,6 +243,8 @@ def build(ep_dirs, out_dir: str, split: str, name: str, train: bool = True, came
     counts = dict(c, episodes=len(ep_dirs), control_rows=len(ctrl), aux_rows=len(aux),
                   robots=dict(Counter(x["robot"] for x in ctrl)), head_cam=dict(Counter(x["head_cam_mode"] for x in ctrl)),
                   hands=dict(Counter(x.get("hand", "right") for x in ctrl)))
+    if external:
+        counts["views"] = dict(Counter(x.get("view", "head") for x in ctrl))
     json.dump(counts, open(os.path.join(out_dir, name + ".counts.json"), "w"), indent=1)
     return dict(counts, path=path)
 
@@ -200,7 +264,12 @@ def check_rows(rows, camera_line: bool = False, sample: int | None = None, seed:
         robot = meta.get("robot") or "ffw_sg2"
         by[robot] += 1
         text = open(r["prompt_path"], encoding="utf-8").read()
-        line = camera_of(r, robot)
+        ext = r.get("view") == "external"
+        if ext:  # paired external row (ext9): its own camera's line, always in the request, no head wording
+            from . import ext9 as E9
+            line = E9.line(json.load(open(r["cams_path"]))[r["external_cam"]], f"l9/{robot}")
+        else:
+            line = camera_of(r, robot)
         bad = []
         if r.get("robot") != robot:
             bad.append(f"robot {r.get('robot')} != meta {robot}")
@@ -208,10 +277,12 @@ def check_rows(rows, camera_line: bool = False, sample: int | None = None, seed:
             bad.append("request robot wording")
         if r.get("camera") != line:
             bad.append("camera field != cams.json line")
-        if camera_line and ("- " + line) not in text:
+        if (camera_line or ext) and ("- " + line) not in text:
             bad.append("camera line missing in the request")
         if not camera_line and "\n- camera: head" in text:
             bad.append("camera line present in a no-line build")
+        if ext and ("head camera" in text or "- Image 1: external camera" not in text):
+            bad.append("external row names the head camera")
         hand = (json.loads(r["answer"]).get("command") or {}).get("hand") if not r.get("label_missing") else None
         if hand is not None and hand != meta.get("arm"):
             bad.append(f"hand {hand} != arm {meta.get('arm')}")

@@ -340,7 +340,7 @@ def _place_layout_event(env, env_ids):
 def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu", variant: str = "standard",
                decimation: int = 5, render_interval: int | None = None, task: str = "mug_tray",
                table_z: float = TABLE_TOP_Z, ws=None, lift: float | None = None, objset: str | None = None,
-               robot: str | None = None):
+               robot: str | None = None, extra_cameras: dict | None = None):
     import isaaclab.envs.mdp as mdp
     import isaaclab.sim as sim_utils
     from isaaclab.assets import AssetBaseCfg, RigidObjectCfg
@@ -458,6 +458,8 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
     else:
         for n, c in _default_camera_cfgs(cameras, depth).items():
             scene_attrs[n] = c
+    for n, c in (extra_cameras or {}).items():  # L9 v2 world-fixed external cameras (ext9); None = unchanged
+        scene_attrs[n] = c
     @configclass
     class QddSceneCfg(InteractiveSceneCfg):
         pass
@@ -564,7 +566,7 @@ class Env:
     def __init__(self, seed: int, headless=True, cameras=DEFAULT_CAMERAS, arm="right", depth=True, sim_device="cpu",
                  variant="standard", decimation: int = 5, render_interval: int | None = None, task: str = "mug_tray",
                  hard_reset: bool = True, table_z: float | None = None, ws=None, lift: float | None = None,
-                 objset: str | None = None, robot: str | None = None):
+                 objset: str | None = None, robot: str | None = None, extra_cameras: dict | None = None):
         from . import randomize
         from .tasks import check_task
         if objset not in (None, "x"):
@@ -589,8 +591,12 @@ class Env:
         tz = TABLE_TOP_Z if table_z is None else float(table_z)
         _LAYOUT["table_z"] = tz  # randomize.write_distractor_poses reads it (distractors stand on this table)
         self.robot_name = robot  # L9 profile (None = the AI Worker)
+        ext = {"extra_cameras": dict(extra_cameras)} if extra_cameras else {}
         cfg, self.layout = _build_cfg(seed, cameras, arm, depth, sim_device, variant, decimation, render_interval,
-                                      task, tz, self.ws, self.lift, objset, **({"robot": robot} if robot else {}))
+                                      task, tz, self.ws, self.lift, objset, **({"robot": robot} if robot else {}),
+                                      **ext)
+        if ext:  # the hard reset keeps every camera's render product (callbacks muted for self.cameras)
+            self.cameras = cameras + tuple(extra_cameras)
         self.sim_device = cfg.sim.device
         _LAYOUT["layout"] = self.layout
         self.randomization = randomize.sample_randomization(seed, variant, self.layout, path=self.task_path())
@@ -912,7 +918,7 @@ def make_env(seed: int, headless: bool = True, cameras=DEFAULT_CAMERAS, arm: str
              sim_device: str = "cpu", variant: str = "standard", decimation: int = 5,
              render_interval: int | None = None, task: str = "mug_tray", hard_reset: bool = True,
              table_z: float | None = None, ws=None, lift: float | None = None,
-             objset: str | None = None, robot: str | None = None) -> Env:
+             objset: str | None = None, robot: str | None = None, extra_cameras: dict | None = None) -> Env:
     """cameras: names from KNOWN_CAMERAS (real robot cameras); () for no rendering.
     task: tasks.TASK_IDS (R2); the default is the original mug -> tray task with the standard layout.
     sim_device: 'cpu' (PhysX on CPU, default, canon §48) or 'cuda' (GPU PhysX, the v1 setting).
@@ -933,6 +939,8 @@ def make_env(seed: int, headless: bool = True, cameras=DEFAULT_CAMERAS, arm: str
     kw = {} if ws is None and lift is None and objset is None else {"ws": ws, "lift": lift, "objset": objset}
     if robot is not None:  # L9 robot profile (spec §9.1); None = the AI Worker (unchanged)
         kw = {"ws": ws, "lift": lift, "objset": objset, "robot": robot}
+    if extra_cameras:  # {scene name: CameraCfg} world-fixed extra cameras (L9 v2 ext9); None / {} = unchanged
+        kw = dict({"ws": ws, "lift": lift, "objset": objset}, **kw, extra_cameras=extra_cameras)
     return Env(seed, headless=headless, cameras=cameras, arm=arm, depth=depth, sim_device=sim_device, variant=variant,
                decimation=decimation, render_interval=render_interval, task=task, hard_reset=hard_reset,
                table_z=table_z, **kw)
