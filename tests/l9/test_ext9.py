@@ -270,3 +270,13 @@ def test_depth_mm_roundtrip(tmp_path):
 def test_external_answer_keeps_a_null_point():
     a = {"command": {"mode": "point", "point_2d": None, "height": "lift", "gripper": "keep"}}
     assert json.loads(E.external_answer(json.dumps(a), None)) == a
+
+
+def test_kind_shares_follow_kind_p():
+    """Valid-pose filtering must not skew the kinds (smoke s5: ceiling 549/600 when the kind was redrawn per sample)."""
+    from collections import Counter
+    table = {"pos": [0.65, -0.1, 0.39], "size": [0.6, 1.4, 0.78], "yaw": 0.0}
+    c = _ctx(boxes=[table])
+    k = Counter(E.draw(s, 0, c)["kind"] for s in range(400))
+    for kind, p in zip(E.KINDS, E.KIND_P):
+        assert abs(k[kind] / 400 - p) < 0.08, k

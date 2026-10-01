@@ -176,10 +176,19 @@ def sees(R, t, K, ctx: Ctx) -> bool:
 def draw(seed: int, attempt: int, ctx: Ctx, cam: int = 0, avoid=()) -> dict | None:
     """One external camera pose (meta pose_draw), or None when no valid pose was found in SUB_TRIES samples."""
     rng = np.random.default_rng([int(seed), 9431, int(cam), int(attempt)])
+    k0 = int(rng.choice(len(KINDS), p=KIND_P))  # the kind is drawn once (filtering must not skew the shares);
+    order = [KINDS[k0]] + [k for k in KINDS if k != KINDS[k0]]  # other kinds only when it has no valid pose
+    for kind in order:
+        d = _draw_kind(rng, kind, attempt, ctx, cam, avoid)
+        if d is not None:
+            return d
+    return None
+
+
+def _draw_kind(rng, kind: str, attempt: int, ctx: Ctx, cam: int, avoid) -> dict | None:
     ws = np.asarray(ctx.look_ws, float)
     rc = np.mean(np.asarray(ctx.robot_pts, float), axis=0)
     for sub in range(SUB_TRIES):
-        kind = KINDS[int(rng.choice(len(KINDS), p=KIND_P))]
         f = float(rng.uniform(*LOOK_TOWARD_ROBOT))
         look = ws + f * (rc - ws) + rng.uniform(-LOOK_JITTER, LOOK_JITTER, 3)
         az = float(rng.uniform(-180.0, 180.0))
