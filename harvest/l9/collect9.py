@@ -42,11 +42,12 @@ def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 20, world=None) ->
         except RuntimeError as ex:
             last = str(ex)
             continue
-        ep = T9.instantiate(d, sc, pool, sd, rmx, tries=20, fixed=row.get("fixed"))
+        ep = T9.instantiate(d, sc, pool, sd, rmx, tries=20, fixed=row.get("fixed"), grip_max=row.get("grip_max"),
+                            v2=bool(row.get("v2")))  # L9 v2 rows: robot max opening, step info (task9v2)
         if ep is None:
             last = "definition does not fit the scene"
             continue
-        T9.add_clutter(ep, sc, pool, sd, rmx)
+        T9.add_clutter(ep, sc, pool, sd, rmx, grip_max=row.get("grip_max"))
         light = V.pick_light_family(sd, row["family"])
         head = V.head_pose(sd)
         rp, hp = V.pose_key(sc["robot_pose"], head)
@@ -151,6 +152,10 @@ def run_episode(world, row: dict, out_dir: str, pool: dict, rm, ledger=None, p: 
                     instruction=ep["instruction"] + gv.get("instruction_suffix", ""))
     else:
         meta.update(gen_version="v1", label_origin="v1")
+    if ep.get("task_v2"):  # L9 v2 task fields (task9v2.finish): grasp-label scene constraints, place pose / height,
+        # done predicates, instruction variant, recovery tags
+        meta.update({k: ep.get(k) for k in ("step_info", "done", "instr_meta", "movable_containers", "start_poses",
+                                              "requires")})
     with open(os.path.join(out_dir, "meta.json"), "w") as f:
         json.dump(meta, f, default=_json_default)
     with open(os.path.join(out_dir, "episode9.json"), "w") as f:

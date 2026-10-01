@@ -46,6 +46,7 @@ class TaskDef:
     templates: tuple = ()
     judge: dict = field(default_factory=dict)  # extra L9 success rules (insert_upright tilt)
     needs: tuple = ()  # scene needs: "second" (another height), "higher" / "lower", "node:<kind>"
+    extra: dict = field(default_factory=dict)  # L9 v2 (task9v2): requires, place poses, recovery, start poses
 
 
 def _t(*xs):
@@ -551,7 +552,10 @@ GATE_DEFS = {"gate_move": TaskDef("gate_move", "gate", {"A": {"role": "target"}}
 
 
 def get_def(name: str) -> TaskDef:
-    return DEFS.get(name) or GATE_DEFS[name]
+    if name in DEFS or name in GATE_DEFS:
+        return DEFS.get(name) or GATE_DEFS[name]
+    from . import task9v2  # L9 v2 definitions (lazy: task9v2 imports this module)
+    return task9v2.DEFS_V2[name]
 FAMILIES = ("insert", "arrange", "stack", "sort", "put_in", "set", "clear", "relation", "height")
 
 
@@ -580,9 +584,10 @@ def kind_of(row: dict) -> str | None:
 
 
 FINGER_OPEN = 0.107  # open pad gap (scene.GRIP_MAX_W): the fingers must fit the opening, or stay above the rim
+GRIP_MARGIN = 0.014  # L9 v2: a mover's grasp width must be <= the robot's max opening - 1.4 cm (spec §9.2)
 
 
-def fits_into(obj: dict, cont: dict) -> bool:
+def fits_into(obj: dict, cont: dict, grip_max: float | None = None) -> bool:
     """onto: the footprint inside the top; into: the object passes the opening (6 mm each side) and the released
     fingers either fit inside the opening (open gap + 2 cm) or stay above the rim (grasp 1.8 cm below the object's
     top: rim depth <= object height - 3 cm)."""
@@ -595,7 +600,7 @@ def fits_into(obj: dict, cont: dict) -> bool:
     if 2 * float(obj["footprint_r"]) > op - 0.012:
         return False
     depth = float(ins.get("rim_z") or ins.get("inner_floor_z") or 0) - float(ins.get("inner_floor_z") or 0)
-    return op >= FINGER_OPEN + 0.02 or depth <= float(obj["height"]) - 0.03
+    return op >= (FINGER_OPEN if grip_max is None else float(grip_max)) + 0.02 or depth <= float(obj["height"]) - 0.03
 
 
 def is_slender(row: dict) -> bool:
@@ -610,18 +615,25 @@ FINGER_HALF_X = 0.0535 + 0.012 + 0.01  # open pad half-gap + finger thickness + 
 FINGER_HALF_Y = 0.02
 
 
-def finger_clear(d, f_other: float) -> bool:
+def finger_half_x(grip_max: float | None = None) -> float:
+    return FINGER_HALF_X if grip_max is None else float(grip_max) / 2 + 0.012 + 0.01
+
+
+def finger_clear(d, f_other: float, grip_max: float | None = None) -> bool:
     """The open fingers around a grasp / release point (offset d = point - other object's centre) miss an object of
     footprint radius f_other: apart in x by more than the finger reach, or in y by more than the finger half-width
     (pilot 3: 57 % of the failures tipped or knocked a neighbour at the approach)."""
-    return abs(float(d[0])) >= f_other + FINGER_HALF_X or abs(float(d[1])) >= f_other + FINGER_HALF_Y
+    return abs(float(d[0])) >= f_other + finger_half_x(grip_max) or abs(float(d[1])) >= f_other + FINGER_HALF_Y
 
 
 def rel_offset(rel: str, gap: float, fa: float, fr: float) -> np.ndarray:
     """World offset of a relational spot from its reference (robot's view: left = +y, front = -x)."""
     d = fa + fr + gap
     return {"left": np.array([0.0, d]), "right": np.array([0.0, -d]), "front": np.array([-d, 0.0]),
-            "behind": np.array([d, 0.0]), "front_left": np.array([-0.7 * d, 0.7 * d])}[rel]
+            "behind": np.array([d, 0.0]), "front_left": np.array([-0.7 * d, 0.7 * d]),
+            # L9 v2 diagonals
+            "front_right": np.array([-0.7 * d, -0.7 * d]), "behind_left": np.array([0.7 * d, 0.7 * d]),
+            "behind_right": np.array([0.7 * d, -0.7 * d])}[rel]
 
 
 def surf_name(node: dict) -> str:
@@ -637,6 +649,9 @@ def surf_name(node: dict) -> str:
 
 def deps(spec: dict) -> set:
     out = {spec[k] for k in ("other_colour", "same_colour", "decoy_of") if spec.get(k)}
+    out |= set(spec.get("other_colours", ()))  # L9 v2
+    if spec.get("beside"):  # L9 v2: placed next to a reference
+        out.add(spec["beside"]["ref"])
     on = str(spec.get("on", ""))
     if on.startswith(("stacked:", "on:")):
         out.add(on.split(":", 1)[1])
@@ -666,13 +681,16 @@ class Fail(Exception):
     pass
 
 
-def instantiate(defn: TaskDef, scene: dict, pool: dict, seed: int, rm, tries: int = 40, fixed: dict | None = None):
+def instantiate(defn: TaskDef, scene: dict, pool: dict, seed: int, rm, tries: int = 40, fixed: dict | None = None,
+                grip_max: float | None = None, v2: bool = False):
     """-> episode dict, or None when this scene / pool cannot host the definition (the caller redraws).
-    fixed: {object name: pool id} (the object gate)."""
+    fixed: {object name: pool id} (the object gate). L9 v2: grip_max = the robot profile's max opening (movers wider
+    than grip_max - GRIP_MARGIN are not drawn unless rim-grasped, finger clearances scale with it); v2 = add step
+    info / done predicates / instruction variants (task9v2.finish). The defaults keep v1 episodes unchanged."""
     for k in range(tries):
         rng = np.random.default_rng([int(seed), 911, k, int(hashlib.sha256(defn.id.encode()).hexdigest()[:6], 16)])
         try:
-            return _try(defn, scene, pool, rng, rm, fixed or {})
+            return _try(defn, scene, pool, rng, rm, fixed or {}, grip_max=grip_max, v2=v2, seed=seed)
         except Fail:
             continue
     return None
@@ -689,8 +707,10 @@ def _nodes(scene, rm):
     return out
 
 
-def _try(defn, scene, pool, rng, rm, fixed=None):
+def _try(defn, scene, pool, rng, rm, fixed=None, grip_max=None, v2=False, seed=0):
     fixed = fixed or {}
+    if v2:
+        from . import task9v2 as V2
     nodes = _nodes(scene, rm)
     flats = [v for v in nodes.values() if v[0]["kind"] in ("top", "zone", "seat")]
     if not flats:
@@ -736,7 +756,10 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
             nm = name_of(r)
             if not nm or any(clash(nm, u) for u in names_used):
                 continue
-            if role in ("target", "base") or spec.get("as_target"):
+            if spec.get("hollow"):  # L9 v2: a bowl / mug / cup moved by a rim / wall grasp (dynamic in the world)
+                if not V2.hollow_ok(r, spec):
+                    continue
+            elif role in ("target", "base") or spec.get("as_target"):
                 if r.get("role9") != "target":
                     continue
                 if role == "base" and not flat_top(r):
@@ -752,10 +775,15 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
                     continue
             if spec.get("cats") and r.get("l9cat") not in spec["cats"]:
                 continue
+            if v2 and not V2.spec_ok(r, spec, oname, defn, grip_max):
+                continue
             if spec.get("colour_named") and r.get("colour") not in ("red", "orange", "yellow", "green", "blue",
                                                                   "purple", "pink", "brown", "black", "white"):
                 continue
             if spec.get("colour_named") and r.get("colour") not in nm.split():
+                continue
+            if spec.get("other_colours") and any(r.get("colour") == pool[chosen[o]].get("colour")
+                                                 for o in spec["other_colours"]):  # L9 v2: differs from several
                 continue
             if spec.get("other_colour") and r.get("colour") == pool[chosen[spec["other_colour"]]].get("colour"):
                 continue
@@ -765,7 +793,7 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
                 ref = pool[chosen[spec["decoy_of"]]]
                 if r.get("colour") == ref.get("colour") or (role == "container" and kind_of(r) != kind_of(ref)):
                     continue
-            if role == "container" and any(chosen.get(a) is not None and not fits_into(pool[chosen[a]], r)
+            if role == "container" and any(chosen.get(a) is not None and not _fit(pool[chosen[a]], r, spec, grip_max)
                                            for a, dd in defn.steps if dd == oname):
                 continue
             if role == "base" and any(chosen.get(a) is not None
@@ -779,7 +807,7 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
                 if any(float(r[key]) < float(pool[x][key]) * 1.15 for x in lows):
                     continue
             for a, dname in defn.steps:  # the object must fit every container / base it goes to
-                if a == oname and dname in chosen and defn.objs.get(dname, {}).get("role") == "container"                         and not fits_into(r, pool[chosen[dname]]):
+                if a == oname and dname in chosen and defn.objs.get(dname, {}).get("role") == "container"                         and not _fit(r, pool[chosen[dname]], defn.objs[dname], grip_max):
                     break
                 if a == oname and dname in chosen and defn.objs.get(dname, {}).get("role") == "base"                         and float(r["footprint_r"]) > float(pool[chosen[dname]]["footprint_r"]) * 1.3:
                     break
@@ -807,7 +835,7 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
     # fit checks for into / onto steps
     for a, d in defn.steps:
         if d in defn.objs and defn.objs[d]["role"] == "container":
-            if not fits_into(pool[chosen[a]], pool[chosen[d]]):
+            if not _fit(pool[chosen[a]], pool[chosen[d]], defn.objs[d], grip_max):
                 raise Fail("does not fit")
         if d in defn.objs and defn.objs[d]["role"] == "base":
             if float(pool[chosen[a]]["footprint_r"]) > float(pool[chosen[d]]["footprint_r"]) * 1.3:
@@ -835,7 +863,7 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
             base = fr + f + 0.02
             if np.hypot(*d) < base:
                 return False
-            if (t or target) and not finger_clear(d, f if target else fr):
+            if (t or target) and not finger_clear(d, f if target else fr, grip_max):
                 return False
         return True
 
@@ -866,6 +894,20 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
             ep["objects"][k] = {"xy": list(hx["xy"]), "node": hx["node"], "support": hk, "fr": fr}
             return
         node, pts, vis = node_for(spec)
+        if spec.get("beside"):  # L9 v2: next to a reference with a gap that just fits the mover (narrow gaps)
+            bs = spec["beside"]
+            ref = ep["objects"][chosen[bs["ref"]]]
+            fa = float(pool[chosen[bs["room_for"]]]["footprint_r"]) if bs.get("room_for") else 0.0
+            gap = 2 * fa + float(rng.uniform(*bs.get("gap", (0.06, 0.08))))
+            for sgn in rng.permutation([-1.0, 1.0]):
+                xy = np.asarray(ref["xy"], float) + np.array([0.0, sgn * (ref["fr"] + fr + gap)])
+                seen = len(vis) and float(np.min(np.hypot(*(np.asarray(vis) - xy).T))) <= 0.015
+                if seen and inside(node, xy, fr) and free(xy, fr, tgt):
+                    placed.append((xy, fr, tgt))
+                    ep["objects"][k] = {"xy": [round(float(xy[0]), 4), round(float(xy[1]), 4)], "node": node["id"],
+                                        "fr": fr}
+                    return
+            raise Fail(f"no room beside {bs['ref']}")
         movers = {a for a, _ in defn.steps}
         dests = {d for _, d in defn.steps}
         refs = {sp.get("ref") for sp in defn.dst.values()} | {x for sp in defn.dst.values() for x in sp.get("between", ())}
@@ -903,7 +945,7 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
         ex = [(np.asarray(v["xy"]), v["fr"], False) for kk, v in ep["objects"].items() if kk in movers]
         others = [(p, f, t) for (p, f, t) in placed if not any(np.allclose(p, e[0]) for e in ex)]
         for (p, f, t) in others:
-            if np.hypot(*(np.asarray(xy) - p)) < fr + f + 0.02 or not finger_clear(np.asarray(xy) - p, f):
+            if np.hypot(*(np.asarray(xy) - p)) < fr + f + 0.02 or not finger_clear(np.asarray(xy) - p, f, grip_max):
                 return False
         for q in spots.values():
             if np.hypot(*(np.asarray(xy) - np.asarray(q["xy"]))) < 2 * SPOT_R + 0.02:
@@ -948,7 +990,10 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
             elif "corner" in spec:
                 P = main_pts
                 sc = {"front_left": P[:, 1] - P[:, 0], "back_right": P[:, 0] - P[:, 1], "front_right": -P[:, 1] - P[:, 0],
-                      "back_left": P[:, 0] + P[:, 1], "centre": None}[spec["corner"]]
+                      "back_left": P[:, 0] + P[:, 1], "centre": None,
+                      # L9 v2 edges: nearest to the robot / deepest (counter backs) / left / right
+                      "front_edge": -P[:, 0], "deep_back": P[:, 0], "left_edge": P[:, 1], "right_edge": -P[:, 1]
+                      }[spec["corner"]]
                 if sc is None:
                     xy = P.mean(axis=0)
                     xy = P[np.argmin(np.hypot(*(P - xy).T))]
@@ -1075,7 +1120,17 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
     for d, v in spots.items():
         v["rule_text"] = ("at the spot the instruction describes on the " + fmt["Msurf"] +
                           f" (its centre within {SPOT_R * 100:.0f} cm of that point, standing on the surface)")
+    if v2:
+        V2.finish(defn, ep, dict(chosen=chosen, pool=pool, nodes=nodes, main=main[0], spots=spots, surfs=surfs,
+                                 sid=sid, vid=vid, grip_max=grip_max, seed=int(seed), scene=scene, fmt=fmt))
     return ep
+
+
+def _fit(obj: dict, cont: dict, cont_spec: dict, grip_max=None) -> bool:
+    """fits_into, or (L9 v2 `nest`) a bowl / cup nesting into one of the same kind that is not smaller."""
+    if cont_spec.get("nest"):
+        return obj.get("l9cat") == cont.get("l9cat") and float(obj["footprint_r"]) <= float(cont["footprint_r"]) + 0.01
+    return fits_into(obj, cont, grip_max)
 
 
 def definition_count() -> dict:
@@ -1083,7 +1138,7 @@ def definition_count() -> dict:
     return dict(Counter(d.family for d in DEFS.values()))
 
 
-def add_clutter(ep: dict, scene: dict, pool: dict, seed: int, rm, n_range=(2, 6)) -> dict:
+def add_clutter(ep: dict, scene: dict, pool: dict, seed: int, rm, n_range=(2, 6), grip_max=None) -> dict:
     """Distractors (pool clutter + unused targets) on visible free points of the flat nodes, clear of every task
     object, spot and surface destination (>= footprints + 3 cm); names never clash with the task objects'.
     -> {id: {xy, node, fr, yaw}} (also stored in ep["clutter"])."""
@@ -1116,7 +1171,7 @@ def add_clutter(ep: dict, scene: dict, pool: dict, seed: int, rm, n_range=(2, 6)
             (x0, x1), (y0, y1) = node["box"]
             if not (x0 + fr <= s[0] <= x1 - fr and y0 + fr <= s[1] <= y1 - fr):
                 continue
-            if all(np.hypot(*(xy - p)) >= fr + f + 0.03 and finger_clear(xy - p, fr)
+            if all(np.hypot(*(xy - p)) >= fr + f + 0.03 and finger_clear(xy - p, fr, grip_max)
                    for p, f in busy):
                 out[k] = {"xy": [round(float(xy[0]), 4), round(float(xy[1]), 4)], "node": node["id"], "fr": fr,
                           "yaw": round(float(rng.uniform(-math.pi, math.pi)), 4)}

@@ -2,6 +2,7 @@
 usage: python tools/l9/plan.py pilot  <out dir> <lanes> [--per 10] [--start 900000] [--job-size 12] [--pod DIR]
        python tools/l9/plan.py prod   <out dir> <lanes> --n N [--start 1000000] [--job-size 30] [--exclude pilot_gate.json]
        python tools/l9/plan.py smoke  <out dir> 1
+       python tools/l9/plan.py v2     <out dir> <lanes> [--total 15000] [--caps ...] [--defs gate.json] (see plan_v2)
 Rows {seed, arm, family, rule, def, split, job, pool, rooms, style}. Each definition runs only on the (family, rule)
 pairs whose scene features meet its needs (compat()); arms alternate within a definition (50 / 50); families and
 layout rules are dealt round-robin (stratified). A job = up to job-size rows of one arm; every job gets its own pool
@@ -160,7 +161,43 @@ def main():
         ch = jobs(rows, arg("--job-size", 30), arg("--pool0", 1000))
         print(json.dumps(write(out, rows, ch, lanes, "plan_prod.json", pod)))
         return
+    if mode == "v2":  # L9 v2: 4 robots x task9v2 definitions (harvest/l9/alloc9.py), successes -> rows by yield
+        print(json.dumps(plan_v2(out, lanes, arg, ft, pod)))
+        return
     raise SystemExit(__doc__)
+
+
+def plan_v2(out: str, lanes: int, arg, ft: dict, pod: str) -> dict:
+    """--total 15000 --min-per-def 60 --caps a,b (task9v2.CAPS_ALL available) --defs gate.json (its "pass" list)
+    --yields g1.json (definitions.<id>.yield) --exclude ex.json ([[robot, def], ...]) --no-holdout --start 3000000
+    --job-size 30 --pool0 3000. Writes plan_v2.json, jobs_<k>.txt and alloc_v2.json (allocation, held-out
+    definitions, definitions without a compatible scene)."""
+    from harvest.l9 import alloc9 as AL
+    from harvest.l9 import task9v2 as V2
+    caps = [c for c in arg("--caps", "").split(",") if c]
+    use = V2.defs_for(caps)
+    if "--defs" in sys.argv:
+        keep = set(json.load(open(arg("--defs", "")))["pass"])
+        use = {k: d for k, d in use.items() if k in keep}
+    pairs = {k: [fr for fr in S9.all_rules() if compat(d, ft[fr])] for k, d in use.items()}
+    unhosted = sorted(k for k, p in pairs.items() if not p)
+    defmap = {k: d.family for k, d in use.items() if pairs[k]}
+    holdout = [] if "--no-holdout" in sys.argv else AL.holdout_defs(defmap)
+    exclude = {tuple(x) for x in json.load(open(arg("--exclude", "")))} if "--exclude" in sys.argv else set()
+    yields = {}
+    if "--yields" in sys.argv:
+        yields = {k: v["yield"] for k, v in json.load(open(arg("--yields", "")))["definitions"].items()
+                  if v.get("n", 0) >= 8}
+    al = AL.allocate(defmap, arg("--total", 15000), arg("--min-per-def", 60), exclude=exclude, holdout=holdout)
+    rows = AL.plan_rows(al, pairs, arg("--start", 3000000), yields, holdout)
+    ch = AL.jobs_v2(rows, arg("--job-size", 30), arg("--pool0", 3000))
+    os.makedirs(out, exist_ok=True)
+    json.dump({"alloc": al, "holdout": holdout, "caps": caps, "unhosted": unhosted, "robot_share": AL.ROBOT_SHARE,
+               "total": arg("--total", 15000), "min_per_def": arg("--min-per-def", 60)},
+              open(os.path.join(out, "alloc_v2.json"), "w"), indent=1)
+    res = write(out, rows, ch, lanes, "plan_v2.json", pod)
+    res.update(defs=len(defmap), holdout=len(holdout), unhosted=len(unhosted))
+    return res
 
 
 if __name__ == "__main__":
