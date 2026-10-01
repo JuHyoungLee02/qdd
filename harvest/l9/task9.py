@@ -97,7 +97,7 @@ def _defs():
                          "Move the {A} from the {P0} into the {V}.", "Put the {A} that is on the {P0} into the {V}.",
                          "Get the {A} from the {P0}; insert it into the {V}.", "The {A} on the {P0} goes into the {V}."),
         dst={"V": HV}, judge=up, needs=("node:slot",))
-    add("ins_jar", "insert", {"A": SL, "H": {"role": "container", "kind": "wide", "cats": ("jar", "vase", "mug", "cup")}},
+    add("ins_jar", "insert", {"A": SL, "H": {"role": "container", "kind": "wide", "cats": ("jar", "vase", "mug", "cup", "bin")}},
         [("A", "H")], _t("Put the {A} into the {H}.", "Stand the {A} up in the {H}.", "Insert the {A} into the {H}.",
                          "Place the {A} upright inside the {H}.", "The {A} goes into the {H}."),
         judge={"upright_max_deg": 30.0})
@@ -813,7 +813,7 @@ def _try(defn, scene, pool, rng, rm, fixed=None):
     def inside(node, xy, fr):
         s = S9.s_of(xy, scene["yaw"])
         (x0, x1), (y0, y1) = node["box"]
-        m = max(fr * 0.8, 0.02)
+        m = 0.015 if node["kind"] == "stand" else max(fr * 0.8, 0.02)
         return x0 + m <= s[0] <= x1 - m and y0 + m <= s[1] <= y1 - m
 
     def place_obj(on, spec):

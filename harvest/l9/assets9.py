@@ -83,14 +83,19 @@ def containers(split: str = "train") -> dict:
 def pool_quota() -> dict:
     """Pool make-up per process: (role9, bucket) -> count."""
     return {("target", "slender"): 6, ("target", "food"): 5, ("target", "toyish"): 5, ("target", "drink"): 3,
-            ("target", "base"): 5, ("target", "any"): 4, ("container", "narrow"): 3, ("container", "wide"): 4,
-            ("container", "flat"): 3, ("clutter", "any"): 8}
+            ("target", "base"): 5, ("target", "any"): 4, ("container", "narrow"): 4, ("container", "wide_bowl"): 4,
+            ("container", "wide_bin"): 4, ("container", "wide_other"): 3,
+            ("container", "flat"): 5, ("clutter", "any"): 8}  # G1 re-pilot: "no pool object" was the main draw failure
 
 
 def bucket_of(r: dict) -> tuple:
     from .task9 import DRINK, FOOD, TOYISH, flat_top, is_slender, kind_of
     if r["role9"] == "container":
-        return ("container", kind_of(r))
+        k = kind_of(r)
+        if k == "wide":  # category-balanced: bowls dominate the catalog (204 of 298)
+            c = r.get("l9cat")
+            return ("container", "wide_bowl" if c == "bowl" else "wide_bin" if c in ("bin", "basket", "box") else "wide_other")
+        return ("container", k)
     if r["role9"] == "clutter":
         return ("clutter", "any")
     if is_slender(r):
@@ -138,7 +143,7 @@ def bucket_sizes(split: str = "train") -> dict:
     return dict(Counter(bucket_of(r) for r in catalog(split).values()))
 
 
-CONTAINER_R_MAX = {"narrow": 0.090, "wide": 0.120, "flat": 0.100}  # footprint radius after rescaling (work band)
+CONTAINER_R_MAX = {"narrow": 0.090, "wide": 0.120, "flat": 0.110}  # footprint radius after rescaling (work band)
 _LEN = ("half_extents", "size", "footprint_r", "root_above_bottom", "centre_from_root_xy", "height", "grasp_width",
         "length", "inner_floor_z", "rim_z", "opening_min_side", "opening_box", "inner_box", "depth", "bottom_z",
         "centre_xy", "caliper_centre", "origin_from_root")

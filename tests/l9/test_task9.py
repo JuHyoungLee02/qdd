@@ -33,14 +33,14 @@ def test_licences_and_pools():
     p0, p1 = A9.pool_for(0), A9.pool_for(1)
     assert p0 == A9.pool_for(0) and set(p0) != set(p1)
     b = Counter(A9.bucket_of(r) for r in p0.values())
-    assert b[("container", "wide")] >= 3 and b[("target", "slender")] >= 3
+    assert b[("container", "wide_bowl")] >= 3 and b[("container", "wide_bin")] >= 3 and b[("target", "slender")] >= 3
     assert all(r["footprint_r"] <= A9.CONTAINER_R_MAX[T9.kind_of(r)] + 1e-6 for r in p0.values() if r["role9"] == "container")
 
 
 def test_instantiate_objects_clear_and_named(rm):
     d = T9.DEFS["line2_y"]
     got = 0
-    for s in range(12):
+    for s in range(24):
         sc = S9.sample("workbench", "crates", s, ("right", "left")[s % 2], rm)
         ep = T9.instantiate(d, sc, A9.pool_for(s), s, rm, tries=20)
         if ep is None:

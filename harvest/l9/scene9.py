@@ -661,6 +661,8 @@ def node_points(node: dict, yaw: float, step: float = 0.02, margin: float = EDGE
     """World grid points (step) inside the node box shrunk by margin (containers: the finger keep-out from the
     walls) -> (world pts [N, 2], S pts [N, 2])."""
     (x0, x1), (y0, y1) = node["box"]
+    if node["kind"] == "stand":  # small blocks: their centre area (objects may overhang, centre on the block)
+        margin, step = 0.015, 0.015
     mx, my = (FINGER_X, FINGER_Y) if node.get("rim_z") is not None else (margin, margin)
     xs = np.arange(x0 + mx, x1 - mx + 1e-9, step)
     ys = np.arange(y0 + my, y1 - my + 1e-9, step)
