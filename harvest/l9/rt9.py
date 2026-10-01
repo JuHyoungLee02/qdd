@@ -522,6 +522,9 @@ class Runtime:
             T_obj = T_of(*self.w.env.object_pose(tg))
             self.held = {"T_obj_G": P9.inv_T(T_obj) @ self.tcp_T()}
             self.held["yaw_delta"] = self._place_yaw(st, info, table_z, gc)
+        elif hold:  # re-measure the grip every call: objects turn in the hand while carried (pilot 10-02: a can held
+            T_obj = T_of(*self.w.env.object_pose(tg))  # from the front turned about the closing axis and the put pose
+            self.held["T_obj_G"] = P9.inv_T(T_obj) @ self.tcp_T()  # from the lift-time grip tipped it over)
         if not hold:
             self.held = None
         step, cmd = VP.plan(self.status2(st), info, table_z, w_open, gc, self.held)
