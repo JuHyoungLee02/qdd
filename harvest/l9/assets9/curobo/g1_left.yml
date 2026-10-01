@@ -1,0 +1,647 @@
+# L9 v2 cuRobo v0.8.0 config: g1 left arm (tools/l9/v2robot/build_curobo9.py)
+# base torso_link, tool frame left_l9_tcp = executor TCP (pad centre, z = -approach, y = closing axis); gripper locked open
+robot_cfg:
+  kinematics:
+    format_version: 2.0
+    base_link: torso_link
+    tool_frames: [left_l9_tcp]
+    urdf_path: /data/harvest/assets_l9v2/robots/g1/g1_l9v2.urdf
+    asset_root_path: /data/harvest/assets_l9v2/robots/g1
+    collision_link_names: [head_link, left_elbow_link, left_hand_index_0_link, left_hand_index_1_link,
+      left_hand_middle_0_link, left_hand_middle_1_link, left_hand_palm_link, left_hand_thumb_0_link,
+      left_hand_thumb_1_link, left_hand_thumb_2_link, left_shoulder_pitch_link, left_shoulder_roll_link,
+      left_shoulder_yaw_link, left_wrist_pitch_link, left_wrist_roll_link, left_wrist_yaw_link,
+      logo_link, right_elbow_link, right_hand_index_0_link, right_hand_index_1_link,
+      right_hand_middle_0_link, right_hand_middle_1_link, right_hand_palm_link, right_hand_thumb_0_link,
+      right_hand_thumb_1_link, right_hand_thumb_2_link, right_shoulder_pitch_link,
+      right_shoulder_roll_link, right_shoulder_yaw_link, right_wrist_pitch_link, right_wrist_roll_link,
+      right_wrist_yaw_link, torso_link, attached_object]
+    collision_spheres:
+      head_link:
+      - center: [-0.00619, 0.00058, 0.46294]
+        radius: 0.06675
+      - center: [-0.02134, -0.01752, 0.4092]
+        radius: 0.04913
+      - center: [-0.03149, 0.00324, 0.49614]
+        radius: 0.02007
+      - center: [-0.02477, 0.02664, 0.41333]
+        radius: 0.03913
+      - center: [0.01536, -0.00077, 0.47096]
+        radius: 0.06455
+      - center: [0.02167, -0.02629, 0.42227]
+        radius: 0.04
+      - center: [-0.02093, 0.02874, 0.36313]
+        radius: 0.04626
+      - center: [-0.0198, -0.03068, 0.36384]
+        radius: 0.04702
+      - center: [0.01881, 0.02376, 0.41556]
+        radius: 0.04476
+      - center: [0.01302, -0.02724, 0.3874]
+        radius: 0.04381
+      - center: [-0.05503, 0.02136, 0.33904]
+        radius: 0.00585
+      - center: [-0.03503, -0.03021, 0.40777]
+        radius: 0.02762
+      - center: [0.02556, 0.00112, 0.3513]
+        radius: 0.03203
+      - center: [0.01583, -0.04532, 0.35364]
+        radius: 0.03475
+      - center: [0.01165, 0.03893, 0.35918]
+        radius: 0.04053
+      - center: [0.04471, 0.00142, 0.38794]
+        radius: 0.01586
+      - center: [-0.0144, -0.06498, 0.3424]
+        radius: 0.01346
+      - center: [0.05533, -0.03025, 0.49518]
+        radius: 0.01056
+      - center: [0.04101, -0.02601, 0.50287]
+        radius: 0.00735
+      - center: [0.04383, -0.01971, 0.33223]
+        radius: 0.00307
+      - center: [0.03915, -0.02441, 0.33773]
+        radius: 0.01112
+      - center: [0.03151, 0.0429, 0.39188]
+        radius: 0.01991
+      - center: [0.00212, 0.07038, 0.33684]
+        radius: 0.00732
+      - center: [-0.05391, 0.00497, 0.37233]
+        radius: 0.00886
+      - center: [-0.01127, 0.07175, 0.33658]
+        radius: 0.00388
+      - center: [-0.03612, -0.02332, 0.33096]
+        radius: 0.00575
+      - center: [-0.04621, -0.00348, 0.33472]
+        radius: 0.0123
+      - center: [-0.02419, 0.06532, 0.34097]
+        radius: 0.0101
+      - center: [-0.04038, -0.05655, 0.33709]
+        radius: 0.00953
+      - center: [0.04026, 0.02954, 0.33124]
+        radius: 0.00591
+      left_elbow_link:
+      - center: [0.06535, 0.00175, -0.00985]
+        radius: 0.04256
+      - center: [0.02563, 0.01404, 0.00683]
+        radius: 0.02255
+      - center: [0.0195, 0.01621, -0.01623]
+        radius: 0.024
+      - center: [-0.01106, 0.0226, -0.00463]
+        radius: 0.01798
+      - center: [-0.00485, 0.02208, 0.0141]
+        radius: 0.01514
+      left_hand_index_0_link:
+      - center: [0.04138, 0.00012, 0.00048]
+        radius: 0.01764
+      - center: [0.02069, -0.00021, -0.00059]
+        radius: 0.01734
+      - center: [0.00405, 0.00064, 0.0011]
+        radius: 0.0143
+      left_hand_index_1_link:
+      - center: [0.03523, 0.00023, 0.00035]
+        radius: 0.01534
+      - center: [0.00901, 0.00067, -0.0006]
+        radius: 0.01696
+      left_hand_middle_0_link:
+      - center: [0.03896, 0.0004, -0.00105]
+        radius: 0.01985
+      - center: [0.01133, 5.0e-05, 0.00044]
+        radius: 0.01905
+      left_hand_middle_1_link:
+      - center: [0.03951, -1.0e-05, 0.00015]
+        radius: 0.01193
+      - center: [0.02117, 0.00068, 0.00024]
+        radius: 0.01508
+      - center: [0.0044, 0.00166, -0.00022]
+        radius: 0.01438
+      left_hand_palm_link:
+      - center: [0.06697, 0.00241, 0.02186]
+        radius: 0.02437
+      - center: [0.04193, -0.00252, -0.02269]
+        radius: 0.02109
+      - center: [0.04181, -4.0e-05, 0.02064]
+        radius: 0.02378
+      - center: [0.04584, -0.01586, 0.01031]
+        radius: 0.00338
+      - center: [0.02286, 0.0008, -0.00699]
+        radius: 0.0275
+      - center: [0.01875, 0.00063, 0.0117]
+        radius: 0.02421
+      - center: [0.07209, 0.01569, 0.01149]
+        radius: 0.00606
+      - center: [0.06654, 0.00072, -0.01824]
+        radius: 0.02813
+      - center: [0.04922, -0.00523, 0.02736]
+        radius: 0.01271
+      left_hand_thumb_0_link:
+      - center: [-0.00208, -0.01424, -0.00157]
+        radius: 0.018
+      - center: [0.00259, -0.02156, -0.00812]
+        radius: 0.00123
+      - center: [-0.00942, -0.01071, -0.00891]
+        radius: 0.00148
+      left_hand_thumb_1_link:
+      - center: [-0.00113, -0.03638, -0.00081]
+        radius: 0.02087
+      - center: [-0.00017, -0.01112, -0.00099]
+        radius: 0.01856
+      left_hand_thumb_2_link:
+      - center: [0.00191, -0.02225, -0.00749]
+        radius: 0.00632
+      - center: [-0.00067, -0.03601, 0.00187]
+        radius: 0.01529
+      - center: [-0.00014, -0.00823, 0.00092]
+        radius: 0.01702
+      left_shoulder_pitch_link:
+      - center: [-0.00022, 0.03671, -0.01301]
+        radius: 0.04498
+      - center: [-0.00176, 0.00665, 0.03469]
+        radius: 0.00538
+      - center: [-0.01518, 0.01431, 0.02085]
+        radius: 0.01745
+      - center: [0.01527, 0.01391, 0.01894]
+        radius: 0.01836
+      left_shoulder_roll_link:
+      - center: [-0.00012, 0.00247, -0.00299]
+        radius: 0.04705
+      - center: [0.00148, 0.0061, -0.04128]
+        radius: 0.04014
+      - center: [-0.00021, 0.00709, -0.07505]
+        radius: 0.03382
+      left_shoulder_yaw_link:
+      - center: [0.01368, -0.0076, -0.07909]
+        radius: 0.04189
+      - center: [0.00093, 1.0e-05, -4.0e-05]
+        radius: 0.04188
+      - center: [0.0077, -0.00534, -0.04503]
+        radius: 0.04139
+      left_wrist_pitch_link:
+      - center: [0.00227, -0.00095, 0.00048]
+        radius: 0.03426
+      - center: [0.04312, 0.00044, -0.00071]
+        radius: 0.03399
+      left_wrist_roll_link:
+      - center: [0.03889, -0.01263, -0.00045]
+        radius: 0.02015
+      - center: [0.01638, -0.01055, 0.00907]
+        radius: 0.02289
+      - center: [0.01614, -0.01114, -0.01235]
+        radius: 0.02062
+      - center: [0.01105, 0.01948, 0.00272]
+        radius: 0.01328
+      - center: [0.03525, 0.01078, -7.0e-05]
+        radius: 0.02307
+      - center: [0.01238, 0.01137, -0.01418]
+        radius: 0.01751
+      - center: [0.01068, 0.01117, 0.01573]
+        radius: 0.01422
+      left_wrist_yaw_link:
+      - center: [0.03018, -0.00072, -0.02016]
+        radius: 0.01201
+      - center: [0.01923, 0.00213, -0.00051]
+        radius: 0.03337
+      - center: [-0.00281, 0.00114, -0.01462]
+        radius: 0.01868
+      - center: [-0.00334, -0.00126, 0.01454]
+        radius: 0.01745
+      logo_link:
+      - center: [0.02743, -0.02255, 0.27174]
+        radius: 0.01537
+      - center: [-0.01692, -0.01665, 0.2715]
+        radius: 0.01524
+      - center: [0.02909, 0.00126, 0.27152]
+        radius: 0.01949
+      - center: [-0.04634, -0.0332, 0.2715]
+        radius: 0.01233
+      - center: [0.05795, 0.02642, 0.27075]
+        radius: 0.01632
+      - center: [-0.05706, -0.0062, 0.27113]
+        radius: 0.01856
+      - center: [-0.05736, 0.02133, 0.27132]
+        radius: 0.01994
+      - center: [0.00536, -0.0348, 0.27149]
+        radius: 0.01498
+      - center: [-0.00756, 0.00359, 0.27742]
+        radius: 0.00943
+      - center: [-0.02829, 0.03502, 0.27235]
+        radius: 0.01814
+      - center: [-0.05821, 0.04455, 0.27178]
+        radius: 0.01569
+      - center: [-0.03292, -0.02096, 0.27095]
+        radius: 0.01525
+      - center: [0.00658, -0.01008, 0.27119]
+        radius: 0.01587
+      - center: [-0.02921, 0.0059, 0.27177]
+        radius: 0.01804
+      - center: [-0.0599, -0.0244, 0.27115]
+        radius: 0.01424
+      - center: [0.05599, -0.05356, 0.27166]
+        radius: 0.01658
+      - center: [-0.00638, 0.04917, 0.27156]
+        radius: 0.01205
+      - center: [-0.0006, 0.01874, 0.27119]
+        radius: 0.01626
+      - center: [-0.02852, -0.0461, 0.27158]
+        radius: 0.01168
+      - center: [0.02803, -0.04159, 0.27174]
+        radius: 0.01415
+      - center: [0.01468, -0.06136, 0.27164]
+        radius: 0.01231
+      - center: [0.0613, 0.00278, 0.27132]
+        radius: 0.01648
+      - center: [-0.00554, -0.06213, 0.27187]
+        radius: 0.0116
+      - center: [0.01464, 0.04251, 0.27092]
+        radius: 0.01317
+      - center: [-0.01062, -0.03919, 0.27118]
+        radius: 0.01353
+      - center: [-0.02451, -0.06158, 0.27183]
+        radius: 0.01142
+      - center: [0.03127, 0.02528, 0.27203]
+        radius: 0.01429
+      - center: [0.02828, 0.06077, 0.27137]
+        radius: 0.01069
+      - center: [-0.04236, -0.06232, 0.27178]
+        radius: 0.01139
+      - center: [-0.06053, -0.0468, 0.27179]
+        radius: 0.01207
+      - center: [0.04248, 0.06006, 0.27134]
+        radius: 0.00973
+      - center: [-0.06078, -0.06387, 0.27288]
+        radius: 0.01151
+      - center: [-0.04346, -0.04911, 0.27799]
+        radius: 0.00439
+      - center: [0.05952, 0.059, 0.27117]
+        radius: 0.01055
+      - center: [-0.05736, 0.06218, 0.27131]
+        radius: 0.01329
+      - center: [-0.04438, -0.04378, 0.26562]
+        radius: 0.00524
+      - center: [0.05781, -0.02517, 0.27152]
+        radius: 0.02132
+      - center: [-0.01207, 0.06301, 0.27122]
+        radius: 0.0116
+      - center: [0.03568, 0.04157, 0.27183]
+        radius: 0.0133
+      - center: [-0.03501, 0.06, 0.27181]
+        radius: 0.01433
+      - center: [0.0617, 0.04582, 0.2703]
+        radius: 0.01214
+      - center: [0.00881, 0.06154, 0.2717]
+        radius: 0.01088
+      - center: [0.03329, -0.0619, 0.27113]
+        radius: 0.01042
+      right_elbow_link:
+      - center: [0.06582, -0.00208, -0.01078]
+        radius: 0.04185
+      - center: [0.02649, -0.0143, -0.01726]
+        radius: 0.0232
+      - center: [0.02274, -0.01423, 0.00609]
+        radius: 0.02479
+      - center: [-0.00464, -0.0222, 0.0135]
+        radius: 0.01392
+      - center: [-0.00368, -0.02143, -0.01409]
+        radius: 0.01733
+      - center: [-0.02134, -0.02448, -9.0e-05]
+        radius: 0.00787
+      right_hand_index_0_link:
+      - center: [0.0392, -0.00038, -0.00084]
+        radius: 0.01893
+      - center: [0.01246, 0.00055, -0.00073]
+        radius: 0.01903
+      right_hand_index_1_link:
+      - center: [0.02448, 0.00037, 0.00043]
+        radius: 0.0144
+      - center: [0.04055, -0.00098, -0.00056]
+        radius: 0.01127
+      - center: [0.00513, 0.00012, 0.00028]
+        radius: 0.0148
+      right_hand_middle_0_link:
+      - center: [0.00912, -0.00073, -0.00091]
+        radius: 0.02009
+      - center: [0.03998, -0.00194, -0.00297]
+        radius: 0.02019
+      right_hand_middle_1_link:
+      - center: [0.04046, 0.00018, -0.00045]
+        radius: 0.01149
+      - center: [0.02275, 0.00012, -8.0e-05]
+        radius: 0.01462
+      - center: [0.00342, 0.001, 0.00041]
+        radius: 0.01465
+      right_hand_palm_link:
+      - center: [0.02437, -0.00089, 0.01192]
+        radius: 0.0271
+      - center: [0.06684, -0.00267, -0.00072]
+        radius: 0.02218
+      - center: [0.01798, -0.00213, -0.00981]
+        radius: 0.02413
+      - center: [0.04431, -0.00093, -0.01884]
+        radius: 0.02638
+      - center: [0.0601, -0.00093, 0.0237]
+        radius: 0.02751
+      - center: [0.06818, -0.00083, -0.02402]
+        radius: 0.0221
+      right_hand_thumb_0_link:
+      - center: [-0.00025, 0.01307, 0.00137]
+        radius: 0.01638
+      - center: [0.00554, 0.02737, -0.00961]
+        radius: 0.00087
+      - center: [-0.00792, 0.0008, -0.00285]
+        radius: 0.00195
+      right_hand_thumb_1_link:
+      - center: [0.00129, 0.04009, -0.00041]
+        radius: 0.01938
+      - center: [-0.00193, 0.01089, 0.00163]
+        radius: 0.01758
+      right_hand_thumb_2_link:
+      - center: [0.0002, 0.0357, 0.00034]
+        radius: 0.01478
+      - center: [-0.00073, 0.0091, -0.00034]
+        radius: 0.01717
+      right_shoulder_pitch_link:
+      - center: [-0.0005, -0.03327, -0.0064]
+        radius: 0.04923
+      - center: [0.0261, -0.01318, 0.02381]
+        radius: 0.00188
+      - center: [-0.02234, -0.00893, 0.03203]
+        radius: 0.00355
+      right_shoulder_roll_link:
+      - center: [-0.00822, -0.00198, -0.00167]
+        radius: 0.04154
+      - center: [0.01068, -0.00139, -0.00019]
+        radius: 0.03944
+      - center: [0.00023, -0.00515, -0.03742]
+        radius: 0.04027
+      - center: [0.00048, -0.00719, -0.07378]
+        radius: 0.03553
+      right_shoulder_yaw_link:
+      - center: [0.01219, 0.00709, -0.07728]
+        radius: 0.04342
+      - center: [-0.00053, 0.00027, 0.00152]
+        radius: 0.04029
+      - center: [0.00747, 0.00518, -0.04275]
+        radius: 0.04068
+      right_wrist_pitch_link:
+      - center: [0.04313, 0.00073, -0.0009]
+        radius: 0.03373
+      - center: [0.00235, 0.00137, -0.00038]
+        radius: 0.03363
+      right_wrist_roll_link:
+      - center: [0.02325, -0.00104, -0.00074]
+        radius: 0.03636
+      - center: [0.05312, 0.02333, -0.00339]
+        radius: 0.00324
+      right_wrist_yaw_link:
+      - center: [-0.00224, 0.00133, 0.01226]
+        radius: 0.01818
+      - center: [0.01798, -0.00076, -0.00025]
+        radius: 0.0327
+      - center: [-0.00242, -0.00292, -0.0142]
+        radius: 0.01841
+      torso_link:
+      - center: [-0.02742, 0.00416, 0.18667]
+        radius: 0.03921
+      - center: [-0.02251, -0.06377, 0.20372]
+        radius: 0.0531
+      - center: [-0.01247, 0.05312, 0.18834]
+        radius: 0.05646
+      - center: [0.01689, 0.02071, 0.21256]
+        radius: 0.05477
+      - center: [0.02915, 0.01708, 0.1848]
+        radius: 0.05301
+      - center: [-0.00132, 0.03987, 0.24149]
+        radius: 0.08015
+      - center: [0.0045, -0.03745, 0.23105]
+        radius: 0.0785
+      - center: [-0.02286, 0.01979, 0.14168]
+        radius: 0.04176
+      - center: [0.04041, 0.00795, 0.13873]
+        radius: 0.04251
+      - center: [-0.0124, 0.05309, 0.12902]
+        radius: 0.05109
+      - center: [-0.0135, -0.04448, 0.12858]
+        radius: 0.05268
+      - center: [-0.03698, -0.00223, 0.13054]
+        radius: 0.02511
+      - center: [0.0182, 0.04312, 0.1823]
+        radius: 0.05929
+      - center: [0.02403, -0.05053, 0.17799]
+        radius: 0.06002
+      - center: [-0.01009, -0.04631, 0.07945]
+        radius: 0.05495
+      - center: [-0.01103, 0.05099, 0.08892]
+        radius: 0.05095
+      - center: [0.01977, 0.05383, 0.16561]
+        radius: 0.05218
+      - center: [0.0213, -0.04596, 0.11521]
+        radius: 0.05383
+      - center: [0.02711, 0.00025, 0.08021]
+        radius: 0.04578
+      - center: [-0.01224, -0.01246, 0.03847]
+        radius: 0.05019
+      - center: [0.01616, 0.04463, 0.1123]
+        radius: 0.05642
+      - center: [0.0297, -0.05049, 0.0847]
+        radius: 0.03747
+      - center: [0.02412, 0.0341, 0.03986]
+        radius: 0.0496
+      - center: [-0.01972, -0.03743, 0.03767]
+        radius: 0.04132
+      - center: [-0.02179, 0.04024, 0.03126]
+        radius: 0.04462
+      - center: [0.03457, -0.006, 0.20165]
+        radius: 0.0372
+      - center: [0.02651, 0.05633, 0.08086]
+        radius: 0.03987
+      - center: [0.02219, -0.0276, 0.04023]
+        radius: 0.05296
+      - center: [0.03684, 0.06402, 0.2391]
+        radius: 0.02599
+      - center: [0.02044, -0.06126, 0.2035]
+        radius: 0.03042
+      - center: [-0.05003, -0.04692, 0.15547]
+        radius: 0.01467
+      - center: [-0.04469, -0.05976, 0.19765]
+        radius: 0.01317
+      - center: [0.05319, 0.00698, 0.01078]
+        radius: 0.01534
+      - center: [0.05611, -0.03173, 0.22319]
+        radius: 0.02021
+      - center: [-0.03488, -0.0922, 0.24022]
+        radius: 0.01078
+      - center: [-0.03929, 0.07904, 0.07223]
+        radius: 0.01463
+      - center: [-0.04478, -0.01672, 0.16332]
+        radius: 0.01274
+      - center: [0.05885, 0.0302, 0.09082]
+        radius: 0.01344
+      - center: [-0.05304, -0.02358, 0.1634]
+        radius: 0.01304
+      - center: [-0.03396, -0.08726, 0.13805]
+        radius: 0.01079
+      - center: [-0.051, -0.06768, 0.22264]
+        radius: 0.01431
+      - center: [0.0517, 0.00297, 0.01367]
+        radius: 0.01563
+      - center: [0.01594, 0.09631, 0.24023]
+        radius: 0.00795
+      - center: [-0.05178, -0.07262, 0.22376]
+        radius: 0.00909
+      - center: [-0.04832, 0.06562, 0.22923]
+        radius: 0.01157
+      - center: [0.06113, 0.06353, 0.22508]
+        radius: 0.00488
+      - center: [0.05566, -0.01089, 0.17717]
+        radius: 0.02503
+      - center: [-0.03499, 0.07941, 0.15351]
+        radius: 0.01868
+      - center: [-0.03441, -0.07981, 0.16082]
+        radius: 0.01151
+      - center: [-0.04643, -0.08237, 0.1468]
+        radius: 0.01218
+      - center: [-0.03834, 0.08151, 0.13767]
+        radius: 0.01227
+      - center: [0.05967, 0.06842, 0.14692]
+        radius: 0.0068
+      - center: [0.02229, -0.08983, 0.16666]
+        radius: 0.01304
+      - center: [-0.05205, -0.02573, 0.27285]
+        radius: 0.0046
+      - center: [-0.05061, 0.00507, 0.09282]
+        radius: 0.00934
+      - center: [-0.04004, 0.02886, 0.02964]
+        radius: 0.01149
+      - center: [0.05669, 0.0097, 0.05387]
+        radius: 0.01045
+      - center: [0.06972, -0.0184, 0.12192]
+        radius: 0.0061
+      - center: [0.05935, 0.03562, 0.13128]
+        radius: 0.01163
+      - center: [0.05765, -0.02761, 0.08387]
+        radius: 0.01241
+      - center: [-0.0417, -0.04697, 0.01176]
+        radius: 0.01215
+      - center: [-0.04414, 0.08017, 0.10896]
+        radius: 0.01369
+      - center: [0.04004, 0.0854, 0.14354]
+        radius: 0.0121
+      - center: [-0.05396, 0.06675, 0.17323]
+        radius: 0.00514
+      - center: [0.03798, -0.06195, 0.06661]
+        radius: 0.02566
+      - center: [-0.03985, -0.08727, 0.117]
+        radius: 0.01064
+      - center: [-0.04152, 0.08818, 0.23869]
+        radius: 0.00889
+      - center: [0.06732, 0.0358, 0.13285]
+        radius: 0.00822
+      - center: [-0.04668, 0.06521, 0.23962]
+        radius: 0.01457
+      - center: [-0.02874, 0.05961, 0.04962]
+        radius: 0.01582
+      - center: [-0.0251, -0.09395, 0.13032]
+        radius: 0.0079
+      - center: [-0.04502, 0.04436, 0.01545]
+        radius: 0.00845
+      - center: [-0.04753, 0.05008, 0.04545]
+        radius: 0.0062
+      - center: [0.03393, -0.03759, 0.00824]
+        radius: 0.01149
+      - center: [0.00061, -0.06404, 0.29635]
+        radius: 0.01511
+      - center: [-0.04148, -0.08036, 0.08534]
+        radius: 0.0134
+      - center: [-0.04313, 0.01897, 0.07239]
+        radius: 0.01494
+      - center: [0.04315, -0.08831, 0.13241]
+        radius: 0.00616
+      - center: [0.04968, 0.08294, 0.14258]
+        radius: 0.00506
+      - center: [0.06933, 0.01592, 0.10756]
+        radius: 0.00434
+    collision_sphere_buffer: 0.0
+    self_collision_buffer: {}
+    self_collision_ignore:
+      right_shoulder_pitch_link: [torso_link]
+      right_shoulder_roll_link: [right_shoulder_pitch_link, torso_link]
+      right_shoulder_yaw_link: [right_shoulder_roll_link, torso_link]
+      right_elbow_link: [right_shoulder_yaw_link, right_wrist_pitch_link]
+      right_wrist_roll_link: [right_elbow_link]
+      right_wrist_pitch_link: [right_wrist_roll_link]
+      right_wrist_yaw_link: [right_wrist_pitch_link]
+      right_hand_palm_link: [right_wrist_yaw_link, right_hand_thumb_2_link, right_hand_index_1_link,
+        right_hand_middle_1_link, right_hand_thumb_1_link]
+      right_hand_index_0_link: [right_hand_palm_link]
+      right_hand_index_1_link: [right_hand_index_0_link, right_hand_middle_1_link]
+      right_hand_middle_0_link: [right_hand_palm_link]
+      right_hand_middle_1_link: [right_hand_middle_0_link]
+      right_hand_thumb_0_link: [right_hand_palm_link]
+      right_hand_thumb_1_link: [right_hand_thumb_0_link]
+      right_hand_thumb_2_link: [right_hand_thumb_1_link, right_hand_index_1_link,
+        right_hand_middle_1_link]
+      left_shoulder_pitch_link: [torso_link]
+      left_shoulder_roll_link: [left_shoulder_pitch_link, torso_link]
+      left_shoulder_yaw_link: [left_shoulder_roll_link]
+      left_elbow_link: [left_shoulder_yaw_link, left_wrist_pitch_link]
+      left_wrist_roll_link: [left_elbow_link]
+      left_wrist_pitch_link: [left_wrist_roll_link]
+      left_wrist_yaw_link: [left_wrist_pitch_link]
+      left_hand_palm_link: [left_wrist_yaw_link, left_hand_thumb_2_link, left_hand_index_1_link,
+        left_hand_middle_1_link, left_hand_thumb_1_link]
+      left_hand_index_0_link: [left_hand_palm_link]
+      left_hand_index_1_link: [left_hand_index_0_link, left_hand_middle_1_link]
+      left_hand_middle_0_link: [left_hand_palm_link]
+      left_hand_middle_1_link: [left_hand_middle_0_link]
+      left_hand_thumb_0_link: [left_hand_palm_link, left_wrist_yaw_link]
+      left_hand_thumb_1_link: [left_hand_thumb_0_link]
+      left_hand_thumb_2_link: [left_hand_thumb_1_link, left_hand_index_1_link, left_hand_middle_1_link]
+      head_link: [torso_link]
+      logo_link: [torso_link]
+    mesh_link_names: [head_link, left_elbow_link, left_hand_index_0_link, left_hand_index_1_link,
+      left_hand_middle_0_link, left_hand_middle_1_link, left_hand_palm_link, left_hand_thumb_0_link,
+      left_hand_thumb_1_link, left_hand_thumb_2_link, left_shoulder_pitch_link, left_shoulder_roll_link,
+      left_shoulder_yaw_link, left_wrist_pitch_link, left_wrist_roll_link, left_wrist_yaw_link,
+      logo_link, right_elbow_link, right_hand_index_0_link, right_hand_index_1_link,
+      right_hand_middle_0_link, right_hand_middle_1_link, right_hand_palm_link, right_hand_thumb_0_link,
+      right_hand_thumb_1_link, right_hand_thumb_2_link, right_shoulder_pitch_link,
+      right_shoulder_roll_link, right_shoulder_yaw_link, right_wrist_pitch_link, right_wrist_roll_link,
+      right_wrist_yaw_link, torso_link]
+    grasp_contact_link_names: [left_hand_palm_link, left_hand_thumb_2_link, left_hand_index_1_link,
+      left_hand_middle_1_link, attached_object]
+    lock_joints: {right_hand_thumb_0_joint: 0.0, right_hand_thumb_1_joint: -0.0178,
+      right_hand_thumb_2_joint: 0.0, right_hand_index_0_joint: 0.1332, right_hand_index_1_joint: 1.2989,
+      right_hand_middle_0_joint: 0.1332, right_hand_middle_1_joint: 1.2989, right_shoulder_pitch_joint: 0.0,
+      right_shoulder_roll_joint: 0.0, right_shoulder_yaw_joint: 0.0, right_elbow_joint: 0.0,
+      right_wrist_roll_joint: 0.0, right_wrist_pitch_joint: 0.0, right_wrist_yaw_joint: 0.0,
+      left_hand_thumb_0_joint: 0.0, left_hand_thumb_1_joint: 0.0178, left_hand_thumb_2_joint: -0.0,
+      left_hand_index_0_joint: -0.1332, left_hand_index_1_joint: -1.2989, left_hand_middle_0_joint: -0.1332,
+      left_hand_middle_1_joint: -1.2989}
+    extra_links:
+      attached_object:
+        parent_link_name: left_l9_tcp
+        link_name: attached_object
+        joint_name: attach_joint
+        joint_type: FIXED
+        fixed_transform: [0, 0, 0, 1, 0, 0, 0]
+    extra_collision_spheres: {attached_object: 16}
+    cspace:
+      joint_names: [left_shoulder_pitch_joint, left_shoulder_roll_joint, left_shoulder_yaw_joint,
+        left_elbow_joint, left_wrist_roll_joint, left_wrist_pitch_joint, left_wrist_yaw_joint,
+        left_hand_thumb_0_joint, left_hand_thumb_1_joint, left_hand_thumb_2_joint,
+        left_hand_middle_0_joint, left_hand_middle_1_joint, left_hand_index_0_joint,
+        left_hand_index_1_joint, right_shoulder_pitch_joint, right_shoulder_roll_joint,
+        right_shoulder_yaw_joint, right_elbow_joint, right_wrist_roll_joint, right_wrist_pitch_joint,
+        right_wrist_yaw_joint, right_hand_thumb_0_joint, right_hand_thumb_1_joint,
+        right_hand_thumb_2_joint, right_hand_middle_0_joint, right_hand_middle_1_joint,
+        right_hand_index_0_joint, right_hand_index_1_joint]
+      default_joint_position: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0178, -0.0,
+        -0.1332, -1.2989, -0.1332, -1.2989, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        -0.0178, 0.0, 0.1332, 1.2989, 0.1332, 1.2989]
+      null_space_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+        1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+        1.0]
+      cspace_distance_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+        1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+        1.0, 1.0]
+      max_acceleration: 15.0
+      max_jerk: 500.0
+      position_limit_clip: 0.03

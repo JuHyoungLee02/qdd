@@ -1,0 +1,471 @@
+{
+ "name": "g1_left",
+ "robot": "g1",
+ "arm": "left",
+ "base_link": "left_hand_palm_link",
+ "tcp_link": "left_l9_tcp",
+ "frame": "TCP frame G: origin pad centre, z = -approach, y = closing axis, x = y cross z",
+ "tcp_in_base": {
+  "xyz": [
+   0.07407,
+   -0.05573,
+   0.01425
+  ],
+  "rpy": [
+   2.612452,
+   -1.415749,
+   2.683014
+  ]
+ },
+ "max_opening_m": 0.1131,
+ "min_opening_m": 0.0215,
+ "pad_length_m": 0.015,
+ "pad_width_m": 0.02,
+ "pad_z_range_in_tcp": [
+  -0.0282,
+  -0.0132
+ ],
+ "finger_depth_m": 0.0345,
+ "finger_joints": {
+  "synergy": [
+   "left_hand_thumb_0_joint",
+   "left_hand_thumb_1_joint",
+   "left_hand_thumb_2_joint",
+   "left_hand_index_0_joint",
+   "left_hand_index_1_joint",
+   "left_hand_middle_0_joint",
+   "left_hand_middle_1_joint"
+  ],
+  "note": "each joint interpolated from width_to_joint (width = the pinch gap); drive all"
+ },
+ "width_to_joint": {
+  "width_m": [
+   0.0215,
+   0.0254,
+   0.03,
+   0.0348,
+   0.0397,
+   0.0447,
+   0.0497,
+   0.0547,
+   0.0597,
+   0.0648,
+   0.0698,
+   0.0748,
+   0.0798,
+   0.0848,
+   0.0898,
+   0.0949,
+   0.0997,
+   0.1041,
+   0.1086,
+   0.1131
+  ],
+  "q_by_joint": {
+   "left_hand_thumb_0_joint": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "left_hand_thumb_1_joint": [
+    0.5524,
+    0.511,
+    0.4649,
+    0.4195,
+    0.3743,
+    0.3306,
+    0.289,
+    0.25,
+    0.2135,
+    0.18,
+    0.1505,
+    0.124,
+    0.1048,
+    0.0913,
+    0.0873,
+    0.1053,
+    0.1209,
+    0.0865,
+    0.052,
+    0.0178
+   ],
+   "left_hand_thumb_2_joint": [
+    0.7441,
+    0.7771,
+    0.8092,
+    0.8289,
+    0.8422,
+    0.8466,
+    0.8421,
+    0.8281,
+    0.8038,
+    0.7696,
+    0.7248,
+    0.6675,
+    0.5926,
+    0.498,
+    0.3752,
+    0.1794,
+    -0.0,
+    -0.0,
+    -0.0,
+    -0.0
+   ],
+   "left_hand_index_0_joint": [
+    -1.078,
+    -1.0344,
+    -0.9845,
+    -0.9322,
+    -0.8778,
+    -0.8229,
+    -0.7676,
+    -0.7119,
+    -0.6562,
+    -0.6006,
+    -0.5452,
+    -0.4907,
+    -0.4371,
+    -0.3855,
+    -0.3348,
+    -0.2866,
+    -0.2415,
+    -0.2,
+    -0.1634,
+    -0.1332
+   ],
+   "left_hand_index_1_joint": [
+    -1.2846,
+    -1.3355,
+    -1.3898,
+    -1.4384,
+    -1.4825,
+    -1.5208,
+    -1.5526,
+    -1.5775,
+    -1.5946,
+    -1.6054,
+    -1.6086,
+    -1.6054,
+    -1.5932,
+    -1.5764,
+    -1.5515,
+    -1.5201,
+    -1.4785,
+    -1.4322,
+    -1.3713,
+    -1.2989
+   ],
+   "left_hand_middle_0_joint": [
+    -1.078,
+    -1.0344,
+    -0.9845,
+    -0.9322,
+    -0.8778,
+    -0.8229,
+    -0.7676,
+    -0.7119,
+    -0.6562,
+    -0.6006,
+    -0.5452,
+    -0.4907,
+    -0.4371,
+    -0.3855,
+    -0.3348,
+    -0.2866,
+    -0.2415,
+    -0.2,
+    -0.1634,
+    -0.1332
+   ],
+   "left_hand_middle_1_joint": [
+    -1.2846,
+    -1.3355,
+    -1.3898,
+    -1.4384,
+    -1.4825,
+    -1.5208,
+    -1.5526,
+    -1.5775,
+    -1.5946,
+    -1.6054,
+    -1.6086,
+    -1.6054,
+    -1.5932,
+    -1.5764,
+    -1.5515,
+    -1.5201,
+    -1.4785,
+    -1.4322,
+    -1.3713,
+    -1.2989
+   ]
+  },
+  "source": "tools/l9/v2robot/hands_v2.py thumb-index pinch synergy (usable band: axis < 10 deg, drift < 1 cm)"
+ },
+ "synergy_facts": {
+  "closing_axis_palm": [
+   0.8293,
+   0.5533,
+   0.078
+  ],
+  "approach_palm": [
+   0.5413,
+   -0.8302,
+   0.1334
+  ],
+  "tcp_xyz": [
+   0.07407,
+   -0.05573,
+   0.01425
+  ],
+  "tcp_rpy": [
+   2.612452,
+   -1.415749,
+   2.683014
+  ],
+  "pad_points_local": {
+   "thumb_2": [
+    0.00169,
+    -0.0184,
+    0.0131
+   ],
+   "index_1": [
+    0.01945,
+    -0.00367,
+    -0.0131
+   ],
+   "middle_1": [
+    0.01831,
+    -0.00425,
+    0.0129
+   ]
+  },
+  "criteria": {
+   "gap_err_m": 0.002,
+   "axis_deg": 10.0,
+   "mid_drift_m": 0.01
+  }
+ },
+ "boxes": {
+  "palm": {
+   "center": [
+    -0.0091,
+    0.0028,
+    0.0658
+   ],
+   "size": [
+    0.0886,
+    0.0892,
+    0.0745
+   ]
+  },
+  "palm_links": [
+   "left_hand_palm_link"
+  ],
+  "by_width": [
+   {
+    "width": 0.1131,
+    "q": 0.1131,
+    "fingers": [
+     {
+      "center": [
+       -0.007,
+       -0.0406,
+       0.0299
+      ],
+      "size": [
+       0.032,
+       0.078,
+       0.1037
+      ]
+     },
+     {
+      "center": [
+       0.0134,
+       0.0569,
+       0.0082
+      ],
+      "size": [
+       0.0358,
+       0.0551,
+       0.0854
+      ]
+     },
+     {
+      "center": [
+       -0.0429,
+       0.0525,
+       0.0158
+      ],
+      "size": [
+       0.0358,
+       0.0551,
+       0.0854
+      ]
+     }
+    ]
+   },
+   {
+    "width": 0.0698,
+    "q": 0.0698,
+    "fingers": [
+     {
+      "center": [
+       -0.008,
+       -0.0297,
+       0.0248
+      ],
+      "size": [
+       0.034,
+       0.0561,
+       0.114
+      ]
+     },
+     {
+      "center": [
+       0.0138,
+       0.0391,
+       0.0144
+      ],
+      "size": [
+       0.035,
+       0.0623,
+       0.073
+      ]
+     },
+     {
+      "center": [
+       -0.0425,
+       0.0347,
+       0.022
+      ],
+      "size": [
+       0.035,
+       0.0623,
+       0.073
+      ]
+     }
+    ]
+   },
+   {
+    "width": 0.0215,
+    "q": 0.0215,
+    "fingers": [
+     {
+      "center": [
+       -0.0091,
+       -0.0149,
+       0.0272
+      ],
+      "size": [
+       0.0362,
+       0.0476,
+       0.1091
+      ]
+     },
+     {
+      "center": [
+       0.0142,
+       0.0142,
+       0.0169
+      ],
+      "size": [
+       0.0343,
+       0.0666,
+       0.0679
+      ]
+     },
+     {
+      "center": [
+       -0.0421,
+       0.0097,
+       0.0245
+      ],
+      "size": [
+       0.0343,
+       0.0666,
+       0.0679
+      ]
+     }
+    ]
+   }
+  ],
+  "note": "axis-aligned boxes in the TCP frame from the URDF meshes (coarse, conservative)"
+ },
+ "mesh_kind": "visual",
+ "actuation": {
+  "sim": null,
+  "real": null,
+  "note": "no L9 sim actuator yet; URDF limits below (unitree_ros g1_description) are the only source",
+  "urdf_limits": {
+   "left_hand_thumb_0_joint": {
+    "lower": -1.04719755,
+    "upper": 1.04719755,
+    "effort": 2.45,
+    "velocity": 6.857
+   },
+   "left_hand_thumb_1_joint": {
+    "lower": -0.72431163,
+    "upper": 1.04719755,
+    "effort": 1.4,
+    "velocity": 12.0
+   },
+   "left_hand_thumb_2_joint": {
+    "lower": 0.0,
+    "upper": 1.74532925,
+    "effort": 1.4,
+    "velocity": 12.0
+   },
+   "left_hand_index_0_joint": {
+    "lower": -1.57079632,
+    "upper": 0.0,
+    "effort": 1.4,
+    "velocity": 12.0
+   },
+   "left_hand_index_1_joint": {
+    "lower": -1.74532925,
+    "upper": 0.0,
+    "effort": 1.4,
+    "velocity": 12.0
+   },
+   "left_hand_middle_0_joint": {
+    "lower": -1.57079632,
+    "upper": 0.0,
+    "effort": 1.4,
+    "velocity": 12.0
+   },
+   "left_hand_middle_1_joint": {
+    "lower": -1.74532925,
+    "upper": 0.0,
+    "effort": 1.4,
+    "velocity": 12.0
+   }
+  }
+ },
+ "urdf": "/data/harvest/l9v2robot/out/grippers/g1_left.urdf",
+ "virtual_joints": [
+  "vx",
+  "vy",
+  "vz",
+  "vr",
+  "vp",
+  "vyaw"
+ ]
+}

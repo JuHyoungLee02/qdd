@@ -212,9 +212,9 @@ def main():
     if s["tcp_rule"] == "g1":
         g = json.load(open(a.g1_tcp))
         for arm in s["arms"]:
-            tcps[arm] = g[arm]["tcp_dist"]
+            tcps[arm] = (g[arm]["tcp_xyz"], g[arm]["tcp_rpy"])
             hand_open[arm] = g[arm]["open_q"]
-            report["arms"][arm] = {"tcp": g[arm]}
+            report["arms"][arm] = {"tcp": {k: g[arm][k] for k in g[arm] if k not in ("table", "synergy")}}
     else:
         for arm, sa in s["arms"].items():
             q0 = RV.finger_open_q(src, sa) if sa["grip_lock"] else {}
@@ -226,7 +226,7 @@ def main():
     path = RV.write_prepared(robot, tcps)
     u = Urdf(path)
     links = subtree_links(u, s["base"])
-    print("prepared", path, "links below base", len(links), "tcps", {k: round(v, 4) for k, v in tcps.items()})
+    print("prepared", path, "links below base", len(links), "tcps", {k: (round(v, 4) if isinstance(v, float) else v) for k, v in tcps.items()})
     if robot == "franka":
         spheres, base_ign, buf = franka_spheres()
         metrics = {"source": "cuRobo v0.8.0 franka.yml"}

@@ -246,7 +246,8 @@ def write_prepared(robot: str, tcps: dict, extra_links: dict | None = None) -> s
     txt = txt.replace("package://franka_description/", "")
     for a, b in s.get("axis_fix", {}).items():  # cuRobo needs axis-aligned joints (P156)
         txt = txt.replace(f'xyz="{a}"', f'xyz="{b}"')
-    links = {tcp_link(arm): (s["arms"][arm]["parent"], tcp_xyz(robot, arm, d), s["arms"][arm]["tcp_rpy"])
+    links = {tcp_link(arm): (s["arms"][arm]["parent"], *((d[0], d[1]) if isinstance(d, (tuple, list)) else
+                                                         (tcp_xyz(robot, arm, d), s["arms"][arm]["tcp_rpy"])))
              for arm, d in tcps.items()}
     links.update(extra_links or {})
     txt = strip_links(txt, list(links))

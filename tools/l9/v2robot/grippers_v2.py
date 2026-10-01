@@ -87,6 +87,18 @@ GRIPPERS = {
                    "fingers": [["left_gripper_finger_link1"], ["left_gripper_finger_link2"]],
                    "pads": ["left_gripper_finger_link1", "left_gripper_finger_link2"], "table": "fk",
                    "q_range": (0.0, 0.05), "distal": 0.5, "pad_rule": "slab"},
+    "g1_right": {"robot": "g1", "arm": "right", "base": "right_hand_palm_link",
+                 "synergy": "/data/harvest/l9v2robot/out/g1_hand.json",
+                 "fingers": [["right_hand_thumb_0_link", "right_hand_thumb_1_link", "right_hand_thumb_2_link"],
+                             ["right_hand_index_0_link", "right_hand_index_1_link"],
+                             ["right_hand_middle_0_link", "right_hand_middle_1_link"]],
+                 "pads": ["right_hand_thumb_2_link", "right_hand_index_1_link"], "pad_rule": "slab"},
+    "g1_left": {"robot": "g1", "arm": "left", "base": "left_hand_palm_link",
+                "synergy": "/data/harvest/l9v2robot/out/g1_hand.json",
+                "fingers": [["left_hand_thumb_0_link", "left_hand_thumb_1_link", "left_hand_thumb_2_link"],
+                            ["left_hand_index_0_link", "left_hand_index_1_link"],
+                            ["left_hand_middle_0_link", "left_hand_middle_1_link"]],
+                "pads": ["left_hand_thumb_2_link", "left_hand_index_1_link"], "pad_rule": "slab"},
 }
 
 
@@ -140,7 +152,24 @@ def limits(u: Urdf, j: str) -> dict:
     return {k: float(el.get(k)) for k in ("effort", "velocity") if el is not None and el.get(k) is not None}
 
 
+_SYN = {}
+
+
+def synergy(g: dict) -> dict:
+    """G1 Dex3-1 thumb-index pinch table (hands_v2.py): usable band rows only, ascending width."""
+    if g["synergy"] not in _SYN:
+        d = json.load(open(g["synergy"]))[g["arm"]]
+        lo, hi = d["min_opening_parallel_m"], d["max_opening_parallel_m"]
+        rows = sorted([r for r in d["table"] if lo - 1e-9 <= r["width"] <= hi + 1e-9], key=lambda r: r["width"])
+        _SYN[g["synergy"]] = {"joints": d["joints"], "w": [r["width"] for r in rows],
+                              "q": np.array([r["q"] for r in rows]), "d": d}
+    return _SYN[g["synergy"]]
+
+
 def qmap(g: dict, qd: float) -> dict:
+    if g.get("synergy"):  # qd = the pinch width (m)
+        s = synergy(g)
+        return {j: float(np.interp(qd, s["w"], s["q"][:, i])) for i, j in enumerate(s["joints"])}
     q = {j: qd for j in g["drive"]}
     q.update({j: m * qd for j, m in g["followers"].items()})
     return q
@@ -159,7 +188,11 @@ def facts(g: dict, name: str) -> dict:
     tcp = RV.tcp_link(g["arm"])
     kind = g.get("mesh_kind", "visual")
     T_base_tcp = u.T_rel(tcp, g["base"])
-    if g["table"] == "fk":
+    if g.get("synergy"):
+        s = synergy(g)
+        qs, ws = list(s["w"]), [round(float(w), 4) for w in s["w"]]
+        src = "tools/l9/v2robot/hands_v2.py thumb-index pinch synergy (usable band: axis < 10 deg, drift < 1 cm)"
+    elif g["table"] == "fk":
         lo, hi = g["q_range"]
         qs = list(np.linspace(lo, hi, 9))
         ws = [pad_gap_tcp(u, g, tcp, qmap(g, q), kind) for q in qs]
@@ -206,13 +239,18 @@ def facts(g: dict, name: str) -> dict:
         "pad_z_range_in_tcp": [round(float(np.mean([v["z_from"] for v in pad.values()])), 4),
                                round(float(np.mean([v["z_to"] for v in pad.values()])), 4)],
         "finger_depth_m": round(tip_depth, 4),
-        "finger_joints": {"drive": g["drive"], "followers": g["followers"],
+        "finger_joints": {"synergy": synergy(g)["joints"], "note": "each joint interpolated from width_to_joint "
+                          "(width = the pinch gap); drive all"} if g.get("synergy") else {"drive": g["drive"], "followers": g["followers"],
                           "note": "follower q = multiplier * drive q; the floating URDF has no <mimic>: drive all"},
-        "width_to_joint": {"width_m": ws, "drive_q": [round(float(q), 4) for q in qs], "source": src},
+        "width_to_joint": ({"width_m": ws, "q_by_joint": {j: [round(float(v), 4) for v in synergy(g)["q"][:, i]] for i, j in
+                                                           enumerate(synergy(g)["joints"])}, "source": src}
+                           if g.get("synergy") else {"width_m": ws, "drive_q": [round(float(q), 4) for q in qs], "source": src}),
+        "synergy_facts": ({k: synergy(g)["d"][k] for k in ("closing_axis_palm", "approach_palm", "tcp_xyz", "tcp_rpy",
+                                                           "pad_points_local", "criteria")} if g.get("synergy") else None),
         "boxes": {"palm": box(palm), "palm_links": palm_links, "by_width": boxes,
                   "note": "axis-aligned boxes in the TCP frame from the URDF meshes (coarse, conservative)"},
         "mesh_kind": kind,
-        "actuation": {**ACTUATION[g["robot"]], "urdf_limits": {j: {"lower": u.joints[j]["lower"], "upper": u.joints[j]["upper"], **limits(u, j)} for j in [*g["drive"], *g["followers"]]}},
+        "actuation": {**ACTUATION[g["robot"]], "urdf_limits": {j: {"lower": u.joints[j]["lower"], "upper": u.joints[j]["upper"], **limits(u, j)} for j in (synergy(g)["joints"] if g.get("synergy") else [*g["drive"], *g["followers"]])}},
     }
 
 
