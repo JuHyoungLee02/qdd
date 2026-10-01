@@ -164,7 +164,7 @@ def run(a):
                 articulation_props=sim_utils.ArticulationRootPropertiesCfg(
                     enabled_self_collisions=False, solver_position_iteration_count=32,
                     solver_velocity_iteration_count=1, fix_root_link=True)),
-            init_state=ArticulationCfg.InitialStateCfg(pos=(0.0, 0.0, 0.0), joint_pos={"vz": 1.0, ".*": 0.0}),
+            init_state=ArticulationCfg.InitialStateCfg(pos=(0.0, 0.0, 0.0), joint_pos={"vz": 1.0}),
             actuators={
                 "virt_lin": ImplicitActuatorCfg(joint_names_expr=["vx", "vy", "vz"], stiffness=1e5, damping=2e3,
                                                 effort_limit_sim=1e4),
@@ -198,7 +198,7 @@ def run(a):
     nb = 0
     for i in range(n_env):
         for p in Usd.PrimRange(stage.GetPrimAtPath(f"/World/envs/env_{i}/Grip")):
-            if p.HasAPI(UsdPhysics.CollisionAPI):
+            if p.HasAPI(UsdPhysics.RigidBodyAPI):  # links (colliders below may be instance proxies; binding inherits)
                 sim_utils.bind_physics_material(str(p.GetPath()), mat)
                 nb += 1
     t_obj = time.time()
@@ -211,7 +211,7 @@ def run(a):
         sim_utils.modify_rigid_body_properties(body, sim_utils.RigidBodyPropertiesCfg(max_depenetration_velocity=1.0))
         sim_utils.modify_mass_properties(body, sim_utils.MassPropertiesCfg(mass=float(row.get("mass", 0.3))))
     obj = RigidObject(RigidObjectCfg(prim_path="/World/envs/env_.*/Obj/Geometry/obja_.*", spawn=None))
-    log(f"authored {n_env} objects in {time.time() - t_obj:.0f}s, finger colliders {nb}")
+    log(f"authored {n_env} objects in {time.time() - t_obj:.0f}s, gripper bodies with the finger material {nb}")
     t_reset = time.time()
     sim.reset()
     scene.update(DT)
@@ -242,6 +242,7 @@ def run(a):
         obj.root_physx_view.set_material_properties(m, allidx)
 
     gm0 = rob.root_physx_view.get_material_properties()
+    log(f"gripper shape friction env0 {gm0[0, :, 0].tolist()} | object env0 {mats0[0, :4].tolist()}")
 
     def set_grip_fric(mu=None):
         m = gm0.clone()
