@@ -107,9 +107,12 @@ def classes():
                     super().append(x + (f"; {ep.pending_report}" if ep.pending_report else ""))
                     ep.pending_report = ""
             self.history = _Hist(self.history)
-            if self.exec_kind == "jcr":
+            if self.exec_kind in ("jcr", "jv1c"):
                 from .exec_jcr import JcrExec
-                return JcrExec(*args, client=self.client, obs_fn=self._obs, seed=int(self.seed), **kw)
+                ex = JcrExec(*args, client=self.client, obs_fn=self._obs, seed=int(self.seed), **kw)
+                if hasattr(self.client, "bind"):  # E-JV1 arm C: the privileged waypoint client reads the executor
+                    self.client.bind(ex)
+                return ex
             return TruthExec(*args, **kw)
 
         def _imgs(self, fr) -> dict:
@@ -262,7 +265,7 @@ def classes():
             t = float(st["t"])
             self._disturb(t)
             samp = self._will_sample(t)
-            if samp and self.far_every > 1 and self.exec_kind != "jcr":  # data mode: far transit rendered 1 in N
+            if samp and self.far_every > 1 and self.exec_kind not in ("jcr", "jv1c"):  # data mode: far transit rendered 1 in N
                 near = float(np.linalg.norm(np.asarray(st["tcp"], float) - self.ex.target)) < NEAR_IMG_M
                 recent = any(t - e["t"] < RECOVER_S for e in self.dist_events)
                 self._far_n = getattr(self, "_far_n", -1) + (0 if (near or recent) else 1)
@@ -431,7 +434,9 @@ def main(argv=None):
     ap.add_argument("--stop-calls", type=int, default=30)
     ap.add_argument("--stop-motion", type=float, default=None, help="default: data 60 s (short episodes), eval 120 s")
     ap.add_argument("--mode", default="data", choices=["data", "eval"])
-    ap.add_argument("--executor", default="truth", choices=["truth", "script", "jcr"])
+    ap.add_argument("--executor", default="truth", choices=["truth", "script", "jcr", "jv1c"],
+                    help="jcr = a model server (JCR arm A or E-JV1 arm B, same protocol); jv1c = E-JV1 arm C "
+                         "(privileged waypoint -> text quantisation -> rule controller)")
     ap.add_argument("--src", default="plan", choices=["plan", "truth", "upper"],
                     help="eval: truth = clean commands (OJ), upper = main-35B errors injected (OJe / OXe)")
     ap.add_argument("--jcr-url", default="")
@@ -439,6 +444,12 @@ def main(argv=None):
     ap.add_argument("--prio", default="", help="eval: JSON overriding the B / C blend parameters (rule sweep)")
     ap.add_argument("--clip-r", type=float, default=None, help="eval: rule A width (m)")
     ap.add_argument("--far-img-every", type=int, default=3, help="data: far-transit decisions rendered 1 in N")
+    ap.add_argument("--rt-lat", type=float, default=None,
+                    help="E-JV1 condition R: answers take effect this many sim seconds after their observation")
+    ap.add_argument("--rt-period", type=int, default=1, help="E-JV1 condition R: model asked every N decisions")
+    ap.add_argument("--eval-disturb", action="store_true",
+                    help="E-JV1: eval episodes always disturbed (d1 kinds, harvest.jv1.plan)")
+    ap.add_argument("--jv1-label", default="P", choices=["P", "A"], help="E-JV1 arm C waypoint rule")
     a = ap.parse_args(argv)
     if a.stop_motion is None:
         a.stop_motion = 60.0 if a.mode == "data" else 120.0
@@ -457,8 +468,11 @@ def main(argv=None):
         StepTruth, Ep = classes()
         dist = U.load_dist(a.dist)
         world = JcrWorld(a.variant, depth=True)
+        from ..jv1 import text as JX
         print("WORLD " + json.dumps({"variant": a.variant, "dt": world.dt, "dist": dist.get("sha256"),
-                                     "scale": a.scale}), flush=True)
+                                     "scale": a.scale, "jv1_head_cam_ok": JX.cam_matches(world._cam("cam_head", "head")),
+                                     "rt_lat": a.rt_lat, "rt_period": a.rt_period, "eval_disturb": a.eval_disturb}),
+              flush=True)
         if abs(world.dt - T.DT) > 1e-6:
             raise SystemExit(f"world dt {world.dt} != truth DT {T.DT}")
         owner = f"{a.owner} pid={os.getpid()}"
@@ -466,6 +480,11 @@ def main(argv=None):
         if a.executor == "jcr":
             from .serve import Client
             client = Client(a.jcr_url)
+        elif a.executor == "jv1c":
+            from ..jv1.realtime import TruthWaypointClient
+            client = TruthWaypointClient(a.jv1_label)
+        if a.rt_lat is not None and client is not None:
+            from ..jv1.realtime import DelayedClient
         for s in seed_list(a.seeds, a.mode == "eval"):
             why = yield_reason(yf)
             if why:
@@ -482,11 +501,19 @@ def main(argv=None):
             ep.plan = D.plan_episode(s, a.scale)
             if a.mode == "eval":  # no physical disturbance; command source fixed; upper realism = the data rates
                 up = a.src == "upper"
-                ep.plan = {"seed": s, "normal": True, "src": a.src, "scale": 1.0, "events": [],
+                ev = []
+                if a.eval_disturb:
+                    from ..jv1.plan import SCALE as JV1_SCALE, disturbed_events
+                    ev = disturbed_events(s, a.variant)
+                ep.plan = {"seed": s, "normal": not ev, "src": a.src, "scale": JV1_SCALE if ev else 1.0, "events": ev,
                            "p_swap": D.P_SWAP if up else 0.0, "p_pre": D.P_PRE if up else 0.0,
                            "mode": "S" if a.executor == "script" else a.envelope,
                            "rng_seed": [int(s), 9001]}
-            ep.exec_kind, ep.client = a.executor, client
+            if a.rt_lat is not None and client is not None:  # fresh answer history per episode
+                ep_client = DelayedClient(client, a.rt_lat, a.rt_period)
+            else:
+                ep_client = client
+            ep.exec_kind, ep.client = a.executor, ep_client
             ep.far_every = a.far_img_every if a.mode == "data" else 1
             ep.dist = dist
             ep.rng = np.random.default_rng(ep.plan["rng_seed"])
