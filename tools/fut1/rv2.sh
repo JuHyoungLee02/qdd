@@ -1,8 +1,9 @@
 #!/bin/bash
 # E-FUT1 change 6 (prereg_fut1.md §7 next step): second seed, F0 and F2 retrained together with 8,000 d1 rows
-# (+ 4,000 replay, fut_rows.py --seed 1; trainer --seed 1), 2-GPU DDP each on 78dc (F0s1 GPU0,1 / F2s1 GPU2,3, global
-# batch 24 = micro 4 x accum 3 x 2), merge, evaluation on the whole held-out pool (F0s1 'cur', F2s1 'roll') + the static
-# sets, each arm's sets split over its 2 GPUs; then tools/fut1/rv2_summary.py (two seeds pooled, change 6 rule).
+# (+ 4,000 replay, fut_rows.py --seed 1; trainer --seed 1), one GPU each like seed 0 (micro 4 x accum 6 = 24; F0s1 on
+# 78dc:1, F2s1 on 78dc:2 -- 78dc:0 holds an E-VB1 server), merge, evaluation on the whole held-out pool (F0s1 'cur',
+# F2s1 'roll') + the static sets split over two cards per arm (F0s1 1+3, F2s1 2+3; a part waits for its card to be
+# free); then tools/fut1/rv2_summary.py (two seeds pooled, change 6 rule).
 # YIELD: a GPU_WANTED line without FUT1 listing 78dc:<g> -> stop that arm's work, exit 3 (rerun resumes: --resume state,
 # cached replies).  usage: nohup bash rv2.sh <code dir> > /dev/null 2>&1 &   (on juhyoung-q-78dc)
 C=$1
@@ -41,9 +42,14 @@ watch() {  # <pid> <gpus a,b> <job names...>: stop on a wanted card
       ev "YIELD 78dc:$g ($*)"; return 3; }; done
     sleep 20
   done; return 0; }
-serve_eval() {  # <gpu> <arm> <merged> <part> <variant> <static sets...>
+serve_eval() {  # per-card lock (78dc:3 is shared by the two arms' second parts), then serve_eval_1
+  until mkdir $F/rv2_lock_g$1 2>/dev/null; do sleep 30; done
+  serve_eval_1 "$@"; local rc=$?
+  rmdir $F/rv2_lock_g$1; return $rc; }
+serve_eval_1() {  # <gpu> <arm> <merged> <part> <variant> <static sets...>
   local g=$1 arm=$2 m=$3 k=$4 v=$5; shift 5
   local port=$((8781 + g)) n=q35_fut1rv2_${arm,,}_$k A=$F/arms/$arm
+  until free $g; do sleep 60; done
   setsid nohup bash $C/tools/teach_35b/vllm.sh $g $m $n $port 0.85 < /dev/null > /dev/null 2>&1 &
   for i in $(seq 120); do curl -sf 127.0.0.1:$port/v1/models | grep -q $n && break; sleep 10; done
   curl -sf 127.0.0.1:$port/v1/models | grep -q $n || { ev "ALERT serve $n"; bash $C/tools/teach_35b/stop.sh $n; return 1; }
@@ -64,17 +70,17 @@ serve_eval() {  # <gpu> <arm> <merged> <part> <variant> <static sets...>
   done
   bash $C/tools/teach_35b/stop.sh $n > /dev/null
   ev "$arm part $k ($v + $# static sets) done on 78dc:$g"; }
-run_arm() {  # <arm> <src arm F0|F2> <gpus a,b> <variant>
-  local arm=$1 src=$2 gs=$3 v=$4 A=$F/arms/$1 R=$F/arms/$1/fut1_tr_${1,,} M=$F/merged/$1
-  local g0=${gs%,*} g1=${gs#*,}
+run_arm() {  # <arm> <src arm F0|F2> <train gpu> <eval gpus a,b> <variant>
+  local arm=$1 src=$2 gs=$3 v=$5 A=$F/arms/$1 R=$F/arms/$1/fut1_tr_${1,,} M=$F/merged/$1
+  local g0=${4%,*} g1=${4#*,}
   mkdir -p $A
-  until free $g0 && free $g1; do sleep 60; done
+  until free $gs; do sleep 60; done
   if [ ! -f $M/MERGE_OK ]; then
     if [ ! -f $R/epoch1/adapter_model.safetensors ]; then
       local RES=""; [ -d $R/state ] && RES=--resume
       ev "$arm train start on 78dc:$gs ($(wc -l < $D/train_$src.jsonl) rows, seed 1) $RES"
       PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True bash $C/tools/teach_35b/train.sh $C $gs $D/train_$src.jsonl $R \
-        --model $BASE --epochs 1 --micro 4 --accum 3 --save-every 100 --seed 1 $RES &
+        --model $BASE --epochs 1 --micro 4 --accum 6 --save-every 100 --seed 1 $RES &
       watch $! $gs $(basename $R) || return 3
       [ -f $R/epoch1/adapter_model.safetensors ] || { ev "ALERT $arm TRAIN_FAIL"; return 1; }
       ev "$arm train done: $(tail -1 $R/log.jsonl | cut -c1-120)"
@@ -97,8 +103,9 @@ run_arm() {  # <arm> <src arm F0|F2> <gpus a,b> <variant>
   mkdir -p $A/eval/mm_$v
   cat $A/parts/mm_${v}_p0/scores.jsonl $A/parts/mm_${v}_p1/scores.jsonl > $A/eval/mm_$v/scores.jsonl
   touch $A/DONE; ev "$arm DONE"; }
-run_arm F0s1 F0 0,1 cur & a0=$!
-run_arm F2s1 F2 2,3 roll & a2=$!
+run_arm F0s1 F0 1 1,3 cur & a0=$!
+sleep 30  # the two eval parts that share 78dc:3 then start in a fixed order
+run_arm F2s1 F2 2 2,3 roll & a2=$!
 wait $a0; wait $a2
 if [ -f $F/arms/F0s1/DONE ] && [ -f $F/arms/F2s1/DONE ]; then
   PYTHONPATH=$C $P $C/tools/fut1/rv2_summary.py --root $F >> $L/rv2_summary.log 2>&1
