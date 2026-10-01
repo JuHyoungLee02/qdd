@@ -17,7 +17,7 @@ def main():
     d = json.load(open(sys.argv[1]))
     prof = sys.argv[2] if len(sys.argv) > 2 else "ffw_sg2"
     arm = sys.argv[3] if len(sys.argv) > 3 else "right"
-    pl = P9.Planner9(C9.load_config(prof, arm))
+    pl = P9.Planner9(C9.load_config(prof, arm), self_collision=os.environ.get("SELFCOL", "1") == "1")
     q = np.asarray(d["q"], float)
     Tb = np.asarray(d["T_world_base"], float)
     T = P9.inv_T(Tb) @ np.asarray(d["tcp_T"], float)

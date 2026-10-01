@@ -96,7 +96,7 @@ def scene_cuboids(parts: list, boxes: dict, T_world_base, pad: float = 0.0) -> d
 class Planner9:
     """One cuRobo MotionPlanner per (profile, arm) config (robot yml from curobo9 / L9v2-ROBOT)."""
 
-    def __init__(self, robot_cfg, device: str = "cuda:0", collision_cache: int = 64):
+    def __init__(self, robot_cfg, device: str = "cuda:0", collision_cache: int = 64, self_collision: bool = True):
         import curobo
         v = tuple(int(x) for x in str(curobo.__version__).split(".")[:3])
         if v < CUROBO_MIN:
@@ -108,7 +108,8 @@ class Planner9:
         cp = (lambda: copy.deepcopy(self._robot_cfg)) if isinstance(robot_cfg, dict) else (lambda: robot_cfg)
         cfg = MotionPlannerCfg.create(robot=cp(), scene_model={"cuboid": {"_floor": {
             "dims": [0.1, 0.1, 0.01], "pose": [5.0, 5.0, -5.0, 1, 0, 0, 0]}}},
-            collision_cache={"cuboid": collision_cache}, max_goalset=1, num_ik_seeds=32, num_trajopt_seeds=4)
+            collision_cache={"cuboid": collision_cache}, max_goalset=1, num_ik_seeds=32, num_trajopt_seeds=4,
+            self_collision_check=self_collision)
         self.mp = MotionPlanner(cfg)
 
         self.mp.warmup(enable_graph=True, num_warmup_iterations=3)
