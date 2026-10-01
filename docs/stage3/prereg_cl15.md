@@ -6,7 +6,7 @@
 
 ## 단
 - **T1 (실행)**: L8S 과제 그대로, **환경은 35B 학습에 없던 것**. 장면 기하·물체·과제·시드는 L8S 보류 편(main35 학습 제외 3 %, E-M35CL `groups.json`의 참값 성공 편)을 쓰고, 보이는 환경을 L8S 자산 라이브러리의 **보류(ood) 분할**로 바꾼다: iTHOR 방 배경(`fx.room_split`, 이름 해시 20 %), Poly Haven 재질·실내 HDRI(`materials.split_of`, id 해시 20 %). L8S 학습 렌더는 코드상 항상 train 분할만 썼다(run_collect: 방 = train(ood_s 외), `materials.pick` 기본 train, `hdr_paths(cat, "train")`). 실행기 = `harvest.cl15.run_t1`(= `run_closed_l8s` 그대로 + 위 세 분할만 ood로 바꾸는 패치).
-  - 편 고르기(결과 전 고정, `tools/cl15/prep.py`): 과제 종류(과제 이름의 `__` 앞) 마다 1편, 종류 안에서 sha256("cl15:<task>:<seed>") 첫 편. 종류 = ov_* 7종(ov_into·left·right·front·behind·between·basket) + 기본 과제 중 후보가 가장 많은 3종(bottle_bin, bottle_tray, mug_stand). 총 10편.
+  - 편 고르기(결과 전 고정, `tools/cl15/prep.py`): 과제 종류(과제 이름의 `__` 앞) 마다 1편, 종류 안에서 sha256("cl15:<task>:<seed>") 첫 편. 종류 = ov_* 7종(ov_into·left·right·front·behind·between·basket) + 기본 과제 중 후보가 가장 많은 3종(bottle_bin, bottle_tray, mug_left_of_bottle — 후보 2편 동률 4종 중 이름순). 총 10편.
 - **T2**: 사용자 지시로 뺌.
 - **T3 (보류)**: L9 장면·과제(오른팔, L9 ood 방·재질·HDRI·ood_o 물체)로 하는 미경험 과제. 사용자 "T3는 보류" — 실행기 연결(`collect9.draw/register_task` + `make_world9(split="ood")` + 같은 CLEpisode)만 설계, 이번에 돌리지 않음.
 
@@ -27,4 +27,4 @@
 - 영상: 모든 편 10 fps 머리 | 왼손목 | 오른손목 H.264, 원본 jpg 보존. 성공 2편·실패 2편을 골라 노트북 `D:\tools\pdf_out\cl15_videos\`(28 MB 이하).
 
 ## 변경 기록
-- (없음)
+- 변경 1 (렌더 전, 결과 없음): 기본 과제 3종 이름 정정 — prep.py 규칙(후보 수 내림차순, 동률은 이름순)대로 mug_stand가 아니라 mug_left_of_bottle. 렌더 전 겹침 검사 PASS(학습 편 폴더 7,670개: 방 28·HDRI 56, ood 풀 방 10·HDRI 10·재질 16, 교집합 0).
