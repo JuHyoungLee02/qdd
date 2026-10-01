@@ -39,7 +39,8 @@ def main():
                 m = (P[:, 2] >= z0) & (P[:, 2] < z1) & (np.abs(P[:, 0]) < 0.02)
                 pos, neg = P[m & (P[:, 1] > 0), 1], P[m & (P[:, 1] < 0), 1]
                 row.append(f"{(pos.min() - neg.max()) * 100:6.2f}" if len(pos) and len(neg) else "   -  ")
-            print(f"  q={q:4.2f} table w={w * 100:5.2f} cm | gap by z band {bands}: " + " ".join(row))
+            print(f"  q={q:4.2f} table w={w * 100:5.2f} cm | gap by z band {bands}: " + " ".join(row)
+                  + f" | finger z min {P[:, 2].min() * 100:6.2f} cm, |y| max {np.abs(P[:, 1]).max() * 100:5.2f} cm")
 
 
 if __name__ == "__main__":

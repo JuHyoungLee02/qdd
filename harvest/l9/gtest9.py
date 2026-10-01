@@ -253,6 +253,31 @@ def width_to_q(w, table) -> float:
     return float(np.interp(float(w), W[o], Q[o]))
 
 
+# The FFW-SG2 (RH-P12-RN) pads move on an arc: closing lowers them along the approach. Drop of the pads (m, along
+# the approach) against the open hand (the TCP = pad centre at q = 0), from the URDF collision meshes
+# (tools/l9/gtest_fingerprobe.py: lowest finger point per drive q, all four finger joints = q).
+PAD_DROP = {"ffw_sg2": {"q": [0.0, 0.2, 0.4, 0.6, 0.8, 0.9, 1.0, 1.1],
+                        "dz": [0.0, 0.0092, 0.0170, 0.0229, 0.0268, 0.0279, 0.0284, 0.0284]}}
+
+
+def pad_drop_q(q, grip: str):
+    d = PAD_DROP.get(grip)
+    if d is None:
+        return np.zeros_like(np.asarray(q, float))
+    return np.interp(np.asarray(q, float), d["q"], d["dz"])
+
+
+def pad_drop(w, grip: str, table) -> float:
+    """Pad drop (m) when the hand is closed to the pad gap w."""
+    return float(pad_drop_q(width_to_q(w, table), grip))
+
+
+def exec_pose(T, w, grip: str, table) -> np.ndarray:
+    """Hand TCP pose to command for a candidate T (TCP = contact centre) of contact width w: backed off along the
+    approach by the pad drop at w, so the closed pads meet the object at the planned contacts."""
+    return backoff(T, pad_drop(w, grip, table))
+
+
 def q_to_width(q, table):
     W, Q = np.asarray(table["width_m"], float), np.asarray(table["drive_q"], float)
     o = np.argsort(Q)

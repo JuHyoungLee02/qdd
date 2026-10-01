@@ -50,6 +50,8 @@ def main(argv=None):
     ap.add_argument("--lowfric", action="store_true")
     ap.add_argument("--neg", action="store_true", help="smoke: add 2 negatives per object (90 deg turn, 8 cm shift)")
     ap.add_argument("--spacing", type=float, default=1.2)
+    ap.add_argument("--no-pad-drop", dest="pad_drop", action="store_false",
+                    help="command T as is (default: back off by the arc drop of the pads, gtest9.exec_pose)")
     ap.add_argument("--collider", default="none", choices=("none", "sdf", "cd"),
                     help="object collider override (gtest9.apply_collider): render meshes as SDF / fine convex decomposition")
     a = ap.parse_args(argv)
@@ -299,11 +301,13 @@ def run(a):
             c, q, rp, rq = GT.object_pose(row, yaw, origin=origins[i], lift=0.001)
             if x is None:  # idle env: object at rest, gripper parked 0.5 m above
                 Tw[i] = GT.pose(np.eye(3), c + [0.0, 0.0, 0.5])
+                mw = Tw[i, :3, 3].copy()
             else:
-                Tw[i] = GT.tcp_world(T[j], yaw, c)
+                Tg = GT.tcp_world(T[j], yaw, c)
+                mw = Tg[:3, 3].copy()  # planned contact centre
+                Tw[i] = GT.exec_pose(Tg, float(w[j]), a.grip, table) if a.pad_drop else Tg
             root[i, :3], root[i, 3:] = rp, rq
             Rb = qmat(rq)
-            mw = Tw[i, :3, 3]
             mloc[i] = Rb.T @ (mw - rp)
             cloc[i] = Rb.T @ (c - rp)
             c0z[i] = c[2]
@@ -372,6 +376,8 @@ def run(a):
         out = {}
         for key in ("close", "hold", "end"):
             mG, cz, fq = (v.cpu().numpy() for v in rec[key])
+            if a.pad_drop:  # grasp centre relative to the (lowered) pads: TCP frame z + pad drop
+                mG = mG + np.c_[np.zeros((len(fq), 2)), GT.pad_drop_q(fq, a.grip)]
             out[key] = (mG, cz - c0z, GT.q_to_width(fq, table))
         sl = slip.cpu().numpy()
         for i, x in enumerate(assign):
