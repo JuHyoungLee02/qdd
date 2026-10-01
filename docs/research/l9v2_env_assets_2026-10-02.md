@@ -86,7 +86,7 @@
 ## 7. 렌더 스모크·다양성 (2026-10-02 02:44–06:30 KST, 7a2a GPU 1, Isaac 1개씩)
 
 - 경로: `tools/l9v2env/smoke_rows.py` → `smoke_render.py`(collect9.draw → World9.prepare/reset → 머리 f0 저장, 편은 돌리지 않음) → `sheet.py`(접촉 시트로 직접 봄) → `diversity_smoke.py`(SigLIP + 축별 엔트로피). 결과 `/data/harvest/out/l9v2env/`(smoke1·smoke1b = 중간 코드 116장, smoke_v2 = 최종 코드 99장, smoke_v1 = v1 코드 106장, div_*.json).
-- 프레임 검수에서 고친 것: (1) Poly Haven USD의 MaterialX 그래프 → Isaac 시작 +4.4분·텍스처 누락 → glTF→UsdPreviewSurface 변환(P160), (2) 실외 계열 화면에 앞 편의 방이 남음(meta room=null) → 방 주차(P164, v1에도 있던 잠복 버그), (3) 가전·금속 부품에 나무 텍스처, 소품 상자가 대리석 덩어리처럼 보임 → 팔레트별 재질 종류(metal·stone·plastic·wood·paint·paper). 이후 최종 99장에서 Isaac 오류 0, 'can not be found' 0, 시작 시간 v1과 같은 수준(276–437 s, 파드 CPU 100 % 제한 중).
+- 프레임 검수에서 고친 것: (1) Poly Haven USD의 MaterialX 그래프 → Isaac 시작 +4.4분·텍스처 누락 → glTF→UsdPreviewSurface 변환(P160), (2) 실외 계열 화면에 앞 편의 방이 남음(meta room=null) → 방 주차(P173, v1에도 있던 잠복 버그), (3) 가전·금속 부품에 나무 텍스처, 소품 상자가 대리석 덩어리처럼 보임 → 팔레트별 재질 종류(metal·stone·plastic·wood·paint·paper). 이후 최종 99장에서 Isaac 오류 0, 'can not be found' 0, 시작 시간 v1과 같은 수준(276–437 s, 파드 CPU 100 % 제한 중).
 - 열린 문제: Isaac 1개가 kitchen_island/bar_ledge 시드 7000043(왼팔) reset 뒤 48분 멈춤(원인 미확인, py-spy 권한 없음). `isaac.sh`의 `timeout`은 SIGTERM만 보내 Isaac이 살아남아 다음 작업과 2개가 겹침 → IR_INST로 찾아 SIGKILL(P172).
 - 일부 ProcTHOR 방 바닥은 원래 밝은 하늘색·노랑(방 자산 색) — 바닥판 문제 아님(재질 기록으로 확인).
 
