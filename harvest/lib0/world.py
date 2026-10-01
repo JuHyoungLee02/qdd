@@ -36,6 +36,9 @@ HEAD_PX, WRIST_PX, VID_PX = 512, 256, 256
 POS_SCALE, ROT_SCALE = 0.05, 0.5  # OSC_POSE output_max (robosuite default controller config)
 ROBOT_PREFIX = ("robot0_", "gripper0_", "mount0_")
 W_CLOSE = 0.0  # Franka fingers closed on nothing: pad gap ~0
+# E-LIB0b (prereg_lib0.md change 2, measured with tools/lib0/franka_geom.py / franka_mesh.py)
+GAP_SCALE_B = 10.7 / 8.0  # Franka gap (max ~8 cm) -> the trained AI Worker scale (fully open 10.7 cm)
+W_CLOSE_B = 0.0018  # m, Franka gap after a close on nothing (measured), before the scale
 TABLE_BIN_M = 0.005
 HORIZON = 100000  # robosuite time-out (raises past it) moved out of reach for the qdd arm: its own limits end episodes
 # (LIBERO step: done = _check_success() only). use_camera_obs=False: the 256 px observations are never used by this arm.
@@ -105,6 +108,7 @@ class LiberoWorld:
         self.env = make_env(self.bddl, horizon=HORIZON, use_camera_obs=False)  # renders only when observed
         self.dt = 1.0 / float(self.rs.control_freq)
         self.w_close = W_CLOSE
+        self.gap_scale = 1.0  # E-LIB0b: every pad gap the code sees / reports x GAP_SCALE_B (the trained scale)
         self.table_z = None
         self.cmd_width = None
         self.done = False
@@ -175,7 +179,7 @@ class LiberoWorld:
 
     def _gap(self) -> float:
         q = np.asarray(self.obs["robot0_gripper_qpos"], float)
-        return float(q[0] - q[1])
+        return float(q[0] - q[1]) * self.gap_scale
 
     def _measure_table(self) -> float:
         """Prior table height = the mode (5 mm bins) of the head depth points' heights below the TCP (first frame)."""

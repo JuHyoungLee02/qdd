@@ -106,3 +106,12 @@
 
 ## 변경 기록
 - (규칙 변경 없음.) 결과: `docs/stage3/results/lib0.md`(2026-10-01 22:47 KST).
+- **변경 2 — E-LIB0b (A 결과를 본 뒤, 새 팔 실행 전; 2026-10-01 23시경 KST)**: 메인 결정(근거: '버리기 전 재검증' 규칙). 학습 없이 어댑터만 고친다. 같은 200편·같은 초기 상태·같은 서버(ep2.5, 7a2a GPU2)·같은 실행기 한도로 **A만 다시** 돌려 팔 이름 **Ab**로 둔다. B·R은 기존 결과를 그대로 쓴다. 판정·지표는 4절 그대로다. 보고는 A·Ab·B·R 나란히, A−B 짝 비교는 변경 없이 내고, Ab−B도 같은 규칙으로 함께 적는다.
+  - 바꾼 목록(Franka 실측: `tools/lib0/franka_geom.py`, `franka_mesh.py`, 시작 자세):
+    1. **패드 간격 척도**: 코드가 보고·판단에 쓰는 모든 간격(NOW·이력·잡음 판단·반복 끊기)을 Franka 간격 × 10.7/8로 바꾼다. 그래서 다 연 Franka(약 7.7–7.9 cm)는 약 10.4–10.6 cm로 보인다. 프롬프트 고정 문구 '완전히 연 패드 간격 10.7 cm'는 이 척도에서 맞는 값이라 그대로 둔다.
+    2. **닫힘 폭**(코드가 채우는 칸): 0 → 아무것도 없이 닫았을 때의 실측 0.18 cm × 10.7/8 = 0.24 cm(문구 "ends near 0.2 cm").
+    3. **z 바닥**: 탁자 + 2.5 cm → **탁자 + 1.2 cm**. Franka 손끝은 TCP 아래 1.0 cm이고, 학습 때 틈(AI Worker 2.5 − 2.25 = 0.25 cm)을 그대로 둔다. 위 끝 40 cm는 그대로다.
+    4. **집게 문구**(학습 고정 문구 → Franka 실측): '닫힘 축 x' → **y**, '패드 4.5 cm(TCP 위 2.25 ~ 아래 2.25 cm)' → **1.7 cm(위 1.2 ~ 아래 0.5 cm)**, '+ 손끝은 TCP 아래 1.0 cm', '집게 몸통은 TCP 위 2.5 cm부터' → **3.0 cm부터**.
+    5. **로봇 이름 문장**: "You control the right arm of a humanoid robot (ROBOTIS AI Worker FFW-SG2) at a table, in simulation." → "You control a robot arm (Franka Emika Panda) at a table, in simulation."
+  - 그대로 둔 것: 높이 의도 수치(above 8 cm, grasp 위 끝 아래 2 cm, place 1 cm, lift 22 cm)는 모델의 명령 정의라서 바꾸지 않는다. 작업 상자 x·y(변경 1, 이미 Franka 실측)도 그대로다. 영상 표식 'RIGHT wrist'는 답 형식(`right_wrist`)과 묶여 있어 그대로 둔다. 속도 8 cm/s, 도착·정착 규칙도 그대로다.
+  - 결과 루트는 같은 `/data/harvest/out/lib0/Ab/`, 영상은 `/data/harvest/videos/lib0/Ab/`, 코드 사본은 새 커밋으로 둔다.

@@ -27,9 +27,34 @@ SUCCESS_LINE = "Success = what the TASK sentence asks is done (the simulator che
 OBJ_HEAD = "OBJECTS (other objects on the table are obstacles, do not touch them)"
 
 
-def patch_box():
+# E-LIB0b (prereg_lib0.md change 2): adapter only, no training. Franka facts (tools/lib0/franka_geom.py, franka_mesh.py):
+# fingers close along base y; pads 1.7 cm (+1.2 / -0.5 cm about the TCP = grip_site); fingertips 1.0 cm below the TCP;
+# hand body from 3.0 cm above the TCP. z floor = fingertip + the trained clearance (AI Worker: 2.5 - 2.25 = 0.25 cm).
+DZ_B = (0.012, 0.40)
+TEXT_B = (
+    ("You control the right arm of a humanoid robot (ROBOTIS AI Worker FFW-SG2) at a table, in simulation.",
+     "You control a robot arm (Franka Emika Panda) at a table, in simulation."),
+    ("its two fingers close along the robot x axis. TCP = the point midway between the finger pads. The pads are 4.5 cm "
+     "long (from 2.25 cm above to 2.25 cm below the TCP); the gripper body starts 2.5 cm above the TCP.",
+     "its two fingers close along the robot y axis. TCP = the point midway between the finger pads. The pads are 1.7 cm "
+     "long (from 1.2 cm above to 0.5 cm below the TCP); the fingertips end 1.0 cm below the TCP; the gripper body starts "
+     "3.0 cm above the TCP."),
+)
+
+
+def patch_box(fix_b: bool = False):
     from ..astra_motion import executor as EX
     EX.SAFE_X, EX.SAFE_Y = BOX_X, BOX_Y
+    if fix_b:
+        EX.SAFE_DZ = DZ_B
+
+
+def text_b(text: str) -> str:
+    for old, new in TEXT_B:
+        if text.count(old) != 1:
+            raise ValueError(f"E-LIB0b: fixed sentence not found once: {old[:60]!r}")
+        text = text.replace(old, new)
+    return text
 
 
 def lib_block(world) -> str:
@@ -90,6 +115,7 @@ def episode_class():
     class LibEpisode(with_loop_break(LimitEpisode)):
         vid_dir = None
         block = None
+        fix_b = False
 
         def _truth(self) -> dict:
             st = self.w.status()
@@ -101,7 +127,8 @@ def episode_class():
 
         def _request(self, obs, i, statics):
             text, ims = super()._request(obs, i, statics)
-            return swap_block(text, self.block), ims
+            text = swap_block(text, self.block)
+            return (text_b(text) if self.fix_b else text), ims
 
         def _tick(self):
             super()._tick()
@@ -140,18 +167,21 @@ def main(argv=None):
     ap.add_argument("--stop-files", default="")
     ap.add_argument("--stop-calls", type=int, default=30)
     ap.add_argument("--stop-motion", type=float, default=120.0)
+    ap.add_argument("--fix-b", action="store_true", help="E-LIB0b adapter fixes (prereg change 2)")
     a = ap.parse_args(argv)
-    patch_box()
+    patch_box(a.fix_b)
     from ..astra_solo import pt_episode as PE
     from ..astra_solo import resolve as RS
     from ..astra_solo.models import LocalVLM
     from ..teach_pt.run_closed_l8s import ErrCount, claim, yield_reason
-    from .world import MAX_STEPS, LiberoWorld
+    from .world import GAP_SCALE_B, MAX_STEPS, W_CLOSE_B, LiberoWorld
     RS.robot_mask = lambda hgt, plane, tcp: np.zeros(np.shape(hgt), bool)
     PE.Monitor = LibMonitor
     code = 0
     stops = [f for f in a.stop_files.split(",") if f]
     world = LiberoWorld(a.suite, a.task)
+    if a.fix_b:
+        world.gap_scale, world.w_close = GAP_SCALE_B, W_CLOSE_B * GAP_SCALE_B
     print("WORLD " + json.dumps({"suite": a.suite, "task": a.task, "language": world.task.language,
                                  "ooi": world.objects_of_interest()}), flush=True)
     model = ErrCount(LocalVLM(a.qwen_url, a.qwen_name, "q35_lib0"))
@@ -176,6 +206,7 @@ def main(argv=None):
                     stop_motion_s=a.stop_motion, mem_points=True, fix_loop=True, loop_break=True, stall_n=3,
                     corrupt=None)
             ep.vid_dir = vd
+            ep.fix_b = a.fix_b
             world.table_z = None  # re-measured at this episode's reset
             ep.block = lib_block(world)
             res = ep.run()
@@ -191,7 +222,7 @@ def main(argv=None):
         mp4 = os.path.join(a.vid_root, a.arm, a.suite, name + ".mp4")
         ok = make_mp4(vd, mp4)
         lat = res.get("latency_s") or []
-        row = {"arm": a.arm, "suite": a.suite, "task": a.task, "k": k, "language": world.task.language,
+        row = {"arm": a.arm, "fix_b": a.fix_b, "suite": a.suite, "task": a.task, "k": k, "language": world.task.language,
                "success": bool(res.get("success")), "t_success": res.get("t_success"),
                "success_in_budget": bool(res.get("success")) and res.get("t_success") is not None
                and float(res["t_success"]) <= budget_s + 1e-9, "budget_s": budget_s,

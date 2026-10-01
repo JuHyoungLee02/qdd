@@ -3,7 +3,7 @@
 # Jobs: tab-separated "<suite> <task> <ks>" lines; claimed with mkdir <out>/claims/<arm>_<suite>_<task>.
 # Servers: arm A -> LIB0_QURL (vLLM, served name lib0_ep2_5); arms B / R -> LIB0_PIHOST:8702 (B) / 8701 (R).
 # Stop: touch /data/harvest/out/lib0/STOP (between jobs; the runner also checks it between episodes).
-# usage: lane.sh <code dir> <arm A|B|R> <lane name> <jobs file>   log -> /data/harvest/logs/lib0/lanes.log + lane_<name>.log
+# usage: lane.sh <code dir> <arm A|Ab|B|R> <lane name> <jobs file>   log -> /data/harvest/logs/lib0/lanes.log + lane_<name>.log
 C=$1; ARM=$2; LN=$3; J=$4
 O=/data/harvest/out/lib0; V=/data/harvest/videos/lib0; L=/data/harvest/logs/lib0
 mkdir -p $O/claims $O/lanes $V $L

@@ -16,7 +16,7 @@ import numpy as np
 
 SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
 SHORT = {"libero_spatial": "Spatial", "libero_object": "Object", "libero_goal": "Goal", "libero_10": "Long"}
-ARMS = ("A", "B", "R")
+ARMS = ("A", "Ab", "B", "R")
 
 
 def wilson(k: int, n: int, z: float = 1.96):
@@ -65,7 +65,7 @@ def main(root: str = "/data/harvest/out/lib0"):
             rs = [r for r in rows if r["arm"] == arm and (s == "all" or r["suite"] == s)]
             k = sum(r["success"] for r in rs)
             d = {"n": len(rs), "k": k, "rate": round(k / len(rs), 3) if rs else None, "wilson": wilson(k, len(rs))}
-            if arm == "A":
+            if arm in ("A", "Ab"):
                 kb = sum(bool(r.get("success_in_budget")) for r in rs)
                 d["in_budget"] = {"k": kb, "rate": round(kb / len(rs), 3) if rs else None}
             S[f"{arm}|{s}"] = d
@@ -77,12 +77,12 @@ def main(root: str = "/data/harvest/out/lib0"):
         for r in rows:
             if r["arm"] != arm or r["success"]:
                 continue
-            c[f"{r.get('end_reason')}/{r.get('fail_stage')}" if arm == "A" else r.get("end_reason")] += 1
+            c[f"{r.get('end_reason')}/{r.get('fail_stage')}" if arm in ("A", "Ab") else r.get("end_reason")] += 1
         F[arm] = c.most_common()
     LAT = {}
     for arm in ARMS:
         lat = [x for r in rows if r["arm"] == arm for x in (r.get("latency_s") or [])]
-        calls = [r.get("n_calls") if arm == "A" else r.get("n_infer") for r in rows if r["arm"] == arm]
+        calls = [r.get("n_calls") if arm in ("A", "Ab") else r.get("n_infer") for r in rows if r["arm"] == arm]
         wall = [r["wall_s"] for r in rows if r["arm"] == arm]
         LAT[arm] = {"n_lat": len(lat), "median_s": round(float(np.median(lat)), 3) if lat else None,
                     "p90_s": round(float(np.percentile(lat, 90)), 3) if lat else None,
@@ -97,14 +97,14 @@ def main(root: str = "/data/harvest/out/lib0"):
             return "-"
         return f"{d['k']}/{d['n']} = {d['rate'] * 100:.0f} % [{d['wilson'][0] * 100:.0f}–{d['wilson'][1] * 100:.0f}]"
     md = ["# E-LIB0 결과 (시범, 보고 전용)", "",
-          "| 묶음 | A 본 35B ep2.5 (무학습) | B π0.5 base (무학습) | A − B (짝, 과제 부트스트랩) | 참고 R π0.5-LIBERO (LIBERO 미세조정) | A, openpi 걸음 예산 안 |",
-          "|---|---|---|---|---|---|"]
+          "| 묶음 | A 본 35B ep2.5 (무학습) | Ab = A + 어댑터 고침 (E-LIB0b) | B π0.5 base (무학습) | A − B (짝, 과제 부트스트랩) | 참고 R π0.5-LIBERO (LIBERO 미세조정) | A, openpi 걸음 예산 안 |",
+          "|---|---|---|---|---|---|---|"]
     for s in SUITES + ("all",):
         p = P[s]
         pd = "-" if not p.get("n") else f"{p['diff_pp']:+.1f} %p [{p['ci_pp'][0]:+.1f}, {p['ci_pp'][1]:+.1f}] {p['label']}"
         ib = S[f"A|{s}"].get("in_budget") or {}
         ibs = "-" if ib.get("rate") is None else f"{ib['k']} ({ib['rate'] * 100:.0f} %)"
-        md.append(f"| {SHORT.get(s, '전체')} | {cell('A', s)} | {cell('B', s)} | {pd} | {cell('R', s)} | {ibs} |")
+        md.append(f"| {SHORT.get(s, '전체')} | {cell('A', s)} | {cell('Ab', s)} | {cell('B', s)} | {pd} | {cell('R', s)} | {ibs} |")
     md += ["", "## 실패 유형 (상위)"]
     for arm in ARMS:
         md.append(f"- {arm}: " + ", ".join(f"{k} {v}" for k, v in F[arm][:5]))
