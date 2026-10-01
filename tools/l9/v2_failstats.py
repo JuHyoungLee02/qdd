@@ -28,7 +28,8 @@ def main():
     by_arm = Counter()
     for m in glob.glob(os.path.join(root, "**", "meta.json"), recursive=True):
         meta = json.load(open(m))
-        if meta.get("grasp_v2") is None or (arm and meta.get("arm") != arm) or os.path.getmtime(m) < since \n                or (clean and meta.get("style") != "clean"):
+        if meta.get("grasp_v2") is None or (arm and meta.get("arm") != arm) or os.path.getmtime(m) < since \
+                or (clean and meta.get("style") != "clean"):
             continue
         n += 1
         s = bool(meta["success"]) and (meta.get("max_dq_rad") or 0) <= 0.04
