@@ -54,6 +54,9 @@ def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 20, world=None) ->
         room = world.room_name(sd, sc["family"], parts) if world is not None else f"seed:{sd}"
         hdr = world.hdr_name(sd) if world is not None else f"seed:{sd}"
         mats = world.material_ids(sd, [p for p in parts if room is None or p["role"] != "room_wall"])             if world is not None else f"seed:{sd}"
+        tag = combo_tag(row)
+        if tag:  # spec §9: another robot / a drawn head camera is another combination (AI Worker std: unchanged)
+            hp = list(hp) + [tag]
         rec = {"room": room, "furniture": [sc["family"], sc["rule"], sc["params"], [p["size"] for p in sc["parts_s"]]],
                "materials": mats, "light_family": light, "hdr": hdr, "robot_pose": rp, "head_pose": hp}
         h = V.combo_hash(rec)
@@ -62,6 +65,15 @@ def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 20, world=None) ->
             continue
         return sc, ep, light, head, h, sd
     raise NoEpisode(last)
+
+
+def combo_tag(row: dict) -> str:
+    """'' for the AI Worker with the standard head camera (old hashes unchanged), else robot / head-camera mode."""
+    from .hcam9 import coin
+    robot = row.get("robot") or "ffw_sg2"
+    h = row.get("hcam")
+    mode = coin(int(row["seed"])) if h == "coin" else (h or "std")
+    return "" if (robot == "ffw_sg2" and mode == "std") else f"{robot}/{mode}"
 
 
 def register_task(ep: dict) -> None:
@@ -117,7 +129,8 @@ def run_episode(world, row: dict, out_dir: str, pool: dict, rm, ledger=None, p: 
                 objects={k: {"name": ep["names"].get(k), "node": o["node"]} for k, o in ep["objects"].items()},
                 clutter=sorted(ep.get("clutter", {})), room=(fs.get("room") or {}).get("name"), hdr=fs.get("hdr"),
                 materials=sorted(set((fs.get("materials") or {}).values())), iso=fs.get("iso"),
-                decor=fs.get("decor"),
+                decor=fs.get("decor"), robot=row.get("robot") or "ffw_sg2", head_cam=fs.get("head_cam"),
+                base=fs.get("base"),
                 motion_version=(mstyle or {}).get("version", MOTION_VERSION), motion_style=mstyle,
                 judge_l9=judge or None, plan_row=row)
     with open(os.path.join(out_dir, "meta.json"), "w") as f:

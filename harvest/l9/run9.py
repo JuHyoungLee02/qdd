@@ -59,7 +59,12 @@ def yield_file() -> str:
 
 
 def ep_dir(out: str, row: dict) -> str:
-    return os.path.join(out, row.get("split", "train"), row["family"], f"{row['def']}_s{row['seed']}_{row['arm']}")
+    rb = row.get("robot") or "ffw_sg2"
+    tail = "" if rb == "ffw_sg2" else f"_{rb}"  # spec §9: another robot on the same seed gets its own folder
+    return os.path.join(out, row.get("split", "train"), row["family"], f"{row['def']}_s{row['seed']}_{row['arm']}{tail}")
+
+
+FRANKA_MAX_GRASP_W = 0.066  # Franka Hand opens 8 cm; close_width = width - 1.4 cm must leave the fingers room
 
 
 def main(argv=None):
@@ -90,6 +95,15 @@ def main(argv=None):
         arms = {r["arm"] for r in rows}
         if len(arms) != 1:
             raise ValueError(f"job {a.job}: one arm per process, got {arms}")
+        robots = {r.get("robot") or "ffw_sg2" for r in rows}
+        hcams = {r.get("hcam") for r in rows}
+        if len(robots) != 1 or len(hcams) != 1:
+            raise ValueError(f"job {a.job}: one robot / head-camera mode per process, got {robots} {hcams}")
+        robot, hcam = next(iter(robots)), next(iter(hcams))
+        if hcam is None and os.path.exists(os.path.join(os.path.dirname(os.path.abspath(a.out)), "HCAM_ON")):
+            hcam = "coin"  # run-level switch (spec §9.3: new episodes of a running production, after the pilot gate)
+            for r in rows:
+                r["hcam"] = hcam
         todo = [r for r in rows if not (os.path.exists(os.path.join(ep_dir(a.out, r), "meta.json"))
                                         or os.path.exists(os.path.join(ep_dir(a.out, r), "skipped.json")))]
         print("JOB " + json.dumps({"job": a.job, "rows": len(rows), "todo": len(todo)}), flush=True)
@@ -97,19 +111,28 @@ def main(argv=None):
             print("RUN_DONE", flush=True)
             os._exit(0)
         from .arm import apply_arm_workspace
+        from .robot9 import apply_prompts
         arm = next(iter(arms))
         apply_arm_workspace(arm)  # left: mirrored safety box / reach corner (before the episode modules load)
+        apply_prompts(robot)  # spec §9.1: robot / gripper / head-camera wording of the requests
         split = rows[0].get("split", "train")
         pool = A9.pool_for(int(rows[0]["pool"]), "train" if split == "train" else "ood_o")
         if rows[0].get("pool_ids"):  # object gate jobs: exactly these targets (+ the pool's clutter / containers)
             cat = A9.catalog("train")
             pool = {k: v for k, v in pool.items() if v["role9"] != "target"}
             pool.update({k: cat[k] for k in rows[0]["pool_ids"] if k in cat})
+        if robot == "franka_mast":  # targets the Franka Hand can close on; fingers / containers: its opening
+            from . import task9 as T9
+            T9.FINGER_OPEN = 0.08
+            pool = {k: v for k, v in pool.items()
+                    if v["role9"] != "target" or float(v.get("grasp_width") or 2 * float(v.get("footprint_r", 1)))
+                    <= FRANKA_MAX_GRASP_W}
         rooms = rooms_for(int(rows[0]["rooms"]), "train" if split == "train" else "ood")
         mesh = A9.mesh_for(int(rows[0]["rooms"]), split="train" if split == "train" else "ood")
-        world = make_world9(arm, pool, rooms, mesh=mesh)
+        world = make_world9(arm, pool, rooms, mesh=mesh, robot=robot, hcam=hcam)
         from ..teach_l8d import collect as _c  # noqa: F401  (load the episode modules, then rebind their copies)
-        print("WORKSPACE " + json.dumps({"arm": arm, "rebound": apply_arm_workspace(arm)}), flush=True)
+        print("WORKSPACE " + json.dumps({"arm": arm, "rebound": apply_arm_workspace(arm), "robot": robot, "hcam": hcam,
+                                         "prompts": apply_prompts(robot)}), flush=True)
         rm = R9.load_default()
         led_dir = os.path.join(a.out, "ledger")
         os.makedirs(led_dir, exist_ok=True)
@@ -120,7 +143,8 @@ def main(argv=None):
               flush=True)
         yf = yield_file()
         for r in todo:
-            if os.path.exists(yf):  # the card is lent to another job: stop between episodes (tools/l9/lend9.sh)
+            if os.path.exists(yf) and os.environ.get("IR_L9R_LENT") != "1":  # lent card: stop between episodes
+                # (tools/l9/lend9.sh); IR_L9R_LENT=1 = this process IS the borrower (tools/l9r/lane_r.sh)
                 print("YIELD " + yf, flush=True)
                 break
             od = ep_dir(a.out, r)
@@ -133,7 +157,8 @@ def main(argv=None):
                 json.dump({"row": r, "reason": f"{type(ex).__name__}: {ex}"}, open(os.path.join(od, "skipped.json"), "w"))
                 print("SKIP " + json.dumps({"seed": r["seed"], "def": r["def"], "reason": str(ex)[:200]}), flush=True)
                 continue
-            keep = ("seed", "task_id", "arm", "env_family", "success", "end_reason", "n_calls", "max_dq_rad", "wall_s")
+            keep = ("seed", "task_id", "arm", "robot", "env_family", "success", "end_reason", "n_calls", "max_dq_rad",
+                    "wall_s")
             print("EP " + json.dumps(dict({k: meta.get(k) for k in keep}, wall_total_s=round(time.perf_counter() - t0, 1))),
                   flush=True)
         print("RUN_DONE", flush=True)

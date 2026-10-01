@@ -97,7 +97,7 @@ def oracle_objects(env):
         objs[k] = Obj(id=k, pos=to_table_frame(p, z0), quat_wxyz=q, half_extents=he)
         half_z[k] = he[2]
     all_ids = list(getattr(env, "obj_ids", ["o3", "o5", "o8", "o9", "o10"]))  # = the contact filter order (scene)
-    n_f = len(FINGER_BODIES[env.arm])
+    n_f = len(getattr(env, "finger_bodies", None) or FINGER_BODIES[env.arm])  # L9 profile: its finger links
     contacts = set()
     for k in env.present:
         if k in VISUAL_ONLY or k in X_VISUAL_ONLY:  # marker / L8-X spots: no sensor; virtual contacts

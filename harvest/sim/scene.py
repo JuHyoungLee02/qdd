@@ -339,7 +339,8 @@ def _place_layout_event(env, env_ids):
 
 def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu", variant: str = "standard",
                decimation: int = 5, render_interval: int | None = None, task: str = "mug_tray",
-               table_z: float = TABLE_TOP_Z, ws=None, lift: float | None = None, objset: str | None = None):
+               table_z: float = TABLE_TOP_Z, ws=None, lift: float | None = None, objset: str | None = None,
+               robot: str | None = None):
     import isaaclab.envs.mdp as mdp
     import isaaclab.sim as sim_utils
     from isaaclab.assets import AssetBaseCfg, RigidObjectCfg
@@ -355,10 +356,16 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
 
     if arm not in ("right", "left"):  # L9: arm="left" (opt-in); every L8 caller passes the default "right"
         raise NotImplementedError(f"arm {arm!r}")
+    if robot is not None:  # L9 spec §9.1 (opt-in robot profile; None = the AI Worker, unchanged)
+        from ..l9 import robot9 as R9
+        if robot != "franka_mast" or arm != "right":
+            raise NotImplementedError(f"robot {robot!r} arm {arm!r}")
     from .tasks import task_layout
     layout = task_layout(seed, task, ws=ws)  # mug_tray = sample_layout(seed)
     robot_prefix = "{ENV_REGEX_NS}/Robot/ffw_sg2_follower"
     finger_paths = [f"{robot_prefix}/{GRIPPER_PRIM[arm]}/{b}" for b in FINGER_BODIES[arm]]
+    if robot is not None:
+        finger_paths = [f"{{ENV_REGEX_NS}}/Robot/{b}" for b in R9.FINGER_BODIES]
     obj_ids = ["o3", "o5", "o8", "o9", "o10"] + (list(X_RIGID) + list(OBJV_IDS) if objset == "x" else [])
 
     def obj_cfg(k):
@@ -403,10 +410,14 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
         return ContactSensorCfg(prim_path=body_path(k), update_period=0.0, history_length=0,
                                 filter_prim_paths_expr=finger_paths + others)
 
-    robot = _robot_cfg()
-    base = INIT_JOINTS if arm == "right" else init_joints(arm)  # L9 left arm: mirrored start, right arm stowed
-    joints = dict(base) if lift is None else {**base, "lift_joint": float(lift)}  # L8-D lift flag
-    robot = robot.replace(init_state=robot.init_state.replace(joint_pos={**robot.init_state.joint_pos, **joints}))
+    if robot is not None:
+        robot_name, robot = robot, R9.franka_robot_cfg()
+    else:
+        robot_name = None
+        robot = _robot_cfg()
+        base = INIT_JOINTS if arm == "right" else init_joints(arm)  # L9 left arm: mirrored start, right arm stowed
+        joints = dict(base) if lift is None else {**base, "lift_joint": float(lift)}  # L8-D lift flag
+        robot = robot.replace(init_state=robot.init_state.replace(joint_pos={**robot.init_state.joint_pos, **joints}))
 
     scene_attrs = {
         "robot": robot,
@@ -435,8 +446,17 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
         spawn=sim_utils.CylinderCfg(radius=mk["radius"], height=mk["height"], axis="Z",
                                     visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=mk["color"])),
         init_state=AssetBaseCfg.InitialStateCfg(pos=(*PARK_XY["o11"], mk["height"] / 2)))
-    for n, c in _default_camera_cfgs(cameras, depth).items():
-        scene_attrs[n] = c
+    if robot_name is not None:  # profile cameras + the stand under the arm base (static collider, moved per episode)
+        for n, c in R9.franka_camera_cfgs(cameras, depth).items():
+            scene_attrs[n] = c
+        scene_attrs["stand"] = AssetBaseCfg(
+            prim_path="{ENV_REGEX_NS}/Stand",
+            spawn=sim_utils.CuboidCfg(size=(R9.STAND_XY, R9.STAND_XY, 2.0), collision_props=sim_utils.CollisionPropertiesCfg(),
+                                      visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.25, 0.25, 0.27))),
+            init_state=AssetBaseCfg.InitialStateCfg(pos=(R9.BASE_X, R9.BASE_Y_RIGHT, 0.80 - 1.0)))
+    else:
+        for n, c in _default_camera_cfgs(cameras, depth).items():
+            scene_attrs[n] = c
     @configclass
     class QddSceneCfg(InteractiveSceneCfg):
         pass
@@ -446,12 +466,15 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
         setattr(scene_cfg, k, v)
 
     arm_joints, gj = ARM_JOINTS[arm], GRIP_JOINT[arm]
+    grip_all = GRIP_ALL[arm]
+    if robot_name is not None:
+        arm_joints, grip_all = list(R9.ARM), list(R9.FINGERS)
 
     @configclass
     class ActionsCfg:
         arm_action = mdp.JointPositionActionCfg(asset_name="robot", joint_names=arm_joints, scale=1.0,
                                                 use_default_offset=False, preserve_order=True)
-        gripper_action = mdp.JointPositionActionCfg(asset_name="robot", joint_names=GRIP_ALL[arm], scale=1.0,
+        gripper_action = mdp.JointPositionActionCfg(asset_name="robot", joint_names=grip_all, scale=1.0,
                                                     preserve_order=True,
                                                     use_default_offset=False)
 
@@ -501,26 +524,34 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
     return cfg, layout
 
 
-def _measure_finger_offsets(arm: str):
+def _measure_finger_offsets(arm: str, robot: str | None = None):
     """(pad centre, fingertip) distance from the link7 origin along the gripper axis (link7 -z), from the USD's
-    authored (zero-joint) pose: finger link2 world bounds expressed in the link7 frame."""
+    authored (zero-joint) pose: finger link2 world bounds expressed in the link7 frame.
+    robot (L9 profile, opt-in): its EE frame and finger links; the pad centre = half the profile's pad above the tip."""
     import omni.usd
     from pxr import Gf, Usd, UsdGeom
 
     stage = omni.usd.get_context().get_stage()
     root = "/World/envs/env_0/Robot/ffw_sg2_follower"
-    T7 = UsdGeom.XformCache().GetLocalToWorldTransform(stage.GetPrimAtPath(f"{root}/{EE_BODY[arm]}"))
+    ee, fingers = f"{root}/{EE_BODY[arm]}", [f"{root}/{GRIPPER_PRIM[arm]}/{b}" for b in FINGER_BODIES[arm][1::2]]
+    if robot is not None:
+        from ..l9 import robot9 as R9
+        root = "/World/envs/env_0/Robot"
+        ee, fingers = f"{root}/{R9.EE_BODY}", [f"{root}/{b}" for b in R9.FINGER_BODIES]
+    T7 = UsdGeom.XformCache().GetLocalToWorldTransform(stage.GetPrimAtPath(ee))
     inv = T7.GetInverse()
     bb = UsdGeom.BBoxCache(Usd.TimeCode.Default(), ["default", "render", "proxy"])
     zs = []
-    for b in FINGER_BODIES[arm][1::2]:  # l2, r2
-        rng = bb.ComputeWorldBound(stage.GetPrimAtPath(f"{root}/{GRIPPER_PRIM[arm]}/{b}")).ComputeAlignedRange()
+    for path in fingers:  # l2, r2
+        rng = bb.ComputeWorldBound(stage.GetPrimAtPath(path)).ComputeAlignedRange()
         lo, hi = rng.GetMin(), rng.GetMax()
         for cx in (lo[0], hi[0]):
             for cy in (lo[1], hi[1]):
                 for cz in (lo[2], hi[2]):
                     zs.append(inv.Transform(Gf.Vec3d(cx, cy, cz))[2])
     tip, base = -min(zs), -max(zs)
+    if robot is not None:
+        return float(tip - R9.PAD_LEN_M / 2), float(tip)
     return float((tip + base) / 2), float(tip)
 
 
@@ -532,7 +563,7 @@ class Env:
     def __init__(self, seed: int, headless=True, cameras=DEFAULT_CAMERAS, arm="right", depth=True, sim_device="cpu",
                  variant="standard", decimation: int = 5, render_interval: int | None = None, task: str = "mug_tray",
                  hard_reset: bool = True, table_z: float | None = None, ws=None, lift: float | None = None,
-                 objset: str | None = None):
+                 objset: str | None = None, robot: str | None = None):
         from . import randomize
         from .tasks import check_task
         if objset not in (None, "x"):
@@ -556,8 +587,9 @@ class Env:
         self.seed, self.arm, self.cameras = int(seed), arm, cameras
         tz = TABLE_TOP_Z if table_z is None else float(table_z)
         _LAYOUT["table_z"] = tz  # randomize.write_distractor_poses reads it (distractors stand on this table)
+        self.robot_name = robot  # L9 profile (None = the AI Worker)
         cfg, self.layout = _build_cfg(seed, cameras, arm, depth, sim_device, variant, decimation, render_interval,
-                                      task, tz, self.ws, self.lift, objset)
+                                      task, tz, self.ws, self.lift, objset, **({"robot": robot} if robot else {}))
         self.sim_device = cfg.sim.device
         _LAYOUT["layout"] = self.layout
         self.randomization = randomize.sample_randomization(seed, variant, self.layout, path=self.task_path())
@@ -572,15 +604,24 @@ class Env:
         self.contact = {k: self.scene[f"contact_{k}"] for k in self.objects if not OBJ_GEOM[k].get("kinematic")}
         self.present = [k for k in self.present_ids if k in self.layout]  # o10 joins after P2 fires
         jn = self.robot.joint_names
-        self.arm_ids = [jn.index(n) for n in ARM_JOINTS[arm]]
-        self.grip_id = jn.index(GRIP_JOINT[arm])
-        self.ee_idx = self.robot.body_names.index(EE_BODY[arm])
-        self.finger_idx = [self.robot.body_names.index(b) for b in FINGER_BODIES[arm]]
+        if robot is None:
+            self.arm_ids = [jn.index(n) for n in ARM_JOINTS[arm]]
+            self.grip_id = jn.index(GRIP_JOINT[arm])
+            self.ee_idx = self.robot.body_names.index(EE_BODY[arm])
+            self.finger_idx = [self.robot.body_names.index(b) for b in FINGER_BODIES[arm]]
+        else:  # L9 profile: its joints / links; finger_mid and gripper_width read pad_pair / pad_inset
+            from ..l9 import robot9 as R9
+            self.arm_ids = [jn.index(n) for n in R9.ARM]
+            self.grip_id = jn.index(R9.FINGERS[0])
+            self.ee_idx = self.robot.body_names.index(R9.EE_BODY)
+            self.finger_idx = [self.robot.body_names.index(b) for b in R9.FINGER_BODIES]
+            self.finger_bodies = R9.FINGER_BODIES
+            self.pad_pair, self.pad_inset = (0, 1), 0.0
         self.step_dt = float(self.env.step_dt)
         self._steps = 0
         self.perturb_state = None
         self.table_top_z = tz
-        self.tcp_offset, self.tip_offset = _measure_finger_offsets(arm)
+        self.tcp_offset, self.tip_offset = _measure_finger_offsets(arm, robot) if robot else _measure_finger_offsets(arm)
         if self.variant != "standard":
             randomize.setup_visuals(self)
             self.rand_mesh_fit = dict(randomize.MESH_FIT)
@@ -684,7 +725,7 @@ class Env:
         self.env.reset(seed=self.seed)
         self._steps = 0
         q = self.robot.data.joint_pos[0]
-        hold = np.concatenate([q[self.arm_ids].cpu().numpy(), [GRIP_MAX_W]])
+        hold = np.concatenate([q[self.arm_ids].cpu().numpy(), [self.grip_max_w]])
         for _ in range(int(round(settle_s / self.step_dt))):
             self.step(hold)
         if self.variant != "standard":  # distractor offset from its sampled pose after settling (spawn check)
@@ -694,10 +735,22 @@ class Env:
         self._steps = 0  # episode clock starts after settling
         return hold
 
+    @property
+    def grip_max_w(self) -> float:
+        if getattr(self, "robot_name", None) is None:
+            return GRIP_MAX_W
+        from ..l9 import robot9 as R9
+        return R9.GRIP_MAX_W
+
     def step(self, q_target: np.ndarray) -> None:
         q_target = np.asarray(q_target, dtype=np.float32)
-        g = width_to_joint(float(q_target[7]))
-        a = np.concatenate([q_target[:7], [g, g, g, g]]).astype(np.float32)
+        if getattr(self, "robot_name", None) is not None:  # L9 profile: two symmetric prismatic fingers
+            from ..l9 import robot9 as R9
+            g = R9.franka_width_to_joint(float(q_target[7]))
+            a = np.concatenate([q_target[:7], [g, g]]).astype(np.float32)
+        else:
+            g = width_to_joint(float(q_target[7]))
+            a = np.concatenate([q_target[:7], [g, g, g, g]]).astype(np.float32)
         self.env.step(self.torch.as_tensor(a, device=self.env.device).unsqueeze(0))
         self._steps += 1
 
@@ -710,13 +763,19 @@ class Env:
         return d.body_pos_w[0, self.ee_idx].cpu().numpy(), d.body_quat_w[0, self.ee_idx].cpu().numpy()
 
     def finger_mid(self) -> np.ndarray:
-        p = self.robot.data.body_pos_w[0, self.finger_idx[1]] + self.robot.data.body_pos_w[0, self.finger_idx[3]]
+        if getattr(self, "robot_name", None) is not None:  # L9 profile: the TCP (pad centre) on the EE frame's -z
+            from .planner import _quat_rot
+            p, q = self.ee_pose()
+            return p + _quat_rot(q, (0.0, 0.0, -self.tcp_offset))
+        a, b = getattr(self, "pad_pair", (1, 3))
+        p = self.robot.data.body_pos_w[0, self.finger_idx[a]] + self.robot.data.body_pos_w[0, self.finger_idx[b]]
         return (p / 2).cpu().numpy()
 
     def gripper_width(self) -> float:
         """Measured pad gap: finger link2 origin distance minus the pad inset (not the joint1 map)."""
-        d = self.robot.data.body_pos_w[0, self.finger_idx[1]] - self.robot.data.body_pos_w[0, self.finger_idx[3]]
-        return max(float(d.norm()) - PAD_INSET_M, 0.0)
+        a, b = getattr(self, "pad_pair", (1, 3))
+        d = self.robot.data.body_pos_w[0, self.finger_idx[a]] - self.robot.data.body_pos_w[0, self.finger_idx[b]]
+        return max(float(d.norm()) - getattr(self, "pad_inset", PAD_INSET_M), 0.0)
 
     def gripper_effort(self) -> float:
         return float(self.robot.data.applied_torque[0, self.grip_id].abs())
@@ -810,7 +869,7 @@ def make_env(seed: int, headless: bool = True, cameras=DEFAULT_CAMERAS, arm: str
              sim_device: str = "cpu", variant: str = "standard", decimation: int = 5,
              render_interval: int | None = None, task: str = "mug_tray", hard_reset: bool = True,
              table_z: float | None = None, ws=None, lift: float | None = None,
-             objset: str | None = None) -> Env:
+             objset: str | None = None, robot: str | None = None) -> Env:
     """cameras: names from KNOWN_CAMERAS (real robot cameras); () for no rendering.
     task: tasks.TASK_IDS (R2); the default is the original mug -> tray task with the standard layout.
     sim_device: 'cpu' (PhysX on CPU, default, canon §48) or 'cuda' (GPU PhysX, the v1 setting).
@@ -829,6 +888,8 @@ def make_env(seed: int, headless: bool = True, cameras=DEFAULT_CAMERAS, arm: str
     objset: None (default) = the five objects o3-o10; "x" = + the L8-X objects (X_OBJ_GEOM: stand, blue mug, small
     cup, open bin, invisible relational spots; docs/research/l8x_env_suite_design_2026-09-27.md)."""
     kw = {} if ws is None and lift is None and objset is None else {"ws": ws, "lift": lift, "objset": objset}
+    if robot is not None:  # L9 robot profile (spec §9.1); None = the AI Worker (unchanged)
+        kw = {"ws": ws, "lift": lift, "objset": objset, "robot": robot}
     return Env(seed, headless=headless, cameras=cameras, arm=arm, depth=depth, sim_device=sim_device, variant=variant,
                decimation=decimation, render_interval=render_interval, task=task, hard_reset=hard_reset,
                table_z=table_z, **kw)
