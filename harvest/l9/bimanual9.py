@@ -555,13 +555,14 @@ def receiver_spot(sc: dict, ep: dict, obj_key: str, fr: float, rm, arm: str, see
     return float(x), float(y), top
 
 
-def handover_compat(C: dict, gr: dict, idx_g, idx_r, wrist: float = WRIST_M, standoff: float = 0.10) -> dict:
+def handover_compat(C: dict, gr: dict, idx_g, idx_r, wrist: float = 0.0, standoff: float | None = None) -> dict:
     """Handover grasp PAIRS in the object frame (bimdeep a13 10-03: once the receiver's swept gripper was checked
     against the giver's real hand, 0 of 706-800 receiver candidates were left -- the giver's pick (chosen alone, as
     for a one-arm task) covered every surface the receiver could use). {giver idx: array of receiver idx} whose
     receiver gripper, swept back `standoff` along its approach at its pre-open, clears the giver's hand (fingers at
     the contact width + palm + wrist) at that giver grasp. C: candidate dict (object frame T / w / pre_open)."""
     from . import grasp9 as G
+    standoff = HANDOVER_SWEEP if standoff is None else standoff
 
     def world_boxes(T, bx):
         R, t = np.asarray(T, float)[:3, :3], np.asarray(T, float)[:3, 3]
@@ -639,6 +640,8 @@ GRAVITY_BOX_HALF = (0.025, 0.025, 0.03)  # m, coarse stand-in for the other arm'
 # was the #1 real B failure (6/7 executed-episode failures) -- same root cause, smaller object this time. Still a
 # box, not the real links (R1 stands); if real collisions start showing up in frame review, grow this back up.
 ZONE_TRIES = 12  # extra live handover points tried when the drawn one fails either arm
+HANDOVER_SWEEP = 0.03  # m of the receiver's straight approach checked against the giver's hand (fingers + palm, no
+# wrist extension): bimdeep a15 10-03, with 10 cm + the 6 cm wrist no receiver grasp of any bottle survived
 ZONE_DX = (0.15, 0.25, 0.35)  # m ahead of the arms' base-link midpoint (live handover grid)
 ZONE_DY = (-0.08, 0.0, 0.08)  # m across the body midline
 ZONE_DZ = (0.12, 0.20, 0.28)  # m above the support
@@ -1051,7 +1054,7 @@ class HandoverRuntime:
         bad |= {int(i) for i in ok if int(i) not in compat}  # not evaluated (over the cap): left out
         return bad, compat
 
-    def _hand_clash(self, slot: "_ArmSlot", obj_key: str, standoff: float = 0.10) -> set:
+    def _hand_clash(self, slot: "_ArmSlot", obj_key: str, standoff: float | None = None) -> set:
         """Candidate indices (rt.choose() indexing, flips included) whose swept gripper hits the OTHER hand."""
         import os as _os
         from . import grasp9 as G
@@ -1059,7 +1062,10 @@ class HandoverRuntime:
         from . import rt9 as RT
         rt = slot.rt
         other = self.other_of(slot)
-        obst = boxes_as_obstacles(live_hand_boxes(self.world, other.arm, other.rt))
+        standoff = HANDOVER_SWEEP if standoff is None else standoff
+        env = self.world.env
+        env.use_arm(other.arm)
+        obst = boxes_as_obstacles(hand_boxes(other.rt.tcp_T(), other.rt.gr, float(env.gripper_width()), wrist=0.0))
         self.world.env.use_arm(slot.arm)
         C = rt._load(obj_key)
         if C is None or not len(C["w"]) or not len(obst[0]):
