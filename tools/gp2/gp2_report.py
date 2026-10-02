@@ -32,16 +32,29 @@ def circ(a, b):
     return min(d, 12 - d)
 
 
+def prior_modes(out, key):
+    """change 2: per approach family, the constant bin that is within +-1 of the most TRAIN labels (the best guess
+    that knows the true family but not the image) -> {family: bin}."""
+    t = [json.loads(x) for x in open(os.path.join(out, "data", "truth_train.jsonl"))]
+    modes = {}
+    for f in sorted({x["family"] for x in t}):
+        lab = [x[key] for x in t if x["family"] == f]
+        modes[f] = max(range(12), key=lambda b: sum(circ(b, v) <= 1 for v in lab))
+    return modes
+
+
 def per_row(out, model, arm, truth):
     key = "rot_bin_img" if arm == "a" else "rot_bin_base"
+    modes = prior_modes(out, key)
     d = os.path.join(out, "eval", model, f"l9_eval_{arm}")
     rep = {}
     for x in open(os.path.join(d, "replies.jsonl")):
         r = json.loads(x)
         rep[r["id"]] = r["text"]
-    sc = {}
+    sc, px = {}, {}
     for x in open(os.path.join(d, "scores.jsonl")):
         s = json.loads(x)
+        px[s["id"]] = s.get("point_px") if s.get("valid") and s.get("point_px") is not None else float("inf")
         if s.get("approach_row"):
             v = s.get("approach_3d_mm")
             sc[s["id"]] = float("inf") if (v is None or not s.get("valid")) else float(v)
@@ -54,7 +67,9 @@ def per_row(out, model, arm, truth):
         rot = c.get("rot")
         ok_rot = isinstance(rot, int) and 0 <= rot <= 11
         e = circ(rot, t[key]) if ok_rot else 6
+        base = float(circ(modes.get(t["family"], 0), t[key]) <= 1)
         rows[t["id"]] = {"fam": float(fam_ok), "rot_exact": float(e == 0), "rot_pm1": float(e <= 1), "rot_err": float(e),
+                         "base_pm1": base, "pt_px": float(px.get(t["id"], float("inf"))),
                          "pt_mm": sc.get(t["id"], float("inf")), "family": t["family"], "robot": t.get("robot"),
                          "instructed": t.get("instructed")}
     allpt = list(sc.values())
@@ -70,8 +85,11 @@ def summ(rows):
             "rot_exact": round(float(np.mean([r["rot_exact"] for r in v])), 4),
             "rot_pm1": round(float(np.mean([r["rot_pm1"] for r in v])), 4),
             "rot_err_bins": round(float(np.mean([r["rot_err"] for r in v])), 3),
+            "prior_pm1": round(float(np.mean([r["base_pm1"] for r in v])), 4),
+            "skill_pm1": round(float(skill(np.array([[r["rot_pm1"], r["base_pm1"]] for r in v]))), 4),
             "pt_median_mm": round(float(np.median(np.where(np.isfinite(pt), pt, 1e9))), 2),
-            "pt_fail20": round(float(np.mean(pt > FAIL_MM)), 4)}
+            "pt_fail20": round(float(np.mean(pt > FAIL_MM)), 4),
+            "pt_px_median": round(float(np.median(np.where(np.isfinite(pp := np.array([r["pt_px"] for r in v])), pp, 1e9))), 1)}
 
 
 def by(rows, k):
@@ -94,12 +112,18 @@ def lx_sets(out, model):
     return res
 
 
+def skill(m):
+    """change 2: chance-corrected +-1 accuracy over rows m = [[correct, prior correct], ...]."""
+    b = m[:, 1].mean()
+    return (m[:, 0].mean() - b) / max(1.0 - b, 1e-9)
+
+
 def boot(x, y, stat, reps=REPS, seed=0):
     """paired bootstrap over shared ids of stat(y) - stat(x): (diff, lo, hi)."""
     ids = sorted(set(x) & set(y))
     if len(ids) < 20:
         return None
-    a, b = np.array([x[i] for i in ids]), np.array([y[i] for i in ids])
+    a, b = np.array([x[i] for i in ids], float), np.array([y[i] for i in ids], float)
     rng = np.random.default_rng(seed)
     idx = rng.integers(0, len(ids), size=(reps, len(ids)))
     d = np.array([stat(b[k]) - stat(a[k]) for k in idx])
@@ -147,43 +171,50 @@ def main():
             c = {}
             for k in ("rot_pm1", "rot_exact", "fam"):
                 c[k] = boot({i: r[k] for i, r in R[mx].items()}, {i: r[k] for i, r in R[my].items()}, mean)
+            c["skill_pm1"] = boot({i: [r["rot_pm1"], r["base_pm1"]] for i, r in R[mx].items()},
+                                  {i: [r["rot_pm1"], r["base_pm1"]] for i, r in R[my].items()}, skill)
             c["rot_err_bins"] = boot({i: r["rot_err"] for i, r in R[mx].items()},
                                      {i: r["rot_err"] for i, r in R[my].items()}, mean)
             px, py = ({i: r["pt_mm"] for i, r in R[m].items()} for m in (mx, my))
             c["pt_median_mm"] = boot(px, py, med)
             c["pt_fail20"] = boot(px, py, fail)
+            qx, qy = ({i: r["pt_px"] for i, r in R[m].items()} for m in (mx, my))
+            c["pt_px_median"] = boot(qx, qy, med)
             if tag == "final" and mx + "_l8x" in R and my + "_l8x" in R:
                 c["l8x"] = {s: {"median_mm": boot(R[mx + "_l8x"][s], R[my + "_l8x"].get(s, {}), med, reps=2000),
                                 "fail20": boot(R[mx + "_l8x"][s], R[my + "_l8x"].get(s, {}), fail, reps=2000)}
                             for s in R[mx + "_l8x"]}
             cmp[f"{lab}@{tag}"] = c
     rep["compare"] = cmp
-    rep["decision"] = decide(cmp, f"final")
+    rep["decision_registered_rule"] = decide(cmp, "final", "rot_pm1")
+    rep["decision"] = decide(cmp, "final", "skill_pm1")  # change 2: primary = chance-corrected
     s = json.dumps(rep, indent=1)
     if "--out" in a:
         open(a[a.index("--out") + 1], "w").write(s)
     print(s)
 
 
-def decide(cmp, tag):
-    """prereg_gp2 §6 (fixed before results)."""
+def decide(cmp, tag, key="rot_pm1"):
+    """prereg_gp2 §5 (fixed before results); change 2: key = skill_pm1 (chance-corrected) is the primary."""
     aa = cmp.get(f"AA_a_s2-a_s0@{tag}")
     b0, b2 = cmp.get(f"b_s0-a_s0@{tag}"), cmp.get(f"b_s0-a_s2@{tag}")
-    if not (aa and b0 and b2) or not aa.get("rot_pm1") or not b0.get("rot_pm1") or not b2.get("rot_pm1"):
-        return {"result": "INCOMPLETE"}
-    m = max(0.03, (aa["rot_pm1"][2] - aa["rot_pm1"][1]) / 2, abs(aa["rot_pm1"][0]))
+    if not (aa and b0 and b2) or not aa.get(key) or not b0.get(key) or not b2.get(key):
+        return {"result": "INCOMPLETE", "key": key}
+    m = max(0.03, (aa[key][2] - aa[key][1]) / 2, abs(aa[key][0]))
     nf = max(0.03, (aa["fam"][2] - aa["fam"][1]) / 2, abs(aa["fam"][0]))
-    np_ = max(0.02, (aa["pt_fail20"][2] - aa["pt_fail20"][1]) / 2, abs(aa["pt_fail20"][0]))
+    # change 2: the L9 v2 point check is the pixel error to the label point (the 3D approach scorer gives the label
+    # itself a 117 mm median on above_target rows, so it is not valid on L9 v2 rows; it stays for L8-X)
+    np_ = max(3.0, (aa["pt_px_median"][2] - aa["pt_px_median"][1]) / 2, abs(aa["pt_px_median"][0]))
 
     def ni(c):  # b not worse than that a run: family accuracy, point > 20 mm rate, L8-X > 20 mm rates
-        ok = c["fam"][1] >= -nf and c["pt_fail20"][2] <= np_
+        ok = c["fam"][1] >= -nf and c["pt_px_median"][2] <= np_
         for s, v in (c.get("l8x") or {}).items():
             aav = ((aa.get("l8x") or {}).get(s) or {}).get("fail20")
             ml = max(0.02, (aav[2] - aav[1]) / 2) if aav else 0.02
             ok = ok and v["fail20"] is not None and v["fail20"][2] <= ml
         return ok
-    win_b = all(c["rot_pm1"][0] >= m and c["rot_pm1"][1] > 0 for c in (b0, b2))
-    win_a = all(c["rot_pm1"][0] <= -m and c["rot_pm1"][2] < 0 for c in (b0, b2))
+    win_b = all(c[key][0] >= m and c[key][1] > 0 for c in (b0, b2))
+    win_a = all(c[key][0] <= -m and c[key][2] < 0 for c in (b0, b2))
     if win_b and ni(b0) and ni(b2):
         r = "B_BETTER"
     elif win_b:
@@ -192,7 +223,7 @@ def decide(cmp, tag):
         r = "A_BETTER"
     else:
         r = "SAME"
-    return {"result": r, "margin_rot_pm1": round(m, 4), "margin_fam": round(nf, 4), "margin_pt_fail20": round(np_, 4),
+    return {"result": r, "key": key, "margin": round(m, 4), "margin_fam": round(nf, 4), "margin_pt_px": round(np_, 2),
             "keep": "b (base frame)" if r == "B_BETTER" else "a (image frame)",
             "note": "early pilot: re-run at 7,500 L9 v2 episodes before the format is frozen"}
 
