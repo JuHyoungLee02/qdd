@@ -2,12 +2,14 @@
 sim ground truth (never invented): one top-level answer key "rationale", one fixed template family, clauses joined by
 "; ", only for clauses whose cause is derivable this row. 8B check arm: --rationale on|off from tools/l9/build_v2.py.
 
-Clauses (owner's order): arm -> approach+part (grasp calls only) -> rot (same pick) -> handover -> articulated.
+Clauses (owner's order): arm -> approach+part (grasp calls only) -> rot (same pick) -> place -> handover -> articulated.
   arm:      "<left|right> arm: <cause>" -- two-armed robots only (alloc9.ROBOT_ARMS); single-command rows: the frozen
             single-arm rule (arm = object side) restated; multi-command (bimanual) rows: each command's own role.
   approach: "<approach> grasp on the <part>: <cause>" -- only on the (one) command that carries approach/rot, matched
             back to its grasp_v2 pick (meta) by (obj, family, rot_bin_img); omitted when no unique pick matches.
   rot:      "rot <bin>: pads across its <w> cm width" -- same matched pick's width_m.
+  place:    "place: <x> cm off-centre, <y> cm above the spot, tol <t> cm (in|out) -> <verdict>" -- carry-phase rows
+            only (step in carry_up/carry_over/lower_open; place_oscillation fix (b), place_readiness_clause).
   handover: "handover: <cause>" -- a command naming handover_point / handover_height (owner r3, not yet produced).
   axis:     "axis <linear|rotary>[ <cw|ccw>]: <cause>" -- a command naming axis (harvest/l9art articulated rows).
 check_rows()-style consistency: parse_rationale() must read back arm / approach / rot / handover / axis words that
@@ -15,9 +17,12 @@ agree with the commands that produced them (specgate9.rationale_mismatches)."""
 from __future__ import annotations
 
 import json
+import math
 import re
 
 TWO_ARMED_DEFAULT = ("right", "left")
+CARRY_STEPS = ("carry_up", "carry_over", "lower_open")  # = teach_l8.labels.CARRY_STEPS
+PLACE_VERDICT = {"lower_open": "place and open", "carry_over": "align above the spot", "carry_up": "lift"}
 PART_WORDS = {"handle": "handle", "rim": "rim", "edge": "edge", "body": "body"}
 PART_CAUSE = {"handle": "it has a handle", "rim": "it's hollow, grasped by the rim",
               "edge": "it's flat, grasped by the edge"}
@@ -96,6 +101,31 @@ def grasp_clauses(meta: dict, r: dict, cmd: dict) -> tuple:
     return ap, rc
 
 
+def place_readiness_clause(r: dict) -> str | None:
+    """place_oscillation fix (b) (docs/research/place_oscillation_2026-10-03.md §4): on a carry-phase row
+    (r["step"] in CARRY_STEPS) with its own ground truth (gt.tgt = the held object's centre, gt.place, gt.tcp),
+    one fixed "readiness" clause with the row's own numbers (never invented): the held object's xy offset from the
+    place, the TCP's height above the place, the tolerance used (v2plan.place_tol) and whether it is inside it,
+    and the step's verdict. None when the row has no carry step or no gt (non-L9 / incomplete rows)."""
+    step = r.get("step")
+    if step not in CARRY_STEPS:
+        return None
+    gt = r.get("gt") or {}
+    tgt, place, tcp = gt.get("tgt"), gt.get("place"), gt.get("tcp")
+    if not (tgt and place and tcp):
+        return None
+    from .v2plan import place_tol
+    dxy = math.hypot(float(tgt[0]) - float(place[0]), float(tgt[1]) - float(place[1]))
+    dz = float(tcp[2]) - float(place[2])
+    try:
+        tol = place_tol(r.get("place") or "")
+    except (KeyError, TypeError):
+        return None
+    inside = dxy < tol
+    return (f"place: {dxy * 100:.1f} cm off-centre, {dz * 100:.1f} cm above the spot, tol {tol * 100:.1f} cm "
+            f"({'in' if inside else 'out'}) -> {PLACE_VERDICT[step]}")
+
+
 def handover_clause(cmd: dict) -> str | None:
     hp, hh = cmd.get("handover_point"), cmd.get("handover_height")
     if hp is None and hh is None:
@@ -136,6 +166,9 @@ def build(meta: dict, r: dict, answer: dict) -> str | None:
             clauses.append(ap)
         if rc:
             clauses.append(rc)
+    pc = place_readiness_clause(r)
+    if pc:
+        clauses.append(pc)
     for cmd in cmds:
         h = handover_clause(cmd)
         if h:
@@ -192,16 +225,20 @@ def strip(answer_json: str) -> str:
 _ARM = re.compile(r"(left|right) arm: ")
 _APPROACH = re.compile(r"(top|oblique|front|side) grasp on the \w+: ")
 _ROT = re.compile(r"rot (\d+): ")
+_PLACE = re.compile(r"place: [\d.]+ cm off-centre, [\d.]+ cm above the spot, tol [\d.]+ cm \((in|out)\) -> "
+                    r"(place and open|align above the spot|lift)")
 _HANDOVER = re.compile(r"handover: ")
 _AXIS = re.compile(r"axis (linear|rotary)(?: (cw|ccw))?: ")
 
 
 def parse(text: str) -> dict:
-    """The rationale string -> {"arms": [...], "approach": str|None, "rot": int|None, "handover": bool,
-    "axis": (kind, turn|None)|None}, in textual order (parse-back for the consistency gate)."""
+    """The rationale string -> {"arms": [...], "approach": str|None, "rot": int|None, "place": verdict str|None,
+    "handover": bool, "axis": (kind, turn|None)|None}, in textual order (parse-back for the consistency gate)."""
     arms = _ARM.findall(text)
     am = _APPROACH.search(text)
     rm = _ROT.search(text)
+    pm = _PLACE.search(text)
     axm = _AXIS.search(text)
     return {"arms": list(arms), "approach": am.group(1) if am else None, "rot": int(rm.group(1)) if rm else None,
+            "place": pm.group(2) if pm else None,
             "handover": bool(_HANDOVER.search(text)), "axis": (axm.group(1), axm.group(2)) if axm else None}

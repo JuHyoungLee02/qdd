@@ -2,7 +2,7 @@
 loop -- qmon.sh (same dir) calls this every 2 h on the collection pod. Scans the given collect roots
 (root/<split>/<family>/<episode>/meta.json), caches cheap per-episode metrics (--cache, keyed by episode dir) so a
 round only reads episodes it has not cached yet, then checks the production of the last --hours ("recent") and the
-whole cache ("cumulative") against 9 health checks + successes/h, and OVERWRITES --status (one line) / appends
+whole cache ("cumulative") against 10 health checks + successes/h, and OVERWRITES --status (one line) / appends
 --events (same line) -- nothing else.
 
 Checks (each PASS/WARN with its value; thresholds from the owner order):
@@ -21,6 +21,12 @@ Checks (each PASS/WARN with its value; thresholds from the owner order):
   9 label contradictions up to --sample-n new control rows (episode_rows, built into a throwaway --tmp subdir that
                         is removed whole at the end of the round) via specgate9.contradictions; WARN > 4% (the
                         spec's own "> 40/1000" gate).
+  10 ABA oscillation    place_oscillation fix canary (docs/research/place_oscillation_2026-10-03.md §1 definition,
+                        applied to the GT label column): share of recent episodes with >=1 carry-phase call
+                        (step in carry_up/carry_over/lower_open) whose step sequence round-trips
+                        (h[k]==h[k-2]!=h[k-1]) that show >=1 such round-trip. Baseline measured in the doc is
+                        0.17% (41/23,973) before the (a)/(d) fix (L9V2_PLACE_TOL/HYST); WARN > 1%. This is a GT
+                        quality canary, not a trained-policy eval -- the doc's own ABA definition, applied upstream.
   + successes/h for context only (never WARN): tools/l9/rate9.py's log parser when --logs has matching logs,
     else the same cache's recent successes / --hours.
 
@@ -102,6 +108,18 @@ def _vis_counts(ep_dir: str) -> tuple:
     return total, dropped
 
 
+CARRY_STEPS = ("carry_up", "carry_over", "lower_open")  # = harvest.teach_l8.labels.CARRY_STEPS
+
+
+def aba_oscillations(ep_dir: str) -> tuple:
+    """(carry-phase calls, ABA round-trips) in one episode's labels.jsonl GT step column -- the place_oscillation
+    doc's own ABA definition (h[k]==h[k-2]!=h[k-1]), applied to the GT "step" field rather than a policy's
+    point-interface height: a canary on the label generator itself (qmon9 check 10), not a trained-policy metric."""
+    steps = [r.get("step") for r in _label_rows(ep_dir) if r.get("step") in CARRY_STEPS]
+    aba = sum(1 for k in range(2, len(steps)) if steps[k] == steps[k - 2] != steps[k - 1])
+    return len(steps), aba
+
+
 def episode_record(ep_dir: str):
     """Cache record of one episode, or None when meta.json can't be read."""
     mp = os.path.join(ep_dir, "meta.json")
@@ -126,10 +144,12 @@ def episode_record(ep_dir: str):
         if r is not None:
             combo = json.dumps([r[0], r[1], r[3]], default=str)
     vt, vd = _vis_counts(ep_dir)
+    carry_calls, carry_aba = aba_oscillations(ep_dir)
     return {"ep_dir": ep_dir, "mtime": mtime, "robot": meta.get("robot") or "ffw_sg2", "task_id": meta.get("task_id"),
             "success": success, "arm": meta.get("arm"), "spec": SG.spec_of(meta),
             "has_grasp_v2": meta.get("grasp_v2") is not None, "table_z": meta.get("table_z"), "picks": picks,
-            "bands": bands, "vis_total": vt, "vis_dropped": vd, "combo": combo}
+            "bands": bands, "vis_total": vt, "vis_dropped": vd, "combo": combo,
+            "carry_calls": carry_calls, "carry_aba": carry_aba}
 
 
 def load_cache(path: str) -> dict:
@@ -326,6 +346,13 @@ def run(roots: list, cache_path: str, status_path: str, events_path: str, tmp_ro
             W(n_contra / max(1, n_sampled) > 0.04, f"contradictions={n_contra}/{n_sampled}")
     finally:
         shutil.rmtree(round_tmp, ignore_errors=True)
+
+    # 10: ABA (above<->lift) GT-label canary, recent episodes with >=1 carry-phase call
+    carry_eps = [r for r in recent if r.get("carry_calls", 0) >= 1]
+    aba_eps = sum(1 for r in carry_eps if r.get("carry_aba", 0) > 0)
+    aba_rate = aba_eps / len(carry_eps) if carry_eps else 0.0
+    if carry_eps:
+        W(aba_rate > 0.01, f"aba_rate={aba_rate:.1%}({aba_eps}/{len(carry_eps)})")
 
     sph = succ_per_hour(logs_dir, hours, now, recent)
     utc = datetime.fromtimestamp(now, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")

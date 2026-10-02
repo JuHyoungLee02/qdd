@@ -25,6 +25,21 @@ from . import grasp9 as G
 
 SEL = os.environ.get("L9V2_SEL", "natural_v1")  # label rule: natural_v1 (spec) | ggx_v1 (GraspGenX + sim, opt-in)
 
+# place_oscillation fix (docs/research/place_oscillation_2026-10-03.md §4, owner order 10-03 04h): above<->lift
+# ("들었다 놨다") came from a height-only carry_over/carry_up split plus a TCP/put xy gate wide enough to mask
+# tracking sag (NEAR_PUT below) but not tied to the held object's own position. Both opt-in (env flags), each
+# additive and off by default -- today's byte-identical control flow is the K0 arm of the 8B check ladder.
+PLACE_TOL_FIX = os.environ.get("L9V2_PLACE_TOL", "0") == "1"  # (a) tolerance-based lower_open, held-object centre
+PLACE_HYST_FIX = os.environ.get("L9V2_PLACE_HYST", "0") == "1"  # (d) hysteresis: no carry_up once committed
+PLACE_SUCCESS_TOL = 0.03  # m, task success xy allowance (bimanual9.success_a/b/d's own default) -- tol_rel's basis
+PLACE_TOL_MAX = 0.025  # m, doc §4 (a): tol_rel capped around the large-place pointing allowance
+PLACE_ABOVE_FIX = os.environ.get("L9V2_PLACE_ABOVE", "0") == "1"  # P0: carry_over physically targets the height
+# "above" actually executes at (resolve.py), not the 22 cm carry height (doc §0.3). Heavier / riskier than (a)/(d)
+# -- new rows only, needs a pod collision/IK smoke batch before any A/B or production use (owner order 10-03 04h,
+# coordinator a8f68de3d815957c2: "서두르다 깨진 코드를 올리지 말고").
+PLACE_ABOVE_DZ = 0.08  # m = astra_solo.resolve.ABOVE_DZ, duplicated as a literal (v2plan must not import resolve,
+# which needs camera/runtime state v2plan doesn't have): test_v2plan.test_place_above_dz_matches_resolve pins them.
+
 STANDOFF = (0.08, 0.14)
 PLACE_DZ = (0.008, 0.025)  # pilot 10-02: placing 4 mm above the surface pushed the object into it (wrist jolts)
 RETREAT = (0.06, 0.12)
@@ -281,6 +296,14 @@ def retreat_axis(gc, tq, common: bool | None = None) -> np.ndarray:
     return G.qmat(np.asarray(tq, float)) @ a_tool
 
 
+def place_tol(key: str) -> float:
+    """xy allowance (m) for 'close enough to place regardless of height' (fix (a)): half the task success
+    tolerance, floored at this place object's own pointing resolution (astra_solo.pt_truth.xy_tol: 12 mm small
+    objects / 25 mm a large tray) and capped at PLACE_TOL_MAX. L9V2_PLACE_TOL only."""
+    from ..astra_solo.pt_truth import xy_tol
+    return min(max(0.5 * PLACE_SUCCESS_TOL, xy_tol(key)), PLACE_TOL_MAX)
+
+
 def carry_z(H: dict, carry_dz: float, gc, tcp, c, h: float, hold: bool) -> float:
     """TCP carry height. Default: carry_base + CARRY_DZ (0.22). A robot with a short vertical reach (R1 Pro, L9v2-R1:
     its leaned arm reaches only ~0.2-0.3 m of height at a given distance) sets gc.carry_clear (a per-episode draw from
@@ -323,16 +346,42 @@ def plan(st: dict, info: dict, table_z: float, w_open: float, gc: GraspChoice, h
     zc = carry_z(H, L.CARRY_DZ, gc, tcp, c, h, hold)
     if hold:
         T_og = held["T_obj_G"] if held else None
+        if PLACE_ABOVE_FIX and held is not None and "grip_offset" not in held:
+            # P0 (docs/research/place_oscillation_2026-10-03.md §0.3): captured once, right after the close, the
+            # same way astra_solo.resolve.py's executor measures it ("TCP height above the plane when the gripper
+            # last closed") -- so carry_over's target below matches what "above" actually executes as.
+            held["grip_offset"] = float(tcp[2]) - float(H["sup_tgt"])
         if T_og is not None:  # put TCP: object upright at the place (its current yaw), bottom place_dz above the top
             put_T = put_pose(st["obj_quat"][tg], p, H["place_top"] + h / 2 + gc.place_dz, T_og,
                              float((held or {}).get("yaw_delta", 0.0)))
             put, pq = put_T[:3, 3], G.mat_quat(put_T[:3, :3])
         else:
             put, pq = np.array([p[0], p[1], H["place_top"] + (tcp[2] - (c[2] - h / 2)) + gc.place_dz]), tq
-        if np.linalg.norm(tcp[:2] - put[:2]) < NEAR_PUT:  # carrying sags / lags 1-3 cm (L.NEAR_XY 1.5 cm looped)
+        if PLACE_TOL_FIX:  # (a): the HELD OBJECT's own centre vs the place, not TCP/put (sag-proof); no lift once
+            obj_near = float(np.linalg.norm(c[:2] - p[:2]))  # the object is close enough to place, at any height
+            tol = place_tol(pl)
+            near = obj_near < tol
+        else:
+            near = float(np.linalg.norm(tcp[:2] - put[:2])) < NEAR_PUT  # carrying sags / lags 1-3 cm (looped)
+            obj_near, tol = None, NEAR_PUT
+        committed = False
+        if PLACE_HYST_FIX:  # (d): once the carry has brought the object within 2x tol, don't relabel it lift
+            if held is not None:  # (no observed failure -- a drop/slip ends the hold, which resets `held` upstream)
+                held["carry_committed"] = bool(held.get("carry_committed")) or (
+                    obj_near if obj_near is not None else float(np.linalg.norm(c[:2] - p[:2]))) < 2 * tol
+            committed = bool(held and held.get("carry_committed"))
+        if near:
             return "lower_open", {"mode": "eef", "position_m": _r(put), "gripper": "open", "quat_wxyz": _q(pq)}
-        if tcp[2] >= zc - L.NEAR_XY:
-            z_over = carry_over_z(zc, put[2] + 0.05, put[:2], pq, T_og, cam=cam)
+        if committed or tcp[2] >= zc - L.NEAR_XY:
+            if PLACE_ABOVE_FIX:
+                # P0: physically roll out "above" at the height it actually executes at (resolve.py's own
+                # convention: place top + ABOVE_DZ + grip_offset), not the 22 cm carry height -- the fix for the
+                # above(8cm label)<->lift(22cm trajectory) covariate shift. carry_up (lift) is unchanged.
+                go = held.get("grip_offset") if held else None
+                go = go if go is not None else float(tcp[2] - (c[2] - h / 2))  # defensive fallback, never crashes
+                z_over = H["place_top"] + PLACE_ABOVE_DZ + go
+            else:
+                z_over = carry_over_z(zc, put[2] + 0.05, put[:2], pq, T_og, cam=cam)
             return "carry_over", {"mode": "eef", "position_m": _r([put[0], put[1], z_over]),
                                   "gripper": "keep", "quat_wxyz": _q(pq)}
         return "carry_up", {"mode": "eef", "position_m": _r([tcp[0], tcp[1], zc]), "gripper": "keep",

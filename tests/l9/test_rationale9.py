@@ -124,6 +124,52 @@ def test_rationale_mismatches_skips_rows_without_rationale():
     assert SG.rationale_mismatches(rows) == 0
 
 
+# ---------------------------------------------------------------- place_oscillation fix (b): place readiness
+ROW_CARRY = {"tgt": OBJ, "place": "l9o_tray", "step": "lower_open",
+             "gt": {"tgt": [0.401, -0.551, 0.80], "place": [0.40, -0.55, 0.71], "tcp": [0.40, -0.55, 0.715]}}
+
+
+def test_place_readiness_clause_lower_open_inside_tol(monkeypatch):
+    from harvest.l9 import v2plan as P
+    monkeypatch.setattr(P, "place_tol", lambda key: 0.02)
+    c = RT.place_readiness_clause(ROW_CARRY)
+    assert c is not None
+    assert c.startswith("place: 0.1 cm off-centre, 0.5 cm above the spot, tol 2.0 cm (in) -> place and open")
+
+
+def test_place_readiness_clause_carry_up_outside_tol_says_lift(monkeypatch):
+    from harvest.l9 import v2plan as P
+    monkeypatch.setattr(P, "place_tol", lambda key: 0.02)
+    row = dict(ROW_CARRY, step="carry_up", gt=dict(ROW_CARRY["gt"], tgt=[0.50, -0.55, 0.80]))
+    c = RT.place_readiness_clause(row)
+    assert "out" in c and c.endswith("-> lift")
+
+
+def test_place_readiness_clause_none_outside_carry_steps():
+    assert RT.place_readiness_clause(dict(ROW_CARRY, step="above_target")) is None
+    assert RT.place_readiness_clause({"step": "lower_open"}) is None  # no gt
+
+
+def test_build_includes_place_clause_for_carry_row(monkeypatch):
+    from harvest.l9 import v2plan as P
+    monkeypatch.setattr(P, "place_tol", lambda key: 0.02)
+    ans = {"command": {"mode": "eef", "gripper": "open"}}
+    text = RT.build(META_FRANKA, ROW_CARRY, ans)
+    assert text is not None and text.startswith("place: ")
+
+
+def test_place_clause_parse_roundtrip_and_mismatch(monkeypatch):
+    from harvest.l9 import v2plan as P
+    monkeypatch.setattr(P, "place_tol", lambda key: 0.02)
+    clause = RT.place_readiness_clause(ROW_CARRY)
+    got = RT.parse(clause)
+    assert got["place"] == "place and open"
+    ans = {"command": {"mode": "eef", "gripper": "open"}, "rationale": clause}
+    assert SG.rationale_mismatches([dict(ROW_CARRY, answer=json.dumps(ans))]) == 0
+    bad_ans = {"command": {"mode": "eef", "gripper": "open"}, "rationale": clause.replace("place and open", "lift")}
+    assert SG.rationale_mismatches([dict(ROW_CARRY, answer=json.dumps(bad_ans))]) == 1
+
+
 def test_gates_reports_rationale_mismatches_key():
     ans = _answer()
     ans["rationale"] = RT.build(META_TWO_ARM, ROW, ans)
