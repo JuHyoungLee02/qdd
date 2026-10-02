@@ -47,7 +47,7 @@ def g1_points(sc: dict, ep: dict) -> list:
     for k, dz in ((tg, (0.05, 0.15)), (dst, (0.10, 0.18))):
         r = at(k)
         if r is not None:
-            out += [(float(r[0][0]), float(r[0][1]), r[1] + z) for z in dz]
+            out += [(float(r[0][0]), float(r[0][1]), r[1] + z) for z in dz]  # even index: the low (view) point
     return out
 
 
@@ -91,7 +91,8 @@ def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 20, world=None) ->
                 last = f"{robot}: surface {float(ep['table_z']):.2f} m outside its reach band"
                 continue
             if robot == "g1" and os.environ.get("G1B_BASE", "1") != "0":  # g1b H4: base x per episode (a range)
-                dx = RB.g1_base_dx(row["arm"], g1_points(sc, ep), sc["furniture"], sd)
+                pts = g1_points(sc, ep)
+                dx = RB.g1_base_dx(row["arm"], pts, sc["furniture"], sd, view=pts[0::2])
                 if dx is None:
                     last = "g1: no base pose reaches the target and the place (reach-limited)"
                     continue

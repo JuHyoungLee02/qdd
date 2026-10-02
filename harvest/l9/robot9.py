@@ -498,9 +498,25 @@ def _furniture_front(parts) -> float:
     return min(xs) if xs else 9.0
 
 
-def g1_base_dx(arm: str, points, parts, seed: int):
+G1_HEAD_IN_ROOT = ((0.05366, 0.01753, 0.47387), ((0.6743, 0.0, 0.73846), (0.0, 1.0, 0.0), (-0.73846, 0.0, 0.6743)))
+# d435_link in the pelvis frame (URDF FK, legs / waist at 0): optical axis = its +x, 47.6 deg down
+
+
+def g1_head_sees(p_world, root_x: float, margin: float = 0.06) -> bool:
+    """World point inside the G1 torso D435 image (HC.W x HC.H, D435_HFOV) with the world9._head_sees margin (+1 %)."""
+    t, R = np.asarray(G1_HEAD_IN_ROOT[0], float), np.asarray(G1_HEAD_IN_ROOT[1], float)
+    c = R.T @ (np.asarray(p_world, float) - np.array([root_x, 0.0, V2["g1"]["base_z"]]) - t)
+    if c[0] <= 1e-6:
+        return False
+    fx = HC.fx_from_hfov(HC.D435_HFOV, HC.W)
+    u, v = HC.W / 2 - fx * c[1] / c[0], HC.H / 2 - fx * c[2] / c[0]
+    return bool(margin * HC.W <= u <= (1 - margin) * HC.W and margin * HC.H <= v <= (1 - margin) * HC.H)
+
+
+def g1_base_dx(arm: str, points, parts, seed: int, view=()):
     """dx (m) to add to the G1 root x, or None when no step of G1_DX reaches every point. points: world xyz the
-    used arm must reach (any approach class of the reach map); parts: the scene's world furniture parts."""
+    used arm must reach (any approach class of the reach map); view: world xyz the torso camera must see;
+    parts: the scene's world furniture parts."""
     from . import curobo9 as C9
     root_x = V2_BASE_X["g1"]
     dmax = _furniture_front(parts) - (root_x + G1_BODY_FRONT + G1_BODY_CLEAR)
@@ -509,7 +525,7 @@ def g1_base_dx(arm: str, points, parts, seed: int):
         if dx > dmax:
             break
         t = np.array([root_x + dx + G1_TORSO_IN_ROOT[0], G1_TORSO_IN_ROOT[1], V2["g1"]["base_z"] + G1_TORSO_IN_ROOT[2]])
-        if all(any(C9.reach_ok("g1", arm, np.asarray(p, float) - t, ap) for ap in C9.APPROACHES) for p in points):
+        if all(g1_head_sees(p, root_x + dx) for p in view) and                 all(any(C9.reach_ok("g1", arm, np.asarray(p, float) - t, ap) for ap in C9.APPROACHES) for p in points):
             ok.append(float(dx))
     if not ok:
         return None
