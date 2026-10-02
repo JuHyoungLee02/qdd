@@ -341,8 +341,13 @@ V2_READY = {  # ready_pose.py 10-02: R1 TCP (0.542, -+0.20, 0.169) in torso_link
     # world top-down yaw +-pi/2;
     # G1 (0.30, -+0.20, 0) in torso_link,
     # yaw -pi/2 (the right-arm reach sweep found top-down only at that yaw for x 0.1-0.4)
-    "r1pro": {"right": (0.87431, -3.07854, -0.2803, -1.58941, -1.51053, 0.2809, -0.10471),
-              "left": (0.87437, 3.07831, 0.28057, -1.58942, 1.51029, 0.28117, 0.10469)},
+    # L9v2-DIAG 9: re-picked by margin-to-joint-limit (return_seeds, same exact TCP pose, err_mm 0.00) -- the
+    # original pick had right/left joint2 only 0.033 rad from its limit (inside cuRobo's own 0.03 rad
+    # position_limit_clip, i.e. effectively AT the planning limit already): pilotR's dominant R1 Pro failure,
+    # 'no collision-free path to the target' in 132/176 failed episodes (carry_up/lift_clear/reopen), was this
+    # start state leaving almost no planner slack for that joint to move at all. New margin 0.126 rad (~4x).
+    "r1pro": {"right": (1.07951, -2.74267, -0.79999, -1.58941, -1.04091, 0.73171, 0.05034),
+              "left": (1.103, 2.72263, 0.84415, -1.58942, 0.99495, 0.76179, -0.07563)},
     "g1": {"right": (-0.30265, -0.76872, 0.61976, -0.1309, -0.88791, 0.69321, 0.59968),
            "left": (-0.20483, 0.01847, 0.32992, -0.08547, 1.68825, -0.23174, -0.83459)}}
 
@@ -401,8 +406,8 @@ def g1_surface_ok(table_z: float) -> bool:
 
 
 def v2_init_joints(profile: str, arm: str, table_z: float, ready: dict | None = None) -> dict:
-    """Start joints: body for the surface, the used arm at its ready pose (V2_READY, inside the limits by >= 0.03),
-    the other arm at its stow pose, every finger open."""
+    """Start joints: body for the surface, the used arm at its ready pose (V2_READY, inside the limits by >= 0.12
+    for R1 Pro -- DIAG 9), the other arm at its stow pose, every finger open."""
     out = v2_body_joints(profile, table_z)
     for s, a in V2[profile]["arms"].items():
         q = (ready or V2_READY[profile]).get(s) if s == arm else V2_STOW[profile].get(s)
