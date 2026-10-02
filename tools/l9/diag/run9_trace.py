@@ -40,7 +40,7 @@ def main():
             r = reset0(seed, task) if task is not None else reset0(seed)
             if st["f"]:
                 st["f"].close()
-            st["seed"], st["n"] = seed, 0
+            st["seed"], st["n"], st["geom"] = seed, 0, set()
             st["f"] = open(os.path.join(tdir, f"{seed}.jsonl"), "w", buffering=1)
             return r
 
@@ -59,10 +59,21 @@ def main():
                        "tcp": np.round(np.asarray(world.pl.tcp_pose()[0], float), 4).tolist(),
                        "tq": np.round(np.asarray(world.pl.tcp_pose()[1], float), 4).tolist(),
                        "gap": round(float(env.gripper_width()), 4), "w_cmd": round(float(width), 4)}
+                plk = (rt.choice_key or (None, None))[1] if rt.choice_key and len(rt.choice_key) > 1 else None
+                if plk is not None:  # objects and spot markers (marker pose = its layout pose on the surface)
+                    pp, pq = env.object_pose(plk)
+                    rec.update(pl=plk, pp=np.round(np.asarray(pp, float), 4).tolist(),
+                               pq=np.round(np.asarray(pq, float), 4).tolist())
+                if tg is not None and st.setdefault("geom", set()).isdisjoint({tg, plk}) is not None:
+                    from harvest.sim.scene import OBJ_GEOM
+                    for k_ in (tg, plk):
+                        if k_ is not None and k_ not in st["geom"] and "half_extents" in OBJ_GEOM.get(k_, {}):
+                            st["geom"].add(k_)
+                            st["f"].write(json.dumps({"geom": k_, "he": list(OBJ_GEOM[k_]["half_extents"])}) + "\n")
                 if tg is not None:
                     p, q = env.object_pose(tg)
                     rec.update(tgt=tg, p=np.round(np.asarray(p, float), 4).tolist(),
-                               q=np.round(np.asarray(q, float), 4).tolist(), tilt=round(tilt_deg(q), 1))
+                               oq=np.round(np.asarray(q, float), 4).tolist(), tilt=round(tilt_deg(q), 1))
                     try:
                         rec["vz"] = round(float(env.objects[tg].data.root_lin_vel_w[0, 2]), 3)
                     except Exception:  # noqa: BLE001

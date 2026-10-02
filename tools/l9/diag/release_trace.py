@@ -9,6 +9,7 @@ command): the target's tilt / height / xy drift and the hand height at -win .. +
   DROP          the object fell > 8 mm after the open without tilting (released in the air)
   OK            none of the above"""
 import json
+import math
 import sys
 from collections import Counter
 
@@ -18,12 +19,19 @@ sys.path.insert(0, __file__.rsplit("/", 1)[0])
 from trace_view import qmat  # noqa: E402
 
 
+def _quat(r):
+    """target quaternion of a trace row: the run9_trace 'q' key holds the arm joints, the object quaternion is 'oq' in
+    newer traces; fall back to None."""
+    return r.get("oq")
+
+
 def main():
     a = sys.argv[1:]
     win = int(a[a.index("--win") + 1]) if "--win" in a else 40
     cnt = Counter()
     for f in [x for x in a if x.endswith(".jsonl")]:
         rows = [json.loads(l) for l in open(f)]
+        geom = {r["geom"]: np.asarray(r["he"], float) for r in rows if "geom" in r}
         rows = [r for r in rows if "p" in r and "err" not in r]
         k = 0
         while k < len(rows):
@@ -57,9 +65,21 @@ def main():
                     yb = (R.T @ (np.asarray(r["fb"]) - t))[1] * 1e3
                     yo = (R.T @ (np.asarray(r["p"]) - t))[1] * 1e3
                     fy = f" fingers y {ya:+.0f}/{yb:+.0f} obj y {yo:+.0f} mm"
+                sup = ""
+                if "pp" in r and r.get("tgt") in geom:
+                    Rt, Rp = qmat(r["q"]) if "q" in r and len(r["q"]) == 4 else None, qmat(r["pq"])
+                    Rt = qmat(rows[k]["q"]) if False else None
+                    ht = float(np.abs(qmat(_quat(r))[2]) @ geom[r["tgt"]]) if _quat(r) is not None else None
+                    he = geom.get(r["pl"], np.zeros(3))  # spot markers: no extent, the marker sits on the surface
+                    top = r["pp"][2] + float(np.abs(Rp[2]) @ he)
+                    loc = Rp.T @ (np.asarray(r["p"]) - np.asarray(r["pp"]))
+                    if ht is not None:
+                        sup = (f" | bottom-over-place-top {(r['p'][2] - ht - top) * 1e3:+.0f} mm, centre in place frame "
+                               f"({loc[0] * 1e3:+.0f},{loc[1] * 1e3:+.0f}) of half ({he[0] * 1e3:.0f},{he[1] * 1e3:.0f}) mm, "
+                               f"place tilt {math.degrees(math.acos(max(-1, min(1, Rp[2, 2])))):.0f}")
                 print(f"{f.rsplit('/', 1)[-1]:16s} i {r['i']:4d} {c:12s} tilt pre-min {tilt_pre_min:5.1f} at-open {tilt0:5.1f} "
                       f"post-max {tilt_post:5.1f} | obj dz {dz * 1e3:+6.1f} dxy {dxy * 1e3:5.1f} mm | gap {r['gap'] * 1e3:.0f} "
-                      f"cmd {r['w_cmd'] * 1e3:.0f}{fy} | tilt+8 at (di, step, gap) {when}")
+                      f"cmd {r['w_cmd'] * 1e3:.0f}{fy} | tilt+8 at (di, step, gap) {when}{sup}")
                 k = hi
             k += 1
     print("\nCLASSES", dict(cnt))
