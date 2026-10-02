@@ -1,0 +1,94 @@
+"""tools/onboard/autotune: pure geometry + range extraction (no GPU, no cuRobo)."""
+import math
+import os
+import sys
+
+import numpy as np
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "tools", "onboard", "autotune"))
+import geom as G  # noqa: E402
+import ranges as RG  # noqa: E402
+
+
+def test_grasp_R_top_down_yaw0_closes_along_x():
+    R = G.grasp_R(0.0, 0.0, 0.0)
+    assert np.allclose(R[:, 2], [0, 0, 1])  # tool z = -approach, approach straight down
+    assert np.allclose(R[:, 1], [1, 0, 0])  # closing axis along world x at yaw 0
+    assert np.allclose(R @ R.T, np.eye(3))
+
+
+def test_grasp_R_tilt_leans_approach_towards_direction():
+    R = G.grasp_R(math.radians(30), math.radians(90), 0.0)
+    a = -R[:, 2]
+    assert a[2] < 0 and a[0] > 0.4  # moving down and away from the robot (+x)
+
+
+def test_yaw_period_from_hand_descriptor():
+    par = {"tips": ["a", "b"], "opposition": [[["a"], ["b"]]]}
+    g1 = {"tips": ["t", "i", "m"], "opposition": [[["t"], ["i", "m"]]]}
+    assert G.yaw_period_deg(par) == 180
+    assert G.yaw_period_deg(g1) == 360
+
+
+def test_camera_visible_ahead_not_behind():
+    cam = {"R": np.eye(3), "t": np.zeros(3), "hfov": 90.0, "width": 640, "height": 480}  # cols fwd, left, up
+    P = np.array([[1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], [1.0, 2.0, 0.0], [1.0, 0.3, -0.2]])
+    assert G.visible(cam, P, margin=0.05).tolist() == [True, False, False, True]
+
+
+def test_pitch_of_camera_looking_down_45():
+    R = G.look_R(45.0)
+    assert abs(G.cam_pitch_deg(R) - 45.0) < 1e-6
+
+
+def test_lean_of_base_pitched_forward():
+    T0 = np.eye(4)
+    T = np.eye(4)
+    T[:3, :3] = G.rot_y(0.8)  # +y rotation tips +x down = forward lean
+    assert abs(G.lean_rad(T, T0) - 0.8) < 1e-9
+
+
+def _synthetic():
+    """2 body configs (lean 0.2 / 0.8), 3 surfaces, x 4 x y 3 points, 4 levels, 4 yaws x 1 tilt. Only the 0.8
+    config at the middle surface reaches; yaw 90 never lifts; the camera only sees x >= 0.4."""
+    C, S, X, Y, Hn = 2, 3, 4, 3, 4
+    yaws = [0, 45, 90, 135]
+    ori = [{"yaw_deg": y, "tilt_deg": 0, "tdir_deg": 0} for y in yaws]
+    reach = np.zeros((C, S, X, Y, Hn, len(ori)), bool)
+    reach[1, 1] = True
+    reach[1, 1, :, :, 1:, 2] = False  # yaw 90: grasp only, no lift / carry level
+    vis = np.zeros((C, S, X, Y, 1), bool)
+    vis[:, :, 1:, :, 0] = True
+    return {
+        "reach": reach, "vis": vis,
+        "xs": np.array([0.2, 0.3, 0.4, 0.5]), "ys": np.array([-0.3, -0.2, -0.1]),
+        "levels": np.array([0.04, 0.09, 0.14, 0.19]), "surfaces": np.array([0.6, 0.7, 0.8]),
+        "orients": ori, "cam_pitch": np.array([[[40.0]] * S] * C),
+        "configs": [{"torso_j": 0.1}, {"torso_j": 0.5}], "lean": np.array([0.2, 0.8]),
+        "mount_z": np.array([1.1, 1.2]), "mount_x": np.array([0.0, 0.05]),
+    }
+
+
+def test_extract_finds_band_and_bad_yaw():
+    prof = RG.extract(_synthetic(), band_depth=0.2, lateral=(-0.3, -0.1), lift_ref=0.10, rel=0.7)
+    assert prof["surface_z_m"] == [0.7, 0.7]
+    assert prof["body"]["lean_rad"] == [0.8, 0.8]
+    assert prof["body"]["joints"]["torso_j"] == [0.5, 0.5]
+    assert 90 in prof["hand"]["yaw_deg_bad"] and 0 in prof["hand"]["yaw_deg_ok"]
+    assert prof["body"]["mount_above_surface_m"] == [0.5, 0.5]
+    assert all(c["surface_z"] == 0.7 for c in prof["cells"])
+    lo, hi = prof["stance_x_m"]
+    assert lo <= hi
+    assert prof["lift_clear_m"][0] == 0.05 and prof["lift_clear_m"][1] >= 0.10
+
+
+def test_extract_ranges_never_single_value_when_band_is_wide():
+    d = _synthetic()
+    d["reach"][1, 2] = d["reach"][1, 1]
+    prof = RG.extract(d, band_depth=0.2, lateral=(-0.3, -0.1), lift_ref=0.10, rel=0.7)
+    assert prof["surface_z_m"] == [0.7, 0.8]
+
+
+def test_rot_euler_recovers_pitch():
+    r, p, y = G.rot_euler(G.rot_z(0.3) @ G.rot_y(0.5))
+    assert abs(r) < 1e-9 and abs(p - 0.5) < 1e-9 and abs(y - 0.3) < 1e-9

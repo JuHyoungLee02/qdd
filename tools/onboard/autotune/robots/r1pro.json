@@ -1,0 +1,6 @@
+{"profile": "r1pro", "urdf": "/data/harvest/assets_l9v2/robots/r1pro/r1pro_l9v2.urdf", "root_z": 0.0,
+ "arms": {"right": {"hand": {"tips": ["right_gripper_finger_link1", "right_gripper_finger_link2"], "opposition": [[["right_gripper_finger_link1"], ["right_gripper_finger_link2"]]]}},
+          "left": {"hand": {"tips": ["left_gripper_finger_link1", "left_gripper_finger_link2"], "opposition": [[["left_gripper_finger_link1"], ["left_gripper_finger_link2"]]]}}},
+ "body_joints": {"torso_joint1": null, "torso_joint2": null, "torso_joint3": null}, "body_n": 6,
+ "cameras": {"cam_head": {"parent": "zed_link", "pos": [0, 0, 0], "quat": [0.5, 0.5, -0.5, 0.5], "hfov": 100.837, "width": 672, "height": 376,
+                          "model": "ZED on torso_link4 (GalaxeaManipSim head camera), fixed"}}}

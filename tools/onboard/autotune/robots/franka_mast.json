@@ -1,0 +1,6 @@
+{"profile": "franka_mast", "urdf": "/data/harvest/assets_l9v2/robots/franka/franka_l9v2.urdf", "root_z_rel_surface": [-0.40, 0.10], "body_n": 6,
+ "arms": {"right": {"hand": {"tips": ["panda_leftfinger", "panda_rightfinger"], "opposition": [[["panda_leftfinger"], ["panda_rightfinger"]]]}}},
+ "body_joints": {},
+ "cameras": {"cam_head": {"parent": "panda_link0", "pos": [-0.1, 0.23, 0.61], "quat": [0.9028590122851736, 0.036833608500734874, 0.4210100716628344, -0.07898992833716564],
+                          "hfov": 69.0, "width": 672, "height": 376, "pitch_offset_deg": [-30, 15],
+                          "model": "D435 on a mast fixed to panda_link0 (robot9.head_mount_default); pitch adjustable on the mast"}}}

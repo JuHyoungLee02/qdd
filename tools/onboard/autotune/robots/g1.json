@@ -1,0 +1,6 @@
+{"profile": "g1", "urdf": "/data/harvest/assets_l9v2/robots/g1/g1_l9v2.urdf", "root_z": 0.793,
+ "arms": {"right": {"hand": {"tips": ["right_hand_thumb_2_link", "right_hand_index_1_link", "right_hand_middle_1_link"], "opposition": [[["right_hand_thumb_2_link"], ["right_hand_index_1_link", "right_hand_middle_1_link"]]]}},
+          "left": {"hand": {"tips": ["left_hand_thumb_2_link", "left_hand_index_1_link", "left_hand_middle_1_link"], "opposition": [[["left_hand_thumb_2_link"], ["left_hand_index_1_link", "left_hand_middle_1_link"]]]}}},
+ "body_joints": {"waist_pitch_joint": null}, "body_n": 9,
+ "cameras": {"cam_head": {"parent": "d435_link", "pos": [0, 0, 0], "quat": [1, 0, 0, 0], "hfov": 69.0, "width": 672, "height": 376,
+                          "model": "D435 on torso_link (unitree_ros d435_joint), fixed"}}}

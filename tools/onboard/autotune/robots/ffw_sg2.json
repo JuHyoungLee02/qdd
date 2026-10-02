@@ -1,0 +1,7 @@
+{"profile": "ffw_sg2", "urdf": "/data/harvest/assets_l9v2/robots/ffw_sg2/ffw_sg2_l9v2.urdf", "root_z": 0.0,
+ "arms": {"right": {"hand": {"tips": ["gripper_r_rh_p12_rn_l2", "gripper_r_rh_p12_rn_r2"], "opposition": [[["gripper_r_rh_p12_rn_l2"], ["gripper_r_rh_p12_rn_r2"]]]}},
+          "left": {"hand": {"tips": ["gripper_l_rh_p12_rn_l2", "gripper_l_rh_p12_rn_r2"], "opposition": [[["gripper_l_rh_p12_rn_l2"], ["gripper_l_rh_p12_rn_r2"]]]}}},
+ "body_joints": {"lift_joint": null}, "body_n": 6,
+ "cameras": {"cam_head": {"parent": "ffw_sg2_follower_head_link2", "pos": [0.0238122, 0.0249820, -0.0109594], "quat": [1, 0, 0, 0],
+                          "hfov": 85.0, "width": 672, "height": 376, "pitch_joint": "head_joint1", "pitch_range": [-0.2317, 0.985], "pitch_n": 7,
+                          "model": "ZED Mini on head_link2 (FFW_SG2_REAL_cameras); neck tilt = head_joint1 (sim-raised limit 0.985)"}}}
