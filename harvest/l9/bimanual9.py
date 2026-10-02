@@ -575,14 +575,16 @@ class HandoverRuntime:
     below is a standalone loop for the pilot's smoke episodes, not the production label/build pipeline."""
 
     def __init__(self, world, profile: str, giver_arm: str, receiver_arm: str, device: str = "cuda:0",
-                 allow_untested: bool = False):
+                 allow_untested: bool = False, receiver_source: str = "rule"):
         from . import rt9 as RT
         env = world.env
         if not getattr(env, "dual", False):
             raise ValueError("HandoverRuntime needs world.env built with dual=True (world9.make_world9(dual=True))")
         if env.primary not in (giver_arm, receiver_arm):
             raise ValueError(f"env.primary={env.primary!r} must be the giver or the receiver arm")
-        self.world, self.profile = world, profile
+        if receiver_source not in ("rule", "graspgenx"):
+            raise ValueError(f"receiver_source={receiver_source!r}: must be 'rule' or 'graspgenx'")
+        self.world, self.profile, self.receiver_source = world, profile, receiver_source
         env.use_arm(giver_arm)
         giver_rt = RT.Runtime(world, profile, giver_arm, device=device, allow_untested=allow_untested)
         env.use_arm(receiver_arm)
@@ -673,11 +675,17 @@ class HandoverRuntime:
 
     def _grasp(self, slot: "_ArmSlot", obj_key: str) -> dict:
         """Choose + transit + straight approach + lift (rt9.Runtime._approach_plan, self-contained), then close.
-        -> {"ok", "status"}."""
+        -> {"ok", "status"}. The receiver, when `self.receiver_source == "graspgenx"`, tries
+        `_receiver_grasp_graspgenx` first and falls back to the rule path (rt.choose()) if it returns None --
+        never worse than the rule path, only possibly better."""
         env = self.world.env
         env.use_arm(slot.arm)
         rt = slot.rt
-        gc = rt.choose(obj_key, {"tgt": obj_key}, extra_boxes=self.other_arm_boxes(slot))
+        gc = None
+        if slot is self.receiver and self.receiver_source == "graspgenx":
+            gc = self._receiver_grasp_graspgenx(obj_key)
+        if gc is None:
+            gc = rt.choose(obj_key, {"tgt": obj_key}, extra_boxes=self.other_arm_boxes(slot))
         if gc is None:
             diag = rt.picks[-1] if rt.picks else {}
             return {"ok": False, "status": "no valid grasp", "choice_fail": diag.get("choice_fail"),
@@ -702,6 +710,55 @@ class HandoverRuntime:
             slot.traj, slot.traj_i = rt._resample(r["lift"]), 0  # None lift -- pod smoke #6 crashed here, bare
             self.run_ticks(len(slot.traj) + 5)  # TypeError from P9.resample(None, ...); the straight-line micro-lift
         return {"ok": True, "status": "ok", "gc": gc, "T_obj_pick": T_obj_pick}  # an optimization, skip if None
+
+    def _receiver_grasp_graspgenx(self, obj_key: str, n_surface: int = 2000):
+        """Receiver grasp via the SAME pod-A/B-validated GraspGenX pipeline the live executor uses
+        (harvest.l9.live9.choose_live + harvest.l9.ggx_refine, LIVE_REFINER=ggx won the 2026-10-02 A/B), fed a
+        PRIVILEGED mesh-sampled point cloud instead of an observed depth cloud -- this is the offline label
+        generator (L9_PRINCIPLES.md §2: the generator is privileged/offline, unlike the live executor it backs).
+        Tries every approach family (filter_candidates' family check is unconditional, so the family must be
+        picked before calling, unlike cam=None which cleanly skips the rot_bin check -- see live9.sample_grasps_cloud's
+        own docstring on this), keeps the highest-score candidate whose grasp pose solves cuRobo IK. Does NOT pass
+        extra_obstacles (live9's own (C,H,R) cuboid convention, different from this file's extra_boxes dict) --
+        the subsequent `_approach_plan(..., extra_boxes=...)` call in `_grasp` still re-checks the giver's gripper
+        box, same as it always does, so a colliding pick is still rejected, just one step later than the rule
+        path's rt.choose() would reject it. -> v2plan.GraspChoice | None."""
+        import os as _os
+        from . import grasp9 as G
+        from . import live9 as L
+        from . import rt9 as RT
+        from ..sim.scene import OBJ_GEOM
+        env = self.world.env
+        env.use_arm(self.receiver.arm)
+        rt = self.receiver.rt
+        oid = OBJ_GEOM.get(obj_key, {}).get("catalog_id") or obj_key
+        mesh_path = _os.path.join("/data/harvest/l9v2/meshes", oid + ".npz")
+        if not _os.path.exists(mesh_path):
+            return None
+        m = np.load(mesh_path)
+        V, F = m["v"], m["f"]
+        rng = np.random.default_rng(0)
+        P_local, N_local, _ = G.sample_surface(V, F, n_surface, rng)
+        c, q = env.object_pose(obj_key)
+        Robj = RT.G.qmat(np.asarray(q, float))
+        P = (P_local @ Robj.T) + np.asarray(c, float)
+        N = N_local @ Robj.T
+        point3d = np.asarray(c, float)
+        base_xy = rt.T_world_base()[:2, 3]
+        f_dir = point3d[:2] - base_xy
+        best = None
+        for fam in ("front", "oblique", "side", "top"):
+            gc = L.choose_live(P, N, self.profile, fam, rot_bin=0, point3d=point3d,
+                               support_z=self.world.table_z, f_dir=f_dir, cam=None, category="", obj_h=0.0,
+                               extra_obstacles=None, seed=0, k=0, use_refiner=True)
+            if gc is None:
+                continue
+            ok, _, _ = rt.planner.ik(rt.to_base(gc.T)[None])
+            if not bool(ok[0]):
+                continue
+            if best is None or float(gc.meta.get("score", 0.0)) > float(best.meta.get("score", 0.0)):
+                best = gc
+        return best
 
     def _live_best_yaw(self, obj_key: str, zone_xyz, n_yaw: int = 8) -> tuple:
         """Owner 2026-10-02 (R4 follow-up to `best_release_yaw`'s static approach-class proxy, which matched the
@@ -868,8 +925,9 @@ class HandoverRuntime:
 
 
 def install_handover(world, profile: str, giver_arm: str, receiver_arm: str, device: str = "cuda:0",
-                      allow_untested: bool = False) -> HandoverRuntime:
-    return HandoverRuntime(world, profile, giver_arm, receiver_arm, device=device, allow_untested=allow_untested)
+                      allow_untested: bool = False, receiver_source: str = "rule") -> HandoverRuntime:
+    return HandoverRuntime(world, profile, giver_arm, receiver_arm, device=device, allow_untested=allow_untested,
+                           receiver_source=receiver_source)
 
 
 # ================================================================================================= category B: lift

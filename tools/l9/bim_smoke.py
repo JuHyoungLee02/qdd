@@ -40,6 +40,10 @@ def main(argv=None):
                           "cheap IK then full cuRobo path cost/margin) instead of the fixed --direction. The owner's "
                           "order (2026-10-02): direction must never be a coin flip or a hand rule.")
     ap.add_argument("--cat", default="block", choices=list("block can cup bottle bowl box".split()))
+    ap.add_argument("--receiver-source", default="rule", choices=["rule", "graspgenx"],
+                     help="receiver grasp source for the ≥20-episode A/B (owner 2026-10-02): 'rule' = "
+                          "rt9.Runtime.choose() (unchanged), 'graspgenx' = bimanual9._receiver_grasp_graspgenx "
+                          "(falls back to 'rule' on a None result, never worse).")
     ap.add_argument("--pool", type=int, default=5000)
     ap.add_argument("--rooms", type=int, default=5000)
     ap.add_argument("--device", default="cuda:0")
@@ -113,9 +117,10 @@ def main(argv=None):
                 giver_i, receiver_i = ("right", "left") if direction == "rl" else ("left", "right")
                 print("DIRECTION " + json.dumps({"seed": seed, "chosen": direction, "scores": scores},
                                                  default=_jsonable), flush=True)
-            hr = B.install_handover(world, a.robot, giver_i, receiver_i, device=a.device, allow_untested=True)
+            hr = B.install_handover(world, a.robot, giver_i, receiver_i, device=a.device, allow_untested=True,
+                                    receiver_source=a.receiver_source)
             r = hr.run_episode(obj_key, world.table_z, seed=seed, episode_idx=i)
-            r["seed"], r["obj"] = seed, obj_key
+            r["seed"], r["obj"], r["receiver_source"] = seed, obj_key, a.receiver_source
             r["wall_s"] = round(time.time() - t0, 1)
             print("EP " + json.dumps({k: v for k, v in r.items() if k != "log"}, default=_jsonable), flush=True)
             results.append(r)
