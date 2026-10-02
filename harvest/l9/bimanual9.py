@@ -656,9 +656,9 @@ GRAVITY_BOX_HALF = (0.025, 0.025, 0.03)  # m, coarse stand-in for the other arm'
 ZONE_TRIES = 12  # extra live handover points tried when the drawn one fails either arm
 HANDOVER_SWEEP = 0.03  # m of the receiver's straight approach checked against the giver's hand (fingers + palm, no
 # wrist extension): bimdeep a15 10-03, with 10 cm + the 6 cm wrist no receiver grasp of any bottle survived
-ZONE_DX = (0.15, 0.25, 0.35)  # m ahead of the arms' base-link midpoint (live handover grid)
+ZONE_DX = (0.20, 0.30, 0.40)  # m ahead of the arms' base-link midpoint (live handover grid)
 ZONE_DY = (-0.08, 0.0, 0.08)  # m across the body midline
-ZONE_DZ = (0.12, 0.20, 0.28)  # m above the support
+ZONE_DZ = (0.10, 0.18, 0.26)  # m above the support
 SETTLE_TICKS = 30  # ~0.6 s at 20 Hz / dt: gripper close/open settle wait
 
 
@@ -1231,6 +1231,21 @@ class HandoverRuntime:
         ok, _, _ = rt.planner.ik(np.stack(Ts))
         return int(np.sum(np.asarray(ok, bool)))
 
+    def _in_head_view(self, p, half_h: float = 0.06, margin: float = 0.08) -> bool:
+        """The point +-half_h vertically projects inside the episode's head camera image (margin = fraction of the
+        image size kept clear at each border). No camera model available -> True."""
+        from . import grasp9 as G
+        try:
+            cam = self.world._cam("cam_head", "head")
+        except Exception:  # noqa: BLE001
+            return True
+        K = np.array([[cam.fx, 0.0, cam.cx], [0.0, cam.fy, cam.cy], [0.0, 0.0, 1.0]])
+        X = np.array([np.asarray(p, float) + [0.0, 0.0, dz] for dz in (-half_h, half_h)])
+        uv, z = G.project(K, np.asarray(cam.R, float), np.asarray(cam.t, float), X)
+        mu, mv = margin * cam.W, margin * cam.H
+        return bool((z > 0).all() and (uv[:, 0] >= mu).all() and (uv[:, 0] <= cam.W - mu).all()
+                    and (uv[:, 1] >= mv).all() and (uv[:, 1] <= cam.H - mv).all())
+
     def _live_grid_ref(self):
         env = self.world.env
         bases = []
@@ -1250,14 +1265,16 @@ class HandoverRuntime:
         rng = np.random.default_rng([int(seed), 2026_10_03, 7, int(episode_idx)])
         return [pts[i] for i in rng.permutation(len(pts))]
 
-    def _move_to(self, slot: "_ArmSlot", target_xyz, quat_wxyz=None, below_z: float | None = None) -> dict:
+    def _move_to(self, slot: "_ArmSlot", target_xyz, quat_wxyz=None, below_z: float | None = None,
+                 boxes: bool = True) -> dict:
         """A straight / planned cuRobo move to a world TCP pose, holding `slot.held_obj` attached if set.
         below_z: the support the held object leaves / reaches (rt9.Runtime.refresh_world)."""
         from . import rt9 as RT
         env = self.world.env
         env.use_arm(slot.arm)
         rt = slot.rt
-        rt.refresh_world(holding=slot.held_obj or None, below_z=below_z, extra_boxes=self.other_arm_boxes(slot))
+        rt.refresh_world(holding=slot.held_obj or None, below_z=below_z,
+                         extra_boxes=self.other_arm_boxes(slot) if boxes else None)
         q = rt.plan_start()  # commanded joints, clipped inside the sim range (cuRobo refuses a start on a limit)
         quat = np.asarray(quat_wxyz, float) if quat_wxyz is not None else np.asarray(rt.tcp_T()[:3, :3], float)
         T = RT.T_of(target_xyz, RT.G.mat_quat(quat) if quat.shape == (3, 3) else quat)
@@ -1337,6 +1354,8 @@ class HandoverRuntime:
             rt_g = self.giver.rt
             chosen = None
             cands = [np.asarray(zone, float)] + self._live_zone_grid(table_z, seed, episode_idx)
+            cands = [z for z in cands if self._in_head_view(z)]  # the handover must be seen (bimdeep a23 frames 10-03:
+            # the live grid put it under the table edge, out of the head view)
             for j, zj in enumerate(cands[:ZONE_TRIES + 1]):
                 if self.receiver_source == "graspgenx":
                     # GraspGen-X samples the receiver grasp live on the in-hand object, so the zone test is the
@@ -1462,7 +1481,9 @@ class HandoverRuntime:
         # giver retreat: back along its own approach axis (+z_G) and up -- away from the object it just let go of
         env.use_arm(self.giver.arm)
         Tg = self.giver.rt.tcp_T()
-        r = self._move_to(self.giver, Tg[:3, 3] + Tg[:3, 2] * 0.10 + np.array([0.0, 0.0, 0.03]))
+        r = self._move_to(self.giver, Tg[:3, 3] + Tg[:3, 2] * 0.10 + np.array([0.0, 0.0, 0.03]), boxes=False)
+        # (bimdeep a23 10-03: with the receiver's hand boxes the retreat start is in collision by design -- the open
+        # fingers sit next to the receiver's; it backs out along its own approach axis)
         log.append({"phase": "giver_retreat", **r})
         # receiver place: the OBJECT goes to the final spot resting on its support (the old move sent the TCP to
         # (final_xy, zone z) and opened there -- a 20+ cm drop, place_err 9.8 cm in smoke13)
