@@ -41,15 +41,25 @@ BIM_B_DEFS = {
 }
 assert len(BIM_B_DEFS) == 6, len(BIM_B_DEFS)
 # owner 10-03 00:xx: per-def train-catalog asset counts (exact category match, full 5356-item catalog, not one
-# pool_for() window -- a pool draw returning 0 for a def with assets>0 is a sampling miss, not an asset gap).
-# Checked 2026-10-02/03: lift_pot has NO matching catalog asset at all ("potted"/"pottery" entries are plants/
-# decor, not a two-handled cooking pot) -- marked, not dropped (per owner: mark, never delete). lift_bar is thin
-# (5, via the "rod" bucket; "bar" itself has 0 exact matches -- chocolate/candy/gold bars are food/decor, not a
-# carry bar) -- flagged, still usable. New assets are NOT added here; owner said propose (license-checked) first.
-BIM_B_ASSET_COUNTS = {  # name -> (n_catalog_matches, note)
-    "lift_tray": (10, "ok"), "lift_pot": (0, "자산 없음(potted/pottery 류는 요리 냄비 아님)"),
-    "lift_big_box": (58, "ok"), "lift_basket": (39, "ok"), "lift_crate": (41, "ok (bin 버킷)"),
-    "lift_bar": (5, "자산 적음(rod 버킷, bar 자체는 0)"),
+# pool_for() window -- a pool draw returning 0 for a def with catalog_n>0 can still be a sampling miss on the
+# RAW ASSET, separate from the bigger blocker below). lift_pot has NO matching catalog asset at all ("potted"/
+# "pottery" entries are plants/decor, not a two-handled cooking pot).
+#
+# BIGGER FINDING (pod check, harvest/l9/rt9.has_candidates against /data/harvest/l9v2/grasps/ffw_sg2, 10-03 00:xx):
+# raw asset existence is NOT the real blocker for most of these -- grasp-CANDIDATE cache coverage for ffw_sg2 is.
+# tray/box/bin/rod have catalog assets but ZERO cached ffw_sg2 candidates (rt9.Runtime.choose() can never return
+# anything for them no matter how many scenes are drawn); only basket has real coverage (15/39). This, not a pool
+# sampling artifact, is why lift_tray and lift_big_box smoke draws both got "no scene / object draw" 3/3 (object9
+# instantiate filters to targets with cached candidates, same filter bim_smoke_b.py applies explicitly). Generating
+# the missing candidate caches is a production-pipeline prerequisite outside this review's scope -- flagged, not
+# fixed here. lift_basket is the only B def currently smoke-testable for AI Worker until that coverage exists.
+BIM_B_ASSET_COUNTS = {  # name -> (n_catalog_matches, n_with_ffw_sg2_candidates, note)
+    "lift_tray": (10, 0, "자산은 있으나 ffw_sg2 잡기 후보 캐시 0 -- 생산 전처리 필요"),
+    "lift_pot": (0, 0, "자산 없음(potted/pottery 류는 요리 냄비 아님)"),
+    "lift_big_box": (58, 0, "자산은 있으나 ffw_sg2 잡기 후보 캐시 0 -- 생산 전처리 필요"),
+    "lift_basket": (39, 15, "스모크 가능 (유일하게 후보 캐시 있음)"),
+    "lift_crate": (41, 0, "자산은 있으나(bin 버킷) ffw_sg2 잡기 후보 캐시 0 -- 생산 전처리 필요"),
+    "lift_bar": (5, 0, "자산 적음(rod 버킷)이고 ffw_sg2 잡기 후보 캐시도 0"),
 }
 assert set(BIM_B_ASSET_COUNTS) == set(BIM_B_DEFS)
 
