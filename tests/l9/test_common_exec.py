@@ -113,3 +113,25 @@ def test_track_lag(tmp_path):
 def test_isaac_env_allowlist():
     sh = open(os.path.join(os.path.dirname(__file__), "..", "..", "tools", "l9", "isaac.sh"), encoding="utf-8").read()
     assert "L9_COMMON_EXEC=$L9_COMMON_EXEC" in sh
+
+
+def test_common_ab(tmp_path):
+    from tools.l9 import common_ab
+    src = tmp_path / "src"
+    src.mkdir()
+    rows = [{"seed": 10 + i, "robot": "g1" if i % 2 else "r1pro", "job": f"v{i}"} for i in range(8)]
+    (src / "plan_pilot_v2.json").write_text(json.dumps(rows))
+    (src / "HCAM_ON").write_text("")
+    out = tmp_path / "ab"
+    assert common_ab.mk(str(out), {"g1": str(src), "r1pro": str(src)}, 3) == {"g1": 3, "r1pro": 3}
+    for arm in ("off", "on"):
+        p = json.loads((out / arm / "plan_pilot_v2.json").read_text())
+        assert [r["seed"] for r in p] == [11, 13, 15, 10, 12, 14]
+        assert len((out / arm / "jobs.txt").read_text().splitlines()) == 6 and (out / arm / "HCAM_ON").exists()
+    assert (out / "on" / "COMMON_EXEC").exists() and not (out / "off" / "COMMON_EXEC").exists()
+    for arm, ok in (("off", False), ("on", True)):
+        d = out / arm / "collect" / "e1"
+        d.mkdir(parents=True)
+        (d / "meta.json").write_text(json.dumps({"robot": "g1", "seed": 11, "success": ok, "max_dq_rad": 0.03}))
+    r = common_ab.cmp(str(out))["g1"]
+    assert r["off"]["pass"] == 0 and r["on"]["pass"] == 1 and r["common_seeds"] == 1
