@@ -104,6 +104,8 @@ def describe(cmd: dict) -> str:
 def _stage_words(ep, st) -> str:
     w = ep.prog["words"]
     x = w.get(st["ref"], st["ref"]) if st.get("ref") else "part"
+    if st["kind"] == "place":
+        return f"put the {w.get('O', 'object')} {x}"
     return STAGE_TEXT[st["kind"]].format(X=x)
 
 

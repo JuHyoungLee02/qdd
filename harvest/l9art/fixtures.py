@@ -17,7 +17,7 @@ import math
 
 import numpy as np
 
-FAMILIES = ("drawer", "door", "slide", "knob", "button", "panel")
+FAMILIES = ("drawer", "door", "slide", "knob", "button", "panel", "dial")  # dial = knob panel with top-mounted knobs
 FAMILY_CODE = {f: i for i, f in enumerate(FAMILIES)}
 WALL = 0.015
 WOOD = [(0.55, 0.45, 0.35), (0.62, 0.50, 0.36), (0.40, 0.30, 0.22), (0.75, 0.72, 0.66), (0.30, 0.30, 0.32),
@@ -99,7 +99,7 @@ def _bar(prefix, centre, along, standoff, length, thick, col) -> list:
     for j, sg in enumerate((-1, 1)):
         pc = c.copy()
         pc[k] += sg * (length / 2 - thick / 2)
-        pc[0] = -post / 2
+        pc[0] = c[0] + standoff - post / 2  # from the face (x = c + standoff) out to the bar
         out.append(_box(f"{prefix}_post{j}", pc, (post, thick * 0.9, thick * 0.9), col))
     return out
 
@@ -109,11 +109,11 @@ def _knob_pull(prefix, centre, col) -> tuple:
     c = np.asarray(centre, float)
     stem_l, cap_t = 0.025, 0.016
     cap = 0.032
-    out = [_box(prefix + "_stem", (-stem_l / 2, c[1], c[2]), (stem_l, 0.014, 0.014), col),
-           _box(prefix + "_cap", (-stem_l - cap_t / 2, c[1], c[2]), (cap_t, cap, cap), col),
-           _box(prefix + "_cap45", (-stem_l - cap_t / 2, c[1], c[2]), (cap_t, cap, cap), col,
+    out = [_box(prefix + "_stem", (c[0] - stem_l / 2, c[1], c[2]), (stem_l, 0.014, 0.014), col),
+           _box(prefix + "_cap", (c[0] - stem_l - cap_t / 2, c[1], c[2]), (cap_t, cap, cap), col),
+           _box(prefix + "_cap45", (c[0] - stem_l - cap_t / 2, c[1], c[2]), (cap_t, cap, cap), col,
                 q=(math.cos(math.pi / 8), math.sin(math.pi / 8), 0, 0))]
-    return out, np.array([-stem_l - cap_t / 2, c[1], c[2]]), cap
+    return out, np.array([c[0] - stem_l - cap_t / 2, c[1], c[2]]), cap
 
 
 def _handle(rng, prefix, x_face, y0, z0, along, max_len, col) -> tuple:
@@ -184,7 +184,7 @@ def _ordinal(rank, n, three, two):
 
 
 def _door(rng, spec):
-    W, D, H = float(rng.uniform(0.28, 0.42)), float(rng.uniform(0.28, 0.40)), float(rng.uniform(0.26, 0.42))
+    W, D, H = float(rng.uniform(0.24, 0.36)), float(rng.uniform(0.28, 0.40)), float(rng.uniform(0.26, 0.42))
     body, dcol, hcol = _pick(rng, WOOD + PAINT), _pick(rng, WOOD + PAINT), _pick(rng, METAL)
     shelf = H / 2 if rng.random() < 0.5 else None
     spec.update(dims={"W": W, "D": D, "H": H}, base=_carcass(W, D, H, body, shelf_z=shelf), body_color=_r(body, 3))
@@ -231,7 +231,7 @@ def _slide(rng, spec):
 
 
 def _panel_block(rng, spec, label):
-    W, D, H = float(rng.uniform(0.20, 0.45)), float(rng.uniform(0.10, 0.22)), float(rng.uniform(0.10, 0.24))
+    W, D, H = float(rng.uniform(0.20, 0.45)), float(rng.uniform(0.10, 0.22)), float(rng.uniform(0.14, 0.30))
     body = _pick(rng, PAINT + METAL + WOOD)
     spec.update(dims={"W": W, "D": D, "H": H}, base=[_box("block", (D / 2, 0, H / 2), (D, W, H), body)],
                 body_color=_r(body, 3), label=label)
@@ -242,8 +242,8 @@ def _mount(face, W, D, H, y, z_rel):
     """(joint origin in F, outward unit vector, rotation link-canonical -> F) for a knob / button on the front face
     (outward -x) or the top face (outward +z). Canonical geometry is built with outward = -x."""
     if face == "front":
-        return np.array([0.0, y, z_rel * H]), np.array([-1.0, 0, 0]), np.eye(3)
-    R = np.array([[0, 0, -1], [0, 1, 0], [1, 0, 0]], float)  # canonical -x -> +z
+        return np.array([0.0, y, (0.55 + z_rel) * H]), np.array([-1.0, 0, 0]), np.eye(3)
+    R = np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]], float)  # canonical -x (outward) -> +z (smoke 10-02: the sign sank top knobs into the panel)
     return np.array([D * (0.5 + z_rel * 0.6), y, H]), np.array([0, 0, 1.0]), R
 
 
@@ -282,7 +282,7 @@ def _add_knob(rng, spec, i, face, y, z_rel, words):
     cname = _pick(rng, sorted(KNOB_COL))
     col = KNOB_COL[cname]
     dia, hk = float(rng.uniform(0.035, 0.05)), float(rng.uniform(0.018, 0.028))
-    rh, rw = float(rng.uniform(0.014, 0.02)), float(rng.uniform(0.010, 0.014))
+    rh, rw = float(rng.uniform(0.024, 0.032)), float(rng.uniform(0.010, 0.014))  # a tall fin the pads can hold [가설]
     bx = [_box("body", (-hk / 2, 0, 0), (hk, dia * 0.92, dia * 0.92), col),
           _box("body45", (-hk / 2, 0, 0), (hk, dia * 0.92, dia * 0.92), col, q=(math.cos(math.pi / 8), math.sin(math.pi / 8), 0, 0)),
           _box("ridge", (-hk - rh / 2 + 0.002, 0, 0), (rh, dia * 0.95, rw), col),
@@ -298,7 +298,7 @@ def _add_knob(rng, spec, i, face, y, z_rel, words):
     ridge = R @ np.array([-hk - rh / 2 + 0.002, 0, 0])
     mark = R @ np.array([-hk - rh + 0.0015, dia * 0.38, 0])
     spec["handles"][ln] = {"type": "knob", "joint": jn, "link": ln, "gc": _r(ridge), "fn": _r(out),
-                           "ridge_along": _r(R @ np.array([0, 1.0, 0])), "length": round(dia * 0.95, 4),
+                           "ridge_along": _r(R @ np.array([0, 1.0, 0])), "length": round(dia * 0.95, 4), "ridge_h": round(rh, 4),
                            "thick": round(rw, 4), "mark": _r(mark), "words": f"{cname} {words}".strip(),
                            "face": face, "color": cname}
 
@@ -339,9 +339,8 @@ def _side_words(n, k):
     return names[k]
 
 
-def _knobs(rng, spec):
+def _knobs(rng, spec, face="front"):
     W, _, _ = _panel_block(rng, spec, "control panel with knobs")
-    face = "front" if rng.random() < 0.6 else "top"
     n = int(rng.choice([1, 2, 3], p=[0.35, 0.35, 0.3]))
     ys = _positions(rng, n, W)[::-1]  # robot's left (+y) first
     for k, y in enumerate(ys):
@@ -351,13 +350,15 @@ def _knobs(rng, spec):
 
 def _buttons(rng, spec):
     W, _, _ = _panel_block(rng, spec, "panel with buttons")
-    face = "front" if rng.random() < 0.6 else "top"
-    n = int(rng.choice([1, 2, 3], p=[0.35, 0.35, 0.3]))
-    sw = face == "front" and rng.random() < 0.35
+    face = "front"  # the switch + buttons panel faces the robot (top-face presses come from the panel family)
+    n = int(rng.choice([2, 3], p=[0.6, 0.4]))
+    sw = True  # every button panel: one switch + 1-2 buttons (button_press and switch_press both fit any job)
+    if sw and n == 1:
+        n = 2  # one switch + at least one button (button_press and switch_press both fit)
     ys = _positions(rng, n, W)[::-1]
     for k, y in enumerate(ys):
         _add_button(rng, spec, k, face, y, float(rng.uniform(-0.05, 0.15)) if face == "front" else 0.0,
-                    (_side_words(n, k) + " button").strip(), switch=sw)
+                    (_side_words(n, k) + " button").strip(), switch=sw and k == 0)
 
 
 def _panel(rng, spec):
@@ -368,7 +369,8 @@ def _panel(rng, spec):
     _add_button(rng, spec, 0, face, b, 0.0, "button")
 
 
-BUILDERS = {"drawer": _drawer, "door": _door, "slide": _slide, "knob": _knobs, "button": _buttons, "panel": _panel}
+BUILDERS = {"drawer": _drawer, "door": _door, "slide": _slide, "knob": _knobs, "button": _buttons, "panel": _panel,
+            "dial": lambda rng, spec: _knobs(rng, spec, "top")}
 
 
 def sample(family: str, seed: int) -> dict:
@@ -429,6 +431,9 @@ def handle_frame(spec: dict, link: str, T_WF, q: dict | None = None) -> dict:
     R = T[:3, :3]
     out = {"gc": T[:3, :3] @ np.asarray(h["gc"], float) + T[:3, 3], "fn": R @ np.asarray(h["fn"], float),
            "type": h["type"]}
+    for k in ("length", "thick", "standoff", "ridge_h"):
+        if h.get(k) is not None:
+            out[k] = float(h[k])
     if h.get("along") in ("y", "z"):
         out["bar"] = R @ (np.array([0, 1.0, 0]) if h["along"] == "y" else np.array([0, 0, 1.0]))
     if h.get("ridge_along") is not None:
@@ -474,13 +479,17 @@ def _usda_box(b: dict, ind: str) -> str:
 def usda(spec: dict) -> str:
     """The articulation as USDA text (prim /fixture: ArticulationRoot; base + moving links; joints)."""
     out = ['#usda 1.0', '(', '    defaultPrim = "fixture"', '    metersPerUnit = 1', '    upAxis = "Z"', ')', '',
-           'def Xform "fixture" (', '    prepend apiSchemas = ["PhysicsArticulationRootAPI", "PhysxArticulationAPI"]',
-           ')', '{', '    bool physxArticulation:enabledSelfCollisions = 0']
+           'def Xform "fixture"', '{']
     rb = '    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]'
+    # the articulation root sits on the base body (Isaac Lab fix_root_link needs a rigid root: smoke 10-02)
+    rb_root = '    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysicsArticulationRootAPI", "PhysxArticulationAPI"]'
 
     def link(name, origin, boxes, mass):
-        s = [f'    def Xform "{name}" (', "    " + rb, '    )', '    {', f'        float physics:mass = {float(mass):.4g}',
-             f'        double3 xformOp:translate = {_f(origin)}', '        uniform token[] xformOpOrder = ["xformOp:translate"]']
+        s = [f'    def Xform "{name}" (', "    " + (rb_root if name == "base" else rb), '    )', '    {',
+             f'        float physics:mass = {float(mass):.4g}']
+        if name == "base":
+            s.append('        bool physxArticulation:enabledSelfCollisions = 0')
+        s += [f'        double3 xformOp:translate = {_f(origin)}', '        uniform token[] xformOpOrder = ["xformOp:translate"]']
         s += [_usda_box(b, "        ") for b in boxes]
         s.append('    }')
         return "\n".join(s)

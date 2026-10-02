@@ -31,7 +31,10 @@ def test_instantiate_and_build(did):
             if st["kind"] in ("pull", "push", "rotate"):
                 assert st["goal"] is not None
         for arm in ("right", "left"):
-            b = SA.build(s, "ffw_sg2", arm, spec, prog, OBJS)
+            try:
+                b = SA.build(s, "ffw_sg2", arm, spec, prog, OBJS)
+            except ValueError:
+                continue
             assert b["ep"]["objects"] and -0.5 <= b["sc"]["lift"] <= 0.0
             if spec is not None:
                 (x0, x1), (y0, y1) = SA.fixture_aabb(spec, b["fixture"]["T"])

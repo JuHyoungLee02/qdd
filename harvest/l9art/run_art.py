@@ -35,10 +35,15 @@ def pick_objects(pool: dict, prog: dict, seed: int, robot: str) -> dict:
         name = str(P.OBJ_NAME.get(k, v.get("name", k)))
         rows.append((k, name, dx, dy, h, v))
     if prog.get("need_obj") == "pushable":
-        cand = [r for r in rows if r[4] <= 1.3 * min(r[2], r[3]) and 0.04 <= min(r[2], r[3]) and max(r[2], r[3]) <= 0.14
-                and not any(w in r[1] for w in ("ball", "orange", "apple", "egg", "can", "bottle", "cup", "mug"))]
+        base = [r for r in rows if r[4] <= 1.3 * min(r[2], r[3]) and 0.04 <= min(r[2], r[3]) and max(r[2], r[3]) <= 0.14
+                and str(r[5].get("l9cat")) not in ("fruit", "vegetable", "bread", "can", "bottle", "cup", "mug", "bowl",
+                                                   "jar", "vase", "flower", "plate", "spoon_fork")]
+        cand = [r for r in base if r[5].get("l9cat") in ("box", "block", "book")] or base  # flat-sided first (smoke: a burger)
     else:
         cand = [r for r in rows if max(r[2], r[3]) <= 0.14 and r[4] <= 0.16]
+        if prog.get("need_obj") == "small":  # combo pick: grasp-tested L9 targets that fit a drawer
+            cand = [r for r in cand if r[5].get("role9") == "target" and max(r[2], r[3]) <= 0.09 and r[4] <= 0.06
+                    and min(r[2], r[3]) <= 0.06]
     if not cand:
         raise ValueError("no fitting object in the pool")
     out = {}
@@ -128,13 +133,9 @@ def main(argv=None):
                 os.makedirs(od, exist_ok=True)
                 epi = EA.ArtEpisode(world, ex, r, built, spec, prog, od, p=a.p, video=a.video)
                 obs = world.observe(depth=False)
-                vis = []
-                for st in prog["stages"]:
-                    if st.get("link"):
-                        hf = FX.handle_frame(spec, st["link"], WA.T_WF_now(world), WA.joints(world))
-                        vis.append(EA.SK.to_px(obs.cams["head"], hf["gc"]) is not None)
-                if not all(vis):
-                    raise SkipScene("the part is outside the head image")
+                why = epi.unseen(obs.cams["head"])
+                if why:
+                    raise SkipScene(f"outside the head image: {why}")
                 res = epi.run()
             except (SkipScene, ValueError, KeyError) as e:
                 os.makedirs(od, exist_ok=True)

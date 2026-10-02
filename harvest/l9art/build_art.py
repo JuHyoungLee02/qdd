@@ -1,0 +1,146 @@
+"""L9art episodes -> training / evaluation rows, same row schema as the L9 build (harvest.l9.build9): each call of
+labels.jsonl becomes one control row {id, kind:"control", prompt_path, images [ring head, wrist], answer, label_missing,
+robot, camera, source, gen, gen_version, skill, split, episode, success}. No depth / aux rows (format v3 has none yet);
+harvest.l9 is read-only (only hcam9.line is reused for the camera field, exactly as harvest.l9.build9.camera_of does).
+
+Train builds (train=True): episodes with meta.success != True are dropped whole, and any remaining row whose label is
+missing is dropped too. Eval builds (train=False) keep every call of every episode, flags included, for scoring."""
+from __future__ import annotations
+
+import argparse
+import glob
+import json
+import os
+from collections import Counter
+
+from ..l9 import hcam9 as HC
+
+ROW_ID_PREFIX = "l9art"
+
+
+def row_id(ep_name: str, call: int) -> str:
+    return f"{ROW_ID_PREFIX}_{ep_name}_c{call:03d}"
+
+
+def label_missing_of(r: dict) -> bool:
+    """True when the labels.jsonl row's command is a point command missing its target pixel, or (sub == "move",
+    where every stage kind always sets point2) missing the end pixel."""
+    cmd = r.get("command") or {}
+    if cmd.get("mode") != "point":
+        return False
+    if cmd.get("point_2d") is None:
+        return True
+    return r.get("sub") == "move" and cmd.get("point2") is None
+
+
+def _copy_prompt(src: str, dst: str) -> None:
+    text = open(src, encoding="utf-8").read()
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    with open(dst, "w", encoding="utf-8", newline="\n") as f:
+        f.write(text)
+
+
+def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool) -> tuple:
+    """-> (control rows, counts) of one l9art episode folder. Episodes without meta.json / labels.jsonl (fully
+    skipped rows) contribute nothing."""
+    c = Counter()
+    meta_path = os.path.join(ep_dir, "meta.json")
+    labels_path = os.path.join(ep_dir, "labels.jsonl")
+    if not (os.path.exists(meta_path) and os.path.exists(labels_path)):
+        c["episode_skipped"] += 1
+        return [], c
+    meta = json.load(open(meta_path))
+    robot = meta.get("robot") or "ffw_sg2"
+    success = bool(meta.get("success"))
+    ep_name = os.path.basename(ep_dir)
+    if train and not success:
+        c["episode_failed_dropped"] += 1
+        return [], c
+    out = []
+    for line in open(labels_path, encoding="utf-8"):
+        line = line.strip()
+        if not line:
+            continue
+        r = json.loads(line)
+        c["states"] += 1
+        call = int(r["call"])
+        call_dir = os.path.join(ep_dir, "calls", f"c{call:03d}")
+        missing = label_missing_of(r)
+        if train and missing:
+            c["label_missing_dropped"] += 1
+            continue
+        cams = json.load(open(os.path.join(call_dir, "cams.json")))
+        camera = HC.line(cams["head"], f"l9art/{robot}")
+        rid = row_id(ep_name, call)
+        dst_prompt = os.path.join(out_dir, "prompts_art", rid + ".txt")
+        _copy_prompt(os.path.join(call_dir, "prompt_v3.txt"), dst_prompt)
+        images = [os.path.join(call_dir, "img1_head_ring.png"), os.path.join(call_dir, "img2_right_wrist_camera.png")]
+        out.append({"id": rid, "kind": "control", "prompt_path": dst_prompt, "images": images,
+                    "answer": r["answer"], "label_missing": missing, "robot": robot, "camera": camera,
+                    "source": f"l9art/{robot}", "gen": "l9art", "gen_version": "v3", "skill": r.get("skill"),
+                    "split": split, "episode": ep_name, "success": success})
+        c["rows"] += 1
+    return out, c
+
+
+def build(ep_dirs, out_dir: str, split: str, name: str, train: bool = True) -> dict:
+    os.makedirs(out_dir, exist_ok=True)
+    rows, c = [], Counter()
+    for d in ep_dirs:
+        a, k = episode_rows(d, out_dir, split, train)
+        rows += a
+        c.update(k)
+    path = os.path.join(out_dir, name + ".jsonl")
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        for x in rows:
+            f.write(json.dumps(x) + "\n")
+    counts = dict(c, episodes=len(ep_dirs), control_rows=len(rows),
+                  robots=dict(Counter(x["robot"] for x in rows)),
+                  skills=dict(Counter(x["skill"] for x in rows)),
+                  label_missing=sum(1 for x in rows if x["label_missing"]))
+    json.dump(counts, open(os.path.join(out_dir, name + ".counts.json"), "w"), indent=1)
+    return dict(counts, path=path)
+
+
+def check_rows(rows) -> dict:
+    """Every control row of this build: prompt / images exist, the answer parses as JSON, and (when its command is a
+    point command) command.command.skill is one of harvest.l9art.tasks.SKILLS. -> {"n", "n_errors", "errors"}."""
+    from . import tasks as TK
+    errs = []
+    for r in rows:
+        bad = []
+        for p in [r["prompt_path"]] + list(r["images"]):
+            if not os.path.exists(p):
+                bad.append(f"missing {os.path.basename(p)}")
+        try:
+            d = json.loads(r["answer"])
+        except (TypeError, json.JSONDecodeError):
+            bad.append("answer not JSON")
+        else:
+            cmd = d.get("command") or {}
+            if cmd.get("mode") == "point" and cmd.get("skill") not in TK.SKILLS:
+                bad.append(f"bad skill {cmd.get('skill')!r}")
+        if bad:
+            errs.append({"id": r["id"], "errors": bad})
+    return {"n": len(rows), "n_errors": len(errs), "errors": errs[:20]}
+
+
+def find_episode_dirs(root: str, split: str) -> list:
+    return sorted(os.path.dirname(p) for p in glob.glob(os.path.join(root, split, "**", "meta.json"), recursive=True))
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--root", required=True, help="collect root (holds <split>/<def>/<def>_s<seed>_<arm>/...)")
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--split", default="train")
+    ap.add_argument("--name", default="train_art")
+    ap.add_argument("--eval", action="store_true", help="keep every row (flagged), instead of the train filter")
+    a = ap.parse_args(argv)
+    ep_dirs = find_episode_dirs(a.root, a.split)
+    res = build(ep_dirs, a.out, a.split, a.name, train=not a.eval)
+    print(json.dumps(res, indent=1, default=str))
+
+
+if __name__ == "__main__":
+    main()

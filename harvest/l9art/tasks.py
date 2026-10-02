@@ -56,7 +56,7 @@ add("knob_off", "knob", [("rotate", "H", ("value", 0.0))],
     ("Turn the {H} back to zero.", "Turn the {H} off (mark pointing to the start position).",
      "Reset the {H} to its start position."),
     start={"H": ("angle", (0.6, 2.2))}, judge={"tol_deg": 12.0})
-add("dial_turn_top", "knob", [("rotate", "H", ("turn", None))],
+add("dial_turn_top", "dial", [("rotate", "H", ("turn", None))],
     ("Turn the {H} on top {DIR} by about {DEG} degrees.", "Rotate the top {H} {DEG} degrees {DIR}."),
     judge={"tol_deg": 15.0, "face": "top"})
 add("button_press", "button", [("press", "H", None)],
@@ -106,7 +106,7 @@ def instantiate(did: str, spec: dict | None, seed: int, obj_name: str | None = N
     instruction, words, judge}. Raises ValueError when the definition does not fit the fixture."""
     d = DEFS[did]
     rng = np.random.default_rng([int(seed), 8081, sorted(DEFS).index(did)])
-    words, start, stages = {"O": obj_name or "object"}, {}, []
+    words, start, stages = {"O": obj_name or "object", "IN": "into the drawer", "TABLE": "onto the table"}, {}, []
     links = {}
     if spec is not None:
         hs = spec["handles"]

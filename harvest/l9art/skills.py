@@ -76,8 +76,10 @@ def handle_grasp(hf: dict, gr: dict, draw: dict) -> dict:
         c = np.cross(bar, a)
         if np.linalg.norm(c) < 1e-6:
             c = np.cross(up, a)
-    elif typ == "knob":  # pinch across the ridge
-        c = np.cross(bar, a)
+    elif typ == "knob":  # pinch across the ridge, the pads' inner edge 3 mm above the knob body (smoke 10-02: the
+        c = np.cross(bar, a)  # pads sat on the body, the closed gap stayed 1.8 cm and the turn slipped)
+        off = max(0.0, float(gr.get("pad_len", 0.04)) / 2 - float(hf.get("ridge_h", 0.02)) / 2 - 0.003)
+        p = p + fn * off
     elif typ == "knob_pull":  # round cap: any closing direction
         ref = np.cross(up, a) if abs(a @ up) < 0.9 else np.array([0.0, 1.0, 0.0])
         c = _tilt(ref, a, draw["knob_roll"])
@@ -148,7 +150,7 @@ def push_plan(obj_c, half, tz: float, direction, dist: float, gr: dict, draw: di
     c = np.array([-d[1], d[0], 0.0])  # closing axis across the push direction: the two fingers side by side
     R = frame_of(a, c)
     fw = float(gr.get("finger_t", 0.012))
-    z = tz + 0.012 + tip_offset(gr)
+    z = tz + 0.025 + tip_offset(gr)  # fingertips 2.5 cm over the table (smoke 10-02: 1.2 cm dragged on it, 0.07 rad jump)
     start = np.asarray(obj_c, float)[:2] - d[:2] * (ext + fw + 0.012)
     goal_xy = np.asarray(obj_c, float)[:2] + d[:2] * dist
     end = goal_xy - d[:2] * (ext + fw + 0.004)

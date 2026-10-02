@@ -46,6 +46,36 @@ def place_fixture(spec: dict, prog: dict, arm: str, tz: float, rng) -> dict:
     return {"T": T.tolist(), "yaw": round(yaw, 5), "pos": [round(x_face, 4), round(y_f, 4), round(tz, 4)]}
 
 
+WS_X = (0.27, 0.66)  # [가설] comfortable TCP box of a 7-DoF arm at the L9 robot poses (refined by the cuRobo IK check)
+WS_Y = (-0.52, 0.06)  # right arm (left mirrored)
+WS_DZ = (0.02, 0.50)
+
+
+def path_points(spec: dict, prog: dict, T, n: int = 6) -> np.ndarray:
+    """Grasp / contact points of every joint stage from its start to its goal (world)."""
+    pts = []
+    q = {jn: 0.0 for jn in spec["joints"]}
+    for jn, v in prog["start"].items():
+        q[jn] = v
+    for st in prog["stages"]:
+        if not st.get("link"):
+            continue
+        jn = spec["handles"][st["link"]]["joint"]
+        q0 = q[jn]
+        g = st["goal"] if st.get("goal") is not None else q0
+        for s in np.linspace(0, 1, n):
+            qq = dict(q, **{jn: q0 + s * (g - q0)})
+            pts.append(FX.handle_frame(spec, st["link"], T, qq)["gc"])
+        q[jn] = g
+    return np.asarray(pts)
+
+
+def in_ws(pts, arm: str, tz: float) -> bool:
+    y = pts[:, 1] * side(arm)
+    return bool((pts[:, 0] >= WS_X[0]).all() and (pts[:, 0] <= WS_X[1]).all() and (y >= WS_Y[0]).all()
+                and (y <= WS_Y[1]).all() and (pts[:, 2] >= tz + WS_DZ[0]).all() and (pts[:, 2] <= tz + WS_DZ[1]).all())
+
+
 def fixture_aabb(spec: dict, T, margin: float = 0.0) -> tuple:
     x0, x1, y0, y1 = FX.footprint(spec, margin)
     P = np.array([[x, y, 0.0, 1.0] for x in (x0, x1) for y in (y0, y1)]) @ np.asarray(T, float).T
@@ -73,7 +103,14 @@ def build(seed: int, robot: str, arm: str, spec: dict | None, prog: dict, objs: 
     from ..sim.assets_x.furniture import _table
     rng = np.random.default_rng([int(seed), 6061])
     tz = float(rng.uniform(*TZ))
-    fx = place_fixture(spec, prog, arm, tz, rng) if spec is not None else None
+    fx = None
+    if spec is not None:  # the whole handle path (start -> goal of every stage) inside the arm's box
+        for _ in range(40):
+            fx = place_fixture(spec, prog, arm, tz, rng)
+            if in_ws(path_points(spec, prog, np.asarray(fx["T"])), arm, tz):
+                break
+        else:
+            raise ValueError("no placement keeps the handle path inside the arm's workspace")
     sg = side(arm)
     x_front = float(rng.uniform(0.20, 0.27))
     if fx is not None:
@@ -98,14 +135,30 @@ def build(seed: int, robot: str, arm: str, spec: dict | None, prog: dict, objs: 
     # objects: free table spots in front of / beside the fixture (push / prop / combo source)
     keep_out = fixture_aabb(spec, fx["T"], 0.06) if fx is not None else None
     placed = {}
-    for k, o in objs.items():
+    take = prog["def"] == "drawer_take_close"
+    objs_l = dict(objs)
+    if take:  # a free table spot for the object taken out of the drawer
+        objs_l["__spot"] = {"name": "spot", "fp": (0.09, 0.09), "h": 0.0}
+    y_h = None
+    if fx is not None:
+        ln0 = next((s["link"] for s in prog["stages"] if s.get("link")), None)
+        if ln0:
+            y_h = float(FX.handle_frame(spec, ln0, np.asarray(fx["T"]))["gc"][1])
+    for k, o in objs_l.items():
         dx, dy = o["fp"]
         r = 0.5 * math.hypot(dx, dy) + 0.02
         ok = False
         for _ in range(60):
+            near = False
             if prog.get("need_obj") == "pushable" and not placed:
                 x = float(rng.uniform(0.33, 0.45))
                 y = float(rng.uniform(*BAND_Y)) * sg
+            elif prog.get("need_obj") == "small" and (not placed or k == "__spot") and y_h is not None:
+                x = float(rng.uniform(0.30, 0.46))  # within reach beside the fixture's front (combo pick / put)
+                y = y_h + float(rng.choice([-1, 1])) * float(rng.uniform(0.14, 0.24))
+                if not (WS_Y[0] + 0.04 <= y * sg <= WS_Y[1] - 0.02):
+                    continue
+                near = True
             else:
                 x = float(rng.uniform(x_front + 0.08, max(x_front + 0.1, min(x_back - 0.08, 0.70))))
                 y = float(rng.uniform(y_lo + 0.08, y_hi - 0.08))
@@ -113,7 +166,7 @@ def build(seed: int, robot: str, arm: str, spec: dict | None, prog: dict, objs: 
                 (kx0, kx1), (ky0, ky1) = keep_out
                 if kx0 - r < x < kx1 + r and ky0 - r < y < ky1 + r:
                     continue
-                if fx is not None and x < kx0 + 0.05 and abs(y - np.asarray(fx["T"])[1][3]) < 0.25:
+                if not near and fx is not None and x < kx0 + 0.05 and abs(y - np.asarray(fx["T"])[1][3]) < 0.25:
                     continue  # the corridor in front of the fixture stays free for the arm
             if any(math.hypot(x - p[0], y - p[1]) < r + q for p, q in placed.values()):
                 continue
@@ -124,15 +177,30 @@ def build(seed: int, robot: str, arm: str, spec: dict | None, prog: dict, objs: 
             raise ValueError("no free table spot for the object")
     if not placed:
         raise ValueError("no object")
+    spot = placed.pop("__spot", None)
+    if take and spot is None:
+        raise ValueError("no free table spot to put the object")
     keys = list(placed)
     tgt = keys[0]
     objects = {k: {"xy": [round(placed[k][0][0], 4), round(placed[k][0][1], 4)], "node": "n0"} for k in keys}
     spot_xy = [objects[tgt]["xy"][0] + 0.001, objects[tgt]["xy"][1]]
+    nodes = [node]
+    if take:  # the object starts on the drawer floor, in its front part (exposed once the drawer is open)
+        ln = prog["stages"][0]["link"]
+        it = spec["interior"][ln]
+        Tl = np.asarray(fx["T"]) @ FX.link_T(spec, ln)
+        dx = float(objs[tgt]["fp"][0])
+        pw = Tl @ np.array([0.035 + dx / 2, 0.0, it["floor_c"][2], 1.0])
+        objects[tgt] = {"xy": [round(float(pw[0]), 4), round(float(pw[1]), 4)], "node": "n_drw"}
+        nodes.append({"id": "n_drw", "kind": "container", "part": None, "top_z": round(float(pw[2]), 4),
+                      "box": [[float(pw[0]) - 0.05, float(pw[0]) + 0.05], [float(pw[1]) - 0.05, float(pw[1]) + 0.05]],
+                      "rim_z": None, "place_class": "desk"})
+        spot_xy = [round(spot[0][0], 4), round(spot[0][1], 4)]
     ep = {"def": prog["def"], "family": "articulated", "table_z": round(tz, 4), "main": "n0", "objects": objects,
           "spots": {"s9_0": {"xy": spot_xy, "rule_text": "beside it"}}, "surfaces": {}, "clutter": {},
           "steps": [(tgt, "s9_0", None)], "instruction": prog["instruction"], "template": prog["def"],
           "names": {k: objs[k]["name"] for k in keys}}
     sc = {"family": family, "rule": "art", "seed": int(seed), "arm": arm, "try": 0, "yaw": 0.0,
           "robot_pose": {"distance": round(x_front, 4), "yaw": 0.0}, "params": {"art": True}, "furniture": parts,
-          "nodes": [node], "lift": round(lift, 4), "usable_n": {"n0": 99}}
-    return {"sc": sc, "ep": ep, "fixture": fx, "tz": tz, "z_int": round(z_int, 4), "tgt": tgt}
+          "nodes": nodes, "lift": round(lift, 4), "usable_n": {"n0": 99}}
+    return {"sc": sc, "ep": ep, "fixture": fx, "tz": tz, "z_int": round(z_int, 4), "tgt": tgt, "spot_xy": spot_xy}

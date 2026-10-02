@@ -198,6 +198,7 @@ class ArtEpisode:
         self.press_peak = {}
         self.knob_goal = None
         self._push = None
+        self.regrasp = False
 
     # ---------------------------------------------------------------- geometry of now
     def T_WF(self):
@@ -214,6 +215,32 @@ class ArtEpisode:
 
     def hf(self, st, q=None):
         return FX.handle_frame(self.spec, st["link"], self.T_WF(), self.q() if q is None else q)
+
+    def unseen(self, cam, margin: int = 30) -> str | None:
+        """Every point the labels need (each part at its start and goal, a pushed object and its goal) inside the head
+        image with a margin (0-1000 units); -> the first missing one or None."""
+        def ok(p):
+            px = SK.to_px(cam, p)
+            return px is not None and margin <= px[0] <= 1000 - margin and margin <= px[1] <= 1000 - margin
+        q = self.q()
+        for st in self.prog["stages"]:
+            if st.get("link"):
+                hf = self.hf(st, q)
+                if not ok(hf["gc"]):
+                    return f"{st['link']} at start"
+                if st.get("goal") is not None:
+                    jn = self.joint_of(st)
+                    qg = dict(q, **{jn: st["goal"]})
+                    hg = self.hf(st, qg)
+                    if not ok(hg["mark"] if st["kind"] == "rotate" else hg["gc"]):
+                        return f"{st['link']} at goal"
+                    q = qg
+            elif st["kind"] == "slide":
+                plan = self.push_plan()
+                c = np.asarray(self.w.env.object_pose(self.b["tgt"])[0], float)
+                if not ok(c) or not ok(np.array([plan["goal_xy"][0], plan["goal_xy"][1], c[2]])):
+                    return "pushed object or its goal"
+        return None
 
     # ---------------------------------------------------------------- labels
     def label(self, obs) -> dict:
@@ -249,7 +276,7 @@ class ArtEpisode:
             else:  # retreat
                 d = -np.asarray(self.tcp_a()) * 0.10
                 out.update(cmd={"mode": "edit", "delta_m": [round(float(v), 3) for v in d], "gripper": "keep",
-                                "skill": skill}, next="done")
+                                "skill": skill}, next="start" if self.regrasp else "done")
             return out
         if kind == "push":
             hf = self.hf(st)
@@ -301,7 +328,79 @@ class ArtEpisode:
                 out.update(cmd={"mode": "edit", "delta_m": [0.0, 0.0, 0.10], "gripper": "keep", "skill": skill},
                            next="done")
             return out
+        if kind == "pick":
+            g = self.obj_grasp()
+            if sub in ("start", "above"):
+                cmd = self._pt(cam, skill, g["p"], "above", "open", g)
+                out.update(cmd=cmd, T=g["T_pre"], open_w=g["open_w"], next="grasp", g=g)
+            elif sub == "grasp":
+                cmd = self._pt(cam, skill, g["p"], "grasp", "close", g)
+                out.update(cmd=cmd, T=g["T"], next="lift", g=g)
+            else:  # lift
+                out.update(cmd={"mode": "point", "skill": skill, "point_2d": None, "height": "lift", "gripper": "keep",
+                                "hand": self.ex.arm}, next="done", lift=0.12)
+            return out
+        if kind == "place":
+            sp = self.place_spot()
+            if sub in ("start", "above"):
+                cmd = self._pt(cam, skill, sp["p"], "above", "keep", {})
+                out.update(cmd=cmd, T=sp["T_above"], next="place", sp=sp)
+            elif sub == "place":
+                cmd = self._pt(cam, skill, sp["p"], "place", "open", {})
+                out.update(cmd=cmd, T=sp["T"], next="retreat", sp=sp)
+            else:
+                out.update(cmd={"mode": "edit", "delta_m": [0.0, 0.0, 0.10], "gripper": "keep", "skill": skill},
+                           next="done")
+            return out
         raise ValueError(kind)
+
+    # ---------------------------------------------------------------- pick / place (combos)
+    def obj_grasp(self) -> dict:
+        """Top / oblique grasp across the object's shorter horizontal side (L9 targets are top-grasp tested)."""
+        from ..sim.scene import OBJ_GEOM
+        k = self.b["tgt"]
+        c, qo = self.w.env.object_pose(k)
+        c = np.asarray(c, float)
+        he = np.asarray(OBJ_GEOM[k]["half_extents"], float)
+        R = FX.qmat(qo)
+        ax = R[:, 0] if he[0] <= he[1] else R[:, 1]  # shorter side: the closing axis
+        ax = np.array([ax[0], ax[1], 0.0])
+        ax = ax / max(np.linalg.norm(ax), 1e-9)
+        a = np.array([0.0, 0.0, -1.0])
+        tilt = 0.5 * self.draw["pitch"]  # up to 15 deg towards the robot (natural spread)
+        toward = np.array([-c[0], -c[1], 0.0])
+        toward /= max(np.linalg.norm(toward), 1e-9)
+        a = SK._tilt(a, np.cross(toward, [0, 0, 1.0]), -tilt)
+        h = 2 * he[2]
+        p = np.array([c[0], c[1], c[2] + he[2] - min(0.02, 0.4 * h)])
+        Rg = SK.frame_of(a, ax if not self.draw["flip"] else -ax)
+        w = float(min(self.ex.gr["max_open"], 2 * min(he[0], he[1]) + 0.03))
+        return {"T": SK.T_pose(Rg, p), "T_pre": SK.T_pose(Rg, p + self.draw["standoff"] * Rg[:, 2]), "a": a,
+                "c": Rg[:, 1], "p": p, "open_w": w}
+
+    def place_spot(self) -> dict:
+        """Where the held object goes: IN = the exposed front part of the open drawer floor, TABLE = the free table
+        spot of the scene; the TCP keeps its height above the object's bottom (measured at the grasp)."""
+        from ..sim.scene import OBJ_GEOM
+        st = self.stage()
+        k = self.b["tgt"]
+        he = np.asarray(OBJ_GEOM[k]["half_extents"], float)
+        if st["ref"] == "IN":
+            ln = next(s["link"] for s in self.prog["stages"] if s.get("link"))
+            jn = self.joint_of({"link": ln})
+            qd = self.q()[jn]
+            it = self.spec["interior"][ln]
+            xl = float(np.clip((qd - 0.02) / 2, he.max() + 0.02, max(he.max() + 0.02, qd - he.max() - 0.03)))
+            T = WA.link_world(self.w, ln)
+            p = T[:3, :3] @ np.array([xl, 0.0, it["floor_c"][2]]) + T[:3, 3]
+        else:
+            xy = self.b["spot_xy"]
+            p = np.array([xy[0], xy[1], float(self.b["tz"])])
+        d = getattr(self, "_held_dz", 2 * he[2] - 0.02)
+        R = self.ex.tcp_T()[:3, :3]
+        Tp = SK.T_pose(R, p + np.array([0, 0, d + 0.012]))
+        Ta = SK.T_pose(R, p + np.array([0, 0, d + 0.10]))
+        return {"p": p, "T": Tp, "T_above": Ta}
 
     def tcp_a(self):
         return -self.ex.tcp_T()[:3, 2]  # approach = -z_G
@@ -392,6 +491,9 @@ class ArtEpisode:
             if not r["ok"]:
                 r = ex.move(T, "pose")
             self.sub = lab["next"]
+            if lab["next"] == "start":  # regrasp recovery: a new grasp draw on the same stage
+                self.regrasp = False
+                self.draw = SK.grasp_draw(self.rng)
             if lab["next"] == "done":
                 self.finish_stage()
             return "moved back" if r["ok"] else f"retreat failed ({r.get('why')})"
@@ -408,7 +510,12 @@ class ArtEpisode:
             self.set_world(st)
             if lab.get("open_w") is not None:
                 ex.width = float(lab["open_w"])
+            if kind == "place":  # carrying: plan with the held object attached, else without (as rt9)
+                ex.planner.attach(ex.plan_start(), [f"obj_{self.b['tgt']}"])
             r = ex.move(T, "pose")
+            if not r["ok"] and kind == "place":
+                self.set_world(st)
+                r = ex.move(T, "pose")
             if not r["ok"]:
                 self.bump("approach_fail")
                 return f"no collision-free path to the pre-pose ({r.get('why')})"
@@ -429,9 +536,38 @@ class ArtEpisode:
                 ex.move(np.asarray(lab["T"], float) @ FX.T_of(np.eye(3), (0, 0, 0.08)), "line")
                 self.sub = "above"
                 return f"closed on nothing (pad gap {w * 100:.1f} cm); reopened and backed off"
+            if kind == "pick":
+                from ..sim.scene import OBJ_GEOM
+                k = self.b["tgt"]
+                c = np.asarray(self.w.env.object_pose(k)[0], float)
+                self._held_dz = float(ex.tcp_T()[2, 3] - (c[2] - OBJ_GEOM[k]["half_extents"][2]))
+                self.sub = lab["next"]
+                return f"closed on the {self.prog['words'].get('O', 'object')} (pad gap {w * 100:.1f} cm)"
             self.rel = np.linalg.inv(WA.link_world(self.w, st["link"])) @ ex.tcp_T()
             self.sub = lab["next"]
             return f"closed on the handle (pad gap {w * 100:.1f} cm)"
+        if sub == "lift":
+            T = ex.tcp_T()
+            T[:3, 3] += np.array([0.0, 0.0, float(lab.get("lift", 0.12))])
+            ex.move(T, "line")
+            k = self.b["tgt"]
+            c = np.asarray(self.w.env.object_pose(k)[0], float)
+            if float(np.linalg.norm(c - ex.tcp_T()[:3, 3])) > 0.12 or ex.grip_w() < EMPTY_GAP:
+                self.bump("lift_drop")
+                ex.set_gripper(self.w.w_open, False)
+                self.sub = "above"
+                return "the object did not come up with the gripper; reopened"
+            self.finish_stage()
+            return f"lifted the {self.prog['words'].get('O', 'object')}"
+        if sub == "place":
+            ex.move(np.asarray(lab["T"], float), "line", slow=1.6)
+            ex.set_gripper(self.w.w_open, False)
+            try:
+                ex.planner.detach()
+            except Exception:  # noqa: BLE001
+                pass
+            self.sub = lab["next"]
+            return "lowered and released"
         if sub == "move":
             if kind in ("pull", "rotate"):
                 return self.follow(st, lab, grasped=True)
@@ -521,7 +657,8 @@ class ArtEpisode:
             q_prev = qm
         qn = self.q()[jn]
         unit = (lambda v: f"{v * 100:.1f} cm") if J["type"] == "prismatic" else (lambda v: f"{math.degrees(v):.0f} deg")
-        if why == "reached" or abs(qn - goal) <= tol:
+        accept = 0.04 * J["hi"] if J["type"] == "prismatic" or J["kind"] == "door" else math.radians(6.0)
+        if why == "reached" or abs(qn - goal) <= max(tol, accept if why in ("stall", "ik") else tol):  # near the goal at the arm's reach: done (smoke 10-02: 14.8 of 15.4 cm looped)
             self.sub = lab["next"] if grasped else "retreat"
             return f"moved along the joint to {unit(qn)} (goal {unit(goal)})"
         self.bump({"lost": "axis_slip", "stall": "axis_stall", "ik": "axis_unreachable"}.get(why, "axis_short"))
@@ -530,7 +667,7 @@ class ArtEpisode:
             ex.set_gripper(self.w.w_open, False)
             return f"lost the handle at {unit(qn)} (goal {unit(goal)}); reopened"
         if grasped:
-            self.sub = "move"  # try again from here (still holding)
+            self.sub, self.regrasp = "release", True  # recovery: let go, back off, grasp again further along
         else:
             self.sub = "above"
         return f"stopped at {unit(qn)} (goal {unit(goal)}): {why}"
@@ -656,6 +793,28 @@ class ArtEpisode:
                 P = self._push or {}
                 goal = P["c0"][:2] + P["d"][:2] * P["dist"] if P else c[:2]
                 r = SK.judge_push(P.get("c0", c)[:2], np.asarray(c)[:2], goal, float(_tilt_deg(np.asarray(qq))), prog["judge"])
+            elif st["kind"] == "pick":
+                r = {"ok": prog["stages"].index(st) in self.done_stages}
+            elif st["kind"] == "place":
+                from ..sim.scene import OBJ_GEOM
+                k = self.b["tgt"]
+                c = np.asarray(self.w.env.object_pose(k)[0], float)
+                he = np.asarray(OBJ_GEOM[k]["half_extents"], float)
+                if st["ref"] == "IN":
+                    ln = next(s["link"] for s in prog["stages"] if s.get("link"))
+                    T = WA.link_world(self.w, ln)
+                    cl = T[:3, :3].T @ (c - T[:3, 3])
+                    it = sp["interior"][ln]
+                    fz = float(it["floor_c"][2])
+                    inside = (0.0 <= cl[0] <= sp["dims"]["D"]) and abs(cl[1]) <= sp["dims"]["W"] / 2 - 0.01 and \
+                        fz - 0.01 <= cl[2] - he[2] <= fz + 0.03
+                    r = {"ok": bool(inside), "obj_in_drawer_link": [round(float(v), 4) for v in cl]}
+                else:
+                    Tf = self.T_WF()
+                    cf = Tf[:3, :3].T @ (c - Tf[:3, 3])
+                    on_table = abs(c[2] - he[2] - float(self.b["tz"])) <= 0.015
+                    out_fx = cf[0] < -0.01 or abs(cf[1]) > sp["dims"]["W"] / 2
+                    r = {"ok": bool(on_table and out_fx), "bottom_dz": round(float(c[2] - he[2] - self.b["tz"]), 4)}
             else:
                 r = {"ok": False, "why": "stage kind not judged"}
             out["stages"].append(dict(r, kind=st["kind"]))
