@@ -33,7 +33,10 @@ def main():
         if "p" in r and "tq" in r:
             R = qmat(r["tq"])
             d = R.T @ (np.asarray(r["p"]) - np.asarray(r["tcp"]))
-            s += f" obj_in_G mm x {d[0] * 1e3:6.1f} y {d[1] * 1e3:6.1f} z {d[2] * 1e3:6.1f} tilt {r.get('tilt')} vz {r.get('vz')}"
+            w = np.asarray(r["p"]) - np.asarray(r["tcp"])
+            ap = -R[:, 2]
+            s += (f" obj_in_G mm x {d[0] * 1e3:6.1f} y {d[1] * 1e3:6.1f} z {d[2] * 1e3:6.1f} | world hxy {np.hypot(*w[:2]) * 1e3:5.1f}"
+                  f" dz {w[2] * 1e3:6.1f} | approach {np.round(ap, 2).tolist()} tilt {r.get('tilt')} vz {r.get('vz')}")
         print(s)
 
 

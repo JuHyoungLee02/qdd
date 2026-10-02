@@ -41,7 +41,7 @@ def main():
             if st["f"]:
                 st["f"].close()
             st["seed"], st["n"] = seed, 0
-            st["f"] = open(os.path.join(tdir, f"{seed}.jsonl"), "w")
+            st["f"] = open(os.path.join(tdir, f"{seed}.jsonl"), "w", buffering=1)
             return r
 
         def step(cmd_pos, width, quat=None):
@@ -68,12 +68,65 @@ def main():
                     except Exception:  # noqa: BLE001
                         pass
                 rec["q"] = np.round(rt.arm_q(), 3).tolist()
+                try:  # finger bodies (the pad pair the gap is read from) and all finger-like joints
+                    a_, b_ = getattr(env, "pad_pair", (0, 1))
+                    bp = env.robot.data.body_pos_w[0]
+                    rec["fa"] = np.round(bp[env.finger_idx[a_]].cpu().numpy(), 4).tolist()
+                    rec["fb"] = np.round(bp[env.finger_idx[b_]].cpu().numpy(), 4).tolist()
+                    jn = env.robot.joint_names
+                    jp = env.robot.data.joint_pos[0].cpu().numpy()
+                    rec["fq"] = {n: round(float(jp[i]), 4) for i, n in enumerate(jn) if "finger" in n or "gripper" in n}
+                except Exception:  # noqa: BLE001
+                    pass
                 st["f"].write(json.dumps(rec) + "\n")
             except Exception as e:  # noqa: BLE001
                 st["f"].write(json.dumps({"i": st["n"], "err": f"{type(e).__name__}: {e}"}) + "\n")
 
         world.step = step
         world.reset = reset
+        # failed-motion dumps (DIAG_DUMP_MOTION=1): the last world scene / attach sent to the planner, the start joints
+        # and the goal of every motion_for that returned no trajectory (carry, put, retreat ...) ->
+        # <trace dir>/motion_<seed>_<k>.json, replay with tools/l9/diag/motion_repro.py
+        if os.environ.get("DIAG_DUMP_MOTION", "1") == "1":
+            pl = rt.planner
+            w0, a0, mf0 = pl.world, pl.attach, rt.motion_for
+            mem = {"tries": [], "k": 0}
+
+            def world_(scene):
+                mem["tries"].append({"scene": scene, "attach": None})
+                return w0(scene)
+
+            def attach_(q, names):
+                if mem["tries"]:
+                    mem["tries"][-1]["attach"] = {"q": np.asarray(q, float).tolist(), "names": list(names)}
+                return a0(q, names)
+
+            def motion_for(pos, grip):
+                q0 = rt.plan_start()
+                mem["tries"] = []
+                out = mf0(pos, grip)
+                if out[0] is None and mem["k"] < 40:
+                    mem["k"] += 1
+                    try:
+                        lab = rt.last_label
+                        cmd = lab[1] if lab else None
+                        quat = (cmd or {}).get("quat_wxyz") or np.asarray(world.pl.tcp_pose()[1], float).tolist()
+                        from harvest.l9.rt9 import T_of
+                        T = T_of(pos, quat)
+                        tg = (rt.choice_key or (None,))[0]
+                        json.dump({"what": "motion", "step": lab[0] if lab else None, "note": out[1],
+                                   "seed": st["seed"], "q": np.asarray(q0, float).tolist(), "joints": rt.joints,
+                                   "T_world_base": rt.T_world_base().tolist(), "tcp_T": T.tolist(),
+                                   "tcp_now": rt.tcp_T().tolist(), "tries": mem["tries"],
+                                   "tgt": tg, "tgt_pose": [np.asarray(v, float).tolist() for v in
+                                                           world.env.object_pose(tg)] if tg else None,
+                                   "goal_is_tcp_T": True},
+                                  open(os.path.join(tdir, f"motion_{st['seed']}_{mem['k']}.json"), "w"))
+                    except Exception as e:  # noqa: BLE001
+                        print("DIAG dump error", type(e).__name__, e, flush=True)
+                return out
+
+            pl.world, pl.attach, rt.motion_for = world_, attach_, motion_for
         return rt
 
     rt9.install = install

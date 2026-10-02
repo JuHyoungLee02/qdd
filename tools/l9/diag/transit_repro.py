@@ -48,6 +48,12 @@ def hits(pl, q, scene: dict, act: float = 0.01) -> list:
     return out
 
 
+def world_top(Tb, v) -> float:
+    R = Tb[:3, :3] @ qmat(v["pose"][3:])
+    c = Tb[:3, :3] @ np.asarray(v["pose"][:3], float) + Tb[:3, 3]
+    return float(c[2] + np.abs(R[2]) @ (np.asarray(v["dims"], float) / 2))
+
+
 def one(pl, path: str) -> dict:
     d = json.load(open(path))
     q = np.asarray(d["q"], float)
@@ -59,8 +65,8 @@ def one(pl, path: str) -> dict:
     low_w = min(tip[2] + s * 0.04 * Tg_w[2, 1] for s in (-1, 1))
     zb = Tb[2, 3]
 
-    def top_w(v):
-        return float(v["pose"][2]) + zb + float(v["dims"][2]) / 2
+    def top_w(v):  # world top z of a base-frame cuboid (the base may be tilted: R1 Pro torso lean)
+        return world_top(Tb, v)
     variants = {"full": dict(cub), "no_support": {k: v for k, v in cub.items() if top_w(v) > low_w - 0.02},
                 "no_objects": {k: v for k, v in cub.items() if not k.startswith("obj_") and top_w(v) > low_w - 0.02},
                 "empty": {}}

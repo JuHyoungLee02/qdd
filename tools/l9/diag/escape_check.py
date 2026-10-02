@@ -17,6 +17,7 @@ import numpy as np
 from harvest.l9 import curobo9 as C9
 from harvest.l9 import plan9 as P9
 from harvest.l9.grasp9 import qmat
+from tools.l9.diag import transit_repro as TR
 
 ACT = 0.012  # cuRobo activation distance (1 cm) + 2 mm margin
 
@@ -99,7 +100,7 @@ def main():
         tip = Tg_w[:3, 3] - Tg_w[:3, 2] * 0.01
         low_w = min(tip[2] + s * 0.04 * Tg_w[2, 1] for s in (-1, 1))
         sc = {k: v for k, v in d["scene"]["cuboid"].items()
-              if float(v["pose"][2]) + Tb[2, 3] + float(v["dims"][2]) / 2 > low_w - 0.02}
+              if TR.world_top(Tb, v) > low_w - 0.02}
         pl.world({"cuboid": sc})
         Q, how = pose_escape(pl, q, Tg)
         n += 1
