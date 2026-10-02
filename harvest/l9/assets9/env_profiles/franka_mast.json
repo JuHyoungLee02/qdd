@@ -4,8 +4,8 @@
  "version": 1,
  "source": {
   "tool": "tools/onboard/autotune (cuRobo batch IK sweep, no render)",
-  "sha": "40afe5c1",
-  "date": "2026-10-02T19:28Z",
+  "sha": "b2327d60",
+  "date": "2026-10-02T23:02Z",
   "n_ik": 73440,
   "selftest_fk_ik": {
    "right": 0.95703125
@@ -4157,7 +4157,13 @@
   "cam_pitch_band_deg": [
    20.0,
    70.0
-  ]
+  ],
+  "gates": {
+   "vis_min": 0.7,
+   "furn_inset_m": 0.03,
+   "body_gap_m": 0.02,
+   "body_clearance": true
+  }
  },
  "arms": {
   "right": {

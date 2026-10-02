@@ -25,7 +25,7 @@ EPS = 1e-6
 CAM_PITCH_BAND = (20.0, 70.0)
 # Runtime gates the profile must respect (integrated A/B main2, 10-03: B lost humanoid scenes to "head: target/place
 # out of view" and "body joints off (P131)"). One set for every robot:
-VIS_MIN = 0.9      # share of the work band the robot's own camera must see (world9 skips scenes whose target leaves view)
+VIS_MIN = 0.7      # share of the work band the own camera must see (world9 skips scenes whose target / place leave view; 0.9 left G1 3 cells)
 FURN_INSET = 0.03  # nearest task object sits >= this far behind the furniture front
 BODY_GAP = 0.02    # no body part (arms excluded) may come closer than this to the furniture front below its top
 
