@@ -519,7 +519,25 @@ class Runtime:
         self.timeline["place_yaw_delta"] = None
         return 0.0
 
+    def _live_place(self, info: dict, table_z: float) -> dict:
+        """The top of an object place from its live pose (oriented box), not table + catalog height: a lying book was
+        +22 mm, a second stack level counted from the table (L9v2-DIAG 10). Containers / markers / surfaces unchanged."""
+        from ..sim.scene import OBJ_GEOM, SUPPORT_TOP, X_VISUAL_ONLY
+        pl = info.get("place")
+        g = OBJ_GEOM.get(pl, {})
+        if (pl is None or pl in X_VISUAL_ONLY or pl in SUPPORT_TOP or "half_extents" not in g or g.get("inside")
+                or g.get("shape") in ("marker", "surface", "openbox") or pl in getattr(self.w.env, "virtual_top", {})
+                ):
+            return info
+        c, q = self.w.env.object_pose(pl)
+        top = float(c[2]) + float(np.abs(G.qmat(q)[2]) @ np.asarray(g["half_extents"], float))
+        from ..teach_l8 import labels as L
+        base = float(info["place_top"]) if "place_top" in info else float(L.place_top(pl, table_z))
+        self.timeline.setdefault("live_place_top_dz", round(top - base, 4))
+        return dict(info, place_top=top)
+
     def plan(self, st: dict, info: dict, table_z: float, w_open: float):
+        info = self._live_place(info, table_z)
         tg = info["tgt"]
         hold = st["pred"].get(f"holding({tg})") is True
         key = (tg, info["place"])

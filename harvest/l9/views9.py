@@ -98,8 +98,11 @@ def canonical(text: str, answer: str, arm: str, head_img: str, used_wrist: tuple
     out = re.sub(r"\n{3,}", "\n\n", out)
     if anchor and anchor in out:
         cam_lines = [slot_line(s, have[s][1], source) for s in SLOTS[1:] if s in have and have[s][1] is not None]
-        if cam_lines:
-            out = out.replace(anchor, anchor + "".join("- " + c + "\n" for c in cam_lines), 1)
+        if cam_lines:  # after the head camera line when there is one (slot order)
+            add = "".join("- " + c + "\n" for c in cam_lines)
+            m = re.search(r"^- camera: head,[^\n]*\n", out[out.index(anchor):], re.M)
+            at = out.index(anchor) + (m.end() if m else len(anchor))
+            out = out[:at] + add + out[at:]
     a = json.loads(answer)
     c = a.get("command")
     if isinstance(c, dict):
