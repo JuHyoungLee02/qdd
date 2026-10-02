@@ -14,7 +14,7 @@ from summary import wilson  # noqa: E402
 root = sys.argv[1] if len(sys.argv) > 1 else "/data/harvest/out/libp"
 meta = json.load(open(os.path.join(root, "meta.json")))
 rows = [json.load(open(p)) for p in glob.glob(os.path.join(root, "*", "*", "t*_k*", "row.json"))]
-ARMS = [a for a in ("Ab", "R", "P0", "PF") if any(r["arm"] == a for r in rows)]
+ARMS = [a for a in ("Ab", "F", "R", "P0", "PF") if any(r["arm"] == a for r in rows)]
 cat = lambda r: meta[f"{r['suite']}|{r['task']}"]["category"]
 cats = sorted({m["category"] for m in meta.values()})
 by = {(r["arm"], r["suite"], r["task"]): r["success"] for r in rows}
