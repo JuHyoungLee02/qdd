@@ -61,6 +61,15 @@ def main(argv=None):
 
         cats = B.BIM_B_DEFS[a.defn_name]["cats"]
         pool = A9.pool_for(a.pool, "train")
+        # owner 10-03 (approved): B's "lift" objects (tray/basket/bin/etc) are tagged role9 in {container,clutter}
+        # in the single-arm catalog -- task9.instantiate()'s target-role filter is role9=='target' only, hardcoded,
+        # and stays UNTOUCHED (single-arm pipeline unmodified). Scoped fix instead: relabel a LOCAL COPY (not the
+        # cached catalog dict -- those are the SAME objects pool_for() returns, mutating in place would corrupt
+        # assets9's module-level cache for the rest of this process) of just this def's own category's
+        # container/clutter items to role9="target" before calling instantiate, so the existing role=="target"
+        # matching codepath picks them up unmodified. Anything already role9=="target" (e.g. "box") is untouched.
+        pool = {k: (dict(v, role9="target") if (v.get("category") or "").lower() in cats
+                    and v.get("role9") in ("container", "clutter") else v) for k, v in pool.items()}
         pool = {k: v for k, v in pool.items() if v.get("role9") != "target" or RT.has_candidates(a.robot, k, True)}
         n_targets = sum(1 for v in pool.values() if v.get("role9") == "target")
         print("POOL " + json.dumps({"size": len(pool), "targets_with_candidates": n_targets}), flush=True)
