@@ -19,6 +19,21 @@ import re
 from collections import defaultdict
 
 SPEC = "L9v2-spec-final"
+# Franka-only camera revision (user 10-02 ~21:40): hcam9 MAST_RANGE/MAST_DEFAULT moved off the arm's sweep side
+# (docs/stage3/results/l9v2_gates.md "Franka camera r1"); nothing else in the label/format spec changed. New
+# Franka episodes after the code switch get spec_version SPEC_FRANKA_R1 (collect9.py); older Franka rows already
+# on disk keep SPEC and are never rewritten (L9_PRINCIPLES: existing rows are never deleted). SPEC_FAMILY maps
+# both to the same family so the build gate's "one spec version" check still passes a set that mixes them -- the
+# exact string (SPEC vs SPEC_FRANKA_R1) on each row is itself the spec_rev marker for anyone auditing which rows
+# used which camera.
+SPEC_FRANKA_R1 = "L9v2-spec-final-r1"
+SPEC_FAMILY = {SPEC: SPEC, SPEC_FRANKA_R1: SPEC}
+
+
+def spec_family(v) -> str:
+    return SPEC_FAMILY.get(v, v)
+
+
 APPROACH = ("top", "oblique", "front", "side")
 ARMS = ("left", "right")
 CMD_KEYS = {"mode", "position_m", "gripper", "quat_wxyz", "point_2d", "height", "approach", "rot", "arm", "hand",
@@ -136,8 +151,12 @@ def gates(rows: list, texts: dict, train: bool = False, frame_note: bool = False
           ood_rooms=frozenset()) -> dict:
     """rows: control rows (with 'answer', 'spec_version', 'overlay', 'prompt_path'); texts: prompt_path -> text.
     frame_note: every prompt carries FRAME_SENTENCE (slot builds, main 10-02). train: the split gate (no hold-out
-    definition / other split / ood object / ood room row)."""
+    definition / other split / ood object / ood room row). The 'one spec version' gate is checked by spec FAMILY
+    (SPEC_FAMILY), not the exact string, so a set that mixes SPEC and SPEC_FRANKA_R1 rows (same spec, only the
+    Franka camera differs) still passes; 'spec_versions' below still reports the exact strings seen (the spec_rev
+    record)."""
     specs = {r.get("spec_version") for r in rows}
+    spec_fams = {spec_family(s) for s in specs}
     overlays = {r.get("overlay", "mono") for r in rows}
     legends = {r.get("colour_legend", "none") for r in rows}
     fams = {template_family(texts[r["prompt_path"]]) for r in rows if r.get("prompt_path") in texts}
@@ -145,7 +164,7 @@ def gates(rows: list, texts: dict, train: bool = False, frame_note: bool = False
     out = {"contradictions": contradictions(rows), "spec_versions": sorted(map(str, specs)),
            "overlays": sorted(overlays), "colour_legends": sorted(legends), "template_families": len(fams),
            "schema_errors": schema}
-    out["ok"] = (out["contradictions"] == 0 and len(specs) == 1 and len(overlays) == 1 and len(legends) == 1
+    out["ok"] = (out["contradictions"] == 0 and len(spec_fams) == 1 and len(overlays) == 1 and len(legends) == 1
                  and len(fams) <= 1 and schema == 0)
     if frame_note:
         out["frame_note_missing"] = sum(1 for r in rows if r.get("prompt_path") in texts

@@ -89,10 +89,10 @@ def test_mast_draw_and_pose():
         assert d["hfov"] == HC.D435_HFOV
     d = HC.draw_mast(0, default=True)
     R, t = HC.mast_pose((0.0, -0.23, 0.80), 0.85, d)
-    assert t == pytest.approx((-0.10, 0.0, 1.40))
-    assert HC.pitch_pan(R) == pytest.approx((45.0, -10.0))
+    assert t == pytest.approx((0.15, -0.48, 1.60))
+    assert HC.pitch_pan(R) == pytest.approx((58.0, 18.0))
     r = HC.realized(R, t, 0.85)
-    assert r["height_above_surface_m"] == pytest.approx(0.55) and r["height_floor_m"] == pytest.approx(1.40)
+    assert r["height_above_surface_m"] == pytest.approx(0.75) and r["height_floor_m"] == pytest.approx(1.60)
 
 
 def test_camera_line_from_cams_json():

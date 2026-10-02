@@ -29,11 +29,18 @@ H_HOLD = ((0.25, 0.35), (0.80, 0.90))
 PITCH_HOLD = ((22.0, 30.0), (62.0, 68.0))
 HFOV_HOLD = ((55.0, 65.0), (95.0, 105.0))
 
-# Franka head camera mast (spec §9.2, rev. smoke 2): default and per-episode ranges, in the panda_link0 frame
-# (x forward, y left). Like a humanoid head between the shoulders: the mast stands 0.23 m to the arm's left (the
-# AI Worker head is at y 0, its right shoulder at y -0.23); behind the base the elbow filled the view (smoke 2).
-MAST_DEFAULT = {"x": -0.10, "y": 0.23, "h": 0.55, "pitch": 45.0, "pan": -10.0}
-MAST_RANGE = {"x": (-0.20, 0.0), "y": (0.15, 0.30), "h": (0.45, 0.70), "pitch": (38.0, 55.0), "pan": (-20.0, 0.0)}
+# Franka head camera mast (spec §9.2-r1, user 10-02 ~21:40 "머리 카메라가 로봇팔에 가려": the rev. smoke 2 mount
+# (mast 0.23 m to the arm's left, pitch 38-55, h 0.45-0.70) sat on the SAME side the single right arm sweeps to
+# reach the table (robot9.BASE_Y_RIGHT; the task's TCP box x 0.25..0.65, y -0.50..0.10 straddles the base's own
+# y=0 line) and looked across at a shallow, near-horizontal angle -- the forearm was frequently between the mast
+# and the TCP. docs/stage3/results/l9v2_gates.md "Franka camera r1": measured on 600 real pilotF/prodF* calls
+# (head_depth.npz distance_to_image_plane vs. the TCP the ring marks, tools/l9/hcam9_occ_probe.py) 29.4 % of
+# on-screen calls had > 50 % of the TCP's footprint occluded by the robot's own links (36.6 % the TCP pixel
+# itself; 18.8 % of all calls had the TCP off-screen). r1 moves the mast to the OTHER side of the base (negative
+# y, away from the old left mount), further forward and higher, pitched down steeper (more top-down, less
+# side-on) and panned back toward the workspace -- validated A/B (same seeds) before switching production.
+MAST_DEFAULT = {"x": 0.15, "y": -0.25, "h": 0.75, "pitch": 58.0, "pan": 18.0}
+MAST_RANGE = {"x": (0.05, 0.25), "y": (-0.33, -0.18), "h": (0.60, 0.90), "pitch": (50.0, 68.0), "pan": (8.0, 28.0)}
 D435_HFOV = 69.0  # Intel RealSense D435 colour, horizontal (datasheet 69 x 42 deg)
 TRIES = 5
 
