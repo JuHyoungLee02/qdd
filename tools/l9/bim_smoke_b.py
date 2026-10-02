@@ -47,6 +47,20 @@ def _episode_timeout(seconds: int):
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
+def _snapper(world, od):
+    """Per-phase frames (head + both wrists, half size) -> od/NN_<phase>_<cam>.png."""
+    n = [0]
+
+    def snap(name):
+        from PIL import Image
+        for cam, short in (("cam_head", "head"), ("cam_wrist_right", "wr"), ("cam_wrist_left", "wl")):
+            im = Image.fromarray(world.env.camera_rgb(cam))
+            im = im.resize((im.width // 2, im.height // 2))
+            im.save(os.path.join(od, f"{n[0]:02d}_{name}_{short}.png"))
+        n[0] += 1
+    return snap
+
+
 def _jsonable(o):
     import numpy as np
     if isinstance(o, np.ndarray):
@@ -70,7 +84,10 @@ def main(argv=None):
                           "category is thin/scattered across windows, e.g. basket) -- overrides --pool if given")
     ap.add_argument("--rooms", type=int, default=5000)
     ap.add_argument("--device", default="cuda:0")
-    ap.add_argument("--carry-dx", type=float, default=0.15)  # m, place target offset from the pick xy
+    ap.add_argument("--carry-dx", type=float, default=0.15)  # m, place target offset from the pick xy (--place one)
+    ap.add_argument("--place", default="both", choices=["both", "one"],
+                    help="both (deep-dive 10-03): start + carry target where both arms reach (bimanual9.b_spots); "
+                         "one: the old one-arm scene draw + handover-zone direction probe")
     ap.add_argument("--episode-timeout-s", type=int, default=600,
                      help="hard per-episode wall-clock cap (SIGALRM); 0 disables.")
     a = ap.parse_args(argv)
@@ -126,6 +143,14 @@ def main(argv=None):
                 except RuntimeError:
                     continue
                 ep = T9.instantiate(defn, sc, pool, sd, rm, grip_max=world.w_open)
+                if ep is not None and a.place == "both":
+                    k0 = ep["steps"][0][0]
+                    sp = B.b_spots(sc, ep, k0, float(pool[k0]["footprint_r"]), rm, sd) if k0 in ep["objects"]                         and k0 in pool else None
+                    if sp is None:
+                        ep = None
+                        continue
+                    ep["objects"][k0]["xy"] = [round(float(sp[0][0]), 4), round(float(sp[0][1]), 4)]
+                    b_target = sp[1]
                 if ep is not None:
                     break
             if ep is None:
@@ -149,32 +174,42 @@ def main(argv=None):
             print("DRAW " + json.dumps({"seed": seed, "obj": obj_key, "wall_s": round(time.time() - t0, 1)}),
                   flush=True)
 
-            zone, _cell = B.zone_point(a.robot, world.table_z, seed, i)  # reused only as a cheap IK probe point
-            scores, _rts = B.probe_direction(world, a.robot, obj_key, zone, device=a.device, allow_untested=True)
-            try:
-                direction = B.choose_direction(scores)
-            except ValueError as ex:
-                print("DIRECTION_FAIL " + json.dumps({"seed": seed, "scores": scores, "err": str(ex)},
-                                                      default=_jsonable), flush=True)
-                results.append({"seed": seed, "ok": False, "status": f"no direction reaches: {ex}"})
-                continue
+            rts = B.runtimes(world, a.robot, device=a.device, allow_untested=True)
+            if a.place == "both":
+                # lead arm: alternated per seed (50/50), LiftRuntime swaps it only if this order finds no pair
+                # (outcome-based); no handover-zone probe for B (it measured the wrong thing)
+                direction = "rl" if seed % 2 == 0 else "lr"
+            else:
+                zone, _cell = B.zone_point(a.robot, world.table_z, seed, i)
+                scores, _rts = B.probe_direction(world, a.robot, obj_key, zone, device=a.device,
+                                                  allow_untested=True, rts=rts)
+                try:
+                    direction = B.choose_direction(scores)
+                except ValueError as ex:
+                    print("DIRECTION_FAIL " + json.dumps({"seed": seed, "scores": scores, "err": str(ex)},
+                                                          default=_jsonable), flush=True)
+                    results.append({"seed": seed, "ok": False, "status": f"no direction reaches: {ex}"})
+                    continue
             arm_a, arm_b = ("right", "left") if direction == "rl" else ("left", "right")
-            print("DIRECTION " + json.dumps({"seed": seed, "chosen": direction, "scores": scores},
-                                             default=_jsonable), flush=True)
 
             env = world.env
             env.use_arm(arm_a)
             pick_xy = np.asarray(env.object_pose(obj_key)[0], float)[:2]
-            target_xy = pick_xy + np.array([a.carry_dx, 0.0])
+            target_xy = np.asarray(b_target, float) if a.place == "both" else pick_xy + np.array([a.carry_dx, 0.0])
 
-            lr = B.install_lift(world, a.robot, arm_a, arm_b, device=a.device, allow_untested=True)
+            lr = B.install_lift(world, a.robot, arm_a, arm_b, device=a.device, allow_untested=True, rts=rts)
+            od = os.path.join(a.out, f"ep{i}")
+            os.makedirs(od, exist_ok=True)
+            lr.snap = _snapper(world, od)
             try:
                 with _episode_timeout(a.episode_timeout_s):
                     r = lr.run_episode(obj_key, world.table_z, target_xy, seed=seed, episode_idx=i)
             except _EpisodeTimeout as ex:
                 print("EPISODE_TIMEOUT " + json.dumps({"seed": seed, "err": str(ex)}), flush=True)
                 r = {"ok": False, "status": "episode timeout"}
-            r["seed"], r["obj"], r["direction"] = seed, obj_key, direction
+            r["seed"], r["obj"], r["direction"], r["def"] = seed, obj_key, direction, a.defn_name
+            r["code"] = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            r["switches"] = {k: os.environ.get(k) for k in ("L9_COMMON_EXEC", "L9V2_GRASP_FLIP") if os.environ.get(k)}
             r["wall_s"] = round(time.time() - t0, 1)
             print("EP " + json.dumps({k: v for k, v in r.items() if k != "log"}, default=_jsonable), flush=True)
             results.append(r)

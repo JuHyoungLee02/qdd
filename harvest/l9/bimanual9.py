@@ -423,13 +423,160 @@ def lift_phase(phase: str, left_closed: bool, right_closed: bool, lifted: bool, 
 
 
 def success_b(final_xy, target_xy, tol: float = 0.03, both_closed_before_lift: bool = False,
-              min_table_gap_m: float = 0.0) -> dict:
+              min_table_gap_m: float = 0.0, held_through: bool = True, tilt_deg: float = 0.0,
+              max_tilt_deg: float = 20.0) -> dict:
     """Research doc §(c) category-B gate: the sync-close gate was honoured, the carried object kept clearance over
-    the table (never dragged / dropped mid-carry), and the final drop point is within tolerance."""
+    the table (never dragged / dropped mid-carry), and the final drop point is within tolerance. Deep-dive 10-03:
+    every input is MEASURED by LiftRuntime (both hands holding at lift start and after the carry, the object's
+    measured rise, its final tilt) -- the first version passed constants (True, LIFT_HEIGHT_M)."""
     err = float(math.hypot(final_xy[0] - target_xy[0], final_xy[1] - target_xy[1]))
-    ok = both_closed_before_lift and min_table_gap_m > 0.0 and err <= tol
+    ok = (both_closed_before_lift and min_table_gap_m > 0.0 and err <= tol and held_through
+          and float(tilt_deg) <= max_tilt_deg)
     return {"ok": bool(ok), "place_err_m": round(err, 4), "both_closed_before_lift": bool(both_closed_before_lift),
-            "min_table_gap_m": round(float(min_table_gap_m), 4)}
+            "min_table_gap_m": round(float(min_table_gap_m), 4), "held_through": bool(held_through),
+            "tilt_deg": round(float(tilt_deg), 1)}
+
+
+# ---------------------------------------------------------------------------------------------- pure: deep-dive fixes
+# bimanual deep-dive 10-03 (stage decomposition of every AIW smoke so far, 0 successes): the other arm was modelled
+# as one box centred on its TCP. A closed hand's TCP sits INSIDE the object it holds (pad centre), so that box
+# covered the very surface the second hand had to grasp: handover receiver ik_ok=0 in 11 of 11 receiver_pick
+# failures although the zone IK probe found 6-9 of 15 candidates, B choose_b 13 of 20 executed failures, and every
+# B lift / carry "no collision-free path" (the attached object always overlaps the other hand's TCP box).
+# hand_boxes: the other hand as its measured gripper model (grasp9.boxes: two finger slabs at the measured gap + the
+# palm, extended back along +z_G by the wrist) at its live TCP pose -- the space between the pads stays free.
+WRIST_M = 0.06  # palm box extended back along +z_G (wrist flange); robot-agnostic stand-in for the forearm start
+
+
+def hand_boxes(T_tcp, gr: dict, width: float, wrist: float = WRIST_M, prefix: str = "other_hand") -> dict:
+    """-> {name: (centre_world, full_extents, quat_wxyz)} (rt9.Runtime.refresh_world extra_boxes format) of a hand
+    whose TCP frame (G: z = -approach, y = closing axis) is T_tcp, fingers open to `width` (measured gap)."""
+    from . import grasp9 as G
+    T = np.asarray(T_tcp, float)
+    R, p = T[:3, :3], T[:3, 3]
+    q = G.mat_quat(R)
+    out = {}
+    for i, (c, h) in enumerate(G.boxes(gr, max(float(width), 0.0), standoff=wrist)):
+        out[f"{prefix}_{i}"] = (p + R @ np.asarray(c, float), [2.0 * float(v) for v in h], q)
+    return out
+
+
+def boxes_as_obstacles(boxes: dict) -> tuple:
+    """extra_boxes dict -> live9 (C, H, R) obstacle arrays (centres, half sizes, rotations)."""
+    from . import grasp9 as G
+    if not boxes:
+        return np.zeros((0, 3)), np.zeros((0, 3)), np.zeros((0, 3, 3))
+    C = np.array([np.asarray(v[0], float) for v in boxes.values()])
+    H = np.array([np.asarray(v[1], float) / 2 for v in boxes.values()])
+    R = np.array([G.qmat(v[2]) for v in boxes.values()])
+    return C, H, R
+
+
+def holding(gap: float, cmd_width: float, empty_m: float) -> bool:
+    """A hand holds something: it is commanded closed and its measured gap stayed above the empty threshold
+    (rt9.EMPTY_M). The old handover overlap test (both gaps < 1 cm) could never be true while both hands actually
+    hold an object of >= 1 cm -- overlap_ticks was 0 in the one episode that reached receiver_carry (smoke13)."""
+    return float(cmd_width) <= 1e-4 and float(gap) >= float(empty_m)
+
+
+def side_ok(mid_y, obj_y: float, arm: str, margin: float = 0.01) -> np.ndarray:
+    """Two-hand lift: each hand takes the object's own side (left arm +y, right arm -y; harvest.l9.arm.side) --
+    the grasp's contact midpoint lies at least `margin` beyond the object centre towards that arm."""
+    from .arm import side
+    d = (np.asarray(mid_y, float) - float(obj_y)) * -side(arm)  # side(right)=+1 -> right wants mid_y < obj_y
+    return d >= margin
+
+
+def both_arm_points(rm_lift, X, Y, top: float, half_span: float) -> np.ndarray:
+    """Points where a two-hand grasp straddling (x, y +- half_span) is inside BOTH arms' measured reach (right arm at
+    y - half_span, left at y + half_span; harvest.l9.reach9 probe maps, left = mirrored)."""
+    from . import reach9 as R9
+    X, Y = np.asarray(X, float).ravel(), np.asarray(Y, float).ravel()
+    return (R9.reach_points(rm_lift, "right", X, Y - half_span, top)
+            & R9.reach_points(rm_lift, "left", X, Y + half_span, top))
+
+
+def _node_free_points(sc: dict, ep: dict, obj_key: str, fr: float, clear: float = 0.03):
+    """(world xy points [N, 2], node top z, ReachModel at the scene lift) on the node holding `obj_key`, kept clear of
+    every other placed object by footprints + `clear`."""
+    from . import scene9 as S9
+    nid = ep["objects"][obj_key]["node"]
+    node = next(n for n in sc["nodes"] if n["id"] == nid)
+    W, _ = S9.node_points(node, sc["yaw"])
+    W = np.asarray(W, float)[:, :2]
+    ok = np.ones(len(W), bool)
+    for k2, o in ep["objects"].items():
+        if k2 == obj_key:
+            continue
+        ok &= np.hypot(W[:, 0] - o["xy"][0], W[:, 1] - o["xy"][1]) > float(o.get("fr", 0.05)) + fr + clear
+    return W[ok], float(node["top_z"])
+
+
+def b_spots(sc: dict, ep: dict, obj_key: str, fr: float, rm, seed: int, d_range=(0.06, 0.18)):
+    """Two-hand lift placement (deep-dive 10-03: B scenes were drawn for ONE arm's band, the object sat on that arm's
+    side and the other hand could not reach it -- 'no direction reaches' / choose_b): a start and a carry target on
+    the object's own node, both where `both_arm_points` holds (each hand's side of the object inside that arm's
+    measured reach) and in the head view, target `d_range` from the start. -> (start_xy, target_xy) | None."""
+    from . import reach9 as R9
+    P, top = _node_free_points(sc, ep, obj_key, fr)
+    if not len(P):
+        return None
+    m = rm.at_lift(sc["lift"])
+    ok = both_arm_points(m, P[:, 0], P[:, 1], top, fr) & R9.visible_points(m, P[:, 0], P[:, 1], top)
+    P = P[ok]
+    if len(P) < 2:
+        return None
+    rng = np.random.default_rng([int(seed), 2026_10_03, 2])
+    order = rng.permutation(len(P))
+    for i in order[:20]:
+        d = np.hypot(P[:, 0] - P[i, 0], P[:, 1] - P[i, 1])
+        cand = P[(d >= d_range[0]) & (d <= d_range[1])]
+        if len(cand):
+            return P[i].copy(), cand[int(rng.integers(len(cand)))].copy()
+    return None
+
+
+def receiver_spot(sc: dict, ep: dict, obj_key: str, fr: float, rm, arm: str, seed: int):
+    """Handover final spot: a free point on the pick node inside the RECEIVER's own measured reach + head view
+    (reach9.usable_points), at least one footprint away from the pick spot. -> (x, y, top_z) | None."""
+    from . import reach9 as R9
+    P, top = _node_free_points(sc, ep, obj_key, fr)
+    if not len(P):
+        return None
+    m = rm.at_lift(sc["lift"])
+    xy0 = ep["objects"][obj_key]["xy"]
+    ok = R9.usable_points(m, arm, P[:, 0], P[:, 1], top) & (np.hypot(P[:, 0] - xy0[0], P[:, 1] - xy0[1]) > 2 * fr + 0.03)
+    P = P[ok]
+    if not len(P):
+        return None
+    rng = np.random.default_rng([int(seed), 2026_10_03, 1])
+    x, y = P[int(rng.integers(len(P)))]
+    return float(x), float(y), top
+
+
+def sync_resample(trajs: list) -> list:
+    """Same number of waypoints for every arm (linear in the waypoint index): two hands on ONE object must move on
+    one time axis, or the faster hand drags the object against the slower one (research doc sync requirement)."""
+    n = max(len(t) for t in trajs)
+    out = []
+    for t in trajs:
+        t = np.asarray(t, float)
+        if len(t) == n:
+            out.append(t)
+            continue
+        s = np.linspace(0.0, len(t) - 1, n)
+        i0 = np.floor(s).astype(int)
+        i1 = np.minimum(i0 + 1, len(t) - 1)
+        f = (s - i0)[:, None]
+        out.append(((1 - f) * t[i0] + f * t[i1]).astype(t.dtype))
+    return out
+
+
+def bottom_offset(R_obj, half_extents) -> float:
+    """Height of the object centre above its lowest bounding-box corner at rotation R_obj."""
+    he = np.asarray(half_extents, float)
+    corners = np.array([[sx, sy, sz] for sx in (-1, 1) for sy in (-1, 1) for sz in (-1, 1)], float) * he
+    return float(-(corners @ np.asarray(R_obj, float).T)[:, 2].min())
 
 
 # ---------------------------------------------------------------------------------------------- pure: category D
@@ -462,6 +609,41 @@ GRAVITY_BOX_HALF = (0.025, 0.025, 0.03)  # m, coarse stand-in for the other arm'
 # was the #1 real B failure (6/7 executed-episode failures) -- same root cause, smaller object this time. Still a
 # box, not the real links (R1 stands); if real collisions start showing up in frame review, grow this back up.
 SETTLE_TICKS = 30  # ~0.6 s at 20 Hz / dt: gripper close/open settle wait
+
+
+_RT_CACHE: dict = {}
+
+
+def runtimes(world, profile: str, device: str = "cuda:0", allow_untested: bool = False) -> dict:
+    """{"left": Runtime, "right": Runtime}, built ONCE per process and env (deep-dive 10-03: every rt9.Runtime starts
+    its own cuRobo planner process; the smoke harnesses built 4 new ones per episode -- probe_direction 2 +
+    install_* 2 -- and never closed any, so episodes took 4-8 min and planner processes piled up on the GPU).
+    Each call starts a new episode on both (Runtime.reset_episode)."""
+    from . import rt9 as RT
+    env = world.env
+    key = (id(env), profile, device, bool(allow_untested))
+    if key not in _RT_CACHE:
+        rts = {}
+        for arm in ("left", "right"):
+            env.use_arm(arm)
+            rts[arm] = RT.Runtime(world, profile, arm, device=device, allow_untested=allow_untested)
+        env.use_arm(env.primary)
+        _RT_CACHE[key] = rts
+    for rt in _RT_CACHE[key].values():
+        rt.reset_episode()
+    return _RT_CACHE[key]
+
+
+def live_hand_boxes(world, arm: str, rt, prefix: str = "other_hand") -> dict:
+    """`hand_boxes` of `arm` at its live TCP pose and measured gap (leaves env on `arm`)."""
+    env = world.env
+    env.use_arm(arm)
+    return hand_boxes(rt.tcp_T(), rt.gr, float(env.gripper_width()), prefix=prefix)
+
+
+def _tilt_deg(R0, R1) -> float:
+    z0, z1 = np.asarray(R0, float)[:, 2], np.asarray(R1, float)[:, 2]
+    return math.degrees(math.acos(max(-1.0, min(1.0, float(z0 @ z1)))))
 
 
 @dataclass
@@ -529,17 +711,19 @@ def _batched_zone_ik(rt, obj_key: str, zone_xyz, n_yaw: int = 8, standoff: float
 
 
 def probe_direction(world, profile: str, obj_key: str, zone_xyz, device: str = "cuda:0",
-                    allow_untested: bool = False, n_yaw: int = 8) -> tuple:
+                    allow_untested: bool = False, n_yaw: int = 8, rts: dict | None = None) -> tuple:
     """Decide giver/receiver direction from measured reach/cost/margin -- call once per episode, before
     install_handover commits a direction. zone_xyz: the already-drawn handover point, the SAME for both
     directions (symmetry comes from the scene draw, never from branching this probe on direction).
+    rts: `runtimes(...)` (reused; None = build two new ones, the old behaviour).
     -> (scores, rts): scores is choose_direction's input shape; rts is {"left": Runtime, "right": Runtime}."""
     from . import rt9 as RT
     env = world.env
-    rts = {}
-    for arm in ("left", "right"):
-        env.use_arm(arm)
-        rts[arm] = RT.Runtime(world, profile, arm, device=device, allow_untested=allow_untested)
+    if rts is None:
+        rts = {}
+        for arm in ("left", "right"):
+            env.use_arm(arm)
+            rts[arm] = RT.Runtime(world, profile, arm, device=device, allow_untested=allow_untested)
     gcs, pick_margin, zone_probe = {}, {}, {}
     for arm, rt in rts.items():
         env.use_arm(arm)
@@ -578,7 +762,7 @@ class HandoverRuntime:
     below is a standalone loop for the pilot's smoke episodes, not the production label/build pipeline."""
 
     def __init__(self, world, profile: str, giver_arm: str, receiver_arm: str, device: str = "cuda:0",
-                 allow_untested: bool = False, receiver_source: str = "rule"):
+                 allow_untested: bool = False, receiver_source: str = "rule", rts: dict | None = None):
         from . import rt9 as RT
         env = world.env
         if not getattr(env, "dual", False):
@@ -588,15 +772,19 @@ class HandoverRuntime:
         if receiver_source not in ("rule", "graspgenx"):
             raise ValueError(f"receiver_source={receiver_source!r}: must be 'rule' or 'graspgenx'")
         self.world, self.profile, self.receiver_source = world, profile, receiver_source
-        env.use_arm(giver_arm)
-        giver_rt = RT.Runtime(world, profile, giver_arm, device=device, allow_untested=allow_untested)
-        env.use_arm(receiver_arm)
-        receiver_rt = RT.Runtime(world, profile, receiver_arm, device=device, allow_untested=allow_untested)
+        if rts is not None:
+            giver_rt, receiver_rt = rts[giver_arm], rts[receiver_arm]
+        else:
+            env.use_arm(giver_arm)
+            giver_rt = RT.Runtime(world, profile, giver_arm, device=device, allow_untested=allow_untested)
+            env.use_arm(receiver_arm)
+            receiver_rt = RT.Runtime(world, profile, receiver_arm, device=device, allow_untested=allow_untested)
         self.giver = _ArmSlot(giver_arm, giver_rt, width=float(giver_rt.w.w_open))
         self.receiver = _ArmSlot(receiver_arm, receiver_rt, width=float(receiver_rt.w.w_open))
         self.phase = "giver_pick"
         self.overlap_ticks = 0
         self.events = []
+        self.snap = None  # optional callback(name): per-phase frames (deep-dive 10-03: judge frames, not numbers)
         env.use_arm(env.primary)
         self._freeze(self.giver)
         self._freeze(self.receiver)
@@ -652,31 +840,46 @@ class HandoverRuntime:
             self.tick()
 
     def _update_overlap(self) -> None:
+        if self.phase != "receiver_pick":
+            return
+        from . import rt9 as RT
         env = self.world.env
         env.use_arm(self.giver.arm)
         gw = env.gripper_width()
         env.use_arm(self.receiver.arm)
         rw = env.gripper_width()
         env.use_arm(env.primary)
-        if self.phase == "receiver_pick" and gw < 0.01 and rw < 0.01:
+        if holding(gw, self.giver.width, RT.EMPTY_M) and holding(rw, self.receiver.width, RT.EMPTY_M):
             self.overlap_ticks += 1
+
+    def _snap(self, name: str) -> None:
+        if self.snap is not None:
+            try:
+                self.snap(name)
+            except Exception as ex:  # noqa: BLE001  (frames are diagnostic only)
+                print(f"SNAP_FAIL {name}: {ex}", flush=True)
+            self.world.env.use_arm(self.world.env.primary)
+
+    def _holds(self, slot: "_ArmSlot") -> bool:
+        from . import rt9 as RT
+        env = self.world.env
+        env.use_arm(slot.arm)
+        return holding(float(env.gripper_width()), slot.width, RT.EMPTY_M)
 
     # -------------------------------------------------------------- motion primitives (self-contained Runtime bits)
     def other_arm_boxes(self, slot: "_ArmSlot") -> dict:
         """A coarse box around the OTHER arm's current TCP, to pass as `extra_boxes=` into `slot.rt.choose()` /
         `refresh_world()` (rt9.Runtime, extended for this: both now accept `extra_boxes` and merge it in after their
         own obstacle scan, so it survives their internal `refresh_world` calls instead of being overwritten by the
-        next one -- spec note R1b). Spec note R1: a box, not the other arm's real links -- no true dual-arm
-        self-collision check."""
-        env = self.world.env
+        next one -- spec note R1b). Spec note R1: boxes, not the other arm's real links. Deep-dive 10-03: the
+        measured gripper model at the live TCP and gap (`hand_boxes`), not one box centred on the TCP (which sits
+        inside a held object and blocked every receiver grasp)."""
         other = self.other_of(slot)
-        env.use_arm(other.arm)
-        p_other, _ = self.world.pl.tcp_pose()
-        env.use_arm(slot.arm)
-        return {"other_arm": (np.asarray(p_other, float), [2 * h for h in GRAVITY_BOX_HALF],
-                              np.array([1.0, 0.0, 0.0, 0.0]))}
+        bx = live_hand_boxes(self.world, other.arm, other.rt)
+        self.world.env.use_arm(slot.arm)
+        return bx
 
-    def _grasp(self, slot: "_ArmSlot", obj_key: str) -> dict:
+    def _grasp(self, slot: "_ArmSlot", obj_key: str, lift: bool = True) -> dict:
         """Choose + transit + straight approach + lift (rt9.Runtime._approach_plan, self-contained), then close.
         -> {"ok", "status"}. The receiver, when `self.receiver_source == "graspgenx"`, tries
         `_receiver_grasp_graspgenx` first and falls back to the rule path (rt.choose()) if it returns None --
@@ -711,7 +914,9 @@ class HandoverRuntime:
             return {"ok": False, "status": f"EMPTY close (gap {gap * 100:.1f} cm)"}
         slot.held_obj = obj_key  # attached before the lift line so refresh_world/choose see it held if that line
         T_obj_pick = RT.T_of(*env.object_pose(obj_key))  # the rigid grip (object <-> gripper), while it holds, is
-        if r.get("lift") is not None:  # needs replanning (rt9.Runtime._approach_plan can return ok=True with a
+        # deep-dive 10-03: no single-hand micro-lift while the OTHER hand also holds the object (the receiver lifting
+        # against the giver's closed grip = a tug of war); lift=False skips it
+        if lift and r.get("lift") is not None:  # needs replanning (rt9.Runtime._approach_plan can return ok=True with a
             slot.traj, slot.traj_i = rt._resample(r["lift"]), 0  # None lift -- pod smoke #6 crashed here, bare
             self.run_ticks(len(slot.traj) + 5)  # TypeError from P9.resample(None, ...); the straight-line micro-lift
         return {"ok": True, "status": "ok", "gc": gc, "T_obj_pick": T_obj_pick}  # an optimization, skip if None
@@ -755,10 +960,14 @@ class HandoverRuntime:
         point3d = np.asarray(c, float)
         base_xy = rt.T_world_base()[:2, 3]
         f_dir = point3d[:2] - base_xy
+        # deep-dive 10-03: the giver's hand (measured gripper model, live pose + gap) is collision geometry for the
+        # GraspGen-X candidates' swept gripper, so the receiver never picks the surface the giver's pads cover
+        obst = boxes_as_obstacles(self.other_arm_boxes(self.receiver))
+        env.use_arm(self.receiver.arm)
         for fam in ("front", "oblique", "side", "top"):
             gc = L.choose_live(P, N, self.profile, fam, rot_bin=0, point3d=point3d,
                                support_z=self.world.table_z, f_dir=f_dir, cam=None, category="", obj_h=0.0,
-                               extra_obstacles=None, seed=0, k=0, use_refiner=True)
+                               extra_obstacles=obst, seed=0, k=0, use_refiner=True)
             print(f"GGXDBG fam={fam} choose_live -> {'None' if gc is None else 'GraspChoice(src=' + str(gc.meta.get('source')) + ')'}", flush=True)
             if gc is None:
                 continue
@@ -812,13 +1021,14 @@ class HandoverRuntime:
                 best_yaw, best_n = yaw, n
         return best_yaw, best_n, len(idx)
 
-    def _move_to(self, slot: "_ArmSlot", target_xyz, quat_wxyz=None) -> dict:
-        """A straight / planned cuRobo move to a world TCP pose, holding `slot.held_obj` attached if set."""
+    def _move_to(self, slot: "_ArmSlot", target_xyz, quat_wxyz=None, below_z: float | None = None) -> dict:
+        """A straight / planned cuRobo move to a world TCP pose, holding `slot.held_obj` attached if set.
+        below_z: the support the held object leaves / reaches (rt9.Runtime.refresh_world)."""
         from . import rt9 as RT
         env = self.world.env
         env.use_arm(slot.arm)
         rt = slot.rt
-        rt.refresh_world(holding=slot.held_obj or None, extra_boxes=self.other_arm_boxes(slot))
+        rt.refresh_world(holding=slot.held_obj or None, below_z=below_z, extra_boxes=self.other_arm_boxes(slot))
         q = env.arm_q() if rt.q_target is None else np.asarray(rt.q_target, float)
         quat = np.asarray(quat_wxyz, float) if quat_wxyz is not None else np.asarray(rt.tcp_T()[:3, :3], float)
         T = RT.T_of(target_xyz, RT.G.mat_quat(quat) if quat.shape == (3, 3) else quat)
@@ -857,10 +1067,12 @@ class HandoverRuntime:
     def _run_episode(self, obj_key: str, table_z: float, seed: int, episode_idx: int, final_xy=None) -> dict:
         zone, cell = zone_point(self.profile, table_z, seed, episode_idx)
         if final_xy is None:
-            final_xy = final_spot_xyz(zone, self.receiver.arm)[:2]
+            f = final_spot_xyz(zone, self.receiver.arm)
+            final_xy = (float(f[0]), float(f[1]), float(table_z))
         log = []
         r = self._grasp(self.giver, obj_key)
         log.append({"phase": "giver_pick", **r})
+        self._snap("giver_pick")
         if not r["ok"]:
             return {"ok": False, "log": log}
         carry_pos, carry_quat = zone, None
@@ -889,7 +1101,7 @@ class HandoverRuntime:
         env2b.use_arm(self.giver.arm)
         lift_xyz = np.asarray(self.giver.rt.tcp_T()[:3, 3], float).copy()
         lift_xyz[2] = max(lift_xyz[2], float(carry_pos[2])) + 0.08
-        r = self._move_to(self.giver, lift_xyz)
+        r = self._move_to(self.giver, lift_xyz, below_z=float(table_z) - 0.02)
         log.append({"phase": "giver_lift_waypoint", **r})
         if not r["ok"]:
             return {"ok": False, "log": log}
@@ -935,32 +1147,73 @@ class HandoverRuntime:
                     R_act2 = G.qmat(np.asarray(q_act2, float))
                     err_deg2 = math.degrees(math.acos(max(-1.0, min(1.0, (np.trace(R_act2.T @ R_des) - 1) / 2))))
                     log[-1]["carry_pose_err"] = f"{err_m2 * 100:.1f}cm/{err_deg2:.1f}deg"
+        self._snap("at_zone")
         self.phase = "receiver_pick"
         self.overlap_ticks = 0
-        r = self._grasp(self.receiver, obj_key)
+        r = self._grasp(self.receiver, obj_key, lift=False)
         log.append({"phase": "receiver_pick", **r})
+        self._snap("receiver_pick")
         if not r["ok"]:
             return {"ok": False, "log": log}
+        from . import grasp9 as G
+        from . import plan9 as P9
+        from . import rt9 as RT
+        from ..sim.scene import OBJ_GEOM
+        env = self.world.env
+        log[-1]["overlap_ticks"] = int(self.overlap_ticks)
+        self.phase = "giver_release"
         self._gripper(self.giver, "open")
-        log.append({"phase": "giver_release", "ok": True})
-        r = self._move_to(self.giver, np.asarray(zone, float) + np.array([-0.08, 0.0, 0.05]))  # retreat, clear of
-        log.append({"phase": "giver_retreat", **r})  # the receiver's incoming carry path
-        r = self._move_to(self.receiver, np.array([final_xy[0], final_xy[1], zone[2]]))
+        env.use_arm(self.receiver.arm)
+        held = self._holds(self.receiver)
+        log.append({"phase": "giver_release", "ok": bool(held), "status": "ok" if held else "receiver lost it"})
+        self._snap("giver_release")
+        if not held:
+            return {"ok": False, "log": log}
+        # giver retreat: back along its own approach axis (+z_G) and up -- away from the object it just let go of
+        env.use_arm(self.giver.arm)
+        Tg = self.giver.rt.tcp_T()
+        r = self._move_to(self.giver, Tg[:3, 3] + Tg[:3, 2] * 0.10 + np.array([0.0, 0.0, 0.03]))
+        log.append({"phase": "giver_retreat", **r})
+        # receiver place: the OBJECT goes to the final spot resting on its support (the old move sent the TCP to
+        # (final_xy, zone z) and opened there -- a 20+ cm drop, place_err 9.8 cm in smoke13)
+        self.phase = "receiver_carry"
+        env.use_arm(self.receiver.arm)
+        p_o, q_o = env.object_pose(obj_key)
+        T_obj = RT.T_of(p_o, q_o)
+        T_obj_Gr = P9.inv_T(T_obj) @ self.receiver.rt.tcp_T()
+        top = float(final_xy[2]) if len(final_xy) > 2 else float(table_z)
+        he = OBJ_GEOM.get(obj_key, {}).get("half_extents", (0.03, 0.03, 0.05))
+        T_tgt = T_obj.copy()
+        T_tgt[:3, 3] = [float(final_xy[0]), float(final_xy[1]), top + bottom_offset(T_obj[:3, :3], he) + 0.01]
+        T_tcp = T_tgt @ T_obj_Gr
+        quat = RT.G.mat_quat(T_tcp[:3, :3])
+        r = self._move_to(self.receiver, T_tcp[:3, 3] + np.array([0.0, 0.0, 0.06]), quat_wxyz=quat)
         log.append({"phase": "receiver_carry", **r})
         if not r["ok"]:
             return {"ok": False, "log": log}
+        r = self._move_to(self.receiver, T_tcp[:3, 3], quat_wxyz=quat, below_z=top - 0.02)
+        log.append({"phase": "receiver_lower", **r})
+        if not r["ok"]:
+            return {"ok": False, "log": log}
+        held_end = self._holds(self.receiver)
+        self._snap("receiver_lower")
         self._gripper(self.receiver, "open")
-        env = self.world.env
+        env.use_arm(self.receiver.arm)
+        Tr = self.receiver.rt.tcp_T()
+        self._move_to(self.receiver, Tr[:3, 3] + Tr[:3, 2] * 0.08 + np.array([0.0, 0.0, 0.04]))
+        self.run_ticks(SETTLE_TICKS)
+        self._snap("done")
         env.use_arm(self.receiver.arm)
         final_obj_xy = np.asarray(env.object_pose(obj_key)[0], float)[:2]
-        gate = success_a(final_obj_xy, final_xy, overlap_ticks=self.overlap_ticks)
+        gate = success_a(final_obj_xy, final_xy[:2], floor_touched=not held_end, overlap_ticks=self.overlap_ticks)
         return {"ok": gate["ok"], "gate": gate, "log": log}
 
 
 def install_handover(world, profile: str, giver_arm: str, receiver_arm: str, device: str = "cuda:0",
-                      allow_untested: bool = False, receiver_source: str = "rule") -> HandoverRuntime:
+                      allow_untested: bool = False, receiver_source: str = "rule",
+                      rts: dict | None = None) -> HandoverRuntime:
     return HandoverRuntime(world, profile, giver_arm, receiver_arm, device=device, allow_untested=allow_untested,
-                           receiver_source=receiver_source)
+                           receiver_source=receiver_source, rts=rts)
 
 
 # ================================================================================================= category B: lift
@@ -970,23 +1223,21 @@ LIFT_HEIGHT_M = 0.08  # m, clearance lift before carrying -- a first guess (no t
 
 class LiftRuntime:
     """Category-B orchestrator: two `rt9.Runtime` (one per arm) gripping the SAME object simultaneously, against
-    one dual SimEnv -- choose split grasps (arm B's choose() sees arm A's gripper as an obstacle, same
-    `extra_boxes` mechanism as HandoverRuntime, which naturally pushes the two picks to opposite sides of the
-    object instead of needing an explicit left/right split heuristic), approach + close both (the sync-close gate
-    in `lift_phase` is about CLOSE timing, not approach timing -- both arms simply reach `held` before `_move_both`
-    is ever called), then lift/carry/place by moving BOTH arms to the TCP pose implied by one shared rigid object
-    target pose (`_move_both`), using each arm's own grip transform captured at grasp time (same `T_obj_G` trick as
-    HandoverRuntime's carry-correction step). KNOWN APPROXIMATION (flag, like HandoverRuntime's R1 other-arm-box):
-    each arm's Cartesian path to its own endpoint is planned independently (`rt.planner.line`/`pose`), so the two
-    grippers are only guaranteed object-consistent AT the keypoints this class calls `_move_both` for (lift /
-    carry / place), not necessarily at every intermediate tick between them -- real contact friction + the dual
-    SimEnv's physics resolve the rest, same as any real-world grasp compliance. If pod smoke shows this is too
-    loose (object slips / arms fight each other), the fix is more keypoints (finer-grained `_move_both` calls), not
-    a different architecture. Not wired into collect9/build9 yet, see tools/l9/bim_smoke_b.py for the smoke
-    harness (spec note §3, same caveat as HandoverRuntime)."""
+    one dual SimEnv. Deep-dive 10-03 rewrite of the choose / close / move steps (0 of ~48 smoke attempts before):
+      - each hand takes the object's own side (`side_ok`: left arm +y, right arm -y), and the second hand's choice
+        sees the first hand's gripper AT ITS CHOSEN GRASP (`hand_boxes(gc.T, pre_open)`), not the first arm's rest
+        TCP (the old choose_b saw a box wherever arm A happened to be);
+      - neither hand lifts alone (the old code ran arm A's single-arm micro-lift before arm B even approached, so B
+        reached for an object that had moved: EMPTY / straight-approach failures) -- the lift_phase sync gate;
+      - lift / carry / place: both hands planned to the TCP poses implied by ONE object target pose (each hand's
+        measured grip transform), WITHOUT the other-hand boxes (the hands move rigidly together; the attached object
+        always overlapped the other hand -> every lift / carry 'no collision-free path'), and executed on one time
+        axis (`sync_resample`);
+      - the gate is measured: both holding before the lift and after the carry, the measured rise, the final tilt.
+    Not wired into collect9/build9 yet (spec note §3)."""
 
     def __init__(self, world, profile: str, arm_a: str, arm_b: str, device: str = "cuda:0",
-                 allow_untested: bool = False):
+                 allow_untested: bool = False, rts: dict | None = None):
         from . import rt9 as RT
         env = world.env
         if not getattr(env, "dual", False):
@@ -994,15 +1245,19 @@ class LiftRuntime:
         if env.primary not in (arm_a, arm_b):
             raise ValueError(f"env.primary={env.primary!r} must be arm_a or arm_b")
         self.world, self.profile = world, profile
-        env.use_arm(arm_a)
-        rt_a = RT.Runtime(world, profile, arm_a, device=device, allow_untested=allow_untested)
-        env.use_arm(arm_b)
-        rt_b = RT.Runtime(world, profile, arm_b, device=device, allow_untested=allow_untested)
+        if rts is not None:
+            rt_a, rt_b = rts[arm_a], rts[arm_b]
+        else:
+            env.use_arm(arm_a)
+            rt_a = RT.Runtime(world, profile, arm_a, device=device, allow_untested=allow_untested)
+            env.use_arm(arm_b)
+            rt_b = RT.Runtime(world, profile, arm_b, device=device, allow_untested=allow_untested)
         self.a = _ArmSlot(arm_a, rt_a, width=float(rt_a.w.w_open))
         self.b = _ArmSlot(arm_b, rt_b, width=float(rt_b.w.w_open))
         self.slots = (self.a, self.b)
         self.phase = "approach"
         self.events = []
+        self.snap = None
         env.use_arm(env.primary)
         self._freeze(self.a)
         self._freeze(self.b)
@@ -1013,8 +1268,6 @@ class LiftRuntime:
     def other_of(self, slot: "_ArmSlot") -> "_ArmSlot":
         return self.b if slot is self.a else self.a
 
-    # -------------------------------------------------------------- per-tick stepping (identical pattern to
-    # HandoverRuntime, generalized over self.slots instead of two named attributes)
     def _freeze(self, slot: "_ArmSlot") -> None:
         env = self.world.env
         env.use_arm(slot.arm)
@@ -1055,17 +1308,62 @@ class LiftRuntime:
             self.tick()
 
     def other_arm_boxes(self, slot: "_ArmSlot") -> dict:
-        env = self.world.env
         other = self.other_of(slot)
-        env.use_arm(other.arm)
-        p_other, _ = self.world.pl.tcp_pose()
+        bx = live_hand_boxes(self.world, other.arm, other.rt)
+        self.world.env.use_arm(slot.arm)
+        return bx
+
+    def _snap(self, name: str) -> None:
+        if self.snap is not None:
+            try:
+                self.snap(name)
+            except Exception as ex:  # noqa: BLE001
+                print(f"SNAP_FAIL {name}: {ex}", flush=True)
+            self.world.env.use_arm(self.world.env.primary)
+
+    def _holds(self, slot: "_ArmSlot") -> bool:
+        from . import rt9 as RT
+        env = self.world.env
         env.use_arm(slot.arm)
-        return {"other_arm": (np.asarray(p_other, float), [2 * h for h in GRAVITY_BOX_HALF],
-                              np.array([1.0, 0.0, 0.0, 0.0]))}
+        return holding(float(env.gripper_width()), slot.width, RT.EMPTY_M)
+
+    def _tcp(self, slot: "_ArmSlot") -> np.ndarray:
+        self.world.env.use_arm(slot.arm)
+        return slot.rt.tcp_T()
+
+    def _side_excluded(self, slot: "_ArmSlot", obj_key: str) -> set:
+        """Candidate indices (as rt.choose() indexes them, flips included) whose contact midpoint is NOT on this
+        arm's side of the object (`side_ok`, margin = half the smaller horizontal half-extent)."""
+        import os as _os
+        from . import grasp9 as G
+        from . import rt9 as RT
+        from ..sim.scene import OBJ_GEOM
+        rt = slot.rt
+        C = rt._load(obj_key)
+        if C is None or not len(C["w"]):
+            return set()
+        if RT.COMMON or _os.environ.get("L9V2_GRASP_FLIP") == "1":
+            C = rt._with_flips(obj_key, C)
+        c, q = self.world.env.object_pose(obj_key)
+        Cw = G.to_world(C, c, q)
+        he = np.asarray(OBJ_GEOM.get(obj_key, {}).get("half_extents", (0.03, 0.03, 0.03)), float)
+        ok = side_ok((Cw["c1"][:, 1] + Cw["c2"][:, 1]) / 2, float(c[1]), slot.arm, margin=0.5 * float(min(he[:2])))
+        return set(np.flatnonzero(~ok).tolist())
+
+    def _choose_side(self, slot: "_ArmSlot", obj_key: str, extra):
+        env = self.world.env
+        env.use_arm(slot.arm)
+        rt = slot.rt
+        saved = set(rt.failed)
+        rt.failed = saved | self._side_excluded(slot, obj_key)
+        try:
+            env.use_arm(slot.arm)
+            return rt.choose(obj_key, {"tgt": obj_key}, extra_boxes=extra)
+        finally:
+            rt.failed = saved
 
     def _approach_and_close(self, slot: "_ArmSlot", obj_key: str, gc) -> dict:
-        """Same body as HandoverRuntime._grasp, minus the choose() call (B picks both arms' candidates together,
-        before either approaches, so arm B's choose() sees arm A's FINAL gripper box, not a mid-approach one)."""
+        """Same body as HandoverRuntime._grasp minus the choose() call and minus the single-hand lift."""
         env = self.world.env
         env.use_arm(slot.arm)
         rt = slot.rt
@@ -1084,22 +1382,18 @@ class LiftRuntime:
         if RT.classify_close(gap, gc.w) == "EMPTY":
             return {"ok": False, "status": f"EMPTY close (gap {gap * 100:.1f} cm)"}
         slot.held_obj = obj_key
-        if r.get("lift") is not None:
-            slot.traj, slot.traj_i = rt._resample(r["lift"]), 0
-            self.run_ticks(len(slot.traj) + 5)
-        return {"ok": True, "status": "ok"}
+        return {"ok": True, "status": "ok", "gap_cm": round(gap * 100, 2)}
 
-    def _move_both(self, T_obj_target: np.ndarray, T_obj_G_a: np.ndarray, T_obj_G_b: np.ndarray) -> dict:
-        """Plan each arm's own Cartesian path to the TCP pose implied by the SAME object target pose (via its own
-        captured grip transform), then execute both simultaneously (shared tick loop, generic over self.slots --
-        tick() already holds a slot at its last waypoint once its own traj is exhausted, so differing path
-        lengths are handled for free)."""
+    def _move_both(self, T_obj_target: np.ndarray, T_obj_G_a: np.ndarray, T_obj_G_b: np.ndarray,
+                   below_z: float | None = None) -> dict:
+        """below_z: the support the object leaves / reaches (rt9.Runtime.refresh_world): the attached object resting
+        on it is otherwise a start / end collision."""
         env = self.world.env
         plans = {}
         for slot, T_obj_G in ((self.a, T_obj_G_a), (self.b, T_obj_G_b)):
             env.use_arm(slot.arm)
             rt = slot.rt
-            rt.refresh_world(holding=slot.held_obj or None, extra_boxes=self.other_arm_boxes(slot))
+            rt.refresh_world(holding=slot.held_obj or None, below_z=below_z)  # no other-hand boxes: rigid co-motion
             T_tcp = T_obj_target @ T_obj_G
             q = env.arm_q() if rt.q_target is None else np.asarray(rt.q_target, float)
             Tb = rt.to_base(T_tcp)
@@ -1107,11 +1401,10 @@ class LiftRuntime:
             if Q is None:
                 return {"ok": False, "status": f"no collision-free path for {slot.arm}"}
             plans[slot.arm] = rt._resample(np.asarray(Q, float))
-        n = 0
-        for slot in self.slots:
-            slot.traj, slot.traj_i = plans[slot.arm], 0
-            n = max(n, len(slot.traj))
-        self.run_ticks(n + 5)
+        qa, qb = sync_resample([plans[self.a.arm], plans[self.b.arm]])
+        self.a.traj, self.a.traj_i = qa.astype(np.float32), 0
+        self.b.traj, self.b.traj_i = qb.astype(np.float32), 0
+        self.run_ticks(len(qa) + 5)
         return {"ok": True, "status": "ok"}
 
     def _gripper(self, slot: "_ArmSlot", action: str) -> None:
@@ -1120,12 +1413,7 @@ class LiftRuntime:
         if action == "open":
             slot.held_obj = None
 
-    # -------------------------------------------------------------- episode
     def run_episode(self, obj_key: str, table_z: float, target_xy, seed: int = 0, episode_idx: int = 0) -> dict:
-        """Category-B smoke episode: both arms choose a (mutually obstacle-aware) grasp on `obj_key`, approach and
-        close together, lift `LIFT_HEIGHT_M`, carry to `target_xy`, place back at the pick height, open together.
-        Not the production collection loop (spec note §3). Every return path restores env.primary (same bug class
-        HandoverRuntime.run_episode fixed first)."""
         env = self.world.env
         try:
             return self._run_episode(obj_key, table_z, target_xy, seed, episode_idx)
@@ -1133,86 +1421,113 @@ class LiftRuntime:
             env.use_arm(env.primary)
 
     def _run_episode(self, obj_key: str, table_z: float, target_xy, seed: int, episode_idx: int) -> dict:
+        from . import grasp9 as G
         from . import plan9 as P9
         from . import rt9 as RT
         env = self.world.env
         log = []
 
         def _choose_pair(first, second):
-            """first picks unconstrained, second avoids first's box. -> (gc_first, gc_second) | (None, None)."""
-            env.use_arm(first.arm)
-            gc1 = first.rt.choose(obj_key, {"tgt": obj_key}, extra_boxes=self.other_arm_boxes(first))
+            gc1 = self._choose_side(first, obj_key, None)
             if gc1 is None:
-                return None, None
-            env.use_arm(second.arm)
-            gc2 = second.rt.choose(obj_key, {"tgt": obj_key}, extra_boxes=self.other_arm_boxes(second))
+                return None, None, "first"
+            first_hand = hand_boxes(gc1.T, first.rt.gr, float(gc1.pre_open), prefix="first_hand")
+            gc2 = self._choose_side(second, obj_key, first_hand)
             if gc2 is None:
-                return None, None
-            return gc1, gc2
+                return None, None, "second"
+            return gc1, gc2, ""
 
-        # owner 2026-10-03 (2hr+ checkpoint follow-up): choose_b (arm B blocked by arm A's box) was still the #1
-        # B failure after shrinking the box once (67% of executed failures) -- owner's next step is arm ORDER,
-        # not a further box shrink (shrinking more erodes real collision protection). Try A-first; if B then finds
-        # nothing, swap and try B-first instead of giving up -- whichever arm's candidate set is more constrained
-        # by this particular object's geometry gets to pick unconstrained.
-        gc_a, gc_b = _choose_pair(self.a, self.b)
+        # outcome-based lead arm: the order given first (the caller alternates it per seed for the 50/50 balance),
+        # the other order only if this one finds no pair; the lead (first to close) is whoever chose first
+        gc_a, gc_b, why = _choose_pair(self.a, self.b)
         swapped = False
-        if gc_a is None or gc_b is None:
-            gc_b2, gc_a2 = _choose_pair(self.b, self.a)
-            if gc_a2 is not None and gc_b2 is not None:
-                gc_a, gc_b, swapped = gc_a2, gc_b2, True
-        if gc_a is None or gc_b is None:
-            return {"ok": False, "log": [{"phase": "choose_b", "ok": False, "tried_swap": True}]}
-        log.append({"phase": "choose", "ok": True, "swapped_order": swapped})
+        if gc_a is None:
+            gc_b2, gc_a2, why2 = _choose_pair(self.b, self.a)
+            if gc_b2 is None:
+                return {"ok": False, "log": [{"phase": "choose_b", "ok": False, "tried_swap": True,
+                                              "status": f"no side pair ({why}/{why2})"}]}
+            self.a, self.b = self.b, self.a
+            gc_a, gc_b, swapped = gc_b2, gc_a2, True
+        self.slots = (self.a, self.b)
+        log.append({"phase": "choose", "ok": True, "swapped_order": swapped, "lead": self.a.arm,
+                    "fam": [gc_a.meta.get("family"), gc_b.meta.get("family")]})
 
         ra = self._approach_and_close(self.a, obj_key, gc_a)
         log.append({"phase": "grasp_a", **ra})
+        self._snap("grasp_a")
         if not ra["ok"]:
             return {"ok": False, "log": log}
         rb = self._approach_and_close(self.b, obj_key, gc_b)
         log.append({"phase": "grasp_b", **rb})
+        self._snap("grasp_b")
         if not rb["ok"]:
             return {"ok": False, "log": log}
+        both0 = self._holds(self.a) and self._holds(self.b)
         self.phase = "lift"
 
-        T_obj_pick = RT.T_of(*env.object_pose(obj_key))
-        T_obj_Ga = P9.inv_T(T_obj_pick) @ gc_a.T
-        T_obj_Gb = P9.inv_T(T_obj_pick) @ gc_b.T
+        p0, q0 = env.object_pose(obj_key)
+        T_obj_pick = RT.T_of(p0, q0)
+        T_obj_Ga = P9.inv_T(T_obj_pick) @ self._tcp(self.a)
+        T_obj_Gb = P9.inv_T(T_obj_pick) @ self._tcp(self.b)
+        sup_z = self.a.rt._bottom_z(obj_key) - 0.02
 
         T_obj_lift = T_obj_pick.copy()
         T_obj_lift[2, 3] += LIFT_HEIGHT_M
-        r = self._move_both(T_obj_lift, T_obj_Ga, T_obj_Gb)
-        log.append({"phase": "lift", **r})
+        r = self._move_both(T_obj_lift, T_obj_Ga, T_obj_Gb, below_z=sup_z)
+        p1, _ = env.object_pose(obj_key)
+        rise = float(p1[2]) - float(p0[2])
+        log.append({"phase": "lift", "rise_cm": round(rise * 100, 1), **r})
+        self._snap("lift")
         if not r["ok"]:
             return {"ok": False, "log": log}
         self.phase = "carry"
 
         T_obj_carry = T_obj_lift.copy()
-        T_obj_carry[:2, 3] = np.asarray(target_xy, float)
-        r = self._move_both(T_obj_carry, T_obj_Ga, T_obj_Gb)
-        log.append({"phase": "carry", **r})
+        T_obj_carry[:2, 3] = np.asarray(target_xy, float)[:2]
+        r = self._move_both(T_obj_carry, T_obj_Ga, T_obj_Gb, below_z=sup_z)
+        held = self._holds(self.a) and self._holds(self.b)
+        p2, _ = env.object_pose(obj_key)
+        log.append({"phase": "carry", "held": held, "z_gap_cm": round((float(p2[2]) - float(p0[2])) * 100, 1), **r})
+        self._snap("carry")
         if not r["ok"]:
             return {"ok": False, "log": log}
         self.phase = "place_gate"
 
         T_obj_place = T_obj_carry.copy()
-        T_obj_place[2, 3] = T_obj_pick[2, 3]  # same table height assumed for pick and place spots
-        r = self._move_both(T_obj_place, T_obj_Ga, T_obj_Gb)
+        T_obj_place[2, 3] = T_obj_pick[2, 3] + 0.005
+        r = self._move_both(T_obj_place, T_obj_Ga, T_obj_Gb, below_z=sup_z)
         log.append({"phase": "place", **r})
         if not r["ok"]:
             return {"ok": False, "log": log}
 
-        self._gripper(self.a, "open")
-        self._gripper(self.b, "open")
+        self.a.width = float(self.a.rt.w.w_open)  # both open on the same tick window
+        self.b.width = float(self.b.rt.w.w_open)
+        self.run_ticks(SETTLE_TICKS)
+        self.a.held_obj = self.b.held_obj = None
+        for slot in self.slots:  # back off along each hand's own approach axis (+z_G) and up
+            T = self._tcp(slot)
+            rt = slot.rt
+            rt.refresh_world(extra_boxes=self.other_arm_boxes(slot))
+            q = np.asarray(rt.q_target if rt.q_target is not None else env.arm_q(), float)
+            T2 = T.copy()
+            T2[:3, 3] = T[:3, 3] + T[:3, 2] * 0.08 + np.array([0.0, 0.0, 0.03])
+            Q = rt.planner.line(q, rt.to_base(T), rt.to_base(T2))
+            if Q is not None:
+                slot.traj, slot.traj_i = rt._resample(np.asarray(Q, float)), 0
+        self.run_ticks(max(len(s.traj) if s.traj is not None else 0 for s in self.slots) + SETTLE_TICKS)
         log.append({"phase": "release", "ok": True})
+        self._snap("done")
         self.phase = "done"
 
         env.use_arm(self.a.arm)
-        final_xy = np.asarray(env.object_pose(obj_key)[0], float)[:2]
-        gate = success_b(final_xy, target_xy, both_closed_before_lift=True, min_table_gap_m=LIFT_HEIGHT_M)
+        p3, q3 = env.object_pose(obj_key)
+        tilt = _tilt_deg(G.qmat(np.asarray(q0, float)), G.qmat(np.asarray(q3, float)))
+        gate = success_b(np.asarray(p3, float)[:2], target_xy, both_closed_before_lift=both0,
+                         min_table_gap_m=rise if rise > 0.5 * LIFT_HEIGHT_M else 0.0, held_through=held,
+                         tilt_deg=tilt)
         return {"ok": gate["ok"], "gate": gate, "log": log}
 
 
 def install_lift(world, profile: str, arm_a: str, arm_b: str, device: str = "cuda:0",
-                  allow_untested: bool = False) -> LiftRuntime:
-    return LiftRuntime(world, profile, arm_a, arm_b, device=device, allow_untested=allow_untested)
+                  allow_untested: bool = False, rts: dict | None = None) -> LiftRuntime:
+    return LiftRuntime(world, profile, arm_a, arm_b, device=device, allow_untested=allow_untested, rts=rts)

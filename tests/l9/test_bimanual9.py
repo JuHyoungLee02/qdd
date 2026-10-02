@@ -316,3 +316,72 @@ def test_choose_direction_raises_when_neither_reaches():
               "rl": {"giver_ik_ok": True, "receiver_ik_ok": False, "path_cost": 3.0, "joint_margin": 0.1}}
     with pytest.raises(ValueError):
         B.choose_direction(scores)
+
+
+# ---------------------------------------------------------------- deep-dive 10-03: other hand model, sync, gates
+def _inside(boxes, p):
+    from harvest.l9 import grasp9 as G
+    for c, ext, q in boxes.values():
+        R = G.qmat(q)
+        d = R.T @ (np.asarray(p, float) - np.asarray(c, float))
+        if (np.abs(d) <= np.asarray(ext, float) / 2 + 1e-9).all():
+            return True
+    return False
+
+
+def test_hand_boxes_leave_the_space_between_the_pads_free():
+    from harvest.l9 import grasp9 as G
+    gr = G.gripper("ffw_sg2")
+    bx = B.hand_boxes(np.eye(4), gr, 0.06)
+    assert not _inside(bx, [0.0, 0.0, 0.0])  # the held object's grasp point (TCP) is NOT covered
+    assert not _inside(bx, [0.0, 0.02, -0.01])
+    assert _inside(bx, [0.0, 0.03 + gr["finger_t"] / 2, -0.01])  # finger slab
+    assert _inside(bx, [0.0, 0.0, 0.10])  # palm / wrist behind the TCP (+z_G = away from the approach)
+
+
+def test_hand_boxes_follow_the_tcp_pose():
+    from harvest.l9 import grasp9 as G
+    gr = G.gripper("ffw_sg2")
+    T = np.eye(4)
+    T[:3, :3] = np.array([[1.0, 0, 0], [0, 0, -1.0], [0, 1.0, 0]])  # rot x +90: z_G -> world -y
+    T[:3, 3] = [0.4, 0.1, 0.9]
+    bx = B.hand_boxes(T, gr, 0.05)
+    assert _inside(bx, [0.4, 0.1 - 0.10, 0.9])  # palm behind along +z_G = world -y
+    assert not _inside(bx, [0.4, 0.1, 0.9])
+    C, H, R = B.boxes_as_obstacles(bx)
+    assert C.shape == (3, 3) and H.shape == (3, 3) and R.shape == (3, 3, 3)
+
+
+def test_holding_needs_closed_command_and_a_gap_above_empty():
+    assert B.holding(0.06, 0.0, 0.003)
+    assert not B.holding(0.001, 0.0, 0.003)  # closed on nothing
+    assert not B.holding(0.06, 0.09, 0.003)  # open
+
+
+def test_side_ok_left_takes_plus_y_right_takes_minus_y():
+    mid = np.array([0.12, -0.12, 0.0])
+    assert list(B.side_ok(mid, 0.0, "left")) == [True, False, False]
+    assert list(B.side_ok(mid, 0.0, "right")) == [False, True, False]
+
+
+def test_sync_resample_gives_one_time_axis():
+    a = np.linspace(0, 1, 5)[:, None] * np.ones((1, 7))
+    b = np.linspace(0, 1, 11)[:, None] * np.ones((1, 7))
+    ra, rb = B.sync_resample([a, b])
+    assert len(ra) == len(rb) == 11
+    assert np.allclose(ra[0], a[0]) and np.allclose(ra[-1], a[-1])
+    assert np.allclose(ra[:, 0], rb[:, 0])  # same fraction of the path at every tick
+
+
+def test_bottom_offset_upright_and_tilted():
+    he = (0.05, 0.03, 0.09)
+    assert abs(B.bottom_offset(np.eye(3), he) - 0.09) < 1e-9
+    R = np.array([[0, 0, 1.0], [0, 1.0, 0], [-1.0, 0, 0]])  # lying on its side
+    assert abs(B.bottom_offset(R, he) - 0.05) < 1e-9
+
+
+def test_success_b_needs_held_through_and_low_tilt():
+    base = dict(both_closed_before_lift=True, min_table_gap_m=0.05)
+    assert B.success_b((0.5, 0.0), (0.5, 0.0), **base)["ok"]
+    assert not B.success_b((0.5, 0.0), (0.5, 0.0), held_through=False, **base)["ok"]
+    assert not B.success_b((0.5, 0.0), (0.5, 0.0), tilt_deg=35.0, **base)["ok"]

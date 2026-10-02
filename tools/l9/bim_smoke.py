@@ -47,6 +47,20 @@ def _episode_timeout(seconds: int):
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
+def _snapper(world, od):
+    """Per-phase frames (head + both wrists, half size) -> od/NN_<phase>_<cam>.png."""
+    n = [0]
+
+    def snap(name):
+        from PIL import Image
+        for cam, short in (("cam_head", "head"), ("cam_wrist_right", "wr"), ("cam_wrist_left", "wl")):
+            im = Image.fromarray(world.env.camera_rgb(cam))
+            im = im.resize((im.width // 2, im.height // 2))
+            im.save(os.path.join(od, f"{n[0]:02d}_{name}_{short}.png"))
+        n[0] += 1
+    return snap
+
+
 def _jsonable(o):
     import numpy as np
     if isinstance(o, np.ndarray):
@@ -116,7 +130,10 @@ def main(argv=None):
             for k in range(20):
                 sd = seed + 100003 * k
                 try:
-                    sc = S9.sample(family, rule, sd, giver, rm)
+                    # auto direction: the object is drawn in the right or the left arm's band by seed parity (the
+                    # 50/50 comes from a symmetric scene draw; the direction itself is outcome-based below)
+                    sc_arm = (("right", "left")[seed % 2]) if a.auto_direction else giver
+                    sc = S9.sample(family, rule, sd, sc_arm, rm)
                 except RuntimeError:
                     continue
                 ep = T9.instantiate(defn, sc, pool, sd, rm, grip_max=world.w_open)
@@ -142,10 +159,11 @@ def main(argv=None):
             print("DRAW " + json.dumps({"seed": seed, "obj": obj_key, "wall_s": round(time.time() - t0, 1)}),
                   flush=True)
             giver_i, receiver_i = giver, receiver
+            rts = B.runtimes(world, a.robot, device=a.device, allow_untested=True)
             if a.auto_direction:
                 zone, _cell = B.zone_point(a.robot, world.table_z, seed, i)
                 scores, _rts = B.probe_direction(world, a.robot, obj_key, zone, device=a.device,
-                                                  allow_untested=True)
+                                                  allow_untested=True, rts=rts)
                 try:
                     direction = B.choose_direction(scores)
                 except ValueError as ex:
@@ -157,16 +175,27 @@ def main(argv=None):
                 print("DIRECTION " + json.dumps({"seed": seed, "chosen": direction, "scores": scores},
                                                  default=_jsonable), flush=True)
             hr = B.install_handover(world, a.robot, giver_i, receiver_i, device=a.device, allow_untested=True,
-                                    receiver_source=a.receiver_source)
+                                    receiver_source=a.receiver_source, rts=rts)
+            od = os.path.join(a.out, f"ep{i}")
+            os.makedirs(od, exist_ok=True)
+            hr.snap = _snapper(world, od)
+            fspot = None
+            if obj_key in ep["objects"] and obj_key in pool:
+                fspot = B.receiver_spot(sc, ep, obj_key, float(pool[obj_key]["footprint_r"]), rm, receiver_i, sd)
             try:
                 with _episode_timeout(a.episode_timeout_s):
-                    r = hr.run_episode(obj_key, world.table_z, seed=seed, episode_idx=i)
+                    r = hr.run_episode(obj_key, world.table_z, seed=seed, episode_idx=i, final_xy=fspot)
             except _EpisodeTimeout as ex:
                 print("EPISODE_TIMEOUT " + json.dumps({"seed": seed, "err": str(ex)}), flush=True)
                 r = {"ok": False, "status": "episode timeout"}
                 # run_episode's own try/finally still runs env.use_arm(env.primary) as the exception propagates
                 # through it (Python guarantees finally runs on exception unwind) -- no extra restore needed here.
             r["seed"], r["obj"], r["receiver_source"] = seed, obj_key, a.receiver_source
+            r["direction"] = B.handover_direction(giver_i)
+            r["def"] = f"handover_{a.cat}_{r['direction']}"
+            r["final_spot"] = fspot
+            r["code"] = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            r["switches"] = {k: os.environ.get(k) for k in ("L9_COMMON_EXEC", "L9V2_GRASP_FLIP") if os.environ.get(k)}
             r["wall_s"] = round(time.time() - t0, 1)
             print("EP " + json.dumps({k: v for k, v in r.items() if k != "log"}, default=_jsonable), flush=True)
             results.append(r)
