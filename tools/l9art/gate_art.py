@@ -18,7 +18,7 @@ from collections import Counter, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-MIN_SUCC = 0.70
+MIN_SUCC = 0.40  # user 10-02 18h: per-skill gate success >= 40 % + quality gates
 MAX_DQ = 0.04
 MAX_DQ_OK_SHARE = 0.99
 LABEL_MIN = 0.95
