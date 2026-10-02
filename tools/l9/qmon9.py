@@ -29,7 +29,7 @@ each NEW episode costs a few small json / npz reads (no image decode, no Isaac).
 each round (bounded size, no unbounded jsonl growth) but only episodes missing from it are re-read from disk.
 
 usage: PYTHONPATH=<deployed harvest code dir> venv/bin/python qmon9.py <collect root>... [--cache F] [--status F]
-       [--events F] [--tmp DIR] [--spec L9v2-general] [--hours 2] [--sample-n 200] [--logs DIR]
+       [--events F] [--tmp DIR] [--spec L9v2-spec-final] [--hours 2] [--sample-n 200] [--logs DIR]
        [--quotas ffw_sg2:3800,franka_mast:4000,r1pro:3700,g1:3400] [--now EPOCH]
 Sibling imports (robot_gate9, diversity9, rate9) resolve from this file's own directory -- deploy all four files
 together under /data/harvest/out/l9/."""
@@ -155,8 +155,11 @@ def save_cache(path: str, cache: dict):
     os.replace(tmp, path)
 
 
-def scan(roots: list, cache: dict) -> int:
-    """Updates cache in place with every episode under roots not already keyed -- the incremental step."""
+def scan(roots: list, cache: dict, cache_path: str | None = None, checkpoint_every: int = 500) -> int:
+    """Updates cache in place with every episode under roots not already keyed -- the incremental step. On a
+    production root this can be tens of thousands of episodes on the very first (cold-cache) round, so with
+    cache_path given it checkpoints to disk every checkpoint_every new episodes -- an interrupted first round loses
+    at most one checkpoint's worth of work, not the whole scan, on the next invocation."""
     added = 0
     for root in roots:
         for m in glob.glob(os.path.join(root, "*", "*", "*", "meta.json")):
@@ -167,6 +170,8 @@ def scan(roots: list, cache: dict) -> int:
             if r is not None:
                 cache[d] = r
                 added += 1
+                if cache_path and added % checkpoint_every == 0:
+                    save_cache(cache_path, cache)
     return added
 
 
@@ -220,7 +225,7 @@ def run(roots: list, cache_path: str, status_path: str, events_path: str, tmp_ro
     now = now if now is not None else time.time()
     B9.prepare(("train", "ood_o"))
     cache = load_cache(cache_path)
-    scan(roots, cache)
+    scan(roots, cache, cache_path)
     save_cache(cache_path, cache)
     all_recs = list(cache.values())
     recent = [r for r in all_recs if r["mtime"] >= now - hours * 3600]
@@ -345,7 +350,7 @@ def main():
     line = run(roots, arg("--cache", os.path.join(out_dir, "qmon_cache.jsonl")),
               arg("--status", os.path.join(out_dir, "qmon_status.txt")),
               arg("--events", os.path.join(out_dir, "events_qmon.log")),
-              arg("--tmp", os.path.join(out_dir, "qmon_tmp")), arg("--spec", "L9v2-general"),
+              arg("--tmp", os.path.join(out_dir, "qmon_tmp")), arg("--spec", "L9v2-spec-final"),
               float(arg("--hours", "2")), int(arg("--sample-n", "200")), quotas_of(arg("--quotas", QUOTA_DEFAULT)),
               arg("--logs", "/data/harvest/logs/l9"), float(arg("--now")) if "--now" in a else None)
     print(line)
