@@ -118,7 +118,7 @@ def main(argv=None):
         # assets9's module-level cache for the rest of this process) of just this def's own category's
         # container/clutter items to role9="target" before calling instantiate, so the existing role=="target"
         # matching codepath picks them up unmodified. Anything already role9=="target" (e.g. "box") is untouched.
-        pool = {k: (dict(v, role9="target") if (v.get("category") or "").lower() in cats
+        pool = {k: (dict(v, role9="target") if ((v.get("category") or "").lower() in cats or v.get("l9cat") in cats)
                     and v.get("role9") in ("container", "clutter") else v) for k, v in pool.items()}
         pool = {k: v for k, v in pool.items() if v.get("role9") != "target" or RT.has_candidates(a.robot, k, True)}
         n_targets = sum(1 for v in pool.values() if v.get("role9") == "target")

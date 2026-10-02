@@ -90,6 +90,7 @@ def main(argv=None):
                           "rt9.Runtime.choose() (unchanged), 'graspgenx' = bimanual9._receiver_grasp_graspgenx "
                           "(falls back to 'rule' on a None result, never worse).")
     ap.add_argument("--pool", type=int, default=5000)
+    ap.add_argument("--pools", default=None, help="comma-separated pool_for() indices to union (thin categories)")
     ap.add_argument("--rooms", type=int, default=5000)
     ap.add_argument("--device", default="cuda:0")
     a = ap.parse_args(argv)
@@ -110,7 +111,13 @@ def main(argv=None):
 
         giver, receiver = ("right", "left") if a.direction == "rl" else ("left", "right")
         cats = B.BIM_A_OBJECTS[a.cat]
-        pool = A9.pool_for(a.pool, "train")
+        pool = {}
+        for pi in ([int(x) for x in a.pools.split(",")] if a.pools else [a.pool]):
+            pool.update(A9.pool_for(pi, "train"))
+        # same local relabel as bim_smoke_b.py (owner-approved there): this category's container / clutter rows count
+        # as handover targets on a LOCAL copy (cups are all role9=clutter in the catalog)
+        pool = {k: (dict(v, role9="target") if v.get("l9cat") in cats and v.get("role9") in ("container", "clutter")
+                    else v) for k, v in pool.items()}
         pool = {k: v for k, v in pool.items() if v.get("role9") != "target" or RT.has_candidates(a.robot, k, True)}
         n_targets = sum(1 for v in pool.values() if v.get("role9") == "target")
         print("POOL " + json.dumps({"size": len(pool), "targets_with_candidates": n_targets}), flush=True)
