@@ -11,9 +11,10 @@ A robot (per task kind: single-arm, articulated, bimanual) passes when
         families    approach-family share: the top family <= max(50 %, ref top + 10 pp); every family the reference
                     uses with >= 5 % share is used
         rot_bins    distinct image rotation bins used >= 0.8 x reference
-        arms        left share in 40-60 % for two-armed robots
+        arms        left share in 40-60 % for two-armed robots (fixed band; the reference mixes right-only Franka)
         spread      IQR of support height (table_z), of grasp x and of grasp y (base frame) >= 0.8 x reference
-        high_share  share of high / shelf placements (place band "high") >= 0.8 x reference
+        high_share  high / shelf placements (place band "high"): when the reference share is >= 2 %, >= 0.8 x it;
+                    below that the reference has too few to judge (reported only)
 verdict: FAIL (a judged definition fails (b), or (c)/(d) fail with nothing pending) / PENDING (definitions below 5,
 or no reference given) / PASS.
 usage: python tools/l9/robot_gate9.py <collect root>... --robot r1pro [--ref <collect root>,...] [--ref-robots
@@ -127,7 +128,8 @@ def diversity_check(p: dict, ref: dict, robot: str) -> dict:
     out["arms_ok"] = (0.40 <= p["left_share"] <= 0.60) if robot in TWO_ARMED else True
     for k in ("iqr_table_z", "iqr_x", "iqr_y"):
         out[k + "_ok"] = (p[k] is not None and ref[k] is not None and p[k] >= SPREAD_FRAC * ref[k]) or ref[k] in (None, 0)
-    out["high_share_ok"] = p["high_share"] >= SPREAD_FRAC * ref["high_share"]
+    out["high_share_ok"] = (p["high_share"] >= SPREAD_FRAC * ref["high_share"]) if ref["high_share"] >= 0.02 else None
+    out["ref"] = {k: ref[k] for k in ("family_share", "rot_bins", "left_share", "iqr_table_z", "iqr_x", "iqr_y", "high_share")}
     out["ok"] = all(v for k, v in out.items() if k.endswith("_ok") and v is not None)
     out["narrower"] = sorted(k[:-3] for k, v in out.items() if k.endswith("_ok") and v is False)
     return out
