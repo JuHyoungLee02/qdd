@@ -167,6 +167,9 @@ def main(argv=None):
         if a.v2:
             from .rt9 import install as v2_install
             v2_install(world, robot, arm, allow_untested=a.v2_untested)
+        if os.environ.get("L9_TIMING"):
+            from . import timing9
+            timing9.install(world)
         print("WORKSPACE " + json.dumps({"arm": arm, "rebound": apply_arm_workspace(arm), "robot": robot, "hcam": hcam, "ext": ext,
                                          "prompts": apply_prompts(robot)}), flush=True)
         rm = R9.load_default()
@@ -198,6 +201,9 @@ def main(argv=None):
                     "wall_s")
             print("EP " + json.dumps(dict({k: meta.get(k) for k in keep}, wall_total_s=round(time.perf_counter() - t0, 1))),
                   flush=True)
+            if os.environ.get("L9_TIMING"):
+                from . import timing9
+                print("TIMING " + json.dumps(timing9.report()), flush=True)
         print("RUN_DONE", flush=True)
     except BaseException:  # noqa: BLE001
         import traceback
