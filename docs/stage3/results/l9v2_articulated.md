@@ -79,3 +79,25 @@
 - R1 Pro(표 0.62/0.72, 0.80은 몸통 도달 밖): front는 dz 0.15에서 x 0.25–0.70, dz 0.25 이상은 x ≥ 0.55에서만, oblique는 dz 0.05에서 x 0.25–0.65, down은 dz ≤ 0.15·x 0.35–0.60 → 높은 손잡이·위 장착 다이얼은 거의 불가. R1은 표 0.56–0.76 + 일 띠 5 cm 바깥(ROBOT_DX) + IK 재배치로 시범.
 - 결정: 같은 표 위에서 IK 사전검사를 통과하는 고정물 자세를 최대 24개 시험(리셋 없이) → 통과하면 한 번 더 리셋(run_art.alt_placement).
 - 밀기: pilot2에서 재조준 밀기 0/6(pilotA 원래 방식 0.56) → 사용자 규칙(더 나을 때만 유지)대로 원래 방식으로 되돌림(30eb2d5).
+
+## 10. 개선 시도 1회 (AIW pilot2, 정의당 20행, 코드 190cb7e) — 사용자 규칙: 나을 때만 유지
+| 정의 | pilotA 사용 가능 | pilot2 사용 가능 | 결정 |
+|---|---|---|---|
+| dial_turn_top | .50 | .60 | 유지(노브 몸통 집기) → 양산 aP3 |
+| drawer_close | .65 | .80 | 유지(시작 40–75 %) → 양산 aP3 |
+| knob_off | .30 | .45 | 유지 → 관문 통과, 양산 aP3 |
+| knob_turn | .35 | .45 | 유지 → 관문 통과, 양산 aP3 |
+| knob_then_button | .40 | .47 | 유지 → 양산 aP3 |
+| push_object | .56 | .07 | 되돌림(재조준 밀기는 AIW에서 나쁨) — AIW 양산은 pilotA 방식 |
+| push_object_far | .07 | .09 | 미달 유지(실험) |
+| 복합 2종 | 0 | 0 | 놓기 자세 IK·운반 시작 충돌 고친 코드(24e0520)로 pilot3 진행 |
+
+## 11. Franka 시범2 (코드 30e7a40, 정의당 ~20행) → 양산 fP
+- 통과 12: switch .80·slide_open .94·door_close .75·slide_close .71·button .68·drawer_open_half .63·push .63·door_open .60·dial .59·push_far .58·drawer_open .53·knob_turn .40.
+- 미달: drawer_close(사용 가능 .75이나 라벨 있음 .942 < .95)·knob_off .28·knob_then_button .25·복합 0.
+- Franka 밀기는 재조준 방식이 우세(.63/.58 vs 첫 시범 .33) → 로봇별 밀기 방식(24e0520, meta push_mode).
+- 양산: fP 602행 = 성공 300 목표. AIW aP3 635행(정의당 60). 모두 code_l9art_24e0520.
+
+## 12. 답 행 원칙 점검 (사용자 10-02 19시대: 세밀한 결정은 전부 VLM 출력 행에)
+- point 명령: skill·point_2d(손잡이·접촉점)·height·gripper·hand·approach·rot. 축 이동: point2(끝) + axis(linear|rotary)·pivot_2d(경첩선/노브 중심)·turn(cw|ccw)·amount_cm|deg (8de22f7). 그 전 행은 build_art가 고정물 사양(family+seed, fx2)·그 호출의 cams로 채움(문·미닫이 실측 덧그림 확인).
+- 코드에만 남은 것: 누름 깊이(버튼 이동량, 실행기 원시 동작), 손잡이 놓을 때 3 cm 벌림, 접근 거리 8–12 cm — 모두 실행기 상수이며 판단이 아님.
