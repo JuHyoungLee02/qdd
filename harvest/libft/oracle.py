@@ -119,6 +119,7 @@ class Oracle:
         self.ep = None
         self.seg, self.sub, self.ki, self.retries = 0, 0, 0, 0
         self.first, self.last_cmd, self.errors = True, None, 0
+        self.rim_goal = None
 
     # ---------------------------------------------------------------- geometry
     def _pixel(self, name: str):
@@ -144,6 +145,26 @@ class Oracle:
         c = np.array([np.median(uu), np.median(vv)])
         k = int(np.argmin((uu - c[0]) ** 2 + (vv - c[1]) ** 2))
         return [round((uu[k] + 0.5) / HEAD_PX * 1000), round((vv[k] + 0.5) / HEAD_PX * 1000)]
+
+    def _touching(self, name: str) -> bool:
+        """Sim truth: a finger geom of the gripper is in contact with a geom of the object (or its sub-bodies)."""
+        sim = self.w.sim
+        m = sim.model
+        bid = self.w.rs.obj_body_id[name]
+        geoms = set()
+        for g in range(m.ngeom):
+            b = int(m.geom_bodyid[g])
+            while b > 0:
+                if b == bid:
+                    geoms.add(g)
+                    break
+                b = int(m.body_parentid[b])
+        fingers = {g for g in range(m.ngeom) if "finger" in (m.geom_id2name(g) or "")}
+        for i in range(sim.data.ncon):
+            c = sim.data.contact[i]
+            if (c.geom1 in geoms and c.geom2 in fingers) or (c.geom2 in geoms and c.geom1 in fingers):
+                return True
+        return False
 
     def _rim(self, px):
         """Rim grasp target for a hollow object pointed at px (harvest.lib0.rim on the live head depth), else None."""
@@ -195,7 +216,7 @@ class Oracle:
         s = self.plan.segments[self.seg]
         tn = obj_name(s["obj"]) if s.get("obj") else "object"
         pn = obj_name(s["place"]) if s.get("place") else "target spot"
-        hold = self.w.holding()
+        hold = self._touching(s.get("obj")) if s.get("obj") else self.w.holding()
         if s["kind"] == "pick":
             if self.sub == 0:
                 px = self._pixel(s["obj"])
@@ -207,7 +228,9 @@ class Oracle:
                 px = self._pixel(s["obj"])
                 if px is None:
                     return self._fail()
-                rim = self._rim(px)
+                if getattr(self, "rim_goal", None) is None:
+                    self.rim_goal = self._rim(px) or False  # computed once per attempt (the arm later hides the rim)
+                rim = self.rim_goal or None
                 if rim is not None:  # hollow object (bowl, basket): grasp its wall with edits (natural grasp)
                     cmd, final = self._edit_to(rim, "keep")
                     if final:
@@ -222,7 +245,7 @@ class Oracle:
                     self.retries += 1
                     if self.retries > 2:
                         return self._fail()
-                    self.sub = 0
+                    self.sub, self.rim_goal = 0, None
                     return self._answer("reopen", {"mode": "gripper", "gripper": "open"}, tn, pn)
                 self.sub = 3
                 return self._answer("carry_up", {"mode": "point", "point_2d": None, "height": "lift", "gripper": "keep"}, tn, pn)
@@ -238,7 +261,7 @@ class Oracle:
                     return self._fail()
                 self.sub = 5
                 return self._answer("lower_open", {"mode": "point", "point_2d": px, "height": "place", "gripper": "open"}, tn, pn)
-            self.seg, self.sub, self.retries = self.seg + 1, 0, 0
+            self.seg, self.sub, self.retries, self.rim_goal = self.seg + 1, 0, 0, None
             return self._answer("retreat", {"mode": "edit", "delta_m": [0.0, 0.0, 0.1], "gripper": "keep"}, tn, pn)
         # manip / push: edits along keyframes (manip: approach keys -> close -> closed path keys -> open -> up)
         keys = (s.get("approach", []) + [None] + s["path"] + [None]) if s["kind"] == "manip" else s["path"]
