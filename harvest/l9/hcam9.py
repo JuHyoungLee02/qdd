@@ -65,8 +65,12 @@ HFOV_HOLD = ((55.0, 65.0), (95.0, 105.0))
 # show up as the dominant effect here. r1-v5: keep r1-v3's x/y/h, push pitch even steeper (65-80, closer to
 # vertical) to see if the trend continues below r1-v3's 20.0 %. Re-validating (same 8-seed quick check, then
 # the full set) before switching production.
-MAST_DEFAULT = {"x": 0.0, "y": -0.48, "h": 1.15, "pitch": 72.0, "pan": 30.0}
-MAST_RANGE = {"x": (-0.15, 0.15), "y": (-0.58, -0.40), "h": (1.00, 1.30), "pitch": (65.0, 80.0), "pan": (20.0, 40.0)}
+# r1-v6 (this commit, run in parallel with r1-v5 on the same 8 seeds): closer distance (~0.6-0.8 m from
+# panda_link0, near/just outside the arm's reach sphere, scaled down from r1-v3/v4/v5's ~1.3 m) with the same
+# steep pitch (60-75) as r1-v3/v5, to see whether "steeper is better" holds at a shorter distance too (and
+# whether MIN_RADIUS_PX=6px, visgate9.py, starts to bite at the longer r1-v3/v5 distance -- closer should help it).
+MAST_DEFAULT = {"x": 0.0, "y": -0.34, "h": 0.70, "pitch": 68.0, "pan": 25.0}
+MAST_RANGE = {"x": (-0.10, 0.10), "y": (-0.40, -0.28), "h": (0.60, 0.80), "pitch": (60.0, 75.0), "pan": (15.0, 35.0)}
 D435_HFOV = 69.0  # Intel RealSense D435 colour, horizontal (datasheet 69 x 42 deg)
 TRIES = 5
 
