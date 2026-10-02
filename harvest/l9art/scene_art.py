@@ -159,7 +159,7 @@ def build(seed: int, robot: str, arm: str, spec: dict | None, prog: dict, objs: 
             raise ValueError(f"object {h_o:.3f} m too tall for the drawer ({h_d:.3f} m)")
     objs_l = dict(objs)
     if take:  # a free table spot for the object taken out of the drawer
-        objs_l["__spot"] = {"name": "spot", "fp": (0.09, 0.09), "h": 0.0}
+        objs_l = {"__spot": {"name": "spot", "fp": (0.09, 0.09), "h": 0.0}, **objs}  # the spot first: the object itself goes into the drawer
     y_h = None
     if fx is not None:
         ln0 = next((s["link"] for s in prog["stages"] if s.get("link")), None)
@@ -169,14 +169,14 @@ def build(seed: int, robot: str, arm: str, spec: dict | None, prog: dict, objs: 
         dx, dy = o["fp"]
         r = 0.5 * math.hypot(dx, dy) + 0.02
         ok = False
-        for _ in range(60):
+        for _ in range(100):
             near = False
             if prog.get("need_obj") == "pushable" and not placed:
-                x = float(rng.uniform(0.33, 0.45))
+                x = float(rng.uniform(0.30, 0.40) if prog["judge"].get("dir") == "away" else rng.uniform(0.33, 0.45))
                 y = float(rng.uniform(*BAND_Y)) * sg
-            elif prog.get("need_obj") == "small" and (not placed or k == "__spot") and y_h is not None:
-                x = float(rng.uniform(0.30, 0.46))  # within reach beside the fixture's front (combo pick / put)
-                y = y_h + float(rng.choice([-1, 1])) * float(rng.uniform(0.14, 0.24))
+            elif prog.get("need_obj") == "small" and (not placed or k == "__spot") and y_h is not None and _ < 40:
+                x = float(rng.uniform(0.28, 0.50))  # within reach beside the fixture's front (combo pick / put)
+                y = y_h + float(rng.choice([-1, 1])) * float(rng.uniform(0.12, 0.30))
                 if not (WS_Y[0] + 0.04 <= y * sg <= WS_Y[1] - 0.02):
                     continue
                 near = True

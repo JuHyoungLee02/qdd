@@ -39,8 +39,8 @@ add("drawer_close", "drawer", [("push", "H", ("share", 0.0))],
 add("door_open", "door", [("pull", "H", ("share", 0.75))],
     ("Open the {H}.", "Swing the {H} open.", "Pull the {H} of the {F} open."),
     judge={"min_share": 0.62})
-add("door_close", "door", [("push", "H", ("share", 0.0))],
-    ("Close the {H}.", "Push the {H} shut.", "Swing the open {H} closed."),
+add("door_close", "door", [("pull", "H", ("share", 0.0))],  # grasp the handle and swing it shut (smoke: the push pre-pose was out of reach 8/8)
+    ("Close the {H}.", "Swing the {H} shut.", "Swing the open {H} closed."),
     start={"H": ("share", (0.30, 0.55))}, judge={"max_share": 0.08})  # wider doors put the free edge at the robot (smoke)
 add("slide_open", "slide", [("pull", "H", ("share", 0.85))],
     ("Slide the {H} open.", "Open the {H} by sliding it {D}.", "Push the {H} aside to open it."),
@@ -158,7 +158,7 @@ def instantiate(did: str, spec: dict | None, seed: int, obj_name: str | None = N
     if d["need_obj"] == "pushable" and d["judge"].get("dir") != "away":
         words["DIR"] = _pick(rng, ("left", "right"))
     if d["need_obj"] == "pushable":
-        words["DIST"] = str(int(_pick(rng, (8, 10, 12, 15))))
+        words["DIST"] = str(int(_pick(rng, (8, 10, 12) if d["judge"].get("dir") == "away" else (8, 10, 12, 15))))
     text = None
     order = list(rng.permutation(len(d["texts"])))
     for i in order:
