@@ -326,6 +326,30 @@ class Planner9:
         A forward walk from the transit's pre-grasp configuration often hits a joint limit on the way down (R1 Pro
         elbow joint4, replay 10-03), although another branch of the same grasp pose has a clean straight line.
         -> (N, dof) pre-grasp -> grasp joint path, or None."""
+        T = np.asarray(T_grasp_base, float)
+        P, order = self._branches(T, n_branches)
+        self.last_reverse = {"n_ik": int(len(order))}
+        for i in order:
+            Q = self.line(P[i], T, T_pre_base, step_m)
+            if Q is not None:
+                self.n_reverse = getattr(self, "n_reverse", 0) + 1
+                return Q[::-1].copy()
+        return None
+
+    def ready_ik(self, T_base, n_branches: int = 32):
+        """L9 common executor (#8): the IK branch of a ready TCP pose with the largest joint-limit margin (world as
+        loaded, self-collision on) -- the branch search of reverse_approach, for every robot.
+        -> (q (dof,), margin rad) or None."""
+        P, order = self._branches(np.asarray(T_base, float), n_branches)
+        if not len(order):
+            return None
+        lo, hi = self._limits()
+        q = P[order[0]]
+        return q.copy(), float(np.minimum(q - lo, hi - q).min())
+
+    def _branches(self, T, n_branches: int):
+        """IK branches of one tool pose (ikr: 32 seeds, self-collision, world as loaded) -> (P (n, dof) planned
+        joints, indices of the successful ones sorted by joint-limit margin, best first)."""
         from curobo.inverse_kinematics import InverseKinematics, InverseKinematicsCfg
         from curobo.types import GoalToolPose, Pose
         from .grasp9 import mat_quat
@@ -338,7 +362,6 @@ class Planner9:
             if getattr(self, "_scene", None):
                 from curobo._src.geom.types import SceneCfg
                 self.ikr.update_world(SceneCfg.create(self._scene))
-        T = np.asarray(T_grasp_base, float)
         g = GoalToolPose.from_poses({self.ikr.tool_frames[0]: Pose(
             position=self.torch.tensor(T[:3, 3][None], dtype=self.torch.float32, device=self.dev),
             quaternion=self.torch.tensor(mat_quat(T[:3, :3])[None], dtype=self.torch.float32, device=self.dev))},
@@ -350,13 +373,7 @@ class Planner9:
         P = P[:, [names.index(n) for n in self._planned]]
         lo, hi = self._limits()
         order = sorted(np.flatnonzero(ok), key=lambda i: -float(np.minimum(P[i] - lo, hi - P[i]).min()))
-        self.last_reverse = {"n_ik": int(len(order))}
-        for i in order:
-            Q = self.line(P[i], T, T_pre_base, step_m)
-            if Q is not None:
-                self.n_reverse = getattr(self, "n_reverse", 0) + 1
-                return Q[::-1].copy()
-        return None
+        return P, order
 
     def cspace(self, q, q_goal):
         """Collision-aware joint-space plan q -> q_goal (world as loaded). -> (N, dof) or None. Its own MotionPlanner:

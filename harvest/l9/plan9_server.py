@@ -130,6 +130,9 @@ class PlannerProxy:
     def cspace(self, *a, **k):
         return self._call("cspace", *a, **k)
 
+    def ready_ik(self, *a, **k):
+        return self._call("ready_ik", *a, **k)
+
     def _limits(self, *a, **k):
         return self._call("_limits", *a, **k)
 

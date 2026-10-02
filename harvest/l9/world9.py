@@ -1075,6 +1075,9 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                 # start TCP pinned R1's q4 at its limit with the TCP 0.5-0.8 m over the table: hold the ready pose
                 goal = np.asarray(self.status()["tcp"], float)
                 steps = 0
+            ready = self._ready_start(goal) if os.environ.get("L9_COMMON_EXEC") == "1" else None
+            if ready is not None and ready.get("ok"):
+                steps = 0  # L9 common executor: started at the ready branch, no Cartesian chase
             for _ in range(steps):
                 if np.linalg.norm(np.asarray(self.status()["tcp"], float) - goal) < 0.01:
                     break
@@ -1082,12 +1085,36 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             for _ in range(10):
                 self.step(goal, self.w_open, None)
             if v2r:  # arm joints by index (G1 names share no prefix)
-                return {"tcp": [round(float(v), 4) for v in self.status()["tcp"]],
-                        "q_arm": [round(float(v), 4) for v in self.env.arm_q()]}
-            jp = "panda_joint" if franka else A.joint_prefix(arm)
-            return {"tcp": [round(float(v), 4) for v in self.status()["tcp"]],
-                    "q_arm": [round(float(v), 4) for v, n in zip(self.env.robot.data.joint_pos[0].cpu().numpy(),
-                                                                 self.env.robot.joint_names) if n.startswith(jp)]}
+                out = {"tcp": [round(float(v), 4) for v in self.status()["tcp"]],
+                       "q_arm": [round(float(v), 4) for v in self.env.arm_q()]}
+            else:
+                jp = "panda_joint" if franka else A.joint_prefix(arm)
+                out = {"tcp": [round(float(v), 4) for v in self.status()["tcp"]],
+                       "q_arm": [round(float(v), 4) for v, n in zip(self.env.robot.data.joint_pos[0].cpu().numpy(),
+                                                                    self.env.robot.joint_names) if n.startswith(jp)]}
+            if ready is not None:
+                out["ready"] = ready
+            return out
+
+        def _ready_start(self, goal) -> dict | None:
+            """L9 common executor (audit 8 + 11): move the used arm to the largest joint-margin IK branch of the ready
+            TCP (goal; orientation = the start grasp orientation, or the held ready-pose orientation of a robot
+            that starts at its ready joints) with a planned joint path (rt9.Runtime.ready_path), then hold it.
+            None without a runtime; {'ok': False} keeps the old chase."""
+            rt = getattr(self, "rt", None)
+            if rt is None or not hasattr(rt, "ready_path"):
+                return None
+            quat = np.asarray(self.pl.tcp_pose()[1], float) if v2r else np.asarray(self.pl.goal_quat, float)
+            try:
+                Q, margin = rt.ready_path(np.asarray(goal, float), quat)
+            except Exception as e:  # noqa: BLE001
+                return {"ok": False, "error": str(e)[:160]}
+            if Q is None:
+                return {"ok": False, "margin": None if margin is None else round(float(margin), 4)}
+            for q in Q:
+                rt.q_target = np.asarray(q, float)
+                self.step(goal, self.w_open, None)
+            return {"ok": True, "margin": round(float(margin), 4), "n": int(len(Q))}
 
         def step(self, cmd_pos, width: float, quat=None) -> None:
             from ..teach_l8d.xart import l8s_step_band

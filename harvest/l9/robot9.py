@@ -369,6 +369,45 @@ if os.environ.get("IR_L9_R1_READY", "1") in ("1", "high") and round(R1_LEAN, 2) 
 # carry clearance of the held object's bottom over carry_base (m), drawn per episode (v2plan.carry_z): R1 only
 V2_CARRY_CLEAR = {"r1pro": (0.05, 0.10)} if os.environ.get("IR_L9_R1_CARRY", "1") == "1" else {}
 
+# ---- L9 common executor (L9_COMMON_EXEC=1, user rule 10-03 03h: one executor, robots differ only by measured data)
+CARRY_CLEAR_RANGE = (0.05, 0.10)  # every robot: held object's bottom over carry_base (m), drawn per pick; the
+# R1 range (L9v2-R1) made general; v2plan.carry_z never goes above the default carry height
+ENV_PROFILE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets9", "env_profiles")
+STEP_GATE = 0.04  # rad, the per-step arm joint gate (max_dq_rad)
+# measured tracking overshoot per robot = max measured arm step / command step cap (meta max_dq_rad over the cap in
+# effect, quantile over successful v2 episodes; tools/l9/track_lag.py). Missing robot = not measured -> the default
+# cap. The command cap is 0.04 / overshoot (never above rt9.CMD_DQ).
+TRACK_OVERSHOOT: dict = {}
+
+
+def env_profile(profile: str) -> dict:
+    """assets9/env_profiles/<profile>.json (written by tools/onboard autotune; format owner: the grip layer) or {}."""
+    import json
+    f = os.path.join(ENV_PROFILE_DIR, f"{profile}.json")
+    if not os.path.exists(f):
+        return {}
+    try:
+        return json.load(open(f, encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def carry_clear_range(profile: str) -> tuple:
+    """Carry clearance range (m) of this robot: its env profile's measured 'carry_clear_m' or the common range."""
+    r = env_profile(profile).get("carry_clear_m")
+    if isinstance(r, (list, tuple)) and len(r) == 2 and 0.0 <= float(r[0]) <= float(r[1]):
+        return float(r[0]), float(r[1])
+    return CARRY_CLEAR_RANGE
+
+
+def cmd_dq_cap(profile: str, default: float) -> float:
+    """Command step cap (rad) from the robot's measured tracking overshoot: the largest 1 mrad step whose measured
+    arm step stays under STEP_GATE, never above the default."""
+    r = float(TRACK_OVERSHOOT.get(profile) or 0.0)
+    if r <= 1.0:
+        return float(default)
+    return min(float(default), math.floor(STEP_GATE / r * 1000.0 + 1e-9) / 1000.0)
+
 
 def v2_joints_to_width(profile: str, arm: str, q) -> float:
     """Measured pad gap from the finger joint values (order = V2 arms[arm].fingers). R1 Pro: q1 + q2 (each finger

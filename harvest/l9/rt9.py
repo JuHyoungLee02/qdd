@@ -53,7 +53,48 @@ REVERSE_APPROACH = {"r1pro": os.environ.get("IR_L9_R1_REVERSE", "1") == "1"}
 GRASP_LINKS_CHECK = {"r1pro": os.environ.get("IR_L9_R1_GRASPCHK", "1") == "1"}  # L9v2-R1, see Runtime._valid
 PLACE_CHECK = {"r1pro": os.environ.get("IR_L9_R1_PLACECHK", "") == "1"}  # L9v2-R1, see Runtime._place_reach
 LIFT_SKIP = {"r1pro": os.environ.get("IR_L9_R1_LIFTSKIP", "") == "1"}  # L9v2-R1, see Runtime.plan
+# L9 common executor (opt-in, default off = unchanged; user rule 10-03 03h, audit rows 2-4, 6-8, 11, 21): the R1 / G1
+# executor fixes above for EVERY robot, robots differing only by their measured data (robot9 CARRY_CLEAR_RANGE /
+# env profile carry_clear_m, TRACK_OVERSHOOT, the sim start pose for the cuRobo locks, the IK ready branch)
+COMMON = os.environ.get("L9_COMMON_EXEC") == "1"
 CURRENT = None
+
+
+def on(table: dict, profile: str, common: bool | None = None) -> bool:
+    """A per-robot executor switch (REVERSE_APPROACH, GRASP_LINKS_CHECK, PLACE_CHECK, LIFT_SKIP): on for every
+    robot under the common executor, else the robot's own entry."""
+    return bool(COMMON if common is None else common) or bool(table.get(profile))
+
+
+def carry_range(profile: str, common: bool | None = None):
+    """Carry clearance range (m) or None (default carry height): common executor = every robot's measured / common
+    range (robot9.carry_clear_range), else the robot-only V2_CARRY_CLEAR entry."""
+    if COMMON if common is None else common:
+        return R9.carry_clear_range(profile)
+    return getattr(R9, "V2_CARRY_CLEAR", {}).get(profile)
+
+
+def cmd_dq(profile: str, common: bool | None = None) -> float:
+    """Command step cap: common executor = from the robot's measured tracking overshoot, else CMD_DQ_BY / CMD_DQ."""
+    if COMMON if common is None else common:
+        return R9.cmd_dq_cap(profile, CMD_DQ)
+    return CMD_DQ_BY.get(profile, CMD_DQ)
+
+
+def locks_from_sim(cfg: dict, names, values) -> tuple:
+    """cuRobo lock_joints (every joint the planner does not move: the idle arm, head, fingers) set to the sim's own
+    start pose (audit 21: G1 idle-arm locks were 0 = forearm over the table while the sim stowed it). Pure; joints
+    the sim does not have keep their config value. -> (cfg copy, {joint: (old, new)} for the changed ones)."""
+    import copy
+    out = copy.deepcopy(cfg)
+    lk = out["robot_cfg"]["kinematics"].get("lock_joints") or {}
+    sim = {str(n): float(v) for n, v in zip(names, values)}
+    changed = {}
+    for j in list(lk):
+        if j in sim and abs(float(lk[j]) - sim[j]) > 1e-4:
+            changed[j] = (float(lk[j]), round(sim[j], 5))
+            lk[j] = round(sim[j], 5)
+    return out, changed
 
 
 def classify_close(gap: float, w_contact: float) -> str:
@@ -190,7 +231,12 @@ class Runtime:
         self.base_link = C9.base_link(profile, arm)
         self.joints = C9.arm_joints(profile, arm)
         from .plan9_server import PlannerProxy  # cuRobo needs warp >= 1.14; the Isaac app holds warp 1.8.2
-        self.planner = PlannerProxy(C9.load_config(profile, arm), device=device)
+        cfg = C9.load_config(profile, arm)
+        self.lock_changes = None
+        if COMMON:  # audit 21: cuRobo locks = the sim start pose of every non-planned joint
+            r0 = world.env.robot
+            cfg, self.lock_changes = locks_from_sim(cfg, r0.joint_names, r0.data.default_joint_pos[0].cpu().numpy())
+        self.planner = PlannerProxy(cfg, device=device)
         self.curobo = self.planner.version
         self.style = style
         rob = world.env.robot
@@ -416,7 +462,7 @@ class Runtime:
             r_ok, _, _ = self.planner.ik(np.stack(Tp), contact_links_off=False)
             ok[idx] = r_ok
             idx = np.flatnonzero(ok)
-            if len(idx) and GRASP_LINKS_CHECK.get(self.profile):
+            if len(idx) and on(GRASP_LINKS_CHECK, self.profile):
                 # L9v2-R1: the grasp pose with the gripper links checked against everything but the target and its
                 # support (replay 10-03: 9 of 11 unplannable straight approaches had the fingers / gripper body in a
                 # fixture, holder or bucket wall at the grasp itself; the check above frees those links)
@@ -442,7 +488,7 @@ class Runtime:
             Cw["test_ok"][j] = False
         self.refresh_world(exclude=(k,), extra_boxes=extra_boxes)
         ok, margin = self._valid(k, Cw, extra_boxes=extra_boxes)
-        if PLACE_CHECK.get(self.profile) and ok.any():
+        if on(PLACE_CHECK, self.profile) and ok.any():
             ok = ok & self._place_reach(Cw, ok, k, info)
         obs = getattr(self.w, "last_obs", None)
         cam = obs.cams.get("head") if obs is not None else None
@@ -466,7 +512,7 @@ class Runtime:
             self.picks.append({"obj": k, "choice_fail": "no valid candidate", "valid_stats": getattr(self, "_vstats", None)})
         if gc is not None:
             gc.meta["valid_stats"] = getattr(self, "_vstats", None)
-            cr = getattr(R9, "V2_CARRY_CLEAR", {}).get(self.profile)
+            cr = carry_range(self.profile)
             if cr is not None:  # L9v2-R1: per-episode carry clearance draw (range, robot-specific)
                 rng = np.random.default_rng([seed, 913, len(self.picks)])
                 gc.carry_clear = float(rng.uniform(*cr))
@@ -505,7 +551,7 @@ class Runtime:
         T_obj = T_of(c, q_obj)
         dz = VP.draws(int(getattr(self.w, "vseed", 0) or 0), len(self.picks))["place_dz"]
         yaws = (0.0,) if (info.get("place_pose") or {}).get("kind") == "oriented" else self.YAW_TRIES
-        cr = getattr(R9, "V2_CARRY_CLEAR", {}).get(self.profile) or (0.05, 0.10)
+        cr = carry_range(self.profile) or (0.05, 0.10)
         Ts, own = [], []
         for i in idx:
             T_og = P9.inv_T(T_obj) @ Cw["T"][i]
@@ -739,7 +785,7 @@ class Runtime:
         if not hold:
             self.held = None
         step, cmd = VP.plan(self.status2(st), info, table_z, w_open, gc, self.held, cam=self._carry_cam())
-        if step == "lift_clear" and LIFT_SKIP.get(self.profile) and getattr(self, "_lift_clear_failed", 0) and \
+        if step == "lift_clear" and on(LIFT_SKIP, self.profile) and getattr(self, "_lift_clear_failed", 0) and \
                 getattr(self, "_last_step", None) == "lift_clear":
             # L9v2-R1: the straight-up clearance move is out of the leaned arm's reach (tall object: target
             # 13 cm higher, 30 identical failed calls in pilot 10-03); the transit to the pre-grasp is collision-
@@ -876,14 +922,14 @@ class Runtime:
         T_pre = gc.T.copy()                             # activation distance it collided with fingertips 4 mm above
         T_pre[:3, 3] = gc.pre                            # it (pilot)
         Qa = self.planner.pose(q0, self.to_base(T_pre))
-        if Qa is None and not REVERSE_APPROACH.get(self.profile):
+        if Qa is None and not on(REVERSE_APPROACH, self.profile):
             self._dump_fail("transit", q0, T_pre)
             return {"ok": False, "status": "transit to the pre-grasp failed", "approach": None, "grasp": None,
                     "lift": None}
         self.refresh_world(exclude=(tg,), below_z=self._bottom_z(tg) - 0.02, extra_boxes=extra_boxes)
         Qg = None if Qa is None else self.planner.line(Qa[-1], self.to_base(T_pre), self.to_base(gc.T), 0.008)
         # the straight approach touches the target by design only
-        if Qg is None and REVERSE_APPROACH.get(self.profile):
+        if Qg is None and on(REVERSE_APPROACH, self.profile):
             # L9v2-R1: walk the straight approach back from a grasp-pose IK branch, then a joint-space transit to
             # its pre-grasp end with the target as a full obstacle (same worlds as the forward path)
             Qr = self.planner.reverse_approach(self.to_base(gc.T), self.to_base(T_pre), 0.008)
@@ -904,6 +950,22 @@ class Runtime:
         T_l[2, 3] += gc.lift_dz
         Ql = self.planner.line(Qg[-1], self.to_base(gc.T), self.to_base(T_l), 0.008)
         return {"ok": True, "status": "ok", "approach": Qa, "grasp": Qg, "lift": Ql}
+
+    def ready_path(self, pos, quat):
+        """L9 common executor (audit 8 + 11): the start of every robot = the largest joint-margin IK branch of its
+        ready TCP (pos / quat in the world frame), reached by a collision-checked joint-space plan from the reset
+        joints during the preroll (no Cartesian chase of another robot's start TCP). -> (Q resampled or None, margin
+        rad or None); None = keep the old preroll."""
+        self.refresh_world()
+        r = self.planner.ready_ik(self.to_base(T_of(pos, quat)))
+        if r is None:
+            return None, None
+        qr, margin = np.asarray(r[0], float), float(r[1])
+        q0 = np.clip(self.arm_q(), self.q_lo + 0.03, self.q_hi - 0.03)
+        if np.abs(qr - q0).max() < 1e-3:
+            return qr[None].copy(), margin
+        Q = self._guard(self.planner.cspace(q0, qr))
+        return (None if Q is None else self._resample(Q)), margin
 
     def _mark(self, *a) -> None:
         """Diagnosis call log marker (L9V2_DEBUG_DIR only; the planner process writes it)."""
@@ -971,7 +1033,7 @@ class Runtime:
         s = self.style or {}
         kind = s.get("profile", "minjerk")
         v = float(s.get("v_avg", 0.09) or 0.09)
-        return P9.resample(Q, dq_max=CMD_DQ_BY.get(self.profile, CMD_DQ), kind=kind if kind in P9.PEAK else "minjerk",
+        return P9.resample(Q, dq_max=cmd_dq(self.profile), kind=kind if kind in P9.PEAK else "minjerk",
                            split=float(s.get("split", 0.7)), slow=slow * max(1.0, 0.09 / v))
 
     # ------------------------------------------------------------------ gripper events
