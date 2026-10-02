@@ -700,6 +700,7 @@ class Runtime:
                 return self._resample(Q0), "lifted a little; the carry path is blocked", None
             if hold:  # L9v2-DIAG 7: the next call chooses the place yaw again
                 self.timeline["held_move_failed"] = self.timeline.get("held_move_failed", 0) + 1
+            self._dump_fail(step or "move", q0, T)  # L9v2-DIAG 9: carry_up / lift_clear / reopen dumps (R1 Pro)
             return None, "no collision-free path to the target", None
         if Q0 is not None:
             Q = np.concatenate([Q0, Q])
