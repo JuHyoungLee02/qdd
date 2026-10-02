@@ -39,9 +39,14 @@ def _is_range(v) -> bool:
 
 
 def _ranges(v) -> list:
-    """[lo, hi] or [[lo, hi], ...] -> list of ranges."""
+    """[lo, hi] or [[lo, hi], ...] -> list of ranges; a flat list of > 2 numbers is a grid of sampled values (each
+    covers +- half the smallest grid step)."""
     if _is_range(v):
         return [list(v)]
+    if isinstance(v, (list, tuple)) and len(v) > 2 and all(isinstance(x, (int, float)) for x in v):
+        s = sorted(float(x) for x in v)
+        h = min((b - a for a, b in zip(s, s[1:]) if b > a), default=1.0) / 2
+        return [[x - h, x + h] for x in s]
     return [list(r) for r in v]
 
 

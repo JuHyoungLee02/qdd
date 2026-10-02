@@ -64,3 +64,9 @@ def test_load_and_flag(tmp_path, monkeypatch):
         E.load("bad", str(bad))
     monkeypatch.delenv("L9_ENV_PROFILE", raising=False)
     assert E.active("ffw_sg2") is None
+
+
+def test_yaw_grid_form():
+    p = _p(hand={"yaw_deg_ok": [0, 30, 60, 90, 300, 330], "yaw_deg_bad": [240, 270]})
+    assert E.validate(p) == []
+    assert E.yaw_ok(p, 40) and not E.yaw_ok(p, 200) and not E.yaw_ok(p, 250)
