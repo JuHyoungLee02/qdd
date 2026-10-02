@@ -20,12 +20,15 @@ import numpy as np
 GATE = 0.04
 
 
-def scan(roots, motion_prefix: str = "l9v2", success_only: bool = True) -> dict:
-    """robot -> list of max_dq_rad over the episodes under roots."""
+def scan(roots, motion_prefix: str = "l9v2", success_only: bool = True, since: float | None = None) -> dict:
+    """robot -> list of max_dq_rad over the episodes under roots (since: meta.json mtime >= this epoch, i.e. only
+    episodes run with the cap given)."""
     out: dict = {}
     for root in roots:
         for d, _, files in os.walk(root):
             if "meta.json" not in files:
+                continue
+            if since is not None and os.path.getmtime(os.path.join(d, "meta.json")) < since:
                 continue
             try:
                 m = json.load(open(os.path.join(d, "meta.json"), encoding="utf-8"))
@@ -58,9 +61,15 @@ def main(argv=None) -> None:
     ap.add_argument("--cap", type=float, default=0.034, help="the command cap in effect for these runs")
     ap.add_argument("--q", type=float, default=0.95)
     ap.add_argument("--all", action="store_true", help="failed episodes too")
+    ap.add_argument("--since", default=None, help="'YYYY-MM-DD HH:MM' local time: episodes written after the cap "
+                                                  "change only (0.034 since 2026-10-02 11:07 KST, 95e8ce0)")
     a = ap.parse_args(argv)
-    res = {k: summarize(v, a.cap, a.q) for k, v in sorted(scan(a.roots, success_only=not a.all).items())}
-    print(json.dumps({"cap": a.cap, "robots": res}, indent=1))
+    since = None
+    if a.since:
+        import datetime
+        since = datetime.datetime.strptime(a.since, "%Y-%m-%d %H:%M").timestamp()
+    res = {k: summarize(v, a.cap, a.q) for k, v in sorted(scan(a.roots, success_only=not a.all, since=since).items())}
+    print(json.dumps({"cap": a.cap, "since": a.since, "robots": res}, indent=1))
 
 
 if __name__ == "__main__":
