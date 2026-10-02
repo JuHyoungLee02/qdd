@@ -382,17 +382,45 @@ FX_FN = {"wall_shelf": _fx_wall_shelf, "high_cubbies": _fx_high_cubbies, "low_sh
          "slope": _fx_slope}
 
 
+HIGH_FIXTURES = ("wall_shelf", "high_cubbies")  # of FIXTURES: the two that reach place_class "high" (task9v2 band
+# "high"/"above_eye") -- shelf_high / compartment nodes (owner 10-03: band "high" was 0.42 % of rendered steps, 0.27 %
+# of successes; user wants eye-height-and-above / shelf placements). shelf_low/gap/slope stay low/desk, no lever here.
+
+
+def high_share() -> float:
+    """Opt-in extra chance (env L9_HIGH_SHARE, default 0 = off, current behaviour byte-identical) of a scene also
+    getting one of HIGH_FIXTURES, on top of the normal add_fixtures() draw -- raises how often a high place is
+    OFFERED; whether it is actually reachable/used still goes through the existing per-robot `rm` + choose_lift
+    (usable()) reach/visibility check downstream, same as every other node, and whether an episode targets it still
+    goes through alloc9's definition weighting (def_weight). General: no robot branch, same for every family/rule."""
+    try:
+        return max(0.0, float(os.environ.get("L9_HIGH_SHARE", "0") or 0.0))
+    except ValueError:
+        return 0.0
+
+
 def add_fixtures(b: _B, family: str) -> list:
     """Extra place fixtures (role "fixture", nodes flagged fixture=...) beyond the furniture top: a wall shelf or open
     compartments above eye level, a low shelf under a table, a narrow gap between two blocks, an inclined board.
-    Drawn after the v1 parts. -> names added."""
+    Drawn after the v1 parts. L9_HIGH_SHARE (off by default): an independent extra draw adds one of HIGH_FIXTURES
+    (picked at random between the two, so neither shelf type takes over) when the normal draw above did not already
+    place one. -> names added."""
     rng = b.rng
-    if rng.random() >= FIXTURE_P:
-        return []
+    hs = high_share()
     out = []
-    for name in [FIXTURES[int(k)] for k in rng.permutation(len(FIXTURES))][: int(rng.integers(1, 3))]:
-        if len(b.parts) + 3 > N_SLOTS - 1:
-            break
+    if rng.random() < FIXTURE_P:
+        for name in [FIXTURES[int(k)] for k in rng.permutation(len(FIXTURES))][: int(rng.integers(1, 3))]:
+            if len(b.parts) + 3 > N_SLOTS - 1:
+                break
+            n0 = len(b.nodes)
+            if FX_FN[name](b, len(out)):
+                for n in b.nodes[n0:]:
+                    n["group"] = f"fx{len(out)}"
+                out.append(name)
+    elif hs <= 0:
+        return []
+    if hs > 0 and not (set(out) & set(HIGH_FIXTURES)) and len(b.parts) + 3 <= N_SLOTS - 1 and rng.random() < hs:
+        name = HIGH_FIXTURES[int(rng.integers(len(HIGH_FIXTURES)))]
         n0 = len(b.nodes)
         if FX_FN[name](b, len(out)):
             for n in b.nodes[n0:]:

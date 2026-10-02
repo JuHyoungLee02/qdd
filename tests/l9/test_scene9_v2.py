@@ -109,6 +109,32 @@ def test_heldout_family_split():
     assert len(tr) + len(ho) == len(S.all_rules())
 
 
+def test_high_share_env_lever(rm, monkeypatch):
+    """L9_HIGH_SHARE (owner 10-03: place_height band "high" was 0.42 % of rendered steps) raises how often a scene
+    offers a HIGH_FIXTURES node, off by default (unset env -> high_share() == 0, same draw as before: the first
+    `rng.random()` branch below is untouched), without collapsing to a single shelf type."""
+    monkeypatch.delenv("L9_HIGH_SHARE", raising=False)
+    assert S.high_share() == 0.0
+    f, r = "shelf_front", "stepped2"
+
+    def frac(n=150, seed0=50000):
+        hi, kinds = 0, set()
+        for i in range(n):
+            sc = S.sample(f, r, seed0 + i, "right", rm)
+            got = set(sc["params"]["fixtures"]) & set(S.HIGH_FIXTURES)
+            if got:
+                hi += 1
+                kinds |= got
+        return hi / n, kinds
+
+    base, _ = frac()
+    monkeypatch.setenv("L9_HIGH_SHARE", "0.9")
+    assert S.high_share() == pytest.approx(0.9)
+    boosted, kinds = frac()
+    assert boosted > base + 0.4  # well above the un-boosted draw
+    assert kinds == set(S.HIGH_FIXTURES)  # both shelf types still appear (diversity, no collapse to one kind)
+
+
 def test_material_hints(rm):
     seen = set()
     for f in ("kitchen", "lab_bench", "laundry", "warehouse_rack", "office"):

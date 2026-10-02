@@ -263,6 +263,30 @@ def test_allocation_totals_and_floors():
     assert AL.allocate(defs, total=15000, min_per_def=60) == al  # deterministic
 
 
+def test_allocation_high_share_env(monkeypatch):
+    """L9_HIGH_SHARE at plan time (alloc9.allocate): default off leaves allocation unchanged (env unset here ==
+    production default); set, the "high"-place definitions' OVERALL share of the 15,000 (floor included) approaches
+    the target, every robot still covers every family (diversity gate), and held-out definitions still get only
+    the floor (not inflated by the lever)."""
+    defs = {k: d.family for k, d in V2.DEFS_V2.items() if not d.extra.get("requires")}
+    high_ids = {k for k in defs if AL.is_high_def(k)}
+    assert high_ids  # some real definitions place "high"
+    monkeypatch.delenv("L9_HIGH_SHARE", raising=False)
+    al0 = AL.allocate(defs, total=15000, min_per_def=60)
+    share0 = sum(sum(al0[k].values()) for k in high_ids) / 15000
+    monkeypatch.setenv("L9_HIGH_SHARE", "0.10")
+    al1 = AL.allocate(defs, total=15000, min_per_def=60)
+    share1 = sum(sum(al1[k].values()) for k in high_ids) / 15000
+    assert share1 == pytest.approx(0.10, abs=0.01) and share1 > share0 + 0.05
+    for r in AL.ROBOT_SHARE:
+        fams = {defs[k] for k, v in al1.items() if v.get(r, 0) > 0}
+        assert fams == set(defs.values())
+    ho = AL.holdout_defs(defs)
+    al2 = AL.allocate(defs, total=15000, min_per_def=60, holdout=ho, high_share=0.10)
+    for k in set(ho) & high_ids:
+        assert sum(al2[k].values()) == 60  # holdout floor, not inflated by the lever
+
+
 def test_allocation_exclusion_moves_to_other_robots():
     defs = {"a": "select", "b": "relation", "c": "tidy"}
     al = AL.allocate(defs, total=600, min_per_def=60, exclude={("franka_mast", "a")})

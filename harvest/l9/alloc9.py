@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+import os
 from collections import Counter, defaultdict
 
 from . import task9v2 as V2
@@ -32,6 +33,51 @@ def def_weight(k: str, f: str) -> float:
     d = V2.DEFS_V2.get(k)
     n = len(d.steps) if d is not None else 1
     return family_weight(f) * (1.0 + STEP_WEIGHT * (n - 1))
+
+
+def is_high_def(k: str) -> bool:
+    """A definition whose static profile (task9v2.def_profile) places at least one step in height class "high"
+    (shelf_high / wall_shelf / cupboard / `higher` dst nodes) -- the plan-time half of the high-place lever (the
+    scene-time half is scene9.high_share): paired with harvest.l9.scene9.high_share so the share of PLANNED rows
+    that even try a high dst approaches env L9_HIGH_SHARE, not just the share of scenes that happen to offer one."""
+    d = V2.DEFS_V2.get(k)
+    return d is not None and "high" in V2.def_profile(d)["place_height"]
+
+
+def env_high_share() -> float:
+    try:
+        return max(0.0, float(os.environ.get("L9_HIGH_SHARE", "0") or 0.0))
+    except ValueError:
+        return 0.0
+
+
+def _apply_high_share(w: dict, ho: set, hs: float, total: int, min_per_def: int) -> dict:
+    """Rescale the non-held-out "high" definitions' weights (relative weights inside each group unchanged) so their
+    OVERALL share of `total` -- floor (every id, high or not, already gets >= min_per_def) + the weighted rest --
+    comes out ~hs, not just their share of the weighted rest (the floor alone can already dwarf a small `rest`
+    share if few definitions are "high", so matching `rest`-share to hs understates the final share). General: no
+    robot branch, keys only off def_profile's place_height and the same counts every `allocate` call already has."""
+    if hs <= 0 or hs >= 1:
+        return w
+    high = [k for k in w if is_high_def(k)]  # every "high" def, including held-out (it still gets the floor)
+    nonho_high = [k for k in high if k not in ho]
+    if not nonho_high:
+        return w  # nothing left to move (e.g. every "high" def is held out)
+    rest = total - min_per_def * len(w)
+    if rest <= 0:
+        return w
+    desired_rest_high = hs * total - min_per_def * len(high)
+    target_rest_share = max(0.0, min(0.999, desired_rest_high / rest))
+    h_sum = sum(w[k] for k in nonho_high)
+    n_sum = sum(w[k] for k in w if k not in ho) - h_sum
+    if h_sum <= 0:
+        return w
+    target = (target_rest_share / (1.0 - target_rest_share)) * n_sum if n_sum > 0 else h_sum
+    scale = target / h_sum
+    out = dict(w)
+    for k in nonho_high:
+        out[k] = w[k] * scale
+    return out
 
 
 def family_weight(f: str) -> float:
@@ -111,16 +157,22 @@ def holdout_defs_hashed(defs: dict, share: float = HOLDOUT_SHARE) -> list:
 
 
 def allocate(defs: dict, total: int = 15000, min_per_def: int = 60, robot_share: dict | None = None,
-             exclude=(), holdout=()) -> dict:
+             exclude=(), holdout=(), high_share: float | None = None) -> dict:
     """defs {id: family} -> {id: {robot: successes}}. Every definition gets >= min_per_def; the rest goes by family
     weight (held-out definitions get only the floor); each definition's count is split over the robots that may run
-    it (exclude = {(robot, id)}) so the robot totals follow robot_share."""
+    it (exclude = {(robot, id)}) so the robot totals follow robot_share.
+    high_share: target share of the weighted (non-floor) budget for "high"-place definitions (is_high_def); None
+    (default) reads env L9_HIGH_SHARE (0 = off, current allocations unchanged bit-for-bit) so every caller of
+    `allocate` (tools/l9/plan.py, plan_pilot_v2.py, plan_prod_v2.py) plans the share instead of hoping a scene
+    happens to offer one (paired with scene9.high_share, the scene-time half of the same lever)."""
     share = dict(robot_share or ROBOT_SHARE)
     ids = sorted(defs)
     if len(ids) * min_per_def > total:
         raise ValueError(f"{len(ids)} definitions x {min_per_def} > {total}")
     ho = set(holdout)
     w = {k: (0.0 if k in ho else def_weight(k, defs[k])) for k in ids}
+    hs = env_high_share() if high_share is None else max(0.0, float(high_share))
+    w = _apply_high_share(w, ho, hs, total, min_per_def)
     rest = total - len(ids) * min_per_def
     sw = sum(w.values()) or 1.0
     per = _round_to({k: min_per_def + rest * w[k] / sw for k in ids}, total)
