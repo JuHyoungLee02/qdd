@@ -82,7 +82,7 @@ def main():
         cnt = defaultdict(int)
         for r in sel:
             # run9: one arm, one head-camera mode and one ext_p per process -> group by all three
-            side = (r.get("arm") or "x")[0] + (f"e{round(float(r['ext_p']) * 10)}" if r.get("ext_p") else "") + (str(r["hcam"])[:2] if r.get("hcam") else "")
+            side = (r.get("arm") or "x")[0] + ("" if r.get("ext_p") is None else f"e{round(float(r['ext_p']) * 10)}") + (str(r["hcam"])[:2] if r.get("hcam") else "")
             r = dict(r, job=f"gab_{robot}_{side}{cnt[side] // k:02d}")
             cnt[side] += 1
             r.pop("pilot", None)
