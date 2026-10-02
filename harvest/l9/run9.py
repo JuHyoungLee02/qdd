@@ -191,6 +191,9 @@ def main(argv=None):
         if a.v2:
             from .rt9 import install as v2_install
             v2_install(world, robot, arm, allow_untested=a.v2_untested)
+            if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(a.out)), "G1B_DIAG")):
+                from .g1b_diag import install as g1b_install  # independent G1 team diagnostics (opt-in)
+                g1b_install(world.rt)
         elif a.live_exec:
             from .rtlive9 import install as live_install
             live_install(world, robot, arm, allow_untested=a.v2_untested)
