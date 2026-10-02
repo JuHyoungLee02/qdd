@@ -103,6 +103,59 @@ def test_phase_fsm_rejects_unknown_phase():
         B.handover_phase("not_a_phase", True, True, True, True, True)
 
 
+def test_all_40_defs_and_robot_eligibility():
+    assert len(B.ALL_BIM_DEFS) == 40
+    assert set(B.ROBOT_CATEGORIES) == {"ffw_sg2", "r1pro", "g1"}
+    assert "B" not in B.ROBOT_CATEGORIES["g1"]  # owner 10-02: G1 excluded from category B (payload)
+    for robot in ("ffw_sg2", "r1pro"):
+        assert set(B.ROBOT_CATEGORIES[robot]) == set("ABCDEF")
+
+
+@pytest.mark.parametrize("defs,n", [(B.BIM_B_DEFS, 6), (B.BIM_C_DEFS, 6), (B.BIM_D_DEFS, 6), (B.BIM_E_DEFS, 4),
+                                    (B.BIM_F_DEFS, 6)])
+def test_category_def_counts(defs, n):
+    assert len(defs) == n
+
+
+def test_lift_phase_fsm_requires_both_closed_before_lift():
+    p = "approach"
+    p = B.lift_phase(p, True, False, False, False, False, False)
+    assert p == "close_gate"  # one side closed moves out of "approach"...
+    p = B.lift_phase(p, True, False, False, False, False, False)
+    assert p == "close_gate"  # ...but the sync gate holds until BOTH are closed
+    p = B.lift_phase(p, True, True, False, False, False, False)
+    assert p == "lift"
+    p = B.lift_phase(p, True, True, True, False, False, False)
+    assert p == "carry"
+    p = B.lift_phase(p, True, True, True, True, False, False)
+    assert p == "place_gate"
+    p = B.lift_phase(p, True, True, True, True, True, True)
+    assert p == "done"
+
+
+def test_lift_phase_fsm_rejects_unknown_phase():
+    with pytest.raises(ValueError):
+        B.lift_phase("bogus", True, True, True, True, True, True)
+
+
+def test_success_b_requires_sync_gate_and_table_clearance():
+    good = B.success_b((0.4, 0.0), (0.4, 0.0), both_closed_before_lift=True, min_table_gap_m=0.05)
+    assert good["ok"] is True
+    no_gate = B.success_b((0.4, 0.0), (0.4, 0.0), both_closed_before_lift=False, min_table_gap_m=0.05)
+    assert no_gate["ok"] is False
+    dragged = B.success_b((0.4, 0.0), (0.4, 0.0), both_closed_before_lift=True, min_table_gap_m=0.0)
+    assert dragged["ok"] is False
+
+
+def test_success_d_both_placed_no_self_collision():
+    good = B.success_d((0.4, 0.1), (0.4, 0.1), (0.4, -0.1), (0.4, -0.1), self_collisions=0)
+    assert good["ok"] is True
+    collided = B.success_d((0.4, 0.1), (0.4, 0.1), (0.4, -0.1), (0.4, -0.1), self_collisions=1)
+    assert collided["ok"] is False
+    off = B.success_d((0.4, 0.2), (0.4, 0.1), (0.4, -0.1), (0.4, -0.1), self_collisions=0)
+    assert off["ok"] is False
+
+
 def test_success_a_gate():
     g = B.success_a((0.40, 0.01), (0.40, 0.0), overlap_ticks=3)
     assert g["ok"] is True and g["place_err_m"] == pytest.approx(0.01, abs=1e-4)

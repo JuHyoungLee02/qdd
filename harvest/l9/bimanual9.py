@@ -28,6 +28,70 @@ for _name, _cats in BIM_A_OBJECTS.items():
     BIM_A_DEFS[f"handover_{_name}_rl"] = {"cats": _cats, "giver": "right", "receiver": "left", "family": "bim_a"}
 assert len(BIM_A_DEFS) == 12, len(BIM_A_DEFS)
 
+# category B (research doc table rows 13-18): two-hand lift/carry/place, symmetric, one object each (sync=True,
+# role=lead for both -- no giver/receiver). G1 excluded (owner 10-02: payload; B is AI Worker + R1 Pro only).
+# `cats` is a best-effort mapping onto the existing catalog (spec note: no two-handled-pot / long-bar assets
+# confirmed in the catalog yet -- "no doors/drawers... existing assets only" per the owner's brief, so an item here
+# with no matching pool row at draw time is simply never drawn, not a new asset).
+BIM_B_DEFS = {
+    "lift_tray": {"cats": ("tray",), "family": "bim_b"}, "lift_pot": {"cats": ("pot",), "family": "bim_b"},
+    "lift_big_box": {"cats": ("box",), "family": "bim_b", "big": True},
+    "lift_basket": {"cats": ("basket",), "family": "bim_b"}, "lift_crate": {"cats": ("crate", "bin"), "family": "bim_b"},
+    "lift_bar": {"cats": ("bar", "rod"), "family": "bim_b"},
+}
+assert len(BIM_B_DEFS) == 6, len(BIM_B_DEFS)
+
+# category C (research doc rows 19-24): one arm holds (role=support, gripper="hold", drift-bounded), the other
+# manipulates (role=lead). All three robots (A/C/E/F per owner's brief).
+BIM_C_DEFS = {
+    "hold_bowl_fill": {"hold_cats": ("bowl",), "family": "bim_c"},
+    "hold_basket_fill": {"hold_cats": ("basket",), "family": "bim_c"},
+    "hold_openbox_fill": {"hold_cats": ("box",), "family": "bim_c"},  # open box (support kind "wide")
+    "hold_tray_load": {"hold_cats": ("tray",), "family": "bim_c"},
+    "hold_cup_pour": {"hold_cats": ("cup", "mug"), "pour_cats": ("bottle",), "family": "bim_c"},
+    "hold_pot_lid": {"hold_cats": ("pot",), "lid_cats": ("lid",), "family": "bim_c"},
+}
+assert len(BIM_C_DEFS) == 6, len(BIM_C_DEFS)
+
+# category D (research doc rows 25-30): two independent single-arm placements in the same scene, pre-filtered
+# (design time, not labeling time: research doc §(d)) so the two targets' workspaces do not overlap.
+BIM_D_DEFS = {
+    "indep_cup_cup": {"cats_left": ("cup",), "cats_right": ("cup",), "family": "bim_d"},
+    "indep_can_bottle": {"cats_left": ("can",), "cats_right": ("bottle",), "family": "bim_d"},
+    "indep_block_block": {"cats_left": ("block",), "cats_right": ("block",), "family": "bim_d"},
+    "indep_bottle_cup": {"cats_left": ("bottle",), "cats_right": ("cup", "mug"), "family": "bim_d"},
+    "indep_box_box": {"cats_left": ("box",), "cats_right": ("box",), "family": "bim_d"},
+    "indep_bowl_bowl": {"cats_left": ("bowl",), "cats_right": ("bowl",), "family": "bim_d"},
+}
+assert len(BIM_D_DEFS) == 6, len(BIM_D_DEFS)
+
+# category E (research doc rows 31-34): handover + a regrasp/reorientation in the receiver's hand (quantised to the
+# 15-deg wrist bin, same as the existing single-arm label resolution). A/C/E/F robots (no G1 payload concern: small
+# objects only, matching the owner's "G1: A/C/E/F" brief).
+BIM_E_DEFS = {
+    "regrasp_box_face": {"cats": ("box",), "family": "bim_e"},
+    "regrasp_cup_upright": {"cats": ("cup", "mug"), "family": "bim_e", "start": "lying"},
+    "regrasp_bottle_cap": {"cats": ("bottle",), "family": "bim_e"},
+    "regrasp_tray_level": {"cats": ("tray",), "family": "bim_e"},
+}
+assert len(BIM_E_DEFS) == 4, len(BIM_E_DEFS)
+
+# category F (research doc rows 35-40): one arm aligns/holds a base, the other inserts/stacks into it.
+BIM_F_DEFS = {
+    "align_pot_lid": {"base_cats": ("pot",), "ins_cats": ("lid",), "family": "bim_f"},
+    "align_bowl_nest": {"base_cats": ("bowl",), "ins_cats": ("bowl",), "family": "bim_f"},
+    "align_cup_saucer": {"base_cats": ("tray",), "ins_cats": ("cup", "mug"), "family": "bim_f"},
+    "align_bottle_rack": {"base_cats": ("holder",), "ins_cats": ("bottle",), "family": "bim_f"},
+    "align_box_in_box": {"base_cats": ("box",), "ins_cats": ("box",), "family": "bim_f"},
+    "align_crate_shelf": {"base_cats": ("crate", "bin"), "ins_cats": (), "family": "bim_f"},  # the shelf is a node
+}
+assert len(BIM_F_DEFS) == 6, len(BIM_F_DEFS)
+
+ALL_BIM_DEFS = {**BIM_A_DEFS, **BIM_B_DEFS, **BIM_C_DEFS, **BIM_D_DEFS, **BIM_E_DEFS, **BIM_F_DEFS}
+assert len(ALL_BIM_DEFS) == 40, len(ALL_BIM_DEFS)  # owner 10-02: 40 definitions total (research doc)
+# robot x category eligibility (owner's brief, 2026-10-02): AI Worker / R1 Pro = all; G1 = A/C/E/F only (no B: payload)
+ROBOT_CATEGORIES = {"ffw_sg2": "ABCDEF", "r1pro": "ABCDEF", "g1": "ACEF"}
+
 GRIPPERS = ("grasp", "release", "hold")  # research doc §(d): "hold" is new (role=support, contact maintained)
 ROLES = ("lead", "support", "independent")
 
@@ -124,6 +188,54 @@ def success_a(final_xy, target_xy, tol: float = 0.03, floor_touched: bool = Fals
     ok = (err <= tol) and (not floor_touched) and (overlap_ticks >= 1)
     return {"ok": bool(ok), "place_err_m": round(err, 4), "floor_touched": bool(floor_touched),
             "overlap_ticks": int(overlap_ticks)}
+
+
+# ---------------------------------------------------------------------------------------------- pure: category B
+# (two-hand lift) phase FSM. Mirror image of A's gate: here BOTH grippers must close before EITHER lifts (research
+# doc §(c): "두 그리퍼 모두 닫힌 뒤에만 상승 시작"), then both carry together (common time axis, doc §(d).2 -- checked
+# post hoc in sim, not solved for jointly), then both release only once the object rests on the target surface.
+LIFT_PHASES = ("approach", "close_gate", "lift", "carry", "place_gate", "done")
+
+
+def lift_phase(phase: str, left_closed: bool, right_closed: bool, lifted: bool, at_target: bool,
+               left_rest: bool, right_rest: bool) -> str:
+    if phase not in LIFT_PHASES:
+        raise ValueError(f"phase {phase!r}: one of {LIFT_PHASES}")
+    if phase == "approach":
+        return "close_gate" if (left_closed or right_closed) else phase
+    if phase == "close_gate":  # the sync gate: neither arm lifts until the OTHER has closed too
+        return "lift" if (left_closed and right_closed) else phase
+    if phase == "lift":
+        return "carry" if lifted else phase
+    if phase == "carry":
+        return "place_gate" if at_target else phase
+    if phase == "place_gate":
+        return "done" if (left_rest and right_rest) else phase
+    return "done"
+
+
+def success_b(final_xy, target_xy, tol: float = 0.03, both_closed_before_lift: bool = False,
+              min_table_gap_m: float = 0.0) -> dict:
+    """Research doc §(c) category-B gate: the sync-close gate was honoured, the carried object kept clearance over
+    the table (never dragged / dropped mid-carry), and the final drop point is within tolerance."""
+    err = float(math.hypot(final_xy[0] - target_xy[0], final_xy[1] - target_xy[1]))
+    ok = both_closed_before_lift and min_table_gap_m > 0.0 and err <= tol
+    return {"ok": bool(ok), "place_err_m": round(err, 4), "both_closed_before_lift": bool(both_closed_before_lift),
+            "min_table_gap_m": round(float(min_table_gap_m), 4)}
+
+
+# ---------------------------------------------------------------------------------------------- pure: category D
+# (simultaneous independent placement) success gate -- no new phase FSM needed: each arm runs its OWN ordinary
+# single-arm pick-place (task9/rt9.Runtime, unmodified), concurrently, with `other_arm_boxes` (see the impure
+# section) as the only cross-arm coupling. The only bimanual-specific check is here: both placed within tolerance,
+# zero self-collision events logged (research doc §(c): "자가충돌 0회").
+def success_d(final_xy_left, target_xy_left, final_xy_right, target_xy_right, tol: float = 0.03,
+              self_collisions: int = 0) -> dict:
+    el = float(math.hypot(final_xy_left[0] - target_xy_left[0], final_xy_left[1] - target_xy_left[1]))
+    er = float(math.hypot(final_xy_right[0] - target_xy_right[0], final_xy_right[1] - target_xy_right[1]))
+    ok = el <= tol and er <= tol and self_collisions == 0
+    return {"ok": bool(ok), "place_err_left_m": round(el, 4), "place_err_right_m": round(er, 4),
+            "self_collisions": int(self_collisions)}
 
 
 # ---------------------------------------------------------------------------------------------- impure: runtime

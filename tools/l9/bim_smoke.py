@@ -87,7 +87,10 @@ def main(argv=None):
                 results.append({"seed": seed, "ok": False, "status": "no scene / object draw"})
                 continue
             light, head = V.pick_light_family(sd, "bim_a"), V.head_pose(sd)
+            from harvest.l9 import collect9 as C9L
+            C9L.register_task(ep)  # harvest.sim.tasks.TASKS[T9_TASK]: world9.reset() needs a registered task
             world.prepare(sc, ep, light, head, sd)
+            world.reset(sd, C9L.T9_TASK)  # builds world.pl (OraclePlanner) -- rt9.Runtime / bimanual9 need it
             obj_key = ep["steps"][0][0]
             print("DRAW " + json.dumps({"seed": seed, "obj": obj_key, "wall_s": round(time.time() - t0, 1)}),
                   flush=True)
