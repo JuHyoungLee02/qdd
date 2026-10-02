@@ -337,10 +337,14 @@ class Planner9:
         """Attach the held objects on every solver. Automatic sphere fitting gave 26 spheres for a large object and
         raised ('only 16 sphere slots'), which killed the whole job (pilot 10-02): fit at most 16, then fewer; if no
         fit works, plan without the attachment (False) instead of crashing."""
+        fit = os.environ.get("L9_ATTACH_FIT", "voxel")  # MORPHIT (Adam fit) took 6 s per attach = 28 % of a lane's
+        # wall (10-02 A/B timing); the held objects are boxes: the voxel fit (bbox grid + SDF) covers them
         for n in self.ATTACH_SPHERES:
             try:
                 for m in self._managers():
-                    m.attach_from_scene(self._js(q), names, num_spheres=n)
+                    import inspect
+                    ft = type(inspect.signature(m.attach_from_scene).parameters["sphere_fit_type"].default)
+                    m.attach_from_scene(self._js(q), names, num_spheres=n, sphere_fit_type=ft(fit))
                 self.attached = names
                 return True
             except (ValueError, RuntimeError):
