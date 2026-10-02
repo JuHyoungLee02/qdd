@@ -41,7 +41,7 @@ add("door_open", "door", [("pull", "H", ("share", 0.75))],
     judge={"min_share": 0.62})
 add("door_close", "door", [("push", "H", ("share", 0.0))],
     ("Close the {H}.", "Push the {H} shut.", "Swing the open {H} closed."),
-    start={"H": ("share", (0.45, 0.80))}, judge={"max_share": 0.08})
+    start={"H": ("share", (0.30, 0.55))}, judge={"max_share": 0.08})  # wider doors put the free edge at the robot (smoke)
 add("slide_open", "slide", [("pull", "H", ("share", 0.85))],
     ("Slide the {H} open.", "Open the {H} by sliding it {D}.", "Push the {H} aside to open it."),
     judge={"min_share": 0.75})
@@ -51,14 +51,14 @@ add("slide_close", "slide", [("pull", "H", ("share", 0.0))],  # grasp the handle
 add("knob_turn", "knob", [("rotate", "H", ("turn", None))],
     ("Turn the {H} {DIR} by about {DEG} degrees.", "Rotate the {H} {DEG} degrees {DIR}.",
      "Twist the {H} {DIR}, roughly {DEG} degrees."),
-    judge={"tol_deg": 15.0})
+    start={"H": ("angle", (0.0, 0.6))}, judge={"tol_deg": 15.0})  # start angle varies the ridge (rot diversity)
 add("knob_off", "knob", [("rotate", "H", ("value", 0.0))],
     ("Turn the {H} back to zero.", "Turn the {H} off (mark pointing to the start position).",
      "Reset the {H} to its start position."),
     start={"H": ("angle", (0.5, 1.6))}, judge={"tol_deg": 12.0})
 add("dial_turn_top", "dial", [("rotate", "H", ("turn", None))],
     ("Turn the {H} on top {DIR} by about {DEG} degrees.", "Rotate the top {H} {DEG} degrees {DIR}."),
-    judge={"tol_deg": 15.0, "face": "top"})
+    start={"H": ("angle", (0.0, 0.6))}, judge={"tol_deg": 15.0, "face": "top"})
 add("button_press", "button", [("press", "H", None)],
     ("Press the {H}.", "Push the {H}.", "Press down the {H} once."), judge={"press_share": 0.6})
 add("switch_press", "button", [("press", "H", None)],

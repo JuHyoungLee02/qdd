@@ -151,6 +151,12 @@ def build(seed: int, robot: str, arm: str, spec: dict | None, prog: dict, objs: 
     keep_out = fixture_aabb(spec, fx["T"], 0.06) if fx is not None else None
     placed = {}
     take = prog["def"] == "drawer_take_close"
+    if prog["def"] in ("drawer_put_close", "drawer_take_close"):  # the object must fit in the closed drawer
+        ln_d = prog["stages"][0]["link"]
+        h_d = float(spec["links"][ln_d]["boxes"][0]["s"][2]) + 0.006
+        h_o = float(next(iter(objs.values()))["h"])
+        if h_o > h_d - 0.025:
+            raise ValueError(f"object {h_o:.3f} m too tall for the drawer ({h_d:.3f} m)")
     objs_l = dict(objs)
     if take:  # a free table spot for the object taken out of the drawer
         objs_l["__spot"] = {"name": "spot", "fp": (0.09, 0.09), "h": 0.0}

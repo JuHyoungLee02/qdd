@@ -17,7 +17,7 @@ YAW_MAX = math.radians(15)
 ROLL_MAX = math.radians(10)
 PUSH_IN = 0.004  # push follower: target 4 mm past the contact
 PRESS_EXTRA = 0.004
-FOLLOW_STEP = {"prismatic": 0.03, "door": math.radians(7.0), "knob": math.radians(12.0)}
+FOLLOW_STEP = {"prismatic": 0.03, "door": math.radians(7.0), "knob": math.radians(6.0)}  # line() rejects > 0.15 rad between waypoints (a 12 deg roll failed as "ik")
 
 
 def frame_of(a, c) -> np.ndarray:
@@ -59,7 +59,9 @@ def handle_grasp(hf: dict, gr: dict, draw: dict) -> dict:
     fn = np.asarray(hf["fn"], float)
     a = -fn
     up = np.array([0.0, 0.0, 1.0])
-    if abs(a @ up) < 0.9:  # front-facing part: pitch down (approach from above-front), yaw about the vertical
+    if hf["type"] == "knob":  # knobs: approach along the knob axis so the turn is a wrist roll (smoke 10-02: a tilted
+        pass  # approach made the 60-120 deg turns leave the arm's reach, 'ik' in 9 of 12 follower stops)
+    elif abs(a @ up) < 0.9:  # front-facing part: pitch down (approach from above-front), yaw about the vertical
         side_ax = np.cross(a, up)
         side_ax /= np.linalg.norm(side_ax)
         a = _tilt(a, side_ax, -draw["pitch"])
@@ -78,7 +80,7 @@ def handle_grasp(hf: dict, gr: dict, draw: dict) -> dict:
             c = np.cross(up, a)
     elif typ == "knob":  # pinch across the ridge, the pads' inner edge 3 mm above the knob body (smoke 10-02: the
         c = np.cross(bar, a)  # pads sat on the body, the closed gap stayed 1.8 cm and the turn slipped)
-        off = max(0.0, float(gr.get("pad_len", 0.04)) / 2 - float(hf.get("ridge_h", 0.02)) / 2 - 0.003)
+        off = max(0.0, float(gr.get("pad_len", 0.04)) / 2 - float(hf.get("ridge_h", 0.02)) / 2 + 0.003)  # pad inner edge 3 mm above the ridge base (was 3 mm into the body)
         p = p + fn * off
     elif typ == "knob_pull":  # round cap: any closing direction
         ref = np.cross(up, a) if abs(a @ up) < 0.9 else np.array([0.0, 1.0, 0.0])

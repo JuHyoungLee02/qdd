@@ -217,6 +217,55 @@ class ArtEpisode:
     def hf(self, st, q=None):
         return FX.handle_frame(self.spec, st["link"], self.T_WF(), self.q() if q is None else q)
 
+    def precheck(self) -> str | None:
+        """cuRobo IK (world = table + fixture body + objects, moving parts off) of every stage's pre-pose, contact /
+        grasp pose and end-of-motion pose, from the start state; -> the first unreachable one or None (smoke 10-02:
+        a drawer handle whose pre-pose was reachable but not the grasp 10 cm further in looped 'could not move in')."""
+        if self.spec is not None:
+            self.ex.set_world(self.spec, self.T_WF(), self.q(), {}, skip_links=tuple(self.spec["links"]))
+        else:
+            self.ex.set_world(None, None, {}, {})
+        q = dict(self.q())
+        names, Ts = [], []
+        for i, st in enumerate(self.prog["stages"]):
+            k = st["kind"]
+            if k in ("pull", "rotate"):
+                hf = self.hf(st, q)
+                g = SK.handle_grasp(hf, self.ex.gr, self.draw)
+                jn = self.joint_of(st)
+                qg = dict(q, **{jn: st["goal"]})
+                T0 = self.T_WF() @ FX.link_T(self.spec, st["link"], q)
+                T1 = self.T_WF() @ FX.link_T(self.spec, st["link"], qg)
+                Ts += [g["T_pre"], g["T"], T1 @ np.linalg.inv(T0) @ g["T"]]
+                names += [f"{i}:{k}:pre", f"{i}:{k}:grasp", f"{i}:{k}:end"]
+                q = qg
+            elif k == "push":
+                jn = self.joint_of(st)
+                qg = dict(q, **{jn: st["goal"]})
+                c0, c1 = self.push_contact(st, q), self.push_contact(st, qg)
+                Ts += [c0["T_pre"], c0["T"], c1["T"]]
+                names += [f"{i}:push:pre", f"{i}:push:contact", f"{i}:push:end"]
+                q = qg
+            elif k == "press":
+                J = self.spec["joints"][self.joint_of(st)]
+                pp = SK.press_pose(self.hf(st, q), J["hi"], self.ex.gr, self.draw)
+                Ts += [pp["T_pre"], pp["T_in"]]
+                names += [f"{i}:press:pre", f"{i}:press:in"]
+            elif k == "slide":
+                pl = self.push_plan()
+                Ts += [pl["T_pre_high"], pl["T_pre"], pl["T_goal"]]
+                names += [f"{i}:slide:high", f"{i}:slide:pre", f"{i}:slide:goal"]
+            elif k == "pick" and self.prog["def"] != "drawer_take_close":
+                g = self.obj_grasp()
+                Ts += [g["T_pre"], g["T"]]
+                names += [f"{i}:pick:pre", f"{i}:pick:grasp"]
+        if not Ts:
+            return None
+        ok = self.ex.planner.ik(np.stack([self.ex.to_base(T) for T in Ts]))[0]
+        bad = [n for n, o in zip(names, ok) if not bool(o)]
+        self.precheck_result = {"n": len(Ts), "bad": bad}
+        return ",".join(bad) if bad else None
+
     def unseen(self, cam, margin: int = 30) -> str | None:
         """Every point the labels need (each part at its start and goal, a pushed object and its goal) inside the head
         image with a margin (0-1000 units); -> the first missing one or None."""
@@ -511,7 +560,7 @@ class ArtEpisode:
                 T[:3, 3] += off
                 kind_p = "perturb_xyz"
             lab["exec_kind"] = kind_p
-            self.set_world(st)
+            self.set_world(None)  # the target part stays an obstacle on the way to the pre-pose (smoke: the hand hit a dial, wrist 0.25 rad jump)
             if lab.get("open_w") is not None:
                 ex.width = float(lab["open_w"])
             if kind == "place":  # carrying: plan with the held object attached, else without (as rt9)
@@ -522,7 +571,13 @@ class ArtEpisode:
                 r = ex.move(T, "pose")
             if not r["ok"]:
                 self.bump("approach_fail")
-                return f"no collision-free path to the pre-pose ({r.get('why')})"
+                try:  # stagewise: reach (IK with the world) or path (collision on the way)?
+                    ok_ik = bool(ex.planner.ik(np.asarray([ex.to_base(T)]))[0][0])
+                except Exception:  # noqa: BLE001
+                    ok_ik = None
+                self.events.append({"call": self.calls, "approach_fail": True, "ik_ok": ok_ik,
+                                    "T": np.round(T, 4).tolist()})
+                return f"no collision-free path to the pre-pose (pose reachable: {ok_ik})"
             if "T_high" in lab:  # push objects: down to the low pre-pose next to the object
                 r = ex.move(np.asarray(lab["T"], float), "line")
             self.sub = lab["next"]
@@ -766,7 +821,7 @@ class ArtEpisode:
         res = self.judge()
         return {"success": res["ok"], "judge": res, "end_reason": self.end_reason, "n_calls": self.calls,
                 "wall_s": round(time.perf_counter() - t0, 1), "sim_t": round(float(w.env.sim_time) - sim_t0, 2),
-                "fail_counts": dict(self.fail_counts), "draw": {k: (round(v, 4) if isinstance(v, float) else v)
+                "fail_counts": dict(self.fail_counts), "events": self.events[:12], "draw": {k: (round(v, 4) if isinstance(v, float) else v)
                                                                for k, v in self.draw.items()}}
 
     def judge(self) -> dict:

@@ -42,7 +42,7 @@ def pick_objects(pool: dict, prog: dict, seed: int, robot: str) -> dict:
     else:
         cand = [r for r in rows if max(r[2], r[3]) <= 0.14 and r[4] <= 0.16]
         if prog.get("need_obj") == "small":  # combo pick: grasp-tested L9 targets that fit a drawer
-            cand = [r for r in cand if r[5].get("role9") == "target" and max(r[2], r[3]) <= 0.09 and r[4] <= 0.06
+            cand = [r for r in cand if r[5].get("role9") == "target" and max(r[2], r[3]) <= 0.10 and r[4] <= 0.10
                     and min(r[2], r[3]) <= 0.06]
     if not cand:
         raise ValueError("no fitting object in the pool")
@@ -75,7 +75,7 @@ def art_pool(job: str, robot: str) -> dict:
         if v.get("l9cat") in ("box", "block", "book") and h <= 1.3 * min(dx, dy) and 0.04 <= min(dx, dy) \
                 and max(dx, dy) <= 0.14:
             push.append(k)
-        if v.get("role9") == "target" and max(dx, dy) <= 0.09 and h <= 0.06 and min(dx, dy) <= min(0.06, gmax):
+        if v.get("role9") == "target" and max(dx, dy) <= 0.10 and h <= 0.10 and min(dx, dy) <= min(0.06, gmax):
             small.append(k)
         if max(dx, dy) <= 0.14 and h <= 0.16:
             prop.append(k)
@@ -211,6 +211,9 @@ def main(argv=None):
                 why = epi.unseen(obs.cams["head"])
                 if why:
                     raise SkipScene(f"outside the head image: {why}")
+                why = epi.precheck()
+                if why:
+                    raise SkipScene(f"IK precheck: {why}")
                 res = epi.run()
             except (SkipScene, ValueError, KeyError) as e:
                 os.makedirs(od, exist_ok=True)

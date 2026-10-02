@@ -135,7 +135,7 @@ def _handle(rng, prefix, x_face, y0, z0, along, max_len, col) -> tuple:
 def _drawer(rng, spec):
     n = int(rng.choice([1, 2, 3], p=[0.3, 0.4, 0.3]))
     W, D = float(rng.uniform(0.30, 0.55)), float(rng.uniform(0.28, 0.40))
-    hd = float(rng.uniform(0.09, 0.15))
+    hd = float(rng.uniform(0.11, 0.17))
     H = n * hd + 2 * WALL + (n - 1) * WALL
     body, front, hcol = _pick(rng, WOOD + PAINT), _pick(rng, WOOD + PAINT), _pick(rng, METAL)
     base = _carcass(W, D, H, body)
