@@ -97,12 +97,15 @@ ROLES = ("lead", "support", "independent")
 
 # ---------------------------------------------------------------------------------------------- pure: zone geometry
 # [가설] per the research doc §(d).3: a fixed handover-zone point in the robot's own frame (not a scene node), so the
-# receiver's label never depends on a dynamic estimate of the giver's future position. AI Worker: WS_X/WS_Y (sim.scene)
-# is the measured top-down reach band of ONE arm; the zone sits at the shared midline (y=0, both arms' workspaces are
-# mirror images about y, harvest.l9.arm) at the near edge of that band and above the table (an in-air handover, so
-# "no floor / table contact" is a meaningful success check, not automatically true).
-ZONE_X = 0.38  # m, world frame (within [0.36, 0.48], sim.scene.WS_X)
-ZONE_Z_ABOVE_TABLE = 0.20  # m above the table top
+# receiver's label never depends on a dynamic estimate of the giver's future position. AI Worker: y=0 (both arms'
+# workspaces are mirror images about y, harvest.l9.arm), x/z matched to scene.INIT_R_ARM's own TCP (0.34, -0.25,
+# table + 0.25) -- a pose the right arm already rests at by default, so x and z (not y) are known-reachable; y=0 is
+# the untested part. First pod smoke (2026-10-02) at (0.38, 0.0, table+0.20) found ik_ok=0 of 6 geometrically valid
+# candidates for the receiver (left) at the zone -- not the other-arm obstacle box (that filter runs later; this was
+# the bare cuRobo IK check on the candidate poses themselves) -- so (x, z) moved to INIT_R_ARM's own values as the
+# best-evidenced reachable point; y=0 stands as the part still needing the pilot to confirm reachable for both arms.
+ZONE_X = 0.34  # m, world frame; = scene.INIT_R_ARM's TCP x (right arm's own default resting x)
+ZONE_Z_ABOVE_TABLE = 0.25  # m above the table top; = scene.INIT_R_ARM's TCP height offset
 # R1 Pro / G1: no measured zone yet (category A ships AI Worker first, owner's plan step 3); same formula, their own
 # reach bands (robot9.V2[profile]), marked untested.
 ZONE_X_V2 = {"r1pro": 0.45, "g1": 0.30}
