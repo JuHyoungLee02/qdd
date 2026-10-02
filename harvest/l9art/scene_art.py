@@ -32,7 +32,7 @@ def T_WF(x, y, z, yaw) -> np.ndarray:
     return FX.T_of(FX.rot_axis([0, 0, 1], yaw), (x, y, z))
 
 
-ROBOT_DX = {"franka_mast": 0.08}  # [가설] Franka on its stand: the work band sits further out (smoke F: 8 of 17 IK-precheck skips)
+ROBOT_DX = {"franka_mast": 0.08, "r1pro": 0.05}  # [가설] Franka on its stand: the work band sits further out (smoke F: 8 of 17 IK-precheck skips)
 
 
 def place_fixture(spec: dict, prog: dict, arm: str, tz: float, rng, robot: str = "ffw_sg2") -> dict:
