@@ -1,8 +1,10 @@
-"""L9 v2 build-time visibility gate (owner order 2026-10-02): the VLM must never be asked to point at something it
-cannot see, and a training row is only as good as the step's target / place object actually being visible in the
-image that row shows. A row is dropped when its point object is (i) outside the image / its centre inside the
-MARGIN border, (ii) too small to resolve (apparent footprint radius under MIN_RADIUS_PX), or (iii) more than
-OCC_MAX of its top face hidden behind something nearer along the camera's own rendered depth.
+"""L9 v2 build-time visibility gate (owner order 2026-10-02, phase rule 10-03): the VLM must never be asked to
+point at something it cannot see, and a training row is only as good as the ONE object its step's command actually
+points at (approach: the target -- not yet held; everything else: the place -- the target is in hand and excluded,
+same convention as teach_l8d.collect._occ) being visible in the image that row shows. A row is dropped when that
+point is (i) outside the image / its centre inside the MARGIN border, (ii) too small to resolve (apparent
+footprint radius under MIN_RADIUS_PX), or (iii) more than OCC_MAX of its top face hidden behind something nearer
+along the camera's own rendered depth.
 
 Reuses teach_l8d.clutter_x.occlusion (the same 50 % rule already production-tested on L8D) instead of a new
 occlusion metric. No instance / segmentation masks are saved per call (an ego call dir holds the RGB images,
@@ -55,11 +57,14 @@ def in_border(u, v, z, W: int, H: int, margin: float = MARGIN) -> bool:
 
 
 def point_visible(cam, depth, geom: dict, centre, margin: float = MARGIN, min_radius_px: float = MIN_RADIUS_PX,
-                  occ_max: float = OCC_MAX, ignore: tuple = ()) -> tuple:
+                  occ_max: float = OCC_MAX, ignore: tuple = (), occ_override: float | None = None) -> tuple:
     """-> (ok, reason) of one object centre in one rendered view (cam = astra_motion.geometry.Cam, depth = its
     z-depth array, geom = SC.OBJ_GEOM[k]). reason is one of "out_of_frame", "too_small", "occluded", "ok". ignore
     (teach_l8d.clutter_x.occlusion's convention) = [(centre, half_extents, yaw), ...] surfaces that do not count as
-    occluders (e.g. a destination's own rim -- see row_visible)."""
+    occluders (e.g. a destination's own rim -- see row_visible). occ_override (owner order 10-03): use this
+    occlusion share instead of recomputing one (e.g. labels.jsonl's own "occ", already measured live at collection
+    time with the real container box / yaw -- strictly more accurate than the build-time footprint_r approximation)
+    -- border / size are still checked against this view's own cam / depth."""
     from ..teach_l8d.clutter_x import occlusion
     footprint_r = float(geom.get("footprint_r") or geom.get("radius") or 0.03)
     u, v, z, r_px = point_radius_px(cam, centre, footprint_r)
@@ -68,7 +73,8 @@ def point_visible(cam, depth, geom: dict, centre, margin: float = MARGIN, min_ra
     if r_px is None or r_px < min_radius_px:
         return False, "too_small"
     half_xy, top_z = obj_half_xy_top(geom, centre)
-    occ = occlusion(cam, depth, centre[:2], half_xy, top_z, ignore=ignore)
+    occ = float(occ_override) if occ_override is not None else occlusion(cam, depth, centre[:2], half_xy, top_z,
+                                                                         ignore=ignore)
     if occ >= occ_max:
         return False, "occluded"
     return True, "ok"
@@ -87,13 +93,17 @@ def _place_self_ignore(geom: dict, centre) -> list:
 
 def row_visible(cam, depth, points: list, margin: float = MARGIN, min_radius_px: float = MIN_RADIUS_PX,
                occ_max: float = OCC_MAX) -> tuple:
-    """points = [(role, geom, centre), ...] (typically tgt then place) -> (ok, reason, role) of the first point that
-    fails, else (True, "ok", None). A row is dropped on the FIRST failing point (never ask the VLM to point at
-    something it cannot see, whichever point that is). role == "place": its own rim does not count as an occluder
-    of its own opening (_place_self_ignore)."""
-    for role, geom, centre in points:
-        ignore = _place_self_ignore(geom, centre) if role == "place" else ()
-        ok, reason = point_visible(cam, depth, geom, centre, margin, min_radius_px, occ_max, ignore=ignore)
+    """points = [(role, geom, centre), ...] or [(role, geom, centre, occ_override), ...] -- normally ONE entry (the
+    point that row's command actually points at: owner order 10-03, see build9._vis_point), kept as a list for
+    tests / a multi-point caller. -> (ok, reason, role) of the first point that fails, else (True, "ok", None).
+    role == "place" (no occ_override): its own rim does not count as an occluder of its own opening
+    (_place_self_ignore)."""
+    for item in points:
+        role, geom, centre = item[0], item[1], item[2]
+        occ_override = item[3] if len(item) > 3 else None
+        ignore = _place_self_ignore(geom, centre) if (role == "place" and occ_override is None) else ()
+        ok, reason = point_visible(cam, depth, geom, centre, margin, min_radius_px, occ_max, ignore=ignore,
+                                   occ_override=occ_override)
         if not ok:
             return False, reason, role
     return True, "ok", None

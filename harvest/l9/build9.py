@@ -118,21 +118,30 @@ def camera_of(r: dict, robot: str) -> str:
     return HC.line(cam, f"l9/{robot}")
 
 
-def _vis_points(r: dict) -> list:
-    """[(role, OBJ_GEOM record, centre)] of this call's step target / place -- visgate9.row_visible input."""
+def _vis_point(r: dict) -> tuple:
+    """(role, OBJ_GEOM record, centre) of the ONE object this call's step actually points at -- owner order 10-03,
+    same convention as teach_l8d.collect._occ: "approach" (not yet holding the target) -> tgt; every other phase
+    (carrying / lowering / releasing -- the target is in hand) -> place. The held object is never checked (it is
+    not what the row's command points at)."""
     from ..sim.scene import OBJ_GEOM
-    gt = r["gt"]
-    return [("tgt", OBJ_GEOM.get(r["tgt"]) or {}, gt["tgt"]), ("place", OBJ_GEOM.get(r["place"]) or {}, gt["place"])]
+    role = "tgt" if r.get("phase") == "approach" else "place"
+    key = r[role]
+    return role, OBJ_GEOM.get(key) or {}, r["gt"][role]
 
 
-def _vis_gate(cam_json: dict, depth, r: dict) -> tuple:
-    """(ok, reason) of one rendered view (its cams.json camera entry + depth array) for this call's target / place
-    (owner order 2026-10-02: the VLM must never be asked to point at something it cannot see). reason = "<role>:
-    <why>" ("tgt:out_of_frame" / "too_small" / "occluded") when dropped, else None. Used for the head image (every
-    call row) and for each third-person / external image (visgate9.py has the pure geometry + occlusion check)."""
+def _vis_gate(cam_json: dict, depth, r: dict, use_occ: bool = False) -> tuple:
+    """(ok, reason) of one rendered view (its cams.json camera entry + depth array) for this call's ONE pointed-at
+    object (_vis_point; owner order 10-02/10-03: the VLM must never be asked to point at something it cannot see,
+    and only the row's own point is checked). reason = "<role>:<why>" ("tgt:out_of_frame" / "too_small" /
+    "occluded") when dropped, else None. use_occ=True (the head view only): reuse labels.jsonl's own "occ" (live
+    env, the real container yaw -- collect.py's _occ) instead of the build-time depth / footprint_r approximation,
+    when present."""
     from ..astra_motion.geometry import Cam
     from . import visgate9 as VG
-    ok, reason, role = VG.row_visible(Cam.from_json(cam_json), depth, _vis_points(r))
+    role, geom, centre = _vis_point(r)
+    occ = r.get("occ") if use_occ else None
+    point = (role, geom, centre) if occ is None else (role, geom, centre, float(occ))
+    ok, reason, role = VG.row_visible(Cam.from_json(cam_json), depth, [point])
     return ok, (None if ok else f"{role}:{reason}")
 
 
@@ -254,8 +263,9 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera
     ctrl, aux, c = [], [], Counter()
     for r in DS.load_rows(ep_dir, split):
         c["states"] += 1
-        head_ok, head_reason = _vis_gate(json.load(open(r["cams_path"]))["head"], np.load(r["depth_path"])["depth"], r)
-        if not head_ok:  # owner order 2026-10-02: never a row whose target / place the head image cannot show
+        head_ok, head_reason = _vis_gate(json.load(open(r["cams_path"]))["head"], np.load(r["depth_path"])["depth"], r,
+                                         use_occ=True)
+        if not head_ok:  # owner order 2026-10-02/10-03: never a row whose pointed-at object the head image can't show
             c["vis_dropped_rows"] += 1
             c[f"vis_drop_head_{head_reason}"] += 1
             continue

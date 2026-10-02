@@ -110,6 +110,18 @@ def test_row_visible_ok_when_every_point_passes():
     assert (ok, reason, role) == (True, "ok", None)
 
 
+def test_row_visible_occ_override_skips_the_depth_recompute():
+    # labels.jsonl's own "occ" (live-env, real yaw) wins over the build-time depth check -- a fully-occluding depth
+    # array is ignored when occ_override says the point is clear
+    depth = _flat_depth(0.1)
+    points = [("tgt", CUBOID, (0.0, 0.0, 1.0), 0.0)]
+    ok, reason, role = VG.row_visible(_cam(), depth, points)
+    assert (ok, reason, role) == (True, "ok", None)
+    points = [("tgt", CUBOID, (0.0, 0.0, 1.0), 0.9)]  # and an override past OCC_MAX still drops it
+    ok, reason, role = VG.row_visible(_cam(), depth, points)
+    assert (ok, reason, role) == (False, "occluded", "tgt")
+
+
 # ---------------------------------------------------------------- obj_half_xy_top
 def test_obj_half_xy_top_markers_keep_their_recorded_z():
     marker = {"shape": "marker", "half_extents": (0.04, 0.04, 0.001), "radius": 0.04}
