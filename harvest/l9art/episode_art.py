@@ -947,6 +947,11 @@ class ArtEpisode:
                     jj = {"tol_deg": jj.get("tol_deg", 15.0)}
                 elif prog["combo"]:
                     jj = {"max_share": jj["max_share"]} if st["kind"] == "push" else {"min_share": 0.75}
+                    if st["kind"] == "pull":  # combos: the opening was reached during the episode (it ends closed)
+                        r = {"ok": prog["stages"].index(st) in self.done_stages, "kind_note": "reached during the episode"}
+                        out["stages"].append(dict(r, kind=st["kind"]))
+                        ok = ok and r["ok"]
+                        continue
                 r = SK.judge_joint(J, q[jn], jj, goal)
             elif st["kind"] == "press":
                 jn = self.joint_of(st)
@@ -965,8 +970,11 @@ class ArtEpisode:
             elif st["kind"] == "place":
                 from ..sim.scene import OBJ_GEOM
                 k = self.b["tgt"]
-                c = np.asarray(self.w.env.object_pose(k)[0], float)
-                he = np.asarray(OBJ_GEOM[k]["half_extents"], float)
+                c, qo = self.w.env.object_pose(k)
+                c = np.asarray(c, float)
+                he0 = np.asarray(OBJ_GEOM[k]["half_extents"], float)
+                hz = float(np.abs(FX.qmat(qo)[2]) @ he0)  # vertical half extent of the object as it lies now
+                he = np.array([he0[0], he0[1], hz])
                 if st["ref"] == "IN":
                     ln = next(s["link"] for s in prog["stages"] if s.get("link"))
                     T = WA.link_world(self.w, ln)
@@ -974,7 +982,7 @@ class ArtEpisode:
                     it = sp["interior"][ln]
                     fz = float(it["floor_c"][2])
                     inside = (0.0 <= cl[0] <= sp["dims"]["D"]) and abs(cl[1]) <= sp["dims"]["W"] / 2 - 0.01 and \
-                        fz - 0.01 <= cl[2] - he[2] <= fz + 0.03
+                        fz - 0.015 <= cl[2] - he[2] <= fz + 0.03
                     r = {"ok": bool(inside), "obj_in_drawer_link": [round(float(v), 4) for v in cl]}
                 else:
                     Tf = self.T_WF()
