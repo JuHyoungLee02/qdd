@@ -10,7 +10,6 @@ import sys
 sys.path.insert(0, "/data/harvest/l9v2/pylib")  # cuRobo 0.8 / warp 1.14 (plan9_server.PYLIB); this tool imports
 # curobo directly in the collection process's own python, which plan9_server's separate-process split avoids
 
-import numpy as np
 import torch
 
 from harvest.l9 import curobo9 as C
@@ -40,30 +39,27 @@ for arm in arms:
     if arm == "left":
         t[1], yaw = -t[1], -YAW
     q = qmul([math.cos(-LEAN / 2), 0, math.sin(-LEAN / 2), 0], [math.cos(yaw / 2), 0, 0, math.sin(yaw / 2)])
-    GRID = float(os.environ.get("READY_GRID", 0.05))  # half-width of the dx/dz search (m); DIAG 9: the single
-    # 9-neighbour search around one hand-picked point found 0 reachable candidates on the current URDF/limits
-    STEP = float(os.environ.get("READY_STEP", 0.04))
-    rng = np.arange(-GRID, GRID + 1e-9, STEP)
-    offs = [(0.0, 0.0)] + [(dx, dz) for dx in rng for dz in rng if dx or dz]
-    T = [[t[0] + dx, t[1], t[2] + dz] for dx, dz in offs]  # batch: the target + grid neighbours (best margin wins)
-    ik = C.make_ik(profile, arm, num_seeds=int(os.environ.get("READY_SEEDS", 64)), max_batch_size=len(T),
+    # L9v2-DIAG 9: the exact target has a whole family of IK solutions (redundant 7-dof arm); the single solution
+    # cuRobo hands back by default can sit right at a joint limit (pilotR V2_READY right joint2 margin 0.033 rad,
+    # inside cuRobo's own 0.03 rad position_limit_clip -> effectively AT the planning limit: most carry/lift/retreat
+    # moves that need that joint to grow at all then have no collision-free path). return_seeds asks for several
+    # solution branches of the SAME exact pose (err_mm 0.00 for all of them in a 16-seed test, margins 0.003-0.126)
+    # instead of only the one cuRobo would otherwise pick; keep the one with the largest margin to either limit.
+    RS = int(os.environ.get("READY_RETURN_SEEDS", 32))
+    ik = C.make_ik(profile, arm, num_seeds=int(os.environ.get("READY_SEEDS", 64)), max_batch_size=1,
                     self_collision_check=os.environ.get("SELFCOL", "1") == "1")
     tf = C.tool_frame(profile, arm)
-    r = ik.solve_pose(GoalToolPose.from_poses({tf: Pose(position=torch.tensor(T, device="cuda", dtype=torch.float32),
-                                                          quaternion=torch.tensor([q] * len(T), device="cuda", dtype=torch.float32))},
-                                              num_goalset=1))
+    goal = GoalToolPose.from_poses({tf: Pose(position=torch.tensor([t], device="cuda", dtype=torch.float32),
+                                              quaternion=torch.tensor([q], device="cuda", dtype=torch.float32))},
+                                   num_goalset=1)
+    r = ik.solve_pose(goal, return_seeds=RS)
     okv = r.success.view(-1).tolist()
     names = list(r.js_solution.joint_names)
-    P = r.js_solution.position.view(len(T), -1)
-    # L9v2-DIAG 9: the first successful candidate (usually the exact target, offset index 0) can sit right at a
-    # joint limit (pilotR V2_READY left joint2 3.07831 vs limit 3.11199, inside cuRobo's own 0.03 rad
-    # position_limit_clip -> the start state is effectively AT the planning limit: most carry/lift/retreat moves
-    # that need that joint to grow at all then have no collision-free path). Among every successful offset, keep
-    # the one with the largest margin to either joint limit instead of just the first.
+    P = r.js_solution.position.view(len(okv), -1)
     lo, hi = (v.cpu().numpy() for v in ik.kinematics.get_joint_limits().position)
     idxs = [names.index(j) for j in C.arm_joints(profile, arm)]
     best_k, best_margin = (okv.index(True) if True in okv else 0), -1.0
-    for k in range(len(T)):
+    for k in range(len(okv)):
         if not okv[k]:
             continue
         qk = P[k].cpu().numpy()
@@ -71,10 +67,9 @@ for arm in arms:
         if margin > best_margin:
             best_k, best_margin = k, margin
     k = best_k
-    t = T[k]
     sol = P[k].tolist()
     arm_q = {j: round(sol[names.index(j)], 5) for j in C.arm_joints(profile, arm)}
-    res[arm] = {"ok": bool(okv[k]), "pos_err_mm": round(float(r.position_error.view(-1)[k]) * 1e3, 3),
+    res[arm] = {"ok": bool(okv[k]), "n_ok": int(sum(okv)), "pos_err_mm": round(float(r.position_error.view(-1)[k]) * 1e3, 3),
                 "limit_margin_rad": round(best_margin, 4), "target_base": t,
                 "quat_base": [round(v, 6) for v in q], "yaw": yaw, "lean": LEAN,
                 "base_link": C.base_link(profile, arm), "tool_frame": tf, "q": arm_q}
