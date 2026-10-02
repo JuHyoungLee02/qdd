@@ -120,6 +120,8 @@ class IK:
                 quaternion=self.torch.tensor(q, device="cuda", dtype=self.torch.float32))}, num_goalset=1)
             r = self.ik.solve_pose(g)
             out[s0:s0 + m] = r.success.reshape(self.B, -1)[:m, 0].cpu().numpy().astype(bool)
+            if (s0 // self.B) % 200 == 199:
+                print(f"  ik {s0 + m}/{len(P)}", flush=True)
         return out
 
 
@@ -180,6 +182,17 @@ def sweep_arm(r: dict, arm: str, out: str, seeds: int, batch: int, snap: float, 
         poses.append(row)
         key = tuple(np.round(np.array(G.rot_euler(Tb[:3, :3])) / 0.05).astype(int))
         groups.setdefault(key, []).append(c)
+    # visibility (numpy)
+    for c, q in enumerate(cfgs):
+        qb = {k: v for k, v in q.items() if k != "root_z_rel_surface"}
+        for s, sz in enumerate(SURFACES):
+            Twr = poses[c][s][0]
+            Pw = np.stack([gx[..., 0].ravel(), gy[..., 0].ravel(), np.full(X * Y, sz + OBJ_Z)], -1)
+            for p, po in enumerate(popts):
+                cw = camera_world(r, u, cam, qb, Twr, po)
+                vis[c, s, :, :, p] = G.visible(cw, Pw, margin=0.05).reshape(X, Y)
+                cam_pitch[c, s, p] = G.cam_pitch_deg(cw["R"])
+    vis_any = vis.any(-1)  # IK only where the robot's own camera sees the point (score = coverage x visible)
     from harvest.l9.grasp9 import mat_quat
     n_ik = 0
     reqP, reqQ, book = [], [], []  # every group's unique in-reach base-frame targets x orientations, solved at once
@@ -191,10 +204,15 @@ def sweep_arm(r: dict, arm: str, out: str, seeds: int, batch: int, snap: float, 
         allP, where = [], []
         for c in members:
             for s, sz in enumerate(SURFACES):
+                m = np.broadcast_to(vis_any[c, s][:, :, None], (X, Y, H)).ravel()
+                if not m.any():
+                    continue
                 Twb = poses[c][s][1]
-                Pw = np.stack([gx.ravel(), gy.ravel(), sz + gl.ravel()], -1)
+                Pw = np.stack([gx.ravel(), gy.ravel(), sz + gl.ravel()], -1)[m]
                 allP.append((Pw - Twb[:3, 3]) @ Twb[:3, :3])
-                where.append((c, s))
+                where.append((c, s, m))
+        if not allP:
+            continue
         keys = np.round(np.concatenate(allP) / snap).astype(np.int64)
         uk, inv = np.unique(keys, axis=0, return_inverse=True)
         up = uk * snap
@@ -206,24 +224,18 @@ def sweep_arm(r: dict, arm: str, out: str, seeds: int, batch: int, snap: float, 
     print(f"[{prof}/{arm}] shard {shard} groups {len(book)}/{len(groups)} ik {n_ik} t {time.time() - t0:.0f}s", flush=True)
     ok = ik.solve(np.concatenate(reqP), Q=np.concatenate(reqQ)) if n_ik else np.zeros(0, bool)
     o0 = 0
-    per = X * Y * H
     for where, inv, nu, idx in book:
         res = np.zeros((nu, O), bool)
         res[idx] = ok[o0:o0 + len(idx) * O].reshape(len(idx), O)
         o0 += len(idx) * O
-        for w, (c, s) in enumerate(where):
-            reach[c, s] = res[inv[w * per:(w + 1) * per]].reshape(X, Y, H, O)
+        i0 = 0
+        for c, s, m in where:
+            k = int(m.sum())
+            flat = reach[c, s].reshape(-1, O)
+            flat[m] = res[inv[i0:i0 + k]]
+            reach[c, s] = flat.reshape(X, Y, H, O)
+            i0 += k
     print(f"[{prof}/{arm}] ik done t {time.time() - t0:.0f}s", flush=True)
-    # visibility (numpy)
-    for c, q in enumerate(cfgs):
-        qb = {k: v for k, v in q.items() if k != "root_z_rel_surface"}
-        for s, sz in enumerate(SURFACES):
-            Twr = poses[c][s][0]
-            Pw = np.stack([gx[..., 0].ravel(), gy[..., 0].ravel(), np.full(X * Y, sz + OBJ_Z)], -1)
-            for p, po in enumerate(popts):
-                cw = camera_world(r, u, cam, qb, Twr, po)
-                vis[c, s, :, :, p] = G.visible(cw, Pw, margin=0.05).reshape(X, Y)
-                cam_pitch[c, s, p] = G.cam_pitch_deg(cw["R"])
     meta = {"profile": prof, "arm": arm, "configs": cfgs, "orients": ori, "pitch_options": popts,
             "selftest_success": st, "reach_radius_m": rad, "n_ik": n_ik, "n_groups": len(groups),
             "seconds": round(time.time() - t0, 1), "seeds": seeds, "snap_m": snap, "shard": list(shard)}

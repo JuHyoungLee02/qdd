@@ -128,6 +128,11 @@ def _arm_section(d, feas, st, band_depth, lateral, lift_ref):
     feas_cs = feas.any(-1)
     lat_rate = np.array([pt[feas_cs][:, :, j].mean() if feas_cs.any() else 0.0 for j in range(len(ys))])
     lat_ok = ys[lat_rate >= 0.5 * lat_rate.max()] if lat_rate.max() > 0 else ys
+    # work mask: points (x, y from the robot root) the feasible cells can grasp + lift at most yaws and see
+    pr = pt[feas_cs].mean(0) if feas_cs.any() else np.zeros(pt.shape[2:])
+    wm = {"xs": [round(float(v), 4) for v in d["xs"]], "ys": [round(float(v), 4) for v in ys],
+          "ok": (pr >= 0.5 * pr.max()).tolist() if pr.max() > 0 else (pr > 1).tolist(),
+          "rule": "mean over feasible cells of yaw-coverage x visible >= 0.5 x its max"}
     return {
         "yaw_deg_ok": sorted(ok_y), "yaw_deg_bad": sorted(set(yaw_rate) - set(ok_y)), "yaw_rate": yaw_rate,
         "tilt_deg": _rng(ok_t) if ok_t else [0.0, 0.0], "tilt_rate": tilt_rate, "fallback": fallback,
@@ -135,7 +140,7 @@ def _arm_section(d, feas, st, band_depth, lateral, lift_ref):
         "carry_clear_m": _rng(carry_ok) if carry_ok else None, "carry_rate": carry,
         "ready_tcp_above_surface_m": _rng(ready_ok) if ready_ok else None, "ready_rate": ready,
         "cam_pitch_deg": _rng(pitches) if pitches else None, "cam_vis_rate": [round(float(v), 4) for v in vr],
-        "lateral_m": _rng(lat_ok),
+        "lateral_m": _rng(lat_ok), "work_mask": wm,
     }
 
 

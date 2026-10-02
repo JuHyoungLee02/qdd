@@ -23,9 +23,22 @@ import ranges as RG  # noqa: E402
 
 
 def load_arm(out_dir: str, profile: str, arm: str) -> dict:
-    z = np.load(os.path.join(out_dir, f"{profile}_{arm}.npz"))
-    meta = json.load(open(os.path.join(out_dir, f"{profile}_{arm}_meta.json")))
+    """One arm's sweep; sharded runs (<arm>.s<k>of<n>.npz, disjoint rotation groups) are OR-merged."""
+    import glob
+    fn = os.path.join(out_dir, f"{profile}_{arm}.npz")
+    files = [fn] if os.path.exists(fn) else sorted(glob.glob(os.path.join(out_dir, f"{profile}_{arm}.s*of*.npz")))
+    if not files:
+        raise FileNotFoundError(fn)
+    z = np.load(files[0])
     d = {k: z[k] for k in z.files}
+    metas = [json.load(open(f[:-4] + "_meta.json")) for f in files]
+    if len(files) > 1:
+        n = metas[0]["shard"][1]
+        if len(files) != n:
+            raise RuntimeError(f"{profile}/{arm}: {len(files)} of {n} shards")
+        for f in files[1:]:
+            d["reach"] = d["reach"] | np.load(f)["reach"]
+    meta = dict(metas[0], n_ik=sum(m["n_ik"] for m in metas), seconds=max(m["seconds"] for m in metas))
     d.update(configs=meta["configs"], orients=meta["orients"], meta=meta)
     return d
 
@@ -43,6 +56,8 @@ def build(robot: dict, arms: dict, rel: float, band_depth: float) -> dict:
     for a, sec in fr["arms"].items():
         lo, hi = sec["lateral_m"]
         lat[a] = [lo, hi] if a != "left" else [round(-hi, 4), round(-lo, 4)]
+        if a == "left":  # sweep arrays are in the right-arm convention: report the left arm's own y
+            sec["work_mask"]["ys"] = [round(-v, 4) for v in sec["work_mask"]["ys"]]
     a0 = next(iter(fr["arms"].values()))
     body = fr["body"]
     torso = {j: v for j, v in body["joints"].items() if j != "root_z_rel_surface"}
@@ -58,6 +73,14 @@ def build(robot: dict, arms: dict, rel: float, band_depth: float) -> dict:
         "carry_clear_m": fr["carry_clear_m"], "head_cam": {"pitch_deg": a0["cam_pitch_deg"]},
         "cells": fr["cells"], "stats": fr["stats"], "arms": fr["arms"],
     }
+    d0 = next(iter(arms.values()))
+    half = {"surface_z": round(float(np.diff(d0["surfaces"]).min()) / 2, 4),
+            "stance_x": round(float(np.diff(d0["xs"]).min()) / 2, 4)}
+    for j in body["joints"]:
+        vals = sorted({c[j] for c in d0["configs"]})
+        if len(vals) > 1:
+            half[f"torso.{j}"] = round(float(np.diff(vals).min()) / 2, 5)
+    prof["cell_half"] = half  # draw jitter inside a cell (envprof9.draw)
     if "root_z_rel_surface" in body["joints"]:  # a stand / virtual lift: the root height over the surface
         prof["lift"] = {"root_z_rel_surface": body["joints"]["root_z_rel_surface"]}
     pj = robot["cameras"][robot.get("head_camera", "cam_head")].get("pitch_joint")

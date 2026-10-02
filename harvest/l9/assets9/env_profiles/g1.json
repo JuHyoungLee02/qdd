@@ -1,0 +1,1460 @@
+{
+ "schema": "l9-env-profile-v1",
+ "profile": "g1",
+ "version": 1,
+ "source": {
+  "tool": "tools/onboard/autotune (cuRobo batch IK sweep, no render)",
+  "sha": "fb86992",
+  "date": "2026-10-02T18:45Z",
+  "n_ik": 2407068,
+  "selftest_fk_ik": {
+   "right": 0.701171875,
+   "left": null
+  }
+ },
+ "surface_z_m": [
+  0.6,
+  0.9
+ ],
+ "stance_x_m": [
+  0.1,
+  0.3
+ ],
+ "lateral_m": {
+  "right": [
+   -0.25,
+   0.0
+  ],
+  "left": [
+   -0.0,
+   0.3
+  ]
+ },
+ "body": {
+  "joints": {
+   "waist_pitch_joint": [
+    0.0,
+    0.52
+   ]
+  },
+  "lean_rad": [
+   -0.0,
+   0.52
+  ],
+  "mount_above_surface_m": [
+   -0.063,
+   0.237
+  ]
+ },
+ "hand": {
+  "yaw_deg_ok": [
+   0,
+   30,
+   60,
+   90,
+   120,
+   150,
+   180,
+   210,
+   300,
+   330
+  ],
+  "yaw_deg_bad": [
+   240,
+   270
+  ],
+  "tilt_deg": [
+   0.0,
+   30.0
+  ],
+  "fallback": [
+   {
+    "dyaw_deg": -150,
+    "tilt_deg": 30,
+    "tdir_deg": 0,
+    "recover": 0.5434
+   },
+   {
+    "dyaw_deg": 180,
+    "tilt_deg": 30,
+    "tdir_deg": 0,
+    "recover": 0.5231
+   },
+   {
+    "dyaw_deg": -120,
+    "tilt_deg": 30,
+    "tdir_deg": 0,
+    "recover": 0.5102
+   },
+   {
+    "dyaw_deg": 150,
+    "tilt_deg": 30,
+    "tdir_deg": 0,
+    "recover": 0.4808
+   },
+   {
+    "dyaw_deg": -90,
+    "tilt_deg": 30,
+    "tdir_deg": 0,
+    "recover": 0.4511
+   },
+   {
+    "dyaw_deg": 120,
+    "tilt_deg": 30,
+    "tdir_deg": 0,
+    "recover": 0.4278
+   },
+   {
+    "dyaw_deg": 180,
+    "tilt_deg": 0,
+    "tdir_deg": 0,
+    "recover": 0.4119
+   },
+   {
+    "dyaw_deg": 150,
+    "tilt_deg": 0,
+    "tdir_deg": 0,
+    "recover": 0.397
+   }
+  ]
+ },
+ "ready": {
+  "tcp_above_surface_m": [
+   0.14,
+   0.29
+  ]
+ },
+ "lift_clear_m": [
+  0.05,
+  0.25
+ ],
+ "carry_clear_m": [
+  0.05,
+  0.25
+ ],
+ "head_cam": {
+  "pitch_deg": [
+   47.6,
+   77.3938
+  ]
+ },
+ "cells": [
+  {
+   "surface_z": 0.65,
+   "stance_x": 0.2,
+   "lean": 0.52,
+   "mount_above": 0.187,
+   "torso": {
+    "waist_pitch_joint": 0.52
+   },
+   "score": 0.5239
+  },
+  {
+   "surface_z": 0.65,
+   "stance_x": 0.15,
+   "lean": 0.52,
+   "mount_above": 0.187,
+   "torso": {
+    "waist_pitch_joint": 0.52
+   },
+   "score": 0.5131
+  },
+  {
+   "surface_z": 0.7,
+   "stance_x": 0.25,
+   "lean": 0.52,
+   "mount_above": 0.137,
+   "torso": {
+    "waist_pitch_joint": 0.52
+   },
+   "score": 0.4907
+  },
+  {
+   "surface_z": 0.75,
+   "stance_x": 0.25,
+   "lean": 0.52,
+   "mount_above": 0.087,
+   "torso": {
+    "waist_pitch_joint": 0.52
+   },
+   "score": 0.4684
+  },
+  {
+   "surface_z": 0.75,
+   "stance_x": 0.25,
+   "lean": 0.39,
+   "mount_above": 0.087,
+   "torso": {
+    "waist_pitch_joint": 0.39
+   },
+   "score": 0.4529
+  },
+  {
+   "surface_z": 0.7,
+   "stance_x": 0.2,
+   "lean": 0.52,
+   "mount_above": 0.137,
+   "torso": {
+    "waist_pitch_joint": 0.52
+   },
+   "score": 0.4506
+  },
+  {
+   "surface_z": 0.8,
+   "stance_x": 0.25,
+   "lean": 0.39,
+   "mount_above": 0.037,
+   "torso": {
+    "waist_pitch_joint": 0.39
+   },
+   "score": 0.4483
+  },
+  {
+   "surface_z": 0.7,
+   "stance_x": 0.2,
+   "lean": 0.39,
+   "mount_above": 0.137,
+   "torso": {
+    "waist_pitch_joint": 0.39
+   },
+   "score": 0.4298
+  },
+  {
+   "surface_z": 0.7,
+   "stance_x": 0.25,
+   "lean": 0.39,
+   "mount_above": 0.137,
+   "torso": {
+    "waist_pitch_joint": 0.39
+   },
+   "score": 0.4298
+  },
+  {
+   "surface_z": 0.75,
+   "stance_x": 0.2,
+   "lean": 0.26,
+   "mount_above": 0.087,
+   "torso": {
+    "waist_pitch_joint": 0.26
+   },
+   "score": 0.4259
+  },
+  {
+   "surface_z": 0.75,
+   "stance_x": 0.25,
+   "lean": 0.26,
+   "mount_above": 0.087,
+   "torso": {
+    "waist_pitch_joint": 0.26
+   },
+   "score": 0.4259
+  },
+  {
+   "surface_z": 0.65,
+   "stance_x": 0.25,
+   "lean": 0.52,
+   "mount_above": 0.187,
+   "torso": {
+    "waist_pitch_joint": 0.52
+   },
+   "score": 0.4252
+  },
+  {
+   "surface_z": 0.75,
+   "stance_x": 0.2,
+   "lean": 0.39,
+   "mount_above": 0.087,
+   "torso": {
+    "waist_pitch_joint": 0.39
+   },
+   "score": 0.4221
+  },
+  {
+   "surface_z": 0.65,
+   "stance_x": 0.1,
+   "lean": 0.52,
+   "mount_above": 0.187,
+   "torso": {
+    "waist_pitch_joint": 0.52
+   },
+   "score": 0.4167
+  },
+  {
+   "surface_z": 0.75,
+   "stance_x": 0.3,
+   "lean": 0.52,
+   "mount_above": 0.087,
+   "torso": {
+    "waist_pitch_joint": 0.52
+   },
+   "score": 0.4113
+  },
+  {
+   "surface_z": 0.7,
+   "stance_x": 0.3,
+   "lean": 0.52,
+   "mount_above": 0.137,
+   "torso": {
+    "waist_pitch_joint": 0.52
+   },
+   "score": 0.4105
+  },
+  {
+   "surface_z": 0.8,
+   "stance_x": 0.25,
+   "lean": 0.26,
+   "mount_above": 0.037,
+   "torso": {
+    "waist_pitch_joint": 0.26
+   },
+   "score": 0.4074
+  },
+  {
+   "surface_z": 0.6,
+   "stance_x": 0.15,
+   "lean": 0.52,
+   "mount_above": 0.237,
+   "torso": {
+    "waist_pitch_joint": 0.52
+   },
+   "score": 0.4066
+  },
+  {
+   "surface_z": 0.6,
+   "stance_x": 0.2,
+   "lean": 0.52,
+   "mount_above": 0.237,
+   "torso": {
+    "waist_pitch_joint": 0.52
+   },
+   "score": 0.4066
+  },
+  {
+   "surface_z": 0.85,
+   "stance_x": 0.25,
+   "lean": 0.26,
+   "mount_above": -0.013,
+   "torso": {
+    "waist_pitch_joint": 0.26
+   },
+   "score": 0.3966
+  },
+  {
+   "surface_z": 0.65,
+   "stance_x": 0.15,
+   "lean": 0.39,
+   "mount_above": 0.187,
+   "torso": {
+    "waist_pitch_joint": 0.39
+   },
+   "score": 0.3966
+  },
+  {
+   "surface_z": 0.65,
+   "stance_x": 0.2,
+   "lean": 0.39,
+   "mount_above": 0.187,
+   "torso": {
+    "waist_pitch_joint": 0.39
+   },
+   "score": 0.3966
+  },
+  {
+   "surface_z": 0.65,
+   "stance_x": 0.25,
+   "lean": 0.39,
+   "mount_above": 0.187,
+   "torso": {
+    "waist_pitch_joint": 0.39
+   },
+   "score": 0.3966
+  },
+  {
+   "surface_z": 0.75,
+   "stance_x": 0.2,
+   "lean": 0.52,
+   "mount_above": 0.087,
+   "torso": {
+    "waist_pitch_joint": 0.52
+   },
+   "score": 0.3927
+  },
+  {
+   "surface_z": 0.75,
+   "stance_x": 0.15,
+   "lean": 0.26,
+   "mount_above": 0.087,
+   "torso": {
+    "waist_pitch_joint": 0.26
+   },
+   "score": 0.3904
+  },
+  {
+   "surface_z": 0.8,
+   "stance_x": 0.2,
+   "lean": 0.26,
+   "mount_above": 0.037,
+   "torso": {
+    "waist_pitch_joint": 0.26
+   },
+   "score": 0.3873
+  },
+  {
+   "surface_z": 0.8,
+   "stance_x": 0.3,
+   "lean": 0.39,
+   "mount_above": 0.037,
+   "torso": {
+    "waist_pitch_joint": 0.39
+   },
+   "score": 0.3873
+  },
+  {
+   "surface_z": 0.8,
+   "stance_x": 0.2,
+   "lean": 0.39,
+   "mount_above": 0.037,
+   "torso": {
+    "waist_pitch_joint": 0.39
+   },
+   "score": 0.3858
+  },
+  {
+   "surface_z": 0.6,
+   "stance_x": 0.1,
+   "lean": 0.52,
+   "mount_above": 0.237,
+   "torso": {
+    "waist_pitch_joint": 0.52
+   },
+   "score": 0.385
+  },
+  {
+   "surface_z": 0.8,
+   "stance_x": 0.2,
+   "lean": 0.13,
+   "mount_above": 0.037,
+   "torso": {
+    "waist_pitch_joint": 0.13
+   },
+   "score": 0.3796
+  },
+  {
+   "surface_z": 0.8,
+   "stance_x": 0.25,
+   "lean": 0.13,
+   "mount_above": 0.037,
+   "torso": {
+    "waist_pitch_joint": 0.13
+   },
+   "score": 0.3796
+  },
+  {
+   "surface_z": 0.75,
+   "stance_x": 0.3,
+   "lean": 0.39,
+   "mount_above": 0.087,
+   "torso": {
+    "waist_pitch_joint": 0.39
+   },
+   "score": 0.3796
+  },
+  {
+   "surface_z": 0.7,
+   "stance_x": 0.15,
+   "lean": 0.39,
+   "mount_above": 0.137,
+   "torso": {
+    "waist_pitch_joint": 0.39
+   },
+   "score": 0.3735
+  },
+  {
+   "surface_z": 0.9,
+   "stance_x": 0.2,
+   "lean": -0.0,
+   "mount_above": -0.063,
+   "torso": {
+    "waist_pitch_joint": 0.0
+   },
+   "score": 0.3719
+  },
+  {
+   "surface_z": 0.85,
+   "stance_x": 0.25,
+   "lean": 0.13,
+   "mount_above": -0.013,
+   "torso": {
+    "waist_pitch_joint": 0.13
+   },
+   "score": 0.3719
+  },
+  {
+   "surface_z": 0.7,
+   "stance_x": 0.15,
+   "lean": 0.52,
+   "mount_above": 0.137,
+   "torso": {
+    "waist_pitch_joint": 0.52
+   },
+   "score": 0.3704
+  },
+  {
+   "surface_z": 0.85,
+   "stance_x": 0.2,
+   "lean": 0.26,
+   "mount_above": -0.013,
+   "torso": {
+    "waist_pitch_joint": 0.26
+   },
+   "score": 0.3696
+  }
+ ],
+ "stats": {
+  "best_score": 0.5239,
+  "n_feasible": 37,
+  "n_cells": 1620,
+  "rel": 0.7,
+  "band_depth_m": 0.25,
+  "lateral_m": [
+   -0.4,
+   0.0
+  ],
+  "lift_ref_m": 0.1
+ },
+ "arms": {
+  "right": {
+   "yaw_deg_ok": [
+    0,
+    30,
+    60,
+    90,
+    120,
+    150,
+    180,
+    210,
+    300,
+    330
+   ],
+   "yaw_deg_bad": [
+    240,
+    270
+   ],
+   "yaw_rate": {
+    "0": 0.8051,
+    "30": 0.8015,
+    "60": 0.7486,
+    "90": 0.6648,
+    "120": 0.6193,
+    "150": 0.5774,
+    "180": 0.5373,
+    "210": 0.4499,
+    "240": 0.2787,
+    "270": 0.2441,
+    "300": 0.4226,
+    "330": 0.6885
+   },
+   "tilt_deg": [
+    0.0,
+    30.0
+   ],
+   "tilt_rate": {
+    "0@0": 0.8124,
+    "30@0": 0.847,
+    "30@90": 0.7869
+   },
+   "fallback": [
+    {
+     "dyaw_deg": -150,
+     "tilt_deg": 30,
+     "tdir_deg": 0,
+     "recover": 0.5434
+    },
+    {
+     "dyaw_deg": 180,
+     "tilt_deg": 30,
+     "tdir_deg": 0,
+     "recover": 0.5231
+    },
+    {
+     "dyaw_deg": -120,
+     "tilt_deg": 30,
+     "tdir_deg": 0,
+     "recover": 0.5102
+    },
+    {
+     "dyaw_deg": 150,
+     "tilt_deg": 30,
+     "tdir_deg": 0,
+     "recover": 0.4808
+    },
+    {
+     "dyaw_deg": -90,
+     "tilt_deg": 30,
+     "tdir_deg": 0,
+     "recover": 0.4511
+    },
+    {
+     "dyaw_deg": 120,
+     "tilt_deg": 30,
+     "tdir_deg": 0,
+     "recover": 0.4278
+    },
+    {
+     "dyaw_deg": 180,
+     "tilt_deg": 0,
+     "tdir_deg": 0,
+     "recover": 0.4119
+    },
+    {
+     "dyaw_deg": 150,
+     "tilt_deg": 0,
+     "tdir_deg": 0,
+     "recover": 0.397
+    }
+   ],
+   "lift_clear_m": [
+    0.05,
+    0.25
+   ],
+   "lift_rate": {
+    "0.05": 1.0,
+    "0.1": 0.9963,
+    "0.15": 0.9781,
+    "0.2": 0.9635,
+    "0.25": 0.944
+   },
+   "carry_clear_m": [
+    0.05,
+    0.25
+   ],
+   "carry_rate": {
+    "0.05": 1.0926,
+    "0.1": 1.1328,
+    "0.15": 1.1291,
+    "0.2": 1.1169,
+    "0.25": 1.0926
+   },
+   "ready_tcp_above_surface_m": [
+    0.14,
+    0.29
+   ],
+   "ready_rate": {
+    "0.14": 0.9003,
+    "0.19": 0.893,
+    "0.24": 0.8775,
+    "0.29": 0.837
+   },
+   "cam_pitch_deg": [
+    47.6,
+    77.3938
+   ],
+   "cam_vis_rate": [
+    0.5701
+   ],
+   "lateral_m": [
+    -0.25,
+    0.0
+   ],
+   "work_mask": {
+    "xs": [
+     0.1,
+     0.15,
+     0.2,
+     0.25,
+     0.3,
+     0.35,
+     0.4,
+     0.45,
+     0.5,
+     0.55,
+     0.6,
+     0.65,
+     0.7,
+     0.75,
+     0.8,
+     0.85,
+     0.9
+    ],
+    "ys": [
+     -0.55,
+     -0.5,
+     -0.45,
+     -0.4,
+     -0.35,
+     -0.3,
+     -0.25,
+     -0.2,
+     -0.15,
+     -0.1,
+     -0.05,
+     0.0,
+     0.05,
+     0.1,
+     0.15
+    ],
+    "ok": [
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ]
+    ],
+    "rule": "mean over feasible cells of yaw-coverage x visible >= 0.5 x its max"
+   }
+  },
+  "left": {
+   "yaw_deg_ok": [
+    0,
+    30,
+    60,
+    90,
+    120,
+    150,
+    180,
+    210,
+    300,
+    330
+   ],
+   "yaw_deg_bad": [
+    240,
+    270
+   ],
+   "yaw_rate": {
+    "0": 0.7997,
+    "30": 0.7783,
+    "60": 0.7225,
+    "90": 0.642,
+    "120": 0.5977,
+    "150": 0.555,
+    "180": 0.5271,
+    "210": 0.4023,
+    "240": 0.1905,
+    "270": 0.2217,
+    "300": 0.4171,
+    "330": 0.688
+   },
+   "tilt_deg": [
+    0.0,
+    30.0
+   ],
+   "tilt_rate": {
+    "0@0": 0.803,
+    "30@0": 0.8407,
+    "30@90": 0.7701
+   },
+   "fallback": [
+    {
+     "dyaw_deg": -150,
+     "tilt_deg": 30,
+     "tdir_deg": 0,
+     "recover": 0.533
+    },
+    {
+     "dyaw_deg": 180,
+     "tilt_deg": 30,
+     "tdir_deg": 0,
+     "recover": 0.5112
+    },
+    {
+     "dyaw_deg": -120,
+     "tilt_deg": 30,
+     "tdir_deg": 0,
+     "recover": 0.5006
+    },
+    {
+     "dyaw_deg": 150,
+     "tilt_deg": 30,
+     "tdir_deg": 0,
+     "recover": 0.4672
+    },
+    {
+     "dyaw_deg": -90,
+     "tilt_deg": 30,
+     "tdir_deg": 0,
+     "recover": 0.4389
+    },
+    {
+     "dyaw_deg": 120,
+     "tilt_deg": 30,
+     "tdir_deg": 0,
+     "recover": 0.4118
+    },
+    {
+     "dyaw_deg": 180,
+     "tilt_deg": 0,
+     "tdir_deg": 0,
+     "recover": 0.4075
+    },
+    {
+     "dyaw_deg": 150,
+     "tilt_deg": 0,
+     "tdir_deg": 0,
+     "recover": 0.3906
+    }
+   ],
+   "lift_clear_m": [
+    0.05,
+    0.25
+   ],
+   "lift_rate": {
+    "0.05": 1.0,
+    "0.1": 0.9976,
+    "0.15": 0.9817,
+    "0.2": 0.9659,
+    "0.25": 0.9452
+   },
+   "carry_clear_m": [
+    0.05,
+    0.25
+   ],
+   "carry_rate": {
+    "0.05": 1.0926,
+    "0.1": 1.134,
+    "0.15": 1.134,
+    "0.2": 1.1194,
+    "0.25": 1.0938
+   },
+   "ready_tcp_above_surface_m": [
+    0.14,
+    0.29
+   ],
+   "ready_rate": {
+    "0.14": 0.9013,
+    "0.19": 0.8941,
+    "0.24": 0.8785,
+    "0.29": 0.8422
+   },
+   "cam_pitch_deg": [
+    47.6,
+    77.3938
+   ],
+   "cam_vis_rate": [
+    0.6324
+   ],
+   "lateral_m": [
+    -0.3,
+    0.0
+   ],
+   "work_mask": {
+    "xs": [
+     0.1,
+     0.15,
+     0.2,
+     0.25,
+     0.3,
+     0.35,
+     0.4,
+     0.45,
+     0.5,
+     0.55,
+     0.6,
+     0.65,
+     0.7,
+     0.75,
+     0.8,
+     0.85,
+     0.9
+    ],
+    "ys": [
+     0.55,
+     0.5,
+     0.45,
+     0.4,
+     0.35,
+     0.3,
+     0.25,
+     0.2,
+     0.15,
+     0.1,
+     0.05,
+     -0.0,
+     -0.05,
+     -0.1,
+     -0.15
+    ],
+    "ok": [
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ]
+    ],
+    "rule": "mean over feasible cells of yaw-coverage x visible >= 0.5 x its max"
+   }
+  }
+ },
+ "cell_half": {
+  "surface_z": 0.025,
+  "stance_x": 0.025,
+  "torso.waist_pitch_joint": 0.065
+ }
+}

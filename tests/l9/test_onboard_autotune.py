@@ -102,3 +102,10 @@ def test_hand_mask_filters_lean_and_surface_minus_joint():
     assert m[1, 1:].all() and not m[0].any() and not m[1, 0].any()
     m2 = CMP.hand_mask(d, {"surface_minus_joint": ["torso_j", 0.15, 0.25]}, n_stance=2)
     assert m2[1, 1].all() and int(m2.sum()) == 2  # only config 1 (j 0.5) at surface 0.7: 0.7 - 0.5 = 0.2
+
+
+def test_work_mask_marks_reachable_visible_points():
+    prof = RG.extract(_synthetic(), band_depth=0.2, lateral=(-0.3, -0.1), lift_ref=0.10, rel=0.7)
+    wm = prof["arms"]["right"]["work_mask"]
+    assert wm["xs"] == [0.2, 0.3, 0.4, 0.5] and len(wm["ok"]) == 4
+    assert wm["ok"][0] == [False, False, False] and all(all(r) for r in wm["ok"][1:])
