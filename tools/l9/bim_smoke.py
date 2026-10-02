@@ -118,7 +118,13 @@ def main(argv=None):
     with open(os.path.join(a.out, "result.json"), "w") as f:
         json.dump(results, f, indent=1, default=_jsonable)
     print("DONE " + json.dumps({"n": len(results), "ok": sum(1 for r in results if r.get("ok"))}), flush=True)
-    sys.exit(code)
+    # isaac.sh's watchdog only reaps the process tree 90 s after it sees a line matching '^RUN_DONE' (run9.py's own
+    # convention); sys.exit() alone does NOT close the Isaac Kit app (background render/physics threads keep the
+    # process alive). First 4 pod smoke runs (2026-10-02) leaked exactly this way -- found as 4 still-running
+    # Isaac processes on fe08 GPU0 well after their episodes had finished, had to be killed by hand. Match run9.py:
+    # print RUN_DONE, then os._exit (skips Isaac's slow/hanging atexit teardown, same as run9.py does).
+    print("RUN_DONE", flush=True)
+    os._exit(code)
 
 
 if __name__ == "__main__":
