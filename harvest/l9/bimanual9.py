@@ -948,7 +948,23 @@ class HandoverRuntime:
             print(f"GGXDBG _receiver_grasp_graspgenx -> {'None' if gc is None else 'GraspChoice'}", flush=True)
         if gc is None:
             ob = self.other_arm_boxes(slot)
-            gc = rt.choose(obj_key, {"tgt": obj_key}, extra_boxes=ob)
+            if slot is self.receiver:
+                # receiver next to the giver's hand: an exact gripper-vs-gripper test instead of cuRobo world boxes
+                # (bimdeep a11 10-03: with the giver's hand as boxes every receiver candidate failed IK, 0 of 46-63,
+                # the pads have to come within cuRobo's activation distance of the giver's fingers by design). Each
+                # candidate's swept gripper (fingers at pre-open + palm, back along the approach) must clear the
+                # giver's hand boxes (live9._hits_extra, the same test GraspGen-X candidates get); cuRobo then plans
+                # without the giver's hand.
+                saved = set(rt.failed)
+                rt.failed = saved | self._hand_clash(slot, obj_key)
+                try:
+                    env.use_arm(slot.arm)
+                    gc = rt.choose(obj_key, {"tgt": obj_key})
+                finally:
+                    rt.failed = saved
+                ob = {}
+            else:
+                gc = rt.choose(obj_key, {"tgt": obj_key}, extra_boxes=ob)
             if gc is None and os.environ.get("BIM_DEBUG") == "1":  # diagnosis only: is it the other hand's boxes?
                 env.use_arm(slot.arm)
                 c_obj = np.asarray(env.object_pose(obj_key)[0], float)
@@ -962,7 +978,8 @@ class HandoverRuntime:
             diag = rt.picks[-1] if rt.picks else {}
             return {"ok": False, "status": "no valid grasp", "choice_fail": diag.get("choice_fail"),
                     "valid_stats": diag.get("valid_stats")}
-        r = rt._approach_plan(rt.plan_start(), gc, obj_key, extra_boxes=self.other_arm_boxes(slot))
+        r = rt._approach_plan(rt.plan_start(), gc, obj_key,
+                              extra_boxes=None if slot is self.receiver else self.other_arm_boxes(slot))
         if not r["ok"]:
             return {"ok": False, "status": r["status"]}
         slot.traj, slot.traj_i = rt._resample(r["approach"]), 0
@@ -984,6 +1001,30 @@ class HandoverRuntime:
             slot.traj, slot.traj_i = rt._resample(r["lift"]), 0  # None lift -- pod smoke #6 crashed here, bare
             self.run_ticks(len(slot.traj) + 5)  # TypeError from P9.resample(None, ...); the straight-line micro-lift
         return {"ok": True, "status": "ok", "gc": gc, "T_obj_pick": T_obj_pick}  # an optimization, skip if None
+
+    def _hand_clash(self, slot: "_ArmSlot", obj_key: str, standoff: float = 0.10) -> set:
+        """Candidate indices (rt.choose() indexing, flips included) whose swept gripper hits the OTHER hand."""
+        import os as _os
+        from . import grasp9 as G
+        from . import live9 as L
+        from . import rt9 as RT
+        rt = slot.rt
+        other = self.other_of(slot)
+        obst = boxes_as_obstacles(live_hand_boxes(self.world, other.arm, other.rt))
+        self.world.env.use_arm(slot.arm)
+        C = rt._load(obj_key)
+        if C is None or not len(C["w"]) or not len(obst[0]):
+            return set()
+        if RT.COMMON or _os.environ.get("L9V2_GRASP_FLIP") == "1":
+            C = rt._with_flips(obj_key, C)
+        c, q = self.world.env.object_pose(obj_key)
+        Cw = G.to_world(C, c, q)
+        bad = set()
+        for i in range(len(Cw["w"])):
+            bx = G.boxes(rt.gr, float(Cw["pre_open"][i]), standoff=standoff)
+            if L._hits_extra(Cw["T"][i], bx, obst):
+                bad.add(i)
+        return bad
 
     def _receiver_grasp_graspgenx(self, obj_key: str, n_surface: int = 2000):
         """Receiver grasp via the SAME pod-A/B-validated GraspGenX pipeline the live executor uses
