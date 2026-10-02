@@ -35,6 +35,10 @@ def main(argv=None):
     ap.add_argument("--seed0", type=int, default=3950000)
     ap.add_argument("--robot", default="ffw_sg2")
     ap.add_argument("--direction", default="rl", choices=["rl", "lr"])  # rl: giver=right (env primary), receiver=left
+    ap.add_argument("--auto-direction", action="store_true",
+                     help="choose giver/receiver per-episode via probe_direction/choose_direction (outcome-based: "
+                          "cheap IK then full cuRobo path cost/margin) instead of the fixed --direction. The owner's "
+                          "order (2026-10-02): direction must never be a coin flip or a hand rule.")
     ap.add_argument("--cat", default="block", choices=list("block can cup bottle bowl box".split()))
     ap.add_argument("--pool", type=int, default=5000)
     ap.add_argument("--rooms", type=int, default=5000)
@@ -94,7 +98,22 @@ def main(argv=None):
             obj_key = ep["steps"][0][0]
             print("DRAW " + json.dumps({"seed": seed, "obj": obj_key, "wall_s": round(time.time() - t0, 1)}),
                   flush=True)
-            hr = B.install_handover(world, a.robot, giver, receiver, device=a.device, allow_untested=True)
+            giver_i, receiver_i = giver, receiver
+            if a.auto_direction:
+                zone, _cell = B.zone_point(a.robot, world.table_z, seed, i)
+                scores, _rts = B.probe_direction(world, a.robot, obj_key, zone, device=a.device,
+                                                  allow_untested=True)
+                try:
+                    direction = B.choose_direction(scores)
+                except ValueError as ex:
+                    print("DIRECTION_FAIL " + json.dumps({"seed": seed, "scores": scores, "err": str(ex)},
+                                                          default=_jsonable), flush=True)
+                    results.append({"seed": seed, "ok": False, "status": f"no direction reaches: {ex}"})
+                    continue
+                giver_i, receiver_i = ("right", "left") if direction == "rl" else ("left", "right")
+                print("DIRECTION " + json.dumps({"seed": seed, "chosen": direction, "scores": scores},
+                                                 default=_jsonable), flush=True)
+            hr = B.install_handover(world, a.robot, giver_i, receiver_i, device=a.device, allow_untested=True)
             r = hr.run_episode(obj_key, world.table_z, seed=seed, episode_idx=i)
             r["seed"], r["obj"] = seed, obj_key
             r["wall_s"] = round(time.time() - t0, 1)

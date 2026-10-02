@@ -401,6 +401,17 @@ class _ArmSlot:
 # for the receiver side, a generalisation of HandoverRuntime._live_best_yaw onto a bare Runtime before a giver/
 # receiver role is fixed, since the object's yaw at the zone isn't decided yet) runs for BOTH directions; full
 # cuRobo path cost / joint margin (stage 2) only for whichever direction(s) stage 1 says both arms reach.
+def zone_point(profile: str, table_z: float, seed: int, episode_idx: int):
+    """-> (xyz, cell_or_None). Single source of truth for the per-episode handover draw, shared by
+    `HandoverRuntime._run_episode` and `probe_direction` callers (owner's outcome-based-direction order: probe
+    and the real run MUST use the SAME zone point, never a per-direction redraw, so symmetry comes only from the
+    scene draw as required)."""
+    if profile == "ffw_sg2":
+        cell = sample_zone_cell(profile, table_z, seed, episode_idx)
+        return cell["xyz"], cell
+    return handover_zone_xyz(profile, table_z, seed, episode_idx), None
+
+
 def _batched_zone_ik(rt, obj_key: str, zone_xyz, n_yaw: int = 8, standoff: float = 0.11) -> tuple:
     """-> (n_ok, n_tested, best_yaw_rad, mean_margin_at_best_yaw); (0, 0, 0.0, 0.0) if no tested candidates."""
     C = rt._load(obj_key)
@@ -702,11 +713,7 @@ class HandoverRuntime:
             env.use_arm(env.primary)
 
     def _run_episode(self, obj_key: str, table_z: float, seed: int, episode_idx: int, final_xy=None) -> dict:
-        if self.profile == "ffw_sg2":
-            cell = sample_zone_cell(self.profile, table_z, seed, episode_idx)
-            zone = cell["xyz"]
-        else:
-            zone, cell = handover_zone_xyz(self.profile, table_z, seed, episode_idx), None
+        zone, cell = zone_point(self.profile, table_z, seed, episode_idx)
         if final_xy is None:
             final_xy = final_spot_xyz(zone, self.receiver.arm)[:2]
         log = []

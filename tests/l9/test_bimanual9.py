@@ -51,6 +51,19 @@ def test_handover_zone_v2_profiles_defined(profile):
     assert z[2] > 0.80
 
 
+def test_zone_point_matches_sample_zone_cell_for_ffw():
+    xyz, cell = B.zone_point("ffw_sg2", table_z=0.85, seed=11, episode_idx=2)
+    ref = B.sample_zone_cell("ffw_sg2", 0.85, 11, 2)
+    assert np.allclose(xyz, ref["xyz"])
+    assert cell is not None and cell["xyz"] is ref["xyz"] or np.allclose(cell["xyz"], ref["xyz"])
+
+
+def test_zone_point_no_cell_for_non_ffw_profiles():
+    xyz, cell = B.zone_point("r1pro", table_z=0.80, seed=1, episode_idx=0)
+    assert xyz.shape == (3,)
+    assert cell is None
+
+
 def test_final_spot_moves_into_receivers_own_side():
     zone = np.array([0.4, 0.0, 1.05])
     right = B.final_spot_xyz(zone, "right")
