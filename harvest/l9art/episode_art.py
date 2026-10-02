@@ -322,6 +322,7 @@ class ArtEpisode:
                 cmd = self._pt(cam, skill, hf["gc"], "grasp", "keep", g, p2=end)
                 if kind == "rotate":
                     cmd["point_2d"] = SK.to_px(cam, hf["gc"])
+                cmd.update(self.axis_fields(cam, st))  # the joint axis in the answer (user principle: no code-only decisions)
                 out.update(cmd=cmd, goal=st["goal"], next="release", now=now)
             elif sub == "release":
                 out.update(cmd={"mode": "gripper", "gripper": "open", "skill": skill}, next="retreat")
@@ -343,6 +344,7 @@ class ArtEpisode:
                 qg = dict(self.q(), **{jn: st["goal"]})
                 end = self.push_contact(st, qg)["point"]
                 cmd = self._pt(cam, skill, c["point"], "grasp", "keep", c, p2=end)
+                cmd.update(self.axis_fields(cam, st))
                 out.update(cmd=cmd, goal=st["goal"], T=c["T"], next="retreat", c=c)
             else:
                 d = -np.asarray(self.tcp_a()) * 0.10
@@ -471,6 +473,9 @@ class ArtEpisode:
         Tp = SK.T_pose(R, p + np.array([0, 0, d + 0.012]))
         Ta = SK.T_pose(R, p + np.array([0, 0, d + 0.10]))
         return {"p": p, "T": Tp, "T_above": Ta}
+
+    def axis_fields(self, cam, st) -> dict:
+        return SK.axis_fields(cam, self.spec, st["link"], self.T_WF(), self.q(), float(st["goal"]))
 
     def tcp_a(self):
         return -self.ex.tcp_T()[:3, 2]  # approach = -z_G

@@ -196,6 +196,34 @@ def to_px(cam, X) -> list | None:
     return [int(round(1000 * u / cam.W)), int(round(1000 * v / cam.H))]
 
 
+def axis_fields(cam, spec: dict, link: str, T_WF, q: dict, goal: float) -> dict:
+    """Format v3 axis of a move along a joint, for the answer row (user principle 10-02: every fine decision in the
+    VLM output): axis = "linear" (drawer / sliding door: direction = point -> point2) or "rotary" with pivot_2d = the
+    rotation axis seen in image 1 (door: the hinge line at the handle height; knob / dial: the knob centre),
+    turn = "cw" | "ccw" as seen by the camera, amount_deg = the turn (rotary) or amount_cm = the travel (linear)."""
+    h = spec["handles"][link]
+    jn = h["joint"]
+    J = spec["joints"][jn]
+    o, ax = FX.joint_world(spec, jn, T_WF)
+    hf = FX.handle_frame(spec, link, T_WF, q)
+    out = {}
+    if J["type"] == "prismatic":
+        out["axis"] = "linear"
+        out["amount_cm"] = round(abs(goal - float(q.get(jn, 0.0))) * 100, 1)
+        return out
+    gc = np.asarray(hf.get("body_gc", hf["gc"]), float)
+    piv = o + ax * float((gc - o) @ ax)  # the hinge / knob axis point nearest the grasped part
+    out["axis"] = "rotary"
+    out["pivot_2d"] = to_px(cam, piv)
+    dq = goal - float(q.get(jn, 0.0))
+    # turn sense seen from the camera: the rotation axis (+dq) pointing away from the camera = clockwise
+    t = np.asarray(cam.t, float)
+    away = float(np.sign(dq)) * float(ax @ (piv - t))
+    out["turn"] = "cw" if away > 0 else "ccw"
+    out["amount_deg"] = int(round(abs(np.degrees(dq))))
+    return out
+
+
 def occluded(cam, depth, X, tol: float = 0.03, r: int = 2) -> bool | None:
     """True when the head depth at X's pixel (median of a 5x5 patch) is more than tol nearer than X itself: something
     (often the arm) hides the pointed part (pilot 10-02 frame review: a slide handle label sat on the arm)."""

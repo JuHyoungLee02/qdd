@@ -34,8 +34,51 @@ def label_missing_of(r: dict) -> bool:
     return r.get("sub") == "move" and cmd.get("point2") is None
 
 
+OLD_P2 = ("- point2 = [x, y] in image 1 (0-1000): where the pointed contact (handle, pushed spot, the knob's white mark, the "
+          "pushed object's centre) should END. Give it only with the move along the joint / the push / the turn; the code "
+          "snaps it onto the part's joint (axis, distance and angle come from point and point2).")
+OLD_FMT = '''"point2": [x, y] (moves along a joint / pushes / turns only), "height"'''
+
+
+def upgrade_prompt(text: str) -> str:
+    """Requests stored before art2 (no joint-axis fields) -> the art2 wording (prompts_art), so all rows share it."""
+    from . import prompts_art as PA
+    new_p2 = PA.ART_BLOCK.split("- point2 = ", 1)[1].split("\n- press:", 1)[0]
+    text = text.replace(OLD_P2, "- point2 = " + new_p2)
+    fmt = PA.ANSWER.split('"point2": ', 1)[1].split(', "height"', 1)[0]
+    return text.replace(OLD_FMT, '"point2": ' + fmt + ', "height"')
+
+
+class _Cam:
+    def __init__(self, d):
+        import numpy as np
+        self.W, self.H, self.fx, self.fy, self.cx, self.cy = (d[k] for k in ("W", "H", "fx", "fy", "cx", "cy"))
+        self.R, self.t = np.asarray(d["R"], float), np.asarray(d["t"], float)
+
+
+def backfill_axis(r: dict, meta: dict, cams: dict):
+    """Older rows (before art2): add axis / pivot_2d / turn / amount to a joint move's command from the episode's
+    fixture (spec re-made from family + seed, fx2) and that call's head camera. -> (answer, ok)."""
+    import numpy as np
+    from . import fixtures as FX
+    from . import skills as SK
+    cmd = r.get("command") or {}
+    if r.get("sub") != "move" or cmd.get("skill") not in ("pull_axis", "push_axis", "rotate") or "axis" in cmd:
+        return r["answer"], True
+    fx = meta.get("fixture") or {}
+    if not fx or fx.get("version", "l9art-fx2") != "l9art-fx2":
+        return r["answer"], False
+    spec = FX.sample(fx["family"], int(fx["seed"]))
+    st = (meta.get("prog") or {}).get("stages", [])[int(r.get("stage") or 0)]
+    T = np.asarray(fx["pose"]["T"], float)
+    extra = SK.axis_fields(_Cam(cams["head"]), spec, st["link"], T, r.get("joints") or {}, float(st["goal"]))
+    a = json.loads(r["answer"])
+    a["command"].update(extra)
+    return json.dumps(a), extra.get("axis") == "linear" or extra.get("pivot_2d") is not None
+
+
 def _copy_prompt(src: str, dst: str) -> None:
-    text = open(src, encoding="utf-8").read()
+    text = upgrade_prompt(open(src, encoding="utf-8").read())
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     with open(dst, "w", encoding="utf-8", newline="\n") as f:
         f.write(text)
@@ -74,13 +117,19 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool) -> tuple:
             c["label_missing_dropped"] += 1
             continue
         cams = json.load(open(os.path.join(call_dir, "cams.json")))
+        answer, ok_axis = backfill_axis(r, meta, cams)
+        if not ok_axis:
+            missing = True
+            if train:
+                c["axis_missing_dropped"] += 1
+                continue
         camera = HC.line(cams["head"], f"l9art/{robot}")
         rid = row_id(ep_name, call)
         dst_prompt = os.path.join(out_dir, "prompts_art", rid + ".txt")
         _copy_prompt(os.path.join(call_dir, "prompt_v3.txt"), dst_prompt)
         images = [os.path.join(call_dir, "img1_head_ring.png"), os.path.join(call_dir, "img2_right_wrist_camera.png")]
         out.append({"id": rid, "kind": "control", "prompt_path": dst_prompt, "images": images,
-                    "answer": r["answer"], "label_missing": missing, "robot": robot, "camera": camera,
+                    "answer": answer, "label_missing": missing, "robot": robot, "camera": camera,
                     "source": f"l9art/{robot}", "gen": "l9art", "gen_version": "v3", "skill": r.get("skill"),
                     "split": split, "episode": ep_name, "success": success})
         c["rows"] += 1

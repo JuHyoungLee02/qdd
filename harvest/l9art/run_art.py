@@ -328,7 +328,7 @@ def main(argv=None):
                         skills_v3=sorted({s["skill"] for s in prog["stages"]}), robot=robot, arm=arm,
                         split=r.get("split", "train"), instruction=prog["instruction"], words=prog["words"],
                         prog={"stages": prog["stages"], "start": prog["start"], "judge": prog["judge"], "links": prog["links"]},
-                        fixture=None if spec is None else {"name": spec["name"], "family": spec["family"],
+                        fixture=None if spec is None else {"name": spec["name"], "family": spec["family"], "version": spec["version"],
                                                            "seed": spec["seed"], "dims": spec["dims"],
                                                            "pose": built["fixture"], "label": spec.get("label"),
                                                            "joints": {k: {kk: J[kk] for kk in ("type", "kind", "lo", "hi", "drive")}

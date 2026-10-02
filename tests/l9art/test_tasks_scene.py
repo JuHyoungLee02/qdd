@@ -57,3 +57,28 @@ def test_handle_grasp_frames():
         assert np.linalg.norm(g["T_pre"][:3, 3] - g["T"][:3, 3]) > 0.07
         if "bar" in hf:
             assert abs(np.dot(R[:, 1], hf["bar"])) < 0.25  # pads close across the bar
+
+
+class _Cam:
+    W, H, fx, fy, cx, cy = 672, 376, 400.0, 400.0, 336.0, 188.0
+    # optical x = image right = -y, optical y = image down = -z, optical z = +x (looking forward)
+    R = np.array([[0, 0, 1.0], [-1.0, 0, 0], [0, -1.0, 0]])
+    t = np.array([0.0, 0.0, 0.92])
+
+
+def test_axis_fields_knob_and_drawer():
+    for s in range(40):
+        sp = FX.sample("knob", s)
+        ln = next(iter(sp["handles"]))
+        if sp["handles"][ln]["face"] == "front":
+            break
+    T = SA.T_WF(0.5, 0.0, 0.75, 0.0)
+    jn = sp["handles"][ln]["joint"]
+    a = SK.axis_fields(_Cam(), sp, ln, T, {jn: 0.0}, 0.8)
+    assert a["axis"] == "rotary" and a["turn"] == "cw" and a["amount_deg"] == 46 and a["pivot_2d"] is not None
+    b = SK.axis_fields(_Cam(), sp, ln, T, {jn: 0.0}, -0.5)
+    assert b["turn"] == "ccw"
+    dr = FX.sample("drawer", 1)
+    ln = next(iter(dr["handles"]))
+    c = SK.axis_fields(_Cam(), dr, ln, T, {}, 0.2)
+    assert c == {"axis": "linear", "amount_cm": 20.0}

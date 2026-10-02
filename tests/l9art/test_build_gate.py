@@ -58,7 +58,7 @@ def default_rows():
     above = {"mode": "point", "skill": "pull_axis", "point_2d": [500, 300], "height": "above", "gripper": "open",
              "hand": "right", "approach": "front", "rot": 3}
     move = {"mode": "point", "skill": "pull_axis", "point_2d": [500, 300], "point2": [400, 300], "height": "grasp",
-            "gripper": "keep", "hand": "right"}
+            "gripper": "keep", "hand": "right", "axis": "linear", "amount_cm": 10.0}
     return [
         {"call": 1, "stage": 0, "sub": "above", "skill": "pull_axis", "answer": _answer(above), "command": above,
          "joints": {}, "tcp": [0, 0, 0], "grip_w": 0.1, "drop": None},

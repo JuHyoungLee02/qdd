@@ -6,14 +6,15 @@ import json
 
 import numpy as np
 
-VERSION = "d-min-v3@art1"
+VERSION = "d-min-v3@art2"  # art2: joint axis fields (axis, pivot_2d, turn, amount) in the answer
 ROBOT_WORDS = {"ffw_sg2": "a humanoid robot (ROBOTIS AI Worker FFW-SG2)", "franka_mast": "a robot arm (Franka Emika Panda) on a stand",
                "r1pro": "a humanoid robot (Galaxea R1 Pro)"}
 
 ART_BLOCK = """SKILLS (format v3: "skill" in every point command; v2 commands without it are pick / place)
 - skill: pick | place | pull_axis | push_axis | rotate | press | push_slide.
 - pull_axis = hold a handle and move it along its joint (open / close a drawer, swing a door, slide a door); push_axis = push a part along its joint without grasping (shut a drawer or a door); rotate = hold a knob or dial and turn it; press = push a button or switch in and let it spring back; push_slide = push an object along the table without lifting it.
-- point2 = [x, y] in image 1 (0-1000): where the pointed contact (handle, pushed spot, the knob's white mark, the pushed object's centre) should END. Give it only with the move along the joint / the push / the turn; the code snaps it onto the part's joint (axis, distance and angle come from point and point2).
+- point2 = [x, y] in image 1 (0-1000): where the pointed contact (handle, pushed spot, the knob's white mark, the pushed object's centre) should END. Give it only with the move along the joint / the push / the turn.
+- With every move along a joint also give the joint: "axis": "linear" (drawer, sliding door: the part slides along point -> point2; "amount_cm" = how far) or "rotary" (hinged door, knob, dial) with "pivot_2d" = [x, y] the rotation axis in image 1 (a door's hinge line at the handle's height, a knob's centre), "turn": "cw" | "ccw" as seen in image 1 and "amount_deg" = how far.
 - press: point at the button with height grasp (the code presses it in and backs off); no point2.
 - Grasping a handle or knob: point at it with height above (pre-pose in front of it, approach and rot as for grasps), then height grasp with gripper close. Pushes and presses use closed fingers: close the gripper first.
 
@@ -47,7 +48,7 @@ YOUR COMMANDS SO FAR (oldest first; results measured by the robot):
 
 ANSWER = """
 First assess what your last command did (images + measured TCP / pad gap), then give exactly one command.
-Return JSON only: {"assessment": {"task_progress": {"verified_completed": [string], "currently_attempting": string, "remaining": [string]}, "execution_status": "not_started"|"progressing"|"failed"|"uncertain"|"recovered", "evidence": "<= 40 words", "evidence_view": "head"|"wrist"|"both", "confidence": "low"|"medium"|"high"}, "command": {"mode": "point"|"edit"|"gripper"|"stop", "skill": string (point only), "point_2d": [x, y] (point only), "point2": [x, y] (moves along a joint / pushes / turns only), "height": "above"|"grasp"|"lift" (point only), "approach": string, "rot": int, "delta_m": [dx, dy, dz] (edit only), "gripper": "keep"|"open"|"close", "hand": "left"|"right"}, "reason": "<= 30 words"}"""
+Return JSON only: {"assessment": {"task_progress": {"verified_completed": [string], "currently_attempting": string, "remaining": [string]}, "execution_status": "not_started"|"progressing"|"failed"|"uncertain"|"recovered", "evidence": "<= 40 words", "evidence_view": "head"|"wrist"|"both", "confidence": "low"|"medium"|"high"}, "command": {"mode": "point"|"edit"|"gripper"|"stop", "skill": string (point only), "point_2d": [x, y] (point only), "point2": [x, y] (moves along a joint / pushes / turns only), "axis": "linear"|"rotary", "pivot_2d": [x, y] (rotary), "turn": "cw"|"ccw" (rotary), "amount_cm": number (linear), "amount_deg": int (rotary) (moves along a joint only), "height": "above"|"grasp"|"lift" (point only), "approach": string, "rot": int, "delta_m": [dx, dy, dz] (edit only), "gripper": "keep"|"open"|"close", "hand": "left"|"right"}, "reason": "<= 30 words"}"""
 
 SUCCESS = {
     "drawer_open": "the {H} is open at least 80 % of its travel", "drawer_open_half": "the {H} is open between 35 and 65 % of its travel",
