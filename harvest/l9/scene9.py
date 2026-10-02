@@ -954,7 +954,7 @@ def usable(node: dict, scene: dict, rm, lift: float, reach: bool = True) -> np.n
         return W[:0]  # covered / front-approach places: not usable by the top-down reach model (L9 v2)
     m = rm.at_lift(lift)
     own = {node["part"]}
-    if reach and scene.get("robot") == "r1pro" and os.environ.get("IR_L9_R1_BAND", "") == "1":
+    if reach and scene.get("robot") == "r1pro" and os.environ.get("IR_L9_R1_BAND", "1") == "1":
         # L9v2-R1: R1 Pro node points from its own measured top-down band (grasp + carry height), not the AI
         # Worker probe (harvest/l9/r1_band.py)
         from . import r1_band as RB

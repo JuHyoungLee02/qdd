@@ -362,12 +362,12 @@ R1_READY_BY_LEAN = {  # lean: (dx, dz, right q, left q); best joint-limit margin
     0.4: (0.49, -0.15, (-1.71181, -0.43204, 2.07445, -1.38539, -0.66566, 0.78176, 0.57974),
           (-1.70225, 0.43672, -2.05653, -1.38539, 0.64402, 0.78897, -0.59301)),
 }
-if os.environ.get("IR_L9_R1_READY", "") in ("1", "high") and round(R1_LEAN, 2) in R1_READY_BY_LEAN:
+if os.environ.get("IR_L9_R1_READY", "1") in ("1", "high") and round(R1_LEAN, 2) in R1_READY_BY_LEAN:
     _r = R1_READY_BY_LEAN[round(R1_LEAN, 2)]
     if any(_r[2]):
         V2_READY["r1pro"] = {"right": _r[2], "left": _r[3]}
 # carry clearance of the held object's bottom over carry_base (m), drawn per episode (v2plan.carry_z): R1 only
-V2_CARRY_CLEAR = {"r1pro": (0.05, 0.10)} if os.environ.get("IR_L9_R1_CARRY", "") == "1" else {}
+V2_CARRY_CLEAR = {"r1pro": (0.05, 0.10)} if os.environ.get("IR_L9_R1_CARRY", "1") == "1" else {}
 
 
 def v2_joints_to_width(profile: str, arm: str, q) -> float:

@@ -91,3 +91,12 @@
   - 중복 배치 0 확인(두 체인 모두).
 
 - 10-03 00:18 KST — 빌드 단계 가시성 관문(VLM이 안 보이는 점을 가리키지 않게, harvest/l9/visgate9.py+build9.py, commit 30a0e1d; world9._head_sees 소진 시 SkipScene도 같은 커밋): 화면 밖(5 % 테두리)·너무 작음(apparent radius_px<6)·50 % 이상 가림(teach_l8d.clutter_x.occlusion 재사용) 드롭, 단계 인식(approach→대상만, 그 외→놓을 곳만, 잡은 물체 제외, labels.jsonl "occ" 우선)으로 수정 후 표본(로봇당 ≤500편 또는 전수) head 드롭률: AIW 0.36 %(15/4,110)·Franka 0.09 %(4/4,390)·R1 0.06 %(2/3,562)·G1 0 %(0/11) — 전부 3 % 이내, 잔여 사유는 전부 out_of_frame. 3인칭/external 뷰는 23~28 %(AIW 27.6 %·Franka 23.4 %, R1·G1 은 external_cams 0건)로 더 높으나 고정 카메라가 다른 각도에서 보는 정상 범위로 판단(off/on 별도 채널이라 드롭률이 높아도 그만큼 3인칭 행 수만 줄어듦), 추가 조치 불필요. tests/l9/test_visgate9.py 17개 포함 전체 통과.
+
+### R1 Pro 원인 분해·수정 (L9v2-R1, 10-03 00–02시 KST, 기존 R1 팀)
+- 자산 점검: TCP(시뮬=cuRobo 0.01 mm)·관절 한계(시뮬=URDF=yml)·자기충돌 무시쌍 정상 — 불일치 아님.
+- 원인 1 (재생 실측, cuRobo 호출 기록 `L9V2_DEBUG_DIR` → r1own/tools/replay.py): READY TCP 가 면 위 9.4 cm(중앙값)라 pilotR 207편 중 142편이 lift_clear 로 시작했고, 그 들기는 빈 세계에서도 IK 불가(팔꿈치 joint4 한계 −1.745 rad). "충돌 없는 경로 없음" 의 대부분은 충돌이 아니라 도달 불가.
+- 원인 2: lean 0.8 의 위잡기 작업공간은 torso_link4 앞 ≈0.5–0.65 m 의 좁은 기둥(reach_band.py, 4 yaw, 여유 0.05 rad) — AIW 도달 탐침으로 놓은 물체·놓을 곳의 상당수가 기둥 밖.
+- 원인 3: 직선 접근이 1-seed IK 로 팔꿈치 한계에 걸림(다른 IK 가지는 됨), 잡기 자세 자체에서 집게가 설비·통 벽에 닿는 후보(검사에서 접촉 링크를 빼서 통과).
+- 수정(R1 전용, 범위/검사, 상수 이동 아님): READY 면 위 ≈21 cm, 운반 여유 U[0.05,0.10] m, 잡기 끝에서 거꾸로 푼 직선 접근 + 관절공간 이동, 잡기 자세 링크 검사, 장면 배치를 R1 측정 도달띠(잡기·운반 높이 둘 다)로. lean 은 0.8 로 동결(0.6: 2/14, 0.4: 0/5 로 이득 없음, 기록 board/humanoid_failed.md).
+- 같은 시드(pilotR 잡 20개): 기준 6/36(17 %) → +READY·운반 6/21(29 %) → +거꾸로 접근 16/44(36 %) → +링크 검사(띠 없음) 7/22(32 %) → **+도달띠 vL8B 14/24(58 %), approach 실패 0**, 관절 걸음 위반 1. 다양성(diversity9 --all): 중복 0, std_y 0.33(pilotR 0.20).
+- 판정 스윕: /data/harvest/l9v2/r1sweep (pilotR 198정의 × 20행, 라운드로빈, robot_gate9.py).

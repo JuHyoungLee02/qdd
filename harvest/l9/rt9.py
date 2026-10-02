@@ -47,8 +47,8 @@ MAX_FALLBACK = 6
 SETTLE_DW, SETTLE_N, SETTLE_MAX_S, WIN_S = 0.001, 3, 0.6, 0.05
 REACH_TOL, HOLD_MAX_S = 0.012, 1.5
 # L9v2-R1: straight approach from the grasp end + joint-space transit when the forward one fails (opt-in per robot)
-REVERSE_APPROACH = {"r1pro": os.environ.get("IR_L9_R1_REVERSE", "") == "1"}
-GRASP_LINKS_CHECK = {"r1pro": os.environ.get("IR_L9_R1_GRASPCHK", "") == "1"}  # L9v2-R1, see Runtime._valid
+REVERSE_APPROACH = {"r1pro": os.environ.get("IR_L9_R1_REVERSE", "1") == "1"}
+GRASP_LINKS_CHECK = {"r1pro": os.environ.get("IR_L9_R1_GRASPCHK", "1") == "1"}  # L9v2-R1, see Runtime._valid
 PLACE_CHECK = {"r1pro": os.environ.get("IR_L9_R1_PLACECHK", "") == "1"}  # L9v2-R1, see Runtime._place_reach
 LIFT_SKIP = {"r1pro": os.environ.get("IR_L9_R1_LIFTSKIP", "") == "1"}  # L9v2-R1, see Runtime.plan
 CURRENT = None
