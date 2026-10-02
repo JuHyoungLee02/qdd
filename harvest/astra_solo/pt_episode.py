@@ -111,12 +111,14 @@ class PtEpisode(Episode):
         if self.cams is not None:
             with open(os.path.join(d, "cams.json"), "w") as f:
                 json.dump({k: c.to_json() for k, c in self.cams.items()}, f)
+        hand = getattr(self.w, "prompt_hand", None)  # L9 (collect9): the arm that moves; left -> left-arm wording
+        fix = (lambda t: t) if hand != "left" else __import__("harvest.l9.hand", fromlist=["left_text"]).left_text
         if self.save_v2 and self.v2_text is not None:
             with open(os.path.join(d, "prompt_v2.txt"), "w", encoding="utf-8") as f:
-                f.write(self.v2_text)
+                f.write(fix(self.v2_text))
         for v, t in self.nd_texts.items():
             with open(os.path.join(d, f"prompt_{v}.txt"), "w", encoding="utf-8") as f:
-                f.write(t)
+                f.write(fix(t))
         if self.save_nd and self.ring_png is not None:
             with open(os.path.join(d, "img1_head_ring.png"), "wb") as f:
                 f.write(self.ring_png)

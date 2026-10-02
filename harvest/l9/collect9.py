@@ -5,7 +5,9 @@ perturbations, PtEpisode / XEpisode, calls/, labels.jsonl, joints.npz, scene.jso
   register the episode's task (tasks.TASKS / X_TASKS, X_STEPS for multi-step) under L9_TASK
   judge    insert definitions: the object's tilt <= 15 deg at the end (spec §3), on top of success_now
   record   meta gen / env_family / layout / task_family / task_id / arm / head_pose / light_family / unreal /
-           combo_hash / robot_pose / objects; every labels row gets `hand` (spec §4)."""
+           combo_hash / robot_pose / objects; every labels row gets `hand` (spec §4). Left-arm episodes collected before dev 10-03 (prompt_hand) saved
+calls/*/prompt_v2.txt (and prompt_nd*) with RIGHT-arm wording: those raw files are invalid for left episodes --
+read the build rows (min_format.row applies hand.left_text) instead; meta "prompt_hand_fixed" marks new ones."""
 from __future__ import annotations
 
 import json
@@ -141,6 +143,7 @@ def run_episode(world, row: dict, out_dir: str, pool: dict, rm, ledger=None, p: 
     if rt is not None:  # spec §12 v2: the cuRobo executor's timing style
         rt.style = mstyle
     style = "clean" if row.get("clean") else row.get("style", "")
+    world.prompt_hand = row["arm"]  # saved requests (prompt_v2 / nd) name the arm that moves (left fix 10-03)
     meta = collect_episode(world, int(row["seed"]), T9_TASK, "drf", row.get("split", "train"), out_dir,
                            0.0 if style == "clean" else p, 4, stop_calls, stop_motion_s, style, video=video)
     judge = {}
@@ -152,6 +155,7 @@ def run_episode(world, row: dict, out_dir: str, pool: dict, rm, ledger=None, p: 
     if ledger is not None:
         ledger.add(h)
     fs = getattr(world, "furniture_scene", {}) or {}
+    meta["prompt_hand_fixed"] = True  # calls/*/prompt_v2.txt names the moving arm (left episodes valid from here)
     meta.update(gen=GEN, env_family=sc["family"], layout=f"{sc['family']}/{sc['rule']}", layout_rule=sc["rule"],
                 task_family=ep["family"], task_id=ep["def"], arm=row["arm"], head_pose=fs.get("head", head),
                 light_family=light, unreal=False, combo_hash=h, robot_pose=sc["robot_pose"], lift_l9=sc["lift"],
