@@ -17,6 +17,8 @@ while true; do
   if [ ! -s $W/ids_$G.txt ]; then
     awk -v g=$G -v t=$T0 '$1 == "DONE" && $2 == g && $3 > t {f = 1} END {exit !f}' /data/harvest/l9v2/grasps_done.log 2>/dev/null \
       && { echo "ALL DONE $(date -u +%FT%TZ)"; break; }
+    # every catalog row has its candidate file (generation finished before this loop started)
+    tail -1 $W/q_$G.log | grep -q '"have": \([0-9]*\), "done": \1, "rows": \1,' && { echo "ALL DONE $(date -u +%FT%TZ)"; break; }
     sleep 120
     continue
   fi
