@@ -59,8 +59,10 @@ class RcWorld:
         return np.array(sorted(i for i in range(m.ngeom) if (m.geom_id2name(i) or "").startswith(ROBOT_PREFIX)), int)
 
     def _base(self):
-        bid = self.sim.model.body_name2id("robot0_base")
-        return np.array(self.sim.data.body_xmat[bid]).reshape(3, 3), np.array(self.sim.data.body_xpos[bid])
+        """The mobile base frame the env reports (state.base_position / base_rotation, xyzw): the frame of
+        state.end_effector_position_relative and of the arm OSC input (the 'robot0_base' body is a fixed placeholder at
+        (10, 10, 0) in RoboCasa: change 1, G1 geometry check)."""
+        return quat_xyzw_to_R(self.obs["state.base_rotation"]), np.asarray(self.obs["state.base_position"], float)
 
     def to_base(self, p_w):
         R, t = self._base()
