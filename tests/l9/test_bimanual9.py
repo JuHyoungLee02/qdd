@@ -205,3 +205,69 @@ def test_success_a_gate():
     assert bad_floor["ok"] is False
     bad_no_overlap = B.success_a((0.40, 0.0), (0.40, 0.0), overlap_ticks=0)
     assert bad_no_overlap["ok"] is False
+
+
+# ---------------------------------------------------------------------------------------------- handover row (owner
+# 2026-10-02, L9_PRINCIPLES.md §2 + "핸드오버는 VLM에 완전히 결합"): every field below must be a WRITTEN command,
+# not live only in code.
+def test_handover_direction_from_giver_arm():
+    assert B.handover_direction("left") == "lr"
+    assert B.handover_direction("right") == "rl"
+
+
+@pytest.mark.parametrize("direction", B.DIRECTIONS)
+def test_handover_rows_carry_every_required_field(direction):
+    rows = B.handover_rows(direction, giver_point_px=[100, 200], giver_height=0.9, giver_approach="top",
+                           giver_rot_bin=3, handover_point_px=[500, 400], handover_height=1.1,
+                           receiver_point_px=[520, 410], receiver_approach="side", receiver_rot_bin=5,
+                           receiver_source="graspgenx", release_sync=True)
+    assert [r["phase"] for r in rows] == ["giver_pick", "giver_carry", "receiver_pick", "giver_release"]
+    assert all(r["direction"] == direction for r in rows)  # direction on every row, not just one
+    giver_arm, receiver_arm = ("left", "right") if direction == "lr" else ("right", "left")
+
+    pick = rows[0]["commands"][0]
+    assert pick["arm"] == giver_arm and pick["point_px"] == [100, 200] and pick["height"] == 0.9
+    assert pick["approach"] == "top" and pick["wrist_bin"] == 3 and pick["gripper"] == "grasp"
+
+    carry = rows[1]["commands"][0]
+    assert carry["arm"] == giver_arm and carry["point_px"] == [500, 400] and carry["height"] == 1.1
+    assert carry["gripper"] == "hold"  # the handover point as a commanded target, not live-only
+
+    hold, grasp = rows[2]["commands"]
+    assert hold["arm"] == giver_arm and hold["gripper"] == "hold" and hold["sync"] is True
+    assert hold["point_px"] == [500, 400]  # same handover point repeated on the receiver_pick row
+    assert grasp["arm"] == receiver_arm and grasp["point_px"] == [520, 410] and grasp["approach"] == "side"
+    assert grasp["wrist_bin"] == 5 and grasp["sync"] is True and grasp["source"] == "graspgenx"
+
+    release = rows[3]["commands"][0]
+    assert release["arm"] == giver_arm and release["gripper"] == "release" and release["sync"] is True
+
+
+def test_handover_rows_rejects_unknown_direction():
+    with pytest.raises(ValueError):
+        B.handover_rows("lrx", [0, 0], 0.9, "top", 0, [0, 0], 0.9, [0, 0], "top", 0)
+
+
+def test_direction_score_gates_on_both_ik_ok():
+    assert B.direction_score(True, True, path_cost=1.0, joint_margin=2.0) == pytest.approx(1.0)
+    assert B.direction_score(True, False, path_cost=1.0, joint_margin=2.0) == float("-inf")
+    assert B.direction_score(False, True, path_cost=1.0, joint_margin=2.0) == float("-inf")
+
+
+def test_choose_direction_picks_the_better_reaching_one():
+    scores = {"lr": {"giver_ik_ok": True, "receiver_ik_ok": True, "path_cost": 2.0, "joint_margin": 1.0},
+              "rl": {"giver_ik_ok": True, "receiver_ik_ok": True, "path_cost": 0.5, "joint_margin": 1.0}}
+    assert B.choose_direction(scores) == "rl"  # lower path cost, same margin
+
+
+def test_choose_direction_skips_the_direction_that_cannot_reach():
+    scores = {"lr": {"giver_ik_ok": False, "receiver_ik_ok": True, "path_cost": 0.1, "joint_margin": 5.0},
+              "rl": {"giver_ik_ok": True, "receiver_ik_ok": True, "path_cost": 3.0, "joint_margin": 0.1}}
+    assert B.choose_direction(scores) == "rl"  # lr can't reach at all, no matter how cheap it looks
+
+
+def test_choose_direction_raises_when_neither_reaches():
+    scores = {"lr": {"giver_ik_ok": False, "receiver_ik_ok": True, "path_cost": 0.1, "joint_margin": 5.0},
+              "rl": {"giver_ik_ok": True, "receiver_ik_ok": False, "path_cost": 3.0, "joint_margin": 0.1}}
+    with pytest.raises(ValueError):
+        B.choose_direction(scores)

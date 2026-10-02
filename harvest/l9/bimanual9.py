@@ -217,6 +217,74 @@ def pair_commands(a: dict, b: dict) -> dict:
     return {"commands": [a, b]}
 
 
+DIRECTIONS = ("lr", "rl")
+
+
+def handover_direction(giver_arm: str) -> str:
+    return "lr" if giver_arm == "left" else "rl"
+
+
+def handover_rows(direction: str, giver_point_px, giver_height, giver_approach, giver_rot_bin,
+                  handover_point_px, handover_height,
+                  receiver_point_px, receiver_approach, receiver_rot_bin, receiver_source: str = "graspgenx",
+                  release_sync: bool = True) -> list:
+    """The handover call sequence's label rows (owner 2026-10-02, L9_PRINCIPLES.md §2/new order: "핸드오버는 VLM에
+    완전히 결합" -- every field below must be WRITTEN into the row as a command, not left live-only in code):
+      - direction ("lr"|"rl": which arm gives) on every row;
+      - the giver's own grasp point (point_px/height/approach/wrist_bin), giver_pick row;
+      - the HANDOVER POINT as a commanded target (point_px + height) on the giver_carry / receiver_pick rows --
+        `sample_handover_zone`/`sample_zone_cell` draw it, but the draw must be projected to a head pixel + height
+        and placed here, not just used internally to steer cuRobo;
+      - the receiver's grasp point/approach/rotation (receiver_pick row) -- `receiver_source` names which generator
+        chose it ("graspgenx" or "rule", owner's A/B requirement) so the label says which, never silently;
+      - release timing as a sync flag (giver_release row, `release_sync`: True = the receiver's contact was
+        confirmed before the giver's gripper opened, the category-A gate itself).
+    -> one dict per call: {"phase", "direction", "commands": [bim_command, ...]}."""
+    if direction not in DIRECTIONS:
+        raise ValueError(f"direction {direction!r}: one of {DIRECTIONS}")
+    giver_arm, receiver_arm = ("left", "right") if direction == "lr" else ("right", "left")
+    rows = [
+        {"phase": "giver_pick", "direction": direction,
+         "commands": [bim_command(giver_arm, "lead", [0.0, 0.0, 0.0], "grasp", point_px=giver_point_px,
+                                  height=giver_height, approach=giver_approach, wrist_bin=giver_rot_bin)]},
+        {"phase": "giver_carry", "direction": direction,
+         "commands": [bim_command(giver_arm, "lead", [0.0, 0.0, 0.0], "hold", point_px=handover_point_px,
+                                  height=handover_height)]},
+        {"phase": "receiver_pick", "direction": direction,
+         "commands": [bim_command(giver_arm, "support", [0.0, 0.0, 0.0], "hold", point_px=handover_point_px,
+                                  height=handover_height, sync=True),
+                      bim_command(receiver_arm, "lead", [0.0, 0.0, 0.0], "grasp", point_px=receiver_point_px,
+                                  approach=receiver_approach, wrist_bin=receiver_rot_bin, sync=True)]},
+        {"phase": "giver_release", "direction": direction,
+         "commands": [bim_command(giver_arm, "support", [0.0, 0.0, 0.0], "release", sync=release_sync)]},
+    ]
+    rows[2]["commands"][1]["source"] = receiver_source  # which generator chose the receiver's grasp (owner's A/B)
+    return rows
+
+
+# ---------------------------------------------------------------------------------------------- pure: direction choice
+# Owner 2026-10-02 (further refinement): the giver/receiver direction is NOT a coin flip or a hand rule -- cheap IK
+# first, full cuRobo only for the direction(s) that clear it, then path cost, then joint margin, label the better
+# direction; 50/50 must come from symmetric object placement (scene9 draw), not from forcing the label. This is the
+# pure scoring half; the live IK/path-cost/margin numbers come from a HandoverRuntime method (impure, pod only,
+# mirrors `_live_best_yaw`'s probe pattern) and get handed to `choose_direction` below.
+def direction_score(giver_ik_ok: bool, receiver_ik_ok: bool, path_cost: float, joint_margin: float) -> float:
+    """Higher is better; -inf if either arm cannot even reach (ik_ok gates before cost/margin matter)."""
+    if not (giver_ik_ok and receiver_ik_ok):
+        return float("-inf")
+    return float(joint_margin) - float(path_cost)
+
+
+def choose_direction(scores: dict) -> str:
+    """scores: {"lr": {"giver_ik_ok", "receiver_ik_ok", "path_cost", "joint_margin"}, "rl": {...}} (both directions
+    evaluated, or just one if the instruction names the giving arm -- the caller decides which directions to
+    probe). -> the better direction; raises if neither direction reaches."""
+    ranked = sorted(scores, key=lambda d: direction_score(**scores[d]), reverse=True)
+    if direction_score(**scores[ranked[0]]) == float("-inf"):
+        raise ValueError(f"no direction reaches: {scores}")
+    return ranked[0]
+
+
 # ---------------------------------------------------------------------------------------------- pure: phase FSM
 PHASES = ("giver_pick", "giver_carry", "giver_hold", "receiver_pick", "giver_release", "receiver_carry", "done")
 
@@ -324,6 +392,93 @@ class _ArmSlot:
     traj_i: int = 0
     width: float = 0.0
     held_obj: str | None = None
+
+
+# ---------------------------------------------------------------------------------------------- impure: direction probe
+# Owner 2026-10-02 (further refinement): outcome-based direction choice, not a coin or a hand rule. Contributed by
+# the arm-choice agent (ae975e701b01078f9), targeting `direction_score`/`choose_direction` above unchanged. Cheap
+# stage 1 (rt.choose() for the giver side -- already what _grasp() would redo, so no extra cost; _batched_zone_ik
+# for the receiver side, a generalisation of HandoverRuntime._live_best_yaw onto a bare Runtime before a giver/
+# receiver role is fixed, since the object's yaw at the zone isn't decided yet) runs for BOTH directions; full
+# cuRobo path cost / joint margin (stage 2) only for whichever direction(s) stage 1 says both arms reach.
+def _batched_zone_ik(rt, obj_key: str, zone_xyz, n_yaw: int = 8, standoff: float = 0.11) -> tuple:
+    """-> (n_ok, n_tested, best_yaw_rad, mean_margin_at_best_yaw); (0, 0, 0.0, 0.0) if no tested candidates."""
+    C = rt._load(obj_key)
+    if C is None or not len(C.get("w", ())):
+        return 0, 0, 0.0, 0.0
+    ok0 = np.asarray(C["test_ok"], bool) if "test_ok" in C else np.ones(len(C["w"]), bool)
+    idx = np.flatnonzero(ok0)
+    if not len(idx):
+        return 0, 0, 0.0, 0.0
+    rt.refresh_world()
+    best = (0, 0.0, 0.0)
+    for k in range(n_yaw):
+        yaw = 2 * math.pi * k / n_yaw
+        cz, sz = math.cos(yaw), math.sin(yaw)
+        Robj = np.array([[cz, -sz, 0.0], [sz, cz, 0.0], [0.0, 0.0, 1.0]])
+        T_obj = np.eye(4)
+        T_obj[:3, :3], T_obj[:3, 3] = Robj, np.asarray(zone_xyz, float)
+        Tg, Tp = [], []
+        for i in idx:
+            Tw = T_obj @ C["T"][i]
+            a_world = Robj @ np.asarray(C["a"][i], float)
+            Twp = Tw.copy()
+            Twp[:3, 3] = Tw[:3, 3] - a_world * standoff
+            Tg.append(rt.to_base(Tw))
+            Tp.append(rt.to_base(Twp))
+        ok_g, _, mg = rt.planner.ik(np.stack(Tg))
+        ok_p, _, mp = rt.planner.ik(np.stack(Tp), contact_links_off=False)
+        both = np.asarray(ok_g, bool) & np.asarray(ok_p, bool)
+        n = int(np.sum(both))
+        m = float(np.mean(np.minimum(mg, mp)[both])) if n else 0.0
+        if n > best[0]:
+            best = (n, yaw, m)
+    n_ok, best_yaw, margin = best
+    return n_ok, len(idx), best_yaw, margin
+
+
+def probe_direction(world, profile: str, obj_key: str, zone_xyz, device: str = "cuda:0",
+                    allow_untested: bool = False, n_yaw: int = 8) -> tuple:
+    """Decide giver/receiver direction from measured reach/cost/margin -- call once per episode, before
+    install_handover commits a direction. zone_xyz: the already-drawn handover point, the SAME for both
+    directions (symmetry comes from the scene draw, never from branching this probe on direction).
+    -> (scores, rts): scores is choose_direction's input shape; rts is {"left": Runtime, "right": Runtime}."""
+    from . import rt9 as RT
+    env = world.env
+    rts = {}
+    for arm in ("left", "right"):
+        env.use_arm(arm)
+        rts[arm] = RT.Runtime(world, profile, arm, device=device, allow_untested=allow_untested)
+    gcs, pick_margin, zone_probe = {}, {}, {}
+    for arm, rt in rts.items():
+        env.use_arm(arm)
+        gc = rt.choose(obj_key, {"tgt": obj_key})
+        gcs[arm] = gc
+        pick_margin[arm] = float(rt._margin[gc.idx]) if gc is not None else 0.0
+        zone_probe[arm] = _batched_zone_ik(rt, obj_key, zone_xyz, n_yaw=n_yaw)
+
+    def _cheap(giver_arm, receiver_arm):
+        n_ok = zone_probe[receiver_arm][0]
+        ok_both = n_ok > 0 and gcs[giver_arm] is not None
+        return {"giver_ik_ok": gcs[giver_arm] is not None, "receiver_ik_ok": n_ok > 0, "path_cost": 0.0,
+                "joint_margin": min(pick_margin[giver_arm], zone_probe[receiver_arm][3]) if ok_both else 0.0}
+
+    scores = {"lr": _cheap("left", "right"), "rl": _cheap("right", "left")}
+    for d in [x for x in DIRECTIONS if scores[x]["giver_ik_ok"] and scores[x]["receiver_ik_ok"]]:
+        giver_arm = "left" if d == "lr" else "right"
+        env.use_arm(giver_arm)
+        rt, gc = rts[giver_arm], gcs[giver_arm]
+        r = rt._approach_plan(rt.plan_start(), gc, obj_key)
+        if not r["ok"]:
+            scores[d]["giver_ik_ok"] = False
+            continue
+        parts = [q for q in (r.get("approach"), r.get("grasp"), r.get("lift")) if q is not None]  # lift can be
+        Q = np.concatenate(parts)  # None after ok=True (bimanual9._grasp hit this once already) -- skip, not crash
+        scores[d]["path_cost"] = float(np.sum(np.linalg.norm(np.diff(Q, axis=0), axis=1)))
+        lo, hi = rt.planner._limits()
+        m = np.minimum(Q - lo, hi - Q).min(1) / max(float((hi - lo).min()), 1e-6)
+        scores[d]["joint_margin"] = float(m.min())
+    return scores, rts
 
 
 class HandoverRuntime:
