@@ -7,7 +7,9 @@ A robot (per task kind: single-arm, articulated, bimanual) passes when
 (b) is judged only on definitions with >= 5 attempted episodes (user 10-03 02h); a definition with fewer is
 "pending" (fill it to 5, then judge). verdict: FAIL (a judged definition fails (b), or (c) fails with nothing
 pending) / PENDING (definitions still below 5) / PASS (all judged, (b) and (c) hold); pending_need = episodes to add.
-usage: python tools/l9/robot_gate9.py <collect root>... [--robot r1pro] [--min-eps 1] [--json out.json]
+usage: python tools/l9/robot_gate9.py <collect root>... [--robot r1pro] [--min-eps 1] [--json out.json] [--exclude a,b]
+--exclude: definitions still experimental for every robot (main 10-03 02h, L9_PRINCIPLES §6: robots are judged only
+on definitions in production for the passing robots); default EXPERIMENTAL_ALL below.
 A collect root is a dir with <split>/<family>/<episode>/meta.json (or skipped.json)."""
 import glob
 import json
@@ -32,7 +34,10 @@ def skip_kind(reason: str) -> str:
     return "other"
 
 
-def evaluate(roots, robot=None, min_eps=1) -> dict:
+EXPERIMENTAL_ALL = ("drawer_put_close", "drawer_take_close")  # experimental for every robot (+ AIW far push defs)
+
+
+def evaluate(roots, robot=None, min_eps=1, exclude=EXPERIMENTAL_ALL) -> dict:
     eps, succ = Counter(), Counter()
     skips = defaultdict(Counter)
     for root in roots:
@@ -60,8 +65,9 @@ def evaluate(roots, robot=None, min_eps=1) -> dict:
                     continue
                 skips[row.get("def") or "?"][skip_kind(sk.get("reason", ""))] += 1
     defs = {}
+    excluded = sorted(k for k in eps if k in set(exclude))
     for k in sorted(eps):
-        if eps[k] < min_eps:
+        if eps[k] < min_eps or k in set(exclude):
             continue
         rate = succ[k] / eps[k]
         judged = eps[k] >= JUDGE_MIN_EPS
@@ -80,16 +86,18 @@ def evaluate(roots, robot=None, min_eps=1) -> dict:
             "pooled_rate": round(sum(succ.values()) / max(1, sum(eps.values())), 3), "mean_def_rate": mean,
             "defs_failing_b": len(failing), "failing_examples": failing[:15],
             "defs_pending": len(pending), "pending_need": {k: JUDGE_MIN_EPS - defs[k]["eps"] for k in pending},
-            "skips_by_kind": dict(sk_total), "pass_b": not failing, "pass_c": mean >= 0.40,
+            "excluded_experimental": excluded, "skips_by_kind": dict(sk_total), "pass_b": not failing, "pass_c": mean >= 0.40,
             "PASS": verdict == "PASS", "verdict": verdict, "defs": defs}
 
 
 def main():
     a = sys.argv[1:]
     arg = lambda k, d: a[a.index(k) + 1] if k in a else d  # noqa: E731
-    vals = {arg(k, None) for k in ("--robot", "--min-eps", "--json")}
+    vals = {arg(k, None) for k in ("--robot", "--min-eps", "--json", "--exclude")}
     roots = [x for x in a if not x.startswith("--") and x not in vals]
-    rep = evaluate(roots, arg("--robot", None), int(arg("--min-eps", "1")))
+    ex = arg("--exclude", None)
+    rep = evaluate(roots, arg("--robot", None), int(arg("--min-eps", "1")),
+                   tuple(x for x in ex.split(",") if x) if ex is not None else EXPERIMENTAL_ALL)
     out = arg("--json", None)
     if out:
         json.dump(rep, open(out, "w"), indent=1)
