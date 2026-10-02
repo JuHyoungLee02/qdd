@@ -53,9 +53,15 @@ HFOV_HOLD = ((55.0, 65.0), (95.0, 105.0))
 # OUTSIDE the arm's ~0.855 m reach sphere from its shoulder (euclidean distance from panda_link0 at the range's
 # midpoint ~1.3 m, versus ~0.25-0.85 m for the old / r1-v1 / r1-v2 ranges) -- high and to the side opposite the
 # old mount, pitched steeply down (near top-down, smaller apparent arm silhouette at this range) and panned back
-# toward the workspace. Re-validating before switching production.
-MAST_DEFAULT = {"x": 0.0, "y": -0.48, "h": 1.15, "pitch": 68.0, "pan": 30.0}
-MAST_RANGE = {"x": (-0.15, 0.15), "y": (-0.58, -0.40), "h": (1.00, 1.30), "pitch": (60.0, 75.0), "pan": (20.0, 40.0)}
+# toward the workspace. A same-seed quick check (8 Franka eps) still measured 23.2 % >50 % occluded -- better than
+# r1-v1/r1-v2 but still above target; owner hypothesis (10-02 ~22:30): near-vertical pitch (60-75 deg) looks down
+# almost the SAME axis the gripper descends on a top-down grasp, so the hand itself (not a stray link) sits
+# between the lens and the object during the final approach -- distinct from the self-occlusion r1-v1/v2 showed.
+# r1-v4 (below) keeps r1-v3's distance (x/y/h, well outside the reach sphere) but lowers pitch to 30-50 deg (an
+# oblique look, not near top-down) to separate the two causes; running the SAME 8-seed quick check before
+# deciding between r1-v3 and r1-v4. Re-validating before switching production.
+MAST_DEFAULT = {"x": 0.0, "y": -0.48, "h": 1.15, "pitch": 40.0, "pan": 30.0}
+MAST_RANGE = {"x": (-0.15, 0.15), "y": (-0.58, -0.40), "h": (1.00, 1.30), "pitch": (30.0, 50.0), "pan": (20.0, 40.0)}
 D435_HFOV = 69.0  # Intel RealSense D435 colour, horizontal (datasheet 69 x 42 deg)
 TRIES = 5
 
