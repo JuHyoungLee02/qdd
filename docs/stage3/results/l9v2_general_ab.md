@@ -28,6 +28,13 @@ Notes fixed before the runs:
 - G1 team switches that are not on dev (`L9V2_G1_*`) are in neither arm. The short-arm mechanisms `L9_EXEC_TABLE` / `L9_CSPACE_READY` (dev 84e45f2c, own G1/R1 A/B running) are in neither arm.
 - Known label defect in both arms (external review 1): some left-arm rows' prompt says "You control the right arm".
   It changes label text only, not the sim outcome, so it does not bias this comparison; it is fixed generally elsewhere.
+- **Revision 2 (06:00 KST, before any main-A/B episode; coordinator decision)**: P0 + (a)(d) (`L9V2_PLACE_ABOVE/TOL/HYST`)
+  are taken OUT of this A/B. Their own K0/K4 smoke (same seeds, 30 rows each, fe08 /data/harvest/out/l9/posc/) failed:
+  K0 3/10 success, GT ABA 0/7 vs K4 2/10, GT ABA 2/7 (cause: P0 carry_over height vs the carry_up branch, (a) tolerance
+  edge). After the owner's fix and a passing re-smoke, the place prescription gets a short separate confirmation A/B on
+  top of this B. The general spec is frozen only after both A/Bs. Main run: code dev b69a765, B env =
+  GGX + GRIP_LAYER + ENV_PROFILE + CARRY_INVIEW + COMMON_EXEC + HIGH_SHARE=0.10; 4 robots × 32 rows (production-rendered
+  rows), 5 rows per job (one Isaac boot per job; boots take 10–13 min under load), 64 jobs.
 - The smoke test (below) runs B without P0. The main A/B runs only with P0 included (coordinator 10-03: no
   trajectory-mode mix inside one spec).
 
