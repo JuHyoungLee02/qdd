@@ -40,13 +40,30 @@ for arm in arms:
                                                           quaternion=torch.tensor([q] * len(T), device="cuda", dtype=torch.float32))},
                                               num_goalset=1))
     okv = r.success.view(-1).tolist()
-    k = okv.index(True) if True in okv else 0
-    t = T[k]
     names = list(r.js_solution.joint_names)
-    sol = r.js_solution.position.view(len(T), -1)[k].tolist()
+    P = r.js_solution.position.view(len(T), -1)
+    # L9v2-DIAG 9: the first successful candidate (usually the exact target, offset index 0) can sit right at a
+    # joint limit (pilotR V2_READY left joint2 3.07831 vs limit 3.11199, inside cuRobo's own 0.03 rad
+    # position_limit_clip -> the start state is effectively AT the planning limit: most carry/lift/retreat moves
+    # that need that joint to grow at all then have no collision-free path). Among every successful offset, keep
+    # the one with the largest margin to either joint limit instead of just the first.
+    lo, hi = (v.cpu().numpy() for v in ik.kinematics.get_joint_limits().position)
+    idxs = [names.index(j) for j in C.arm_joints(profile, arm)]
+    best_k, best_margin = (okv.index(True) if True in okv else 0), -1.0
+    for k in range(len(T)):
+        if not okv[k]:
+            continue
+        qk = P[k].cpu().numpy()
+        margin = float(min(min(qk[i] - lo[i], hi[i] - qk[i]) for i in idxs))
+        if margin > best_margin:
+            best_k, best_margin = k, margin
+    k = best_k
+    t = T[k]
+    sol = P[k].tolist()
     arm_q = {j: round(sol[names.index(j)], 5) for j in C.arm_joints(profile, arm)}
     res[arm] = {"ok": bool(okv[k]), "pos_err_mm": round(float(r.position_error.view(-1)[k]) * 1e3, 3),
-                "target_base": t, "quat_base": [round(v, 6) for v in q], "yaw": yaw, "lean": LEAN,
+                "limit_margin_rad": round(best_margin, 4), "target_base": t,
+                "quat_base": [round(v, 6) for v in q], "yaw": yaw, "lean": LEAN,
                 "base_link": C.base_link(profile, arm), "tool_frame": tf, "q": arm_q}
     print(profile, arm, res[arm])
 json.dump(res, open(out, "w"), indent=1)
