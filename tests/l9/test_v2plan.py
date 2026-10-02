@@ -92,6 +92,73 @@ def _st(tcp, quat, grip_w=0.1, hold=False, obj=None, on=False):
             "pred": {"holding(o1)": hold, "upright(o1)": True, "on(o1,o2)": on}}
 
 
+def test_inview_score_true_false():
+    """P.inview_score (L9_CARRY_INVIEW): same 'inside with a 5% margin' convention as world9._head_sees."""
+    cam = _cam()
+    centre_pt = np.array([0.45, -0.2, 0.8])  # straight below the camera: always centred regardless of depth
+    far_pt = np.array([0.45, -0.7, 0.8])  # far to the side: projects outside the margin
+    assert P.inview_score(cam, [centre_pt]) == 1.0
+    assert P.inview_score(cam, [far_pt]) == 0.0
+    assert P.inview_score(cam, [centre_pt, far_pt]) == 0.5
+    assert P.inview_score(None, [centre_pt]) == 0.0  # no camera (flag off) -> 0, never consulted by carry_over_z
+    assert P.inview_score(cam, []) == 0.0
+
+
+def test_carry_over_z_default_without_cam_or_held():
+    """cam=None or T_obj_G=None (flag off / nothing measured yet) must keep today's formula byte-identical."""
+    assert P.carry_over_z(0.97, 0.84, (0.40, -0.55), [1, 0, 0, 0], np.eye(4), cam=None) == 0.97
+    assert P.carry_over_z(0.97, 0.84, (0.40, -0.55), [1, 0, 0, 0], None, cam=_cam()) == 0.97
+
+
+def test_carry_over_z_tie_keeps_default():
+    """Both candidates equally (in)-view (here: directly under the camera, always centred) -> keep max() (today)."""
+    cam = _cam()
+    assert P.carry_over_z(0.97, 0.84, (0.45, -0.2), [1, 0, 0, 0], np.eye(4), cam=cam) == 0.97
+
+
+def test_carry_over_z_prefers_inview_candidate():
+    """The higher (default = max) candidate projects outside the head image at this offset; the lower one is
+    inside -> carry_over_z switches to it (soft preference, no new constant: both values are already computed by
+    the caller)."""
+    cam = _cam()
+    assert P.carry_over_z(0.97, 0.84, (0.40, -0.55), [1, 0, 0, 0], np.eye(4), cam=cam) == 0.84
+    assert P.carry_over_z(0.84, 0.97, (0.40, -0.55), [1, 0, 0, 0], np.eye(4), cam=cam) == 0.84  # order-independent
+
+
+def test_plan_carry_over_default_matches_legacy_formula(monkeypatch):
+    """plan()'s carry_over step without a camera (flag off) must still compute max(zc, put_z + 0.05): the only
+    change is additive and opt-in."""
+    from harvest.astra_motion import harness
+    monkeypatch.setattr(harness, "obj_height", lambda k: 0.10)
+    C, c = _cands()
+    gc = P.choose(C, np.ones(5, bool), np.ones(5), c, (0.0, 0.0), 5, 0, allow_instruct=False)
+    info = {"tgt": "o1", "place": "o2", "sup_tgt": 0.75, "sup_place": 0.71, "place_top": 0.73}
+    held = {"T_obj_G": np.eye(4)}
+    obj = {"o1": [0.45, -0.2, 0.80], "o2": [0.40, -0.55, 0.71]}
+    st = _st([0.0, 0.0, 0.97], list(gc.quat), 0.04, hold=True, obj=obj)
+    put_T = P.put_pose([1.0, 0, 0, 0], (0.40, -0.55), 0.73 + 0.05 + gc.place_dz, np.eye(4))
+    expected = round(max(0.97, put_T[2, 3] + 0.05), 4)
+    s, cmd = P.plan(st, info, 0.75, 0.107, gc, held)
+    assert s == "carry_over" and cmd["position_m"][2] == expected
+
+
+def test_plan_carry_over_prefers_inview_with_camera(monkeypatch):
+    """Same scenario, with a head camera (L9_CARRY_INVIEW=1 wiring): the default (zc) candidate is off-frame at
+    this place offset, the lower one is in frame -> plan() must return the lower z instead."""
+    from harvest.astra_motion import harness
+    monkeypatch.setattr(harness, "obj_height", lambda k: 0.10)
+    C, c = _cands()
+    gc = P.choose(C, np.ones(5, bool), np.ones(5), c, (0.0, 0.0), 5, 0, allow_instruct=False)
+    info = {"tgt": "o1", "place": "o2", "sup_tgt": 0.75, "sup_place": 0.71, "place_top": 0.73}
+    held = {"T_obj_G": np.eye(4)}
+    obj = {"o1": [0.45, -0.2, 0.80], "o2": [0.40, -0.55, 0.71]}
+    st = _st([0.0, 0.0, 0.97], list(gc.quat), 0.04, hold=True, obj=obj)
+    put_T = P.put_pose([1.0, 0, 0, 0], (0.40, -0.55), 0.73 + 0.05 + gc.place_dz, np.eye(4))
+    expected = round(put_T[2, 3] + 0.05, 4)
+    s, cmd = P.plan(st, info, 0.75, 0.107, gc, held, cam=_cam())
+    assert s == "carry_over" and cmd["position_m"][2] == expected and expected < 0.97 - 0.05
+
+
 def test_plan_sequence_side_grasp(monkeypatch):
     from harvest.astra_motion import harness
     monkeypatch.setattr(harness, "obj_height", lambda k: 0.10)

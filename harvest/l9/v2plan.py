@@ -203,6 +203,44 @@ def ang_deg(q1, q2) -> float:
     return math.degrees(2 * math.acos(min(1.0, d)))
 
 
+def _in_frame(cam, p, margin: float = 0.05) -> bool:
+    """True if world point p projects inside the head image with a `margin` inset fraction of each side (same
+    convention as world9._head_sees)."""
+    from ..astra_motion.geometry import project
+    u, v, z = project(cam, p)
+    return bool(z > 0 and math.isfinite(u) and math.isfinite(v) and
+                margin * cam.W <= u <= (1 - margin) * cam.W and margin * cam.H <= v <= (1 - margin) * cam.H)
+
+
+def inview_score(cam, pts, margin: float = 0.05) -> float:
+    """Fraction of world points (e.g. TCP, held-object centre) inside the head image with `margin` (0.0 if cam is
+    None or pts is empty)."""
+    if cam is None or not pts:
+        return 0.0
+    return sum(1 for p in pts if _in_frame(cam, p, margin)) / len(pts)
+
+
+def carry_over_z(zc: float, put_z_floor: float, put_xy, pq, T_obj_G, cam=None, margin: float = 0.05) -> float:
+    """z for the carry_over waypoint (L9_CARRY_INVIEW, soft preference, user order 10-03). The two candidates are
+    already computed by the caller -- zc (the carry height) and put_z_floor = put[2] + 0.05 (today's floor) -- no
+    new constant and no wider range. With a head camera and the held-object grip transform, pick whichever of the
+    two keeps the TCP and the held-object centre inside the head image more often (world9._head_sees's 5% margin
+    convention); ties, or no camera / no held transform (flag off), keep today's choice (max(zc, put_z_floor))."""
+    default = max(float(zc), float(put_z_floor))
+    other = min(float(zc), float(put_z_floor))
+    if cam is None or T_obj_G is None or default == other:
+        return default
+
+    def score(z: float) -> float:
+        T = np.eye(4)
+        T[:3, :3] = G.qmat(pq)
+        T[:3, 3] = [put_xy[0], put_xy[1], z]
+        obj_p = (T @ np.asarray(T_obj_G, float))[:3, 3]
+        return inview_score(cam, [T[:3, 3], obj_p], margin)
+
+    return other if score(other) > score(default) else default
+
+
 def put_pose(obj_quat_held, place_xy, centre_z: float, T_obj_G, yaw_delta: float = 0.0) -> np.ndarray:
     """TCP pose that puts the held object down UPRIGHT (its held yaw + yaw_delta) with its centre at
     (place_xy, centre_z); the hand keeps the grip measured at the lift (T_obj_G). Pilot 10-02: placing with the held
@@ -215,9 +253,10 @@ def put_pose(obj_quat_held, place_xy, centre_z: float, T_obj_G, yaw_delta: float
     return T_w_obj @ np.asarray(T_obj_G, float)
 
 
-def plan(st: dict, info: dict, table_z: float, w_open: float, gc: GraspChoice, held: dict | None):
+def plan(st: dict, info: dict, table_z: float, w_open: float, gc: GraspChoice, held: dict | None, cam=None):
     """-> (step, command | None). st: world.status() with 'tcp' and 'tcp_quat'; held: {'T_obj_G'} measured after the
-    close (None before). The steps keep the xlabels names (labels / texts / phase stay comparable)."""
+    close (None before). The steps keep the xlabels names (labels / texts / phase stay comparable). cam: head
+    camera for L9_CARRY_INVIEW (None = unchanged carry_over height, the default)."""
     from ..teach_l8d import xlabels as XL
     from ..teach_l8 import labels as L
     from ..astra_motion.harness import obj_height
@@ -252,7 +291,8 @@ def plan(st: dict, info: dict, table_z: float, w_open: float, gc: GraspChoice, h
         if np.linalg.norm(tcp[:2] - put[:2]) < NEAR_PUT:  # carrying sags / lags 1-3 cm (L.NEAR_XY 1.5 cm looped)
             return "lower_open", {"mode": "eef", "position_m": _r(put), "gripper": "open", "quat_wxyz": _q(pq)}
         if tcp[2] >= zc - L.NEAR_XY:
-            return "carry_over", {"mode": "eef", "position_m": _r([put[0], put[1], max(zc, put[2] + 0.05)]),
+            z_over = carry_over_z(zc, put[2] + 0.05, put[:2], pq, T_og, cam=cam)
+            return "carry_over", {"mode": "eef", "position_m": _r([put[0], put[1], z_over]),
                                   "gripper": "keep", "quat_wxyz": _q(pq)}
         return "carry_up", {"mode": "eef", "position_m": _r([tcp[0], tcp[1], zc]), "gripper": "keep",
                             "quat_wxyz": _q(tq)}

@@ -27,6 +27,8 @@ from . import v2plan as VP
 
 GRASP_DIR = os.environ.get("L9V2_GRASPS", "/data/harvest/l9v2/grasps")
 TESTED_DIR = os.environ.get("L9V2_TESTED", "/data/harvest/l9v2/tested")
+CARRY_INVIEW = os.environ.get("L9_CARRY_INVIEW") == "1"  # opt-in, default off (user order 10-03): among the
+# already-computed carry_over z candidates, prefer the one keeping the held object / TCP in the head camera view
 VERSION = "l9v2-1"
 GRIP_NAME = {"ffw_sg2": "ffw_sg2", "franka_mast": "franka", "r1pro": "r1pro", "g1": "g1"}
 EMPTY_M, CONTACT_TOL, CONTACT_TOL_HI, SLIP_GAP, SLIP_MOVE = 0.003, 0.008, 0.020, 0.003, 0.010
@@ -543,6 +545,16 @@ class Runtime:
         self.timeline.setdefault("live_place_top_dz", round(top - base, 4))
         return dict(info, place_top=top)
 
+    def _carry_cam(self):
+        """Head camera for v2plan.carry_over_z (L9_CARRY_INVIEW only; None keeps today's behaviour everywhere
+        else, and on any lookup failure -- this is a soft preference, never worth breaking the carry move)."""
+        if not CARRY_INVIEW:
+            return None
+        try:
+            return self.w._cam("cam_head", "head")
+        except Exception:  # noqa: BLE001
+            return None
+
     def plan(self, st: dict, info: dict, table_z: float, w_open: float):
         info = self._live_place(info, table_z)
         tg = info["tgt"]
@@ -596,7 +608,7 @@ class Runtime:
                 self.held["yaw_delta"] = self._place_yaw(st, info, table_z, gc)
         if not hold:
             self.held = None
-        step, cmd = VP.plan(self.status2(st), info, table_z, w_open, gc, self.held)
+        step, cmd = VP.plan(self.status2(st), info, table_z, w_open, gc, self.held, cam=self._carry_cam())
         if step == "retreat" and getattr(self, "_retreat_fail", 0):
             # the retreat move could not be planned (dbg6: 20 identical retreat calls): the object is placed, stop
             step, cmd = "done", {"mode": "stop"}
