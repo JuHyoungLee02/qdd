@@ -419,10 +419,11 @@ class HandoverRuntime:
         from . import rt9 as RT
         if RT.classify_close(gap, gc.w) == "EMPTY":
             return {"ok": False, "status": f"EMPTY close (gap {gap * 100:.1f} cm)"}
-        slot.traj, slot.traj_i = rt._resample(r["lift"]), 0
-        self.run_ticks(len(slot.traj) + 5)
-        slot.held_obj = obj_key
-        return {"ok": True, "status": "ok", "gc": gc}
+        slot.held_obj = obj_key  # attached before the lift line so refresh_world/choose see it held if that line
+        if r.get("lift") is not None:  # needs replanning (rt9.Runtime._approach_plan can return ok=True with a
+            slot.traj, slot.traj_i = rt._resample(r["lift"]), 0  # None lift -- pod smoke #6 crashed here, bare
+            self.run_ticks(len(slot.traj) + 5)  # TypeError from P9.resample(None, ...); the straight-line micro-lift
+        return {"ok": True, "status": "ok", "gc": gc}  # is an optimization, not required -- skip it, stay at grasp
 
     def _move_to(self, slot: "_ArmSlot", target_xyz, quat_wxyz=None) -> dict:
         """A straight / planned cuRobo move to a world TCP pose, holding `slot.held_obj` attached if set."""
