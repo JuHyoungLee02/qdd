@@ -33,8 +33,9 @@ Notes fixed before the runs:
   ffw_sg2 `pilot1/plan_pilot_v2.json`, franka_mast `pilotF/plan_pilot_v2.json`, r1pro `r1sweep/plan_pilot_v2.json`,
   g1 `g1b/gate1/plan_pilot_v2.json` (all under `/data/harvest/l9v2`).
 - `tools/l9/gab/gab_select.py <ab dir> 30 ...`: **30 rows per robot** (14 families, 30 definitions for AIW/Franka/R1,
-  13 families for G1), round-robin over families, definitions inside a family, arms alternating L/R for two-armed
-  robots (15/15), order by a fixed hash of the seed. One row per job. A and B get the same rows and seeds.
+  13 families for G1), round-robin over families, then definitions inside a family,
+  arms as the plan drew them (no forced left/right balance), order by a fixed hash of the seed. One row per job. A and B
+  get the same rows and seeds.
 - The queue interleaves robots and puts A and B of a row next to each other, so both arms see the same cards and the
   same time of day. Lanes: `tools/l9/gab/gab_lane.sh` (per-arm env file `<ab>/{A,B}.env`).
 - Scene skips (no episode, `skipped.json`) are not failures and leave the denominator (robot gate rule (a)). If a robot
@@ -42,7 +43,11 @@ Notes fixed before the runs:
 
 ## Metrics (`tools/l9/gab/gab_report.py`)
 - Success = `success` and `max_dq_rad <= 0.04` (production gate). Per robot, per family, paired by seed.
-- Diversity of successful episodes (robot_gate9.profile): approach-family shares, image rotation bins, left share,
+- Left/right (user 10-03, revision 1 before any result): the general spec does not force symmetric or centred placement;
+  scenes come from each robot's own cameras and reach, and the left/right balance is made at BUILD time (thin the
+  larger arm, top up the smaller one). So the left/right check applies to the built set, not to raw production; in
+  this A/B the left share is reported for reference only and is not part of the verdict. B contains no forcing switch.
+- Diversity of successful episodes (robot_gate9.profile): approach-family shares, image rotation bins, left share (reference only),
   IQR of support height and of grasp x / y, high/shelf place share.
 - Place round trip (ABA): share of episodes whose held-phase height commands contain h[k] = h[k-2] != h[k-1]
   (definition in docs/research/place_oscillation_2026-10-03.md; the function comes from the owner ab86d5b7).
@@ -53,7 +58,7 @@ Notes fixed before the runs:
 B passes for a robot when all hold:
 1. B success rate >= A − 10 pp, and no family where A has >= 2 successes and B has 0.
 2. Diversity not narrower: `robot_gate9.diversity_check(B, ref=A)` ok (top family <= max(50 %, A top + 10 pp), every
-   family A uses at >= 5 % is used, rotation bins >= 0.8 × A, left share 40–60 % for two-armed robots, IQRs >= 0.8 × A,
+   family A uses at >= 5 % is used, rotation bins >= 0.8 × A, IQRs >= 0.8 × A,
    high share >= 0.8 × A when A >= 2 %).
 3. Episodes over the 0.04 rad step gate: B <= A + 1.
 4. ABA share: B <= A + 2 pp (P0 is expected to lower it).
