@@ -197,6 +197,14 @@ class LiveRuntime(RT.Runtime):
 
 def install(world, profile: str = "ffw_sg2", arm: str = "right", device: str = "cuda:0", allow_untested=False,
            style=None) -> LiveRuntime:
-    """Same hook-wiring as rt9.install (unchanged), with LiveRuntime installed instead of rt9.Runtime."""
+    """Same hook-wiring as rt9.install (unchanged), with LiveRuntime installed instead of rt9.Runtime.
+    LIVE_REFINER=ggx installs harvest.l9.ggx_refine's GraspGenX-backed refiner (live9.set_refiner) bound to this
+    arm; unset (default) leaves live9's refiner hook empty, so choose_live uses only its own antipodal search --
+    the A/B switch between the two is this one env var, no code change."""
+    if os.environ.get("LIVE_REFINER") == "ggx":
+        from . import ggx_refine as GGX
+        L.set_refiner(GGX.make_refiner(arm))
+    else:
+        L.set_refiner(None)
     return RT.install(world, profile, arm, device=device, allow_untested=allow_untested, style=style,
                       runtime_cls=LiveRuntime)
