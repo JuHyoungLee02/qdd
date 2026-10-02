@@ -1019,9 +1019,9 @@ class Runtime:
         if float(np.linalg.norm(tcp[:2] - c[:2])) >= L.RETREAT_XY + 0.03 or \
                 tcp[2] >= c[2] + obj_height(k) / 2 + L.RETREAT_ABOVE:
             return None
-        away = tcp - gc.a * gc.retreat
-        tgt = np.array([away[0], away[1], max(away[2], tcp[2]) + 0.04])
         q = np.asarray(self.w.pl.tcp_pose()[1], float)
+        away = tcp - VP.retreat_axis(gc, q) * gc.retreat
+        tgt = np.array([away[0], away[1], max(away[2], tcp[2]) + 0.04])
         return "retreat", {"mode": "eef", "position_m": [round(float(v), 4) for v in tgt], "gripper": "keep",
                            "quat_wxyz": [round(float(v), 5) for v in q]}
 

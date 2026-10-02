@@ -28,6 +28,7 @@ SEL = os.environ.get("L9V2_SEL", "natural_v1")  # label rule: natural_v1 (spec) 
 STANDOFF = (0.08, 0.14)
 PLACE_DZ = (0.008, 0.025)  # pilot 10-02: placing 4 mm above the surface pushed the object into it (wrist jolts)
 RETREAT = (0.06, 0.12)
+COMMON = os.environ.get("L9_COMMON_EXEC") == "1"  # L9 common executor (opt-in): see retreat_axis
 LIFT_DZ = (0.02, 0.05)
 INSTRUCTED_P = 0.20
 INSTRUCT_TEXT = {"top": "from above", "oblique": "at an angle", "front": "from the front", "side": "from the side"}
@@ -266,6 +267,20 @@ def put_pose(obj_quat_held, place_xy, centre_z: float, T_obj_G, yaw_delta: float
     return T_w_obj @ np.asarray(T_obj_G, float)
 
 
+def retreat_axis(gc, tq, common: bool | None = None) -> np.ndarray:
+    """Approach axis (world) to back out along after a release. Default: gc.a, the approach at GRASP time. The
+    common executor uses the hand's CURRENT approach: the tool-frame approach R(gc.quat)^T a turned by the current
+    tool orientation tq -- after a place yaw (rt9._place_yaw) or a re-measured grip the hand is turned, and gc.a
+    moved a side grasp's open fingers sideways through the placed object (R1 sweep 10-03: placed within 7 mm,
+    dragged 5-10 cm toward the retreat target; success with a turned place yaw 46 / 49 / 47 % vs 57 / 53 / 54 %
+    unturned, R1 / AIW / Franka)."""
+    a = np.asarray(gc.a, float)
+    if not (COMMON if common is None else common) or tq is None:
+        return a
+    a_tool = G.qmat(np.asarray(gc.quat, float)).T @ a
+    return G.qmat(np.asarray(tq, float)) @ a_tool
+
+
 def carry_z(H: dict, carry_dz: float, gc, tcp, c, h: float, hold: bool) -> float:
     """TCP carry height. Default: carry_base + CARRY_DZ (0.22). A robot with a short vertical reach (R1 Pro, L9v2-R1:
     its leaned arm reaches only ~0.2-0.3 m of height at a given distance) sets gc.carry_clear (a per-episode draw from
@@ -298,7 +313,7 @@ def plan(st: dict, info: dict, table_z: float, w_open: float, gc: GraspChoice, h
         p = p + np.array([*info["place_xy_offset"], 0.0], float)
     c = np.asarray(st["obj"][tg], float)
     if pred.get(f"on({tg},{pl})") is True and not hold:
-        away = tcp - gc.a * gc.retreat
+        away = tcp - retreat_axis(gc, tq) * gc.retreat
         if float(np.linalg.norm(tcp[:2] - c[:2])) < L.RETREAT_XY + 0.03 and tcp[2] < c[2] + h / 2 + L.RETREAT_ABOVE:
             tgt = np.array([away[0], away[1], max(away[2], tcp[2]) + 0.04])
             return "retreat", {"mode": "eef", "position_m": _r(tgt), "gripper": "keep", "quat_wxyz": _q(tq)}

@@ -135,3 +135,19 @@ def test_common_ab(tmp_path):
         (d / "meta.json").write_text(json.dumps({"robot": "g1", "seed": 11, "success": ok, "max_dq_rad": 0.03}))
     r = common_ab.cmp(str(out))["g1"]
     assert r["off"]["pass"] == 0 and r["on"]["pass"] == 1 and r["common_seeds"] == 1
+
+
+def test_retreat_axis_follows_the_turned_hand():
+    import math
+    import types
+    from harvest.l9 import grasp9 as G
+    from harvest.l9 import v2plan as VP
+    q0 = np.array(G.mat_quat(np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]], float)))  # tool z -> world +x
+    gc = types.SimpleNamespace(a=G.qmat(q0) @ np.array([0, 0, 1.0]), quat=q0)  # side grasp along +x
+    assert np.allclose(VP.retreat_axis(gc, q0, common=False), gc.a)
+    assert np.allclose(VP.retreat_axis(gc, None, common=True), gc.a)
+    assert np.allclose(VP.retreat_axis(gc, q0, common=True), gc.a)
+    yaw = np.array([math.cos(math.pi / 4), 0, 0, math.sin(math.pi / 4)])  # hand turned 90 deg about world z
+    tq = G.mat_quat(G.qmat(yaw) @ G.qmat(q0))
+    assert np.allclose(VP.retreat_axis(gc, tq, common=True), [0, 1, 0], atol=1e-6)
+    assert np.allclose(VP.retreat_axis(gc, tq, common=False), [1, 0, 0], atol=1e-6)
