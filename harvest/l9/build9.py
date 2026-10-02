@@ -118,6 +118,24 @@ def camera_of(r: dict, robot: str) -> str:
     return HC.line(cam, f"l9/{robot}")
 
 
+def _vis_points(r: dict) -> list:
+    """[(role, OBJ_GEOM record, centre)] of this call's step target / place -- visgate9.row_visible input."""
+    from ..sim.scene import OBJ_GEOM
+    gt = r["gt"]
+    return [("tgt", OBJ_GEOM.get(r["tgt"]) or {}, gt["tgt"]), ("place", OBJ_GEOM.get(r["place"]) or {}, gt["place"])]
+
+
+def _vis_gate(cam_json: dict, depth, r: dict) -> tuple:
+    """(ok, reason) of one rendered view (its cams.json camera entry + depth array) for this call's target / place
+    (owner order 2026-10-02: the VLM must never be asked to point at something it cannot see). reason = "<role>:
+    <why>" ("tgt:out_of_frame" / "too_small" / "occluded") when dropped, else None. Used for the head image (every
+    call row) and for each third-person / external image (visgate9.py has the pure geometry + occlusion check)."""
+    from ..astra_motion.geometry import Cam
+    from . import visgate9 as VG
+    ok, reason, role = VG.row_visible(Cam.from_json(cam_json), depth, _vis_points(r))
+    return ok, (None if ok else f"{role}:{reason}")
+
+
 def external_rows(r: dict, x: dict, base_prompt: str, robot: str, out_dir: str) -> tuple:
     """Paired external-view control rows of one head row x (ext9): same state, same answer except point_2d = the
     head label's 3D point (head depth) projected into the external camera, kept only when the external depth shows
@@ -144,6 +162,10 @@ def external_rows(r: dict, x: dict, base_prompt: str, robot: str, out_dir: str) 
     for k in keys:
         ext = cams[k]
         ed = E9.load_depth(os.path.join(ed_dir, f"{k}_depth.npz"))
+        ok, reason = _vis_gate(ext, ed, r)
+        if not ok:
+            c[f"vis_drop_ext_{reason}"] += 1
+            continue
         pt, rot = None, None
         if cmd.get("rot") is not None:  # format v2: the closing-axis angle as seen by this camera (ext_save)
             rot = (ext.get("grasp_rot") or {}).get("rot_bin_img")
@@ -177,7 +199,8 @@ def external_rows(r: dict, x: dict, base_prompt: str, robot: str, out_dir: str) 
 
 
 def slot_rows(r: dict, x: dict, meta: dict, robot: str, seed: int, third_person: bool) -> tuple:
-    """The 4-slot schema (views9) of one ego row x: (ego row, [third-person variant]) -- user 10-02."""
+    """The 4-slot schema (views9) of one ego row x: (ego row, [third-person variant], visibility-drop Counter) --
+    user 10-02 (4 slots); the third-person variant is gated by _vis_gate (owner order 10-02)."""
     from . import tp9
     from . import views9 as V
     arm = meta.get("arm") or "right"
@@ -198,14 +221,21 @@ def slot_rows(r: dict, x: dict, meta: dict, robot: str, seed: int, third_person:
                     slots=res["slots"], arm=arm)
     ego = one(None, "slots")
     tps = []
+    cv = Counter()
     if third_person and not x.get("label_missing"):
+        from . import ext9 as E9
         d, ext = tp9.external_cams(r["call_dir"])
         for k in sorted(ext)[:1]:  # one third-person view per row
             ip = os.path.join(d, f"img1_{k}.png")
-            if os.path.exists(ip):
+            dp = os.path.join(d, f"{k}_depth.npz")
+            if os.path.exists(ip) and os.path.exists(dp):
+                ok, reason = _vis_gate(ext[k], E9.load_depth(dp), r)
+                if not ok:
+                    cv[f"vis_drop_tp_{reason}"] += 1
+                    continue
                 tps.append(dict(one((ip, ext[k]), "slots_tp"), id=x["id"] + "_tp", third_person=True,
                                 third_person_cam=k))
-    return ego, tps
+    return ego, tps, cv
 
 
 def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera_line: bool = False,
@@ -222,6 +252,11 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera
     ctrl, aux, c = [], [], Counter()
     for r in DS.load_rows(ep_dir, split):
         c["states"] += 1
+        head_ok, head_reason = _vis_gate(json.load(open(r["cams_path"]))["head"], np.load(r["depth_path"])["depth"], r)
+        if not head_ok:  # owner order 2026-10-02: never a row whose target / place the head image cannot show
+            c["vis_dropped_rows"] += 1
+            c[f"vis_drop_head_{head_reason}"] += 1
+            continue
         v2 = open(os.path.join(r["call_dir"], "prompt_v2.txt"), encoding="utf-8").read()
         named = register_call_names(r, v2)
         c["names_ok" if named else "names_mismatch"] += 1
@@ -257,9 +292,10 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera
                 f.write(add_camera_line(open(p, encoding="utf-8").read(), line))
             x.update(prompt_path=dst, camera_line=True)
         if slots:  # 4-slot camera schema (views9); third-person variants go to the third-person shard
-            x, tp_rows = slot_rows(r, x, meta, robot, seed, third_person)
+            x, tp_rows, cv = slot_rows(r, x, meta, robot, seed, third_person)
             ext_rows += tp_rows
             c["third_person_slot_rows"] += len(tp_rows)
+            c.update(cv)
         ctrl += [x] * (repeat_of(x) if train else 1)
         for e in ext_rows:  # right after their head row, same repeats
             ctrl += [e] * (repeat_of(x) if train else 1)

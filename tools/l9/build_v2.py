@@ -57,10 +57,13 @@ def main():
                 except ValueError:
                     bad += 1
     n_idx = sum(len({(e["episode"], e["call"]) for e in tp9.index(r)}) for r in roots) if tp_on else 0
+    vis_drop = {k: v for k, v in c.items() if k.startswith("vis_drop")}  # owner order 10-02: head / external / tp
     check = {"ego_third_person_rows": sum(1 for x in ego if x.get("third_person") or x.get("view") == "external"),
              "third_person_rows": c["third_person_rows"], "third_person_index_calls": n_idx,
              "slot_parse_errors": bad, "rows_without_head": c.get("rows_without_head"),
-             "image_count_hist": c.get("image_count_hist"), "slot_combos": c.get("slot_combos")}
+             "image_count_hist": c.get("image_count_hist"), "slot_combos": c.get("slot_combos"),
+             "vis_gate": dict(vis_drop, states=c.get("states", 0),
+                              drop_rate=round(c.get("vis_dropped_rows", 0) / c["states"], 4) if c.get("states") else None)}
     check["ok"] = (check["ego_third_person_rows"] == 0 and bad == 0 and not check["rows_without_head"]
                    and (c["third_person_rows"] == 0 if not tp_on else True))
     ctrl = [x for x in ego if x.get("kind", "control") == "control" and x.get("gen") == "l9"]

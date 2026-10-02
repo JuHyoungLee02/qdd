@@ -572,6 +572,9 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                 self._apply_head_cam(seed, tz, att)
                 for _ in range(PRE_RENDER):
                     env.env.sim.render()
+            if not self._head_sees():  # redraws exhausted and still not visible: never ask the VLM to point
+                from ..teach_l8d.fx import SkipScene  # at something off-screen (owner order 10-02)
+                raise SkipScene("head: target/place out of view")
             self.head = head
             self.pl = OraclePlanner(env)
             if franka or v2r:
