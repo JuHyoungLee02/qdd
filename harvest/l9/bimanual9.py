@@ -11,6 +11,7 @@ Impure layer (bottom half, `HandoverRuntime` / `run_smoke`): pod only, lazy impo
 from __future__ import annotations
 
 import math
+import os
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -905,7 +906,17 @@ class HandoverRuntime:
             gc = self._receiver_grasp_graspgenx(obj_key)
             print(f"GGXDBG _receiver_grasp_graspgenx -> {'None' if gc is None else 'GraspChoice'}", flush=True)
         if gc is None:
-            gc = rt.choose(obj_key, {"tgt": obj_key}, extra_boxes=self.other_arm_boxes(slot))
+            ob = self.other_arm_boxes(slot)
+            gc = rt.choose(obj_key, {"tgt": obj_key}, extra_boxes=ob)
+            if gc is None and os.environ.get("BIM_DEBUG") == "1":  # diagnosis only: is it the other hand's boxes?
+                env.use_arm(slot.arm)
+                c_obj = np.asarray(env.object_pose(obj_key)[0], float)
+                gc_nb = rt.choose(obj_key, {"tgt": obj_key})
+                print("BIMDBG " + str({"arm": slot.arm, "n_boxes": len(ob), "obj": np.round(c_obj, 3).tolist(),
+                                       "box_c": [np.round(v[0], 3).tolist() for v in ob.values()],
+                                       "nobox_ok": gc_nb is not None,
+                                       "vs": (rt.picks[-1] if rt.picks else {}).get("valid_stats")}), flush=True)
+                gc_nb = None
         if gc is None:
             diag = rt.picks[-1] if rt.picks else {}
             return {"ok": False, "status": "no valid grasp", "choice_fail": diag.get("choice_fail"),
@@ -1379,8 +1390,19 @@ class LiftRuntime:
         env = self.world.env
         env.use_arm(slot.arm)
         rt = slot.rt
-        r = rt._approach_plan(rt.plan_start(), gc, obj_key, extra_boxes=self.other_arm_boxes(slot))
+        ob = self.other_arm_boxes(slot)
+        r = rt._approach_plan(rt.plan_start(), gc, obj_key, extra_boxes=ob)
         if not r["ok"]:
+            if os.environ.get("BIM_DEBUG") == "1":
+                other = self.other_of(slot)
+                env.use_arm(other.arm)
+                dq = float(np.abs(other.rt.arm_q() - env.robot.data.default_joint_pos[0, other.rt.sim_ids].cpu().numpy()).max())
+                env.use_arm(slot.arm)
+                dq_self = float(np.abs(rt.arm_q() - env.robot.data.default_joint_pos[0, rt.sim_ids].cpu().numpy()).max())
+                r2 = rt._approach_plan(rt.plan_start(), gc, obj_key)
+                print("BIMDBG " + str({"arm": slot.arm, "n_boxes": len(ob), "other_dq": round(dq, 3),
+                                       "self_dq": round(dq_self, 3), "status": r["status"], "nobox": r2["status"],
+                                       "fam": gc.meta.get("family")}), flush=True)
             return {"ok": False, "status": r["status"]}
         slot.traj, slot.traj_i = rt._resample(r["approach"]), 0
         self.run_ticks(len(slot.traj) + 5)
