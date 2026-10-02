@@ -453,11 +453,14 @@ def success_d(final_xy_left, target_xy_left, final_xy_right, target_xy_right, to
 # contained "trajectory player" per arm -- and reuses only the self-contained pieces of Runtime: `choose()` (grasp
 # candidate selection), `_approach_plan()` (pre-grasp transit + straight approach + lift, already its own function),
 # `planner.pose()/line()` + `_resample()` for the carry / zone / final moves, and `refresh_world()` for obstacles.
-GRAVITY_BOX_HALF = (0.045, 0.045, 0.05)  # m, coarse stand-in for the other arm's gripper (spec note R1). First pod
+GRAVITY_BOX_HALF = (0.025, 0.025, 0.03)  # m, coarse stand-in for the other arm's gripper (spec note R1). First pod
 # smoke (2026-10-02, seed 3950010): the original (0.07, 0.07, 0.09) box (18 cm tall) centred on the giver's TCP --
 # itself placed at/above the held object's top (a "top" family grasp) -- extended far enough past the object that
 # `choose()` found 0 reachable candidates for the receiver in EVERY approach family, not just the ones that would
-# really collide. Shrunk to roughly the gripper's own pad footprint; still a box, not the real links (R1 stands).
+# really collide. Shrunk once to (0.045, 0.045, 0.05) for that. Shrunk again 2026-10-03 (1hr checkpoint): category
+# B's choose_b (arm B choosing while avoiding arm A's box on the SAME object, much smaller than a handover zone)
+# was the #1 real B failure (6/7 executed-episode failures) -- same root cause, smaller object this time. Still a
+# box, not the real links (R1 stands); if real collisions start showing up in frame review, grow this back up.
 SETTLE_TICKS = 30  # ~0.6 s at 20 Hz / dt: gripper close/open settle wait
 
 
@@ -871,6 +874,20 @@ class HandoverRuntime:
                 T_grip_desired = T_obj_desired @ T_obj_G
                 carry_pos = T_grip_desired[:3, 3]
                 carry_quat = RT.G.mat_quat(T_grip_desired[:3, :3])
+        # owner 2026-10-03 (1hr checkpoint, "no collision-free path" was the #1 real giver_carry failure, 7/9
+        # executed-episode failures across every smoke run so far): the direct, single _move_to from the
+        # just-picked pose straight to carry_pos/carry_quat often combines a large translation AND rotation
+        # through cluttered table-level space in one cuRobo call. Same fix as category B's LiftRuntime already
+        # uses successfully (a plain straight-up waypoint before the real move): lift to a clear height, SAME
+        # orientation as just-picked (quat_wxyz=None keeps current), THEN do the full carry move from up there.
+        env2b = self.world.env
+        env2b.use_arm(self.giver.arm)
+        lift_xyz = np.asarray(self.giver.rt.tcp_T()[:3, 3], float).copy()
+        lift_xyz[2] = max(lift_xyz[2], float(carry_pos[2])) + 0.08
+        r = self._move_to(self.giver, lift_xyz)
+        log.append({"phase": "giver_lift_waypoint", **r})
+        if not r["ok"]:
+            return {"ok": False, "log": log}
         r = self._move_to(self.giver, carry_pos, quat_wxyz=carry_quat)
         log.append({"phase": "giver_carry", **r})
         if not r["ok"]:
