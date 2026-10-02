@@ -715,9 +715,31 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             self._ext_now = now
             self._ext_ms["capture"].append((time.perf_counter() - t0) * 1e3)
 
+        def other_wrist_save(self, call_dir: str) -> None:
+            """The other arm's wrist image (user 10-02: dual-arm robots keep both wrists; 4-slot schema, views9):
+            img3_wrist_other.png + cams.json "wrist_other" (its record, arm). AI Worker renders both wrists already
+            (obs "wrist_left" holds the other one); single-wrist worlds: no-op."""
+            import json
+
+            from ..astra_solo.overlay import png_bytes
+            obs = getattr(self, "last_obs", None)
+            if obs is None or "wrist_left" not in (obs.rgb or {}) or "wrist_left" not in (obs.cams or {}):
+                return
+            with open(os.path.join(call_dir, "img3_wrist_other.png"), "wb") as f:
+                f.write(png_bytes(np.asarray(obs.rgb["wrist_left"])))
+            cj = os.path.join(call_dir, "cams.json")
+            cams_j = json.load(open(cj)) if os.path.exists(cj) else {}
+            c = obs.cams["wrist_left"]
+            cams_j["wrist_other"] = dict(c.to_json() if hasattr(c, "to_json") else dict(c),
+                                         arm="right" if arm == "left" else "left")
+            with open(cj, "w") as f:
+                json.dump(cams_j, f)
+
         def ext_save(self, call_dir: str, idx: int) -> None:
             """Episode-writer hook (pt_episode._save_call, attempt 0, after cams.json): img1_external<k>.png,
-            external<k>_depth.npz (uint16 mm, ext9.load_depth) and the cams.json entries "external<k>" with the pair id. No-op unless paired."""
+            external<k>_depth.npz (uint16 mm, ext9.load_depth) and external_cams.json entries "external<k>" with the pair
+            id, all in the third-person tree (tp9.tp_dir, user 10-02). No-op unless paired."""
+            self.other_wrist_save(call_dir)
             if not self.ext_cams or not self._ext_now:
                 return
             import json
@@ -725,20 +747,17 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
 
             from ..astra_solo.overlay import png_bytes
             t0 = time.perf_counter()
+            from . import tp9
             pair = f"{os.path.basename(os.path.dirname(os.path.dirname(call_dir)))}/c{int(idx):03d}"
-            cj = os.path.join(call_dir, "cams.json")
-            cams_j = json.load(open(cj)) if os.path.exists(cj) else {}
             for k, rec in enumerate(self.ext_cams):
                 rgb, depth = self._ext_now[rec["name"]]
-                with open(os.path.join(call_dir, f"img1_external{k}.png"), "wb") as f:
-                    f.write(png_bytes(rgb))
-                np.savez_compressed(os.path.join(call_dir, f"external{k}_depth.npz"), depth_mm=E9.depth_to_mm(depth))
-                cams_j[f"external{k}"] = dict({x: v for x, v in rec.items() if x != "scene_name"}, pair=pair)
+                r = dict({x: v for x, v in rec.items() if x != "scene_name"}, pair=pair)
                 gc = getattr(getattr(self, "rt", None), "choice", None)  # v2: this call's grasp (format v2 `rot`)
                 if gc is not None:
-                    cams_j[f"external{k}"]["grasp_rot"] = E9.grasp_rot(rec, gc.c1, gc.c2)
-            with open(cj, "w") as f:
-                json.dump(cams_j, f)
+                    r["grasp_rot"] = E9.grasp_rot(rec, gc.c1, gc.c2)
+                # third-person views go to their own tree (tp9): the ego call dir / cams.json stay head + wrist
+                tp9.write(call_dir, k, png_bytes(rgb),
+                          lambda path, d=depth: np.savez_compressed(path, depth_mm=E9.depth_to_mm(d)), r)
             self._ext_pairs.append(int(idx))
             self._ext_now = None
             self._ext_ms["save"].append((time.perf_counter() - t0) * 1e3)

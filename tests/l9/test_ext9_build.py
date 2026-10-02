@@ -8,6 +8,7 @@ from PIL import Image
 
 from harvest.l9 import build9 as B9
 from harvest.l9 import ext9 as E
+from harvest.l9 import tp9 as TP
 
 FX = os.path.join(os.path.dirname(__file__), "fixtures")
 P3 = np.array([0.50, -0.10, 0.80])
@@ -121,8 +122,32 @@ def test_check_rows_catches_a_head_line_on_an_external_row(tmp_path):
 def test_build_counts(tmp_path, flag):
     ep, _ = _episode(str(tmp_path / "src"))
     c = B9.build([ep], str(tmp_path / "out"), "l9train", "x", train=False, external=flag)
-    assert c["control_rows"] == (2 if flag else 1)
+    # user 10-02: the ego shard never holds third-person rows; they go to their own shard only with the switch on
+    assert c["control_rows"] == 1 and c["third_person_rows"] == (1 if flag else 0)
+    ego = [json.loads(x) for x in open(c["path"])]
+    assert not [x for x in ego if x.get("view") == "external"]
+    tp = str(tmp_path / "out" / "x_third_person.jsonl")
+    assert os.path.exists(tp) is flag
+    if flag:
+        assert len(open(tp).readlines()) == len(TP.index(str(tmp_path / "src")))
     assert ("views" in c) is flag
+
+
+def test_migrate_moves_external_views_and_build_reads_them(tmp_path):
+    ep, _ = _episode(str(tmp_path / "src"))
+    c0 = os.path.join(ep, "calls", "c000")
+    before, _, _ = B9.episode_rows(ep, str(tmp_path / "o1"), "l9train", False, np.random.default_rng(0), external=True)
+    assert TP.migrate(str(tmp_path / "src")) == {"calls": 1, "views": 1}
+    t = TP.tp_dir(c0)
+    assert t == str(tmp_path / "third_person" / "train" / "dining" / "d_s1234567_right" / "calls" / "c000")
+    assert os.path.exists(os.path.join(t, "img1_external0.png")) and os.path.exists(os.path.join(t, "external0_depth.npz"))
+    assert not [f for f in os.listdir(c0) if "external" in f]
+    assert not [k for k in json.load(open(os.path.join(c0, "cams.json"))) if k.startswith("external")]
+    idx = TP.index(str(tmp_path / "src"))
+    assert len(idx) == 1 and idx[0]["legacy"] is False and idx[0]["camera"] == "external0"
+    after, _, _ = B9.episode_rows(ep, str(tmp_path / "o2"), "l9train", False, np.random.default_rng(0), external=True)
+    assert [x["answer"] for x in after] == [x["answer"] for x in before]
+    assert TP.migrate(str(tmp_path / "src")) == {"calls": 0, "views": 0}  # idempotent
 
 
 def _set_rot(ep, rot_entry):
@@ -165,3 +190,32 @@ def test_grasp_rot_matches_projection():
     d = (b - a) * np.array([E.W, E.H]) / 1000.0
     deg = np.degrees(np.arctan2(d[1], d[0])) % 180.0
     assert abs(((g["rot_deg_img"] - deg) + 90) % 180 - 90) < 3.0 and g["rot_bin_img"] == int(g["rot_deg_img"] // 15) % 12
+
+
+def test_tp_write_keeps_ego_call_clean(tmp_path):
+    c = tmp_path / "run" / "collect" / "train" / "dining" / "ep_s1_right" / "calls" / "c003"
+    os.makedirs(c)
+    t = TP.write(str(c), 0, b"png", lambda p: np.savez_compressed(p, depth_mm=np.zeros((2, 2), np.uint16)),
+                 {"R": [[1, 0, 0], [0, 1, 0], [0, 0, 1]], "t": [0, 0, 1], "pair": "ep_s1_right/c003"})
+    assert t == str(tmp_path / "run" / "third_person" / "train" / "dining" / "ep_s1_right" / "calls" / "c003")
+    assert os.listdir(c) == []
+    d, cams = TP.external_cams(str(c))
+    assert d == t and list(cams) == ["external0"] and os.path.exists(os.path.join(t, "external0_depth.npz"))
+
+
+@pytest.mark.parametrize("on", [False, True])
+def test_slot_build_schema_and_third_person_switch(tmp_path, on):
+    from harvest.l9 import views9 as V
+    ep, _ = _episode(str(tmp_path / "src"))
+    TP.migrate(str(tmp_path / "src"))
+    c = B9.build([ep], str(tmp_path / "out"), "l9train", "x", train=False, slots=True, third_person=on)
+    ego = [json.loads(x) for x in open(c["path"])]
+    ctrl = [x for x in ego if x.get("kind", "control") == "control" and x.get("image_views")]
+    assert ctrl and c["rows_without_head"] == 0
+    for x in ctrl:
+        V.parse_slots(open(x["prompt_path"], encoding="utf-8").read())
+        assert "third_person" not in x["image_views"] and json.loads(x["answer"])["command"]["arm"] == "right"
+    assert c["third_person_rows"] == (len(TP.index(str(tmp_path / "src"))) if on else 0)
+    if on:
+        tp = [json.loads(x) for x in open(str(tmp_path / "out" / "x_third_person.jsonl"))]
+        assert tp[0]["image_views"][-1] == "third_person" and tp[0]["images"][-1].endswith("img1_external0.png")

@@ -127,9 +127,13 @@ def external_rows(r: dict, x: dict, base_prompt: str, robot: str, out_dir: str) 
     from ..astra_solo import nd as ND
     from ..astra_solo.overlay import png_bytes
     from . import ext9 as E9
+    from . import tp9
     c = Counter()
     cams = json.load(open(r["cams_path"]))
-    keys = sorted(k for k in cams if k.startswith("external"))
+    ed_dir, ext_cams = tp9.external_cams(r["call_dir"])  # third-person tree (legacy: the ego call dir)
+    cams.update(ext_cams)
+    keys = sorted(ext_cams)
+    c["third_person_views"] += len(keys)
     if not keys or x.get("label_missing"):
         return [], c
     head = cams["head"]
@@ -139,7 +143,7 @@ def external_rows(r: dict, x: dict, base_prompt: str, robot: str, out_dir: str) 
     out = []
     for k in keys:
         ext = cams[k]
-        ed = E9.load_depth(os.path.join(r["call_dir"], f"{k}_depth.npz"))
+        ed = E9.load_depth(os.path.join(ed_dir, f"{k}_depth.npz"))
         pt, rot = None, None
         if cmd.get("rot") is not None:  # format v2: the closing-axis angle as seen by this camera (ext_save)
             rot = (ext.get("grasp_rot") or {}).get("rot_bin_img")
@@ -152,7 +156,7 @@ def external_rows(r: dict, x: dict, base_prompt: str, robot: str, out_dir: str) 
                 c[f"external_{info['why']}"] += 1
                 continue
         from PIL import Image
-        rgb = np.asarray(Image.open(os.path.join(r["call_dir"], f"img1_{k}.png")).convert("RGB"))
+        rgb = np.asarray(Image.open(os.path.join(ed_dir, f"img1_{k}.png")).convert("RGB"))
         ring, drawn = ND.ring_overlay(rgb, Cam.from_json(ext), r["gt"]["tcp"])
         rid = f"{x['id']}_ext{k[len('external'):]}"
         ip = os.path.join(out_dir, "external_img", f"{rid}.png")
@@ -167,13 +171,46 @@ def external_rows(r: dict, x: dict, base_prompt: str, robot: str, out_dir: str) 
         out.append(dict(x, id=rid, view="external", external_cam=k, pair_of=x["id"], pair_id=ext.get("pair"),
                         camera=line, camera_line=True, prompt_path=pp, images=[ip] + list(x["images"][1:]),
                         answer=E9.external_answer(x["answer"], pt, rot),
-                        depth_path=os.path.join(r["call_dir"], f"{k}_depth.npz")))
+                        depth_path=os.path.join(ed_dir, f"{k}_depth.npz")))
         c["external_rows"] += 1
     return out, c
 
 
+def slot_rows(r: dict, x: dict, meta: dict, robot: str, seed: int, third_person: bool) -> tuple:
+    """The 4-slot schema (views9) of one ego row x: (ego row, [third-person variant]) -- user 10-02."""
+    from . import tp9
+    from . import views9 as V
+    arm = meta.get("arm") or "right"
+    cams = json.load(open(r["cams_path"]))
+    used = (x["images"][1], cams.get("wrist")) if len(x["images"]) > 1 and cams.get("wrist") else None
+    op = os.path.join(r["call_dir"], "img3_wrist_other.png")
+    other = (op, cams["wrist_other"]) if cams.get("wrist_other") and os.path.exists(op) else None
+    text = open(x["prompt_path"], encoding="utf-8").read()
+    src = f"l9/{robot}"
+
+    def one(third, tag):
+        res = V.canonical(text, x["answer"], arm, x["images"][0], used, other, third, V.row_rng(x["id"], seed),
+                          source=src, anchor=CAM_ANCHOR)
+        pp = x["prompt_path"][:-4] + f"_{tag}.txt"
+        with open(pp, "w", encoding="utf-8", newline="\n") as f:
+            f.write(res["text"])
+        return dict(x, prompt_path=pp, images=res["images"], answer=res["answer"], image_views=res["image_views"],
+                    slots=res["slots"], arm=arm)
+    ego = one(None, "slots")
+    tps = []
+    if third_person and not x.get("label_missing"):
+        d, ext = tp9.external_cams(r["call_dir"])
+        for k in sorted(ext)[:1]:  # one third-person view per row
+            ip = os.path.join(d, f"img1_{k}.png")
+            if os.path.exists(ip):
+                tps.append(dict(one((ip, ext[k]), "slots_tp"), id=x["id"] + "_tp", third_person=True,
+                                third_person_cam=k))
+    return ego, tps
+
+
 def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera_line: bool = False,
-                 grasp_format: bool = True, external: bool = False) -> tuple:
+                 grasp_format: bool = True, external: bool = False, slots: bool = False,
+                 third_person: bool = False, seed: int = 0) -> tuple:
     """-> (control rows, aux rows, counts) of one L9 episode. external=True adds the paired external-view rows of
     paired episodes (ext9; default off = the head-only build, unchanged)."""
     from ..teach_l8.dataset import repeat_of
@@ -214,6 +251,10 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera
             with open(dst, "w", encoding="utf-8", newline="\n") as f:
                 f.write(add_camera_line(open(p, encoding="utf-8").read(), line))
             x.update(prompt_path=dst, camera_line=True)
+        if slots:  # 4-slot camera schema (views9); third-person variants go to the third-person shard
+            x, tp_rows = slot_rows(r, x, meta, robot, seed, third_person)
+            ext_rows += tp_rows
+            c["third_person_slot_rows"] += len(tp_rows)
         ctrl += [x] * (repeat_of(x) if train else 1)
         for e in ext_rows:  # right after their head row, same repeats
             ctrl += [e] * (repeat_of(x) if train else 1)
@@ -225,26 +266,41 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera
 
 
 def build(ep_dirs, out_dir: str, split: str, name: str, train: bool = True, camera_line: bool = False,
-          seed: int = 0, grasp_format: bool = True, external: bool = False) -> dict:
-    """external=True: + the paired external-view rows (ext9; main compares builds with and without them)."""
+          seed: int = 0, grasp_format: bool = True, external: bool = False, slots: bool = False,
+          third_person: bool = False) -> dict:
+    """external=True (--third-person on): + the paired external-view rows, written to their own shard
+    <name>_third_person.jsonl (user 10-02: the ego shard <name>.jsonl never holds third-person rows; off = 0 of them)."""
     prepare(("train", "ood_o"))
     os.makedirs(out_dir, exist_ok=True)
     rng = np.random.default_rng([seed, 9, 29])
     ctrl, aux, c = [], [], Counter()
     for d in ep_dirs:
-        a, b, k = episode_rows(d, out_dir, split, train, rng, camera_line, grasp_format, external)
+        a, b, k = episode_rows(d, out_dir, split, train, rng, camera_line, grasp_format, external, slots,
+                               third_person, seed)
         ctrl += a
         aux += b
         c.update(k)
+    is_tp = (lambda x: x.get("view") == "external" or bool(x.get("third_person")))  # noqa: E731
+    tp = [x for x in ctrl if is_tp(x)]
+    ctrl = [x for x in ctrl if not is_tp(x)]
     path = os.path.join(out_dir, name + ".jsonl")
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         for x in ctrl + aux:
             f.write(json.dumps(x) + "\n")
+    if external or third_person:
+        with open(os.path.join(out_dir, name + "_third_person.jsonl"), "w", encoding="utf-8", newline="\n") as f:
+            for x in tp:
+                f.write(json.dumps(x) + "\n")
     counts = dict(c, episodes=len(ep_dirs), control_rows=len(ctrl), aux_rows=len(aux),
                   robots=dict(Counter(x["robot"] for x in ctrl)), head_cam=dict(Counter(x["head_cam_mode"] for x in ctrl)),
                   hands=dict(Counter(x.get("hand", "right") for x in ctrl)))
+    counts["third_person_rows"] = len(tp)
+    if slots:
+        counts["image_count_hist"] = dict(Counter(len(x["images"]) for x in ctrl + tp))
+        counts["slot_combos"] = dict(Counter("+".join(x["image_views"]) for x in ctrl + tp))
+        counts["rows_without_head"] = sum(1 for x in ctrl + tp if (x.get("image_views") or ["?"])[0] != "head")
     if external:
-        counts["views"] = dict(Counter(x.get("view", "head") for x in ctrl))
+        counts["views"] = dict(Counter(x.get("view", "head") for x in ctrl + tp))
     json.dump(counts, open(os.path.join(out_dir, name + ".counts.json"), "w"), indent=1)
     return dict(counts, path=path)
 
