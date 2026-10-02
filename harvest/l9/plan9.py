@@ -193,6 +193,15 @@ class Planner9:
         r = self.mp.plan_pose(self._goal(T_base), self._js(q), max_attempts=SEEDS[2])
         if r is not None and bool(r.success.any()):
             return self._pos(r.get_interpolated_plan())
+        if os.environ.get("L9_IK_SEED") == "1" and not self.attached and not self.start_hits(q):
+            # H4 (every robot, opt-in): plan_pose's own IK misses a goal that the batched world-collision IK (the
+            # candidate filter) solves -- hand that IK solution to a joint-space plan instead of giving up
+            ok, qi, _ = self.ik(np.asarray(T_base, float)[None], contact_links_off=False)
+            if bool(ok[0]):
+                Q = self.cspace(q, qi[0])
+                if Q is not None:
+                    self.n_ik_seed = getattr(self, "n_ik_seed", 0) + 1
+                    return Q
         if not escape or not self.start_hits(q):
             return None
         E = self.escape(q)

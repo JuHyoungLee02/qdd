@@ -862,27 +862,73 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             from ..teach_l8d.fx import SkipScene
             if robot == "g1" and not stance and not R9.g1_surface_ok(tz):
                 raise SkipScene(f"g1: surface {tz:.2f} m outside its standing reach band")
-            if robot == "r1pro" and not R9.r1_surface_ok(tz):
+            from . import envprof9 as E9
+            prof = E9.active(robot)
+            cell = None
+            self._env_cell = None
+            if prof is not None and prof.get("cells"):
+                # L9 env profile (opt-in L9_ENV_PROFILE=1, every robot with profile cells): one stance per episode --
+                # a cell of the robot's own profile at this surface height (same seed as the scene draw), its body
+                # joints and stance distance; fixed for the whole episode
+                cell = E9.draw(prof, int(self.scene9.get("seed", 0) or 0), near={"surface_z": tz})
+                if cell is None:
+                    raise SkipScene(f"{robot}: no env profile cell at surface {tz:.2f} m")
+                self._env_cell = cell
+            elif robot == "r1pro" and not R9.r1_surface_ok(tz):
                 raise SkipScene(f"r1pro: surface {tz:.2f} m above its torso reach (L9v2-DIAG 8)")
             rob = self.env.robot
             lean = float((stance or {}).get("lean", 0.0)) if robot == "g1" else 0.0
             joints = R9.v2_init_joints(robot, arm, tz, ready=R9.g1_lean_ready(arm, lean) if lean else None)
             if lean:  # g1b H7: torso lean of this episode (fixed), shoulder pitch compensated in the ready pose
                 joints["waist_pitch_joint"] = lean
-            for jn, v in joints.items():
-                rob.data.default_joint_pos[0, rob.joint_names.index(jn)] = float(v)
-                rob.cfg.init_state.joint_pos[jn] = float(v)
             pos = R9.v2_root_pos(robot)
             if dx:  # g1b H4: per-episode base x (collect9.draw, robot9.g1_base_dx)
                 pos = (pos[0] + float(dx), pos[1], pos[2])
-            rob.data.default_root_state[0, :3] = torch.tensor(pos, dtype=rob.data.default_root_state.dtype,
-                                                              device=rob.data.default_root_state.device)
-            rob.cfg.init_state.pos = pos
             body = R9.v2_body_joints(robot, tz)
             if lean:
                 body["waist_pitch_joint"] = lean
+            if cell is not None:
+                lim = rob.data.soft_joint_pos_limits[0].cpu().numpy()
+                for jn, v in (cell.get("torso") or {}).items():
+                    if jn in rob.joint_names:
+                        i = rob.joint_names.index(jn)
+                        body[jn] = float(np.clip(v, lim[i, 0] + 0.01, lim[i, 1] - 0.01))
+                joints.update(body)
+                if "stance_x" in cell:
+                    pos = (self._stance_root_x(float(cell["stance_x"]), pos[0]), pos[1], pos[2])
+            for jn, v in joints.items():
+                rob.data.default_joint_pos[0, rob.joint_names.index(jn)] = float(v)
+                rob.cfg.init_state.joint_pos[jn] = float(v)
+            rob.data.default_root_state[0, :3] = torch.tensor(pos, dtype=rob.data.default_root_state.dtype,
+                                                              device=rob.data.default_root_state.device)
+            rob.cfg.init_state.pos = pos
+            if cell is not None:
+                import omni.usd
+                from ..sim.randomize import _set_pose
+                _set_pose(omni.usd.get_context().get_stage().GetPrimAtPath("/World/envs/env_0/Robot"), tuple(pos),
+                          (1.0, 0.0, 0.0, 0.0))
             self.base = {"pos": [round(v, 4) for v in pos], "body_joints": {k: round(v, 4) for k, v in body.items()},
                          "surface_z": round(tz, 4)}
+            if cell is not None:
+                self.base["env_cell"] = {k: (round(v, 4) if isinstance(v, float) else v) for k, v in cell.items()
+                                         if k != "torso"}
+
+        def _stance_root_x(self, stance_x: float, x0: float) -> float:
+            """Root x for an env-profile stance: stance_x behind the front of the work band (the nearest task object
+            of the episode), never closer than the robot keep-out box allows to the nearest furniture front (the scene
+            keeps furniture out of x < KEEP_OUT x-max with the root at x0)."""
+            from ..sim.assets_x.furniture import KEEP_OUT
+            ep, sc = self.ep, self.scene9
+            objs = ep.get("objects") or {}
+            xs = [float(objs[k]["xy"][0]) for st in ep.get("steps", []) for k in st[:2] if k in objs and "xy" in objs[k]]
+            if not xs:
+                return x0
+            want = min(xs) - stance_x
+            fronts = [float(p["pos"][0]) - float(p["size"][0]) / 2 for p in sc.get("furniture", [])
+                      if "pos" in p and "size" in p and p.get("role") not in ("room_wall", "ground")]
+            if fronts:
+                want = min(want, min(fronts) - float(KEEP_OUT[0][1]) + x0)
+            return float(want)
 
         def _check_v2(self, tol: float = 0.05) -> None:  # 0.03 skipped a scene on 0.030 (contact sag, 10-02)
             from ..teach_l8d.fx import SkipScene
@@ -1088,6 +1134,9 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             if v2r:  # L9v2-DIAG 2: R1 Pro / G1 start at V2_READY (cuRobo-chosen ready pose); chasing the AI Worker
                 # start TCP pinned R1's q4 at its limit with the TCP 0.5-0.8 m over the table: hold the ready pose
                 goal = np.asarray(self.status()["tcp"], float)
+                ec = getattr(self, "_env_cell", None)
+                if ec and "ready_tcp_above" in ec:  # env profile: the ready TCP height of the episode (its own range)
+                    goal[2] = float(tz) + float(ec["ready_tcp_above"])
                 steps = 0
             ready = self._ready_start(goal) if os.environ.get("L9_COMMON_EXEC") == "1" else None
             if ready is not None and ready.get("ok"):

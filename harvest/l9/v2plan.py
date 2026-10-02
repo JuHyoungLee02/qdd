@@ -304,6 +304,62 @@ def place_tol(key: str) -> float:
     return min(max(0.5 * PLACE_SUCCESS_TOL, xy_tol(key)), PLACE_TOL_MAX)
 
 
+PLACE_FREE = os.environ.get("L9_PLACE_FREE") == "1"
+FREE_STEP, FREE_GAP = 0.01, 0.01
+
+
+def _xy_radius(k: str) -> float:
+    from ..sim.scene import OBJ_GEOM
+    he = (OBJ_GEOM.get(k) or {}).get("half_extents")
+    return float(np.hypot(he[0], he[1])) if he else 0.03
+
+
+def free_place_xy(st: dict, place: str, tg: str, p: np.ndarray) -> np.ndarray:
+    """H2 (multi-step, every robot; opt-in L9_PLACE_FREE=1): when an object already sits at the place point (an
+    earlier step put it there -- 31 R1 sweep episodes had the place point < 5 cm from an earlier placed object, 0
+    succeeded; 2 of 88 with one place object for 2+ steps), move the point inside the place's footprint to the free
+    spot nearest its centre (clearance >= target + neighbour radius + 1 cm), else the most free spot. Pure."""
+    from ..sim.scene import OBJ_GEOM
+    from .grasp9 import qmat
+    g = OBJ_GEOM.get(place) or {}
+    he = g.get("half_extents")
+    if not he:
+        return p
+    rt = _xy_radius(tg)
+    occ = []
+    for k, q in st["obj"].items():
+        if k in (tg, place):
+            continue
+        q = np.asarray(q, float)
+        if np.hypot(*(q[:2] - p[:2])) < rt + _xy_radius(k) + FREE_GAP:
+            occ.append((q[:2], _xy_radius(k)))
+    if not occ:
+        return p
+    R = qmat(np.asarray((st.get("obj_quat") or {}).get(place, (1.0, 0.0, 0.0, 0.0)), float))[:2, :2]
+    c = np.asarray(st["obj"][place], float)[:2]
+    ax, ay = max(float(he[0]) - rt, 0.0), max(float(he[1]) - rt, 0.0)
+    xs = np.arange(-ax, ax + 1e-9, FREE_STEP) if ax > 0 else np.zeros(1)
+    ys = np.arange(-ay, ay + 1e-9, FREE_STEP) if ay > 0 else np.zeros(1)
+    L = np.array([(x, y) for x in xs for y in ys])
+    W = c[None] + L @ R.T
+    clear = np.min(np.stack([np.linalg.norm(W - o[None], axis=1) - (r + rt) for o, r in occ]), axis=0)
+    good = clear >= FREE_GAP
+    i = int(np.argmin(np.where(good, np.linalg.norm(L, axis=1), np.inf))) if good.any() else int(np.argmax(clear))
+    return np.array([W[i, 0], W[i, 1], p[2]], float)
+
+
+def place_point(st: dict, info: dict, tg: str) -> np.ndarray:
+    """The place point of the current step: the place object's position (+ the definition's xy offset), moved off an
+    earlier placed object when L9_PLACE_FREE=1 (not for relational offsets)."""
+    pl = info["place"]
+    p = np.asarray(st["obj"][pl], float)
+    if info.get("place_xy_offset"):
+        return p + np.array([*info["place_xy_offset"], 0.0], float)
+    if PLACE_FREE or os.environ.get("L9_PLACE_FREE") == "1":
+        return free_place_xy(st, pl, tg, p)
+    return p
+
+
 def carry_z(H: dict, carry_dz: float, gc, tcp, c, h: float, hold: bool) -> float:
     """TCP carry height. Default: carry_base + CARRY_DZ (0.22). A robot with a short vertical reach (R1 Pro, L9v2-R1:
     its leaned arm reaches only ~0.2-0.3 m of height at a given distance) sets gc.carry_clear (a per-episode draw from
@@ -331,9 +387,7 @@ def plan(st: dict, info: dict, table_z: float, w_open: float, gc: GraspChoice, h
     hold = pred.get(f"holding({tg})") is True
     H = XL.heights(info, table_z)
     h = obj_height(tg)
-    p = np.asarray(st["obj"][pl], float)
-    if info.get("place_xy_offset"):
-        p = p + np.array([*info["place_xy_offset"], 0.0], float)
+    p = place_point(st, info, tg)
     c = np.asarray(st["obj"][tg], float)
     if pred.get(f"on({tg},{pl})") is True and not hold:
         away = tcp - retreat_axis(gc, tq) * gc.retreat

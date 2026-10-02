@@ -578,11 +578,10 @@ class Runtime:
             return out
         try:
             st = self.w.status()
-            p = np.asarray(st["obj"][pl], float)
+            st = self.status2(st)
+            p = VP.place_point(st, info, k)
         except Exception:  # noqa: BLE001
             return out
-        if info.get("place_xy_offset"):
-            p = p + np.array([*info["place_xy_offset"], 0.0], float)
         table_z = float(self.w.table_z)
         H = XL.heights(self._live_place(info, table_z), table_z)
         h = obj_height(k)
@@ -740,9 +739,7 @@ class Runtime:
         tg, pl = info["tgt"], info["place"]
         H = XL.heights(info, table_z)
         h = obj_height(tg)
-        p = np.asarray(st["obj"][pl], float)
-        if info.get("place_xy_offset"):
-            p = p + np.array([*info["place_xy_offset"], 0.0], float)
+        p = VP.place_point(self.status2(st), info, tg)
         q_obj = np.asarray(self.w.env.object_pose(tg)[1], float)
         zc = VP.carry_z(H, L.CARRY_DZ, gc, st["tcp"], st["obj"][tg], h, True)
         Ts = []
