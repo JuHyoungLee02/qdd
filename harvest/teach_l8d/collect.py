@@ -15,6 +15,16 @@ from ..astra_solo.pt_episode import PtEpisode
 from ..teach_l8 import collect as LC
 from ..teach_pt.collect import PtCollector
 
+
+def _tcp_quat(w) -> dict:
+    """L9 grip layer (L9_GRIP_LAYER=1 only, else {} = rows unchanged): the hand orientation (frame G, wxyz) next to
+    the TCP, so a build can draw the fingertips (hand9.tip_points_world, build9 --tip-overlay)."""
+    from ..l9 import hand9 as H9
+    pl = getattr(w, "pl", None)
+    if not H9.enabled() or pl is None or not hasattr(pl, "tcp_pose"):
+        return {}
+    return {"tcp_quat": [round(float(v), 5) for v in pl.tcp_pose()[1]]}
+
 SCENE_SCHEMA = "qdd.l8d.scene/v1"
 
 
@@ -80,7 +90,8 @@ class _XLabels(LC.Collector):
         row = {"call": meta["call"], "site": meta["site"], "prev_kind": self.prev_kind, "drop": drop,
                "gt": {"tgt": LC._l(tgt), "place": LC._l(st["obj"][info["place"]]), "tcp": LC._l(st["tcp"]),
                       "grip_w": round(float(st["grip_w"]), 4),
-                      "others": {k: LC._l(v) for k, v in st["obj"].items() if k not in (info["tgt"], info["place"])}},
+                      "others": {k: LC._l(v) for k, v in st["obj"].items() if k not in (info["tgt"], info["place"])},
+                      **_tcp_quat(w)},
                "ex_target": LC._l(ep.ex.target), "drawn": list(getattr(ep, "drawn", [])),
                "tgt": info["tgt"], "place": info["place"], "occ": occ, "sat": sat}
         if lab is None:

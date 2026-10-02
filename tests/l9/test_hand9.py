@@ -201,3 +201,23 @@ def test_exec_offsets_interpolate_contact_mid_and_front():
     o = t.exec_offsets(0.025)
     assert o["contact_mid"] == pytest.approx([0.008, 0.0, -0.005]) and o["tip_front"] == pytest.approx(-0.035)
     assert H.GapTable(_table().meta).exec_offsets(0.02) == {}
+
+
+def test_tip_points_world_and_overlay():
+    # parallel gripper, hand pointing down (G z up = identity quat): tips at +-gap/2 along y around the TCP
+    meta = {"contacts_G": [{"a": [0.0, -0.0, -0.01], "b": [0.0, 0.0, -0.01]},
+                           {"a": [0.0, -0.025, -0.01], "b": [0.0, 0.025, -0.01]},
+                           {"a": [0.0, -0.05, -0.01], "b": [0.0, 0.05, -0.01]}]}
+    t = H.GapTable(dict(_table().meta, **meta))
+    p = H.tip_points_world(t, [0.4, 0.0, 0.8], [1.0, 0.0, 0.0, 0.0], 0.05)
+    assert p["a"] == pytest.approx([0.4, -0.025, 0.79]) and p["b"] == pytest.approx([0.4, 0.025, 0.79])
+    p90 = H.tip_points_world(t, [0.0, 0.0, 0.0], [np.cos(np.pi / 4), 0.0, 0.0, np.sin(np.pi / 4)], 0.1)  # yaw 90
+    assert p90["b"] == pytest.approx([-0.05, 0.0, -0.01], abs=1e-9)
+    from harvest.astra_motion.geometry import Cam, project
+    from harvest.astra_solo import nd as ND
+    cam = Cam("head", 64, 48, 40.0, 40.0, 32.0, 24.0, np.eye(3), np.zeros(3))
+    pts = {k: v for k, v in {"a": [0.0, -0.1, 1.0], "b": [0.0, 0.1, 1.0], "c": [0.0, 0.1, -1.0]}.items()
+           if project(cam, v)[2] > 0} or {"a": [0.0, -0.1, -1.0], "b": [0.0, 0.1, -1.0]}
+    img = np.zeros((48, 64, 3), np.uint8)
+    out, drawn = ND.tips_overlay(img, cam, pts)
+    assert len(drawn) >= 2 and out.any() and not img.any()

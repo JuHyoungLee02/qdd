@@ -2,7 +2,7 @@
 (user 10-02). Ego rows -> <out>/<name>.jsonl; with --third-person on, the third-person variants -> <name>_third_person.jsonl.
 Checks: off-build 0 third-person rows; on-build third-person rows = third-person index entries of the episodes (one
 view per row); every ego row parses to the 4 slots; 0 rows without the head image; image-count histogram.
-usage: python tools/l9/build_v2.py <out dir> <name> <collect root>... [--third-person off|on] [--split l9train]
+usage: python tools/l9/build_v2.py <out dir> <name> <collect root>... [--third-person off|on] [--split l9train] [--tip-overlay]
        [--eval] [--no-slots] [--seed 0] [--success-only] [--camera-line] [--both] [--spec L9v2-spec-final (family)]
        [--rationale off|on|both] [--no-ep-filter]
 --no-ep-filter: skip build9.episode_filter (user 10-03 key-call occlusion drop + per-robot arm balance; default on
@@ -61,7 +61,8 @@ def main():
             eps.append(os.path.dirname(m))
     c = B9.build(eps, out, arg("--split", "l9train"), name, train="--eval" not in a, camera_line="--camera-line" in a,
                  seed=int(arg("--seed", "0")), slots=slots, third_person=tp_on, rationale=rat_mode != "off",
-                 ep_filter=False if "--no-ep-filter" in a else None)  # user 10-03: key-call occlusion + arm balance
+                 ep_filter=False if "--no-ep-filter" in a else None,  # user 10-03: key-call occlusion + arm balance
+                 tip_overlay="--tip-overlay" in a)  # grip layer 8B arm: fingertip markers (whole set)
     ego = [json.loads(x) for x in open(c["path"])]
     bad = 0
     if slots:
