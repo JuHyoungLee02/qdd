@@ -16,6 +16,7 @@ FAMILIES_ENV = ("kitchen", "office", "living_low", "dining", "workbench", "entra
 LIFT_DEFAULT = -0.0993
 H_REF = 0.92  # [가설] interaction height at the default lift (L8S table 0.78 + 0.14; xdrawer used 0.95 for drawers)
 TZ = (0.70, 0.84)
+ROBOT_TZ = {"r1pro": (0.56, 0.76)}  # R1 Pro torso reach caps its surfaces at ~0.77 m (robot9.r1_surface_ok; R1 smoke: 17/17 skipped)
 YAW = math.radians(12.0)
 BAND_Y = (-0.34, -0.10)  # right arm: the handle / knob / button y band (left arm mirrored)
 FACE_X = {"drawer": (0.50, 0.58), "door": (0.52, 0.60), "slide": (0.48, 0.56), "knob": (0.44, 0.52),
@@ -121,7 +122,7 @@ def build(seed: int, robot: str, arm: str, spec: dict | None, prog: dict, objs: 
     first is the task / prop object). Raises ValueError when nothing fits."""
     from ..sim.assets_x.furniture import _table
     rng = np.random.default_rng([int(seed), 6061])
-    tz = float(rng.uniform(*TZ))
+    tz = float(rng.uniform(*ROBOT_TZ.get(robot, TZ)))
     fx = None
     if spec is not None:  # the whole handle path (start -> goal of every stage) inside the arm's box
         for _ in range(40):

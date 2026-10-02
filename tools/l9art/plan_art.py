@@ -21,7 +21,7 @@ def plan(defs, n, robots, seed0, per_job, split, tag, arms_aiw=("right", "left")
         for rb in robots:
             if rb not in TK.DEFS[d]["robots"]:
                 continue
-            for i in range(n):
+            for i in range(int(n.get(d, 0)) if isinstance(n, dict) else n):
                 arm = arms_aiw[i % len(arms_aiw)] if rb in ("ffw_sg2", "r1pro") else "right"
                 rows.append({"seed": s, "def": d, "robot": rb, "arm": arm, "split": split})
                 s += 1
@@ -43,6 +43,7 @@ def main(argv=None):
     ap.add_argument("--out", required=True)
     ap.add_argument("--defs", default=",".join(sorted(TK.DEFS)))
     ap.add_argument("--n", type=int, default=20)
+    ap.add_argument("--n-map", default=None, help="JSON {def: rows} (production: rows = target successes / pilot yield)")
     ap.add_argument("--robots", default="ffw_sg2,franka_mast")
     ap.add_argument("--seed0", type=int, default=9100000)
     ap.add_argument("--per-job", type=int, default=12)
@@ -50,7 +51,9 @@ def main(argv=None):
     ap.add_argument("--tag", default="art")
     ap.add_argument("--pod-plan", default=None, help="also write <out>_lane_jobs.txt for tools/l9/lane.sh: \"--plan <pod-plan> --job J\" per line")
     a = ap.parse_args(argv)
-    rows = plan(a.defs.split(","), a.n, a.robots.split(","), a.seed0, a.per_job, a.split, a.tag)
+    nn = json.loads(a.n_map) if a.n_map else a.n
+    defs = sorted(nn) if a.n_map else a.defs.split(",")
+    rows = plan(defs, nn, a.robots.split(","), a.seed0, a.per_job, a.split, a.tag)
     json.dump(rows, open(a.out, "w"), indent=0)
     jobs = sorted({r["job"] for r in rows})
     print(json.dumps({"rows": len(rows), "jobs": len(jobs)}))
