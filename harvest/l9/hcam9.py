@@ -57,11 +57,16 @@ HFOV_HOLD = ((55.0, 65.0), (95.0, 105.0))
 # r1-v1/r1-v2 but still above target; owner hypothesis (10-02 ~22:30): near-vertical pitch (60-75 deg) looks down
 # almost the SAME axis the gripper descends on a top-down grasp, so the hand itself (not a stray link) sits
 # between the lens and the object during the final approach -- distinct from the self-occlusion r1-v1/v2 showed.
-# r1-v4 (below) keeps r1-v3's distance (x/y/h, well outside the reach sphere) but lowers pitch to 30-50 deg (an
-# oblique look, not near top-down) to separate the two causes; running the SAME 8-seed quick check before
-# deciding between r1-v3 and r1-v4. Re-validating before switching production.
-MAST_DEFAULT = {"x": 0.0, "y": -0.48, "h": 1.15, "pitch": 40.0, "pan": 30.0}
-MAST_RANGE = {"x": (-0.15, 0.15), "y": (-0.58, -0.40), "h": (1.00, 1.30), "pitch": (30.0, 50.0), "pan": (20.0, 40.0)}
+# r1-v4 (x/y/h unchanged from r1-v3, pitch lowered to 30-50) tested the opposite of the hypothesis: it measured
+# WORSE than r1-v3 (47.5 % vs 20.0 %, approach-only 38.1 % vs 24.0 %, same 8 seeds) -- at this distance a shallow
+# / oblique look crosses more of the cluttered scene volume on its way to the target (more chances for a wall,
+# other furniture or the arm to sit on the ray), while a near-top-down look has a short, mostly-open path straight
+# down. So steeper pitch helps at this range, not hurts; the earlier "hand on a top-down grasp" worry did not
+# show up as the dominant effect here. r1-v5: keep r1-v3's x/y/h, push pitch even steeper (65-80, closer to
+# vertical) to see if the trend continues below r1-v3's 20.0 %. Re-validating (same 8-seed quick check, then
+# the full set) before switching production.
+MAST_DEFAULT = {"x": 0.0, "y": -0.48, "h": 1.15, "pitch": 72.0, "pan": 30.0}
+MAST_RANGE = {"x": (-0.15, 0.15), "y": (-0.58, -0.40), "h": (1.00, 1.30), "pitch": (65.0, 80.0), "pan": (20.0, 40.0)}
 D435_HFOV = 69.0  # Intel RealSense D435 colour, horizontal (datasheet 69 x 42 deg)
 TRIES = 5
 

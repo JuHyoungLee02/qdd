@@ -90,7 +90,7 @@ def test_mast_draw_and_pose():
     d = HC.draw_mast(0, default=True)
     R, t = HC.mast_pose((0.0, -0.23, 0.80), 0.85, d)
     assert t == pytest.approx((0.0, -0.71, 2.00))
-    assert HC.pitch_pan(R) == pytest.approx((40.0, 30.0))
+    assert HC.pitch_pan(R) == pytest.approx((72.0, 30.0))
     r = HC.realized(R, t, 0.85)
     assert r["height_above_surface_m"] == pytest.approx(1.15) and r["height_floor_m"] == pytest.approx(2.00)
 
