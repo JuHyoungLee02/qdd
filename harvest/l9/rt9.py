@@ -630,10 +630,11 @@ class Runtime:
             Q0 = self.segs["lift"]
             self.segs["lift"] = None
             q0 = Q0[-1]
-        if step == "retreat":  # straight out (back along the approach and up): a planned curve swept the open
-            Q = self._guard(self.planner.line(q0, self.to_base(self.tcp_T()), self.to_base(T)))  # fingers through
-            if Q is not None:                                                                # the placed object
-                self.timeline.setdefault("line_moves", []).append("retreat")
+        if step == "retreat" or (step == "carry_up" and Q0 is None):  # straight out / up: a planned curve swept
+            Q = self._guard(self.planner.line(q0, self.to_base(self.tcp_T()), self.to_base(T)))  # the open fingers
+            if Q is not None:                                                                # through the object
+                self.timeline.setdefault("line_moves", []).append(step)  # carry_up: the curve also turned the
+                # wrist 25-60 deg with the object in the hand (L9v2-DIAG note)
         else:
             Q = None
         if Q is None:
