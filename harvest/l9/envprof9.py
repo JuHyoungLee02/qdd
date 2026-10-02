@@ -106,21 +106,29 @@ def _u(rng, r) -> float:
     return float(rng.uniform(r[0], r[1]))
 
 
-def draw(p: dict, seed: int) -> dict:
-    """One episode's stance from profile p (deterministic in seed)."""
+def draw(p: dict, seed: int, near: dict | None = None) -> dict | None:
+    """One episode's stance from profile p (deterministic in seed). near ({"surface_z": z}, world9 consumer): only the
+    cells within cell_half (default 0.025) of those values -- the scene's actual surface picks the coupled body
+    posture; the nested body joints are then used exactly (no jitter: it would undo the surface coupling); None when
+    no cell matches."""
     rng = np.random.default_rng(int(seed) & 0xFFFFFFFF)
     out = {"torso": {}, "lift": {}}
     cells = p.get("cells") or []
+    half = p.get("cell_half", {})
+    if cells and near:
+        cells = [c for c in cells if all(k in c and abs(float(c[k]) - float(v)) <= float(half.get(k, 0.025)) + 1e-9
+                                         for k, v in near.items())]
+        if not cells:
+            return None
     if cells:
         c = cells[int(rng.integers(len(cells)))]
-        half = p.get("cell_half", {})
         for k, v in c.items():
             if k == "score":
                 continue
             if isinstance(v, dict):
                 out.setdefault(k, {})
                 for j, x in v.items():
-                    h = float(half.get(f"{k}.{j}", 0.0))  # nested fields: "torso.<joint>"
+                    h = 0.0 if near else float(half.get(f"{k}.{j}", 0.0))  # nested fields: "torso.<joint>"
                     out[k][j] = float(x) + (float(rng.uniform(-h, h)) if h else 0.0)
             else:
                 h = float(half.get(k, 0.0))

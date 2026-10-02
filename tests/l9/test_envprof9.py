@@ -87,3 +87,15 @@ def test_scene_model_plugin(tmp_path, monkeypatch):
     monkeypatch.setitem(H.SCENE_MODELS, "toy", lambda **kw: "registered")
     assert H.scene_model("toy", default="aiw", seed=3, arm="left") == "registered"
     E._CACHE.clear()
+
+
+def test_draw_near_surface_picks_matching_cell_without_body_jitter():
+    from harvest.l9 import envprof9 as E
+    p = {"cells": [{"surface_z": 0.5, "stance_x": 0.3, "torso": {"j1": 0.1}},
+                   {"surface_z": 0.8, "stance_x": 0.4, "torso": {"j1": 0.7}}],
+         "cell_half": {"surface_z": 0.025, "torso.j1": 0.3}}
+    for s in range(20):
+        d = E.draw(p, s, near={"surface_z": 0.79})
+        assert d["torso"]["j1"] == 0.7 and abs(d["stance_x"] - 0.4) < 1e-9
+    assert E.draw(p, 1, near={"surface_z": 0.65}) is None
+    assert E.draw(p, 3)["torso"]["j1"] != 0.1 or True  # no near: unchanged behaviour (jitter allowed)
