@@ -16,11 +16,14 @@ the point-format label (pt) gets `approach` and `rot` (12 bins of the closing-ax
 from __future__ import annotations
 
 import math
+import os
 from dataclasses import dataclass, field
 
 import numpy as np
 
 from . import grasp9 as G
+
+SEL = os.environ.get("L9V2_SEL", "natural_v1")  # label rule: natural_v1 (spec) | ggx_v1 (GraspGenX + sim, opt-in)
 
 STANDOFF = (0.08, 0.14)
 PLACE_DZ = (0.008, 0.025)  # pilot 10-02: placing 4 mm above the surface pushed the object into it (wrist jolts)
@@ -134,7 +137,13 @@ def choose(C_world: dict, ok: np.ndarray, margin: np.ndarray, obj_centre, robot_
         pref = [f for f in ("side", "front", "oblique", "top") if f in fams_ok and f != first]
         instructed = pref[d["alt"] % len(pref)] if pref else None
     rank = None
-    if parts is not None:
+    S = None
+    if parts is not None and SEL == "ggx_v1" and "ggx_s" in C_world:
+        i, step, rank, S = G.select_ggx(fam, parts, robot_d, margin, ok, order, C_world["ggx_s"],
+                                        C_world.get("slip_mm", np.full(len(ok), np.nan)), instructed=instructed)
+        why = "instructed" if instructed else (f"scene_constraint:{constraint}" if constraint else "natural")
+        rule = "ggx_v1"
+    elif parts is not None:
         i, step, rank = G.select_natural(fam, parts, robot_d, margin, ok, order, instructed=instructed)
         why = "instructed" if instructed else (f"scene_constraint:{constraint}" if constraint else "natural")
         rule = "natural_v1"
@@ -157,6 +166,10 @@ def choose(C_world: dict, ok: np.ndarray, margin: np.ndarray, obj_centre, robot_
             "approach_vec": np.round(a[i], 4).tolist(), "score": round(float(C_world["score"][i]), 4),
             "source": str(C_world["source"][i]), "draws": {x: round(v, 4) if isinstance(v, float) else v
                                                          for x, v in d.items()}}
+    if S is not None:
+        sl = float(C_world.get("slip_mm", np.full(len(ok), np.nan))[i])
+        meta.update(sel_score=round(float(S[i]), 4), ggx_score=round(float(C_world["ggx_s"][i]), 4),
+                    slip_mm=None if not np.isfinite(sl) else round(sl, 2))
     rb, rdeg = G.rot_base(a[i], (C_world["c2"][i] - C_world["c1"][i]) / max(C_world["w"][i], 1e-9))[::-1]
     meta.update(rot_deg_base=round(rdeg, 2), rot_bin_base=int(rb))
     open_cm = round(float(C_world["pre_open"][i]) * 100)

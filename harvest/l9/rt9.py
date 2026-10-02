@@ -28,6 +28,8 @@ from . import v2plan as VP
 
 GRASP_DIR = os.environ.get("L9V2_GRASPS", "/data/harvest/l9v2/grasps")
 TESTED_DIR = os.environ.get("L9V2_TESTED", "/data/harvest/l9v2/tested")
+GGX_GRASP_DIR = os.environ.get("L9V2_GGX_GRASPS", "")  # opt-in: GraspGenX candidates merged into the cache (_merge_ggx)
+GGX_TESTED_DIR = os.environ.get("L9V2_GGX_TESTED", "/data/harvest/l9v2/tested_ggx")
 CARRY_INVIEW = os.environ.get("L9_CARRY_INVIEW") == "1"  # opt-in, default off (user order 10-03): among the
 # already-computed carry_over z candidates, prefer the one keeping the held object / TCP in the head camera view
 VERSION = "l9v2-1"
@@ -317,8 +319,52 @@ class Runtime:
             ok[:] = False
         d["source"] = np.array(["analytic"] * len(d["w"]))
         d["test_ok"] = ok
+        if GGX_GRASP_DIR:
+            d = self._merge_ggx(d, oid, r if os.path.exists(t) else None)
         self._cand[k] = d
         return d
+
+    def _merge_ggx(self, d: dict, oid: str, r_an) -> dict:
+        """Production candidates = analytic antipodal U GraspGenX (L9V2_GGX_GRASPS / L9V2_GGX_TESTED, opt-in): the
+        GGX ones only count when they passed the same sim lift/shake test (tested_mask). Adds per candidate:
+        ggx_s (own GGX confidence, or the best GGX confidence next to an analytic one, harvest.l9.ggx_cache.ggx_support)
+        and slip_mm (sim test slip, NaN untested) for the ggx_v1 label rule."""
+        from . import ggx_cache as GC
+        K0 = len(d["w"])
+        slip = np.full(K0, np.nan)
+        if r_an is not None and "slip_mm" in r_an and "idx" in r_an and len(r_an["idx"]) == len(r_an["slip_mm"]):
+            ix = np.asarray(r_an["idx"], int)
+            slip[ix[ix < K0]] = np.asarray(r_an["slip_mm"], float)[ix < K0]
+        f = os.path.join(GGX_GRASP_DIR, self.grip, f"{oid}.npz")
+        if not os.path.exists(f):
+            print(f"GGXDBG load {oid} grip={self.grip} analytic={K0} ggx_file=missing", flush=True)
+            d["ggx_s"], d["slip_mm"] = np.zeros(K0), slip
+            return d
+        X = dict(np.load(f))
+        K1 = len(X["w"])
+        okx = np.zeros(K1, bool)
+        slx = np.full(K1, np.nan)
+        tf = os.path.join(GGX_TESTED_DIR, self.grip, f"{oid}.npz")
+        if os.path.exists(tf):
+            rx = dict(np.load(tf))
+            okx = tested_mask(rx, K1)
+            if "slip_mm" in rx and "idx" in rx and len(rx["idx"]) == len(rx["slip_mm"]):
+                ix = np.asarray(rx["idx"], int)
+                slx[ix[ix < K1]] = np.asarray(rx["slip_mm"], float)[ix < K1]
+        sup = GC.ggx_support(d, X) if K1 else np.zeros(K0)
+        out = {}
+        for key in ("T", "c1", "c2", "w", "a", "score", "pre_open"):
+            out[key] = np.concatenate([np.asarray(d[key]), np.asarray(X[key]).reshape((K1,) + np.asarray(d[key]).shape[1:])])
+        out["source"] = np.concatenate([d["source"], np.array(["graspgenx"] * K1)])
+        out["test_ok"] = np.concatenate([d["test_ok"], okx])
+        out["ggx_s"] = np.concatenate([sup, np.asarray(X["score"], float)])
+        out["slip_mm"] = np.concatenate([slip, slx])
+        for key in d:
+            if key not in out:
+                out[key] = d[key]
+        print(f"GGXDBG load {oid} grip={self.grip} analytic={K0} pass={int(d['test_ok'].sum())} ggx={K1} "
+              f"ggx_pass={int(okx.sum())} analytic_with_ggx_support={int((sup > 0).sum())}", flush=True)
+        return out
 
     def _valid(self, k: str, Cw: dict, extra_boxes: dict | None = None) -> tuple:
         """valid mask (test pass, support clearance, neighbour finger clearance at pre_open, reach) + margin.

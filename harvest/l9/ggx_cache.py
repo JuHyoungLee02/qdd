@@ -20,46 +20,86 @@ import numpy as np
 from . import grasp9 as G
 
 DEPTHS = (0.0, -0.01, 0.01, -0.02, 0.02)  # metres along the approach, tried in order
-MAX_SHIFT = 0.02  # the contact midpoint may move at most this far from the GGX TCP along the closing axis
+SNAP = (0.02, 0.015, 0.025, 0.01, 0.03, 0.035, 0.04, 0.005)  # TCP below the snapped surface entry, in order
+MAX_SHIFT = 0.03  # the contact midpoint may move at most this far from the GGX TCP along the closing axis
 NEAR_M, NEAR_COS = 0.015, math.cos(math.radians(25.0))
 
 
-def seat(V, F, grip: str, R_tcp: np.ndarray, t_tcp: np.ndarray, rng, pts=None, sz=None):
-    """One GGX TCP pose (object frame) -> grasp9 candidate dict entry or None."""
+def pair(ts, s0: float, wmax: float, ft: float):
+    """Contact pair on one closing line (hit distances ts from the open finger start): entry i / exit k with finger
+    room on both outer sides (no surface within ft before i / after k), width in range, the start outside; the pair
+    whose midpoint is nearest the GGX TCP (s0) -> (t_i, t_k) or a reject reason."""
+    if len(ts) < 2:
+        return "nohit"
+    best, last = None, "width"
+    for i in range(len(ts)):
+        if ts[i] < 0.005 or (i > 0 and ts[i] - ts[i - 1] < ft):
+            continue
+        for k in range(i + 1, len(ts)):
+            w = ts[k] - ts[i]
+            if w > wmax:
+                break
+            if w < G.W_MIN or (k + 1 < len(ts) and ts[k + 1] - ts[k] < ft):
+                continue
+            d = abs((ts[i] + ts[k]) / 2 - s0)
+            if d > MAX_SHIFT:
+                last = "shift"
+                continue
+            if best is None or d < best[0]:
+                best = (d, ts[i], ts[k])
+    return last if best is None else (best[1], best[2])
+
+
+def seat(V, F, grip: str, R_tcp: np.ndarray, t_tcp: np.ndarray, rng, pts=None, sz=None, why=None):
+    """One GGX TCP pose (object frame) -> grasp9 candidate dict entry or None (`why`: Counter of reject reasons).
+    TCP depths tried: GGX's own (DEPTHS around it), then snapped to the mesh along the approach (SNAP below the
+    first surface the approach line through the GGX TCP enters) -- GGX's base->TCP depth is only verified for the
+    AIW gripper, so every gripper also gets the surface-snapped depths (the G1 integration's ray-cast idea)."""
     gr = G.gripper(grip)
     wmax = gr["max_open"] - G.OPEN_MARGIN
     a = -R_tcp[:, 2] / max(np.linalg.norm(R_tcp[:, 2]), 1e-9)
+    why = why if why is not None else {}
     if a[2] > G.BELOW_Z:
+        why["below"] = why.get("below", 0) + 1
         return None
     c = R_tcp[:, 1] - a * float(R_tcp[:, 1] @ a)
     c = c / max(np.linalg.norm(c), 1e-9)
     s0 = wmax / 2 + 0.02
-    for d in DEPTHS:
-        o = t_tcp + a * d - c * s0
+    tops = [t_tcp + a * d for d in DEPTHS]
+    h = G.ray_hits((t_tcp - a * 0.4)[None], a[None], V, F)[0]
+    if len(h):
+        e = t_tcp - a * 0.4 + a * float(h[0])
+        tops += [e + a * d for d in SNAP]
+    last = "nohit"
+    for tc in tops:
+        o = tc - c * s0
         ts = G.ray_hits(o[None], c[None], V, F)[0]
         ts = ts[ts <= 2 * s0]
-        if len(ts) < 2:
+        pr = pair(ts, s0, wmax, gr["finger_t"])
+        if isinstance(pr, str):
+            last = pr
             continue
-        w = float(ts[1] - ts[0])
-        if not (G.W_MIN <= w <= wmax) or ts[0] < 0.005 or abs((ts[0] + ts[1]) / 2 - s0) > MAX_SHIFT:
-            continue
-        if len(ts) > 2 and ts[2] - ts[1] < gr["finger_t"]:
-            continue
-        p, q = o + c * ts[0], o + c * ts[1]
+        t0_, t1_ = pr
+        w = float(t1_ - t0_)
+        p, q = o + c * t0_, o + c * t1_
         m = (p + q) / 2
         R = G.frame_of(a, c)
         T = np.eye(4)
         T[:3, :3], T[:3, 3] = R, m
         open_w = min(w + rng.uniform(*G.PRE_OPEN), gr["max_open"])
         if sz is not None and G._lowest(T, G.boxes(gr, open_w)) < sz + G.SUPPORT_CLEAR:
-            return None
+            last = "support"
+            continue
         if pts is not None and G.hits_boxes((pts - m) @ R, G.boxes(gr, max(open_w, w + 0.002), G.STANDOFF)):
-            return None
+            last = "collision"
+            continue
+        why["ok"] = why.get("ok", 0) + 1
         return {"T": T, "c1": p, "c2": q, "w": w, "a": a, "pre_open": open_w}
+    why[last] = why.get(last, 0) + 1
     return None
 
 
-def candidates(V, F, grip: str, poses_tcp, scores, seed: int = 0) -> dict:
+def candidates(V, F, grip: str, poses_tcp, scores, seed: int = 0, why=None) -> dict:
     """poses_tcp: [(R_tcp, t_tcp)] object frame, scores: GGX confidences -> grasp9-format dict (score = GGX conf)."""
     V, F = np.asarray(V, float), np.asarray(F, int)
     rng = np.random.default_rng(seed + 13)
@@ -68,7 +108,7 @@ def candidates(V, F, grip: str, poses_tcp, scores, seed: int = 0) -> dict:
     sz = float(V[:, 2].min())
     out = {k: [] for k in ("T", "c1", "c2", "w", "a", "pre_open", "score")}
     for (R, t), s in zip(poses_tcp, scores):
-        e = seat(V, F, grip, np.asarray(R, float), np.asarray(t, float), rng, pts=pts, sz=sz)
+        e = seat(V, F, grip, np.asarray(R, float), np.asarray(t, float), rng, pts=pts, sz=sz, why=why)
         if e is None:
             continue
         for k in e:

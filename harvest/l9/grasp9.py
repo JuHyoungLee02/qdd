@@ -570,6 +570,36 @@ def part_of(c1, c2, w: float, obj_half, hollow: bool, elongated: bool) -> str:
     return "body"
 
 
+W_NAT, W_SIM, SLIP_MM = 0.5, 0.3, 10.0  # ggx_v1 weights (pre-registered 10-03, docs/stage3/results/l9v2_ggx.md)
+
+
+def select_ggx(fam, part, robot_d, margin, ok, order, ggx_s, slip_mm, instructed=None):
+    """Learned + sim label (label_rule ggx_v1, opt-in L9V2_SEL=ggx_v1): among the valid candidates (sim lift/shake
+    pass, support, clearance, IK -- `ok`) the highest S = ggx_s (GraspGenX confidence, 0-1) + W_NAT * natural prior
+    (1 - rank / len(order) for the object kind's natural (family, part) order, 0 outside it -- a soft prior, never a
+    filter) + W_SIM * exp(-slip / SLIP_MM) (sim test slip; untested-but-valid = 0.5). Ties: robot side (2 cm),
+    reach margin, index (deterministic). Instructed rows: the same score inside the instructed family.
+    -> (index | None, rule_step, natural rank | None, S per candidate)."""
+    fam, part, ok = np.asarray(fam), np.asarray(part), np.asarray(ok, bool)
+    rank = np.full(len(ok), -1)
+    for r, (f, p) in enumerate(order or ()):
+        rank[(rank < 0) & (fam == f) & (part == p)] = r
+    n = max(len(order or ()), 1)
+    prior = np.where(rank >= 0, 1.0 - rank / n, 0.0)
+    sl = np.asarray(slip_mm, float)
+    sim = np.where(np.isfinite(sl), np.exp(-np.abs(np.nan_to_num(sl)) / SLIP_MM), 0.5)
+    S = np.asarray(ggx_s, float) + W_NAT * prior + W_SIM * sim
+    m = ok & ((fam == instructed) if instructed is not None else True)
+    idx = np.flatnonzero(m)
+    if not len(idx):
+        return None, (2 if instructed is not None else 3), None, S
+    i = int(sorted(idx, key=lambda j: (-round(float(S[j]), 3), round(float(robot_d[j]) / 0.02), -float(margin[j]),
+                                       j))[0])
+    rk = int(rank[i]) if rank[i] >= 0 else None
+    step = 2 if instructed is not None else (0 if rk == 0 else (1 if rk is not None else 3))
+    return i, step, rk, S
+
+
 def select_natural(fam, part, robot_d, margin, ok, order, instructed=None):
     """Deterministic natural label (label_rule natural_v1): the first (family, part) of `order` with a valid
     candidate; inside it robot side (2 cm steps) -> largest reach margin. Instructed rows: the instructed family,

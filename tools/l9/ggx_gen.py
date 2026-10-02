@@ -22,6 +22,13 @@ from harvest.l9.ggx_refine import _tcp_in_base  # noqa: E402
 from tools.l9.graspgenx_client import base_to_tcp, request_grasps  # noqa: E402
 
 
+# served gripper name per cache gripper: AIW = the verified converter asset (base_link + tcp_in_base); Franka = a
+# TCP-frame sweep volume (frame G as the GGX base, tools/l9/g1_ggx_sweep.sweep on franka_hand.json, gripper_type 0):
+# the base_link converter gave poses scattered around the object (pod probe 10-03), the curated franka_panda path
+# of the shared server is broken (GraspGenXSampler.from_gripper_name missing)
+GGX_NAME = {"ffw_sg2": "ffw_sg2_right", "franka": "franka_hand_tcp"}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--meshes", required=True)
@@ -37,8 +44,8 @@ def main():
     od = os.path.join(a.out, a.grip)
     os.makedirs(od, exist_ok=True)
     log = open(os.path.join(od, f"_log_{i}.jsonl"), "a")
-    name = G.JSON_NAME.get(a.grip, a.grip)
-    xyz, rpy = _tcp_in_base(name)
+    name = GGX_NAME.get(a.grip, G.JSON_NAME.get(a.grip, a.grip))
+    xyz, rpy = ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0)) if name.endswith("_tcp") else _tcp_in_base(name)
     if a.ids:
         files = [os.path.join(a.meshes, s.strip() + ".npz") for s in open(a.ids) if s.strip()]
     else:
@@ -65,12 +72,13 @@ def main():
             for Tg in gr:
                 R, t = base_to_tcp(np.asarray(Tg[:3, :3], float), np.asarray(Tg[:3, 3], float), xyz, rpy)
                 poses.append((R, t + centre))
-            C = GC.candidates(V, F, a.grip, poses, sc, seed=j)
+            why = {}
+            C = GC.candidates(V, F, a.grip, poses, sc, seed=j, why=why)
             np.savez_compressed(dst, **C)
             fam = [G.family_obj(v) for v in C["a"]]
             rec = {"id": k, "req": a.num_grasps, "ret": int(len(gr)), "n": int(len(C["w"])), "top": fam.count("top"),
                    "oblique": fam.count("oblique"), "horizontal": fam.count("horizontal"),
-                   "conf_max": round(float(sc.max()), 3) if len(sc) else None, "s": round(time.time() - t0, 1)}
+                   "conf_max": round(float(sc.max()), 3) if len(sc) else None, "why": why, "s": round(time.time() - t0, 1)}
             print("GGXDBG gen", a.grip, json.dumps(rec), flush=True)
             log.write(json.dumps(rec) + "\n")
         except Exception as e:
