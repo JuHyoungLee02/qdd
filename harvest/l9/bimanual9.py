@@ -579,6 +579,16 @@ class HandoverRuntime:
         log.append({"phase": "giver_carry", **r})
         if not r["ok"]:
             return {"ok": False, "log": log}
+        if cell is not None and carry_quat is not None:  # diagnostic (2026-10-02): live-IK found good candidates
+            env2 = self.world.env  # at the DESIRED pose (yawik 6-9/15, smoke11) but choose() still got ik_ok=0 right
+            env2.use_arm(self.receiver.arm)  # after -- is the object actually where _move_to commanded it, or did
+            p_act, q_act = env2.object_pose(obj_key)  # the open-loop carry (plan once, no closed-loop correction)
+            p_des = T_obj_desired[:3, 3]  # leave it off by enough to flip marginal candidates?
+            from . import grasp9 as G
+            err_m = float(np.linalg.norm(np.asarray(p_act, float) - p_des))
+            R_act, R_des = G.qmat(np.asarray(q_act, float)), T_obj_desired[:3, :3]
+            err_deg = math.degrees(math.acos(max(-1.0, min(1.0, (np.trace(R_act.T @ R_des) - 1) / 2))))
+            log[-1]["carry_pose_err"] = f"{err_m * 100:.1f}cm/{err_deg:.1f}deg"
         self.phase = "receiver_pick"
         self.overlap_ticks = 0
         r = self._grasp(self.receiver, obj_key)
