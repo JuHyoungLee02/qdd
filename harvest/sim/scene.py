@@ -261,7 +261,15 @@ def _ensure_app(headless: bool, cameras: bool):
         if CYCLO_LAB_SRC not in sys.path:
             sys.path.insert(0, CYCLO_LAB_SRC)
         from isaaclab.app import AppLauncher
-        _APP = AppLauncher(headless=headless, device="cuda:0", enable_cameras=cameras).app
+        import os
+        kw = {}
+        kt, pt = os.environ.get("L9_KIT_THREADS"), os.environ.get("L9_PHYSX_THREADS")
+        if kt or pt:  # L9 lanes (10-02): many Isaac processes per pod were CPU-throttled; cap the worker threads
+            a = [f"--/plugins/carb.tasking.plugin/threadCount={int(kt)}"] if kt else []
+            if pt:
+                a += [f"--/persistent/physics/numThreads={int(pt)}", f"--/physics/numThreads={int(pt)}"]
+            kw["kit_args"] = " ".join(a)
+        _APP = AppLauncher(headless=headless, device="cuda:0", enable_cameras=cameras, **kw).app
     return _APP
 
 
