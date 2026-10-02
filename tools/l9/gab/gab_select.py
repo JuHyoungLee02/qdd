@@ -81,8 +81,9 @@ def main():
         per[robot] = []
         cnt = defaultdict(int)
         for r in sel:
-            side = r.get("arm") or "x"
-            r = dict(r, job=f"gab_{robot}_{side[0]}{cnt[side] // k:02d}")
+            # run9: one arm, one head-camera mode and one ext_p per process -> group by all three
+            side = (r.get("arm") or "x")[0] + (f"e{round(float(r['ext_p']) * 10)}" if r.get("ext_p") else "") + (str(r["hcam"])[:2] if r.get("hcam") else "")
+            r = dict(r, job=f"gab_{robot}_{side}{cnt[side] // k:02d}")
             cnt[side] += 1
             r.pop("pilot", None)
             plan.append(r)
