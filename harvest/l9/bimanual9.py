@@ -893,6 +893,17 @@ class HandoverRuntime:
         log.append({"phase": "giver_lift_waypoint", **r})
         if not r["ok"]:
             return {"ok": False, "log": log}
+        # owner 2026-10-03 (2hr checkpoint follow-up): split the remaining translation+rotation into two moves
+        # instead of one -- translate to carry_pos FIRST, keeping the current (lift) orientation (quat_wxyz=None),
+        # THEN rotate in place (same position) to the real carry_quat. The FINAL release pose is unchanged (still
+        # exactly carry_pos/carry_quat, so the handover-point label this feeds is unaffected) -- only the PATH to
+        # get there is relaxed, same spirit as the lift waypoint: smaller, easier-to-plan moves instead of one
+        # big combined one.
+        if carry_quat is not None:
+            r = self._move_to(self.giver, carry_pos)
+            log.append({"phase": "giver_carry_translate", **r})
+            if not r["ok"]:
+                return {"ok": False, "log": log}
         r = self._move_to(self.giver, carry_pos, quat_wxyz=carry_quat)
         log.append({"phase": "giver_carry", **r})
         if not r["ok"]:
