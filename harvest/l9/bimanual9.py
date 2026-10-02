@@ -634,10 +634,22 @@ def runtimes(world, profile: str, device: str = "cuda:0", allow_untested: bool =
     return _RT_CACHE[key]
 
 
+AT_LOCK_RAD = 0.05  # the other arm counts as "at its cuRobo lock pose" below this joint deviation
+
+
 def live_hand_boxes(world, arm: str, rt, prefix: str = "other_hand") -> dict:
-    """`hand_boxes` of `arm` at its live TCP pose and measured gap (leaves env on `arm`)."""
+    """`hand_boxes` of `arm` at its live TCP pose and measured gap (leaves env on `arm`). Under the common executor
+    (rt9.COMMON) every planner already holds the other arm's REAL links at the sim start pose (its cuRobo locks,
+    rt9.locks_from_sim); while that arm still sits there (max joint deviation < AT_LOCK_RAD) no extra boxes are
+    added -- bimdeep a1 10-03: the resting receiver's hand boxes (open fingers + palm + wrist) made the giver's
+    own pick ik_ok=0 in 11 of 14 episodes, the direction probe without them had found the same grasps."""
+    from . import rt9 as RT
     env = world.env
     env.use_arm(arm)
+    if RT.COMMON:
+        q0 = env.robot.data.default_joint_pos[0, rt.sim_ids].cpu().numpy()
+        if float(np.abs(rt.arm_q() - q0).max()) < AT_LOCK_RAD:
+            return {}
     return hand_boxes(rt.tcp_T(), rt.gr, float(env.gripper_width()), prefix=prefix)
 
 

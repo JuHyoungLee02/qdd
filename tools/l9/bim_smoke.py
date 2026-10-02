@@ -206,6 +206,11 @@ def main(argv=None):
             r["wall_s"] = round(time.time() - t0, 1)
             print("EP " + json.dumps({k: v for k, v in r.items() if k != "log"}, default=_jsonable), flush=True)
             results.append(r)
+            print("PHASES " + json.dumps({"seed": seed, "gate": r.get("gate"), "log": [
+                {k: v for k, v in e.items() if k in ("phase", "ok", "status", "rise_cm", "held", "z_gap_cm", "gap_cm",
+                                                     "overlap_ticks", "carry_pose_err", "release_yaw_ik", "valid_stats",
+                                                     "lead", "fam", "swapped_order")}
+                for e in (r.get("log") or [])]}, default=_jsonable), flush=True)
             try:
                 from PIL import Image
                 od = os.path.join(a.out, f"ep{i}")
