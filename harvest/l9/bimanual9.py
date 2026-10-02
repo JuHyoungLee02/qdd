@@ -373,7 +373,9 @@ class HandoverRuntime:
         rt = slot.rt
         gc = rt.choose(obj_key, {"tgt": obj_key}, extra_boxes=self.other_arm_boxes(slot))
         if gc is None:
-            return {"ok": False, "status": "no valid grasp"}
+            diag = rt.picks[-1] if rt.picks else {}
+            return {"ok": False, "status": "no valid grasp", "choice_fail": diag.get("choice_fail"),
+                    "valid_stats": diag.get("valid_stats")}
         r = rt._approach_plan(rt.plan_start(), gc, obj_key, extra_boxes=self.other_arm_boxes(slot))
         if not r["ok"]:
             return {"ok": False, "status": r["status"]}
