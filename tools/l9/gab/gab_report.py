@@ -85,7 +85,8 @@ def main():
                         "neither": pair[(False, False)]},
              "diversity_B_vs_A": div, "families_lost": lost_fam}
         r["succ_ok"] = sb["rate"] >= sa["rate"] - MARGIN_ROBOT and not lost_fam
-        r["div_ok"] = None if div is None else bool(div["ok"])
+        # left/right is reference only (user 10-03: balanced at build time, not in raw production)
+        r["div_ok"] = None if div is None else not [k for k in div["narrower"] if k != "arms"]
         r["dq_ok"] = sb["dq_over"] <= sa["dq_over"] + 1
         r["aba_ok"] = None if sa["aba_share"] is None or sb["aba_share"] is None else sb["aba_share"] <= sa["aba_share"] + ABA_TOL
         r["n_ok"] = sa["episodes"] >= 20 and sb["episodes"] >= 20

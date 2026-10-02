@@ -1,7 +1,7 @@
 """L9v2-general integrated A/B (all general elements ON vs current), row selection. Read-only on the sources.
 Per robot: N single-arm train rows from that robot's pilot plan, round-robin over task families (sorted), then over
-definitions inside a family, arms alternating left/right for two-armed robots; order inside a group = a fixed hash of
-the seed (deterministic, no RNG state). One row per job. Both arms (A, B) get the SAME rows (same seeds).
+definitions inside a family (arms as the plan drew them, no forced left/right balance); order inside a group = a fixed hash of
+the seed (deterministic, no RNG state). GAB_ROWS_PER_JOB (default 5) rows of one robot and arm per job. Both arms (A, B) get the SAME rows (same seeds).
 usage: python gab_select.py <ab dir> <n per robot> robot=plan.json [robot=plan.json ...]
 writes <ab dir>/plan_gab.json, <ab dir>/q.txt ("<arm> <robot> <plan> <job>", rows interleaved robot by robot, A then
 B for each row), <ab dir>/rows.tsv (job robot def family arm seed)."""
@@ -39,7 +39,7 @@ def pick(rows, robot, n):
                 continue
             dname = defs[k % len(defs)]
             lst = fam[fname][dname]
-            arm = ("left", "right")[want_arm % 2] if robot in TWO_ARMED else None
+            arm = None  # no forced left/right balance (user 10-03: L/R is balanced at build time)
             j = next((i for i, r in enumerate(lst) if arm is None or r.get("arm") == arm), 0)
             r = lst.pop(j)
             if r["seed"] in used:
@@ -53,27 +53,33 @@ def pick(rows, robot, n):
 
 def main():
     ab, n = sys.argv[1], int(sys.argv[2])
+    k = int(os.environ.get("GAB_ROWS_PER_JOB", "5"))  # rows per Isaac process (one boot; same robot and arm)
     os.makedirs(ab, exist_ok=True)
-    plan, per = [], {}
+    plan, per, jobs = [], {}, {}
     for spec in sys.argv[3:]:
         robot, src = spec.split("=", 1)
         sel = pick(json.load(open(src)), robot, n)
         per[robot] = []
-        for i, r in enumerate(sel):
-            r = dict(r, job=f"gab_{robot}_{i:03d}")
+        cnt = defaultdict(int)
+        for r in sel:
+            side = r.get("arm") or "x"
+            r = dict(r, job=f"gab_{robot}_{side[0]}{cnt[side] // k:02d}")
+            cnt[side] += 1
             r.pop("pilot", None)
             plan.append(r)
             per[robot].append(r)
+        jobs[robot] = sorted({r["job"] for r in per[robot]})
     p = os.path.join(ab, "plan_gab.json")
     json.dump(plan, open(p, "w"))
     with open(os.path.join(ab, "q.txt"), "w") as q, open(os.path.join(ab, "rows.tsv"), "w") as t:
-        for i in range(max(len(v) for v in per.values())):
-            for robot in per:
-                if i < len(per[robot]):
-                    r = per[robot][i]
+        for i in range(max(len(v) for v in jobs.values())):
+            for robot in jobs:
+                if i < len(jobs[robot]):
                     for arm in ("A", "B"):
-                        q.write(f"{arm} {robot} {p} {r['job']}\n")
-                    t.write(f"{r['job']}\t{robot}\t{r.get('def')}\t{r.get('task_family')}\t{r.get('arm')}\t{r['seed']}\n")
+                        q.write(f"{arm} {robot} {p} {jobs[robot][i]}\n")
+        for r in plan:
+            t.write("\t".join(str(x) for x in (r["job"], r["robot"], r.get("def"), r.get("task_family"), r.get("arm"),
+                                               r["seed"])) + "\n")
     for robot, v in per.items():
         print(robot, len(v), "families", len({r.get("task_family") for r in v}), "defs", len({r.get("def") for r in v}),
               "left", sum(r.get("arm") == "left" for r in v))
