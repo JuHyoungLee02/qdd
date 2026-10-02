@@ -103,6 +103,9 @@ class PlannerProxy:
     def line(self, *a, **k):
         return self._call("line", *a, **k)
 
+    def _limits(self, *a, **k):
+        return self._call("_limits", *a, **k)
+
     def attach(self, q, names):
         ok = self._call("attach", q, names)
         self.attached = names if ok else None
