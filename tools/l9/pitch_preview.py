@@ -89,6 +89,7 @@ def main(argv=None):
                 world._write_K("cam_head", d["hfov"])
                 for _ in range(3):
                     world.env.env.sim.render()
+                world.env.scene["cam_head"].update(0.0, force_recompute=True)  # else the buffer keeps the old pose
                 rgb = world.env.camera_rgb("cam_head")[..., :3].copy()
                 im = Image.fromarray(rgb)
                 dr = ImageDraw.Draw(im)
