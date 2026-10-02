@@ -49,6 +49,8 @@ REACH_TOL, HOLD_MAX_S = 0.012, 1.5
 # L9v2-R1: straight approach from the grasp end + joint-space transit when the forward one fails (opt-in per robot)
 REVERSE_APPROACH = {"r1pro": os.environ.get("IR_L9_R1_REVERSE", "") == "1"}
 GRASP_LINKS_CHECK = {"r1pro": os.environ.get("IR_L9_R1_GRASPCHK", "") == "1"}  # L9v2-R1, see Runtime._valid
+PLACE_CHECK = {"r1pro": os.environ.get("IR_L9_R1_PLACECHK", "") == "1"}  # L9v2-R1, see Runtime._place_reach
+LIFT_SKIP = {"r1pro": os.environ.get("IR_L9_R1_LIFTSKIP", "") == "1"}  # L9v2-R1, see Runtime.plan
 CURRENT = None
 
 
@@ -211,6 +213,7 @@ class Runtime:
         self._retreat_fail = 0
         self._settle_n = 0
         self._n_dump = 0  # failed-plan dumps per episode (L9V2_DEBUG_DIR)
+        self._lift_clear_failed = 0
 
     def arm_q(self) -> np.ndarray:
         return self.w.env.robot.data.joint_pos[0, self.sim_ids].cpu().numpy().astype(float)
@@ -393,6 +396,8 @@ class Runtime:
             Cw["test_ok"][j] = False
         self.refresh_world(exclude=(k,), extra_boxes=extra_boxes)
         ok, margin = self._valid(k, Cw, extra_boxes=extra_boxes)
+        if PLACE_CHECK.get(self.profile) and ok.any():
+            ok = ok & self._place_reach(Cw, ok, k, info)
         obs = getattr(self.w, "last_obs", None)
         cam = obs.cams.get("head") if obs is not None else None
         depth = (obs.depth or {}).get("head") if obs is not None and getattr(obs, "depth", None) else None
@@ -426,6 +431,61 @@ class Runtime:
                            n_valid=int(ok.sum()), curobo=self.curobo, grip=self.grip)
             self._Cw, self._ok, self._margin = Cw, ok, margin
         return gc
+
+    def _place_reach(self, Cw: dict, ok, k: str, info: dict) -> np.ndarray:
+        """L9v2-R1: keep the grasp candidates whose grip also reaches the PLACE: the put pose (object upright at the
+        place, held yaw + one of YAW_TRIES) and the pose above it (carry height) both have IK with this grasp
+        (pilot 10-03: carry_over / lower_open 'no collision-free path' loops after a front / side grasp of a target
+        that was reachable itself). No place / no candidate passing -> the mask is left unchanged (all True)."""
+        from ..astra_motion.harness import obj_height
+        from ..teach_l8 import labels as L
+        from ..teach_l8d import xlabels as XL
+        out = np.ones(len(ok), bool)
+        pl = info.get("place")
+        idx = np.flatnonzero(ok)
+        if pl is None or not len(idx):
+            return out
+        try:
+            st = self.w.status()
+            p = np.asarray(st["obj"][pl], float)
+        except Exception:  # noqa: BLE001
+            return out
+        if info.get("place_xy_offset"):
+            p = p + np.array([*info["place_xy_offset"], 0.0], float)
+        table_z = float(self.w.table_z)
+        H = XL.heights(self._live_place(info, table_z), table_z)
+        h = obj_height(k)
+        c, q_obj = self.w.env.object_pose(k)
+        T_obj = T_of(c, q_obj)
+        dz = VP.draws(int(getattr(self.w, "vseed", 0) or 0), len(self.picks))["place_dz"]
+        yaws = (0.0,) if (info.get("place_pose") or {}).get("kind") == "oriented" else self.YAW_TRIES
+        cr = getattr(R9, "V2_CARRY_CLEAR", {}).get(self.profile) or (0.05, 0.10)
+        Ts, own = [], []
+        for i in idx:
+            T_og = P9.inv_T(T_obj) @ Cw["T"][i]
+            hang = float(Cw["T"][i][2, 3]) - (float(c[2]) - h / 2)
+            zc = min(H["carry_base"] + L.CARRY_DZ, H["carry_base"] + max(hang, 0.0) + float(cr[0]))
+            for d in yaws:
+                T = VP.put_pose(q_obj, p, H["place_top"] + h / 2 + dz, T_og, d)
+                Tu = T.copy()
+                Tu[2, 3] = max(zc, T[2, 3] + 0.05)
+                Ts += [self.to_base(T), self.to_base(Tu)]
+                own.append(i)
+        try:
+            r_ok, _, _ = self.planner.ik(np.stack(Ts))
+        except Exception:  # noqa: BLE001
+            return out
+        good = set()
+        for j, i in enumerate(own):
+            if r_ok[2 * j] and r_ok[2 * j + 1]:
+                good.add(i)
+        m = np.zeros(len(ok), bool)
+        m[list(good)] = True
+        if self._vstats is not None:
+            self._vstats["place_ok"] = int(len(good))
+        if not good and (self.picks or self.regrasp_n):  # a later pick: keep the old behaviour (no skip mid-episode)
+            return out
+        return m  # first pick with no grasp that reaches the place: no valid grasp -> scene skipped (reach limit)
 
     def prechoose(self) -> None:
         """Right after the world reset: render the head (with depth) once, choose the first pick's grasp, and for an
@@ -633,6 +693,14 @@ class Runtime:
         if not hold:
             self.held = None
         step, cmd = VP.plan(self.status2(st), info, table_z, w_open, gc, self.held, cam=self._carry_cam())
+        if step == "lift_clear" and LIFT_SKIP.get(self.profile) and getattr(self, "_lift_clear_failed", 0) and \
+                getattr(self, "_last_step", None) == "lift_clear":
+            # L9v2-R1: the straight-up clearance move is out of the leaned arm's reach (tall object: target
+            # 13 cm higher, 30 identical failed calls in pilot 10-03); the transit to the pre-grasp is collision-
+            # checked anyway -> go there directly
+            step, cmd = "above_target", {"mode": "eef", "position_m": VP._r(gc.pre), "gripper": "keep",
+                                         "quat_wxyz": VP._q(gc.quat)}
+            self.timeline["lift_clear_skipped"] = self.timeline.get("lift_clear_skipped", 0) + 1
         if step == "retreat" and getattr(self, "_retreat_fail", 0):
             # the retreat move could not be planned (dbg6: 20 identical retreat calls): the object is placed, stop
             step, cmd = "done", {"mode": "stop"}
@@ -744,6 +812,8 @@ class Runtime:
                 return self._resample(Q0), "lifted a little; the carry path is blocked", None
             if hold:  # L9v2-DIAG 7: the next call chooses the place yaw again
                 self.timeline["held_move_failed"] = self.timeline.get("held_move_failed", 0) + 1
+            if step == "lift_clear":
+                self._lift_clear_failed = getattr(self, "_lift_clear_failed", 0) + 1
             self._dump_fail(step or "move", q0, T)  # L9v2-DIAG 9: carry_up / lift_clear / reopen dumps (R1 Pro)
             return None, "no collision-free path to the target", None
         if Q0 is not None:
