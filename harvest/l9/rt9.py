@@ -225,8 +225,9 @@ class Runtime:
     def release_width(self) -> float:
         """Opening after a release / reopen: the pre-open + 1.5 cm (clipped to the max): at the pre-open alone the
         pads could keep touching a slightly turned object, 'holding' stayed true and the retreat dragged it."""
-        if getattr(self, "_release_full", False):
-            return float(self.w.w_open)
+        if getattr(self, "_release_full", False) or getattr(self, "_last_step", None) == "lower_open":
+            return float(self.w.w_open)  # releasing at the place: open fully (pilot 10-02: the object sat within
+            # 3-12 mm of the place at the release and ended 40-200 mm away: the pads dragged it on the retreat)
         return float(min(self.w.w_open, self.open_width() + 0.015))
 
     def open_width(self) -> float:
@@ -607,7 +608,14 @@ class Runtime:
             Q0 = self.segs["lift"]
             self.segs["lift"] = None
             q0 = Q0[-1]
-        Q = self._guard(self.planner.pose(q0, self.to_base(T)))
+        if step == "retreat":  # straight out (back along the approach and up): a planned curve swept the open
+            Q = self._guard(self.planner.line(q0, self.to_base(self.tcp_T()), self.to_base(T)))  # fingers through
+            if Q is not None:                                                                # the placed object
+                self.timeline.setdefault("line_moves", []).append("retreat")
+        else:
+            Q = None
+        if Q is None:
+            Q = self._guard(self.planner.pose(q0, self.to_base(T)))
         if Q is None and hold:  # pilot 10-02: carry_over failed in 7 of 40 episodes with the object attached
             c_obj = np.asarray(self.w.env.object_pose(tg)[0], float)
             for k, (att, bz) in enumerate(((True, min(c_obj[2], pos[2])), (False, None))):
