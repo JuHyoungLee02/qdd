@@ -150,7 +150,9 @@ def reach_map(profile: str, arm: str) -> dict:
 
 def reach_ok(profile: str, arm: str, xyz_base, approach: str) -> bool:
     """True if the reach-map cell nearest to xyz_base (base_link frame, m) had at least one collision-free IK
-    solution for that approach class (cuRobo batched IK, self-collision on, no world). Outside the grid -> False."""
+    solution for that approach class (cuRobo batched IK, self-collision on, no world). Outside the grid -> False.
+    Classes are taken in the cuRobo base frame: for R1 Pro the base (torso_link4) leans robot9.R1_LEAN forward, so
+    classify the world approach after rotating it into that frame (the map was built at the R1_LEAN posture)."""
     if approach not in APPROACHES:
         raise ValueError(f"approach {approach!r}: one of {APPROACHES}")
     m = reach_map(profile, arm)
