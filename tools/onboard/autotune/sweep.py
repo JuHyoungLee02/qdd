@@ -16,7 +16,7 @@ target (positions snapped to `--snap` m, base rotations grouped to 0.05 rad), ta
 reach radius are marked unreachable without IK.
 
 usage: sweep.py <robots/profile.json> <out dir> [--arms right,left] [--seeds 8] [--batch 2048] [--selftest]
--> <out>/<profile>_<arm>.npz per arm + <out>/<profile>_meta.json; ranges via profile.py.
+-> <out>/<profile>_<arm>.npz per arm + <out>/<profile>_meta.json; ranges via make_profile.py.
 """
 from __future__ import annotations
 
@@ -102,12 +102,13 @@ class IK:
         self.ik = C9.make_ik(profile, arm, num_seeds=seeds, max_batch_size=batch)
         self.tf = C9.tool_frame(profile, arm)
 
-    def solve(self, P: np.ndarray, Rm: np.ndarray) -> np.ndarray:
-        """P (N, 3), Rm (N, 3, 3) in the config base frame -> success (N,)."""
+    def solve(self, P: np.ndarray, Rm: np.ndarray = None, Q: np.ndarray = None) -> np.ndarray:
+        """P (N, 3) + rotations Rm (N, 3, 3) or quaternions Q (N, 4, wxyz) in the config base frame -> success."""
         from curobo.types import GoalToolPose, Pose
         from harvest.l9.grasp9 import mat_quat
         out = np.zeros(len(P), bool)
-        Q = np.stack([mat_quat(R) for R in Rm]) if len(P) else np.zeros((0, 4))
+        if Q is None:
+            Q = np.stack([mat_quat(R) for R in Rm]) if len(P) else np.zeros((0, 4))
         for s0 in range(0, len(P), self.B):
             m = min(self.B, len(P) - s0)
             p, q = P[s0:s0 + m], Q[s0:s0 + m]
@@ -132,7 +133,8 @@ def selftest(u, profile, arm, ik: IK, base, tool, arm_joints, n=512):
     return float(ok.mean())
 
 
-def sweep_arm(r: dict, arm: str, out: str, seeds: int, batch: int, snap: float, do_selftest: bool) -> dict:
+def sweep_arm(r: dict, arm: str, out: str, seeds: int, batch: int, snap: float, do_selftest: bool,
+              shard=(0, 1)) -> dict:
     from urdf_fk import Urdf
     from harvest.l9 import curobo9 as C9
     prof = r["profile"]
@@ -178,35 +180,40 @@ def sweep_arm(r: dict, arm: str, out: str, seeds: int, batch: int, snap: float, 
         poses.append(row)
         key = tuple(np.round(np.array(G.rot_euler(Tb[:3, :3])) / 0.05).astype(int))
         groups.setdefault(key, []).append(c)
+    from harvest.l9.grasp9 import mat_quat
     n_ik = 0
+    reqP, reqQ, book = [], [], []  # every group's unique in-reach base-frame targets x orientations, solved at once
     for gi, (key, members) in enumerate(groups.items()):
+        if gi % shard[1] != shard[0]:
+            continue
         Rrep = poses[members[0]][0][1][:3, :3]
-        Rb_ori = np.einsum("ji,ojk->oik", Rrep, Rw)  # base-frame tool rotations (O, 3, 3)
+        Qo = np.stack([mat_quat(Rrep.T @ Rw[o]) for o in range(O)])  # base-frame tool rotations
         allP, where = [], []
         for c in members:
             for s, sz in enumerate(SURFACES):
                 Twb = poses[c][s][1]
                 Pw = np.stack([gx.ravel(), gy.ravel(), sz + gl.ravel()], -1)
-                Pb = (Pw - Twb[:3, 3]) @ Twb[:3, :3]
-                allP.append(Pb)
+                allP.append((Pw - Twb[:3, 3]) @ Twb[:3, :3])
                 where.append((c, s))
-        allP = np.concatenate(allP)
-        keys = np.round(allP / snap).astype(np.int64)
+        keys = np.round(np.concatenate(allP) / snap).astype(np.int64)
         uk, inv = np.unique(keys, axis=0, return_inverse=True)
-        inv = inv.ravel()
         up = uk * snap
-        near = np.linalg.norm(up, axis=1) <= rad
-        res = np.zeros((len(uk), O), bool)
-        idx = np.nonzero(near)[0]
-        for o in range(O):
-            if len(idx):
-                res[idx, o] = ik.solve(up[idx], np.repeat(Rb_ori[o][None], len(idx), 0))
+        idx = np.nonzero(np.linalg.norm(up, axis=1) <= rad)[0]
+        reqP.append(np.repeat(up[idx], O, 0))
+        reqQ.append(np.tile(Qo, (len(idx), 1)))
+        book.append((where, inv.ravel(), len(uk), idx))
         n_ik += len(idx) * O
-        per = X * Y * H
+    print(f"[{prof}/{arm}] shard {shard} groups {len(book)}/{len(groups)} ik {n_ik} t {time.time() - t0:.0f}s", flush=True)
+    ok = ik.solve(np.concatenate(reqP), Q=np.concatenate(reqQ)) if n_ik else np.zeros(0, bool)
+    o0 = 0
+    per = X * Y * H
+    for where, inv, nu, idx in book:
+        res = np.zeros((nu, O), bool)
+        res[idx] = ok[o0:o0 + len(idx) * O].reshape(len(idx), O)
+        o0 += len(idx) * O
         for w, (c, s) in enumerate(where):
             reach[c, s] = res[inv[w * per:(w + 1) * per]].reshape(X, Y, H, O)
-        print(f"[{prof}/{arm}] group {gi + 1}/{len(groups)} configs {len(members)} unique {len(uk)} ik {len(idx) * O}"
-              f" t {time.time() - t0:.0f}s", flush=True)
+    print(f"[{prof}/{arm}] ik done t {time.time() - t0:.0f}s", flush=True)
     # visibility (numpy)
     for c, q in enumerate(cfgs):
         qb = {k: v for k, v in q.items() if k != "root_z_rel_surface"}
@@ -219,10 +226,11 @@ def sweep_arm(r: dict, arm: str, out: str, seeds: int, batch: int, snap: float, 
                 cam_pitch[c, s, p] = G.cam_pitch_deg(cw["R"])
     meta = {"profile": prof, "arm": arm, "configs": cfgs, "orients": ori, "pitch_options": popts,
             "selftest_success": st, "reach_radius_m": rad, "n_ik": n_ik, "n_groups": len(groups),
-            "seconds": round(time.time() - t0, 1), "seeds": seeds, "snap_m": snap}
-    np.savez_compressed(os.path.join(out, f"{prof}_{arm}.npz"), reach=reach, vis=vis, cam_pitch=cam_pitch, xs=XS,
+            "seconds": round(time.time() - t0, 1), "seeds": seeds, "snap_m": snap, "shard": list(shard)}
+    sfx = "" if shard[1] == 1 else f".s{shard[0]}of{shard[1]}"
+    np.savez_compressed(os.path.join(out, f"{prof}_{arm}{sfx}.npz"), reach=reach, vis=vis, cam_pitch=cam_pitch, xs=XS,
                         ys=YS, levels=LEVELS, surfaces=SURFACES, lean=lean, mount_z=mount_z, mount_x=mount_x)
-    json.dump(meta, open(os.path.join(out, f"{prof}_{arm}_meta.json"), "w"), indent=1)
+    json.dump(meta, open(os.path.join(out, f"{prof}_{arm}{sfx}_meta.json"), "w"), indent=1)
     print(f"[{prof}/{arm}] done {meta['seconds']}s ik {n_ik} reach {reach.mean():.3f} vis {vis.mean():.3f}", flush=True)
     return meta
 
@@ -236,11 +244,12 @@ def main():
     ap.add_argument("--batch", type=int, default=2048)
     ap.add_argument("--snap", type=float, default=0.03)
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--shard", default="0/1", help="k/n: only rotation groups g with g %% n == k (merge: merge.py)")
     a = ap.parse_args()
     r = load_robot(a.robot)
     os.makedirs(a.out, exist_ok=True)
     for arm in (a.arms.split(",") if a.arms else list(r["arms"])):
-        sweep_arm(r, arm, a.out, a.seeds, a.batch, a.snap, a.selftest)
+        sweep_arm(r, arm, a.out, a.seeds, a.batch, a.snap, a.selftest, tuple(int(v) for v in a.shard.split("/")))
 
 
 if __name__ == "__main__":

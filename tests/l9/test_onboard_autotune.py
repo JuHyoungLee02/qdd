@@ -92,3 +92,13 @@ def test_extract_ranges_never_single_value_when_band_is_wide():
 def test_rot_euler_recovers_pitch():
     r, p, y = G.rot_euler(G.rot_z(0.3) @ G.rot_y(0.5))
     assert abs(r) < 1e-9 and abs(p - 0.5) < 1e-9 and abs(y - 0.3) < 1e-9
+
+
+def test_hand_mask_filters_lean_and_surface_minus_joint():
+    import compare as CMP
+    d = _synthetic()
+    m = CMP.hand_mask(d, {"lean_rad": [0.75, 0.85], "surface_z_m": [0.65, 0.85]}, n_stance=2)
+    assert m.shape == (2, 3, 2)
+    assert m[1, 1:].all() and not m[0].any() and not m[1, 0].any()
+    m2 = CMP.hand_mask(d, {"surface_minus_joint": ["torso_j", 0.15, 0.25]}, n_stance=2)
+    assert m2[1, 1].all() and int(m2.sum()) == 2  # only config 1 (j 0.5) at surface 0.7: 0.7 - 0.5 = 0.2

@@ -1,0 +1,11 @@
+{
+ "note": "Today's HAND-TUNED settings per robot (reference only, for validation of the auto ranges -- never an input of the sweep). Filters on the sweep cells; a missing key = unconstrained. surface_minus_joint = (joint, lo, hi): surface - joint value in [lo, hi].",
+ "r1pro": {"lean_rad": [0.75, 0.85], "mount_above_surface_m": [0.33, 0.39], "surface_z_m": [0.40, 0.77],
+           "source": "robot9.R1_LEAN 0.80 (user-approved 0.75-0.90), R1_T4_ABOVE 0.36, r1_surface_ok (torso top caps surfaces at ~0.77); r1b retune: lean 0.65-0.80, above 0.36-0.42"},
+ "g1": {"lean_rad": [0.10, 0.40], "surface_z_m": [0.55, 0.78],
+        "source": "wt_l9g1 1cf1dd7: L9V2_G1_SURF U[0.55, 0.78], lean 0.10-0.40 (waist pitch)"},
+ "ffw_sg2": {"surface_minus_joint": ["lift_joint", 0.62, 0.88],
+             "source": "scene9.REL_OK (0.72, 0.98) node height relative to the torso at LIFT_DEFAULT -0.0993; lift chosen per scene (scene9.choose_lift)"},
+ "franka_mast": {"root_z_rel_surface": [-0.12, 0.0],
+                 "source": "robot9.BASE_DROP (0.0, 0.12): base top = surface - U[0, 0.12]"}
+}
