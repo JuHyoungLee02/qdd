@@ -11,10 +11,38 @@ usage: python -m tools.l9.bim_smoke --out DIR [--n 2] [--seed0 3950000] [--robot
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
+import signal
 import sys
 import time
+
+
+class _EpisodeTimeout(Exception):
+    pass
+
+
+@contextlib.contextmanager
+def _episode_timeout(seconds: int):
+    """SIGALRM-based safety net (owner 2026-10-03: GraspGenX receiver episodes ran ~1.6x longer than rule, flag a
+    hard per-episode cap instead of letting a slow/stuck episode block the whole ≥20-episode run). Best-effort:
+    SIGALRM only raises between Python bytecode instructions, so a single very long blocking C call (e.g. one
+    cuRobo/torch kernel) can delay the raise until that call returns -- acceptable for this safety net's purpose."""
+    if seconds <= 0:
+        yield
+        return
+
+    def _handler(signum, frame):
+        raise _EpisodeTimeout(f"episode exceeded {seconds}s")
+
+    old = signal.signal(signal.SIGALRM, _handler)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old)
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -40,6 +68,9 @@ def main(argv=None):
                           "cheap IK then full cuRobo path cost/margin) instead of the fixed --direction. The owner's "
                           "order (2026-10-02): direction must never be a coin flip or a hand rule.")
     ap.add_argument("--cat", default="block", choices=list("block can cup bottle bowl box".split()))
+    ap.add_argument("--episode-timeout-s", type=int, default=600,
+                     help="hard per-episode wall-clock cap (SIGALRM); 0 disables. A timed-out episode is recorded "
+                          "ok=False status='episode timeout' and the run moves to the next seed.")
     ap.add_argument("--receiver-source", default="rule", choices=["rule", "graspgenx"],
                      help="receiver grasp source for the ≥20-episode A/B (owner 2026-10-02): 'rule' = "
                           "rt9.Runtime.choose() (unchanged), 'graspgenx' = bimanual9._receiver_grasp_graspgenx "
@@ -127,7 +158,14 @@ def main(argv=None):
                                                  default=_jsonable), flush=True)
             hr = B.install_handover(world, a.robot, giver_i, receiver_i, device=a.device, allow_untested=True,
                                     receiver_source=a.receiver_source)
-            r = hr.run_episode(obj_key, world.table_z, seed=seed, episode_idx=i)
+            try:
+                with _episode_timeout(a.episode_timeout_s):
+                    r = hr.run_episode(obj_key, world.table_z, seed=seed, episode_idx=i)
+            except _EpisodeTimeout as ex:
+                print("EPISODE_TIMEOUT " + json.dumps({"seed": seed, "err": str(ex)}), flush=True)
+                r = {"ok": False, "status": "episode timeout"}
+                # run_episode's own try/finally still runs env.use_arm(env.primary) as the exception propagates
+                # through it (Python guarantees finally runs on exception unwind) -- no extra restore needed here.
             r["seed"], r["obj"], r["receiver_source"] = seed, obj_key, a.receiver_source
             r["wall_s"] = round(time.time() - t0, 1)
             print("EP " + json.dumps({k: v for k, v in r.items() if k != "log"}, default=_jsonable), flush=True)

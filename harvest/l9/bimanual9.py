@@ -716,9 +716,12 @@ class HandoverRuntime:
         (harvest.l9.live9.choose_live + harvest.l9.ggx_refine, LIVE_REFINER=ggx won the 2026-10-02 A/B), fed a
         PRIVILEGED mesh-sampled point cloud instead of an observed depth cloud -- this is the offline label
         generator (L9_PRINCIPLES.md §2: the generator is privileged/offline, unlike the live executor it backs).
-        Tries every approach family (filter_candidates' family check is unconditional, so the family must be
+        Tries approach families in order (filter_candidates' family check is unconditional, so the family must be
         picked before calling, unlike cam=None which cleanly skips the rot_bin check -- see live9.sample_grasps_cloud's
-        own docstring on this), keeps the highest-score candidate whose grasp pose solves cuRobo IK. Does NOT pass
+        own docstring on this) and returns the FIRST one whose grasp pose solves cuRobo IK (owner 2026-10-03: not
+        best-of-4 by score -- that made the pod A/B ~1.6x slower per episode than the rule path for no fairness
+        benefit, since rule's rt.choose() itself is also a first-good-enough pick, not an exhaustive best-of search).
+        Does NOT pass
         extra_obstacles (live9's own (C,H,R) cuboid convention, different from this file's extra_boxes dict) --
         the subsequent `_approach_plan(..., extra_boxes=...)` call in `_grasp` still re-checks the giver's gripper
         box, same as it always does, so a colliding pick is still rejected, just one step later than the rule
@@ -746,7 +749,6 @@ class HandoverRuntime:
         point3d = np.asarray(c, float)
         base_xy = rt.T_world_base()[:2, 3]
         f_dir = point3d[:2] - base_xy
-        best = None
         for fam in ("front", "oblique", "side", "top"):
             gc = L.choose_live(P, N, self.profile, fam, rot_bin=0, point3d=point3d,
                                support_z=self.world.table_z, f_dir=f_dir, cam=None, category="", obj_h=0.0,
@@ -754,11 +756,9 @@ class HandoverRuntime:
             if gc is None:
                 continue
             ok, _, _ = rt.planner.ik(rt.to_base(gc.T)[None])
-            if not bool(ok[0]):
-                continue
-            if best is None or float(gc.meta.get("score", 0.0)) > float(best.meta.get("score", 0.0)):
-                best = gc
-        return best
+            if bool(ok[0]):
+                return gc
+        return None
 
     def _live_best_yaw(self, obj_key: str, zone_xyz, n_yaw: int = 8) -> tuple:
         """Owner 2026-10-02 (R4 follow-up to `best_release_yaw`'s static approach-class proxy, which matched the

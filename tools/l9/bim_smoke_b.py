@@ -14,10 +14,35 @@ usage: python -m tools.l9.bim_smoke_b --out DIR [--n 2] [--seed0 3951000] [--rob
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
+import signal
 import sys
 import time
+
+
+class _EpisodeTimeout(Exception):
+    pass
+
+
+@contextlib.contextmanager
+def _episode_timeout(seconds: int):
+    """Same SIGALRM-based per-episode safety net as bim_smoke.py -- see that file's copy for the rationale."""
+    if seconds <= 0:
+        yield
+        return
+
+    def _handler(signum, frame):
+        raise _EpisodeTimeout(f"episode exceeded {seconds}s")
+
+    old = signal.signal(signal.SIGALRM, _handler)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old)
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -46,6 +71,8 @@ def main(argv=None):
     ap.add_argument("--rooms", type=int, default=5000)
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--carry-dx", type=float, default=0.15)  # m, place target offset from the pick xy
+    ap.add_argument("--episode-timeout-s", type=int, default=600,
+                     help="hard per-episode wall-clock cap (SIGALRM); 0 disables.")
     a = ap.parse_args(argv)
     os.makedirs(a.out, exist_ok=True)
     results = []
@@ -141,7 +168,12 @@ def main(argv=None):
             target_xy = pick_xy + np.array([a.carry_dx, 0.0])
 
             lr = B.install_lift(world, a.robot, arm_a, arm_b, device=a.device, allow_untested=True)
-            r = lr.run_episode(obj_key, world.table_z, target_xy, seed=seed, episode_idx=i)
+            try:
+                with _episode_timeout(a.episode_timeout_s):
+                    r = lr.run_episode(obj_key, world.table_z, target_xy, seed=seed, episode_idx=i)
+            except _EpisodeTimeout as ex:
+                print("EPISODE_TIMEOUT " + json.dumps({"seed": seed, "err": str(ex)}), flush=True)
+                r = {"ok": False, "status": "episode timeout"}
             r["seed"], r["obj"], r["direction"] = seed, obj_key, direction
             r["wall_s"] = round(time.time() - t0, 1)
             print("EP " + json.dumps({k: v for k, v in r.items() if k != "log"}, default=_jsonable), flush=True)
