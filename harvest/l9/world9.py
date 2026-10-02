@@ -218,13 +218,18 @@ def material_pool(cat: dict, role: str, split: str, setting: str | None = None) 
 
 
 def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "train", mesh: dict | None = None,
-                robot: str = "ffw_sg2", hcam: str | None = None, ext: dict | None = None):
+                robot: str = "ffw_sg2", hcam: str | None = None, ext: dict | None = None, dual: bool = False):
     """robot: robot9 profile ("ffw_sg2" = the AI Worker, unchanged; "franka_mast"). hcam (spec §9.3, E-HCAM8):
     None = the standard head camera every episode (unchanged); "coin" = hcam9.coin(seed) picks std / rand per seed;
     "rand" / "hold" = every episode. The Franka mast camera is drawn per episode whatever hcam says.
     ext (user 10-02, ext9): None = no external camera (unchanged); {"p": share, "n": 1 | 2} = 1-2 world-fixed
     external cameras rendered with the head at every call of the episodes whose ext9.coin is on (they render
-    in every episode: switching their render products off breaks them; only paired episodes save them)."""
+    in every episode: switching their render products off breaks them; only paired episodes save them).
+    dual (L9 bimanual, 2026-10-02, opt-in -- default False keeps every existing single-arm call byte-identical):
+    forwarded to sim.scene.make_env(dual=True). `arm` still names env.primary (the stepped arm's 8-D target);
+    the other arm's targets go through world.env.set_arm2_target after world.env.use_arm(other) (sim.scene.SimEnv
+    dual support, b2b8946). World9 itself needs no further change: use_arm / set_arm2_target / other_arm live on
+    env and are reachable as world.env.*."""
     from ..astra_motion.world_isaac import CAMS, KEYS, NO_RENDER, PRE_RENDER, IsaacWorld, WORLD_CONV_TO_OPTICAL
     from ..sim import scene as SC
     from ..sim.assets_x import isaac as FX
@@ -269,10 +274,11 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             try:
                 self.env = make_env(0, headless=True, cameras=cams, depth=True, render_interval=NO_RENDER,
                                     variant="drf", objset="x", arm=arm, **({"robot": robot} if franka or v2r else {}),
-                                    **xc)
+                                    **({"dual": True} if dual else {}), **xc)
             finally:
                 undo()
             env = self.env
+            self.dual = bool(dual)
             # (the external render products always render: switching their HydraTexture updates off and on again
             # leaves the annotators empty, smoke 10-02)
             self.ext_cams, self._ext_now, self._ext_pairs, self._ext_K = None, None, [], {}

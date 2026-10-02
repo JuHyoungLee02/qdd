@@ -1062,7 +1062,8 @@ def make_env(seed: int, headless: bool = True, cameras=DEFAULT_CAMERAS, arm: str
              sim_device: str = "cpu", variant: str = "standard", decimation: int = 5,
              render_interval: int | None = None, task: str = "mug_tray", hard_reset: bool = True,
              table_z: float | None = None, ws=None, lift: float | None = None,
-             objset: str | None = None, robot: str | None = None, extra_cameras: dict | None = None) -> Env:
+             objset: str | None = None, robot: str | None = None, extra_cameras: dict | None = None,
+             dual: bool = False) -> Env:
     """cameras: names from KNOWN_CAMERAS (real robot cameras); () for no rendering.
     task: tasks.TASK_IDS (R2); the default is the original mug -> tray task with the standard layout.
     sim_device: 'cpu' (PhysX on CPU, default, canon §48) or 'cuda' (GPU PhysX, the v1 setting).
@@ -1085,6 +1086,8 @@ def make_env(seed: int, headless: bool = True, cameras=DEFAULT_CAMERAS, arm: str
         kw = {"ws": ws, "lift": lift, "objset": objset, "robot": robot}
     if extra_cameras:  # {scene name: CameraCfg} world-fixed extra cameras (L9 v2 ext9); None / {} = unchanged
         kw = dict({"ws": ws, "lift": lift, "objset": objset}, **kw, extra_cameras=extra_cameras)
+    if dual:  # L9 bimanual (opt-in; default False = every existing call unchanged): forward to Env(dual=True)
+        kw = dict({"ws": ws, "lift": lift, "objset": objset}, **kw, dual=True)
     return Env(seed, headless=headless, cameras=cameras, arm=arm, depth=depth, sim_device=sim_device, variant=variant,
                decimation=decimation, render_interval=render_interval, task=task, hard_reset=hard_reset,
                table_z=table_z, **kw)

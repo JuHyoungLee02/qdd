@@ -255,10 +255,13 @@ class Runtime:
         return out
 
     def refresh_world(self, holding: str | None = None, exclude=(), below_z: float | None = None,
-                      shrink: dict | None = None) -> None:
+                      shrink: dict | None = None, extra_boxes: dict | None = None) -> None:
         """World cuboids for cuRobo. below_z: drop every cuboid whose top is below below_z + 3 cm (the support the
         held object leaves or reaches: lift-off and placement are vertical moves, and the attached object starting
-        or ending on its support is a start / end collision for cuRobo; smoke 10-02, 2 of 8 episodes stuck)."""
+        or ending on its support is a start / end collision for cuRobo; smoke 10-02, 2 of 8 episodes stuck).
+        extra_boxes (L9 bimanual, harvest.l9.bimanual9, opt-in -- default None = unchanged): more cuboids
+        {name: (center, full_extents, quat)} merged in after the below_z filter (never dropped by it), e.g. the
+        other arm's current TCP box."""
         fs = getattr(self.w, "scene9", {}) or {}
         parts = [p for p in fs.get("furniture", []) if "size" in p and "pos" in p]
         boxes = self.obstacle_boxes(exclude, shrink)
@@ -266,6 +269,8 @@ class Runtime:
             lim = below_z + 0.03
             parts = [p for p in parts if float(p["pos"][2]) + float(p["size"][2]) / 2 > lim]
             boxes = {k: v for k, v in boxes.items() if k == f"obj_{holding}" or float(v[0][2]) + v[1][2] / 2 > lim}
+        if extra_boxes:
+            boxes.update(extra_boxes)
         scene = P9.scene_cuboids(parts, boxes, self.T_world_base(), pad=0.005)
         self.planner.world(scene)
         dbg = os.environ.get("L9V2_DEBUG_DIR")
