@@ -4,7 +4,9 @@ Checks: off-build 0 third-person rows; on-build third-person rows = third-person
 view per row); every ego row parses to the 4 slots; 0 rows without the head image; image-count histogram.
 usage: python tools/l9/build_v2.py <out dir> <name> <collect root>... [--third-person off|on] [--split l9train]
        [--eval] [--no-slots] [--seed 0] [--success-only] [--camera-line] [--both] [--spec L9v2-spec-final (family)]
-       [--rationale off|on|both]
+       [--rationale off|on|both] [--no-ep-filter]
+--no-ep-filter: skip build9.episode_filter (user 10-03 key-call occlusion drop + per-robot arm balance; default on
+for training builds, off for --eval).
 --both (with --third-person on): also <name>_tp_off.jsonl and <name>_tp_on.jsonl from the same build; the ego rows are
 byte-identical (checked).
 --rationale (owner 10-02 22:40, 8B check arm): on = every control row's answer gets the build-time "why"
@@ -58,7 +60,8 @@ def main():
                 continue
             eps.append(os.path.dirname(m))
     c = B9.build(eps, out, arg("--split", "l9train"), name, train="--eval" not in a, camera_line="--camera-line" in a,
-                 seed=int(arg("--seed", "0")), slots=slots, third_person=tp_on, rationale=rat_mode != "off")
+                 seed=int(arg("--seed", "0")), slots=slots, third_person=tp_on, rationale=rat_mode != "off",
+                 ep_filter=False if "--no-ep-filter" in a else None)  # user 10-03: key-call occlusion + arm balance
     ego = [json.loads(x) for x in open(c["path"])]
     bad = 0
     if slots:
@@ -96,7 +99,8 @@ def main():
             vb.setdefault(x.get("robot"), Counter())["+".join(x.get("image_views") or [])] += 1
         check["views_by_robot"] = {k: dict(v) for k, v in vb.items()}
         check["episode_specs"] = dict(Counter(x.get("episode_spec") for x in ctrl))
-    check.update(spec_gates=g, episodes_dropped_old_spec=n_old_spec, episodes_dropped_split=split_drop)
+    check.update(spec_gates=g, episodes_dropped_old_spec=n_old_spec, episodes_dropped_split=split_drop,
+                 episode_filter=c.get("episode_filter"))  # per robot / arm: raw -> after key occlusion -> balanced
     check["ok"] = check["ok"] and g["ok"]
     if tp_on and "--both" in a:  # user 10-02: two sets from one build -- off = the ego rows, on = the same bytes + tp rows
         import hashlib

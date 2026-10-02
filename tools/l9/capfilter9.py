@@ -5,7 +5,11 @@ rows kept here (in order).
 usage: python tools/l9/capfilter9.py <rows in.json> <rows out.json> --collect R1,R2 --pending plan[@collect[@run]],...
        [--robot-cap ffw_sg2=2600,franka_mast=3700,r1pro=2500,g1=2200] [--cell-cap 0 = per robot] [--n-defs 198]
        [--yield 0.5] [--def-cap 60] [--arm-balance] [--by-need] [--batch <job list file: pending rows of these jobs are not counted>]
-pending plans: rows whose episode dir has neither meta.json nor skipped.json count as pending."""
+pending plans: rows whose episode dir has neither meta.json nor skipped.json count as pending.
+User 10-03: quotas count episodes AFTER the build's episode-level drop (build9.key_occlusion: a KEY call of a
+KEY_OCC_ROBOTS episode >= 50 % occluded), so the top-up keeps producing until the kept count reaches the cap;
+--arm-need: per robot, rows of the arm already ahead (expected) are skipped (the build thins the longer arm).
+The yield is kept successes / episodes, so it already includes the drop rate."""
 import glob
 import json
 import os
@@ -13,9 +17,13 @@ import sys
 from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from harvest.l9 import build9 as B9  # noqa: E402
 from harvest.l9.run9 import ep_dir  # noqa: E402
 
 CAPS = {"ffw_sg2": 2600, "franka_mast": 3700, "r1pro": 2500, "g1": 2200}
+
+
+occ_drop = Counter()  # successes dropped by build9.key_occlusion, per robot (reported)
 
 
 def done_counts(roots):
@@ -31,6 +39,9 @@ def done_counts(roots):
             r = meta.get("robot") or "ffw_sg2"
             eps[r] += 1
             if meta.get("success") and (meta.get("max_dq_rad") or 0) <= 0.04:
+                if r in B9.KEY_OCC_ROBOTS and B9.key_occlusion(os.path.dirname(m)) is not None:
+                    occ_drop[r] += 1  # user 10-03: dropped whole at build -> not counted toward the quota
+                    continue
                 cell[(r, meta.get("task_id"))] += 1
                 rob[r] += 1
                 arms[(r, meta.get("task_id"), meta.get("arm"))] += 1
@@ -81,6 +92,10 @@ def main():
             exp_rob[rb] += yld.get(rb, 0.5)
             exp_def[r["def"]] += yld.get(rb, 0.5)
             exp_arm[(rb, r["def"], r["arm"])] += yld.get(rb, 0.5)
+    arm_need = "--arm-need" in a  # per robot: skip rows of the arm already >= the other arm (expected, after occ drop)
+    exp_rarm = Counter()
+    for (rb_, d_, arm_), v in exp_arm.items():
+        exp_rarm[(rb_, arm_)] += v
     keep, drop = [], Counter()
     if "--by-need" in a:  # definitions with the fewest expected successes first (user 10-02 19h: under-covered first)
         rows = sorted(rows, key=lambda r: exp_def[r["def"]])
@@ -96,6 +111,9 @@ def main():
             drop["def_cap"] += 1
             continue
         other = "left" if r["arm"] == "right" else "right"
+        if arm_need and exp_rarm[(rb, other)] > 0 and exp_rarm[(rb, r["arm"])] >= exp_rarm[(rb, other)]:
+            drop["arm_need"] += 1  # user 10-03: the build balances arms per robot; produce only the shorter arm
+            continue
         if arm_bal and exp_arm[(rb, r["def"], r["arm"])] >= exp_arm[(rb, r["def"], other)] + 2:
             drop["arm_balance"] += 1
             continue
@@ -104,10 +122,13 @@ def main():
         exp_rob[rb] += yld.get(rb, 0.5)
         exp_def[r["def"]] += yld.get(rb, 0.5)
         exp_arm[(rb, r["def"], r["arm"])] += yld.get(rb, 0.5)
+        exp_rarm[(rb, r["arm"])] += yld.get(rb, 0.5)
     json.dump(keep, open(a[1], "w"))
     print(json.dumps({"in": len(rows), "kept": len(keep), "dropped": dict(drop),
                       "expected_by_robot": {k: round(v) for k, v in exp_rob.items()}, "cell_cap": cell_cap,
-                      "yield": {k: round(v, 2) for k, v in yld.items()}}))
+                      "yield": {k: round(v, 2) for k, v in yld.items()},
+                      "key_occ_dropped_successes": dict(occ_drop),
+                      "expected_by_robot_arm": {f"{k[0]}/{k[1]}": round(v) for k, v in exp_rarm.items()}}))
 
 
 if __name__ == "__main__":

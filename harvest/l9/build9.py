@@ -31,6 +31,79 @@ GRASP_BLOCK = ("GRASP (only when the gripper closes on an object): point at the 
                "0-165 degrees because both pads look alike).\n\n")
 ROBOT_ANCHOR = CAM_ANCHOR
 
+# Episode-level filters (user 10-03), applied by build() before any row is made, for every build (current and
+# L9v2-general) and whatever head camera the episode drew (each call's own live "occ" in labels.jsonl).
+# (1) key-call occlusion: an episode whose KEY call (approach = above_target, grasp = descend_close, place =
+#     lower_open) has its pointed-at object (target while approaching / grasping, else the place) >= OCC_MAX hidden
+#     in the head image is dropped WHOLE -- otherwise the VLM learns to move without seeing the key step. Same
+#     measure / threshold as the per-call gate (visgate9.OCC_MAX on labels.jsonl "occ", teach_l8d.collect._occ).
+#     Robots: KEY_OCC_ROBOTS (user order names the Franka; the rule itself is robot-agnostic).
+# (2) arm balance: per robot with both arms present, the majority arm is thinned to the minority arm's count
+#     (definitions where that arm leads most first, so per-definition balance improves too); the shortfall is what
+#     the auto top-up must add on the minority arm (capfilter9 --arm-need).
+KEY_STEPS = {"above_target": "approach", "descend_close": "grasp", "lower_open": "place"}
+KEY_OCC_ROBOTS = ("franka_mast",)
+
+
+def key_occlusion(ep_dir: str, occ_max: float | None = None) -> dict | None:
+    """First key call of the episode whose pointed-at object is >= occ_max occluded in the head image, as
+    {"call", "step", "key", "occ"}; None = the episode keeps (key calls without a measured occ are not judged)."""
+    from . import visgate9 as VG
+    occ_max = VG.OCC_MAX if occ_max is None else float(occ_max)
+    p = os.path.join(ep_dir, "labels.jsonl")
+    if not os.path.exists(p):
+        return None
+    for line in open(p, encoding="utf-8"):
+        r = json.loads(line)
+        if r.get("step") in KEY_STEPS and r.get("occ") is not None and float(r["occ"]) >= occ_max:
+            return {"call": r.get("call"), "step": r["step"], "key": KEY_STEPS[r["step"]], "occ": float(r["occ"])}
+    return None
+
+
+def episode_filter(ep_dirs, key_occ_robots=KEY_OCC_ROBOTS, arm_balance: bool = True) -> tuple:
+    """-> (kept episode dirs, report). report["robots"][robot] = {"raw": {arm: n}, "after_occ": {...},
+    "after_balance": {...}, "need": {arm: shortfall}}, report["key_occ"] = {robot: {key: n}}."""
+    import hashlib
+    metas = []
+    for d in ep_dirs:
+        m = json.load(open(os.path.join(d, "meta.json")))
+        metas.append((d, m.get("robot") or "ffw_sg2", m.get("arm") or "right", m.get("task_id")))
+    rep = {"robots": {}, "key_occ": {}}
+    kept = []
+    for d, rb, arm, td in metas:
+        st = rep["robots"].setdefault(rb, {"raw": Counter(), "after_occ": Counter()})
+        st["raw"][arm] += 1
+        if rb in key_occ_robots:
+            k = key_occlusion(d)
+            if k is not None:
+                rep["key_occ"].setdefault(rb, Counter())[k["key"]] += 1
+                continue
+        st["after_occ"][arm] += 1
+        kept.append((d, rb, arm, td))
+    drop = set()
+    for rb, st in rep["robots"].items():
+        n = st["after_occ"]
+        need = Counter()
+        if arm_balance and n["left"] > 0 and n["right"] > 0 and n["left"] != n["right"]:
+            maj, mnr = ("left", "right") if n["left"] > n["right"] else ("right", "left")
+            surplus = n[maj] - n[mnr]
+            need[mnr] = surplus
+            by_def = {}
+            for d, r_, a_, td in kept:
+                if r_ == rb:
+                    by_def.setdefault((a_, td), []).append(d)
+            for v in by_def.values():  # deterministic thinning order (path hash), stable across builds
+                v.sort(key=lambda p: hashlib.sha1(p.encode()).hexdigest())
+            for _ in range(surplus):
+                tds = {td for (a_, td) in by_def if a_ == maj and by_def[(a_, td)]}
+                td = max(sorted(tds, key=str), key=lambda t: len(by_def[(maj, t)]) - len(by_def.get((mnr, t), [])))
+                drop.add(by_def[(maj, td)].pop())
+        st["after_balance"] = Counter(a_ for d, r_, a_, td in kept if r_ == rb and d not in drop)
+        st["need"] = need
+    rep["robots"] = {rb: {k: dict(v) for k, v in st.items()} for rb, st in rep["robots"].items()}
+    rep["key_occ"] = {rb: dict(v) for rb, v in rep["key_occ"].items()}
+    return [d for d, r_, a_, td in kept if d not in drop], rep
+
 
 def prepare(splits=("train", "ood_o")) -> int:
     """Register every L9 catalog object (targets / clutter as meshes, containers with their spawn scale and inner
@@ -348,12 +421,16 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera
 
 def build(ep_dirs, out_dir: str, split: str, name: str, train: bool = True, camera_line: bool = False,
           seed: int = 0, grasp_format: bool = True, external: bool = False, slots: bool = False,
-          third_person: bool = False, rationale: bool = False) -> dict:
+          third_person: bool = False, rationale: bool = False, ep_filter: bool | None = None) -> dict:
     """external=True (--third-person on): + the paired external-view rows, written to their own shard
     <name>_third_person.jsonl (user 10-02: the ego shard <name>.jsonl never holds third-person rows; off = 0 of them).
-    rationale=True: see episode_rows (default False = unchanged output, owner 10-02 22:40)."""
+    rationale=True: see episode_rows (default False = unchanged output, owner 10-02 22:40).
+    ep_filter (default = train): episode_filter() first -- key-call occlusion + arm balance (user 10-03)."""
     prepare(("train", "ood_o"))
     os.makedirs(out_dir, exist_ok=True)
+    ep_rep = None
+    if train if ep_filter is None else ep_filter:
+        ep_dirs, ep_rep = episode_filter(ep_dirs)
     rng = np.random.default_rng([seed, 9, 29])
     ctrl, aux, c = [], [], Counter()
     for d in ep_dirs:
@@ -377,6 +454,8 @@ def build(ep_dirs, out_dir: str, split: str, name: str, train: bool = True, came
                   robots=dict(Counter(x["robot"] for x in ctrl)), head_cam=dict(Counter(x["head_cam_mode"] for x in ctrl)),
                   hands=dict(Counter(x.get("hand", "right") for x in ctrl)))
     counts["third_person_rows"] = len(tp)
+    if ep_rep is not None:
+        counts["episode_filter"] = ep_rep
     if slots:
         counts["image_count_hist"] = dict(Counter(len(x["images"]) for x in ctrl + tp))
         counts["slot_combos"] = dict(Counter("+".join(x["image_views"]) for x in ctrl + tp))
