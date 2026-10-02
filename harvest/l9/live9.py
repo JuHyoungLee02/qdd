@@ -61,14 +61,17 @@ def back_project(point_2d, cam, depth) -> np.ndarray | None:
     return None if p is None else np.asarray(p, float)
 
 
-def crop_cloud(point3d, head_cam, head_depth, wrist_cam=None, wrist_depth=None, radius: float = CROP_R) -> np.ndarray:
+def crop_cloud(point3d, head_cam, head_depth, wrist_cam=None, wrist_depth=None, radius: float = CROP_R):
     """Base-frame points within `radius` of point3d, unprojected from the head depth (always) and the wrist depth
     (when both wrist_cam and wrist_depth are given -- the wrist is often closer and fills in what the head's angle
     misses). Invalid depth pixels (0 / inf / nan, astra_solo.resolve.depth_points) are dropped before the radius
-    mask."""
+    mask. -> (P (K,3), V (K,3)): V[i] is the ORIGIN of the camera that saw P[i] -- a depth sensor only ever sees the
+    surface facing it, so (V[i] - P[i]) is always a true outward direction at that point (estimate_normals uses it
+    to orient the local-PCA normal; unlike a mesh, there is no interior centroid to fall back on for a partial,
+    single- or dual-view shell)."""
     from ..astra_solo.resolve import depth_points
     point3d = np.asarray(point3d, float)
-    pts = []
+    pts, origins = [], []
     for cam, depth in ((head_cam, head_depth), (wrist_cam, wrist_depth)):
         if cam is None or depth is None:
             continue
@@ -81,23 +84,33 @@ def crop_cloud(point3d, head_cam, head_depth, wrist_cam=None, wrist_depth=None, 
         m = d <= radius
         if m.any():
             pts.append(P[m])
-    return np.concatenate(pts, 0) if pts else np.zeros((0, 3))
+            origins.append(np.tile(np.asarray(cam.t, float), (int(m.sum()), 1)))
+    if not pts:
+        return np.zeros((0, 3)), np.zeros((0, 3))
+    return np.concatenate(pts, 0), np.concatenate(origins, 0)
 
 
-def downsample_cap(P: np.ndarray, cap: int = MAX_CLOUD, seed: int = 0) -> np.ndarray:
-    """A deterministic random subset of at most `cap` rows (the O(n^2) pair search below needs a bounded cloud)."""
+def downsample_cap(P: np.ndarray, cap: int = MAX_CLOUD, seed: int = 0, V: np.ndarray | None = None):
+    """A deterministic random subset of at most `cap` rows (the O(n^2) pair search below needs a bounded cloud).
+    With V (crop_cloud's per-point camera origins), subsamples both the same way and returns (P, V); without it,
+    returns P alone (back-compatible with callers that only crop a plain point cloud, e.g. tests)."""
     if len(P) <= cap:
-        return P
+        return (P, V) if V is not None else P
     rng = np.random.default_rng(seed)
-    return P[np.sort(rng.choice(len(P), cap, replace=False))]
+    idx = np.sort(rng.choice(len(P), cap, replace=False))
+    return (P[idx], V[idx]) if V is not None else P[idx]
 
 
-def estimate_normals(P: np.ndarray, k: int = NORMAL_K) -> np.ndarray:
+def estimate_normals(P: np.ndarray, view_origin=None, k: int = NORMAL_K) -> np.ndarray:
     """Local-PCA surface normal per point (eigenvector of the smallest eigenvalue of the k-nearest-neighbour
-    covariance), oriented away from the crop's own centroid. Hypothesis (no mesh to check against): a single-object
-    crop is small enough that "away from its own centre" is outward almost everywhere; a concave crop (e.g. deep
-    inside a hollow object) can get this backwards at the few points nearest the concavity -- the antipodal cone
-    test on BOTH contacts' normals then rejects most pairs this would have broken."""
+    covariance). view_origin: the sensor origin that observed each point (crop_cloud's V, shape (N,3), or a single
+    (3,) origin for every point) -- a depth sensor only ever sees the near/outward-facing surface, so orienting the
+    normal toward its own view_origin is the correct, sensor-grounded outward direction for a PARTIAL (single- or
+    dual-view) shell. Without view_origin (no mesh / sensor geometry at hand -- tests on a synthetic CLOSED surface
+    only), falls back to the old 'away from the crop's own centroid' heuristic, which assumes a watertight blob and
+    is wrong for a real partial view (a near-flat facing patch's own centroid sits ON the surface, not inside it --
+    this produced near-parallel instead of antipodal normal pairs on real pod depth, 10-02 smoke: 0 pairs found on
+    400 real points of an object the cache path grasps fine)."""
     n = len(P)
     if n == 0:
         return np.zeros((0, 3))
@@ -106,14 +119,19 @@ def estimate_normals(P: np.ndarray, k: int = NORMAL_K) -> np.ndarray:
         return np.tile(np.array([0.0, 0.0, 1.0]), (n, 1))
     d2 = ((P[:, None, :] - P[None, :, :]) ** 2).sum(-1)
     idx = np.argsort(d2, axis=1)[:, 1:kk + 1]
-    centre = P.mean(0)
+    if view_origin is not None:
+        V = np.broadcast_to(np.asarray(view_origin, float), P.shape)
+    else:
+        centre = P.mean(0)
+        V = None
     N = np.empty_like(P)
     for i in range(n):
         Q = P[idx[i]] - P[idx[i]].mean(0)
         cov = Q.T @ Q
         _, v = np.linalg.eigh(cov)
         nv = v[:, 0]
-        nv = nv if nv @ (P[i] - centre) >= 0 else -nv
+        out_ref = (V[i] - P[i]) if V is not None else (P[i] - centre)
+        nv = nv if nv @ out_ref >= 0 else -nv
         N[i] = nv
     return N
 

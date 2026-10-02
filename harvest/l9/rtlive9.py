@@ -124,13 +124,13 @@ class LiveRuntime(RT.Runtime):
             self.picks.append({"obj": k, "choice_fail": "back-projection: no valid depth at the commanded point"})
             return None
         wrist_cam, wrist_depth = self._wrist_depth()
-        P = L.crop_cloud(point3d, head_cam, head_depth, wrist_cam, wrist_depth)
+        P, V = L.crop_cloud(point3d, head_cam, head_depth, wrist_cam, wrist_depth)
         if len(P) < L.MIN_PTS:
             self._dbg(f"{k}: crop too small ({len(P)} pts) at point3d={point3d} approach={approach} rot={rot_bin}")
             self.picks.append({"obj": k, "choice_fail": f"live crop too small ({len(P)} points)"})
             return None
-        P = L.downsample_cap(P, L.MAX_CLOUD, seed=int(getattr(self.w, "vseed", 0) or 0))
-        N = L.estimate_normals(P)
+        P, V = L.downsample_cap(P, L.MAX_CLOUD, seed=int(getattr(self.w, "vseed", 0) or 0), V=V)
+        N = L.estimate_normals(P, view_origin=V)
         self.refresh_world(exclude=(k,), extra_boxes=extra_boxes)
         support_z = self._bottom_z(k)
         f_dir = point3d[:2] - self.T_world_base()[:2, 3]
@@ -174,11 +174,11 @@ class LiveRuntime(RT.Runtime):
         if point3d is None:
             return None, "no reachable live grasp of the commanded point"
         wrist_cam, wrist_depth = self._wrist_depth()
-        P = L.crop_cloud(point3d, head_cam, head_depth, wrist_cam, wrist_depth)
+        P, V = L.crop_cloud(point3d, head_cam, head_depth, wrist_cam, wrist_depth)
         if len(P) < L.MIN_PTS:
             return None, "no reachable live grasp of the commanded point"
-        P = L.downsample_cap(P, L.MAX_CLOUD, seed=int(getattr(self.w, "vseed", 0) or 0))
-        N = L.estimate_normals(P)
+        P, V = L.downsample_cap(P, L.MAX_CLOUD, seed=int(getattr(self.w, "vseed", 0) or 0), V=V)
+        N = L.estimate_normals(P, view_origin=V)
         support_z = self._bottom_z(k)
         f_dir = point3d[:2] - self.T_world_base()[:2, 3]
         new = L.choose_live(P, N, self.grip, approach, rot_bin, point3d, support_z, f_dir, cam=head_cam,

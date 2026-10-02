@@ -49,9 +49,10 @@ def test_crop_cloud_keeps_only_points_within_radius():
     cam = Cam("head", 20, 20, 50.0, 50.0, 10.0, 10.0, np.eye(3), np.zeros(3))
     depth = np.full((20, 20), 1.0)
     depth[10, 10] = 1.0  # centre pixel: ray along +z at distance 1 -> point (0,0,1) roughly
-    P = L.crop_cloud(np.array([0.0, 0.0, 1.0]), cam, depth, radius=0.5)
-    assert len(P) > 0
+    P, V = L.crop_cloud(np.array([0.0, 0.0, 1.0]), cam, depth, radius=0.5)
+    assert len(P) > 0 and len(V) == len(P)
     assert np.linalg.norm(P - np.array([0.0, 0.0, 1.0]), axis=1).max() <= 0.5 + 1e-9
+    assert (V == cam.t).all()  # every point here came from the head camera
 
 
 def test_estimate_normals_recovers_flat_face_direction():
@@ -59,6 +60,42 @@ def test_estimate_normals_recovers_flat_face_direction():
     N_est = L.estimate_normals(P, k=10)
     cos = np.abs((N_est * N_true).sum(1))
     assert np.median(cos) > 0.9  # most points: normal within ~25 deg of truth
+
+
+def arc_cloud(r, half_angle_deg, hz, n=200, seed=0):
+    """Points on a cylinder's outward-facing arc (angle in [-half_angle_deg, +half_angle_deg] about +x, axis z) --
+    what a SINGLE camera on +x actually sees of a cylinder: a partial convex shell, never the far side. True
+    outward normal = radial."""
+    rng = np.random.default_rng(seed)
+    th = np.radians(rng.uniform(-half_angle_deg, half_angle_deg, n))
+    z = rng.uniform(-hz, hz, n)
+    x, y = r * np.cos(th), r * np.sin(th)
+    return np.stack([x, y, z], 1), np.stack([np.cos(th), np.sin(th), np.zeros(n)], 1)
+
+
+def test_estimate_normals_partial_single_face_needs_view_origin():
+    """A real depth camera only ever sees a PARTIAL shell (the facing surface), unlike the closed box_cloud fixture
+    used elsewhere. 'away from the crop's own centroid' (no view_origin) is degenerate for a single flat patch (the
+    centroid sits ON the plane); orienting toward the sensor (view_origin) is correct regardless of patch shape."""
+    rng = np.random.default_rng(21)
+    P = np.stack([np.full(200, 0.1), rng.uniform(-0.05, 0.05, 200), rng.uniform(-0.05, 0.05, 200)], 1)
+    cam_pos = np.array([0.5, 0.0, 0.0])
+    N_oriented = L.estimate_normals(P, view_origin=cam_pos, k=10)
+    assert (N_oriented[:, 0] > 0.9).all()  # every point's normal correctly points toward the camera (+x)
+
+
+def test_antipodal_pairs_cloud_finds_pairs_on_a_partial_single_view_arc():
+    """Regression (10-02 pod smoke): a real depth camera sees a PARTIAL convex shell (e.g. a can's front ~160 deg
+    arc), not a closed mesh -- the antipodal pair here is the silhouette's LEFT vs RIGHT edge, not a front/back
+    face pair a full mesh would offer. Before the view_origin fix this is exactly the shape of cloud that found 0
+    antipodal pairs on 400 real pod points for an object the cache path grasps fine."""
+    P, _ = arc_cloud(0.03, 80.0, 0.006, n=300, seed=5)  # a ~160 deg visible arc, radius 3 cm (can-sized)
+    cam_pos = np.array([0.5, 0.0, 0.0])
+    N_est = L.estimate_normals(P, view_origin=cam_pos, k=12)
+    gr = G.gripper("ffw_sg2")
+    pr = L.antipodal_pairs_cloud(P, N_est, gr, seed=0)
+    assert len(pr["w"]) > 0
+    assert pr["w"].max() > 0.02  # the pairs really do span across the arc, not two nearby points
 
 
 # ---------------------------------------------------------------------------------------------- antipodal pairs
