@@ -105,5 +105,10 @@ existing config file was changed.
 ## Next step
 
 Generated bundles are **not** used anywhere in production. Per the task's constraint, whether/when the G1 width
-table or any other generated config replaces the hand-made one is the L9 owner's call -- sent as a one-line summary
-separately (SendMessage).
+table or any other generated config replaces the hand-made one is not this tool's call to make.
+
+**Update (10-03 01:4x KST, L9 owner reply):** the L9 G1 team independently found almost the same number (claimed
+table vs. real gap off by 30-45 mm) and is already re-mapping the table from a URDF collision-mesh measurement --
+an independent cross-check landing on the same order of magnitude as this tool's generic FK re-measurement. The L9
+owner says bundle replacement is not theirs to decide alone (production-code-unchanged principle, robot-asset
+changes need the user's decision) and asked that it be proposed to main/the user directly rather than to them.
