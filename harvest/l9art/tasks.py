@@ -45,7 +45,7 @@ add("door_close", "door", [("push", "H", ("share", 0.0))],
 add("slide_open", "slide", [("pull", "H", ("share", 0.85))],
     ("Slide the {H} open.", "Open the {H} by sliding it {D}.", "Push the {H} aside to open it."),
     judge={"min_share": 0.75})
-add("slide_close", "slide", [("push", "H", ("share", 0.0))],
+add("slide_close", "slide", [("pull", "H", ("share", 0.0))],  # grasp the handle and slide it back (smoke: no room beside the bar for a push)
     ("Slide the {H} closed.", "Close the {H}.", "Slide the {H} back to close it."),
     start={"H": ("share", (0.55, 0.95))}, judge={"max_share": 0.10})
 add("knob_turn", "knob", [("rotate", "H", ("turn", None))],
@@ -55,7 +55,7 @@ add("knob_turn", "knob", [("rotate", "H", ("turn", None))],
 add("knob_off", "knob", [("rotate", "H", ("value", 0.0))],
     ("Turn the {H} back to zero.", "Turn the {H} off (mark pointing to the start position).",
      "Reset the {H} to its start position."),
-    start={"H": ("angle", (0.6, 2.2))}, judge={"tol_deg": 12.0})
+    start={"H": ("angle", (0.5, 1.6))}, judge={"tol_deg": 12.0})
 add("dial_turn_top", "dial", [("rotate", "H", ("turn", None))],
     ("Turn the {H} on top {DIR} by about {DEG} degrees.", "Rotate the top {H} {DEG} degrees {DIR}."),
     judge={"tol_deg": 15.0, "face": "top"})
@@ -148,7 +148,7 @@ def instantiate(did: str, spec: dict | None, seed: int, obj_name: str | None = N
             elif goal[0] == "value":
                 st["goal"] = float(goal[1])
             elif goal[0] == "turn":
-                deg = float(_pick(rng, (45, 60, 90, 120)))
+                deg = float(_pick(rng, (30, 45, 60, 90)))
                 sgn = 1 if rng.random() < 0.5 else -1
                 q0 = start.get(J["name"], 0.0)
                 st["goal"] = round(q0 + sgn * math.radians(deg), 4)

@@ -38,7 +38,7 @@ def pick_objects(pool: dict, prog: dict, seed: int, robot: str) -> dict:
         base = [r for r in rows if r[4] <= 1.3 * min(r[2], r[3]) and 0.04 <= min(r[2], r[3]) and max(r[2], r[3]) <= 0.14
                 and str(r[5].get("l9cat")) not in ("fruit", "vegetable", "bread", "can", "bottle", "cup", "mug", "bowl",
                                                    "jar", "vase", "flower", "plate", "spoon_fork")]
-        cand = [r for r in base if r[5].get("l9cat") in ("box", "block", "book")] or base  # flat-sided first (smoke: a burger)
+        cand = [r for r in base if r[5].get("l9cat") in ("box", "block", "book")]  # flat-sided only (smoke: a burger rolled, toppled)
     else:
         cand = [r for r in rows if max(r[2], r[3]) <= 0.14 and r[4] <= 0.16]
         if prog.get("need_obj") == "small":  # combo pick: grasp-tested L9 targets that fit a drawer
@@ -53,10 +53,17 @@ def pick_objects(pool: dict, prog: dict, seed: int, robot: str) -> dict:
     return out
 
 
-def fx_seeds(job: str) -> dict:
-    from .fixtures import FAMILIES
+def fx_seeds(job: str, arm: str = "right") -> dict:
+    """One fixture seed per family for a job; the door hinges on the arm's side (smoke 10-02: a door hinged on the
+    far side swung its handle out of reach / left no pre-pose for the close push)."""
+    from .fixtures import FAMILIES, sample
     h = int(hashlib.sha256(f"l9art:{job}".encode()).hexdigest()[:8], 16)
-    return {f: (h + 7919 * i) % 100000 for i, f in enumerate(FAMILIES)}
+    out = {f: (h + 7919 * i) % 100000 for i, f in enumerate(FAMILIES)}
+    s = out["door"]
+    while sample("door", s)["handles"]["door"]["hinge"] != arm:
+        s += 1
+    out["door"] = s
+    return out
 
 
 def main(argv=None):
@@ -66,6 +73,7 @@ def main(argv=None):
     ap.add_argument("--out", default=OUT)
     ap.add_argument("--p", type=float, default=0.15)
     ap.add_argument("--video", action="store_true", help="per-episode review frames (head | wrist every 6 steps)")
+    ap.add_argument("--diag-drift", action="store_true", help="diagnosis: passive joint drift of every fixture, no episodes")
     a = ap.parse_args(argv)
     code = 0
     try:
@@ -99,12 +107,45 @@ def main(argv=None):
         pool = R9run.job_pool([dict(rows[0], pool=rows[0].get("pool", 0))], robot, False)
         rooms = R9run.rooms_for(int(rows[0].get("rooms", 0)), "train")
         mesh = A9.mesh_for(int(rows[0].get("rooms", 0)), split="train")
-        seeds = rows[0].get("fx_seed") or fx_seeds(a.job)
+        seeds = rows[0].get("fx_seed") or fx_seeds(a.job, arm)
         specs = {f: FX.sample(f, int(s)) for f, s in seeds.items()}
         world = WA.make_art_world(arm, pool, rooms, mesh, robot, specs)
         ex = EA.Exec(world, robot, arm)
         print("WORLD " + json.dumps({"robot": robot, "arm": arm, "fixtures": {f: s["name"] for f, s in specs.items()},
                                      "pool": len(pool), "n": len(todo)}), flush=True)
+        if a.diag_drift:  # passive joint drift test: each fixture's joints at mid-range, no contact
+            import torch
+            for r in todo[:1]:
+                for fam, spec in specs.items():
+                    seed = int(r["seed"])
+                    prog = {"def": "diag", "stages": [], "start": {}, "instruction": "diag", "need_obj": None}
+                    objs = pick_objects(pool, prog, seed, robot)
+                    T = SA.T_WF(0.55, -0.2 * SA.side(arm), 0.75, 0.0)
+                    built = SA.build(seed, robot, arm, None, prog, objs)
+                    built["sc"]["furniture"][0]["pos"][2] = built["sc"]["furniture"][0]["pos"][2]
+                    T[2, 3] = built["tz"]
+                    W9._ART_GHOST = WA.ghost_part(spec, T)
+                    register_task(built["ep"])
+                    world.prepare(built["sc"], built["ep"], V.pick_light_family(seed, "office"), V.head_pose(seed), seed)
+                    mid = {jn: 0.5 * (J["lo"] + J["hi"]) if J["kind"] != "knob" else 0.5 for jn, J in spec["joints"].items()}
+                    WA.stage_fixture(world, fam, T, mid)
+                    world.reset(seed)
+                    ex.reset()
+                    st0 = WA.settle_fixture(world, mid)
+                    art = world.env.scene[world.fx[fam]["key"]]
+                    series = []
+                    for k in range(120):
+                        ex.step()
+                        if k % 20 == 0:
+                            series.append({jn: round(v, 4) for jn, v in WA.joints(world).items()})
+                    print("DRIFT " + json.dumps({"fam": fam, "mid": {k: round(v, 4) for k, v in mid.items()},
+                                                 "settle": {k: round(v, 4) for k, v in st0["joints"].items()},
+                                                 "series": series,
+                                                 "stiffness": art.data.joint_stiffness[0].cpu().numpy().round(3).tolist(),
+                                                 "damping": art.data.joint_damping[0].cpu().numpy().round(3).tolist(),
+                                                 "root_err": round(st0["root_err_m"], 4)}), flush=True)
+            print("RUN_DONE", flush=True)
+            os._exit(0)
         for r in todo:
             od = ep_dir(a.out, r)
             t0 = time.perf_counter()

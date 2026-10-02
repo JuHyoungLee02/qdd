@@ -17,6 +17,7 @@ from . import skills as SK
 from . import world_art as WA
 
 CMD_DQ = 0.034
+CMD_DQ_CONTACT = 0.02  # [가설] contact moves (follower, push, press): measured steps reached 0.047-0.072 at 0.034
 MAX_CALLS = 24
 REACH_TOL, HOLD_MAX_S = 0.012, 1.5
 CLOSE_S, OPEN_S = 0.6, 0.5
@@ -109,14 +110,14 @@ class Exec:
         for _ in range(max(1, int(round(seconds / self.w.dt)))):
             self.step()
 
-    def run(self, Q, slow: float = 1.0, target=None) -> dict:
+    def run(self, Q, slow: float = 1.0, target=None, dq: float = CMD_DQ) -> dict:
         """Execute a joint path (resampled to <= CMD_DQ per step), then wait for the arm to arrive."""
         from ..l9.plan9 import resample
         Q = np.asarray(Q, float)
         if (Q < self.q_lo).any() or (Q > self.q_hi).any():
             self.stats["limit_rejects"] += 1
             return {"ok": False, "why": "plan leaves the joint range"}
-        Q = resample(np.concatenate([[self.plan_start()], Q]), dq_max=CMD_DQ, slow=slow)
+        Q = resample(np.concatenate([[self.plan_start()], Q]), dq_max=dq, slow=slow)
         for q in Q[1:]:
             self.q_target = q
             self.step()
@@ -172,13 +173,13 @@ class Exec:
         Q = self.planner.line(self.plan_start(), self.to_base(self.tcp_T()), self.to_base(T), step_m, check)
         return Q
 
-    def move(self, T, mode: str = "pose", slow: float = 1.0) -> dict:
+    def move(self, T, mode: str = "pose", slow: float = 1.0, dq: float = CMD_DQ) -> dict:
         Q = self.plan_pose(T) if mode == "pose" else self.plan_line(T)
         if Q is None and mode == "pose":
             Q = self.plan_line(T, check=True)
         if Q is None:
             return {"ok": False, "why": "no path"}
-        return self.run(Q, slow=slow, target=T)
+        return self.run(Q, slow=slow, target=T, dq=dq)
 
 
 # ================================================================================================ episode
@@ -478,7 +479,10 @@ class ArtEpisode:
         if m == "stop":
             raise Halt("stop")
         if m == "gripper":
-            w = ex.set_gripper(self.w.w_open if cmd["gripper"] == "open" else 0.0, cmd["gripper"] == "close")
+            wo = self.w.w_open
+            if cmd["gripper"] == "open" and kind in ("pull", "rotate"):  # let go of a handle: open a little only
+                wo = min(self.w.w_open, ex.grip_w() + 0.03)  # (smoke: wide pads pushed a sliding door back 2 cm)
+            w = ex.set_gripper(wo if cmd["gripper"] == "open" else 0.0, cmd["gripper"] == "close")
             if cmd["gripper"] == "open":
                 self.rel = None
             self.sub = lab["next"]
@@ -579,7 +583,7 @@ class ArtEpisode:
                 return self.push_object(lab)
         if sub == "press":
             jn = self.joint_of(st)
-            r = ex.move(np.asarray(lab["T"], float), "line", slow=2.0)
+            r = ex.move(np.asarray(lab["T"], float), "line", slow=2.0, dq=CMD_DQ_CONTACT)
             peak = max(self.press_peak.get(jn, 0.0), self.q().get(jn, 0.0))
             ex.hold(0.3)
             peak = max(peak, self.q().get(jn, 0.0))
@@ -645,7 +649,7 @@ class ArtEpisode:
             if Q is None:
                 why = "ik"
                 break
-            ex.run(Q, slow=1.3, target=T)
+            ex.run(Q, slow=1.3, target=T, dq=CMD_DQ_CONTACT)
             qm = self.q()[jn]
             if abs(qm - q_prev) < 0.15 * step:
                 stall += 1
@@ -692,7 +696,7 @@ class ArtEpisode:
             if Q is None:
                 self.bump("push_unreachable")
                 break
-            ex.run(Q, slow=1.4, target=T)
+            ex.run(Q, slow=1.4, target=T, dq=CMD_DQ_CONTACT)
         c_obj = np.asarray(self.w.env.object_pose(k)[0], float)
         err = float(np.linalg.norm(self._push["c0"][:2] + self._push["d"][:2] * self._push["dist"] - c_obj[:2]))
         self.sub = "retreat"

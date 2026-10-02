@@ -293,8 +293,8 @@ def _add_knob(rng, spec, i, face, y, z_rel, words):
     spec["links"][ln] = {"origin": _r(org), "boxes": bx, "mass": 0.08}
     spec["joints"][jn] = {"type": "revolute", "kind": "knob", "link": ln, "axis": _r(axis), "origin": _r(org),
                           "lo": round(-math.radians(150), 4), "hi": round(math.radians(150), 4),
-                          "drive": {"stiffness": 0.0, "damping": round(float(rng.uniform(0.01, 0.05)), 4),
-                                    "friction": round(float(rng.uniform(0.02, 0.08)), 4)}}
+                          "drive": {"stiffness": 0.0, "damping": round(float(rng.uniform(0.15, 0.40)), 4),
+                                    "friction": round(float(rng.uniform(0.05, 0.15)), 4)}}  # knobs hold their angle (smoke: one spun 150 deg)
     ridge = R @ np.array([-hk - rh / 2 + 0.002, 0, 0])
     mark = R @ np.array([-hk - rh + 0.0015, dia * 0.38, 0])
     spec["handles"][ln] = {"type": "knob", "joint": jn, "link": ln, "gc": _r(ridge), "fn": _r(out),
@@ -500,7 +500,17 @@ def usda(spec: dict) -> str:
         typ = "PhysicsPrismaticJoint" if J["type"] == "prismatic" else "PhysicsRevoluteJoint"
         lo, hi = (J["lo"], J["hi"]) if J["type"] == "prismatic" else (math.degrees(J["lo"]), math.degrees(J["hi"]))
         q = quat_x_to(J["axis"])
-        out += [f'    def {typ} "{jn}"', '    {', '        rel physics:body0 = </fixture/base>',
+        # an explicit drive (+ joint friction) on every joint: without DriveAPI the joints had no damping / spring in
+        # PhysX (diag 10-02: buttons stayed pressed, a released door kept swinging at constant speed)
+        dk = "linear" if J["type"] == "prismatic" else "angular"
+        d = J["drive"]
+        sc_ = 1.0 if J["type"] == "prismatic" else math.pi / 180.0  # angular drive gains are per degree
+        out += [f'    def {typ} "{jn}" (', f'        prepend apiSchemas = ["PhysicsDriveAPI:{dk}", "PhysxJointAPI"]', '    )',
+                '    {', f'        float drive:{dk}:physics:stiffness = {float(d["stiffness"]) * sc_:.6g}',
+                f'        float drive:{dk}:physics:damping = {float(d["damping"]) * sc_:.6g}',
+                f'        float drive:{dk}:physics:targetPosition = 0', f'        uniform token drive:{dk}:physics:type = "force"',
+                f'        float physxJoint:jointFriction = {float(d.get("friction", 0.0)):.6g}',
+                '        rel physics:body0 = </fixture/base>',
                 f'        rel physics:body1 = </fixture/{J["link"]}>', '        uniform token physics:axis = "X"',
                 f'        float physics:lowerLimit = {lo:.6g}', f'        float physics:upperLimit = {hi:.6g}',
                 f'        point3f physics:localPos0 = {_f(J["origin"])}', f'        quatf physics:localRot0 = {_f(q)}',
