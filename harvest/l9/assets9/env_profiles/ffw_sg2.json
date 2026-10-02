@@ -4,8 +4,8 @@
  "version": 1,
  "source": {
   "tool": "tools/onboard/autotune (cuRobo batch IK sweep, no render)",
-  "sha": "9de8f94",
-  "date": "2026-10-02T19:25Z",
+  "sha": "40afe5c1",
+  "date": "2026-10-02T19:28Z",
   "n_ik": 238356,
   "selftest_fk_ik": {
    "right": 0.947265625,

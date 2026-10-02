@@ -4,8 +4,8 @@
  "version": 1,
  "source": {
   "tool": "tools/onboard/autotune (cuRobo batch IK sweep, no render)",
-  "sha": "9de8f94",
-  "date": "2026-10-02T19:25Z",
+  "sha": "40afe5c1",
+  "date": "2026-10-02T19:28Z",
   "n_ik": 5712804,
   "selftest_fk_ik": {
    "right": null,
@@ -47,11 +47,11 @@
   },
   "lean_rad": [
    0.0349,
-   1.8151
+   0.8028
   ],
   "mount_above_surface_m": [
    -0.1977,
-   0.6083
+   0.4913
   ]
  },
  "hand": {
@@ -74,49 +74,49 @@
     "dyaw_deg": 90,
     "tilt_deg": 30,
     "tdir_deg": 0,
-    "recover": 0.4087
+    "recover": 0.4043
    },
    {
     "dyaw_deg": 60,
     "tilt_deg": 30,
     "tdir_deg": 0,
-    "recover": 0.4055
+    "recover": 0.401
    },
    {
     "dyaw_deg": -60,
     "tilt_deg": 30,
     "tdir_deg": 0,
-    "recover": 0.4021
+    "recover": 0.3976
    },
    {
     "dyaw_deg": 30,
     "tilt_deg": 30,
     "tdir_deg": 0,
-    "recover": 0.3925
+    "recover": 0.3878
    },
    {
     "dyaw_deg": -30,
     "tilt_deg": 30,
     "tdir_deg": 0,
-    "recover": 0.3828
+    "recover": 0.3779
    },
    {
     "dyaw_deg": 0,
     "tilt_deg": 30,
     "tdir_deg": 0,
-    "recover": 0.3737
+    "recover": 0.3686
    },
    {
     "dyaw_deg": 90,
     "tilt_deg": 30,
     "tdir_deg": 90,
-    "recover": 0.3135
+    "recover": 0.3154
    },
    {
     "dyaw_deg": 60,
     "tilt_deg": 30,
     "tdir_deg": 90,
-    "recover": 0.2972
+    "recover": 0.2988
    }
   ]
  },
@@ -137,7 +137,7 @@
  "head_cam": {
   "pitch_deg": [
    21.9995,
-   67.9991
+   65.9992
   ]
  },
  "cells": [
@@ -257,18 +257,6 @@
    "torso": {
     "torso_joint1": 0.05234,
     "torso_joint2": -0.66322,
-    "torso_joint3": -1.15192
-   },
-   "score": 0.8843
-  },
-  {
-   "surface_z": 0.4,
-   "stance_x": 0.1,
-   "lean": 1.6057,
-   "mount_above": 0.6083,
-   "torso": {
-    "torso_joint1": 0.05234,
-    "torso_joint2": 0.40142,
     "torso_joint3": -1.15192
    },
    "score": 0.8843
@@ -2050,18 +2038,6 @@
    "score": 0.7639
   },
   {
-   "surface_z": 0.4,
-   "stance_x": 0.15,
-   "lean": 1.6057,
-   "mount_above": 0.6083,
-   "torso": {
-    "torso_joint1": 0.05234,
-    "torso_joint2": 0.40142,
-    "torso_joint3": -1.15192
-   },
-   "score": 0.7593
-  },
-  {
    "surface_z": 0.45,
    "stance_x": 0.5,
    "lean": 0.2793,
@@ -2902,18 +2878,6 @@
    "score": 0.7207
   },
   {
-   "surface_z": 0.45,
-   "stance_x": 0.1,
-   "lean": 1.6057,
-   "mount_above": 0.5583,
-   "torso": {
-    "torso_joint1": 0.05234,
-    "torso_joint2": 0.40142,
-    "torso_joint3": -1.15192
-   },
-   "score": 0.7207
-  },
-  {
    "surface_z": 0.75,
    "stance_x": 0.6,
    "lean": 0.7505,
@@ -3574,18 +3538,6 @@
    "score": 0.696
   },
   {
-   "surface_z": 0.4,
-   "stance_x": 0.1,
-   "lean": 1.8151,
-   "mount_above": 0.538,
-   "torso": {
-    "torso_joint1": 0.64576,
-    "torso_joint2": -0.66322,
-    "torso_joint3": -1.8326
-   },
-   "score": 0.6944
-  },
-  {
    "surface_z": 0.75,
    "stance_x": 0.45,
    "lean": 0.7505,
@@ -4030,18 +3982,6 @@
    "score": 0.6759
   },
   {
-   "surface_z": 0.45,
-   "stance_x": 0.1,
-   "lean": 1.8151,
-   "mount_above": 0.488,
-   "torso": {
-    "torso_joint1": 0.64576,
-    "torso_joint2": -0.66322,
-    "torso_joint3": -1.8326
-   },
-   "score": 0.6759
-  },
-  {
    "surface_z": 0.65,
    "stance_x": 0.35,
    "lean": 0.5061,
@@ -4164,7 +4104,7 @@
  ],
  "core": {
   "rel": 0.9,
-  "n": 23,
+  "n": 22,
   "surface_z_m": [
    0.4,
    0.95
@@ -4175,16 +4115,16 @@
   ],
   "lean_rad": [
    0.192,
-   1.6057
+   0.8028
   ],
   "mount_above_surface_m": [
    0.0739,
-   0.6083
+   0.4646
   ]
  },
  "stats": {
   "best_score": 0.9537,
-  "n_feasible": 335,
+  "n_feasible": 330,
   "n_cells": 38880,
   "rel": 0.7,
   "band_depth_m": 0.25,
@@ -4211,70 +4151,70 @@
     90
    ],
    "yaw_rate": {
-    "0": 0.7614,
-    "30": 0.7233,
-    "60": 0.4637,
-    "90": 0.4414,
-    "120": 0.6524,
-    "150": 0.755
+    "0": 0.7596,
+    "30": 0.7206,
+    "60": 0.4539,
+    "90": 0.4308,
+    "120": 0.6475,
+    "150": 0.7529
    },
    "tilt_deg": [
     0.0,
     30.0
    ],
    "tilt_rate": {
-    "0@0": 0.4645,
-    "30@0": 0.5185,
-    "30@90": 0.4959
+    "0@0": 0.4643,
+    "30@0": 0.5167,
+    "30@90": 0.4946
    },
    "fallback": [
     {
      "dyaw_deg": 90,
      "tilt_deg": 30,
      "tdir_deg": 0,
-     "recover": 0.4087
+     "recover": 0.4043
     },
     {
      "dyaw_deg": 60,
      "tilt_deg": 30,
      "tdir_deg": 0,
-     "recover": 0.4055
+     "recover": 0.401
     },
     {
      "dyaw_deg": -60,
      "tilt_deg": 30,
      "tdir_deg": 0,
-     "recover": 0.4021
+     "recover": 0.3976
     },
     {
      "dyaw_deg": 30,
      "tilt_deg": 30,
      "tdir_deg": 0,
-     "recover": 0.3925
+     "recover": 0.3878
     },
     {
      "dyaw_deg": -30,
      "tilt_deg": 30,
      "tdir_deg": 0,
-     "recover": 0.3828
+     "recover": 0.3779
     },
     {
      "dyaw_deg": 0,
      "tilt_deg": 30,
      "tdir_deg": 0,
-     "recover": 0.3737
+     "recover": 0.3686
     },
     {
      "dyaw_deg": 90,
      "tilt_deg": 30,
      "tdir_deg": 90,
-     "recover": 0.3135
+     "recover": 0.3154
     },
     {
      "dyaw_deg": 60,
      "tilt_deg": 30,
      "tdir_deg": 90,
-     "recover": 0.2972
+     "recover": 0.2988
     }
    ],
    "lift_clear_m": [
@@ -4282,39 +4222,39 @@
     0.2
    ],
    "lift_rate": {
-    "0.05": 0.9704,
-    "0.1": 0.9411,
-    "0.15": 0.8959,
-    "0.2": 0.8341,
-    "0.25": 0.7582
+    "0.05": 0.9711,
+    "0.1": 0.944,
+    "0.15": 0.9005,
+    "0.2": 0.8399,
+    "0.25": 0.7638
    },
    "carry_clear_m": [
     0.05,
     0.25
    ],
    "carry_rate": {
-    "0.05": 1.0219,
-    "0.1": 1.0191,
-    "0.15": 0.9886,
-    "0.2": 0.9489,
-    "0.25": 0.9059
+    "0.05": 1.0244,
+    "0.1": 1.0245,
+    "0.15": 0.9959,
+    "0.2": 0.9578,
+    "0.25": 0.9152
    },
    "ready_tcp_above_surface_m": [
     0.14,
     0.24
    ],
    "ready_rate": {
-    "0.14": 0.5118,
-    "0.19": 0.4722,
-    "0.24": 0.4234,
-    "0.29": 0.3709
+    "0.14": 0.5123,
+    "0.19": 0.4748,
+    "0.24": 0.4266,
+    "0.29": 0.3734
    },
    "cam_pitch_deg": [
     21.9995,
-    67.9991
+    65.9992
    ],
    "cam_vis_rate": [
-    0.9568
+    0.9557
    ],
    "lateral_m": [
     -0.5,
@@ -4412,8 +4352,6 @@
      [
       false,
       false,
-      true,
-      true,
       false,
       false,
       false,
@@ -4421,38 +4359,6 @@
       false,
       false,
       false,
-      false,
-      false,
-      false,
-      false
-     ],
-     [
-      false,
-      false,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      false,
-      false,
-      false,
-      false
-     ],
-     [
-      false,
-      false,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
       false,
       false,
       false,
@@ -4467,12 +4373,46 @@
       true,
       true,
       true,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     [
       false,
       false,
       true,
       true,
       true,
       true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
       false,
       false,
       false
@@ -4662,70 +4602,70 @@
    ],
    "yaw_deg_bad": [],
    "yaw_rate": {
-    "0": 0.7817,
-    "30": 0.7796,
-    "60": 0.7747,
-    "90": 0.7611,
-    "120": 0.7597,
-    "150": 0.77
+    "0": 0.7804,
+    "30": 0.7803,
+    "60": 0.779,
+    "90": 0.7707,
+    "120": 0.7716,
+    "150": 0.7694
    },
    "tilt_deg": [
     0.0,
     30.0
    ],
    "tilt_rate": {
-    "0@0": 0.4751,
-    "30@0": 0.5176,
-    "30@90": 0.4999
+    "0@0": 0.4754,
+    "30@0": 0.5159,
+    "30@90": 0.4988
    },
    "fallback": [
     {
      "dyaw_deg": 90,
      "tilt_deg": 30,
      "tdir_deg": 0,
-     "recover": 0.5017
-    },
-    {
-     "dyaw_deg": -60,
-     "tilt_deg": 30,
-     "tdir_deg": 0,
-     "recover": 0.5012
-    },
-    {
-     "dyaw_deg": 60,
-     "tilt_deg": 30,
-     "tdir_deg": 0,
-     "recover": 0.501
-    },
-    {
-     "dyaw_deg": 30,
-     "tilt_deg": 30,
-     "tdir_deg": 0,
-     "recover": 0.5001
-    },
-    {
-     "dyaw_deg": -30,
-     "tilt_deg": 30,
-     "tdir_deg": 0,
-     "recover": 0.4999
+     "recover": 0.5063
     },
     {
      "dyaw_deg": 0,
      "tilt_deg": 30,
      "tdir_deg": 0,
-     "recover": 0.4995
+     "recover": 0.5063
+    },
+    {
+     "dyaw_deg": -60,
+     "tilt_deg": 30,
+     "tdir_deg": 0,
+     "recover": 0.5062
+    },
+    {
+     "dyaw_deg": -30,
+     "tilt_deg": 30,
+     "tdir_deg": 0,
+     "recover": 0.5062
+    },
+    {
+     "dyaw_deg": 30,
+     "tilt_deg": 30,
+     "tdir_deg": 0,
+     "recover": 0.5059
+    },
+    {
+     "dyaw_deg": 60,
+     "tilt_deg": 30,
+     "tdir_deg": 0,
+     "recover": 0.5059
+    },
+    {
+     "dyaw_deg": 30,
+     "tilt_deg": 30,
+     "tdir_deg": 90,
+     "recover": 0.2216
     },
     {
      "dyaw_deg": -60,
      "tilt_deg": 30,
      "tdir_deg": 90,
-     "recover": 0.2244
-    },
-    {
-     "dyaw_deg": 90,
-     "tilt_deg": 30,
-     "tdir_deg": 90,
-     "recover": 0.2243
+     "recover": 0.2214
     }
    ],
    "lift_clear_m": [
@@ -4733,39 +4673,39 @@
     0.2
    ],
    "lift_rate": {
-    "0.05": 0.9722,
-    "0.1": 0.944,
-    "0.15": 0.9004,
-    "0.2": 0.8378,
-    "0.25": 0.7609
+    "0.05": 0.973,
+    "0.1": 0.9469,
+    "0.15": 0.9054,
+    "0.2": 0.8442,
+    "0.25": 0.767
    },
    "carry_clear_m": [
     0.05,
     0.25
    ],
    "carry_rate": {
-    "0.05": 1.0224,
-    "0.1": 1.0206,
-    "0.15": 0.9928,
-    "0.2": 0.9553,
-    "0.25": 0.9147
+    "0.05": 1.0248,
+    "0.1": 1.026,
+    "0.15": 1.0003,
+    "0.2": 0.9646,
+    "0.25": 0.9245
    },
    "ready_tcp_above_surface_m": [
     0.14,
     0.24
    ],
    "ready_rate": {
-    "0.14": 0.529,
-    "0.19": 0.4893,
-    "0.24": 0.438,
-    "0.29": 0.3832
+    "0.14": 0.5301,
+    "0.19": 0.4928,
+    "0.24": 0.4421,
+    "0.29": 0.3864
    },
    "cam_pitch_deg": [
     21.9995,
-    67.9991
+    65.9992
    ],
    "cam_vis_rate": [
-    0.9688
+    0.968
    ],
    "lateral_m": [
     -0.55,
@@ -4886,7 +4826,7 @@
       true,
       true,
       false,
-      true,
+      false,
       true,
       true,
       false,
@@ -4895,7 +4835,7 @@
       false
      ],
      [
-      true,
+      false,
       true,
       true,
       true,
@@ -4905,7 +4845,7 @@
       true,
       true,
       false,
-      true,
+      false,
       true,
       false,
       false,
