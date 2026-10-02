@@ -198,10 +198,11 @@ class LiveRuntime(RT.Runtime):
 def install(world, profile: str = "ffw_sg2", arm: str = "right", device: str = "cuda:0", allow_untested=False,
            style=None) -> LiveRuntime:
     """Same hook-wiring as rt9.install (unchanged), with LiveRuntime installed instead of rt9.Runtime.
-    LIVE_REFINER=ggx installs harvest.l9.ggx_refine's GraspGenX-backed refiner (live9.set_refiner) bound to this
-    arm; unset (default) leaves live9's refiner hook empty, so choose_live uses only its own antipodal search --
-    the A/B switch between the two is this one env var, no code change."""
-    if os.environ.get("LIVE_REFINER") == "ggx":
+    LIVE_REFINER (default "ggx", 2026-10-02 pod A/B: it always attempted more episodes and had a higher success
+    rate than the antipodal search alone, both robots) installs harvest.l9.ggx_refine's GraspGenX-backed refiner
+    (live9.set_refiner) bound to this arm. Any other value (e.g. LIVE_REFINER=antipodal, kept for the A/B
+    comparison) leaves live9's refiner hook empty, so choose_live uses only its own antipodal search."""
+    if os.environ.get("LIVE_REFINER", "ggx") == "ggx":
         from . import ggx_refine as GGX
         L.set_refiner(GGX.make_refiner(arm))
     else:
