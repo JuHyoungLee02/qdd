@@ -164,6 +164,7 @@ def main(argv=None):
             C9L.register_task(ep)
             world.prepare(sc, ep, light, head, sd)
             try:
+                world.env.use_arm(world.env.primary)  # a skipped episode (no direction, ...) may leave the other arm current
                 world.reset(sd, C9L.T9_TASK)
             except SkipScene as ex:
                 # production's own "this exact draw doesn't work, try another" signal -- MUST be caught per
