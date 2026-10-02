@@ -191,7 +191,8 @@ def main(argv=None):
             except (SkipScene, NoEpisode, ValueError) as ex:
                 os.makedirs(od, exist_ok=True)
                 json.dump({"row": r, "reason": f"{type(ex).__name__}: {ex}"}, open(os.path.join(od, "skipped.json"), "w"))
-                print("SKIP " + json.dumps({"seed": r["seed"], "def": r["def"], "reason": str(ex)[:200]}), flush=True)
+                print("SKIP " + json.dumps({"seed": r["seed"], "def": r["def"], "reason": str(ex)[:200],
+                                            "wall_s": round(time.perf_counter() - t0, 1)}), flush=True)
                 continue
             keep = ("seed", "task_id", "arm", "robot", "env_family", "success", "end_reason", "n_calls", "max_dq_rad",
                     "wall_s")
