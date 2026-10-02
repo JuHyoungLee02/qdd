@@ -126,8 +126,6 @@ def instantiate(did: str, spec: dict | None, seed: int, obj_name: str | None = N
             if not cand:
                 raise ValueError(f"{did}: no fitting part on {spec['name']}")
             links["H"] = _pick(rng, cand)
-            if d["combo"] and d["family"] == "drawer":  # put / take: the top drawer (nothing above the opened part;
-                links["H"] = max(cand, key=lambda l: spec["links"][l]["origin"][2])  # combo pilot: lower drawers lost the object)
         for k, ln in links.items():
             words[k] = hs[ln]["words"]
         words["F"] = spec.get("label", "cabinet")
