@@ -168,11 +168,11 @@ def push_plan(obj_c, half, tz: float, direction, dist: float, gr: dict, draw: di
     d = d / np.linalg.norm(d)
     ext = float(abs(d[0]) * half[0] + abs(d[1]) * half[1])
     a = np.array([0.0, 0.0, -1.0])
-    # straight-down hand (smoke: a tilted paddle tipped a box pushed away from the robot)
+    a = _tilt(a, np.cross(d, [0, 0, 1.0]), 0.5 * draw["pitch"])
     c = np.array([-d[1], d[0], 0.0])  # closing axis across the push direction: the two fingers side by side
     R = frame_of(a, c)
     fw = float(gr.get("finger_t", 0.012))
-    z = tz + 0.015 + tip_offset(gr)  # fingertips 1.5 cm over the table
+    z = tz + 0.025 + tip_offset(gr)  # fingertips 2.5 cm over the table (smoke 10-02: 1.2 cm dragged on it, 0.07 rad jump)
     start = np.asarray(obj_c, float)[:2] - d[:2] * (ext + fw + 0.012)
     goal_xy = np.asarray(obj_c, float)[:2] + d[:2] * dist
     end = goal_xy - d[:2] * (ext + fw + 0.004)
