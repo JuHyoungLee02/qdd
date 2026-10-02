@@ -28,6 +28,7 @@ PERTURB = (0.01, 0.025)
 VIDEO_EVERY = 6
 VERSION = "l9art-1"
 PUSH_MODE = {"franka_mast": "v2"}
+COMBO_HOLD_DAMPING = 400.0  # [가설] N s/m: an opened drawer creeps < 1 cm under a 2-4 N brush while placing
 
 
 class Halt(Exception):
@@ -713,10 +714,23 @@ class ArtEpisode:
         self.fail_counts[k] = self.fail_counts.get(k, 0) + 1
 
     def finish_stage(self):
+        done = self.stage()
         self.done_stages.append(self.stage_i)
         self.stage_i += 1
         self.sub = "start"
         self.rel = None
+        nxt = self.stage()
+        if self.prog.get("combo") and self.spec is not None:  # combos: the opened drawer holds still (high damping)
+            try:  # while the object goes in / out, its own damping is back for the closing push
+                if done and done["kind"] == "pull" and nxt and nxt["kind"] in ("pick", "place"):
+                    WA.set_joint_damping(self.w, self.joint_of(done), COMBO_HOLD_DAMPING)
+                    self._held_joint = self.joint_of(done)
+                if nxt and nxt["kind"] == "push" and getattr(self, "_held_joint", None):
+                    jn = self._held_joint
+                    WA.set_joint_damping(self.w, jn, float(self.spec["joints"][jn]["drive"]["damping"]))
+                    self._held_joint = None
+            except Exception:  # noqa: BLE001
+                pass
 
     def set_world(self, st, skip_all_links: bool = False, skip_held: bool = False):
         so = (self.b["tgt"],) if skip_held else ()  # the held object is not an obstacle of its own carry

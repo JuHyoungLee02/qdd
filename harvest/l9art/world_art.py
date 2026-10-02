@@ -169,3 +169,13 @@ def ghost_part(spec: dict, T_WF) -> dict:
     H = float(spec["dims"]["H"])
     return {"id": "art_ghost", "prim": "cuboid", "size": [x1 - x0, y1 - y0, H], "pos": [(x0 + x1) / 2, (y0 + y1) / 2, tz + H / 2],
             "yaw": 0.0, "role": "ghost", "usd": "ghost"}
+
+
+def set_joint_damping(world, joint: str, value: float) -> None:
+    """Runtime damping of one fixture joint (combos hold the opened drawer while an object goes in: pilot3 10-02,
+    the hand pushed the free drawer from 17 to 6 cm while placing)."""
+    import torch
+    fam = world.fx_cur
+    art = world.env.scene[world.fx[fam]["key"]]
+    i = art.joint_names.index(joint)
+    art.write_joint_damping_to_sim(torch.tensor([[float(value)]], device=art.device), joint_ids=[i])
