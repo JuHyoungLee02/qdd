@@ -206,5 +206,21 @@ def main(argv=None):
     os._exit(code)
 
 
-if __name__ == "__main__":
+def _profiled():
+    """L9_PROFILE=<path>: cProfile the whole run and dump the stats before os._exit (which skips atexit)."""
+    import cProfile
+    path = os.environ["L9_PROFILE"]
+    pr = cProfile.Profile()
+    real_exit = os._exit
+
+    def _exit(code):
+        pr.disable()
+        pr.dump_stats(path)
+        real_exit(code)
+    os._exit = _exit
+    pr.enable()
     main()
+
+
+if __name__ == "__main__":
+    _profiled() if os.environ.get("L9_PROFILE") else main()
