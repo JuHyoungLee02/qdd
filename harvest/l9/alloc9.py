@@ -78,6 +78,18 @@ def is_holdout(def_id) -> bool:
     return str(def_id) in HOLDOUT_FROZEN
 
 
+# Robot-level build gate (user 10-03 01h): a robot must clear every one of its task types (single-arm pick/place,
+# articulated, bimanual) at >= the 40% pilot gate before ANY of its episodes (of any task type, including ones
+# already on disk) enter a training build -- a robot never sits in production for some task types and not others.
+# False here does not stop or delete production; harvest.l9.run9 / art_prod / bimanual keep writing episodes (they
+# are the gate evidence), only tools/l9/build_v2.py drops that robot's rows until this flips to True.
+ROBOT_GATE_CLEARED = {"ffw_sg2": True, "franka_mast": True, "r1pro": False, "g1": False}
+
+
+def robot_build_ready(robot) -> bool:
+    return bool(ROBOT_GATE_CLEARED.get(str(robot), False))
+
+
 def holdout_defs(defs: dict, share: float = HOLDOUT_SHARE) -> list:
     """The frozen hold-out definitions present in defs (HOLDOUT_FROZEN)."""
     return sorted(k for k in HOLDOUT_FROZEN if k in defs)

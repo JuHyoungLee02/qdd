@@ -36,7 +36,7 @@ def main():
     n_old_spec = 0
     train = "--eval" not in a
     from harvest.l9 import alloc9 as AL
-    split_drop = {"holdout_def": 0, "non_train_split": 0}
+    split_drop = {"holdout_def": 0, "non_train_split": 0, "robot_not_gated": 0}
     for r in roots:
         for m in sorted(glob.glob(os.path.join(r, "*", "*", "*", "meta.json"))):
             meta = json.load(open(m))
@@ -50,6 +50,9 @@ def main():
                 continue
             if train and AL.is_holdout(meta.get("task_id")):  # E-TP1 leak: train episodes of a hold-out definition
                 split_drop["holdout_def"] += 1  # (pilot rows, kept on disk; the hold-out build may take them)
+                continue
+            if train and not AL.robot_build_ready(meta.get("robot")):  # user 10-03 01h: robot-level all-task gate
+                split_drop["robot_not_gated"] += 1  # (kept on disk; this robot's rows re-enter once it clears)
                 continue
             eps.append(os.path.dirname(m))
     c = B9.build(eps, out, arg("--split", "l9train"), name, train="--eval" not in a, camera_line="--camera-line" in a,

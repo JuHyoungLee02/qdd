@@ -168,14 +168,17 @@ FRAME_SENTENCE = "Directions in the task (left, right, front, behind) are in the
 
 
 def split_leaks(rows: list, ood_objects=frozenset(), ood_rooms=frozenset()) -> dict:
-    """Training rows that must not exist (owner 10-02, E-TP1 leak): a frozen hold-out definition, an episode of
-    another split, an ood_o object, an ood room (rows carry task_def, ep_split, objects, room)."""
-    from .alloc9 import is_holdout
+    """Training rows that must not exist: a frozen hold-out definition, an episode of another split, an ood_o
+    object, an ood room (owner 10-02, E-TP1 leak), or a robot not yet cleared on every one of its task types
+    (user 10-03 01h: a robot never sits in production for some task types and not others; rows carry task_def,
+    ep_split, objects, room, robot)."""
+    from .alloc9 import is_holdout, robot_build_ready
     oo, orm = set(ood_objects), set(ood_rooms)
     return {"holdout_def_rows": sum(1 for r in rows if is_holdout(r.get("task_def"))),
             "non_train_split_rows": sum(1 for r in rows if r.get("ep_split", "train") != "train"),
             "ood_object_rows": sum(1 for r in rows if oo & set(r.get("objects") or ())),
-            "ood_room_rows": sum(1 for r in rows if r.get("room") in orm)}
+            "ood_room_rows": sum(1 for r in rows if r.get("room") in orm),
+            "robot_not_gated_rows": sum(1 for r in rows if not robot_build_ready(r.get("robot")))}
 
 
 def gates(rows: list, texts: dict, train: bool = False, frame_note: bool = False, ood_objects=frozenset(),
