@@ -609,6 +609,7 @@ GRAVITY_BOX_HALF = (0.025, 0.025, 0.03)  # m, coarse stand-in for the other arm'
 # B's choose_b (arm B choosing while avoiding arm A's box on the SAME object, much smaller than a handover zone)
 # was the #1 real B failure (6/7 executed-episode failures) -- same root cause, smaller object this time. Still a
 # box, not the real links (R1 stands); if real collisions start showing up in frame review, grow this back up.
+ZONE_TRIES = 6  # extra reach-verified handover cells tried when the drawn one fails either arm
 SETTLE_TICKS = 30  # ~0.6 s at 20 Hz / dt: gripper close/open settle wait
 
 
@@ -1147,23 +1148,21 @@ class HandoverRuntime:
         if not r["ok"]:
             return {"ok": False, "log": log}
         carry_pos, carry_quat = zone, None
-        if cell is not None:  # owner 2026-10-02 (R4 follow-up): release at a yaw whose candidates actually point
-            yaw, n_ok, n_tot = self._live_best_yaw(obj_key, zone)  # the direction the zone is reachable from
-            log[-1]["release_yaw_ik"] = f"{n_ok}/{n_tot}"
+        if cell is not None:
+            # handover point + release yaw chosen together from measurements of BOTH arms (bimdeep a8 10-03: the
+            # drawn zone cell was out of the giver's IK with its actual grip in 3 of 3 move failures, 'ik_goal'
+            # False): the episode's own cell first, then up to ZONE_TRIES more cells of the same reach-verified set;
+            # per cell the receiver-ranked yaws (live IK of its candidates) until the giver's grip pose there solves
+            # IK too. The label records whichever point / yaw was used.
+            from . import plan9 as P9
+            from . import rt9 as RT
             T_obj_pick = r.get("T_obj_pick")
-            if T_obj_pick is not None:
-                from . import plan9 as P9
-                from . import rt9 as RT
-                T_obj_G = P9.inv_T(T_obj_pick) @ r["gc"].T  # the rigid grip, constant while held
-                cz, sz = math.cos(yaw), math.sin(yaw)
-                T_obj_desired = np.eye(4)
-                T_obj_desired[:3, :3] = np.array([[cz, -sz, 0.0], [sz, cz, 0.0], [0.0, 0.0, 1.0]])
-                T_obj_desired[:3, 3] = zone
-                T_grip_desired = T_obj_desired @ T_obj_G
-                # bimdeep a5 10-03: the receiver-best yaw was often a wrist pose the GIVER cannot hold at the zone
-                # (final rotate 'no collision-free path'). Take the receiver-ranked yaws in order and keep the first
-                # whose giver grip pose solves IK (outcome-based, both arms measured).
-                rt_g = self.giver.rt
+            T_obj_G = P9.inv_T(T_obj_pick) @ r["gc"].T  # the rigid grip, constant while held
+            rt_g = self.giver.rt
+            chosen = None
+            for j in range(ZONE_TRIES + 1):
+                zj, _cj = (zone, cell) if j == 0 else zone_point(self.profile, table_z, seed, 1000 * (episode_idx + 1) + j)
+                _yaw, n_ok, n_tot = self._live_best_yaw(obj_key, zj)
                 self.world.env.use_arm(self.giver.arm)
                 for n_r, yaw_r in sorted(self._yaw_rank, key=lambda t: -t[0]):
                     if n_r <= 0:
@@ -1171,14 +1170,29 @@ class HandoverRuntime:
                     cz, sz = math.cos(yaw_r), math.sin(yaw_r)
                     T_try = np.eye(4)
                     T_try[:3, :3] = np.array([[cz, -sz, 0.0], [sz, cz, 0.0], [0.0, 0.0, 1.0]])
-                    T_try[:3, 3] = zone
+                    T_try[:3, 3] = zj
                     ok_g, _, _ = rt_g.planner.ik(rt_g.to_base(T_try @ T_obj_G)[None])
                     if bool(np.asarray(ok_g).reshape(-1)[0]):
-                        T_obj_desired, T_grip_desired = T_try, T_try @ T_obj_G
-                        log[-1]["release_yaw_giver"] = f"{n_r} rx cands, yaw {math.degrees(yaw_r):.0f}"
+                        chosen = (j, zj, T_try, n_r, n_tot, yaw_r)
                         break
-                carry_pos = T_grip_desired[:3, 3]
-                carry_quat = RT.G.mat_quat(T_grip_desired[:3, :3])
+                if chosen is not None:
+                    break
+            if chosen is None:
+                log[-1]["release_yaw_ik"] = "no zone cell / yaw both arms reach"
+                return {"ok": False, "log": log + [{"phase": "zone_choice", "ok": False,
+                                                    "status": "no handover point both arms reach"}]}
+            j, zone, T_obj_desired, n_r, n_tot, yaw_r = chosen
+            log[-1]["release_yaw_ik"] = f"{n_r}/{n_tot}"
+            log[-1]["zone_try"] = j
+            log[-1]["zone"] = [round(float(v), 3) for v in zone]
+            T_grip_desired = T_obj_desired @ T_obj_G
+            carry_pos = T_grip_desired[:3, 3]
+            carry_quat = RT.G.mat_quat(T_grip_desired[:3, :3])
+            # the translate-then-rotate split only when the translate end pose (current wrist orientation at the
+            # zone) is itself reachable; otherwise go straight to the final pose
+            T_mid = RT.T_of(carry_pos, RT.G.mat_quat(rt_g.tcp_T()[:3, :3]))
+            ok_m, _, _ = rt_g.planner.ik(rt_g.to_base(T_mid)[None])
+            self._split_carry = bool(np.asarray(ok_m).reshape(-1)[0])
         # owner 2026-10-03 (1hr checkpoint, "no collision-free path" was the #1 real giver_carry failure, 7/9
         # executed-episode failures across every smoke run so far): the direct, single _move_to from the
         # just-picked pose straight to carry_pos/carry_quat often combines a large translation AND rotation
@@ -1202,7 +1216,7 @@ class HandoverRuntime:
         # exactly carry_pos/carry_quat, so the handover-point label this feeds is unaffected) -- only the PATH to
         # get there is relaxed, same spirit as the lift waypoint: smaller, easier-to-plan moves instead of one
         # big combined one.
-        if carry_quat is not None:
+        if carry_quat is not None and getattr(self, "_split_carry", True):
             r = self._move_to(self.giver, carry_pos)
             log.append({"phase": "giver_carry_translate", **r})
             if not r["ok"]:
