@@ -113,7 +113,7 @@ def franka_robot_cfg():
         activate_contact_sensors=True,
         rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False, max_depenetration_velocity=5.0),
         articulation_props=sim_utils.ArticulationRootPropertiesCfg(
-            enabled_self_collisions=False, solver_position_iteration_count=8, solver_velocity_iteration_count=0,
+            enabled_self_collisions=False, solver_position_iteration_count=32, solver_velocity_iteration_count=1,  # DIAG 4
             fix_root_link=True))
     return ArticulationCfg(
         prim_path="{ENV_REGEX_NS}/Robot", spawn=spawn,
@@ -434,7 +434,7 @@ def v2_robot_cfg(profile: str, init_joints: dict | None = None):
         activate_contact_sensors=True,
         rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=True, max_depenetration_velocity=5.0),
         articulation_props=sim_utils.ArticulationRootPropertiesCfg(
-            enabled_self_collisions=False, solver_position_iteration_count=8, solver_velocity_iteration_count=0,
+            enabled_self_collisions=False, solver_position_iteration_count=32, solver_velocity_iteration_count=1,  # DIAG 4
             fix_root_link=True))
     fingers = [j for a in s["arms"].values() for j in a["fingers"]]
     return ArticulationCfg(

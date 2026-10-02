@@ -195,6 +195,7 @@ class Runtime:
         self.instruction_suffix = ""
         self.dead = False
         self._retreat_fail = 0
+        self._settle_n = 0
         self._n_dump = 0  # failed-plan dumps per episode (L9V2_DEBUG_DIR)
 
     def arm_q(self) -> np.ndarray:
@@ -509,6 +510,14 @@ class Runtime:
         hold = st["pred"].get(f"holding({tg})") is True
         key = (tg, info["place"])
         if self.choice_key != key and not hold:
+            if self.failed and self._settle_n < 3 and (
+                    float(st["grip_w"]) < min(w_open, self.open_width()) - 0.01 or self.w.env.object_vel(tg) > 0.02):
+                # L9v2-DIAG 5: after an EMPTY / WIDE close the object is often still moving (squeezed out); choosing
+                # now aims the re-grasp at where it was, not where it settles -> open first, choose once it rests
+                self._settle_n += 1
+                self.last_label, self._last_step = ("reopen", {"mode": "gripper", "gripper": "open"}), "reopen"
+                return "reopen", {"mode": "gripper", "gripper": "open"}
+            self._settle_n = 0
             # L9v2-DIAG 3: the task stage moves on right at the release, so an intermediate target never got its
             # retreat; the next target's first move (lift_clear straight up / a transit) dragged or knocked the placed
             # object (multi-step 3 / 42 successes). Retreat from the previous target first while the hand is near it.
