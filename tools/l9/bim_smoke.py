@@ -190,7 +190,7 @@ def main(argv=None):
             hr.snap = _snapper(world, od)
             fspot = None
             if obj_key in ep["objects"] and obj_key in pool:
-                fspot = B.receiver_spots(sc, ep, obj_key, float(pool[obj_key]["footprint_r"]), rm, receiver_i, sd) or None
+                fspot = B.receiver_spots(sc, ep, obj_key, float(pool[obj_key]["footprint_r"]), rm, receiver_i, sd, k=12) or None
             try:
                 with _episode_timeout(a.episode_timeout_s):
                     r = hr.run_episode(obj_key, world.table_z, seed=seed, episode_idx=i, final_xy=fspot)

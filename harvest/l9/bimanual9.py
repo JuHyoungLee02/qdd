@@ -1522,6 +1522,21 @@ class HandoverRuntime:
         final_xy, top, T_tcp, dyaw = pick
         log[-1]["final_spot"] = [round(float(v), 3) for v in final_xy]
         quat = RT.G.mat_quat(T_tcp[:3, :3])
+        # lift the received object straight up first (bimdeep a24/a25 10-03: 4 of 25 receiver carries refused a
+        # start next to where the giver's hand had just been); a short vertical line, unchecked if the checked
+        # one refuses its touching start (same rule as the two-hand lift)
+        env.use_arm(self.receiver.arm)
+        T_now = rt_r.tcp_T()
+        T_up0 = T_now.copy()
+        T_up0[2, 3] += 0.05
+        rt_r.refresh_world(holding=obj_key)
+        q0 = rt_r.plan_start()
+        Qu = rt_r.planner.line(q0, rt_r.to_base(T_now), rt_r.to_base(T_up0))
+        if Qu is None:
+            Qu = rt_r.planner.line(q0, rt_r.to_base(T_now), rt_r.to_base(T_up0), 0.01, False)
+        if Qu is not None:
+            self.receiver.traj, self.receiver.traj_i = rt_r._resample(np.asarray(Qu, float)), 0
+            self.run_ticks(len(self.receiver.traj) + 5)
         r = self._move_to(self.receiver, T_tcp[:3, 3] + np.array([0.0, 0.0, 0.06]), quat_wxyz=quat)
         log.append({"phase": "receiver_carry", **r})
         if not r["ok"]:
