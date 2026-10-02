@@ -3,7 +3,9 @@
 Checks: off-build 0 third-person rows; on-build third-person rows = third-person index entries of the episodes (one
 view per row); every ego row parses to the 4 slots; 0 rows without the head image; image-count histogram.
 usage: python tools/l9/build_v2.py <out dir> <name> <collect root>... [--third-person off|on] [--split l9train]
-       [--eval] [--no-slots] [--seed 0] [--success-only]"""
+       [--eval] [--no-slots] [--seed 0] [--success-only] [--camera-line] [--both]
+--both (with --third-person on): also <name>_tp_off.jsonl and <name>_tp_on.jsonl from the same build; the ego rows are
+byte-identical (checked)."""
 import glob
 import json
 import os
@@ -47,6 +49,20 @@ def main():
              "image_count_hist": c.get("image_count_hist"), "slot_combos": c.get("slot_combos")}
     check["ok"] = (check["ego_third_person_rows"] == 0 and bad == 0 and not check["rows_without_head"]
                    and (c["third_person_rows"] == 0 if not tp_on else True))
+    if tp_on and "--both" in a:  # user 10-02: two sets from one build -- off = the ego rows, on = the same bytes + tp rows
+        import hashlib
+        ego_b = open(c["path"], "rb").read()
+        tp_b = open(os.path.join(out, name + "_third_person.jsonl"), "rb").read()
+        with open(os.path.join(out, name + "_tp_off.jsonl"), "wb") as f:
+            f.write(ego_b)
+        with open(os.path.join(out, name + "_tp_on.jsonl"), "wb") as f:
+            f.write(ego_b + tp_b)
+        off_b = open(os.path.join(out, name + "_tp_off.jsonl"), "rb").read()
+        on_b = open(os.path.join(out, name + "_tp_on.jsonl"), "rb").read()
+        check["sets"] = {"off_rows": off_b.count(b"\n"), "on_rows": on_b.count(b"\n"),
+                         "ego_sha256": hashlib.sha256(off_b).hexdigest()[:16],
+                         "ego_identical": on_b[:len(off_b)] == off_b}
+        check["ok"] = check["ok"] and check["sets"]["ego_identical"]
     json.dump(check, open(os.path.join(out, name + ".check.json"), "w"), indent=1)
     print(json.dumps(dict(check, episodes=len(eps), control_rows=c["control_rows"])))
 
