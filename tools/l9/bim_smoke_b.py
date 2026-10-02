@@ -207,6 +207,10 @@ def main(argv=None):
             except _EpisodeTimeout as ex:
                 print("EPISODE_TIMEOUT " + json.dumps({"seed": seed, "err": str(ex)}), flush=True)
                 r = {"ok": False, "status": "episode timeout"}
+            except Exception as ex:  # noqa: BLE001  one broken episode must not end the whole run
+                import traceback
+                traceback.print_exc()
+                r = {"ok": False, "status": f"{type(ex).__name__}: {ex}"[:200]}
             r["seed"], r["obj"], r["direction"], r["def"] = seed, obj_key, direction, a.defn_name
             r["code"] = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
             r["switches"] = {k: os.environ.get(k) for k in ("L9_COMMON_EXEC", "L9V2_GRASP_FLIP") if os.environ.get(k)}

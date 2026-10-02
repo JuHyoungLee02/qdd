@@ -195,6 +195,10 @@ def main(argv=None):
             except _EpisodeTimeout as ex:
                 print("EPISODE_TIMEOUT " + json.dumps({"seed": seed, "err": str(ex)}), flush=True)
                 r = {"ok": False, "status": "episode timeout"}
+            except Exception as ex:  # noqa: BLE001  one broken episode must not end the whole run
+                import traceback
+                traceback.print_exc()
+                r = {"ok": False, "status": f"{type(ex).__name__}: {ex}"[:200]}
                 # run_episode's own try/finally still runs env.use_arm(env.primary) as the exception propagates
                 # through it (Python guarantees finally runs on exception unwind) -- no extra restore needed here.
             r["seed"], r["obj"], r["receiver_source"] = seed, obj_key, a.receiver_source

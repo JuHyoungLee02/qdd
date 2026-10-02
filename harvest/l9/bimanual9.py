@@ -674,6 +674,22 @@ def drop_model_overlap(rt, boxes: dict) -> dict:
     return {k: v for k, v in boxes.items() if k not in bad}
 
 
+def _line_or_pose(rt, q, Tb):
+    """Straight tool line, else a free cuRobo plan. (The old `line(...) or pose(...)` raised 'truth value of an array
+    is ambiguous' whenever the line DID succeed -- bimdeep b4 crashed on its first successful place.)"""
+    Q = rt.planner.line(q, rt.to_base(rt.tcp_T()), Tb)
+    if Q is None:
+        Q = rt.planner.pose(q, Tb)
+    if Q is None and os.environ.get("BIM_DEBUG") == "1":
+        try:
+            hits = rt.planner._call("start_hits", q, 0.012)
+        except Exception as ex:  # noqa: BLE001
+            hits = str(ex)
+        print("BIMDBG move " + str({"arm": rt.arm, "start_hits": hits[:6] if isinstance(hits, list) else hits,
+                                    "dz": round(float(Tb[2, 3] - rt.to_base(rt.tcp_T())[2, 3]), 3)}), flush=True)
+    return Q
+
+
 def _tilt_deg(R0, R1) -> float:
     z0, z1 = np.asarray(R0, float)[:, 2], np.asarray(R1, float)[:, 2]
     return math.degrees(math.acos(max(-1.0, min(1.0, float(z0 @ z1)))))
@@ -1072,11 +1088,11 @@ class HandoverRuntime:
         env.use_arm(slot.arm)
         rt = slot.rt
         rt.refresh_world(holding=slot.held_obj or None, below_z=below_z, extra_boxes=self.other_arm_boxes(slot))
-        q = env.arm_q() if rt.q_target is None else np.asarray(rt.q_target, float)
+        q = rt.plan_start()  # commanded joints, clipped inside the sim range (cuRobo refuses a start on a limit)
         quat = np.asarray(quat_wxyz, float) if quat_wxyz is not None else np.asarray(rt.tcp_T()[:3, :3], float)
         T = RT.T_of(target_xyz, RT.G.mat_quat(quat) if quat.shape == (3, 3) else quat)
         Tb = rt.to_base(T)
-        Q = rt.planner.line(q, rt.to_base(rt.tcp_T()), Tb) or rt.planner.pose(q, Tb)
+        Q = _line_or_pose(rt, q, Tb)
         if Q is None:
             return {"ok": False, "status": "no collision-free path"}
         slot.traj, slot.traj_i = rt._resample(np.asarray(Q, float)), 0
@@ -1449,9 +1465,9 @@ class LiftRuntime:
             rt = slot.rt
             rt.refresh_world(holding=slot.held_obj or None, below_z=below_z)  # no other-hand boxes: rigid co-motion
             T_tcp = T_obj_target @ T_obj_G
-            q = env.arm_q() if rt.q_target is None else np.asarray(rt.q_target, float)
+            q = rt.plan_start()  # commanded joints, clipped inside the sim range (cuRobo refuses a start on a limit)
             Tb = rt.to_base(T_tcp)
-            Q = rt.planner.line(q, rt.to_base(rt.tcp_T()), Tb) or rt.planner.pose(q, Tb)
+            Q = _line_or_pose(rt, q, Tb)
             if Q is None:
                 return {"ok": False, "status": f"no collision-free path for {slot.arm}"}
             plans[slot.arm] = rt._resample(np.asarray(Q, float))
