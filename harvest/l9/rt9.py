@@ -31,6 +31,8 @@ VERSION = "l9v2-1"
 GRIP_NAME = {"ffw_sg2": "ffw_sg2", "franka_mast": "franka", "r1pro": "r1pro", "g1": "g1"}
 EMPTY_M, CONTACT_TOL, CONTACT_TOL_HI, SLIP_GAP, SLIP_MOVE = 0.003, 0.008, 0.020, 0.003, 0.010
 LIMIT_MARGIN = 0.01
+CMD_DQ = 0.034  # command step cap: the measured arm lags then catches up, 12 of ~120 pilot successes measured
+# 0.0401-0.047 rad at a 0.04 command cap (rejected by the <= 0.04 gate); 0.034 x 1.17 stays under 0.04
 WIDE_KEEP = 0.045
 TARGET_CORE = 0.5  # while approaching, the target is an obstacle at half its box: the fingers / palm around a grasp
 #                    stay outside the core, the arm cannot pass through the object (smoke 10-02: full box -> no grasp
@@ -546,6 +548,15 @@ class Runtime:
         elif hold:  # re-measure the grip every call: objects turn in the hand while carried (pilot 10-02: a can held
             T_obj = T_of(*self.w.env.object_pose(tg))  # from the front turned about the closing axis and the put pose
             self.held["T_obj_G"] = P9.inv_T(T_obj) @ self.tcp_T()  # from the lift-time grip tipped it over)
+            nf = self.timeline.get("held_move_failed", 0)
+            if nf > self.held.get("nf_seen", 0):  # only after a new failed move (keeps a yaw that works)
+                self.held["nf_seen"] = nf
+                # L9v2-DIAG 7: the yaw chosen at the lift was unreachable with the re-measured grip (the object slid
+                # 17 mm in the hand; lower_open 'no collision-free path' 26 times until the call limit) -> choose the
+                # place yaw again with the grip as it is now; stop when no yaw works after 4 failed moves
+                if nf >= 4 and self.timeline.get("place_yaw_delta", 0) is None:
+                    return "tipped", None
+                self.held["yaw_delta"] = self._place_yaw(st, info, table_z, gc)
         if not hold:
             self.held = None
         step, cmd = VP.plan(self.status2(st), info, table_z, w_open, gc, self.held)
@@ -657,6 +668,8 @@ class Runtime:
         if Q is None:
             if Q0 is not None:
                 return self._resample(Q0), "lifted a little; the carry path is blocked", None
+            if hold:  # L9v2-DIAG 7: the next call chooses the place yaw again
+                self.timeline["held_move_failed"] = self.timeline.get("held_move_failed", 0) + 1
             return None, "no collision-free path to the target", None
         if Q0 is not None:
             Q = np.concatenate([Q0, Q])
@@ -742,8 +755,8 @@ class Runtime:
         s = self.style or {}
         kind = s.get("profile", "minjerk")
         v = float(s.get("v_avg", 0.09) or 0.09)
-        return P9.resample(Q, kind=kind if kind in P9.PEAK else "minjerk", split=float(s.get("split", 0.7)),
-                           slow=slow * max(1.0, 0.09 / v))
+        return P9.resample(Q, dq_max=CMD_DQ, kind=kind if kind in P9.PEAK else "minjerk",
+                           split=float(s.get("split", 0.7)), slow=slow * max(1.0, 0.09 / v))
 
     # ------------------------------------------------------------------ gripper events
     def on_grip_cmd(self, action: str, t: float) -> None:
