@@ -391,7 +391,8 @@ class Runtime:
         if gc is not None:
             gc.meta["valid_stats"] = getattr(self, "_vstats", None)
             self._exec_pose(gc, float(c[2]) - float(he[2]))
-            gc.meta.update(obj=k, tested=bool(C.get("tested", False)), n_candidates=int(len(C["w"])),
+            gc.meta.update(obj=k, obj_h=round(2 * float(he[2]), 4), tested=bool(C.get("tested", False)),
+                           n_candidates=int(len(C["w"])),
                            n_valid=int(ok.sum()), curobo=self.curobo, grip=self.grip)
             self._Cw, self._ok, self._margin = Cw, ok, margin
         return gc
@@ -453,15 +454,23 @@ class Runtime:
             idx = np.flatnonzero(m)
             if len(idx):
                 i = int(idx[np.argmax(self._margin[idx])])
-                new = VP.choose({k: (v[[i]] if isinstance(v, np.ndarray) and len(v) == len(Cw["w"]) else v)
-                                 for k, v in Cw.items()}, np.ones(1, bool), self._margin[[i]],
-                                gc.T[:3, 3], self.T_world_base()[:2, 3], 0, len(self.picks), allow_instruct=False)
+                sub = {k: (v[[i]] if isinstance(v, np.ndarray) and len(v) == len(Cw["w"]) else v)
+                       for k, v in Cw.items()}
+                # the fallback keeps the label fields of a first choice: grasped part, category and the visible
+                # grasp-part point from the head image (pilot 10-02: 76 of 427 picks had part None and no point)
+                obs = getattr(self.w, "last_obs", None)
+                cam = obs.cams.get("head") if obs is not None else None
+                depth = (obs.depth or {}).get("head") if obs is not None and getattr(obs, "depth", None) else None
+                new = VP.choose(sub, np.ones(1, bool), self._margin[[i]], gc.T[:3, 3], self.T_world_base()[:2, 3], 0,
+                                len(self.picks), allow_instruct=False, cam=cam, depth=depth, parts=sub.get("part"),
+                                category=gc.meta.get("category") or "", height=float(gc.meta.get("obj_h") or 0.0))
                 if new is None:
                     continue
                 new.idx = i
                 new.meta.update({x: gc.meta.get(x) for x in ("obj", "tested", "n_candidates", "n_valid", "curobo",
                                                            "grip", "valid_set", "label_rule", "rule_step",
-                                                           "approach_reason", "instructed_approach")})
+                                                           "approach_reason", "instructed_approach", "natural_order",
+                                                           "obj_h")})
                 note = (f"{gc.family} approach out of reach -> {new.family}, rot bin {b0} -> "
                         f"{new.meta.get('rot_bin_base')}")
                 return new, note

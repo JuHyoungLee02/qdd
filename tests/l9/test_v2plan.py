@@ -72,6 +72,19 @@ def test_label_point_and_rot_bin_with_camera():
     assert 0 <= m["rot_bin_img"] <= 11 and len(m["valid_set"]) == 5
 
 
+def test_single_candidate_choose_keeps_part_and_point():
+    """rt9.next_fallback re-chooses one candidate: with parts / camera it must keep the part and the visible point."""
+    C, c = _cands()
+    i = 2
+    sub = {k: (v[[i]] if isinstance(v, np.ndarray) and len(v) == 5 else v) for k, v in C.items()}
+    parts = np.array(["body"])
+    depth = np.full((376, 672), 0.6, float)
+    gc = P.choose(sub, np.ones(1, bool), np.ones(1), c, (0.0, 0.0), 0, 0, allow_instruct=False, cam=_cam(),
+                  depth=depth, parts=parts, category="bottle", height=0.2)
+    assert gc is not None and gc.meta["part"] == "body" and gc.meta["label_rule"] == "natural_v1"
+    assert gc.meta["point"] is not None and gc.meta["category"] == "bottle"
+
+
 def _st(tcp, quat, grip_w=0.1, hold=False, obj=None, on=False):
     obj = obj or {"o1": [0.45, -0.2, 0.80], "o2": [0.40, -0.35, 0.76]}
     return {"tcp": tcp, "tcp_quat": quat, "grip_w": grip_w, "obj": obj,
