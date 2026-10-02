@@ -37,7 +37,9 @@ for arm in arms:
     q = qmul([math.cos(-LEAN / 2), 0, math.sin(-LEAN / 2), 0], [math.cos(yaw / 2), 0, 0, math.sin(yaw / 2)])
     offs = [(0.0, 0.0)] + [(dx, dz) for dx in (-0.05, 0.0, 0.05) for dz in (-0.05, 0.0, 0.05) if dx or dz]
     T = [[t[0] + dx, t[1], t[2] + dz] for dx, dz in offs]  # batch: the target + 8 neighbours (first success wins)
-    ik = C.make_ik(profile, arm, num_seeds=64, max_batch_size=len(T))
+    import os
+    ik = C.make_ik(profile, arm, num_seeds=64, max_batch_size=len(T),
+                    self_collision_check=os.environ.get("SELFCOL", "1") == "1")
     tf = C.tool_frame(profile, arm)
     r = ik.solve_pose(GoalToolPose.from_poses({tf: Pose(position=torch.tensor(T, device="cuda", dtype=torch.float32),
                                                           quaternion=torch.tensor([q] * len(T), device="cuda", dtype=torch.float32))},
