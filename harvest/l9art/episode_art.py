@@ -501,7 +501,9 @@ class ArtEpisode:
         P = self._push
         c_now = np.asarray(self.w.env.object_pose(k)[0], float)
         rem = P["dist"] - float((c_now - P["c0"])[:2] @ P["d"][:2])
-        plan = SK.push_plan(c_now, P["half"], float(self.b["tz"]), P["d"], max(0.0, rem), self.ex.gr, self.draw)
+        q_now = self.w.env.object_pose(k)[1]
+        ext = float(np.abs(FX.qmat(q_now).T @ np.asarray(P["d"], float)) @ np.asarray(P["half"], float))  # yaw-aware
+        plan = SK.push_plan(c_now, (ext, ext, P["half"][2]), float(self.b["tz"]), P["d"], max(0.0, rem), self.ex.gr, self.draw)
         plan["goal_xy"] = P["c0"][:2] + P["d"][:2] * P["dist"]
         return plan
 
@@ -735,19 +737,26 @@ class ArtEpisode:
     def push_object(self, lab) -> str:
         ex = self.ex
         k = self.b["tgt"]
-        for _ in range(12):
-            plan = self.push_plan()
-            c_obj = np.asarray(self.w.env.object_pose(k)[0], float)
-            rem = float(np.linalg.norm(plan["goal_xy"] - c_obj[:2]))
-            if rem <= 0.012:
+        from ..sim.scene import OBJ_GEOM
+        he = np.asarray(OBJ_GEOM[k]["half_extents"], float)
+        fw = float(ex.gr.get("finger_t", 0.012))
+        R0 = ex.tcp_T()[:3, :3]
+        z0 = float(ex.tcp_T()[2, 3])
+        goal = self._push["c0"][:2] + self._push["d"][:2] * self._push["dist"]
+        for _ in range(16):  # re-aimed pushes: the hand goes behind the object on the object -> goal line each 2.5 cm
+            c_obj, q_obj = self.w.env.object_pose(k)
+            c_obj = np.asarray(c_obj, float)
+            v = goal - c_obj[:2]
+            rem = float(np.linalg.norm(v))
+            if rem <= 0.010:
                 break
-            T = plan["T_goal"].copy()
-            p0 = ex.tcp_T()[:3, 3]
-            seg = min(0.03, float(np.linalg.norm(T[:3, 3] - p0)))
-            d = T[:3, 3] - p0
-            if np.linalg.norm(d) < 1e-4:
-                break
-            T[:3, 3] = p0 + d / np.linalg.norm(d) * seg
+            dvec = v / rem
+            Ro = FX.qmat(q_obj)
+            d3 = np.array([dvec[0], dvec[1], 0.0])
+            ext = float(np.abs(Ro.T @ d3) @ he)  # the object's extent along the push direction (its yaw)
+            step = min(0.025, rem)
+            hand = c_obj[:2] + dvec * (step - ext - fw - 0.004)
+            T = SK.T_pose(R0, np.array([hand[0], hand[1], z0]))
             Q = ex.plan_line(T, check=False, step_m=0.006)
             if Q is None:
                 self.bump("push_unreachable")

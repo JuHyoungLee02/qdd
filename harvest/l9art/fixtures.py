@@ -300,7 +300,8 @@ def _add_knob(rng, spec, i, face, y, z_rel, words):
     spec["handles"][ln] = {"type": "knob", "joint": jn, "link": ln, "gc": _r(ridge), "fn": _r(out),
                            "ridge_along": _r(R @ np.array([0, 1.0, 0])), "length": round(dia * 0.95, 4), "ridge_h": round(rh, 4),
                            "thick": round(rw, 4), "mark": _r(mark), "words": f"{cname} {words}".strip(),
-                           "face": face, "color": cname}
+                           "face": face, "color": cname, "body_gc": _r(R @ np.array([-hk / 2, 0, 0])), "body_h": round(hk, 4),
+                           "dia": round(dia * 0.92, 4)}
 
 
 def _add_button(rng, spec, i, face, y, z_rel, words, switch=False):
@@ -431,7 +432,7 @@ def handle_frame(spec: dict, link: str, T_WF, q: dict | None = None) -> dict:
     R = T[:3, :3]
     out = {"gc": T[:3, :3] @ np.asarray(h["gc"], float) + T[:3, 3], "fn": R @ np.asarray(h["fn"], float),
            "type": h["type"]}
-    for k in ("length", "thick", "standoff", "ridge_h"):
+    for k in ("length", "thick", "standoff", "ridge_h", "body_h", "dia"):
         if h.get(k) is not None:
             out[k] = float(h[k])
     if h.get("along") in ("y", "z"):
@@ -440,6 +441,8 @@ def handle_frame(spec: dict, link: str, T_WF, q: dict | None = None) -> dict:
         out["bar"] = R @ np.asarray(h["ridge_along"], float)
     if h.get("mark") is not None:
         out["mark"] = R @ np.asarray(h["mark"], float) + T[:3, 3]
+    if h.get("body_gc") is not None:
+        out["body_gc"] = R @ np.asarray(h["body_gc"], float) + T[:3, 3]
     return out
 
 

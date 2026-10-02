@@ -94,10 +94,12 @@ def handle_grasp(hf: dict, gr: dict, draw: dict) -> dict:
         c = np.cross(bar, a)
         if np.linalg.norm(c) < 1e-6:
             c = np.cross(up, a)
-    elif typ == "knob":  # pinch across the ridge, the pads' inner edge 3 mm above the knob body (smoke 10-02: the
-        c = np.cross(bar, a)  # pads sat on the body, the closed gap stayed 1.8 cm and the turn slipped)
-        off = max(0.0, float(gr.get("pad_len", 0.04)) / 2 - float(hf.get("ridge_h", 0.02)) / 2 + 0.003)  # pad inner edge 3 mm above the ridge base (was 3 mm into the body)
-        p = p + fn * off
+    elif typ == "knob":  # pinch the knob BODY across its diameter, closing across the fin (pilot 10-02: pinching the
+        c = np.cross(bar, a)  # 1.2 cm fin closed at 2.3-2.9 cm and the turn stalled at 7-42 deg in 8 of 12 episodes)
+        if hf.get("body_gc") is not None:
+            tip_beyond_pad = tip_offset(gr) - pad_offset(gr)
+            off = max(0.0, tip_beyond_pad + 0.003 - float(hf.get("body_h", 0.02)) / 2)  # fingertips clear the panel
+            p = np.asarray(hf["body_gc"], float) + fn * off
     elif typ == "knob_pull":  # round cap: any closing direction
         ref = np.cross(up, a) if abs(a @ up) < 0.9 else np.array([0.0, 1.0, 0.0])
         c = _tilt(ref, a, draw["knob_roll"])
@@ -109,6 +111,8 @@ def handle_grasp(hf: dict, gr: dict, draw: dict) -> dict:
     R = frame_of(a, c)
     th = float(hf.get("thick", 0.012))
     open_w = float(min(gr["max_open"], th + 0.03 + 0.01 * abs(draw["u"])))
+    if typ == "knob" and hf.get("dia"):
+        open_w = float(min(gr["max_open"], float(hf["dia"]) + 0.025))
     pt = p - a * pad_offset(gr)  # TCP so that the PAD CENTRE sits on the handle (AI Worker pads are 0.7-2.7 cm beyond its TCP)
     T = T_pose(R, pt)
     T_pre = T_pose(R, pt + draw["standoff"] * R[:, 2])  # back along -a (= +z_G)
@@ -164,11 +168,11 @@ def push_plan(obj_c, half, tz: float, direction, dist: float, gr: dict, draw: di
     d = d / np.linalg.norm(d)
     ext = float(abs(d[0]) * half[0] + abs(d[1]) * half[1])
     a = np.array([0.0, 0.0, -1.0])
-    a = _tilt(a, np.cross(d, [0, 0, 1.0]), 0.5 * draw["pitch"])
+    # straight-down hand (smoke: a tilted paddle tipped a box pushed away from the robot)
     c = np.array([-d[1], d[0], 0.0])  # closing axis across the push direction: the two fingers side by side
     R = frame_of(a, c)
     fw = float(gr.get("finger_t", 0.012))
-    z = tz + 0.025 + tip_offset(gr)  # fingertips 2.5 cm over the table (smoke 10-02: 1.2 cm dragged on it, 0.07 rad jump)
+    z = tz + 0.015 + tip_offset(gr)  # fingertips 1.5 cm over the table
     start = np.asarray(obj_c, float)[:2] - d[:2] * (ext + fw + 0.012)
     goal_xy = np.asarray(obj_c, float)[:2] + d[:2] * dist
     end = goal_xy - d[:2] * (ext + fw + 0.004)

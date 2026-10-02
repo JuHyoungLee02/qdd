@@ -189,7 +189,7 @@ def test_collect_and_summarize_fail_group(tmp_path):
     assert s["diversity"]["needs_approach_diversity"] is True
     assert s["diversity"]["n_approach_families"] == 1  # only "front" used in default_rows()
     assert s["verdict"]["pass"] is False
-    assert any("success_rate" in r for r in s["verdict"]["reasons"])
+    assert any("usable_rate" in r for r in s["verdict"]["reasons"])
     assert any("approach_families" in r for r in s["verdict"]["reasons"])
 
 

@@ -23,7 +23,8 @@ MAX_DQ = 0.04
 MAX_DQ_OK_SHARE = 0.99
 LABEL_MIN = 0.95
 MIN_APPROACH_FAMILIES = 2
-GRASP_SKILLS = ("pull_axis", "rotate", "pick")  # stages that grasp a part -> need approach-family diversity
+GRASP_SKILLS = ("pull_axis", "pick")  # knobs: axis-aligned pinch is the natural grasp -> rot-bin diversity instead
+MIN_ROT_BINS_ROTATE = 3  # stages that grasp a part -> need approach-family diversity
 
 
 # ---------------------------------------------------------------- loading
@@ -75,7 +76,9 @@ def wilson(k: int, n: int, z: float = 1.96) -> tuple:
 def _group_stats(eps: list) -> dict:
     n = len(eps)
     succ = sum(1 for _, m, _ in eps if m.get("success"))
+    usable = sum(1 for _, m, _ in eps if m.get("success") and float(m.get("max_dq_rad") or 0.0) <= MAX_DQ)
     p, lo, hi = wilson(succ, n)
+    pu, ulo, uhi = wilson(usable, n)
     end_reason = Counter(m.get("end_reason") for _, m, _ in eps)
     fail_counts = Counter()
     for _, m, _ in eps:
@@ -98,7 +101,7 @@ def _group_stats(eps: list) -> dict:
             draw_yaw.append(float(dw["yaw"]))
         for r in labels:
             cmd = r.get("command") or {}
-            if cmd.get("mode") != "point":
+            if cmd.get("mode") != "point" or cmd.get("height") == "lift":  # lift has no point by design
                 continue
             n_point += 1
             n_point_ok += cmd.get("point_2d") is not None
@@ -118,6 +121,8 @@ def _group_stats(eps: list) -> dict:
 
     needs_approach_diversity = bool(skills_v3 & set(GRASP_SKILLS))
     return {"n_episodes": n, "n_success": succ, "success_rate": p, "success_ci95": [lo, hi],
+            "n_usable": usable, "usable_rate": pu, "usable_ci95": [ulo, uhi],
+            "needs_rot_diversity": "rotate" in skills_v3,
             "end_reason": dict(end_reason), "fail_counts": dict(fail_counts),
             "max_dq_rad": {"max": round(max(dq), 4) if dq else None, "n_over_0.04": dq_over,
                            "ok_share": dq_ok_share, "n": len(dq)},
@@ -134,10 +139,10 @@ def verdict_of(stats: dict, min_succ: float) -> dict:
     if stats["n_episodes"] == 0:
         fails.append("no_episodes")
     else:
-        if stats["success_rate"] < min_succ:
-            fails.append(f"success_rate {stats['success_rate']} < {min_succ}")
-        if stats["max_dq_rad"]["ok_share"] < MAX_DQ_OK_SHARE:
-            fails.append(f"max_dq_rad ok_share {stats['max_dq_rad']['ok_share']} < {MAX_DQ_OK_SHARE}")
+        if stats["usable_rate"] < min_succ:  # usable = success and measured joint step <= 0.04 (build keeps only these)
+            fails.append(f"usable_rate {stats['usable_rate']} < {min_succ}")
+        if stats.get("needs_rot_diversity") and len(stats["diversity"]["rot_bins_used"]) < MIN_ROT_BINS_ROTATE:
+            fails.append(f"rot_bins {len(stats['diversity']['rot_bins_used'])} < {MIN_ROT_BINS_ROTATE}")
         if stats["label_presence"]["overall"] < LABEL_MIN:
             fails.append(f"label_presence {stats['label_presence']['overall']} < {LABEL_MIN}")
         if stats["diversity"]["needs_approach_diversity"] and stats["diversity"]["n_approach_families"] < MIN_APPROACH_FAMILIES:
@@ -158,12 +163,12 @@ def summarize(groups: dict, min_succ: float = MIN_SUCC) -> dict:
 
 # ---------------------------------------------------------------- markdown
 def to_markdown(res: dict) -> str:
-    rows = ["| def | robot | n | skipped | success | ci95 | dq_ok_share | label | families | verdict |",
-            "|---|---|---|---|---|---|---|---|---|---|"]
+    rows = ["| def | robot | n | skipped | success | usable | ci95 (usable) | dq_ok_share | label | families | verdict |",
+            "|---|---|---|---|---|---|---|---|---|---|---|"]
     for key, s in res.items():
-        lo, hi = s["success_ci95"]
+        lo, hi = s["usable_ci95"]
         rows.append(f"| {s['task_id']} | {s['robot']} | {s['n_episodes']} | {s['n_skipped']} | "
-                    f"{s['success_rate']} | [{lo}, {hi}] | {s['max_dq_rad']['ok_share']} | "
+                    f"{s['success_rate']} | {s['usable_rate']} | [{lo}, {hi}] | {s['max_dq_rad']['ok_share']} | "
                     f"{s['label_presence']['overall']} | {s['diversity']['n_approach_families']} | "
                     f"{'PASS' if s['verdict']['pass'] else 'FAIL: ' + '; '.join(s['verdict']['reasons'])} |")
     return "\n".join(rows) + "\n"

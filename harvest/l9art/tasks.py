@@ -35,7 +35,7 @@ add("drawer_open_half", "drawer", [("pull", "H", ("share", 0.5))],
     judge={"band": (0.35, 0.65)})
 add("drawer_close", "drawer", [("push", "H", ("share", 0.0))],
     ("Close the {H}.", "Push the {H} shut.", "Push the open {H} closed."),
-    start={"H": ("share", (0.55, 0.95))}, judge={"max_share": 0.10})
+    start={"H": ("share", (0.40, 0.75))}, judge={"max_share": 0.10})
 add("door_open", "door", [("pull", "H", ("share", 0.75))],
     ("Open the {H}.", "Swing the {H} open.", "Pull the {H} of the {F} open."),
     judge={"min_share": 0.62})

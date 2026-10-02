@@ -56,6 +56,9 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool) -> tuple:
     if train and not success:
         c["episode_failed_dropped"] += 1
         return [], c
+    if train and float(meta.get("max_dq_rad") or 0.0) > 0.04:  # measured joint jump (contact): not a training episode
+        c["episode_jump_dropped"] += 1
+        return [], c
     out = []
     for line in open(labels_path, encoding="utf-8"):
         line = line.strip()
