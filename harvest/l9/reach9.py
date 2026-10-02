@@ -23,6 +23,8 @@ def band(arm: str) -> tuple:
 
 def reach_points(rm: ReachModel, arm: str, X, Y, top: float, z_need=Z_NEED) -> np.ndarray:
     """bool array: the arm reaches (x, y) over the truth plan's z band [top + z_need[0], top + z_need[1]]."""
+    if hasattr(rm, "reach_xy"):  # a robot's own reach model (hand9.scene_model plug-in, e.g. g1reach9.G1Reach)
+        return rm.reach_xy(arm, X, Y, top)
     X = np.asarray(X, float).ravel()
     Y = np.asarray(Y, float).ravel() * A.side(arm)  # right-arm frame
     C = rm._col_ok(top + z_need[0], top + z_need[1])  # [y, x]
@@ -33,6 +35,7 @@ def reach_points(rm: ReachModel, arm: str, X, Y, top: float, z_need=Z_NEED) -> n
 
 def visible_points(rm: ReachModel, X, Y, z: float, h: float = OBJ_H, margin: float = VIEW_MARGIN_PX) -> np.ndarray:
     X, Y = np.asarray(X, float).ravel(), np.asarray(Y, float).ravel()
+    margin = float(getattr(rm, "margin_px", margin))  # a robot's own model may carry its own camera gate margin
     if rm.cam is None:
         return np.ones(X.shape, bool)
     c = rm.cam

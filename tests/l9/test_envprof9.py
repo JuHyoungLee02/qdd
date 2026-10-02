@@ -70,3 +70,20 @@ def test_yaw_grid_form():
     p = _p(hand={"yaw_deg_ok": [0, 30, 60, 90, 300, 330], "yaw_deg_bad": [240, 270]})
     assert E.validate(p) == []
     assert E.yaw_ok(p, 40) and not E.yaw_ok(p, 200) and not E.yaw_ok(p, 250)
+
+
+def make_model(seed, arm, profile=None):  # a stand-in robot scene model factory ("module:factory" in a profile)
+    return ("own", seed, arm, profile["profile"] if profile else None)
+
+
+def test_scene_model_plugin(tmp_path, monkeypatch):
+    from harvest.l9 import hand9 as H
+    monkeypatch.setattr(E, "DIR", str(tmp_path))
+    E._CACHE.clear()
+    assert H.scene_model("toy", default="aiw", seed=1, arm="right") == "aiw"  # no profile, nothing registered
+    (tmp_path / "toy.json").write_text(json.dumps(_p(scene_model="tests.l9.test_envprof9:make_model")))
+    E._CACHE.clear()
+    assert H.scene_model("toy", default="aiw", seed=3, arm="left") == ("own", 3, "left", "toy")
+    monkeypatch.setitem(H.SCENE_MODELS, "toy", lambda **kw: "registered")
+    assert H.scene_model("toy", default="aiw", seed=3, arm="left") == "registered"
+    E._CACHE.clear()

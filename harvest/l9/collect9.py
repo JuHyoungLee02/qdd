@@ -13,6 +13,7 @@ import os
 
 import numpy as np
 
+from . import envprof9 as E9
 from . import scene9 as S9
 from . import task9 as T9
 from . import vary9 as V
@@ -37,6 +38,9 @@ def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 20, world=None) ->
             if row.get("reach") == "base":  # diagnosis rows: the L8S reach probe / default lift
                 from . import reach9 as R9
                 rmx = R9.load_base()
+            if E9.enabled():  # L9 env profile (opt-in): the robot's own reach / camera model, when it has one
+                from . import hand9 as H9
+                rmx = H9.scene_model(row.get("robot") or "ffw_sg2", default=rmx, seed=sd, arm=row["arm"])
             sc = S9.sample(row["family"], row["rule"], sd, row["arm"], rmx,
                            lifts=[S9.LIFT_DEFAULT] if row.get("lift_mode") == "default" else None,
                            robot=row.get("robot"))  # L9v2-R1: r1pro may use its own reach band (scene9.usable)
@@ -49,7 +53,13 @@ def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 20, world=None) ->
             last = "definition does not fit the scene"
             continue
         robot = row.get("robot") or "ffw_sg2"
-        if robot in ("g1", "r1pro"):  # body reach band (world9._place_v2 skips the scene): draw another scene instead
+        prof = E9.active(robot)
+        if prof is not None and "surface_z_m" in prof:  # env profile (opt-in): every robot's own surface band
+            lo, hi = prof["surface_z_m"]
+            if not lo <= float(ep["table_z"]) <= hi:
+                last = f"{robot}: surface {float(ep['table_z']):.2f} m outside its profile band [{lo}, {hi}]"
+                continue
+        elif robot in ("g1", "r1pro"):  # body reach band (world9._place_v2 skips the scene): draw another scene instead
             from . import robot9 as RB  # of losing the row (G1 pilot 10-02: 58 of 60 rows skipped)
             ok = RB.g1_surface_ok(ep["table_z"]) if robot == "g1" else RB.r1_surface_ok(ep["table_z"])
             if not ok:

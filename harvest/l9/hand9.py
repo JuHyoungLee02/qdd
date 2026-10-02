@@ -69,8 +69,24 @@ def register_scene_model(profile: str, factory) -> None:
     SCENE_MODELS[profile] = factory
 
 
+def _import(spec: str):
+    import importlib
+    mod, name = spec.split(":")
+    return getattr(importlib.import_module(mod), name)
+
+
 def scene_model(profile: str, default=None, **kw):
+    """The robot's own reach / camera model for scene placement: a registered factory, else the env profile's
+    "scene_model" ("module:factory"), else `default` (the AI Worker ReachModel). Factory contract:
+    factory(seed=int, arm=str, profile=dict | None) -> object with the reach9 ReachModel duck type (at_lift / cam)
+    or reach_xy(arm, X, Y, top) [+ margin_px] (reach9.reach_points / visible_points dispatch on it)."""
     f = SCENE_MODELS.get(profile)
+    if f is None:
+        from . import envprof9 as E
+        p = E.load(profile)
+        if p and p.get("scene_model"):
+            f = _import(p["scene_model"])
+            kw.setdefault("profile", p)
     return f(**kw) if f is not None else default
 
 
