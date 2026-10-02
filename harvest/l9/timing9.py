@@ -33,6 +33,8 @@ def install(world) -> None:
     rt = getattr(world, "rt", None)
     if rt is not None:
         _wrap(type(rt.planner), "_call", "curobo")
+        for m in ("pose", "ik", "line", "world", "attach", "detach", "grasp"):
+            _wrap(type(rt.planner), m, f"curobo_{m}")
     from ..astra_solo import pt_episode as PE
     _wrap(PE.PtEpisode if hasattr(PE, "PtEpisode") else PE, "_save_call", "write")
     T["t0"] = time.perf_counter()

@@ -13,10 +13,14 @@ frame is the grasp frame G of grasp9 (z_G = -approach), so plan_grasp's approach
 from __future__ import annotations
 
 import math
+import os
 
 import numpy as np
 
 DQ_MAX = 0.04
+# (IK seeds, trajopt seeds, plan attempts); L9_CUROBO="ik,trajopt,attempts" overrides (speed A/B, 10-02 profile:
+# cuRobo was 47 % of the lane wall time)
+SEEDS = tuple(int(x) for x in os.environ.get("L9_CUROBO", "64,12,8").split(","))
 IK_BATCH = 128
 CUROBO_MIN = (0, 8, 0)
 
@@ -108,7 +112,7 @@ class Planner9:
         cp = (lambda: copy.deepcopy(self._robot_cfg)) if isinstance(robot_cfg, dict) else (lambda: robot_cfg)
         cfg = MotionPlannerCfg.create(robot=cp(), scene_model={"cuboid": {"_floor": {
             "dims": [0.1, 0.1, 0.01], "pose": [5.0, 5.0, -5.0, 1, 0, 0, 0]}}},
-            collision_cache={"cuboid": collision_cache}, max_goalset=1, num_ik_seeds=64, num_trajopt_seeds=12,
+            collision_cache={"cuboid": collision_cache}, max_goalset=1, num_ik_seeds=SEEDS[0], num_trajopt_seeds=SEEDS[1],
             self_collision_check=self_collision)
         self.mp = MotionPlanner(cfg)
 
@@ -181,7 +185,7 @@ class Planner9:
         refuse every attempt ('Start or End state in collision'; L9v2-DIAG 1: the preroll pose touches shelf decor,
         the arm rests on an object it just placed): then a short straight TCP escape (3 / 6 / 10 cm up, back along
         the tool z, towards the base, down, sideways) to a collision-free state and the plan from there."""
-        r = self.mp.plan_pose(self._goal(T_base), self._js(q), max_attempts=8)
+        r = self.mp.plan_pose(self._goal(T_base), self._js(q), max_attempts=SEEDS[2])
         if r is not None and bool(r.success.any()):
             return self._pos(r.get_interpolated_plan())
         if not escape or not self.start_hits(q):
@@ -189,7 +193,7 @@ class Planner9:
         E = self.escape(q)
         if E is None:
             return None
-        r = self.mp.plan_pose(self._goal(T_base), self._js(E[-1]), max_attempts=8)
+        r = self.mp.plan_pose(self._goal(T_base), self._js(E[-1]), max_attempts=SEEDS[2])
         if r is None or not bool(r.success.any()):
             return None
         self.n_escape = getattr(self, "n_escape", 0) + 1
