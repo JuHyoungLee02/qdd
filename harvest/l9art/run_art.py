@@ -14,6 +14,7 @@ import time
 import numpy as np
 
 OUT = "/data/harvest/l9v2/art_pilot/collect"
+SCENE_TRIES = 3  # an episode skips only after 3 scene draws fail the visibility / IK checks
 
 
 def ep_dir(out, r):
@@ -191,29 +192,38 @@ def main(argv=None):
                 prog0 = TK.instantiate(r["def"], spec, seed)
                 objs = pick_objects(pool, prog0, seed, robot)
                 prog = TK.instantiate(r["def"], spec, seed, obj_name=next(iter(objs.values()))["name"])
-                built = SA.build(seed, robot, arm, spec, prog, objs)
-                sc, ep = built["sc"], built["ep"]
-                T = np.asarray(built["fixture"]["T"]) if built["fixture"] else None
-                W9._ART_GHOST = WA.ghost_part(spec, T) if spec is not None else None
-                register_task(ep)
-                light = V.pick_light_family(seed, sc["family"])
-                head = SA.head_aim(seed, built["p_int"], sc["lift"]) if robot == "ffw_sg2" else V.head_pose(seed)
-                world.prepare(sc, ep, light, head, seed)
-                WA.stage_fixture(world, fam if spec is not None else None, T, prog["start"])
-                world.reset(seed)
-                ex.reset()
-                fx_state = WA.settle_fixture(world, prog["start"]) if spec is not None else {}
-                if spec is not None and fx_state.get("root_err_m", 0) > 0.01:
-                    raise SkipScene(f"fixture root off by {fx_state['root_err_m']:.3f} m")
-                os.makedirs(od, exist_ok=True)
-                epi = EA.ArtEpisode(world, ex, r, built, spec, prog, od, p=a.p, video=a.video)
-                obs = world.observe(depth=False)
-                why = epi.unseen(obs.cams["head"])
-                if why:
-                    raise SkipScene(f"outside the head image: {why}")
-                why = epi.precheck()
-                if why:
-                    raise SkipScene(f"IK precheck: {why}")
+                why_all = []
+                for tr in range(SCENE_TRIES):  # redraw the scene (placement / head) when a check fails
+                    try:
+                        built = SA.build(seed + 1000003 * tr, robot, arm, spec, prog, objs)
+                        sc, ep = built["sc"], built["ep"]
+                        T = np.asarray(built["fixture"]["T"]) if built["fixture"] else None
+                        W9._ART_GHOST = WA.ghost_part(spec, T) if spec is not None else None
+                        register_task(ep)
+                        light = V.pick_light_family(seed, sc["family"])
+                        sd = seed + 1000003 * tr
+                        head = SA.head_aim(sd, built["p_int"], sc["lift"]) if robot == "ffw_sg2" else V.head_pose(sd)
+                        world.prepare(sc, ep, light, head, sd)
+                        WA.stage_fixture(world, fam if spec is not None else None, T, prog["start"])
+                        world.reset(sd)
+                        ex.reset()
+                        fx_state = WA.settle_fixture(world, prog["start"]) if spec is not None else {}
+                        if spec is not None and fx_state.get("root_err_m", 0) > 0.01:
+                            raise SkipScene(f"fixture root off by {fx_state['root_err_m']:.3f} m")
+                        os.makedirs(od, exist_ok=True)
+                        epi = EA.ArtEpisode(world, ex, r, built, spec, prog, od, p=a.p, video=a.video)
+                        obs = world.observe(depth=False)
+                        why = epi.unseen(obs.cams["head"])
+                        if why:
+                            raise SkipScene(f"outside the head image: {why}")
+                        why = epi.precheck()
+                        if why:
+                            raise SkipScene(f"IK precheck: {why}")
+                        break
+                    except SkipScene as e1:
+                        why_all.append(str(e1)[:80])
+                        if tr == SCENE_TRIES - 1:
+                            raise SkipScene(" | ".join(why_all))
                 res = epi.run()
             except (SkipScene, ValueError, KeyError) as e:
                 os.makedirs(od, exist_ok=True)

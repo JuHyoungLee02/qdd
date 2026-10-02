@@ -31,14 +31,17 @@ def T_WF(x, y, z, yaw) -> np.ndarray:
     return FX.T_of(FX.rot_axis([0, 0, 1], yaw), (x, y, z))
 
 
-def place_fixture(spec: dict, prog: dict, arm: str, tz: float, rng) -> dict:
+ROBOT_DX = {"franka_mast": 0.08}  # [가설] Franka on its stand: the work band sits further out (smoke F: 8 of 17 IK-precheck skips)
+
+
+def place_fixture(spec: dict, prog: dict, arm: str, tz: float, rng, robot: str = "ffw_sg2") -> dict:
     """Fixture pose: the program's first part in the arm band, the face at FACE_X; -> {T, yaw, pos}."""
     yaw = float(rng.uniform(-YAW, YAW))
     fam = spec["family"]
     ln = next((s["link"] for s in prog["stages"] if s.get("link")), None) or next(iter(spec["handles"]))
     h = spec["handles"][ln]
     top = h.get("face") == "top"
-    x_face = float(rng.uniform(*(TOP_FACE_X if top else FACE_X[fam])))
+    x_face = float(rng.uniform(*(TOP_FACE_X if top else FACE_X[fam]))) + ROBOT_DX.get(robot, 0.0)
     hy = float((FX.link_T(spec, ln)[:3, :3] @ np.asarray(h["gc"]) + FX.link_T(spec, ln)[:3, 3])[1])
     yb = float(rng.uniform(*BAND_Y)) * side(arm)
     y_f = yb - hy * math.cos(yaw)
@@ -70,9 +73,10 @@ def path_points(spec: dict, prog: dict, T, n: int = 6) -> np.ndarray:
     return np.asarray(pts)
 
 
-def in_ws(pts, arm: str, tz: float) -> bool:
+def in_ws(pts, arm: str, tz: float, robot: str = "ffw_sg2") -> bool:
+    dx = ROBOT_DX.get(robot, 0.0)
     y = pts[:, 1] * side(arm)
-    return bool((pts[:, 0] >= WS_X[0]).all() and (pts[:, 0] <= WS_X[1]).all() and (y >= WS_Y[0]).all()
+    return bool((pts[:, 0] >= WS_X[0] + dx).all() and (pts[:, 0] <= WS_X[1] + dx).all() and (y >= WS_Y[0]).all()
                 and (y <= WS_Y[1]).all() and (pts[:, 2] >= tz + WS_DZ[0]).all() and (pts[:, 2] <= tz + WS_DZ[1]).all())
 
 
@@ -121,8 +125,8 @@ def build(seed: int, robot: str, arm: str, spec: dict | None, prog: dict, objs: 
     fx = None
     if spec is not None:  # the whole handle path (start -> goal of every stage) inside the arm's box
         for _ in range(40):
-            fx = place_fixture(spec, prog, arm, tz, rng)
-            if in_ws(path_points(spec, prog, np.asarray(fx["T"])), arm, tz):
+            fx = place_fixture(spec, prog, arm, tz, rng, robot)
+            if in_ws(path_points(spec, prog, np.asarray(fx["T"])), arm, tz, robot):
                 break
         else:
             raise ValueError("no placement keeps the handle path inside the arm's workspace")

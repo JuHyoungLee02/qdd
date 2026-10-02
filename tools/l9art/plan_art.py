@@ -48,13 +48,17 @@ def main(argv=None):
     ap.add_argument("--per-job", type=int, default=12)
     ap.add_argument("--split", default="train")
     ap.add_argument("--tag", default="art")
+    ap.add_argument("--pod-plan", default=None, help="also write <out>_lane_jobs.txt for tools/l9/lane.sh: \"--plan <pod-plan> --job J\" per line")
     a = ap.parse_args(argv)
     rows = plan(a.defs.split(","), a.n, a.robots.split(","), a.seed0, a.per_job, a.split, a.tag)
     json.dump(rows, open(a.out, "w"), indent=0)
     jobs = sorted({r["job"] for r in rows})
     print(json.dumps({"rows": len(rows), "jobs": len(jobs)}))
-    with open(os.path.splitext(a.out)[0] + "_jobs.txt", "w") as f:
+    with open(os.path.splitext(a.out)[0] + "_jobs.txt", "w", newline="\n") as f:  # LF: pod lanes read it
         f.write("\n".join(jobs) + "\n")
+    if a.pod_plan:  # lane.sh appends "--out <run dir>/collect" itself
+        with open(os.path.splitext(a.out)[0] + "_lane_jobs.txt", "w", newline="\n") as f:
+            f.write("".join(f"--plan {a.pod_plan} --job {j}\n" for j in jobs))
 
 
 if __name__ == "__main__":
