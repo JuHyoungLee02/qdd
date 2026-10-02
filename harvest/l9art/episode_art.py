@@ -710,6 +710,8 @@ class ArtEpisode:
                 return f"pressed {peak * 1000:.1f} mm of {J['hi'] * 1000:.0f} mm and backed off"
             self.bump("press_short")
             self.sub = "above"
+            self.events.append({"call": self.calls, "press_move": {k: r.get(k) for k in ("ok", "why", "err_mm")},
+                                "tcp_err_mm": round(float(np.linalg.norm(ex.tcp_T()[:3, 3] - np.asarray(lab["T"])[:3, 3])) * 1e3, 1)})
             return f"pressed only {peak * 1000:.1f} mm of {J['hi'] * 1000:.0f} mm"
         raise ValueError(sub)
 
