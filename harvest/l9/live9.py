@@ -27,10 +27,18 @@ License weights, internal use, licence cleared 2026-10-02) -- integrating it is 
 from __future__ import annotations
 
 import math
+import os
 
 import numpy as np
 
 from . import grasp9 as G
+
+_DEBUG = bool(os.environ.get("LIVE_DEBUG"))
+
+
+def _dbg(msg: str) -> None:
+    if _DEBUG:
+        print(f"LIVE9_DEBUG {msg}", flush=True)
 
 CROP_R = 0.09           # crop radius (m) around the back-projected point: bigger than any pickable object's half-diag
 NORMAL_K = 12           # neighbours for the local-PCA normal estimate
@@ -197,6 +205,7 @@ def sample_grasps_cloud(P: np.ndarray, N: np.ndarray, grip: str, approach: str, 
     (every pair passes the rot test) when cam is None, e.g. a synthetic/offline test with no camera."""
     gr = G.gripper(grip)
     pr = antipodal_pairs_cloud(P, N, gr, seed=seed)
+    _dbg(f"sample_grasps_cloud: {len(P)} pts -> {len(pr['w'])} antipodal pairs (max_open={gr['max_open']:.3f})")
     if not len(pr["w"]):
         return _empty_grasps(gr)
     cos_c = math.cos(math.atan(G.MU))
@@ -205,6 +214,7 @@ def sample_grasps_cloud(P: np.ndarray, N: np.ndarray, grip: str, approach: str, 
     Kc = None
     if cam is not None:
         Kc = np.array([[cam.fx, 0.0, cam.cx], [0.0, cam.fy, cam.cy], [0.0, 0.0, 1.0]])
+    n_rot_ok = n_fam_ok = n_support_ok = n_collide_ok = 0
     T_l, c1, c2, w_l, a_l, pre, sc = [], [], [], [], [], [], []
     for p, q, w, ang in zip(pr["p"], pr["q"], pr["w"], pr["ang"]):
         c = (q - p) / w
@@ -215,6 +225,7 @@ def sample_grasps_cloud(P: np.ndarray, N: np.ndarray, grip: str, approach: str, 
             _, rb_img = G.rot_img(m, c, Kc, np.asarray(cam.R, float), np.asarray(cam.t, float))
             if min((rb_img - rot_bin) % 12, (rot_bin - rb_img) % 12) > rot_win:
                 continue
+        n_rot_ok += 1
         u = np.cross(c, [0.0, 0.0, 1.0])
         if np.linalg.norm(u) < 1e-6:
             u = np.cross(c, [1.0, 0.0, 0.0])
@@ -225,6 +236,7 @@ def sample_grasps_cloud(P: np.ndarray, N: np.ndarray, grip: str, approach: str, 
         keep = (fam == approach) & (A[:, 2] <= G.BELOW_Z)
         if not keep.any():
             continue
+        n_fam_ok += 1
         open_w = float(min(w + rng.uniform(*G.PRE_OPEN), gr["max_open"]))
         bx_low = G.boxes(gr, open_w)
         bx = G.boxes(gr, max(open_w, w + 0.002), G.STANDOFF)
@@ -235,11 +247,13 @@ def sample_grasps_cloud(P: np.ndarray, N: np.ndarray, grip: str, approach: str, 
             T[:3, :3], T[:3, 3] = R, m
             if G._lowest(T, bx_low) < support_z + G.SUPPORT_CLEAR:
                 continue
+            n_support_ok += 1
             rel = P - m
             if G.hits_boxes(rel @ R, bx):
                 continue
             if extra_obstacles is not None and _hits_extra(T, bx, extra_obstacles):
                 continue
+            n_collide_ok += 1
             T_l.append(T)
             c1.append(p)
             c2.append(q)
@@ -247,6 +261,8 @@ def sample_grasps_cloud(P: np.ndarray, N: np.ndarray, grip: str, approach: str, 
             a_l.append(a)
             pre.append(open_w)
             sc.append(max(cone, 0.0))
+    _dbg(f"sample_grasps_cloud: rot_ok={n_rot_ok} fam_ok(pairs)={n_fam_ok} support_ok(angles)={n_support_ok} "
+        f"collide_ok={n_collide_ok} -> {len(T_l)} candidates")
     K = len(T_l)
     out = {"T": np.asarray(T_l).reshape(K, 4, 4), "c1": np.asarray(c1).reshape(K, 3),
            "c2": np.asarray(c2).reshape(K, 3), "w": np.asarray(w_l), "a": np.asarray(a_l).reshape(K, 3),
