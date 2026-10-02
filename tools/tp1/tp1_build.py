@@ -11,6 +11,7 @@ import glob
 import hashlib
 import json
 import os
+import re
 import sys
 from collections import Counter
 
@@ -33,8 +34,9 @@ def gp2_holdout(task_id: str) -> bool:  # the E-GP2 definition hash (sha256("gp2
 def select(out, roots):
     """change 1: held-out DEFINITIONS = the definitions of collect/holdout episodes + the E-GP2 hash definitions; every
     eligible episode of those definitions (either folder) is evaluated, none is trained on."""
+    from harvest.l9 import alloc9 as AL
     from harvest.l9 import specgate9 as SG
-    ho_defs = set()
+    ho_defs = set(AL.HOLDOUT_FROZEN)  # change 3: the owner's frozen hold-out definitions as well
     for root in roots:
         for m in glob.glob(os.path.join(root, "holdout", "*", "*", "meta.json")):
             try:
@@ -86,11 +88,22 @@ def rows(eps_path, out, split, part):
     eps = eps[k::n]
     tr = split == "train"
     c = B9.build([e["dir"] for e in eps], out, "l9train", f"l9tp_{split}.part{k:02d}", train=tr, camera_line=False,
-                 seed=0, slots=True, third_person=tr)  # seed 0 = build_v2 (slot draws keyed by row id + seed)
+                 seed=0, slots=True, third_person=True)  # seed 0 = build_v2 (slot draws keyed by row id + seed)
+    # change 3: the hold-out build also makes its third-person rows (directional third-person eval subset)
     print(json.dumps({x: v for x, v in c.items() if x != "path"}))
 
 
+DIR_WORDS = re.compile(r"\b(left|right|front|behind)\b", re.I)
+
+
+def instruction_of(row):
+    ep = os.path.dirname(os.path.dirname(row["call_dir"]))
+    return json.load(open(os.path.join(ep, "meta.json"))).get("instruction") or ""
+
+
 def merge(out, nt, ne):
+    from harvest.l9 import assets9 as A9
+    from harvest.l9 import run9 as RN
     from harvest.l9 import specgate9 as SG
     from harvest.l9 import views9 as V
 
@@ -102,14 +115,20 @@ def merge(out, nt, ne):
     ego = cat([os.path.join(out, f"l9tp_train.part{k:02d}.jsonl") for k in range(nt)])
     tp = cat([os.path.join(out, f"l9tp_train.part{k:02d}_third_person.jsonl") for k in range(nt)])
     ev = cat([os.path.join(out, f"l9tp_eval.part{k:02d}.jsonl") for k in range(ne)])
-    files = {"train_off.jsonl": ego, "train_on.jsonl": ego + tp, "l9_eval_off.jsonl": ev, "l9_eval_on.jsonl": ev}
+    evtp = [json.loads(x) for k in range(ne)
+            for x in open(os.path.join(out, f"l9tp_eval.part{k:02d}_third_person.jsonl"), encoding="utf-8")]
+    evdir = [x for x in evtp if x.get("kind", "control") == "control" and not x.get("label_missing")
+             and DIR_WORDS.search(instruction_of(x))]  # change 3: directional third-person hold-out subset
+    files = {"train_off.jsonl": ego, "train_on.jsonl": ego + tp, "l9_eval_off.jsonl": ev, "l9_eval_on.jsonl": ev,
+             "l9_eval_onaux.jsonl": ev, "l9_eval_tpdir.jsonl": "".join(json.dumps(x) + "\n" for x in evdir).encode(),
+             "l9_eval_tp_all.jsonl": "".join(json.dumps(x) + "\n" for x in evtp).encode()}
     for name, b in files.items():
         with open(os.path.join(out, name), "wb") as f:
             f.write(b)
     rows_e = [json.loads(x) for x in ego.decode().splitlines()]
     rows_t = [json.loads(x) for x in tp.decode().splitlines()]
     rows_v = [json.loads(x) for x in ev.decode().splitlines()]
-    ctrl = [x for x in rows_e if x.get("kind", "control") == "control" and x.get("gen") == "l9"]
+    ctrl = [x for x in rows_e + rows_t if x.get("kind", "control") == "control" and x.get("gen") == "l9"]
     texts = {x["prompt_path"]: open(x["prompt_path"], encoding="utf-8").read() for x in ctrl if x.get("prompt_path")}
     bad = 0
     for x in ctrl:
@@ -118,23 +137,26 @@ def merge(out, nt, ne):
                 V.parse_slots(texts[x["prompt_path"]])
             except ValueError:
                 bad += 1
-    g = SG.gates(ctrl, texts)
-    vctrl = [x for x in rows_v if x.get("kind", "control") == "control"]
+    ood_o, ood_r = set(A9.catalog("ood_o")), set(RN.room_table("ood"))
+    g = SG.gates(ctrl, texts, train=True, frame_note=True, ood_objects=ood_o, ood_rooms=ood_r)
+    vctrl = [x for x in rows_v + evtp if x.get("kind", "control") == "control"]
     vtexts = {x["prompt_path"]: open(x["prompt_path"], encoding="utf-8").read() for x in vctrl if x.get("prompt_path")}
-    gv = SG.gates(vctrl, vtexts)
+    gv = SG.gates(vctrl, vtexts, frame_note=True)
     chk = {"off_rows": len(rows_e), "on_rows": len(rows_e) + len(rows_t), "third_person_rows": len(rows_t),
            "ego_third_person_rows": sum(1 for x in rows_e if x.get("third_person") or x.get("view") == "external"),
            "tp_rows_not_third_person": sum(1 for x in rows_t if not (x.get("third_person") or x.get("view") == "external")),
            "ego_identical": files["train_on.jsonl"][:len(ego)] == ego, "slot_parse_errors": bad,
            "rows_without_head": sum(1 for x in ctrl if (x.get("image_views") or ["head"])[0] != "head"),
-           "eval_rows": len(rows_v), "eval_control": len(vctrl),
+           "eval_rows": len(rows_v), "eval_control": sum(1 for x in rows_v if x.get("kind", "control") == "control"),
            "eval_third_person_rows": sum(1 for x in rows_v if x.get("third_person") or x.get("view") == "external"),
+           "eval_tp_rows": len(evtp), "eval_tpdir_rows": len(evdir),
+           "frame_note_missing": sum(1 for t in list(texts.values()) + list(vtexts.values()) if V.FRAME_NOTE not in t),
            "spec_gates_ok": g.get("ok"), "eval_spec_gates_ok": gv.get("ok"),
            "image_count_hist": dict(Counter(len(x["images"]) for x in rows_e + rows_t)),
            "sha256": {k: sha(os.path.join(out, k)) for k in files}}
     chk["ok"] = (chk["ego_third_person_rows"] == 0 and chk["tp_rows_not_third_person"] == 0 and chk["ego_identical"]
                  and bad == 0 and chk["rows_without_head"] == 0 and chk["eval_third_person_rows"] == 0
-                 and bool(g.get("ok")) and bool(gv.get("ok")))
+                 and chk["frame_note_missing"] == 0 and bool(g.get("ok")) and bool(gv.get("ok")))
     json.dump(dict(chk, spec_gates=g, eval_spec_gates=gv), open(os.path.join(out, "check.json"), "w"), indent=1)
     print(json.dumps(chk))
     if not chk["ok"]:

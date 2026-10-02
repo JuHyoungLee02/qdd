@@ -2,7 +2,7 @@
 # E-TP1 chain on 78dc (prereg_tp1): frozen episode list -> rows (tools/tp1/tp1_build.py, 64 + 4 parallel parts on CPU)
 # -> merge (off / on, ego bytes identical, spec gates) -> train_<arm>.jsonl + steps (hcam8_build combine with an empty
 # base = the E-GP2 stage-2 steps rule) -> training runs through tools/gp2/gp2_worker.sh (GP2_O / GP2_TAG, shared card
-# locks): GPU1 off s0, GPU2 on s0, GPU3 off s1. usage: tp1_prep.sh <code dir>
+# locks): GPU1 off s0, GPU2 on s0, GPU3 off s1, GPU0 onaux s0 (change 3). usage: tp1_prep.sh <code dir>
 C=$1
 export GP2_O=/data/harvest/out/tp1 GP2_TAG=_tp1
 O=$GP2_O; D=$O/data; L=/data/harvest/logs/gp2; P=/data/harvest/venv_sam3/bin/python
@@ -28,15 +28,22 @@ done
 wait
 $P tools/tp1/tp1_build.py merge $D $NT $NE > $D/merge.json 2>> $L/prep_tp1.err || { log "MERGE_FAIL $(head -c 600 $D/merge.json)"; exit 1; }
 log "MERGE $(head -c 900 $D/merge.json)"
+# change 3: arm 4 = on + perspective aux rows (GT, no re-render) and the perspective hold-out items
+$P tools/tp1/tp1_aux.py check $D/train_off.jsonl > $D/aux_check.json 2>> $L/prep_tp1.err || { log "AUXCHECK_FAIL"; exit 1; }
+log "AUX_CHECK $(cat $D/aux_check.json)"
+$P tools/tp1/tp1_aux.py train $D/train_on.jsonl $D/train_onaux.jsonl --frac 0.15 > $D/aux_train.json 2>> $L/prep_tp1.err   || { log "AUX_FAIL $(head -c 400 $D/aux_train.json)"; exit 1; }
+log "AUX_TRAIN $(cat $D/aux_train.json)"
+$P tools/tp1/tp1_aux.py eval $D/l9_eval_off.jsonl $D/l9_eval_tp_all.jsonl $D/persp_eval.jsonl > $D/aux_eval.json   2>> $L/prep_tp1.err || { log "AUXEVAL_FAIL"; exit 1; }
+log "AUX_EVAL $(cat $D/aux_eval.json)"
 : > $D/empty_base.jsonl
-for a in off on; do
+for a in off on onaux; do
   /data/harvest/venv_train/bin/python tools/l9r/hcam8_build.py combine $D/empty_base.jsonl $D/train_$a.jsonl $O/train_$a.jsonl \
     --steps-out $O/steps_$a.txt > $O/combine_$a.json 2>> $L/prep_tp1.err || { log "COMBINE_FAIL $a"; exit 1; }
   echo "$a $(cat $O/steps_$a.txt)" >> $O/steps.txt
   log "COMBINE $a $(cat $O/combine_$a.json)"
 done
 touch $O/DATA_READY
-for x in "1 off 0" "2 on 0" "3 off 1"; do
+for x in "1 off 0" "2 on 0" "3 off 1" "0 onaux 0"; do
   set -- $x
   setsid nohup bash $C/tools/gp2/gp2_worker.sh $C $1 $2 $3 >> $L/worker_tp1_g$1.log 2>&1 < /dev/null &
   sleep 5
