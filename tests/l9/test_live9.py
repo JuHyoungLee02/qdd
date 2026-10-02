@@ -254,7 +254,9 @@ def test_refiner_hook_is_used_when_installed_and_restored_after():
                 "pre_open": np.array([0.05]), "gripper": gr, "source": np.array(["refiner"])}
     try:
         L.set_refiner(fake_refiner)
-        point3d = np.array([0.0, 0.0, 0.05])
+        # well clear of the box (P spans z in [-0.05, 0.05]): the refiner's candidate must pass live9's own
+        # re-validation (filter_candidates: family / rot / support / collision) to be used, like any other source
+        point3d = np.array([0.0, 0.0, 0.15])
         gc = L.choose_live(P, N, "ffw_sg2", "top", 0, point3d, support_z=-0.06, f_dir=np.array([1.0, 0.0]),
                            use_refiner=True)
         assert len(calls) == 1
@@ -272,6 +274,31 @@ def test_refiner_hook_not_called_when_use_refiner_false():
         L.choose_live(P, N, "ffw_sg2", "top", 0, point3d, support_z=-0.06, f_dir=np.array([1.0, 0.0]),
                      use_refiner=False)
         assert not calls
+    finally:
+        L.set_refiner(None)
+
+
+def test_refiner_candidate_colliding_with_the_object_is_rejected_falls_back_to_antipodal():
+    """A refiner is not trusted blindly (live9.filter_candidates): a candidate sitting right on the object's own
+    surface with no standoff clearance must be rejected, same as the antipodal path would reject it itself, and
+    choose_live falls back to its own antipodal search instead of returning a colliding grasp."""
+    P, N = box_cloud(0.03, 0.035, 0.05, n_per_face=20, seed=13)
+
+    def bad_refiner(cloud, point3d, approach, rot, gripper):
+        gr = G.gripper(gripper)
+        T = np.eye(4)
+        T[:3, 3] = point3d  # right on the box surface: the swept gripper clips the box's own far side
+        return {"T": T[None], "c1": np.array([point3d]) - [0.02, 0, 0], "c2": np.array([point3d]) + [0.02, 0, 0],
+                "w": np.array([0.04]), "a": np.array([[0.0, 0.0, -1.0]]), "score": np.array([1.0]),
+                # narrow opening: the fingers close right onto the top face's own points instead of straddling it
+                "pre_open": np.array([0.01]), "gripper": gr, "source": np.array(["bad_refiner"])}
+    try:
+        L.set_refiner(bad_refiner)
+        point3d = np.array([0.0, 0.0, 0.05])
+        gc = L.choose_live(P, N, "ffw_sg2", "top", 0, point3d, support_z=-0.06, f_dir=np.array([1.0, 0.0]),
+                           use_refiner=True)
+        assert gc is not None
+        assert gc.meta["source"] != "bad_refiner"  # fell back to the antipodal search
     finally:
         L.set_refiner(None)
 

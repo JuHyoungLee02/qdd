@@ -314,6 +314,49 @@ def refine(cloud: np.ndarray, point3d, approach: str, rot: int, gripper: str):
     return None if fn is None else fn(cloud, point3d, approach, rot, gripper)
 
 
+def filter_candidates(C: dict, P: np.ndarray, approach: str, rot_bin: int, support_z: float, f_dir, cam=None,
+                      extra_obstacles=None, rot_win: int = ROT_WIN) -> dict:
+    """Re-validate an ALREADY BUILT candidates dict (any source -- a refiner's, not only this module's own
+    antipodal search) against the same four checks sample_grasps_cloud applies while building its own: commanded
+    approach family, rot_img window (image-projected closing axis, cam=None skips this check), support clearance,
+    and collision with the cropped cloud + extra_obstacles. A refiner is not trusted blindly."""
+    n = len(C.get("w", []))
+    if n == 0:
+        return C
+    keep = np.ones(n, bool)
+    Kc = None
+    if cam is not None:
+        Kc = np.array([[cam.fx, 0.0, cam.cx], [0.0, cam.fy, cam.cy], [0.0, 0.0, 1.0]])
+    for i in range(n):
+        a, T = C["a"][i], C["T"][i]
+        if G.family(a, f_dir) != approach:
+            keep[i] = False
+            continue
+        if Kc is not None:
+            c = (C["c2"][i] - C["c1"][i])
+            nrm = np.linalg.norm(c)
+            c = c / nrm if nrm > 1e-9 else T[:3, 1]
+            m = (C["c1"][i] + C["c2"][i]) / 2
+            _, rb = G.rot_img(m, c, Kc, np.asarray(cam.R, float), np.asarray(cam.t, float))
+            if min((rb - rot_bin) % 12, (rot_bin - rb) % 12) > rot_win:
+                keep[i] = False
+                continue
+        gr = C.get("gripper") or {}
+        pre = float(C["pre_open"][i]) if "pre_open" in C else gr.get("max_open", 0.1)
+        bx_low = G.boxes(gr, pre)
+        if G._lowest(T, bx_low) < support_z + G.SUPPORT_CLEAR:
+            keep[i] = False
+            continue
+        bx = G.boxes(gr, pre, G.STANDOFF)
+        rel = P - T[:3, 3]
+        if G.hits_boxes(rel @ T[:3, :3], bx):
+            keep[i] = False
+            continue
+        if extra_obstacles is not None and _hits_extra(T, bx, extra_obstacles):
+            keep[i] = False
+    return {k: (v[keep] if isinstance(v, np.ndarray) and len(v) == n else v) for k, v in C.items()}
+
+
 # ---------------------------------------------------------------------------------------------- choosing
 def pick_live(C: dict, point3d) -> int | None:
     """Index of the best live candidate: contact midpoint closest to the commanded point (spec: refine NEAR that
@@ -338,6 +381,9 @@ def choose_live(P: np.ndarray, N: np.ndarray, grip: str, approach: str, rot_bin:
     C = None
     if use_refiner:
         C = refine(P, point3d, approach, rot_bin, grip)
+        if C and len(C.get("w", [])):
+            C = filter_candidates(C, P, approach, rot_bin, support_z, f_dir, cam=cam,
+                                  extra_obstacles=extra_obstacles, rot_win=rot_win)
     if not C or not len(C.get("w", [])):
         C = sample_grasps_cloud(P, N, grip, approach, rot_bin, support_z, f_dir, cam=cam,
                                 extra_obstacles=extra_obstacles, seed=seed, rot_win=rot_win)
