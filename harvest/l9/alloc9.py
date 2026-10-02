@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import math
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 from . import task9v2 as V2
 
@@ -167,6 +167,8 @@ def plan_rows(alloc: dict, pairs: dict, start: int = 3000000, yields: dict | Non
     yields = yields or {}
     ho = set(holdout)
     rows, seed = [], int(start)
+    arm_k = Counter()  # owner 10-03: arms dealt on a per-robot counter across definitions (a per-definition counter
+    # started every definition on "left" -> 2:1 left with 3 rows a definition, R1 pilot 396:198)
     for i, k in enumerate(sorted(alloc)):
         if not pairs.get(k):
             continue
@@ -180,12 +182,14 @@ def plan_rows(alloc: dict, pairs: dict, start: int = 3000000, yields: dict | Non
             for jj in range(n):
                 f, r = pairs[k][(i * 7 + j) % len(pairs[k])]
                 rows.append({"seed": seed, "robot": robot, "grip_max": V2.grip_max_of(robot),
-                             "arm": _arm(arms, jj, RIGHT_SHARE.get(robot, 0.5)), "family": f, "rule": r, "def": k,
+                             "arm": _arm(arms, arm_k[robot], RIGHT_SHARE.get(robot, 0.5)), "family": f, "rule": r,
+                             "def": k,
                              "task_family": d.family,
                              "split": "holdout" if k in ho else "train", "style": style_of(seed), "v2": True,
                              "n_steps": prof["n_steps"], "recovery": prof["recovery"], "requires": prof["requires"]})
                 seed += 1
                 j += 1
+                arm_k[robot] += 1
     return rows
 
 
