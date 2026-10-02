@@ -6,6 +6,9 @@ import json
 import math
 import sys
 
+sys.path.insert(0, "/data/harvest/l9v2/pylib")  # cuRobo 0.8 / warp 1.14 (plan9_server.PYLIB); this tool imports
+# curobo directly in the collection process's own python, which plan9_server's separate-process split avoids
+
 import numpy as np
 import torch
 
