@@ -119,6 +119,7 @@ class XEpisode(PtEpisode):
             self.k += 1
             self.info.clear()
             self.info.update(self.w.step_info(self.k))
+            self.mon.done_tgts.add(self.mon.tgt)  # carried on purpose: not a knocked neighbour (R1 2-step 10-03)
             self.mon.tgt, self.mon.place = self.info["tgt"], self.info["place"]
             self.mon.success, self.mon.t_ok, self.t_success = False, None, None
             self._advance_gripper()

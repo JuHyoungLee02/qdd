@@ -27,7 +27,8 @@ for m in glob.glob(os.path.join(root, "**", "meta.json"), recursive=True):
     res = json.load(open(os.path.join(d, "result.json")))
     for k in ("collision", "tipped", "off_table"):
         flags[k] += bool(res.get(k))
-    flags["knocked"] += bool(res.get("knocked"))
+    tgts = {r.get("tgt") for r in rows}  # old result.json counted earlier step targets as knocked (fixed 10-03)
+    flags["knocked"] += bool([k for k in res.get("knocked") or [] if k not in tgts])
     j = (meta.get("max_dq_rad") or 0) > 0.04
     jumps += j
     carry = [r for r in rows if r["step"] == "carry_up"]
