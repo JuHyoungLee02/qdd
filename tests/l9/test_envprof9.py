@@ -81,7 +81,7 @@ def test_scene_model_plugin(tmp_path, monkeypatch):
     monkeypatch.setattr(E, "DIR", str(tmp_path))
     E._CACHE.clear()
     assert H.scene_model("toy", default="aiw", seed=1, arm="right") == "aiw"  # no profile, nothing registered
-    (tmp_path / "toy.json").write_text(json.dumps(_p(scene_model="tests.l9.test_envprof9:make_model")))
+    (tmp_path / "toy.json").write_text(json.dumps(_p(scene_model=f"{__name__}:make_model")))
     E._CACHE.clear()
     assert H.scene_model("toy", default="aiw", seed=3, arm="left") == ("own", 3, "left", "toy")
     monkeypatch.setitem(H.SCENE_MODELS, "toy", lambda **kw: "registered")
