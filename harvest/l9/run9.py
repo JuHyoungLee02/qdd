@@ -58,6 +58,35 @@ def yield_file() -> str:
     return os.path.join(YIELD_DIR, f"{socket.gethostname()}_{g}")
 
 
+def job_pool(rows: list, robot: str, v2: bool, untested: bool = False) -> dict:
+    """The object pool of a job (also tools/l9/prefilter9.py: the same pool predicts the same scene draws). Sets
+    task9.FINGER_OPEN for the robot as a side effect (as the job does)."""
+    from . import assets9 as A9
+    split = rows[0].get("split", "train")
+    pool = A9.pool_for(int(rows[0]["pool"]), "train" if split == "train" else "ood_o")
+    if rows[0].get("pool_ids"):  # object gate jobs: exactly these targets (+ the pool's clutter / containers)
+        cat = A9.catalog("train")
+        pool = {k: v for k, v in pool.items() if v["role9"] != "target"}
+        pool.update({k: cat[k] for k in rows[0]["pool_ids"] if k in cat})
+    if robot == "franka_mast":  # targets the Franka Hand can close on; fingers / containers: its opening
+        from . import task9 as T9
+        T9.FINGER_OPEN = 0.08
+        pool = {k: v for k, v in pool.items()
+                if v["role9"] != "target" or float(v.get("grasp_width") or 2 * float(v.get("footprint_r", 1)))
+                <= FRANKA_MAX_GRASP_W}
+    elif robot in ("r1pro", "g1"):  # L9 v2 R1 Pro / G1: targets their gripper can close on (opening - 1.4 cm)
+        from . import robot9 as R9v
+        from . import task9 as T9
+        T9.FINGER_OPEN = float(R9v.V2[robot]["grip_max_w"])
+        pool = {k: v for k, v in pool.items()
+                if v["role9"] != "target" or float(v.get("grasp_width") or 2 * float(v.get("footprint_r", 1)))
+                <= T9.FINGER_OPEN - 0.014}
+    if v2:  # targets need cached grasp candidates (and the Isaac lift + shake test unless --v2-untested)
+        from . import rt9 as RT
+        pool = {k: v for k, v in pool.items() if v["role9"] != "target" or RT.has_candidates(robot, k, untested)}
+    return pool
+
+
 def ep_dir(out: str, row: dict) -> str:
     rb = row.get("robot") or "ffw_sg2"
     tail = "" if rb == "ffw_sg2" else f"_{rb}"  # spec §9: another robot on the same seed gets its own folder
@@ -129,27 +158,7 @@ def main(argv=None):
         apply_arm_workspace(arm)  # left: mirrored safety box / reach corner (before the episode modules load)
         apply_prompts(robot)  # spec §9.1: robot / gripper / head-camera wording of the requests
         split = rows[0].get("split", "train")
-        pool = A9.pool_for(int(rows[0]["pool"]), "train" if split == "train" else "ood_o")
-        if rows[0].get("pool_ids"):  # object gate jobs: exactly these targets (+ the pool's clutter / containers)
-            cat = A9.catalog("train")
-            pool = {k: v for k, v in pool.items() if v["role9"] != "target"}
-            pool.update({k: cat[k] for k in rows[0]["pool_ids"] if k in cat})
-        if robot == "franka_mast":  # targets the Franka Hand can close on; fingers / containers: its opening
-            from . import task9 as T9
-            T9.FINGER_OPEN = 0.08
-            pool = {k: v for k, v in pool.items()
-                    if v["role9"] != "target" or float(v.get("grasp_width") or 2 * float(v.get("footprint_r", 1)))
-                    <= FRANKA_MAX_GRASP_W}
-        elif robot in ("r1pro", "g1"):  # L9 v2 R1 Pro / G1: targets their gripper can close on (opening - 1.4 cm)
-            from . import robot9 as R9v
-            from . import task9 as T9
-            T9.FINGER_OPEN = float(R9v.V2[robot]["grip_max_w"])
-            pool = {k: v for k, v in pool.items()
-                    if v["role9"] != "target" or float(v.get("grasp_width") or 2 * float(v.get("footprint_r", 1)))
-                    <= T9.FINGER_OPEN - 0.014}
-        if a.v2:  # targets need cached grasp candidates (and the Isaac lift + shake test unless --v2-untested)
-            from . import rt9 as RT
-            pool = {k: v for k, v in pool.items() if v["role9"] != "target" or RT.has_candidates(robot, k, a.v2_untested)}
+        pool = job_pool(rows, robot, a.v2, a.v2_untested)
         rooms = rooms_for(int(rows[0]["rooms"]), "train" if split == "train" else "ood")
         mesh = A9.mesh_for(int(rows[0]["rooms"]), split="train" if split == "train" else "ood")
         ext_on = os.path.join(os.path.dirname(os.path.abspath(a.out)), "EXT_ON")  # run-level switch: "<p> [<n>]"
