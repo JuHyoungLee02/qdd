@@ -262,6 +262,10 @@ V2 = {
                      "finger_bodies": (f"{s}_hand_thumb_2_link", f"{s}_hand_index_1_link")}
                  for s in ("right", "left")},
         "grip_max_w": 0.1131, "grip_min_w": 0.0215,  # Dex3-1 thumb-index pinch band (tools/l9/v2robot/hands_v2.py)
+        # g1b H8: the thumb's inner face (TCP x +0.006..+0.025, right hand) opposes the GAP between the index (x -0.026..
+        # +0.003) and middle (+0.031..+0.060) fingers (URDF collision meshes): the pinch centre is +0.015 m along the TCP
+        # x axis (left hand mirrored: -0.015), the TCP (thumb-index pad midpoint) sits on the index edge
+        "pinch_offset": {"right": (0.015, 0.0, 0.0), "left": (-0.015, 0.0, 0.0)},
         "pad_len_m": 0.015, "finger_depth_m": 0.0345,
         # [hypothesis] drives; URDF hand joint effort 2.45 N m. Legs + waist are held at 0 by the body drives.
         "kp": 400.0, "kd": 80.0, "finger_kp": 20.0, "finger_kd": 1.0, "finger_effort": 2.45,
@@ -593,6 +597,18 @@ def _part_fronts(parts) -> list:
     return out
 
 
+G1_REACH_MARGIN = float(os.environ.get("G1B_REACH_MARGIN", "0.05"))  # g1b H9: the 4 xy neighbours at this distance
+# must be reachable too (interior of the reachable region: a reach-map cell counts with ONE solved orientation, while
+# the held object fixes the put orientation up to 8 yaws -- p1h15: 4 of 7 held objects found no put pose at the edge)
+
+
+def _reach_m(C9, arm: str, pb) -> bool:
+    pts = [pb] + ([pb + d for d in (np.array([G1_REACH_MARGIN, 0, 0]), np.array([-G1_REACH_MARGIN, 0, 0]),
+                                     np.array([0, G1_REACH_MARGIN, 0]), np.array([0, -G1_REACH_MARGIN, 0]))]
+                  if G1_REACH_MARGIN > 0 else [])
+    return all(any(C9.reach_ok("g1", arm, q, ap) for ap in C9.APPROACHES) for q in pts)
+
+
 def g1_stance(arm: str, reach_pts, view_pts, parts, table_z: float, seed: int):
     """-> {dx, lean, dz, surface, n_feasible} drawn uniformly among the feasible stances, or None. Points are world
     xyz at the drawn (unshifted) heights; dz moves them with the furniture."""
@@ -618,7 +634,7 @@ def g1_stance(arm: str, reach_pts, view_pts, parts, table_z: float, seed: int):
                 o = np.array([rx + G1_TORSO_IN_ROOT[0], 0.0, G1_PIVOT_Z])
                 if not all(g1_sees(p, rx, lean) for p in vp):
                     continue
-                if all(any(C9.reach_ok("g1", arm, Ry.T @ (p - o), ap) for ap in C9.APPROACHES) for p in rp):
+                if all(_reach_m(C9, arm, Ry.T @ (p - o)) for p in rp):
                     feas.append((round(float(dx), 3), lean, round(dz, 4), round(float(s), 3)))
     if not feas:
         return None
