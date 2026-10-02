@@ -30,32 +30,45 @@ def iqr(a):
     return float(q[1] - q[0])
 
 
+def episode_combo(d, meta):
+    """(robot, task_id, vec, combo) of one episode directory (meta already loaded, as the caller has it from its
+    own meta.json read) -- the per-file body of episodes() below, factored out so a per-episode caller (qmon9.py,
+    the pod-side quality monitor: owner order 10-03) can reuse it without re-globbing a whole root. None when
+    scene.json / episode9.json / labels.jsonl / the target's layout entry is missing."""
+    try:
+        sc = json.load(open(os.path.join(d, "scene.json")))
+        ep = json.load(open(os.path.join(d, "episode9.json")))
+        row0 = json.loads(open(os.path.join(d, "labels.jsonl")).readline())
+    except (OSError, ValueError):
+        return None
+    robot = meta.get("robot") or "ffw_sg2"
+    lay = sc.get("layout") or {}
+    tg = row0.get("tgt")
+    if tg not in lay:
+        return None
+    rp = (ep.get("scene") or {}).get("robot_pose") or meta.get("robot_pose") or {}
+    bx = BASE_X.get(robot, 0.0)
+    x, y, yaw = lay[tg][:3]  # some layouts carry extra fields (z, tilt) after yaw
+    combo = (round(float(rp.get("distance", 0)), 3), round(float(rp.get("yaw", 0)), 3),
+             tuple(sorted((k,) + tuple(round(x_, 3) if isinstance(x_, (int, float)) else str(x_) for x_ in v)
+                          for k, v in lay.items())))
+    return robot, meta.get("task_id"), (x - bx, y, yaw, float(rp.get("distance", np.nan)),
+                                        float(rp.get("yaw", np.nan))), combo
+
+
 def episodes(root, every):
     for m in glob.glob(os.path.join(root, "*", "*", "*", "meta.json")):
         d = os.path.dirname(m)
         try:
             meta = json.load(open(m))
-            sc = json.load(open(os.path.join(d, "scene.json")))
-            ep = json.load(open(os.path.join(d, "episode9.json")))
-            row0 = json.loads(open(os.path.join(d, "labels.jsonl")).readline())
         except (OSError, ValueError):
             continue
         ok = bool(meta.get("success")) and (meta.get("max_dq_rad") or 0) <= 0.04
         if not (ok or every):
             continue
-        robot = meta.get("robot") or "ffw_sg2"
-        lay = sc.get("layout") or {}
-        tg = row0.get("tgt")
-        if tg not in lay:
-            continue
-        rp = (ep.get("scene") or {}).get("robot_pose") or meta.get("robot_pose") or {}
-        bx = BASE_X.get(robot, 0.0)
-        x, y, yaw = lay[tg][:3]  # some layouts carry extra fields (z, tilt) after yaw
-        combo = (round(float(rp.get("distance", 0)), 3), round(float(rp.get("yaw", 0)), 3),
-                 tuple(sorted((k,) + tuple(round(x_, 3) if isinstance(x_, (int, float)) else str(x_) for x_ in v)
-                              for k, v in lay.items())))
-        yield robot, meta.get("task_id"), (x - bx, y, yaw, float(rp.get("distance", np.nan)),
-                                           float(rp.get("yaw", np.nan))), combo
+        r = episode_combo(d, meta)
+        if r is not None:
+            yield r
 
 
 def summarise(roots, every, min_n):
