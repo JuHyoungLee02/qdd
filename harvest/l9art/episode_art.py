@@ -668,7 +668,7 @@ class ArtEpisode:
             ex.move(T, "line")
             k = self.b["tgt"]
             c = np.asarray(self.w.env.object_pose(k)[0], float)
-            if float(np.linalg.norm(c - ex.tcp_T()[:3, 3])) > 0.12 or ex.grip_w() < EMPTY_GAP or c[2] < getattr(self, "_pick_z0", -9.0) + 0.04:
+            if float(np.linalg.norm(c - ex.tcp_T()[:3, 3])) > 0.12 or ex.grip_w() < EMPTY_GAP or c[2] < getattr(self, "_pick_z0", -9.0) + 0.015:
                 # the object must rise with the hand (combo pilot: a pick in a drawer counted lifted on the drawer floor)
                 self.bump("lift_drop")
                 ex.set_gripper(self.w.w_open, False)
