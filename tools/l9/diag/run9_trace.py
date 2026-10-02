@@ -103,7 +103,7 @@ def main():
 
             def motion_for(pos, grip):
                 q0 = rt.plan_start()
-                mem["tries"] = []
+                mem["tries"], mem["calls"] = [], []
                 out = mf0(pos, grip)
                 if out[0] is None and mem["k"] < 40:
                     mem["k"] += 1
@@ -117,7 +117,10 @@ def main():
                         json.dump({"what": "motion", "step": lab[0] if lab else None, "note": out[1],
                                    "seed": st["seed"], "q": np.asarray(q0, float).tolist(), "joints": rt.joints,
                                    "T_world_base": rt.T_world_base().tolist(), "tcp_T": T.tolist(),
-                                   "tcp_now": rt.tcp_T().tolist(), "tries": mem["tries"],
+                                   "tcp_now": rt.tcp_T().tolist(), "tries": mem["tries"], "calls": mem.get("calls", []),
+                                   "gc": None if rt.choice is None else {"T": np.asarray(rt.choice.T).tolist(),
+                                                                         "pre": np.asarray(rt.choice.pre).tolist(),
+                                                                         "family": rt.choice.family},
                                    "tgt": tg, "tgt_pose": [np.asarray(v, float).tolist() for v in
                                                            world.env.object_pose(tg)] if tg else None,
                                    "goal_is_tcp_T": True},
@@ -126,6 +129,22 @@ def main():
                         print("DIAG dump error", type(e).__name__, e, flush=True)
                 return out
 
+            def wrap(name):
+                f0 = getattr(pl, name)
+
+                def f(*args, **kw):
+                    out = f0(*args, **kw)
+                    try:
+                        mem.setdefault("calls", []).append({
+                            "fn": name, "world_idx": len(mem["tries"]) - 1, "ok": out is not None,
+                            "args": [np.asarray(x, float).tolist() if hasattr(x, "__len__") else x for x in args],
+                            "kw": {k: (np.asarray(v, float).tolist() if hasattr(v, "__len__") else v) for k, v in kw.items()}})
+                    except Exception:  # noqa: BLE001
+                        pass
+                    return out
+                return f
+
+            pl.line, pl.pose = wrap("line"), wrap("pose")
             pl.world, pl.attach, rt.motion_for = world_, attach_, motion_for
         return rt
 
