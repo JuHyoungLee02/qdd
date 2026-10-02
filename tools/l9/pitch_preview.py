@@ -54,6 +54,9 @@ def main(argv=None):
                 except (NoEpisode, SkipScene) as ex:
                     print(f"SKIP_ROW {job} seed={row['seed']}: {ex}", flush=True)
                     continue
+                if not world.head_cam or not world.head_cam.get("draw"):
+                    print(f"SKIP_ROW {job} seed={row['seed']}: head_cam not set after prepare()", flush=True)
+                    continue
                 base = dict(world.head_cam["draw"])
                 p0 = float(base["pitch"])
                 imgs = []
