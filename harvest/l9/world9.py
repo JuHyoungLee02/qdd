@@ -1038,6 +1038,10 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             # rate limit replaced it; with the cap the L9 gate froze the arm mid-carry, diag 2026-10-01)
             s = A.arm_start(arm)
             goal = np.array([s[0], s[1], tz + s[2]])
+            if v2r:  # L9v2-DIAG 2: R1 Pro / G1 start at V2_READY (cuRobo-chosen ready pose); chasing the AI Worker
+                # start TCP pinned R1's q4 at its limit with the TCP 0.5-0.8 m over the table: hold the ready pose
+                goal = np.asarray(self.status()["tcp"], float)
+                steps = 0
             for _ in range(steps):
                 if np.linalg.norm(np.asarray(self.status()["tcp"], float) - goal) < 0.01:
                     break

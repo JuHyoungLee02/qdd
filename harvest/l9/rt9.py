@@ -508,6 +508,15 @@ class Runtime:
         hold = st["pred"].get(f"holding({tg})") is True
         key = (tg, info["place"])
         if self.choice_key != key and not hold:
+            # L9v2-DIAG 3: the task stage moves on right at the release, so an intermediate target never got its
+            # retreat; the next target's first move (lift_clear straight up / a transit) dragged or knocked the placed
+            # object (multi-step 3 / 42 successes). Retreat from the previous target first while the hand is near it.
+            ptg = (self.choice_key or (None,))[0]
+            if self.choice is not None and ptg is not None and ptg != tg:
+                r = self._retreat_from(ptg, self.choice, st)
+                if r is not None:
+                    self.last_label, self._last_step = r, "retreat"
+                    return r[0], {k: v for k, v in r[1].items() if k != "quat_wxyz"}
             if self.choice is not None:
                 self.picks.append(self.pick_record())
             self.choice, self.choice_key, self.segs, self.held = self.choose(tg, info), key, {}, None
@@ -662,6 +671,22 @@ class Runtime:
         from ..sim.scene import OBJ_GEOM
         c, _ = self.w.env.object_pose(k)
         return float(c[2]) - float(OBJ_GEOM[k]["half_extents"][2])
+
+    def _retreat_from(self, k: str, gc, st: dict):
+        """('retreat', cmd) back along the previous grasp's approach (+ up), as v2plan.plan does for the last target,
+        while the hand is still within the retreat zone of object k; None once clear (L9v2-DIAG 3)."""
+        from ..astra_motion.harness import obj_height
+        from ..teach_l8 import labels as L
+        tcp = np.asarray(st["tcp"], float)
+        c = np.asarray(self.w.env.object_pose(k)[0], float)
+        if float(np.linalg.norm(tcp[:2] - c[:2])) >= L.RETREAT_XY + 0.03 or \
+                tcp[2] >= c[2] + obj_height(k) / 2 + L.RETREAT_ABOVE:
+            return None
+        away = tcp - gc.a * gc.retreat
+        tgt = np.array([away[0], away[1], max(away[2], tcp[2]) + 0.04])
+        q = np.asarray(self.w.pl.tcp_pose()[1], float)
+        return "retreat", {"mode": "eef", "position_m": [round(float(v), 4) for v in tgt], "gripper": "keep",
+                           "quat_wxyz": [round(float(v), 5) for v in q]}
 
     def _dump_fail(self, what: str, q0, T_world) -> None:
         """L9V2_DEBUG_DIR: the scene, start joints and goal of a failed plan (<= 6 per process) for
