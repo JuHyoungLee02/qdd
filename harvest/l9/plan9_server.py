@@ -25,6 +25,13 @@ def serve(sock: str, cfg_path: str, device: str) -> None:
     from .plan9 import Planner9
     cfg = json.load(open(cfg_path))
     pl = Planner9(cfg, device=device)
+    rec = None
+    dbg = os.environ.get("L9V2_DEBUG_DIR")
+    if dbg and os.environ.get("L9V2_PLAN_LOG", "1") == "1":  # diagnosis only: every call + result, replayable
+        import pickle
+        os.makedirs(dbg, exist_ok=True)
+        rec = open(os.path.join(dbg, f"plancalls_{os.getpid()}_{int(time.time())}.pkl"), "ab")
+        pickle.dump(("_cfg", (cfg_path,), {}, None, time.time()), rec)
     with Listener(sock, family="AF_UNIX", authkey=AUTH) as lst:
         print("PLANNER_READY", pl.version, flush=True)
         conn = lst.accept()
@@ -37,11 +44,25 @@ def serve(sock: str, cfg_path: str, device: str) -> None:
             if name == "_quit":
                 conn.send(("ok", None))
                 break
+            if name == "_mark":  # episode marker from the runtime (diagnosis log only)
+                if rec is not None:
+                    pickle.dump(("_mark", args, kw, None, time.time()), rec)
+                    rec.flush()
+                conn.send(("ok", None))
+                continue
             try:
                 if name in ("joint_names", "version"):
                     out = getattr(pl, name)
                 else:
                     out = getattr(pl, name)(*args, **kw)
+                if rec is not None and name not in ("joint_names", "version"):
+                    summ = out if not hasattr(out, "shape") else ("array", tuple(out.shape))
+                    if isinstance(out, dict):
+                        summ = {k: (("array", tuple(v.shape)) if hasattr(v, "shape") else v) for k, v in out.items()}
+                    elif isinstance(out, tuple):
+                        summ = out
+                    pickle.dump((name, args, kw, summ, time.time()), rec)
+                    rec.flush()
                 conn.send(("ok", out))
             except Exception as e:  # noqa: BLE001  (reported to the client)
                 import traceback
@@ -114,6 +135,10 @@ class PlannerProxy:
     def detach(self):
         self.attached = None
         return self._call("detach")
+
+    def mark(self, *a, **k):
+        """Episode marker in the diagnosis call log (no-op without L9V2_DEBUG_DIR on the server)."""
+        return self._call("_mark", *a, **k)
 
     def close(self):
         try:

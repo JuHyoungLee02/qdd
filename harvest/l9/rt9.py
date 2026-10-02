@@ -413,6 +413,7 @@ class Runtime:
         from ..sim import tasks as T
         self.w.observe(depth=True)
         info = self.w.task_info()
+        self._mark("episode", int(getattr(self.w, "vseed", 0) or 0), self.profile, self.arm)
         self.choice, self.choice_key = self.choose(info["tgt"], info), (info["tgt"], info["place"])
         if self.choice is None and os.environ.get("L9V2_SKIP_UNGRASPABLE", "1") == "1":
             from ..teach_l8d.fx import SkipScene  # no valid grasp of the first target in this scene: redraw, do not
@@ -641,6 +642,7 @@ class Runtime:
         st = self.w.status()
         hold = tg is not None and st["pred"].get(f"holding({tg})") is True
         q0 = self.plan_start()
+        self._mark("step", step, [float(v) for v in pos], hold)
         width = None
         note = None
         if step == "above_target" and gc is not None:
@@ -748,6 +750,14 @@ class Runtime:
         T_l[2, 3] += gc.lift_dz
         Ql = self.planner.line(Qg[-1], self.to_base(gc.T), self.to_base(T_l), 0.008)
         return {"ok": True, "status": "ok", "approach": Qa, "grasp": Qg, "lift": Ql}
+
+    def _mark(self, *a) -> None:
+        """Diagnosis call log marker (L9V2_DEBUG_DIR only; the planner process writes it)."""
+        if os.environ.get("L9V2_DEBUG_DIR") and hasattr(self.planner, "mark"):
+            try:
+                self.planner.mark(*a)
+            except Exception:  # noqa: BLE001
+                pass
 
     def _bottom_z(self, k: str) -> float:
         from ..sim.scene import OBJ_GEOM
