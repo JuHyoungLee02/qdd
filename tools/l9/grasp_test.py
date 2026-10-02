@@ -240,7 +240,11 @@ def run(a):
         obj_mode[k] = mode or "none"
         if mode and mode != "none":
             GT.apply_collider(stage, pp, mode)
-    obj = RigidObject(RigidObjectCfg(prim_path="/World/envs/env_.*/Obj/Geometry/obja_.*", spawn=None))
+    # P164 regex: one physx view over every env's rigid body. Objaverse rows share "Geometry/obja_<uid>" (wildcard
+    # over the uid); GSO ood_o rows have body_rel == "" (the body IS /Obj) -- no suffix. A chunk is one or the other
+    # (load_tasks draws from one --ids file), never mixed.
+    obj_suffix = "/Geometry/obja_.*" if any(t[1].get("body_rel") for t in tasks) else ""
+    obj = RigidObject(RigidObjectCfg(prim_path=f"/World/envs/env_.*/Obj{obj_suffix}", spawn=None))
     log(f"authored {n_env} objects in {time.time() - t_obj:.0f}s")
     t_reset = time.time()
     sim.reset()
