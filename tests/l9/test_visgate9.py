@@ -77,6 +77,32 @@ def test_row_visible_drops_on_first_failing_point():
     assert (ok, reason, role) == (False, "out_of_frame", "tgt")
 
 
+def test_row_visible_place_ignores_its_own_rim():
+    # the occluder surface sits almost exactly where the place point's own top is (dz close to z): a destination's
+    # own near rim, not an external occluder -- must not drop the row (teach_l8d.collect._occ's container_boxes
+    # convention, replicated rotation-invariantly with footprint_r since there is no live env / yaw at build time).
+    depth = _flat_depth(0.98)  # object top z = 1.02 (centre 1.0 + half height 0.02): dz < z - OCC_TOL, but the
+    points = [("place", CUBOID, (0.0, 0.0, 1.0))]  # back-projected hit still lands within the place's own footprint
+    ok, reason, role = VG.row_visible(_cam(), depth, points)
+    assert (ok, reason, role) == (True, "ok", None)
+
+
+def test_row_visible_place_still_drops_for_a_real_occluder():
+    depth = _flat_depth(0.5)  # far nearer than the object's own rim: a real occluder, not the container's own wall
+    points = [("place", CUBOID, (0.0, 0.0, 1.0))]
+    ok, reason, role = VG.row_visible(_cam(), depth, points)
+    assert (ok, reason, role) == (False, "occluded", "place")
+
+
+def test_row_visible_tgt_has_no_self_ignore():
+    # the same near-rim depth that is excused for "place" still counts against "tgt" (only a destination's own
+    # rim is exempt -- a target is never exempted from its own occluder check)
+    depth = _flat_depth(0.98)
+    points = [("tgt", CUBOID, (0.0, 0.0, 1.0))]
+    ok, reason, role = VG.row_visible(_cam(), depth, points)
+    assert (ok, reason, role) == (False, "occluded", "tgt")
+
+
 def test_row_visible_ok_when_every_point_passes():
     depth = _flat_depth(5.0)
     points = [("tgt", CUBOID, (0.0, 0.0, 1.0)), ("place", CUBOID, (0.01, 0.0, 1.0))]

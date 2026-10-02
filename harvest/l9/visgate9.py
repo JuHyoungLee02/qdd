@@ -55,9 +55,11 @@ def in_border(u, v, z, W: int, H: int, margin: float = MARGIN) -> bool:
 
 
 def point_visible(cam, depth, geom: dict, centre, margin: float = MARGIN, min_radius_px: float = MIN_RADIUS_PX,
-                  occ_max: float = OCC_MAX) -> tuple:
+                  occ_max: float = OCC_MAX, ignore: tuple = ()) -> tuple:
     """-> (ok, reason) of one object centre in one rendered view (cam = astra_motion.geometry.Cam, depth = its
-    z-depth array, geom = SC.OBJ_GEOM[k]). reason is one of "out_of_frame", "too_small", "occluded", "ok"."""
+    z-depth array, geom = SC.OBJ_GEOM[k]). reason is one of "out_of_frame", "too_small", "occluded", "ok". ignore
+    (teach_l8d.clutter_x.occlusion's convention) = [(centre, half_extents, yaw), ...] surfaces that do not count as
+    occluders (e.g. a destination's own rim -- see row_visible)."""
     from ..teach_l8d.clutter_x import occlusion
     footprint_r = float(geom.get("footprint_r") or geom.get("radius") or 0.03)
     u, v, z, r_px = point_radius_px(cam, centre, footprint_r)
@@ -66,19 +68,32 @@ def point_visible(cam, depth, geom: dict, centre, margin: float = MARGIN, min_ra
     if r_px is None or r_px < min_radius_px:
         return False, "too_small"
     half_xy, top_z = obj_half_xy_top(geom, centre)
-    occ = occlusion(cam, depth, centre[:2], half_xy, top_z)
+    occ = occlusion(cam, depth, centre[:2], half_xy, top_z, ignore=ignore)
     if occ >= occ_max:
         return False, "occluded"
     return True, "ok"
+
+
+def _place_self_ignore(geom: dict, centre) -> list:
+    """[(centre, half_extents, 0.0)] approximating a "place" destination's own near rim/wall (teach_l8d.collect._occ
+    excludes it via container_boxes(env, ...), which needs a live env; here the yaw is unknown, so the box uses
+    footprint_r (= hypot of the true half extents) on both x and y -- a square that contains the true box at ANY
+    yaw, rotation-invariant and conservative). Without this, a container's own near edge reads as "occluding" its
+    own opening and the gate drops a correctly-labelled placement."""
+    fr = float(geom.get("footprint_r") or geom.get("radius") or 0.03)
+    he = geom.get("half_extents") or (fr, fr, 0.03)
+    return [(tuple(float(v) for v in centre), (fr, fr, max(float(he[2]), 0.001)), 0.0)]
 
 
 def row_visible(cam, depth, points: list, margin: float = MARGIN, min_radius_px: float = MIN_RADIUS_PX,
                occ_max: float = OCC_MAX) -> tuple:
     """points = [(role, geom, centre), ...] (typically tgt then place) -> (ok, reason, role) of the first point that
     fails, else (True, "ok", None). A row is dropped on the FIRST failing point (never ask the VLM to point at
-    something it cannot see, whichever point that is)."""
+    something it cannot see, whichever point that is). role == "place": its own rim does not count as an occluder
+    of its own opening (_place_self_ignore)."""
     for role, geom, centre in points:
-        ok, reason = point_visible(cam, depth, geom, centre, margin, min_radius_px, occ_max)
+        ignore = _place_self_ignore(geom, centre) if role == "place" else ()
+        ok, reason = point_visible(cam, depth, geom, centre, margin, min_radius_px, occ_max, ignore=ignore)
         if not ok:
             return False, reason, role
     return True, "ok", None
