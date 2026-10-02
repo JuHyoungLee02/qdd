@@ -97,9 +97,14 @@ class LiveRuntime(RT.Runtime):
         return np.array([b[0] for b in bl]), np.array([b[1] for b in bl]), np.array([b[2] for b in bl])
 
     # ------------------------------------------------------------------ the live choice
+    def _dbg(self, msg: str) -> None:
+        if os.environ.get("LIVE_DEBUG"):
+            print(f"LIVE_DEBUG {msg}", flush=True)
+
     def choose(self, k: str, info: dict, extra_boxes: dict | None = None):
         cmd = self._command(k, info, extra_boxes)
         if cmd is None:
+            self._dbg(f"{k}: no command (cache label step found nothing)")
             self.picks.append({"obj": k, "choice_fail": "no VLM-style command for the live executor"})
             return None
         point_2d, approach, rot_bin, category, obj_h = cmd
@@ -110,15 +115,18 @@ class LiveRuntime(RT.Runtime):
         head_cam = obs.cams.get("head")
         head_depth = (obs.depth or {}).get("head") if getattr(obs, "depth", None) else None
         if head_cam is None or head_depth is None:
+            self._dbg(f"{k}: no head depth")
             self.picks.append({"obj": k, "choice_fail": "no head depth to back-project the command"})
             return None
         point3d = L.back_project(point_2d, head_cam, head_depth)
         if point3d is None:
+            self._dbg(f"{k}: back-projection failed at point_2d={point_2d}")
             self.picks.append({"obj": k, "choice_fail": "back-projection: no valid depth at the commanded point"})
             return None
         wrist_cam, wrist_depth = self._wrist_depth()
         P = L.crop_cloud(point3d, head_cam, head_depth, wrist_cam, wrist_depth)
         if len(P) < L.MIN_PTS:
+            self._dbg(f"{k}: crop too small ({len(P)} pts) at point3d={point3d} approach={approach} rot={rot_bin}")
             self.picks.append({"obj": k, "choice_fail": f"live crop too small ({len(P)} points)"})
             return None
         P = L.downsample_cap(P, L.MAX_CLOUD, seed=int(getattr(self.w, "vseed", 0) or 0))
@@ -131,11 +139,13 @@ class LiveRuntime(RT.Runtime):
         gc = L.choose_live(P, N, self.grip, approach, rot_bin, point3d, support_z, f_dir, category=category,
                            obj_h=obj_h, extra_obstacles=extra, seed=seed, k=len(self.picks))
         if gc is None:
+            self._dbg(f"{k}: no live candidate in {len(P)} pts, point3d={point3d} approach={approach} rot={rot_bin}")
             self.picks.append({"obj": k, "choice_fail": "no valid live candidate",
                                "live_cmd": {"approach": approach, "rot_bin": int(rot_bin), "n_cloud": int(len(P))}})
             return None
         ok, _, margin = self.planner.ik(self.to_base(gc.T)[None])
         if not bool(ok[0]):
+            self._dbg(f"{k}: live candidate found but cuRobo IK rejected it, approach={approach} rot={rot_bin}")
             self.picks.append({"obj": k, "choice_fail": "live candidate unreachable (cuRobo IK)",
                                "live_cmd": {"approach": approach, "rot_bin": int(rot_bin)}})
             return None
