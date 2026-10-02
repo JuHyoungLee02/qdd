@@ -24,6 +24,10 @@ def qmul(a, b):
             w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2, w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2]
 
 
+if "READY_SEED0" in os.environ:  # DIAG 9: cuRobo's IK draws the same seeds every process by default (reruns of the
+    # exact V2_READY target failed identically 3x) -- a different torch seed can find what index 0 missed
+    torch.manual_seed(int(os.environ["READY_SEED0"]))
+
 profile, out = sys.argv[1], sys.argv[2]
 p = [float(v) for v in sys.argv[3:6]]
 YAW = float(sys.argv[6]) if len(sys.argv) > 6 else 1.5708  # AI Worker INIT: top-down yaw pi/2
@@ -42,7 +46,7 @@ for arm in arms:
     rng = np.arange(-GRID, GRID + 1e-9, STEP)
     offs = [(0.0, 0.0)] + [(dx, dz) for dx in rng for dz in rng if dx or dz]
     T = [[t[0] + dx, t[1], t[2] + dz] for dx, dz in offs]  # batch: the target + grid neighbours (best margin wins)
-    ik = C.make_ik(profile, arm, num_seeds=64, max_batch_size=len(T),
+    ik = C.make_ik(profile, arm, num_seeds=int(os.environ.get("READY_SEEDS", 64)), max_batch_size=len(T),
                     self_collision_check=os.environ.get("SELFCOL", "1") == "1")
     tf = C.tool_frame(profile, arm)
     r = ik.solve_pose(GoalToolPose.from_poses({tf: Pose(position=torch.tensor(T, device="cuda", dtype=torch.float32),
