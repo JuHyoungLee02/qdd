@@ -233,7 +233,7 @@ def run(a):
         pp = f"/World/envs/env_{i}/Obj"
         prim = stage.DefinePrim(pp, "Xform")
         prim.GetReferences().AddReference(row["usd_physics"])
-        body = f"{pp}/{row['body_rel']}"
+        body = f"{pp}/{row['body_rel']}" if row.get("body_rel") else pp  # body_rel "" (e.g. GSO ood_o): rigid body is the reference root itself
         sim_utils.modify_rigid_body_properties(body, sim_utils.RigidBodyPropertiesCfg(max_depenetration_velocity=1.0))
         sim_utils.modify_mass_properties(body, sim_utils.MassPropertiesCfg(mass=float(row.get("mass", 0.3))))
         mode = (row.get("collider") or cmap.get(k)) if a.collider == "auto" else a.collider
