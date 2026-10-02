@@ -262,6 +262,10 @@ V2 = {
                      "finger_bodies": (f"{s}_hand_thumb_2_link", f"{s}_hand_index_1_link")}
                  for s in ("right", "left")},
         "grip_max_w": 0.1131, "grip_min_w": 0.0215,  # Dex3-1 thumb-index pinch band (tools/l9/v2robot/hands_v2.py)
+        # g1b H8: the thumb's inner face (TCP x +0.006..+0.025, right hand) opposes the GAP between the index (x -0.026..
+        # +0.003) and middle (+0.031..+0.060) fingers (URDF collision meshes): the pinch centre is +0.015 m along the TCP
+        # x axis (left hand mirrored: -0.015), the TCP (thumb-index pad midpoint) sits on the index edge
+        "pinch_offset": {"right": (0.015, 0.0, 0.0), "left": (-0.015, 0.0, 0.0)},
         "pad_len_m": 0.015, "finger_depth_m": 0.0345,
         # [hypothesis] drives; URDF hand joint effort 2.45 N m. Legs + waist are held at 0 by the body drives.
         "kp": 400.0, "kd": 80.0, "finger_kp": 20.0, "finger_kd": 1.0, "finger_effort": 2.45,
@@ -464,10 +468,198 @@ def r1_surface_ok(table_z: float) -> bool:
     return r1_torso_for_surface(table_z)[1] >= -0.02
 
 
+# g1b H5: the Dex3-1 width table is the thumb-index PAD distance; the curled distal links reach past the pads, so the
+# real free gap between thumb and index / middle (URDF collision meshes, |x| <= 2 cm, 3 cm either side of the TCP along
+# the approach) is ~4.5 cm narrower below 8 cm (pre-open 4.6 cm for a 2.2 cm object left 0 mm: the fingertips knocked
+# the object over on the approach, p1h4v 2 of 5 episodes). Pre-open = the table width whose free gap is the wanted one.
+G1_FREE_GAP = ((0.0215, -0.028), (0.0254, -0.024), (0.0300, -0.019), (0.0348, -0.014), (0.0397, -0.008),
+               (0.0447, -0.002), (0.0497, 0.005), (0.0547, 0.011), (0.0597, 0.018), (0.0648, 0.026), (0.0698, 0.033),
+               (0.0748, 0.041), (0.0798, 0.048), (0.0848, 0.055), (0.0898, 0.058), (0.0949, 0.059), (0.0997, 0.060),
+               (0.1041, 0.062), (0.1086, 0.064), (0.1131, 0.065))
+
+
+def g1_open_for_gap(gap: float) -> float:
+    """Smallest table width (pad distance) whose free finger gap is >= gap (clipped to the table)."""
+    W, F = np.array([r[0] for r in G1_FREE_GAP]), np.array([r[1] for r in G1_FREE_GAP])
+    return float(np.interp(float(gap), F, W))
+
+
 def g1_surface_ok(table_z: float) -> bool:
     """G1 stands straight: its shoulders (pelvis 0.793 + 0.044 + 0.248 m) must be 0.30-0.55 m over the surface."""
     s = V2["g1"]["base_z"] + 0.044 + 0.248 - float(table_z)
     return G1_SHOULDER_ABOVE[0] <= s <= G1_SHOULDER_ABOVE[1]
+
+
+# g1b H4: per-episode G1 base x (a range, not a constant). The scenes are drawn with the AI Worker reach probe (x
+# 0.30-0.62); the G1 arm (cuRobo reach maps assets9/reach_v2/g1_<arm>.json) reaches only x <= 0.33-0.43 from its
+# default root (offline, p1 rows: target AND place in reach for 3 of 97 drawn scenes). The base moves forward by dx,
+# drawn uniformly among the 1 cm steps where the target and the place are both in reach and the body (front <= 0.10 m
+# ahead of the root at every height, URDF collision meshes) keeps G1_BODY_CLEAR from every furniture part in front.
+G1_TORSO_IN_ROOT = (-0.004, 0.0, 0.044)  # torso_link (cuRobo base) origin in the pelvis frame, legs / waist at 0
+G1_BODY_FRONT, G1_BODY_CLEAR, G1_CORRIDOR_Y = 0.10, 0.03, 0.25
+G1_DX = (0.0, 0.40, 0.01)
+
+
+def _furniture_front(parts) -> float:
+    """Smallest world x of any furniture part (not walls / ground) inside the body corridor |y| < G1_CORRIDOR_Y."""
+    xs = []
+    for p in parts:
+        if p.get("role") in ("room_wall", "ground") or "size" not in p or "pos" not in p:
+            continue
+        c, s, yaw = np.asarray(p["pos"], float), np.asarray(p["size"], float) / 2, float(p.get("yaw") or 0.0)
+        if c[2] - s[2] > 1.3:
+            continue
+        R = np.array([[math.cos(yaw), -math.sin(yaw)], [math.sin(yaw), math.cos(yaw)]])
+        u = np.linspace(-1.0, 1.0, 21)
+        W = np.stack(np.meshgrid(u, u), -1).reshape(-1, 2) * s[:2] @ R.T + c[:2]
+        m = np.abs(W[:, 1]) < G1_CORRIDOR_Y
+        if m.any():
+            xs.append(float(W[m, 0].min()))
+    return min(xs) if xs else 9.0
+
+
+G1_HEAD_IN_ROOT = ((0.05366, 0.01753, 0.47387), ((0.6743, 0.0, 0.73846), (0.0, 1.0, 0.0), (-0.73846, 0.0, 0.6743)))
+# d435_link in the pelvis frame (URDF FK, legs / waist at 0): optical axis = its +x, 47.6 deg down
+
+
+def g1_head_sees(p_world, root_x: float, margin: float = 0.06) -> bool:
+    """World point inside the G1 torso D435 image (HC.W x HC.H, D435_HFOV) with the world9._head_sees margin (+1 %)."""
+    t, R = np.asarray(G1_HEAD_IN_ROOT[0], float), np.asarray(G1_HEAD_IN_ROOT[1], float)
+    c = R.T @ (np.asarray(p_world, float) - np.array([root_x, 0.0, V2["g1"]["base_z"]]) - t)
+    if c[0] <= 1e-6:
+        return False
+    fx = HC.fx_from_hfov(HC.D435_HFOV, HC.W)
+    u, v = HC.W / 2 - fx * c[1] / c[0], HC.H / 2 - fx * c[2] / c[0]
+    return bool(margin * HC.W <= u <= (1 - margin) * HC.W and margin * HC.H <= v <= (1 - margin) * HC.H)
+
+
+def g1_base_dx(arm: str, points, parts, seed: int, view=()):
+    """dx (m) to add to the G1 root x, or None when no step of G1_DX reaches every point. points: world xyz the
+    used arm must reach (any approach class of the reach map); view: world xyz the torso camera must see;
+    parts: the scene's world furniture parts."""
+    from . import curobo9 as C9
+    root_x = V2_BASE_X["g1"]
+    dmax = _furniture_front(parts) - (root_x + G1_BODY_FRONT + G1_BODY_CLEAR)
+    ok = []
+    for dx in np.arange(G1_DX[0], G1_DX[1] + 1e-9, G1_DX[2]):
+        if dx > dmax:
+            break
+        t = np.array([root_x + dx + G1_TORSO_IN_ROOT[0], G1_TORSO_IN_ROOT[1], V2["g1"]["base_z"] + G1_TORSO_IN_ROOT[2]])
+        if all(g1_head_sees(p, root_x + dx) for p in view) and                 all(any(C9.reach_ok("g1", arm, np.asarray(p, float) - t, ap) for ap in C9.APPROACHES) for p in points):
+            ok.append(float(dx))
+    if not ok:
+        return None
+    return round(ok[int(np.random.default_rng([int(seed), 1931]).integers(len(ok)))], 3)
+
+
+# g1b H7 (user 10-03 03h): G1 stance per episode = base x (dx), torso lean (waist pitch, fixed in the episode) and the
+# work-surface height (the furniture moves down / up by dz so the main surface lands in the G1 band), drawn together
+# uniformly among the combinations where the target and the place are in reach (reach maps, leaned torso frame), in
+# the torso D435 view (leaned camera) and the body (front 0.10 m, upper body leaning) clears the furniture by 3 cm.
+G1_LEANS = tuple(round(v, 2) for v in np.arange(0.0, 0.401, 0.05))  # waist_pitch (limit 0.52); arm shoulder pitch -lean
+G1_SURF = (0.575, 0.785, 0.01)  # surface band: reach-map area >= 36 cells (0.575) .. shoulders 0.30 m over it (0.785)
+G1_CAM_IN_TORSO = (0.05766, 0.01753, 0.42987)  # d435_link origin in torso_link (URDF FK); axes = G1_HEAD_IN_ROOT[1]
+G1_PIVOT_Z = 0.837  # torso_link origin height (pelvis 0.793 + 0.044)
+
+
+def _Ry(t: float) -> np.ndarray:
+    c, s = math.cos(t), math.sin(t)
+    return np.array([[c, 0.0, s], [0.0, 1.0, 0.0], [-s, 0.0, c]])
+
+
+def g1_sees(p_world, root_x: float, lean: float, margin: float = 0.06) -> bool:
+    """World point inside the (leaned) torso D435 image with the world9._head_sees margin (+1 %)."""
+    Ry = _Ry(lean)
+    o = np.array([root_x + G1_TORSO_IN_ROOT[0], 0.0, G1_PIVOT_Z])
+    t = o + Ry @ np.asarray(G1_CAM_IN_TORSO, float)
+    R = Ry @ np.asarray(G1_HEAD_IN_ROOT[1], float)
+    c = R.T @ (np.asarray(p_world, float) - t)
+    if c[0] <= 1e-6:
+        return False
+    fx = HC.fx_from_hfov(HC.D435_HFOV, HC.W)
+    u, v = HC.W / 2 - fx * c[1] / c[0], HC.H / 2 - fx * c[2] / c[0]
+    return bool(margin * HC.W <= u <= (1 - margin) * HC.W and margin * HC.H <= v <= (1 - margin) * HC.H)
+
+
+def _part_fronts(parts) -> list:
+    """(front x in the body corridor, top z, bottom z, floor-standing) of every furniture part (not walls / ground)."""
+    out = []
+    for p in parts:
+        if p.get("role") in ("room_wall", "ground") or "size" not in p or "pos" not in p:
+            continue
+        c, s, yaw = np.asarray(p["pos"], float), np.asarray(p["size"], float) / 2, float(p.get("yaw") or 0.0)
+        R = np.array([[math.cos(yaw), -math.sin(yaw)], [math.sin(yaw), math.cos(yaw)]])
+        u = np.linspace(-1.0, 1.0, 21)
+        W = np.stack(np.meshgrid(u, u), -1).reshape(-1, 2) * s[:2] @ R.T + c[:2]
+        m = np.abs(W[:, 1]) < G1_CORRIDOR_Y
+        if m.any():
+            out.append((float(W[m, 0].min()), float(c[2] + s[2]), float(c[2] - s[2]), bool(c[2] - s[2] < 0.01)))
+    return out
+
+
+G1_REACH_MARGIN = float(os.environ.get("G1B_REACH_MARGIN", "0.05"))  # g1b H9: the 4 xy neighbours at this distance
+# must be reachable too (interior of the reachable region: a reach-map cell counts with ONE solved orientation, while
+# the held object fixes the put orientation up to 8 yaws -- p1h15: 4 of 7 held objects found no put pose at the edge)
+
+
+def _reach_m(C9, arm: str, pb) -> bool:
+    pts = [pb] + ([pb + d for d in (np.array([G1_REACH_MARGIN, 0, 0]), np.array([-G1_REACH_MARGIN, 0, 0]),
+                                     np.array([0, G1_REACH_MARGIN, 0]), np.array([0, -G1_REACH_MARGIN, 0]))]
+                  if G1_REACH_MARGIN > 0 else [])
+    return all(any(C9.reach_ok("g1", arm, q, ap) for ap in C9.APPROACHES) for q in pts)
+
+
+def g1_stance(arm: str, reach_pts, view_pts, parts, table_z: float, seed: int):
+    """-> {dx, lean, dz, surface, n_feasible} drawn uniformly among the feasible stances, or None. Points are world
+    xyz at the drawn (unshifted) heights; dz moves them with the furniture."""
+    from . import curobo9 as C9
+    root0 = V2_BASE_X["g1"]
+    fronts = _part_fronts(parts)
+    floor_h = min([t - b for f, t, b, fl in fronts if fl] or [9.0])
+    feas = []
+    for s in np.arange(G1_SURF[0], G1_SURF[1] + 1e-9, G1_SURF[2]):
+        dz = float(s) - float(table_z)
+        if floor_h + dz < 0.10:
+            continue
+        rp = [np.asarray(p, float) + [0.0, 0.0, dz] for p in reach_pts]
+        vp = [np.asarray(p, float) + [0.0, 0.0, dz] for p in view_pts]
+        for lean in G1_LEANS:
+            Ry = _Ry(lean)
+            sl = math.sin(lean)
+            for dx in np.arange(G1_DX[0], G1_DX[1] + 1e-9, G1_DX[2]):
+                rx = root0 + float(dx)
+                if any(f < rx + G1_BODY_FRONT + max(0.0, min(t + dz, 1.35) - G1_PIVOT_Z) * sl + G1_BODY_CLEAR
+                       for f, t, b, fl in fronts):
+                    break
+                o = np.array([rx + G1_TORSO_IN_ROOT[0], 0.0, G1_PIVOT_Z])
+                if not all(g1_sees(p, rx, lean) for p in vp):
+                    continue
+                if all(_reach_m(C9, arm, Ry.T @ (p - o)) for p in rp):
+                    feas.append((round(float(dx), 3), lean, round(dz, 4), round(float(s), 3)))
+    if not feas:
+        return None
+    rng = np.random.default_rng([int(seed), 1932])
+    fam = os.environ.get("G1B_FAMILY", "")
+    # retest families (owner 10-03 04h): the family's factor is drawn uniformly among its feasible values, the
+    # others take the least-changed feasible value (lean 0 first, surface nearest the drawn one, base nearest)
+    canon = lambda f: (f[1], abs(f[2]), f[0])  # noqa: E731
+    key = {"height": 3, "stance": 0, "lean": 1}.get(fam)
+    if key is not None:
+        vals = sorted({f[key] for f in feas})
+        v = vals[int(rng.integers(len(vals)))]
+        dx, lean, dz, s = min((f for f in feas if f[key] == v), key=canon)
+    elif fam in ("mask", "room"):
+        dx, lean, dz, s = min(feas, key=canon)
+    else:
+        dx, lean, dz, s = feas[int(rng.integers(len(feas)))]
+    return {"dx": dx, "lean": lean, "dz": dz, "surface": s, "n_feasible": len(feas), "family": fam or "joint"}
+
+
+def g1_lean_ready(arm: str, lean: float) -> dict:
+    """V2_READY with the used arm's shoulder pitch -lean (keeps the top-down ready TCP, FK: 1-3 cm lower)."""
+    q = list(V2_READY["g1"][arm])
+    q[0] -= float(lean)
+    return {arm: tuple(q)}
 
 
 def v2_init_joints(profile: str, arm: str, table_z: float, ready: dict | None = None) -> dict:

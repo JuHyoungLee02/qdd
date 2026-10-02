@@ -5,7 +5,9 @@ perturbations, PtEpisode / XEpisode, calls/, labels.jsonl, joints.npz, scene.jso
   register the episode's task (tasks.TASKS / X_TASKS, X_STEPS for multi-step) under L9_TASK
   judge    insert definitions: the object's tilt <= 15 deg at the end (spec §3), on top of success_now
   record   meta gen / env_family / layout / task_family / task_id / arm / head_pose / light_family / unreal /
-           combo_hash / robot_pose / objects; every labels row gets `hand` (spec §4)."""
+           combo_hash / robot_pose / objects; every labels row gets `hand` (spec §4). Left-arm episodes collected before dev 10-03 (prompt_hand) saved
+calls/*/prompt_v2.txt (and prompt_nd*) with RIGHT-arm wording: those raw files are invalid for left episodes --
+read the build rows (min_format.row applies hand.left_text) instead; meta "prompt_hand_fixed" marks new ones."""
 from __future__ import annotations
 
 import json
@@ -24,6 +26,57 @@ MOTION_VERSION = "l8s-1"  # the L8S truth plan / executor (human-like motion var
 
 class NoEpisode(Exception):
     pass
+
+
+def g1_shift_heights(sc: dict, ep: dict, dz: float) -> None:
+    """g1b H7: move the drawn furniture scene vertically by dz (floor-standing parts change height, the others move),
+    with every absolute height the episode keeps (nodes, main surface, spots, surfaces, step place heights)."""
+    dz = float(dz)
+    for key in ("furniture", "parts_s"):
+        for p in sc.get(key, []):
+            if p.get("role") in ("room_wall", "ground") or "size" not in p or "pos" not in p:
+                continue
+            if float(p["pos"][2]) - float(p["size"][2]) / 2 < 0.01:  # standing on the floor: change its height
+                p["size"] = [p["size"][0], p["size"][1], round(float(p["size"][2]) + dz, 5)]
+                p["pos"] = [p["pos"][0], p["pos"][1], round(float(p["size"][2]) / 2, 5)]
+            else:
+                p["pos"] = [p["pos"][0], p["pos"][1], round(float(p["pos"][2]) + dz, 5)]
+    for n in sc.get("nodes", []):
+        for k in ("top_z", "rim_z", "covered_above"):
+            if n.get(k) is not None:
+                n[k] = round(float(n[k]) + dz, 5)
+    ep["table_z"] = round(float(ep["table_z"]) + dz, 5)
+    for src in ("spots", "surfaces"):
+        for v in (ep.get(src) or {}).values():
+            if v.get("top") is not None:
+                v["top"] = round(float(v["top"]) + dz, 5)
+    for si in ep.get("step_info") or []:
+        ph = si.get("place_height") or {}
+        if ph.get("z") is not None:
+            ph["z"] = round(float(ph["z"]) + dz, 5)
+
+
+def g1_points(sc: dict, ep: dict) -> list:
+    """g1b H4: world points the G1 arm must reach for the first step: the target at grasp / pre-grasp height and the
+    place at put / carry height (spots, surfaces, objects of the episode; an unknown place adds no point)."""
+    nodes = {n["id"]: n for n in sc.get("nodes", [])}
+
+    def at(k):
+        for src in ("spots", "surfaces"):
+            s = (ep.get(src) or {}).get(k)
+            if s and "xy" in s and "top" in s:
+                return s["xy"], float(s["top"])
+        o = (ep.get("objects") or {}).get(k)
+        if o and o.get("node") in nodes:
+            return o["xy"], float(nodes[o["node"]]["top_z"])
+        return None
+    tg, dst = ep["steps"][0][0], ep["steps"][0][1]
+    out = []
+    for k, dz in ((tg, (0.05, 0.15)), (dst, (0.10, 0.18))):
+        r = at(k)
+        if r is not None:
+            out += [(float(r[0][0]), float(r[0][1]), r[1] + z) for z in dz]  # even index: the low (view) point
+    return out
 
 
 def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 20, world=None) -> tuple:
@@ -54,18 +107,37 @@ def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 20, world=None) ->
             continue
         robot = row.get("robot") or "ffw_sg2"
         prof = E9.active(robot)
-        if prof is not None and "surface_z_m" in prof:  # env profile (opt-in): every robot's own surface band
+        stance = None
+        if robot == "g1" and os.environ.get("G1B_STANCE", "1") != "0":  # g1b H7: dx + lean + surface height together
+            from . import robot9 as RB
+            pts = g1_points(sc, ep)
+            stance = RB.g1_stance(row["arm"], pts, pts[0::2], sc["furniture"], float(ep["table_z"]), sd)
+            if stance is None:
+                last = "g1: no stance (base x, lean, surface height) reaches the target and the place (reach-limited)"
+                continue
+        if stance is None and prof is not None and "surface_z_m" in prof:  # env profile (opt-in): own surface band
             lo, hi = prof["surface_z_m"]
             if not lo <= float(ep["table_z"]) <= hi:
                 last = f"{robot}: surface {float(ep['table_z']):.2f} m outside its profile band [{lo}, {hi}]"
                 continue
-        elif robot in ("g1", "r1pro"):  # body reach band (world9._place_v2 skips the scene): draw another scene instead
+        elif robot in ("g1", "r1pro") and stance is None:  # body reach band (world9._place_v2 skips the scene): draw another scene instead
             from . import robot9 as RB  # of losing the row (G1 pilot 10-02: 58 of 60 rows skipped)
             ok = RB.g1_surface_ok(ep["table_z"]) if robot == "g1" else RB.r1_surface_ok(ep["table_z"])
             if not ok:
                 last = f"{robot}: surface {float(ep['table_z']):.2f} m outside its reach band"
                 continue
+            if robot == "g1" and os.environ.get("G1B_BASE", "1") != "0" and stance is None:  # g1b H4: base x
+                pts = g1_points(sc, ep)
+                dx = RB.g1_base_dx(row["arm"], pts, sc["furniture"], sd, view=pts[0::2])
+                if dx is None:
+                    last = "g1: no base pose reaches the target and the place (reach-limited)"
+                    continue
+                ep["g1_base_dx"] = dx
         T9.add_clutter(ep, sc, pool, sd, rmx, grip_max=row.get("grip_max"))
+        if stance is not None:  # after the clutter (drawn with the reach probe at the drawn heights)
+            g1_shift_heights(sc, ep, stance["dz"])
+            ep["g1_stance"] = stance
+            ep["g1_base_dx"] = stance["dx"]
         light = V.pick_light_family(sd, row["family"])
         head = V.head_pose(sd)
         rp, hp = V.pose_key(sc["robot_pose"], head)
@@ -141,6 +213,7 @@ def run_episode(world, row: dict, out_dir: str, pool: dict, rm, ledger=None, p: 
     if rt is not None:  # spec §12 v2: the cuRobo executor's timing style
         rt.style = mstyle
     style = "clean" if row.get("clean") else row.get("style", "")
+    world.prompt_hand = row["arm"]  # saved requests (prompt_v2 / nd) name the arm that moves (left fix 10-03)
     meta = collect_episode(world, int(row["seed"]), T9_TASK, "drf", row.get("split", "train"), out_dir,
                            0.0 if style == "clean" else p, 4, stop_calls, stop_motion_s, style, video=video)
     judge = {}
@@ -152,6 +225,7 @@ def run_episode(world, row: dict, out_dir: str, pool: dict, rm, ledger=None, p: 
     if ledger is not None:
         ledger.add(h)
     fs = getattr(world, "furniture_scene", {}) or {}
+    meta["prompt_hand_fixed"] = True  # calls/*/prompt_v2.txt names the moving arm (left episodes valid from here)
     meta.update(gen=GEN, env_family=sc["family"], layout=f"{sc['family']}/{sc['rule']}", layout_rule=sc["rule"],
                 task_family=ep["family"], task_id=ep["def"], arm=row["arm"], head_pose=fs.get("head", head),
                 light_family=light, unreal=False, combo_hash=h, robot_pose=sc["robot_pose"], lift_l9=sc["lift"],

@@ -162,6 +162,12 @@ def main(argv=None):
                 r["hcam"] = hcam
         todo = [r for r in rows if not (os.path.exists(os.path.join(ep_dir(a.out, r), "meta.json"))
                                         or os.path.exists(os.path.join(ep_dir(a.out, r), "skipped.json")))]
+        _rd = os.path.dirname(os.path.abspath(a.out))
+        if os.path.exists(os.path.join(_rd, "G1B_FAMILY")):  # retest: solved / filled definitions need no Isaac boot
+            _sv = os.path.join(os.path.dirname(_rd), "SOLVED")
+            _nm = int(os.environ.get("G1B_NMIN", "5"))
+            todo = [r for r in todo if not os.path.exists(os.path.join(_sv, r["def"])) and len(glob.glob(
+                os.path.join(a.out, "*", "*", f"{r['def']}_s*", "meta.json"))) < _nm]
         print("JOB " + json.dumps({"job": a.job, "rows": len(rows), "todo": len(todo)}), flush=True)
         if not todo:
             print("RUN_DONE", flush=True)
@@ -191,6 +197,9 @@ def main(argv=None):
         if a.v2:
             from .rt9 import install as v2_install
             v2_install(world, robot, arm, allow_untested=a.v2_untested)
+            if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(a.out)), "G1B_DIAG")):
+                from .g1b_diag import install as g1b_install  # independent G1 team diagnostics (opt-in)
+                g1b_install(world.rt)
         elif a.live_exec:
             from .rtlive9 import install as live_install
             live_install(world, robot, arm, allow_untested=a.v2_untested)
@@ -209,7 +218,19 @@ def main(argv=None):
         print("WORLD " + json.dumps({"arm": world.arm, "pool": len(pool), "rooms": sorted(rooms), "n": len(todo)}),
               flush=True)
         yf = yield_file()
+        rdir = os.path.dirname(os.path.abspath(a.out))
+        if os.path.exists(os.path.join(rdir, "G1B_FAMILY")):  # retest family of this run dir (robot9.g1_stance)
+            os.environ["G1B_FAMILY"] = open(os.path.join(rdir, "G1B_FAMILY")).read().strip()
+        solved = os.path.join(os.path.dirname(rdir), "SOLVED")  # retest: a definition ends at its first success
+        n_min = int(os.environ.get("G1B_NMIN", "5"))
+
+        def _rendered(d):
+            return len(glob.glob(os.path.join(a.out, "*", "*", f"{d}_s*", "meta.json")))
         for r in todo:
+            if os.path.exists(os.path.join(rdir, "G1B_FAMILY")) and (
+                    os.path.exists(os.path.join(solved, r["def"])) or _rendered(r["def"]) >= n_min):
+                print("RETEST_SKIP " + json.dumps({"seed": r["seed"], "def": r["def"]}), flush=True)
+                continue
             if os.path.exists(yf) and os.environ.get("IR_L9R_LENT") != "1":  # lent card: stop between episodes
                 # (tools/l9/lend9.sh); IR_L9R_LENT=1 = this process IS the borrower (tools/l9r/lane_r.sh)
                 print("YIELD " + yf, flush=True)
@@ -230,6 +251,9 @@ def main(argv=None):
                     "wall_s")
             print("EP " + json.dumps(dict({k: meta.get(k) for k in keep}, wall_total_s=round(time.perf_counter() - t0, 1),
                                           t=round(time.time(), 1))), flush=True)
+            if meta.get("success") and os.path.exists(os.path.join(rdir, "G1B_FAMILY")):
+                os.makedirs(solved, exist_ok=True)
+                open(os.path.join(solved, r["def"]), "a").write(f"{od}\n")
             if os.environ.get("L9_TIMING"):
                 from . import timing9
                 print("TIMING " + json.dumps(timing9.report()), flush=True)

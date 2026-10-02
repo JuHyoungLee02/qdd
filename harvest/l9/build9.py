@@ -33,15 +33,16 @@ ROBOT_ANCHOR = CAM_ANCHOR
 
 # Episode-level filters (user 10-03), applied by build() before any row is made, for every build (current and
 # L9v2-general) and whatever head camera the episode drew (each call's own live "occ" in labels.jsonl).
-# (1) key-call occlusion: an episode whose KEY call (approach = above_target, grasp = descend_close, place =
-#     lower_open) has its pointed-at object (target while approaching / grasping, else the place) >= OCC_MAX hidden
+# (1) key-call occlusion: an episode whose KEY call (KEY_STEPS: approach = above_target, place = lower_open) has its pointed-at object (target while approaching / grasping, else the place) >= OCC_MAX hidden
 #     in the head image is dropped WHOLE -- otherwise the VLM learns to move without seeing the key step. Same
 #     measure / threshold as the per-call gate (visgate9.OCC_MAX on labels.jsonl "occ", teach_l8d.collect._occ).
 #     Robots: KEY_OCC_ROBOTS (user order names the Franka; the rule itself is robot-agnostic).
 # (2) arm balance: per robot with both arms present, the majority arm is thinned to the minority arm's count
 #     (definitions where that arm leads most first, so per-definition balance improves too); the shortfall is what
 #     the auto top-up must add on the minority arm (capfilter9 --arm-need).
-KEY_STEPS = {"above_target": "approach", "descend_close": "grasp", "lower_open": "place"}
+# user decision 10-03 (05h): only the approach call (above_target, target) and the place call (lower_open, place);
+# the gripper hiding the target during the grasp (descend_close) is allowed.
+KEY_STEPS = {"above_target": "approach", "lower_open": "place"}
 KEY_OCC_ROBOTS = ("franka_mast",)
 
 

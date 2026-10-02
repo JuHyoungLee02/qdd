@@ -987,6 +987,9 @@ class Env:
         t = self.gap_table()
         if t is not None:  # grip layer: the largest torque over ALL finger joints (g1b H1: one joint read ~0)
             return float(self.robot.data.applied_torque[0, self._gl_ids(t)].abs().max())
+        if getattr(self, "robot_name", None) == "g1":  # g1b H1: grip_id = thumb_0, whose target never moves (its torque
+            # stays ~0 while the other six joints squeeze at the 2.45 N m cap): the largest finger torque instead
+            return float(self.robot.data.applied_torque[0, self.grip_ids].abs().max())
         return float(self.robot.data.applied_torque[0, self.grip_id].abs())
 
     def object_pose(self, k):

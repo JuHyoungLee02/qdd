@@ -1,5 +1,4 @@
-"""build9.episode_filter (user 10-03): a KEY_OCC_ROBOTS episode with a key call (above_target / descend_close /
-lower_open) >= 50 % occluded is dropped whole; non-key calls never drop it; arms are balanced per robot."""
+"""build9.episode_filter (user 10-03): a KEY_OCC_ROBOTS episode with a key call (above_target / lower_open) >= 50 % occluded is dropped whole; non-key calls never drop it; arms are balanced per robot."""
 import json
 import os
 
@@ -22,7 +21,7 @@ def test_key_occlusion_steps(tmp_path):
     c = _ep(tmp_path, "c", "franka_mast", "right", "t", [("tipped", None), ("descend_close", 0.7)])
     assert B9.key_occlusion(a)["key"] == "place"
     assert B9.key_occlusion(b) is None  # carry is not a key call; 0.49 < OCC_MAX
-    assert B9.key_occlusion(c)["key"] == "grasp"
+    assert B9.key_occlusion(c) is None  # grasp-step occlusion is allowed (user 10-03)
 
 
 def test_filter_franka_only_and_arm_balance(tmp_path):
