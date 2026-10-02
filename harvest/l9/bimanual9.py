@@ -460,6 +460,50 @@ class HandoverRuntime:
             self.run_ticks(len(slot.traj) + 5)  # TypeError from P9.resample(None, ...); the straight-line micro-lift
         return {"ok": True, "status": "ok", "gc": gc, "T_obj_pick": T_obj_pick}  # an optimization, skip if None
 
+    def _live_best_yaw(self, obj_key: str, zone_xyz, n_yaw: int = 8) -> tuple:
+        """Owner 2026-10-02 (R4 follow-up to `best_release_yaw`'s static approach-class proxy, which matched the
+        broad direction but still left the receiver at ik_ok=0 in every pod attempt that reached it -- pod smoke
+        #10): the SAME two-stage batched cuRobo IK check `rt9.Runtime._valid` makes (the grasp pose itself, then
+        the retracted pre-grasp standoff pose, both with self-collision on and the giver's TCP box as an obstacle)
+        run directly against the receiver's own test-passing candidates, for `n_yaw` candidate world yaws of the
+        object placed at `zone_xyz` -- picks the yaw with the most candidates where BOTH poses solve. A real IK
+        probe, not a proxy, at a real (if slightly cheaper -- a single fixed standoff, not the per-pick random
+        draw) version of what `choose()` will check for real right after. -> (best_yaw_rad, n_ok, n_tested)."""
+        env = self.world.env
+        env.use_arm(self.receiver.arm)
+        rt = self.receiver.rt
+        C = rt._load(obj_key)
+        if C is None or not len(C.get("w", ())):
+            return 0.0, 0, 0
+        ok0 = np.asarray(C["test_ok"], bool) if "test_ok" in C else np.ones(len(C["w"]), bool)
+        idx = np.flatnonzero(ok0)
+        if not len(idx):
+            return 0.0, 0, 0
+        STANDOFF_PROBE = 0.11  # m, the midpoint of v2plan.STANDOFF (0.08, 0.14) -- a fixed probe value; the real
+        rt.refresh_world(extra_boxes=self.other_arm_boxes(self.receiver))  # per-pick draw happens in choose() itself
+        best_yaw, best_n = 0.0, -1
+        for k in range(n_yaw):
+            yaw = 2 * math.pi * k / n_yaw
+            cz, sz = math.cos(yaw), math.sin(yaw)
+            Robj = np.array([[cz, -sz, 0.0], [sz, cz, 0.0], [0.0, 0.0, 1.0]])
+            T_obj = np.eye(4)
+            T_obj[:3, :3] = Robj
+            T_obj[:3, 3] = zone_xyz
+            Tg, Tp = [], []
+            for i in idx:
+                Tw = T_obj @ C["T"][i]
+                a_world = Robj @ np.asarray(C["a"][i], float)
+                Twp = Tw.copy()
+                Twp[:3, 3] = Tw[:3, 3] - a_world * STANDOFF_PROBE
+                Tg.append(rt.to_base(Tw))
+                Tp.append(rt.to_base(Twp))
+            ok_g, _, _ = rt.planner.ik(np.stack(Tg))
+            ok_p, _, _ = rt.planner.ik(np.stack(Tp))
+            n = int(np.sum(np.asarray(ok_g, bool) & np.asarray(ok_p, bool)))
+            if n > best_n:
+                best_yaw, best_n = yaw, n
+        return best_yaw, best_n, len(idx)
+
     def _move_to(self, slot: "_ArmSlot", target_xyz, quat_wxyz=None) -> dict:
         """A straight / planned cuRobo move to a world TCP pose, holding `slot.held_obj` attached if set."""
         from . import rt9 as RT
@@ -517,25 +561,20 @@ class HandoverRuntime:
             return {"ok": False, "log": log}
         carry_pos, carry_quat = zone, None
         if cell is not None:  # owner 2026-10-02 (R4 follow-up): release at a yaw whose candidates actually point
-            giver_arm = self.giver.arm  # the direction the zone cell is reachable from, for the receiver
-            shoulder_recv = cell["shoulder_right" if self.receiver.arm == "right" else "shoulder_left"]
-            C = self.receiver.rt._load(obj_key)
-            if C is not None and len(C.get("a", ())):
-                yaw, n_match, n_tot = best_release_yaw(np.asarray(C["a"], float), cell["classes"], shoulder_recv,
-                                                       (zone[0], zone[1]))
-                log[-1]["release_yaw_match"] = f"{n_match}/{n_tot}"
-                T_obj_pick = r.get("T_obj_pick")
-                if T_obj_pick is not None:
-                    from . import plan9 as P9
-                    from . import rt9 as RT
-                    T_obj_G = P9.inv_T(T_obj_pick) @ r["gc"].T  # the rigid grip, constant while held
-                    cz, sz = math.cos(yaw), math.sin(yaw)
-                    T_obj_desired = np.eye(4)
-                    T_obj_desired[:3, :3] = np.array([[cz, -sz, 0.0], [sz, cz, 0.0], [0.0, 0.0, 1.0]])
-                    T_obj_desired[:3, 3] = zone
-                    T_grip_desired = T_obj_desired @ T_obj_G
-                    carry_pos = T_grip_desired[:3, 3]
-                    carry_quat = RT.G.mat_quat(T_grip_desired[:3, :3])
+            yaw, n_ok, n_tot = self._live_best_yaw(obj_key, zone)  # the direction the zone is reachable from
+            log[-1]["release_yaw_ik"] = f"{n_ok}/{n_tot}"
+            T_obj_pick = r.get("T_obj_pick")
+            if T_obj_pick is not None:
+                from . import plan9 as P9
+                from . import rt9 as RT
+                T_obj_G = P9.inv_T(T_obj_pick) @ r["gc"].T  # the rigid grip, constant while held
+                cz, sz = math.cos(yaw), math.sin(yaw)
+                T_obj_desired = np.eye(4)
+                T_obj_desired[:3, :3] = np.array([[cz, -sz, 0.0], [sz, cz, 0.0], [0.0, 0.0, 1.0]])
+                T_obj_desired[:3, 3] = zone
+                T_grip_desired = T_obj_desired @ T_obj_G
+                carry_pos = T_grip_desired[:3, 3]
+                carry_quat = RT.G.mat_quat(T_grip_desired[:3, :3])
         r = self._move_to(self.giver, carry_pos, quat_wxyz=carry_quat)
         log.append({"phase": "giver_carry", **r})
         if not r["ok"]:
