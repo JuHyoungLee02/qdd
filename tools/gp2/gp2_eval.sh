@@ -18,7 +18,9 @@ wanted() {
   done < /data/harvest/out/vla/GPU_WANTED
   return 1
 }
+until [ -f $O/DATA_READY ]; do [ -f $O/STOP_EVAL ] && exit 0; sleep 120; done  # steps.txt is written by gp2_prep.sh
 S=$(grep "^$ARM " $O/steps.txt | tail -n 1 | cut -d' ' -f2)
+[ -z "$S" ] && { log "NO_STEPS $R"; exit 1; }
 for M in ${R}_q$((S / 4)) ${R}_q$((S / 2)) ${R}_final; do
   [ -f $O/eval/$M/EVAL_DONE ] && continue
   until [ -f $O/merged/$M/config.json ]; do
