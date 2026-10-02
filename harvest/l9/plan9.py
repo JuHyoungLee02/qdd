@@ -121,7 +121,8 @@ class Planner9:
         self.ikb = InverseKinematics(InverseKinematicsCfg.create(  # batched reach checks (candidate filtering)
             robot=cp(), scene_model={"cuboid": {"_floor": {"dims": [0.1, 0.1, 0.01],
                                                                "pose": [5.0, 5.0, -5.0, 1, 0, 0, 0]}}},
-            num_seeds=16, self_collision_check=True, max_batch_size=IK_BATCH, collision_cache={"cuboid": collision_cache}))
+            num_seeds=int(os.environ.get("L9_IK_SEEDS_CANDIDATE", "16")), self_collision_check=True,
+            max_batch_size=IK_BATCH, collision_cache={"cuboid": collision_cache}))
         self.torch = __import__("torch")
         self.dev = device
         self.attached = None
