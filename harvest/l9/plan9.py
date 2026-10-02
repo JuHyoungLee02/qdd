@@ -134,6 +134,7 @@ class Planner9:
         sc = SceneCfg.create(scene)
         self.mp.update_world(sc)
         self.ikb.update_world(sc)
+        self._scene = scene  # start_hits() checks the start state against these cuboids
 
     def _js(self, q):
         from curobo.types import JointState
@@ -175,11 +176,62 @@ class Planner9:
                 "grasp": self._pos(r.grasp_interpolated_trajectory) if ok else None,
                 "lift": self._pos(r.lift_interpolated_trajectory) if ok else None}
 
-    def pose(self, q, T_base) -> np.ndarray | None:
+    def pose(self, q, T_base, escape: bool = True) -> np.ndarray | None:
+        """Collision-aware pose-to-pose. A start state inside the padded world (+ activation distance) makes cuRobo
+        refuse every attempt ('Start or End state in collision'; L9v2-DIAG 1: the preroll pose touches shelf decor,
+        the arm rests on an object it just placed): then a short straight TCP escape (3 / 6 / 10 cm up, back along
+        the tool z, towards the base, down, sideways) to a collision-free state and the plan from there."""
         r = self.mp.plan_pose(self._goal(T_base), self._js(q), max_attempts=8)
+        if r is not None and bool(r.success.any()):
+            return self._pos(r.get_interpolated_plan())
+        if not escape or not self.start_hits(q):
+            return None
+        E = self.escape(q)
+        if E is None:
+            return None
+        r = self.mp.plan_pose(self._goal(T_base), self._js(E[-1]), max_attempts=8)
         if r is None or not bool(r.success.any()):
             return None
-        return self._pos(r.get_interpolated_plan())
+        self.n_escape = getattr(self, "n_escape", 0) + 1
+        return np.concatenate([E, self._pos(r.get_interpolated_plan())[1:]])
+
+    def start_hits(self, q, act: float = 0.012) -> list:
+        """[(cuboid, penetration m)] of joint state q vs the current world: robot collision spheres + the 1 cm
+        activation distance (+ 2 mm). Non-empty = cuRobo refuses q as a start state."""
+        from .grasp9 import qmat
+        st = self.mp.compute_kinematics(self._js(q))
+        S = st.robot_spheres.reshape(-1, 4).cpu().numpy()
+        S = S[S[:, 3] > 0]
+        out = []
+        for k, v in (getattr(self, "_scene", None) or {}).get("cuboid", {}).items():
+            c, R, h = np.asarray(v["pose"][:3], float), qmat(v["pose"][3:]), np.asarray(v["dims"], float) / 2
+            d = np.linalg.norm(np.maximum(np.abs((S[:, :3] - c) @ R) - h, 0.0), axis=1)
+            pen = S[:, 3] + act - d
+            if (pen > 0).any():
+                out.append((k, float(pen.max())))
+        return out
+
+    def tool_T(self, q) -> np.ndarray:
+        from .grasp9 import qmat
+        st = self.mp.compute_kinematics(self._js(q))
+        T = np.eye(4)
+        T[:3, :3] = qmat(st.tool_poses.quaternion.reshape(-1, 4)[0].cpu().numpy())
+        T[:3, 3] = st.tool_poses.position.reshape(-1, 3)[0].cpu().numpy()
+        return T
+
+    def escape(self, q, steps=(0.03, 0.06, 0.10)):
+        """(N, dof) straight TCP move from q to the first collision-free state (start_hits == []), or None."""
+        T0 = self.tool_T(q)
+        dirs = [np.array([0, 0, 1.0]), T0[:3, 2], np.array([-1.0, 0, 0]), np.array([0, 0, -1.0]),
+                np.array([0, 1.0, 0]), np.array([0, -1.0, 0])]
+        for st in steps:
+            for d in dirs:
+                T1 = T0.copy()
+                T1[:3, 3] = T0[:3, 3] + st * d / np.linalg.norm(d)
+                Q = self.line(q, T0, T1)
+                if Q is not None and not self.start_hits(Q[-1]):
+                    return Q
+        return None
 
     def ik(self, T_base_batch, contact_links_off: bool = True):
         """Batched reach test: -> (ok (N,), q (N, dof), margin (N,)) for world-collision-aware IK of N tool poses.
