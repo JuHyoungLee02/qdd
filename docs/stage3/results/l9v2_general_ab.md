@@ -35,6 +35,15 @@ Notes fixed before the runs:
   top of this B. The general spec is frozen only after both A/Bs. Main run: code dev b69a765, B env =
   GGX + GRIP_LAYER + ENV_PROFILE + CARRY_INVIEW + COMMON_EXEC + HIGH_SHARE=0.10; 4 robots × 32 rows (production-rendered
   rows), 5 rows per job (one Isaac boot per job; boots take 10–13 min under load), 64 jobs.
+- **Revision 3 (07:1x KST, main run half done, no verdict looked at)**: the b69a765 copy lacked the env-profile
+  CONSUMER in world9 (919c2ab2: per-episode body/stance cell for every robot with a profile). B drew surface heights
+  from the profile but kept the old body limits, so R1 B skipped 6/7 rows (world9 DIAG 8, "surface above its torso
+  reach"; A 0). The run in `gab/main` is stopped (lanes finish their job, nothing killed) and kept as a bug baseline.
+  `gab/main2` reruns BOTH arms of all 4 robots on the same rows (main's plan after the ext_p split, 76 jobs) with code
+  dev b4fe4a4c (contains 919c2ab2). Checked in B.env: none of `L9V2_PLACE_*`, `L9_CSPACE_READY`, `L9_PLACE_FREE`,
+  `L9_IK_SEED`, `L9_EXEC_TABLE`, `L9_IK_SEEDS_CANDIDATE` is set (all opt-in, default off in b4fe4a4c); B.env = A.env +
+  GGX (3 vars) + GRIP_LAYER + CARRY_INVIEW + COMMON_EXEC + ENV_PROFILE + HIGH_SHARE=0.10. The verdict is computed on
+  main2 only.
 - The smoke test (below) runs B without P0. The main A/B runs only with P0 included (coordinator 10-03: no
   trajectory-mode mix inside one spec).
 
