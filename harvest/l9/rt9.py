@@ -36,6 +36,9 @@ EMPTY_M, CONTACT_TOL, CONTACT_TOL_HI, SLIP_GAP, SLIP_MOVE = 0.003, 0.008, 0.020,
 LIMIT_MARGIN = 0.01
 CMD_DQ = 0.034  # command step cap: the measured arm lags then catches up, 12 of ~120 pilot successes measured
 # 0.0401-0.047 rad at a 0.04 command cap (rejected by the <= 0.04 gate); 0.034 x 1.17 stays under 0.04
+# L9v2-R1: R1 Pro arm lags its target up to 0.2 rad (kp 1000 / kd 200) and catches up with 0.042-0.050 rad steps
+# when the target stops (vL8 10-03, 2 of 8 successes rejected): a smaller command step for that robot (opt-in)
+CMD_DQ_BY = {"r1pro": 0.026} if os.environ.get("IR_L9_R1_DQ", "") == "1" else {}
 WIDE_KEEP = 0.045
 TARGET_CORE = 0.5  # while approaching, the target is an obstacle at half its box: the fingers / palm around a grasp
 #                    stay outside the core, the arm cannot pass through the object (smoke 10-02: full box -> no grasp
@@ -852,7 +855,7 @@ class Runtime:
         s = self.style or {}
         kind = s.get("profile", "minjerk")
         v = float(s.get("v_avg", 0.09) or 0.09)
-        return P9.resample(Q, dq_max=CMD_DQ, kind=kind if kind in P9.PEAK else "minjerk",
+        return P9.resample(Q, dq_max=CMD_DQ_BY.get(self.profile, CMD_DQ), kind=kind if kind in P9.PEAK else "minjerk",
                            split=float(s.get("split", 0.7)), slow=slow * max(1.0, 0.09 / v))
 
     # ------------------------------------------------------------------ gripper events
