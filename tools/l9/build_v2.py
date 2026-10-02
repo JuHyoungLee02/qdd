@@ -4,8 +4,13 @@ Checks: off-build 0 third-person rows; on-build third-person rows = third-person
 view per row); every ego row parses to the 4 slots; 0 rows without the head image; image-count histogram.
 usage: python tools/l9/build_v2.py <out dir> <name> <collect root>... [--third-person off|on] [--split l9train]
        [--eval] [--no-slots] [--seed 0] [--success-only] [--camera-line] [--both] [--spec L9v2-spec-final]
+       [--rationale off|on|both]
 --both (with --third-person on): also <name>_tp_off.jsonl and <name>_tp_on.jsonl from the same build; the ego rows are
-byte-identical (checked)."""
+byte-identical (checked).
+--rationale (owner 10-02 22:40, 8B check arm): on = every control row's answer gets the build-time "why"
+(harvest.l9.rationale9); both = also <name>_rat_off.jsonl / <name>_rat_on.jsonl from the SAME rows (row ids
+identical, only the reply text differs, checked like --both above); off (default) = unchanged (no production
+change). The consistency gate (rationale word == command word) runs inside specgate9.gates() either way."""
 import glob
 import json
 import os
@@ -16,6 +21,7 @@ from harvest.l9 import build9 as B9  # noqa: E402
 from harvest.l9 import tp9  # noqa: E402
 from harvest.l9 import views9 as V  # noqa: E402
 from harvest.l9 import specgate9 as SG  # noqa: E402
+from harvest.l9 import rationale9 as RT  # noqa: E402
 
 
 def main():
@@ -24,6 +30,7 @@ def main():
     out, name = a[0], a[1]
     roots = [x for i, x in enumerate(a[2:], 2) if not x.startswith("--") and not a[i - 1].startswith("--")]
     tp_on = arg("--third-person", "off") == "on"
+    rat_mode = arg("--rationale", "off")
     slots = "--no-slots" not in a
     eps = []
     n_old_spec = 0
@@ -46,7 +53,7 @@ def main():
                 continue
             eps.append(os.path.dirname(m))
     c = B9.build(eps, out, arg("--split", "l9train"), name, train="--eval" not in a, camera_line="--camera-line" in a,
-                 seed=int(arg("--seed", "0")), slots=slots, third_person=tp_on)
+                 seed=int(arg("--seed", "0")), slots=slots, third_person=tp_on, rationale=rat_mode != "off")
     ego = [json.loads(x) for x in open(c["path"])]
     bad = 0
     if slots:
@@ -93,6 +100,37 @@ def main():
                          "ego_sha256": hashlib.sha256(off_b).hexdigest()[:16],
                          "ego_identical": on_b[:len(off_b)] == off_b}
         check["ok"] = check["ok"] and check["sets"]["ego_identical"]
+    if rat_mode != "off":  # owner 10-02 22:40: 8B check arm (rationale on/off), build-time "why" (rationale9)
+        anss = []
+        for x in ctrl:
+            try:
+                anss.append(json.loads(x["answer"]))
+            except (TypeError, ValueError):
+                anss.append({})
+        rats = [a.get("rationale") for a in anss]
+        parsed = [RT.parse(r) if r else None for r in rats]
+        n = len(ctrl)
+        with_rat = sum(1 for r in rats if r)
+        share = lambda f: round(sum(1 for p in parsed if p and f(p)) / n, 4) if n else 0.0  # noqa: E731
+        check["rationale"] = {
+            "rows": n, "with_rationale": with_rat, "share_with_rationale": round(with_rat / n, 4) if n else 0.0,
+            "share_arm": share(lambda p: bool(p["arms"])), "share_approach": share(lambda p: p["approach"] is not None),
+            "share_rot": share(lambda p: p["rot"] is not None), "share_handover": share(lambda p: p["handover"]),
+            "share_axis": share(lambda p: p["axis"] is not None), "mismatches": g["rationale_mismatches"],
+            "examples": [r for r in rats if r][:5]}
+        check["ok"] = check["ok"] and check["rationale"]["mismatches"] == 0
+        if rat_mode == "both":  # <name>_rat_off.jsonl / _rat_on.jsonl from the SAME rows (c["path"] = the on build)
+            off_lines = [json.dumps(dict(x, answer=RT.strip(x["answer"]))) for x in ego]
+            on_lines = [json.dumps(x) for x in ego]
+            with open(os.path.join(out, name + "_rat_off.jsonl"), "w", encoding="utf-8", newline="\n") as f:
+                f.write("".join(ln + "\n" for ln in off_lines))
+            with open(os.path.join(out, name + "_rat_on.jsonl"), "w", encoding="utf-8", newline="\n") as f:
+                f.write("".join(ln + "\n" for ln in on_lines))
+            off_b = open(os.path.join(out, name + "_rat_off.jsonl"), "rb").read()
+            on_b = open(os.path.join(out, name + "_rat_on.jsonl"), "rb").read()
+            check["rationale"]["sets"] = {"off_rows": off_b.count(b"\n"), "on_rows": on_b.count(b"\n"),
+                                          "rows_identical": off_b.count(b"\n") == on_b.count(b"\n")}
+            check["ok"] = check["ok"] and check["rationale"]["sets"]["rows_identical"]
     json.dump(check, open(os.path.join(out, name + ".check.json"), "w"), indent=1)
     print(json.dumps(dict(check, episodes=len(eps), control_rows=c["control_rows"])))
 

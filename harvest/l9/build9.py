@@ -240,9 +240,11 @@ def slot_rows(r: dict, x: dict, meta: dict, robot: str, seed: int, third_person:
 
 def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera_line: bool = False,
                  grasp_format: bool = True, external: bool = False, slots: bool = False,
-                 third_person: bool = False, seed: int = 0) -> tuple:
+                 third_person: bool = False, seed: int = 0, rationale: bool = False) -> tuple:
     """-> (control rows, aux rows, counts) of one L9 episode. external=True adds the paired external-view rows of
-    paired episodes (ext9; default off = the head-only build, unchanged)."""
+    paired episodes (ext9; default off = the head-only build, unchanged). rationale=True: each control row's answer
+    (ego + any third-person slot variant) gets the build-time "why" (rationale9.build) inserted before "reason";
+    default False = byte-identical to the no-rationale build (owner 10-02 22:40, no production change)."""
     from ..teach_l8.dataset import repeat_of
     from ..teach_pt import dataset as DS
     from ..teach_pt import min_format as MF
@@ -291,11 +293,22 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera
             with open(dst, "w", encoding="utf-8", newline="\n") as f:
                 f.write(add_camera_line(open(p, encoding="utf-8").read(), line))
             x.update(prompt_path=dst, camera_line=True)
+        tp_rows = []
         if slots:  # 4-slot camera schema (views9); third-person variants go to the third-person shard
             x, tp_rows, cv = slot_rows(r, x, meta, robot, seed, third_person)
             ext_rows += tp_rows
             c["third_person_slot_rows"] += len(tp_rows)
             c.update(cv)
+        if rationale:
+            from . import rationale9 as RT
+            text = RT.for_answer(meta, r, x["answer"])
+            if text:
+                x["answer"] = RT.inject(x["answer"], text)
+                for tp in tp_rows:
+                    tp["answer"] = RT.inject(tp["answer"], text)
+                c["rationale_rows"] += 1
+            else:
+                c["rationale_missing"] += 1
         ctrl += [x] * (repeat_of(x) if train else 1)
         for e in ext_rows:  # right after their head row, same repeats
             ctrl += [e] * (repeat_of(x) if train else 1)
@@ -308,16 +321,17 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera
 
 def build(ep_dirs, out_dir: str, split: str, name: str, train: bool = True, camera_line: bool = False,
           seed: int = 0, grasp_format: bool = True, external: bool = False, slots: bool = False,
-          third_person: bool = False) -> dict:
+          third_person: bool = False, rationale: bool = False) -> dict:
     """external=True (--third-person on): + the paired external-view rows, written to their own shard
-    <name>_third_person.jsonl (user 10-02: the ego shard <name>.jsonl never holds third-person rows; off = 0 of them)."""
+    <name>_third_person.jsonl (user 10-02: the ego shard <name>.jsonl never holds third-person rows; off = 0 of them).
+    rationale=True: see episode_rows (default False = unchanged output, owner 10-02 22:40)."""
     prepare(("train", "ood_o"))
     os.makedirs(out_dir, exist_ok=True)
     rng = np.random.default_rng([seed, 9, 29])
     ctrl, aux, c = [], [], Counter()
     for d in ep_dirs:
         a, b, k = episode_rows(d, out_dir, split, train, rng, camera_line, grasp_format, external, slots,
-                               third_person, seed)
+                               third_person, seed, rationale)
         ctrl += a
         aux += b
         c.update(k)

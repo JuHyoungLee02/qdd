@@ -85,6 +85,9 @@ def schema_errors(answer: str) -> list:
             if p is not None and not (isinstance(p, list) and len(p) == 2 and all(isinstance(v, int) and 0 <= v <= 1000
                                                                                      for v in p)):
                 errs.append(f"{k} {p!r}")
+    rat = a.get("rationale")  # optional (owner 10-02 22:40, build-time "why"; rationale9.build)
+    if rat is not None and not (isinstance(rat, str) and 0 < len(rat.split()) <= 60):
+        errs.append(f"rationale {rat!r}")
     return errs
 
 
@@ -133,6 +136,34 @@ def contradictions(rows: list) -> int:
     return n
 
 
+def rationale_mismatches(rows: list) -> int:
+    """Parse-back consistency gate (owner 10-02 22:40): a row's "rationale" must name the same arm(s) / approach /
+    rot / handover / axis as the commands that produced it (rationale9.parse vs. rationale9.commands_of). Rows
+    without a rationale are skipped -- nothing to check, not a mismatch."""
+    from . import rationale9 as RT
+    n = 0
+    for r in rows:
+        try:
+            a = json.loads(r.get("answer") or "")
+        except (TypeError, ValueError):
+            continue
+        if not isinstance(a, dict) or "rationale" not in a:
+            continue
+        cmds = RT.commands_of(a)
+        got = RT.parse(a["rationale"])
+        exp_arms = [c.get("arm") or c.get("hand") for c in cmds if (c.get("arm") or c.get("hand"))]
+        grasp = [c for c in cmds if c.get("approach") is not None and c.get("rot") is not None]
+        bad = ((got["arms"] and got["arms"] != exp_arms)
+               or (got["approach"] is not None and (not grasp or grasp[0].get("approach") != got["approach"]))
+               or (got["rot"] is not None and (not grasp or grasp[0].get("rot") != got["rot"]))
+               or (got["handover"] and not any(c.get("handover_point") is not None
+                                               or c.get("handover_height") is not None for c in cmds))
+               or (got["axis"] is not None and not any(c.get("axis") == got["axis"][0] for c in cmds)))
+        if bad:
+            n += 1
+    return n
+
+
 FRAME_SENTENCE = "Directions in the task (left, right, front, behind) are in the robot's frame, not the camera image."
 
 
@@ -161,11 +192,12 @@ def gates(rows: list, texts: dict, train: bool = False, frame_note: bool = False
     legends = {r.get("colour_legend", "none") for r in rows}
     fams = {template_family(texts[r["prompt_path"]]) for r in rows if r.get("prompt_path") in texts}
     schema = sum(1 for r in rows if r.get("answer") is not None and schema_errors(r["answer"]))
+    rat_mm = rationale_mismatches(rows)
     out = {"contradictions": contradictions(rows), "spec_versions": sorted(map(str, specs)),
            "overlays": sorted(overlays), "colour_legends": sorted(legends), "template_families": len(fams),
-           "schema_errors": schema}
+           "schema_errors": schema, "rationale_mismatches": rat_mm}
     out["ok"] = (out["contradictions"] == 0 and len(spec_fams) == 1 and len(overlays) == 1 and len(legends) == 1
-                 and len(fams) <= 1 and schema == 0)
+                 and len(fams) <= 1 and schema == 0 and rat_mm == 0)
     if frame_note:
         out["frame_note_missing"] = sum(1 for r in rows if r.get("prompt_path") in texts
                                         and FRAME_SENTENCE not in texts[r["prompt_path"]])
