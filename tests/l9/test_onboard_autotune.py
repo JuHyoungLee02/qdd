@@ -128,3 +128,21 @@ def test_compare_hand_best_stance_mean():
 
 def test_pitch_beyond_vertical_is_not_folded():
     assert abs(G.cam_pitch_deg(G.look_R(110.0)) - 110.0) < 1e-6
+
+
+def test_body_clearance_removes_stances_inside_the_body():
+    d = _synthetic()
+    d["body_front_x"] = np.full((2, 3), 0.25)  # body reaches x 0.25 below the surface top
+    sc, st = RG.cell_scores(d, 0.2, (-0.3, -0.1), 0.10)
+    ok = RG.clear_mask(d, st)  # stance d ok iff d - FURN_INSET >= body_front_x + BODY_GAP
+    assert ok.shape == sc.shape
+    assert not ok[:, :, [i for i, s in enumerate(st) if s < 0.25 + RG.FURN_INSET + RG.BODY_GAP - 1e-9]].any()
+    prof = RG.extract(d, band_depth=0.2, lateral=(-0.3, -0.1), lift_ref=0.10, rel=0.7)
+    assert all(c["stance_x"] >= 0.25 + RG.FURN_INSET + RG.BODY_GAP - 1e-9 for c in prof["cells"])
+
+
+def test_cells_need_most_of_the_band_in_view():
+    d = _synthetic()
+    d["vis"][:, :, 1, :, 0] = False  # camera now sees only x >= 0.4 -> band starting at 0.3 is half hidden
+    prof = RG.extract(d, band_depth=0.2, lateral=(-0.3, -0.1), lift_ref=0.10, rel=0.0)
+    assert all(c["stance_x"] >= 0.4 - 1e-9 for c in prof["cells"])

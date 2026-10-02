@@ -84,6 +84,46 @@ def camera_world(r: dict, u, cam: str, q: dict, T_wr: np.ndarray, pitch_opt: flo
             "width": c["width"], "height": c["height"]}
 
 
+def body_points(r: dict, u, per_link: int = 400) -> dict:
+    """{link: N x 3 collision-mesh points in the link frame} of every body link that is NOT part of an arm (arm links =
+    the first arm joint's child and its descendants, for every arm). Visual meshes when a link has no collision."""
+    import trimesh
+    from harvest.l9 import curobo9 as C9
+    arm_links = set()
+    for a in r["arms"]:
+        ch = u.joints[C9.arm_joints(r["profile"], a)[0]]["child"]
+        arm_links |= {ch, *u.descendants(ch)}
+    out = {}
+    for link in u.links:
+        if link in arm_links:
+            continue
+        gs = u.geoms(link, "collision") or u.geoms(link, "visual")
+        pts = []
+        for fn, sc, Tg, prim in gs:
+            if fn is None or not os.path.exists(fn):
+                continue
+            m = trimesh.load(fn, force="mesh", process=False)
+            v = np.asarray(m.vertices, float) * np.asarray(sc, float)
+            if len(v) > per_link:
+                v = v[np.random.default_rng(0).choice(len(v), per_link, replace=False)]
+            pts.append((Tg[:3, :3] @ v.T).T + Tg[:3, 3])
+        if pts:
+            out[link] = np.concatenate(pts)
+    return out
+
+
+def body_front_x(u, pts: dict, q: dict, rz: float, surface_z: float, above: float = 0.02) -> float:
+    """Most forward x (root frame) of the non-arm body below surface + `above` with the root at height rz; -9 if none."""
+    best = -9.0
+    for link, P in pts.items():
+        T = u.T_root(link, q)
+        W = (T[:3, :3] @ P.T).T + T[:3, 3]
+        m = W[:, 2] + rz <= surface_z + above
+        if m.any():
+            best = max(best, float(W[m, 0].max()))
+    return best
+
+
 def pitch_options(c: dict) -> list:
     if c.get("pitch_joint"):
         lo, hi = c["pitch_range"]
@@ -192,6 +232,13 @@ def sweep_arm(r: dict, arm: str, out: str, seeds: int, batch: int, snap: float, 
                 cw = camera_world(r, u, cam, qb, Twr, po)
                 vis[c, s, :, :, p] = G.visible(cw, Pw, margin=0.05).reshape(X, Y)
                 cam_pitch[c, s, p] = G.cam_pitch_deg(cw["R"])
+    # body clearance (L9 runtime P131: a torso posture that pushes into the furniture is not held)
+    bpts = body_points(r, u)
+    bfx = np.full((C, S), -9.0)
+    for c, q in enumerate(cfgs):
+        qb = {k: v for k, v in q.items() if k != "root_z_rel_surface"}
+        for s, sz in enumerate(SURFACES):
+            bfx[c, s] = body_front_x(u, bpts, qb, float(poses[c][s][0][2, 3]), float(sz))
     sfx = "" if shard[1] == 1 else f".s{shard[0]}of{shard[1]}"
     if vis_only:  # recompute camera visibility / pitch only, keep the stored IK results
         old = np.load(os.path.join(out, f"{prof}_{arm}{sfx}.npz"))
@@ -248,7 +295,8 @@ def sweep_arm(r: dict, arm: str, out: str, seeds: int, batch: int, snap: float, 
             "selftest_success": st, "reach_radius_m": rad, "n_ik": n_ik, "n_groups": len(groups),
             "seconds": round(time.time() - t0, 1), "seeds": seeds, "snap_m": snap, "shard": list(shard)}
     np.savez_compressed(os.path.join(out, f"{prof}_{arm}{sfx}.npz"), reach=reach, vis=vis, cam_pitch=cam_pitch, xs=XS,
-                        ys=YS, levels=LEVELS, surfaces=SURFACES, lean=lean, mount_z=mount_z, mount_x=mount_x)
+                        ys=YS, levels=LEVELS, surfaces=SURFACES, lean=lean, mount_z=mount_z, mount_x=mount_x,
+                        body_front_x=bfx)
     json.dump(meta, open(os.path.join(out, f"{prof}_{arm}{sfx}_meta.json"), "w"), indent=1)
     print(f"[{prof}/{arm}] done {meta['seconds']}s ik {n_ik} reach {reach.mean():.3f} vis {vis.mean():.3f}", flush=True)
     return meta

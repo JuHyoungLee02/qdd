@@ -23,6 +23,11 @@ EPS = 1e-6
 # G1 D435 47.6 + lean 0.1-0.4 = 53-70, Franka mast ~20-40). One constant for all robots: a body posture whose camera
 # looks straight down (R1 lean >1, 85-90 deg) is outside every robot's view distribution (L9: no VLM confusion).
 CAM_PITCH_BAND = (20.0, 70.0)
+# Runtime gates the profile must respect (integrated A/B main2, 10-03: B lost humanoid scenes to "head: target/place
+# out of view" and "body joints off (P131)"). One set for every robot:
+VIS_MIN = 0.9      # share of the work band the robot's own camera must see (world9 skips scenes whose target leaves view)
+FURN_INSET = 0.03  # nearest task object sits >= this far behind the furniture front
+BODY_GAP = 0.02    # no body part (arms excluded) may come closer than this to the furniture front below its top
 
 
 def with_pitch_band(d: dict, band) -> dict:
@@ -65,8 +70,23 @@ def cell_scores(d: dict, band_depth: float, lateral, lift_ref: float) -> tuple:
     _, _, _, cov_y, vis_any = _point_terms(d, lift_ref)
     point = cov_y.mean(-1) * vis_any  # [C,S,X,Y]
     st = _stances(d["xs"], band_depth)
-    sc = np.stack([point[:, :, _band(d["xs"], d["ys"], s, band_depth, lateral)].mean(-1) for s in st], -1)
+    bands = [_band(d["xs"], d["ys"], s, band_depth, lateral) for s in st]
+    sc = np.stack([point[:, :, b].mean(-1) for b in bands], -1)
+    seen = np.stack([vis_any[:, :, b].mean(-1) for b in bands], -1)
+    sc = np.where((seen >= VIS_MIN - EPS) & clear_mask(d, st), sc, 0.0)
     return sc, st
+
+
+def clear_mask(d: dict, st) -> np.ndarray:
+    """[C,S,D] stance d keeps the body (arms excluded) out of the furniture under the work surface: the furniture front
+    is FURN_INSET before the band, and body_front_x[C,S] (sweep: the most forward body point below surface + 2 cm,
+    root frame; -inf when none) must stay BODY_GAP behind it. Sweeps without body_front_x pass everything."""
+    C, S = np.asarray(d["vis"]).shape[:2]
+    st = np.asarray(st, float)
+    if "body_front_x" not in d:
+        return np.ones((C, S, len(st)), bool)
+    bf = np.asarray(d["body_front_x"], float).reshape(C, S)
+    return (st[None, None, :] - FURN_INSET) >= bf[:, :, None] + BODY_GAP - EPS
 
 
 def _rng(v):
@@ -172,7 +192,7 @@ def extract(arms, band_depth: float = 0.25, lateral=(-0.40, 0.0), lift_ref: floa
         scores.append(sc)
     score = np.mean(scores, 0)  # [C,S,D]
     best = float(score.max())
-    feas = score >= rel * best - EPS if best > 0 else np.zeros_like(score, bool)
+    feas = (score >= rel * best - EPS) & (score > 0) if best > 0 else np.zeros_like(score, bool)
     C, S, D = score.shape
     surf = np.asarray(d0["surfaces"], float)
     mz = np.broadcast_to(np.asarray(d0["mount_z"], float).reshape(C, -1), (C, S))
@@ -200,6 +220,8 @@ def extract(arms, band_depth: float = 0.25, lateral=(-0.40, 0.0), lift_ref: floa
                     "lean_rad": _rng([d0["lean"][c] for c, _, _ in core]) if core else None,
                     "mount_above_surface_m": _rng([mz[c, s] - surf[s] for c, s, _ in core]) if core else None}
     prof["stats"]["cam_pitch_band_deg"] = list(cam_pitch_band) if cam_pitch_band else None
+    prof["stats"]["gates"] = {"vis_min": VIS_MIN, "furn_inset_m": FURN_INSET, "body_gap_m": BODY_GAP,
+                              "body_clearance": "body_front_x" in d0}
     a0 = prof["arms"][names[0]]
     prof["hand"] = {"yaw_deg_ok": a0["yaw_deg_ok"], "yaw_deg_bad": a0["yaw_deg_bad"], "tilt_deg": a0["tilt_deg"],
                     "fallback": a0["fallback"]}
