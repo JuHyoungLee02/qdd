@@ -86,7 +86,9 @@ HFOV_CHOICES = tuple(round(STD_HFOV + d, 2) for d in (-5.0, 0.0, 5.0))  # AIW: (
 PITCH_OLD_STEEPEST = 55.0
 MAST_DEFAULT = {"x": -0.10, "y": 0.23, "h": 0.55, "pitch": PITCH_OLD_STEEPEST - 5.0, "pan": -10.0}
 MAST_RANGE = {"x": (-0.20, 0.0), "y": (0.15, 0.30), "h": (0.45, 0.70),
-              "pitch": [PITCH_OLD_STEEPEST - off for off in (0.0, 5.0, 10.0, 15.0)], "pan": (-20.0, 0.0)}
+              "pitch": (40.0, 50.0), "pan": (-20.0, 0.0)}
+# r1-v8 (user 10-03 after the pitch_preview PNGs, tools/l9/pitch_preview.py): pitch uniform 40-50 deg down per
+# episode (the 55 deg panel clipped the top; general spec, every new Franka episode).
 D435_HFOV = 69.0  # Intel RealSense D435 colour, horizontal (datasheet 69 x 42 deg)
 FRANKA_HFOV_CHOICES = tuple(round(D435_HFOV + d, 2) for d in (-5.0, 0.0, 5.0))  # (64.0, 69.0, 74.0), user 10-03
 TRIES = 5
