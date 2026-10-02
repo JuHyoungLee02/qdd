@@ -37,13 +37,13 @@ def jobs_of(path):
             except ValueError:
                 continue
             ok = bool(d.get("success")) and (d.get("max_dq_rad") or 0) <= 0.04
-            cur["rows"].append(("EP", float(d.get("wall_total_s") or 0), d.get("robot") or "?", ok))
+            cur["rows"].append(("EP", float(d.get("wall_total_s") or 0), d.get("robot") or "?", ok, d.get("t")))
         elif line.startswith("SKIP {"):
             try:
                 d = json.loads(line[5:])
             except ValueError:
                 continue
-            cur["rows"].append(("SKIP", float(d.get("wall_s") or 0), None, False))
+            cur["rows"].append(("SKIP", float(d.get("wall_s") or 0), None, False, d.get("t")))
         else:
             m = EXIT.match(line)
             if m:
@@ -63,14 +63,15 @@ def main():
             continue
         jobs += [j for j in jobs_of(p) if (j["end"] or now) >= t_min]
     boots = sorted((j["end"] - j["start"]) - sum(r[1] for r in j["rows"]) for j in jobs if j["end"] and j["rows"])
+    boots = [b for b in boots if b == b]
     boot0 = boots[len(boots) // 2] if boots else 60.0
     W = defaultdict(lambda: [0, 0])  # (window, pod, robot) -> [eps, succ]
     for j in jobs:
         boot = max(0.0, (j["end"] - j["start"]) - sum(r[1] for r in j["rows"])) if j["end"] else boot0
         t = j["start"] + boot
         pod = j["host"].replace("juhyoung-", "")
-        for kind, wall, robot, ok in j["rows"]:
-            t += wall
+        for kind, wall, robot, ok, tt in j["rows"]:
+            t = float(tt) if tt else t + wall  # EP / SKIP lines carry their clock since 10-02 16h
             if kind != "EP" or t < t_min or t > now:
                 continue
             w = int((now - t) // win)

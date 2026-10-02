@@ -97,6 +97,7 @@ FRANKA_MAX_GRASP_W = 0.066  # Franka Hand opens 8 cm; close_width = width - 1.4 
 
 
 def main(argv=None):
+    T_MAIN = time.time()
     ap = argparse.ArgumentParser()
     ap.add_argument("--plan", required=True)
     ap.add_argument("--job", required=True)
@@ -179,6 +180,7 @@ def main(argv=None):
         if os.environ.get("L9_TIMING"):
             from . import timing9
             timing9.install(world)
+        print("BOOT " + json.dumps({"boot_s": round(time.time() - T_MAIN, 1), "t": round(time.time(), 1)}), flush=True)
         print("WORKSPACE " + json.dumps({"arm": arm, "rebound": apply_arm_workspace(arm), "robot": robot, "hcam": hcam, "ext": ext,
                                          "prompts": apply_prompts(robot)}), flush=True)
         rm = R9.load_default()
@@ -204,12 +206,13 @@ def main(argv=None):
                 os.makedirs(od, exist_ok=True)
                 json.dump({"row": r, "reason": f"{type(ex).__name__}: {ex}"}, open(os.path.join(od, "skipped.json"), "w"))
                 print("SKIP " + json.dumps({"seed": r["seed"], "def": r["def"], "reason": str(ex)[:200],
-                                            "wall_s": round(time.perf_counter() - t0, 1)}), flush=True)
+                                            "wall_s": round(time.perf_counter() - t0, 1), "t": round(time.time(), 1)}),
+                      flush=True)
                 continue
             keep = ("seed", "task_id", "arm", "robot", "env_family", "success", "end_reason", "n_calls", "max_dq_rad",
                     "wall_s")
-            print("EP " + json.dumps(dict({k: meta.get(k) for k in keep}, wall_total_s=round(time.perf_counter() - t0, 1))),
-                  flush=True)
+            print("EP " + json.dumps(dict({k: meta.get(k) for k in keep}, wall_total_s=round(time.perf_counter() - t0, 1),
+                                          t=round(time.time(), 1))), flush=True)
             if os.environ.get("L9_TIMING"):
                 from . import timing9
                 print("TIMING " + json.dumps(timing9.report()), flush=True)

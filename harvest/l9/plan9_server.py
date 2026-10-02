@@ -61,6 +61,10 @@ class PlannerProxy:
         env = {k: v for k, v in os.environ.items() if not k.startswith(("CARB_", "OMNI_", "EXP_", "ISAAC_PATH"))}
         env["PYTHONPATH"] = f"{code}:{PYLIB}"
         env.pop("LD_PRELOAD", None)
+        pg = [g for g in os.environ.get("L9_PLANNER_GPUS", "").split(",") if g.strip()]
+        if pg:  # planner on a compute-only card (fe08 1/4/5: no render), spread by process id (10-02 16h)
+            env["CUDA_VISIBLE_DEVICES"] = pg[os.getpid() % len(pg)].strip()
+            device = "cuda:0"
         self.log = open(os.path.join(log_dir, f"planner_{tag}.log"), "w")
         self.p = subprocess.Popen(["/isaac-sim/python.sh", "-m", "harvest.l9.plan9_server", self.sock, cfg_path,
                                    device], env=env, stdout=self.log, stderr=subprocess.STDOUT, cwd=code)
