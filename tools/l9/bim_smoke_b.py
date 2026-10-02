@@ -40,6 +40,9 @@ def main(argv=None):
     ap.add_argument("--def", dest="defn_name", default="lift_tray", choices=list(
         "lift_tray lift_pot lift_big_box lift_basket lift_crate lift_bar".split()))
     ap.add_argument("--pool", type=int, default=5000)
+    ap.add_argument("--pools", default=None,
+                     help="comma-separated pool_for() indices to UNION together (more diversity for defs whose "
+                          "category is thin/scattered across windows, e.g. basket) -- overrides --pool if given")
     ap.add_argument("--rooms", type=int, default=5000)
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--carry-dx", type=float, default=0.15)  # m, place target offset from the pick xy
@@ -60,7 +63,10 @@ def main(argv=None):
         from harvest.l9.run9 import rooms_for
 
         cats = B.BIM_B_DEFS[a.defn_name]["cats"]
-        pool = A9.pool_for(a.pool, "train")
+        pool_idxs = [int(x) for x in a.pools.split(",")] if a.pools else [a.pool]
+        pool = {}
+        for p in pool_idxs:
+            pool.update(A9.pool_for(p, "train"))
         # owner 10-03 (approved): B's "lift" objects (tray/basket/bin/etc) are tagged role9 in {container,clutter}
         # in the single-arm catalog -- task9.instantiate()'s target-role filter is role9=='target' only, hardcoded,
         # and stays UNTOUCHED (single-arm pipeline unmodified). Scoped fix instead: relabel a LOCAL COPY (not the
