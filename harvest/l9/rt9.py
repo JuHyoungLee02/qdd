@@ -648,7 +648,7 @@ class Runtime:
             return
         from . import robot9 as R9
         off = np.asarray((R9.V2.get(self.profile, {}).get("pinch_offset") or {}).get(self.arm, (0.0, 0.0, 0.0)), float)
-        if os.environ.get("G1B_PINCH", "0") != "0" and np.any(off) and not gc.meta.get("pinch_offset"):
+        if os.environ.get("G1B_PINCH", "1") != "0" and np.any(off) and not gc.meta.get("pinch_offset"):
             gc.T = gc.T.copy()  # g1b H8: the hand pinch centre (robot data) onto the grasp point
             gc.T[:3, 3] = gc.T[:3, 3] - gc.T[:3, :3] @ off
             gc.meta["pinch_offset"] = [round(float(v), 4) for v in off]
