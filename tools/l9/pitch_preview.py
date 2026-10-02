@@ -27,6 +27,8 @@ def main(argv=None):
         from harvest.l9.rt9 import install as v2_install
         from harvest.l9.run9 import job_pool, rooms_for
         from harvest.l9.world9 import make_world9
+        from harvest.teach_l8d.fx import SkipScene
+        from harvest.l9.collect9 import NoEpisode
 
         os.makedirs(a.out, exist_ok=True)
         offsets = [float(x) for x in a.offsets.split(",")]
@@ -44,9 +46,14 @@ def main(argv=None):
             rooms = rooms_for(int(jrows[0]["rooms"]), "train" if split == "train" else "ood")
             world = make_world9(arm, pool, rooms, robot=robot, hcam=None)
             v2_install(world, robot, arm, allow_untested=False)
-            for row in jrows:
-                sc, ep, light, head, h, sd = draw_scene(row, pool, rm, None, tries=20, world=world)
-                world.prepare(sc, ep, light, head, sd)
+            done = False
+            for row in jrows:  # try candidate rows for this family until one builds (NoEpisode: retry next)
+                try:
+                    sc, ep, light, head, h, sd = draw_scene(row, pool, rm, None, tries=20, world=world)
+                    world.prepare(sc, ep, light, head, sd)
+                except (NoEpisode, SkipScene) as ex:
+                    print(f"SKIP_ROW {job} seed={row['seed']}: {ex}", flush=True)
+                    continue
                 base = dict(world.head_cam["draw"])
                 p0 = float(base["pitch"])
                 imgs = []
@@ -72,6 +79,10 @@ def main(argv=None):
                 out_path = os.path.join(a.out, f"{sc['family']}_{row['seed']}.png")
                 comp.save(out_path)
                 results.append({"family": sc["family"], "seed": row["seed"], "base_pitch": p0, "path": out_path})
+                done = True
+                break
+            if not done:
+                print(f"NO_ROW_WORKED {job}", flush=True)
             world.env.close()
         json.dump(results, open(os.path.join(a.out, "index.json"), "w"), indent=1)
         print("PITCH_PREVIEW " + json.dumps(results), flush=True)
