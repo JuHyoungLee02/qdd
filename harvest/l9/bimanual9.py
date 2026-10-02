@@ -654,6 +654,26 @@ def live_hand_boxes(world, arm: str, rt, prefix: str = "other_hand") -> dict:
     return hand_boxes(rt.tcp_T(), rt.gr, float(env.gripper_width()), prefix=prefix)
 
 
+def drop_model_overlap(rt, boxes: dict) -> dict:
+    """Drop the other-hand boxes that the planner's OWN robot model already touches with the planned arm where it
+    is now. cuRobo keeps the other arm as locked joints at a fixed pose (rt9.locks_from_sim / the yml locks), and
+    those links ARE collision-checked: a box on the other hand lying on that locked copy puts every configuration in
+    collision (bimdeep BIM_DEBUG 10-03: giver pick ik_ok=0 with the receiver's hand boxes 40 cm away from the target,
+    ik ok without them, 6 of 6; B lead-arm transit failed with boxes, ok without, 2 of 2). Boxes clear of the model
+    (the other hand far from its locked pose: at the handover zone, on the shared object) are kept."""
+    if not boxes:
+        return boxes
+    from . import plan9 as P9
+    rt.planner.world(P9.scene_cuboids([], boxes, rt.T_world_base(), pad=0.005))
+    try:
+        hits = rt.planner._call("start_hits", np.clip(rt.arm_q(), rt.q_lo, rt.q_hi), 0.0)
+    except Exception as ex:  # noqa: BLE001  (old planner servers without start_hits: keep the boxes)
+        print(f"BIM drop_model_overlap: {ex}", flush=True)
+        return boxes
+    bad = {h[0] for h in hits}
+    return {k: v for k, v in boxes.items() if k not in bad}
+
+
 def _tilt_deg(R0, R1) -> float:
     z0, z1 = np.asarray(R0, float)[:, 2], np.asarray(R1, float)[:, 2]
     return math.degrees(math.acos(max(-1.0, min(1.0, float(z0 @ z1)))))
@@ -890,7 +910,7 @@ class HandoverRuntime:
         other = self.other_of(slot)
         bx = live_hand_boxes(self.world, other.arm, other.rt)
         self.world.env.use_arm(slot.arm)
-        return bx
+        return drop_model_overlap(slot.rt, bx)
 
     def _grasp(self, slot: "_ArmSlot", obj_key: str, lift: bool = True) -> dict:
         """Choose + transit + straight approach + lift (rt9.Runtime._approach_plan, self-contained), then close.
@@ -1334,7 +1354,7 @@ class LiftRuntime:
         other = self.other_of(slot)
         bx = live_hand_boxes(self.world, other.arm, other.rt)
         self.world.env.use_arm(slot.arm)
-        return bx
+        return drop_model_overlap(slot.rt, bx)
 
     def _snap(self, name: str) -> None:
         if self.snap is not None:
@@ -1465,7 +1485,8 @@ class LiftRuntime:
             gc1 = self._choose_side(first, obj_key, None)
             if gc1 is None:
                 return None, None, "first"
-            first_hand = hand_boxes(gc1.T, first.rt.gr, float(gc1.pre_open), prefix="first_hand")
+            first_hand = drop_model_overlap(second.rt, hand_boxes(gc1.T, first.rt.gr, float(gc1.pre_open),
+                                                                  prefix="first_hand"))
             gc2 = self._choose_side(second, obj_key, first_hand)
             if gc2 is None:
                 return None, None, "second"
