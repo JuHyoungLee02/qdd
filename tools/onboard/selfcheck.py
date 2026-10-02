@@ -1,11 +1,12 @@
 """(pure) Onboarding tool (A) self-checks: aggregates the outputs of the existing + small new scripts this chain
 calls into PASS/FAIL with numbers (design doc docs/research/embodiment_onboarding_2026-10-03.md §4.1's 7 steps /
-the task's 6 self-checks). No new measurement here -- every check just reads a JSON file another script already
-wrote (build_curobo9.py's <robot>_build.json, width_table.py's verify output, ready_search.py's output,
-verify_limits.py's stdout, spawn_smoke9.py's *_smoke.json).
+the task's 6 self-checks, + check 7 added 10-03 on the L9 owner's request). No new measurement here -- every check
+just reads a JSON file another script already wrote (build_curobo9.py's <robot>_build.json, width_table.py's verify
+output, ready_search.py's output, verify_limits.py's stdout, spawn_smoke9.py's *_smoke.json,
+scene_reach.py's comparison json).
 
 usage: selfcheck.py <robot> <arm> --build B.json [--width W.json] [--ready R.json] [--limits-log L.log]
-                    [--smoke S.json] [--width-tol-mm 5] [--out report.md]
+                    [--smoke S.json] [--scene SC.json] [--width-tol-mm 5] [--out report.md]
 """
 from __future__ import annotations
 
@@ -96,10 +97,28 @@ def check_render_probe(smoke: dict | None) -> dict:
                      f"{smoke.get('tcp_err_mm')} mm"}
 
 
+def check_scene_own_reach_camera(scene: dict | None, min_rate: float = 0.30, max_gap: float = 0.15) -> dict:
+    """7. (added 10-03, L9 owner/main request) scene placement validated against the robot's OWN reach map + OWN
+    head camera -- scene_reach.py draws scenes with the AI Worker's reach9.load_default() (today's default for any
+    robot without its own hook) and re-checks them against the profile's own reach_v2 map + head camera. FAIL if
+    the robot's own-camera usable rate is low in absolute terms, or far below the AIW rate the scenes were drawn to
+    satisfy (the G1 lesson, commit 2311383: AIW-style placement put ~63 % of G1's targets outside its own camera)."""
+    if not scene:
+        return {"name": "scene_own_reach_camera", "ok": None, "detail": "not run (pass --scene)"}
+    r_own, r_aiw, gap = scene.get("rate_usable_under_own_camera"), scene.get("rate_usable_under_aiw_default"), scene.get("gap")
+    ok = r_own is not None and r_own >= min_rate and (gap is None or gap <= max_gap)
+    return {"name": "scene_own_reach_camera", "ok": ok, "rate_usable_under_own_camera": r_own,
+           "rate_usable_under_aiw_default": r_aiw, "gap": gap, "min_rate": min_rate, "max_gap": max_gap,
+           "detail": f"own-camera usable rate {r_own} (floor {min_rate}), vs AIW-drawn rate {r_aiw} "
+                     f"(gap {gap}, max allowed {max_gap}), over {scene.get('n_seeds')} seeds "
+                     f"({scene.get('family')}/{scene.get('rule')})"}
+
+
 def run_all(robot: str, arm: str, build: dict, width: dict | None, ready: dict | None, limits_log: str | None,
-           smoke: dict | None, width_tol_mm: float, tcp_tol_mm: float) -> dict:
+           smoke: dict | None, width_tol_mm: float, tcp_tol_mm: float, scene: dict | None = None) -> dict:
     checks = [check_tcp(build, arm, tcp_tol_mm), check_limits_log(limits_log), check_selfcollision(build, arm),
-             check_width_table(width, width_tol_mm), check_ready_pose(ready), check_render_probe(smoke)]
+             check_width_table(width, width_tol_mm), check_ready_pose(ready), check_render_probe(smoke),
+             check_scene_own_reach_camera(scene)]
     return {"robot": robot, "arm": arm, "checks": checks,
            "overall_pass": all(c["ok"] for c in checks if c["ok"] is not None)}
 
@@ -122,6 +141,7 @@ def main():
     ap.add_argument("--ready", default=None)
     ap.add_argument("--limits-log", default=None)
     ap.add_argument("--smoke", default=None)
+    ap.add_argument("--scene", default=None)
     ap.add_argument("--width-tol-mm", type=float, default=5.0)
     ap.add_argument("--tcp-tol-mm", type=float, default=1.0)
     ap.add_argument("--out", default=None)
@@ -131,9 +151,10 @@ def main():
     width = json.load(open(a.width)) if a.width else None
     ready = json.load(open(a.ready)) if a.ready else None
     smoke = json.load(open(a.smoke)) if a.smoke else None
+    scene = json.load(open(a.scene)) if a.scene else None
     limits_log = open(a.limits_log).read() if a.limits_log else None
 
-    report = run_all(a.robot, a.arm, build, width, ready, limits_log, smoke, a.width_tol_mm, a.tcp_tol_mm)
+    report = run_all(a.robot, a.arm, build, width, ready, limits_log, smoke, a.width_tol_mm, a.tcp_tol_mm, scene)
     print(json.dumps(report, indent=1, default=str))
     md = to_markdown(report)
     print(md)
