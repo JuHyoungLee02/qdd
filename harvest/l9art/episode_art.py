@@ -508,6 +508,7 @@ class ArtEpisode:
         return plan
 
     def _pt(self, cam, skill, p, height, grip, g, p2=None, p_ref=None) -> dict:
+        self._p3 = np.asarray(p, float)  # the pointed 3D point (occlusion check in run)
         cmd = {"mode": "point", "skill": skill, "point_2d": SK.to_px(cam, p), "height": height, "gripper": grip,
                "hand": self.ex.arm}
         a, c = g.get("a"), g.get("c")
@@ -803,6 +804,8 @@ class ArtEpisode:
             row = {"call": i, "stage": lab.get("stage"), "sub": lab["sub"], "skill": lab.get("skill"),
                    "answer": ans, "command": lab["cmd"], "joints": {k: round(v, 5) for k, v in self.q().items()},
                    "tcp": [round(float(v), 4) for v in self.ex.tcp_T()[:3, 3]], "grip_w": round(self.ex.grip_w(), 4),
+                   "occ": SK.occluded(obs.cams["head"], (obs.depth or {}).get("head"), getattr(self, "_p3", None))
+                   if lab["cmd"].get("mode") == "point" and lab["cmd"].get("point_2d") is not None else None,
                    "drop": None if lab["cmd"].get("mode") != "point" or lab["cmd"].get("point_2d") is not None
                    else "not_visible"}
             try:

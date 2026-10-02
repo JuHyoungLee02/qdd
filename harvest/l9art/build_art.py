@@ -26,9 +26,10 @@ def label_missing_of(r: dict) -> bool:
     """True when the labels.jsonl row's command is a point command missing its target pixel, or (sub == "move",
     where every stage kind always sets point2) missing the end pixel."""
     cmd = r.get("command") or {}
-    if cmd.get("mode") != "point":
+    if cmd.get("mode") != "point" or cmd.get("height") == "lift":  # lift: no point by design
         return False
-    if cmd.get("point_2d") is None:
+    if cmd.get("point_2d") is None or (r.get("occ") is True and r.get("sub") in ("start", "above")):  # target hidden
+        # before the hand reaches it (depth check); near / holding it the own fingers hide it by nature: kept
         return True
     return r.get("sub") == "move" and cmd.get("point2") is None
 

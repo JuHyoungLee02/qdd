@@ -196,6 +196,28 @@ def to_px(cam, X) -> list | None:
     return [int(round(1000 * u / cam.W)), int(round(1000 * v / cam.H))]
 
 
+def occluded(cam, depth, X, tol: float = 0.03, r: int = 2) -> bool | None:
+    """True when the head depth at X's pixel (median of a 5x5 patch) is more than tol nearer than X itself: something
+    (often the arm) hides the pointed part (pilot 10-02 frame review: a slide handle label sat on the arm)."""
+    if depth is None or X is None:
+        return None
+    R, t = np.asarray(cam.R, float), np.asarray(cam.t, float)
+    Xc = (np.asarray(X, float) - t) @ R
+    if Xc[2] <= 1e-6:
+        return None
+    u = int(round(cam.fx * Xc[0] / Xc[2] + cam.cx))
+    v = int(round(cam.fy * Xc[1] / Xc[2] + cam.cy))
+    D = np.asarray(depth, float)
+    D = D[..., 0] if D.ndim == 3 else D
+    if not (0 <= u < D.shape[1] and 0 <= v < D.shape[0]):
+        return None
+    patch = D[max(0, v - r):v + r + 1, max(0, u - r):u + r + 1]
+    patch = patch[np.isfinite(patch) & (patch > 0)]
+    if patch.size == 0:
+        return None
+    return bool(float(np.median(patch)) < float(Xc[2]) - tol)
+
+
 def rot_bin(cam, p, c, half: float = 0.02):
     a = to_px(cam, np.asarray(p) - half * np.asarray(c))
     b = to_px(cam, np.asarray(p) + half * np.asarray(c))
