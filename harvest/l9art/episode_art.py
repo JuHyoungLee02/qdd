@@ -624,6 +624,9 @@ class ArtEpisode:
             if not r["ok"] and kind == "place":  # no attach, the held object out of the world (combo pilot: the
                 self.set_world(st, skip_held=True)  # fingers around it made every carry start 'in collision')
                 r = ex.move(T, "pose")
+            if not r["ok"] and self.spec is not None and self.done_stages:  # the hand still at the last part (a
+                self.set_world(st, skip_all_links=True, skip_held=kind == "place")  # failed retreat): plan without
+                r = ex.move(T, "pose")  # the moving parts (combo pilot 4: 6x 'no path' after a failed retreat)
             if not r["ok"]:
                 self.bump("approach_fail")
                 try:  # stagewise: reach (IK with the world) or path (collision on the way)?
