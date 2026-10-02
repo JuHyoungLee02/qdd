@@ -464,6 +464,22 @@ def r1_surface_ok(table_z: float) -> bool:
     return r1_torso_for_surface(table_z)[1] >= -0.02
 
 
+# g1b H5: the Dex3-1 width table is the thumb-index PAD distance; the curled distal links reach past the pads, so the
+# real free gap between thumb and index / middle (URDF collision meshes, |x| <= 2 cm, 3 cm either side of the TCP along
+# the approach) is ~4.5 cm narrower below 8 cm (pre-open 4.6 cm for a 2.2 cm object left 0 mm: the fingertips knocked
+# the object over on the approach, p1h4v 2 of 5 episodes). Pre-open = the table width whose free gap is the wanted one.
+G1_FREE_GAP = ((0.0215, -0.028), (0.0254, -0.024), (0.0300, -0.019), (0.0348, -0.014), (0.0397, -0.008),
+               (0.0447, -0.002), (0.0497, 0.005), (0.0547, 0.011), (0.0597, 0.018), (0.0648, 0.026), (0.0698, 0.033),
+               (0.0748, 0.041), (0.0798, 0.048), (0.0848, 0.055), (0.0898, 0.058), (0.0949, 0.059), (0.0997, 0.060),
+               (0.1041, 0.062), (0.1086, 0.064), (0.1131, 0.065))
+
+
+def g1_open_for_gap(gap: float) -> float:
+    """Smallest table width (pad distance) whose free finger gap is >= gap (clipped to the table)."""
+    W, F = np.array([r[0] for r in G1_FREE_GAP]), np.array([r[1] for r in G1_FREE_GAP])
+    return float(np.interp(float(gap), F, W))
+
+
 def g1_surface_ok(table_z: float) -> bool:
     """G1 stands straight: its shoulders (pelvis 0.793 + 0.044 + 0.248 m) must be 0.30-0.55 m over the surface."""
     s = V2["g1"]["base_z"] + 0.044 + 0.248 - float(table_z)

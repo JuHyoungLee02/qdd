@@ -556,6 +556,7 @@ class Runtime:
                 gc.carry_clear = float(rng.uniform(*cr))
                 gc.meta["carry_clear"] = round(gc.carry_clear, 4)
             self._exec_pose(gc, float(c[2]) - float(he[2]))
+            self._g1_open(gc)
             gc.meta.update(obj=k, obj_h=round(2 * float(he[2]), 4), tested=bool(C.get("tested", False)),
                            n_candidates=int(len(C["w"])),
                            n_valid=int(ok.sum()), curobo=self.curobo, grip=self.grip)
@@ -639,6 +640,19 @@ class Runtime:
                 if name in getattr(T, "X_TASKS", {}):
                     T.X_TASKS[name] = T.TASKS[name]
 
+    G1_CLEAR = 0.02  # g1b H5: free gap at the stand-off = contact width + 2 cm (1 cm each side)
+
+    def _g1_open(self, gc) -> None:
+        """g1b H5 (G1 only): pre-open so the REAL free finger gap (robot9.G1_FREE_GAP) clears the object."""
+        if self.profile != "g1" or gc is None:
+            return
+        from . import robot9 as R9
+        want = R9.g1_open_for_gap(float(gc.w) + self.G1_CLEAR)
+        if want > float(gc.pre_open):
+            gc.meta["pre_open_slab"] = round(float(gc.pre_open), 4)
+            gc.pre_open = min(want, float(R9.V2["g1"]["grip_max_w"]))
+            gc.meta["pre_open_m"] = round(gc.pre_open, 4)
+
     def _exec_pose(self, gc, support_z: float) -> None:
         """Commanded TCP = the candidate frame moved back along the approach by the pad drop at the contact width:
         the RH-P12-RN pads move on an arc and sit up to 2.8 cm further along the approach when closed (L9v2-GTEST
@@ -694,6 +708,7 @@ class Runtime:
                                                            "grip", "valid_set", "label_rule", "rule_step",
                                                            "approach_reason", "instructed_approach", "natural_order",
                                                            "obj_h")})
+                self._g1_open(new)
                 note = (f"{gc.family} approach out of reach -> {new.family}, rot bin {b0} -> "
                         f"{new.meta.get('rot_bin_base')}")
                 return new, note
