@@ -177,6 +177,8 @@ class Exec:
         Q = self.plan_pose(T) if mode == "pose" else self.plan_line(T)
         if Q is None and mode == "pose":
             Q = self.plan_line(T, check=True)
+        if Q is None and mode == "line":  # a straight move with no continuous IK (another elbow branch): a planned
+            Q = self.plan_pose(T)  # move in the current world (Franka pilot: presses and grasps stopped at the pre-pose)
         if Q is None:
             return {"ok": False, "why": "no path"}
         return self.run(Q, slow=slow, target=T, dq=dq)
@@ -604,6 +606,8 @@ class ArtEpisode:
             self.sub = lab["next"]
             return f"reached the pre-pose (error {r.get('err_mm', 0):.0f} mm)"
         if sub == "grasp":
+            if kind in ("pull", "rotate"):
+                self.set_world(st)  # the grasped part is not an obstacle for the move in (line fallback = planned move)
             r = ex.move(np.asarray(lab["T"], float), "line", slow=1.6)
             if not r["ok"]:
                 self.bump("approach_fail")
@@ -659,6 +663,7 @@ class ArtEpisode:
                 return self.push_object(lab)
         if sub == "press":
             jn = self.joint_of(st)
+            self.set_world(st)  # the pressed button is not an obstacle
             r = ex.move(np.asarray(lab["T"], float), "line", slow=2.0, dq=CMD_DQ_CONTACT)
             peak = max(self.press_peak.get(jn, 0.0), self.q().get(jn, 0.0))
             ex.hold(0.3)
