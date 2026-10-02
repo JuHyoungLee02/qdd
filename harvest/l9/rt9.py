@@ -475,9 +475,38 @@ class Runtime:
         self._vstats = vs
         return ok, margin
 
+    def _with_flips(self, k: str, C: dict) -> dict:
+        """Every robot (opt-in L9V2_GRASP_FLIP=1): add each candidate turned 180 deg about its approach axis (x_G, y_G
+        negated, contacts swapped) after the originals. The antipodal sampler keeps ONE of the two closing-axis signs
+        per contact pair (grasp9.antipodal_pairs dedup) -- the same grasp for a symmetric pinch, but a different wrist
+        angle, and with limited wrist ranges often the reachable one (G1 SKIPDBG 10-03: 66 of 96 'no valid grasp'
+        skips had candidates past the support / free-opening checks and every one failed IK). A flip keeps the
+        original's physics-test verdict (same contacts and width). Original indices are unchanged."""
+        key = (k, "flip")
+        if key in self._cand:
+            return self._cand[key]
+        n = len(C["w"])
+        F = {}
+        for f, v in C.items():
+            if isinstance(v, np.ndarray) and v.ndim >= 1 and len(v) == n:
+                F[f] = v
+        Tf = C["T"].copy()
+        Tf[:, :3, 0] *= -1.0
+        Tf[:, :3, 1] *= -1.0
+        out = dict(C)
+        for f, v in F.items():
+            add = {"T": Tf, "c1": C["c2"], "c2": C["c1"]}.get(f, v)
+            out[f] = np.concatenate([v, add])
+        if "source" in out and len(out["source"]) == 2 * n:
+            out["source"] = np.concatenate([np.asarray(C["source"]), np.char.add(np.asarray(C["source"]).astype(str), "_flip")])
+        self._cand[key] = out
+        return out
+
     def choose(self, k: str, info: dict, extra_boxes: dict | None = None):
         """extra_boxes: see Runtime.refresh_world (L9 bimanual, opt-in, default None = unchanged)."""
         C = self._load(k)
+        if C is not None and len(C["w"]) and (COMMON or os.environ.get("L9V2_GRASP_FLIP") == "1"):
+            C = self._with_flips(k, C)
         if C is None or not len(C["w"]):
             self.picks.append({"obj": k, "choice_fail": "no candidate file" if C is None else "no candidates"})
             return None

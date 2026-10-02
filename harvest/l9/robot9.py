@@ -377,7 +377,10 @@ STEP_GATE = 0.04  # rad, the per-step arm joint gate (max_dq_rad)
 # measured tracking overshoot per robot = max measured arm step / command step cap (meta max_dq_rad over the cap in
 # effect, quantile over successful v2 episodes; tools/l9/track_lag.py). Missing robot = not measured -> the default
 # cap. The command cap is 0.04 / overshoot (never above rt9.CMD_DQ).
-TRACK_OVERSHOOT: dict = {}
+# Measured 10-03 (track_lag --since '2026-10-02 11:10', cap 0.034, q 0.95, jumps > 2x apart; successful episodes
+# n / over 0.04 / jumps: AIW prodA* + pilot1 5192 / 429 / 235, Franka prodF* + pilotF 3745 / 43 / 24, R1 pilotR +
+# r1sweep + r1b 182 / 11 / 5, G1 pilotG + g1* 16 / 0 / 0): every robot keeps 0.034 (0.04 / 1.132 = 0.035)
+TRACK_OVERSHOOT: dict = {"ffw_sg2": 1.132, "franka_mast": 0.962, "r1pro": 1.099, "g1": 0.978}
 
 
 def env_profile(profile: str) -> dict:
