@@ -17,11 +17,12 @@ while IFS=$'\t' read -r -u 3 SUITE TASK KS; do
   [ -z "$SUITE" ] && continue
   mkdir $O/claims/${ARM}_${SUITE}_$TASK 2>/dev/null || continue
   log "RUN $ARM $SUITE $TASK ks=$KS"
-  if [ $ARM = A ] || [ $ARM = Ab ] || [ $ARM = Ac ]; then
+  if [ $ARM = A ] || [ $ARM = Ab ] || [ $ARM = Ac ] || [ $ARM = F ]; then
     FB=""; [ $ARM = Ab ] && FB=--fix-b  # Ab = E-LIB0b (prereg change 2)
     [ $ARM = Ac ] && FB=--fix-c  # Ac = E-LIB0c (change 3: b + rim grasp)
+    [ $ARM = F ] && FB=--fix-b  # F = E-LIBFT fine-tuned checkpoint, served as $LIB0_QNAME (prereg_libft.md)
     nice -n 10 timeout 10800 $PY -m harvest.lib0.run_a --suite $SUITE --task $TASK --ks $KS --qwen-url $LIB0_QURL \
-      --qwen-name lib0_ep2_5 --out $O --vid-root $V --arm $ARM $FB --stop-files $O/STOP >> $L/lane_$LN.log 2>&1 < /dev/null
+      --qwen-name ${LIB0_QNAME:-lib0_ep2_5} --out $O --vid-root $V --arm $ARM $FB --stop-files $O/STOP >> $L/lane_$LN.log 2>&1 < /dev/null
   else
     P=8702; [ $ARM = R ] && P=8701; P=${LIB0_PIPORT:-$P}  # E-LIB1 arms P0 / PF set LIB0_PIPORT
     nice -n 10 timeout 10800 $PY -m harvest.lib0.run_pi --suite $SUITE --task $TASK --ks $KS --host $LIB0_PIHOST --port $P \
