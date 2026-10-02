@@ -780,6 +780,13 @@ class Runtime:
             return None
         gap = float(ws[-1][1]) if ws else float(self.w.status()["grip_w"])
         out = classify_close(gap, gc.w)
+        if self.profile == "g1":
+            # the Dex3-1 width read from index_0 is 2-4 cm under the true gap (GTEST 10-02): no width verdict; the
+            # finger contacts decide (no contact data: CONTACT, the micro-lift and the truth holding state decide)
+            tg = (self.choice_key or (None,))[0]
+            touched = self.w.status().get("gripper_contacts")
+            out = "CONTACT" if touched is None or tg in touched else "EMPTY"
+            self.timeline["close_judge"] = "contacts"
         self.timeline.update(t_settle=round(t, 3), final_gap=round(gap, 4), outcome_close=out, close_cmd_w=0.0)
         if out == "CONTACT" or (out == "WIDE" and gap < gc.w + WIDE_KEEP):
             # WIDE with a plausible gap: the natural deep grasps often close on a wider section than the planned
