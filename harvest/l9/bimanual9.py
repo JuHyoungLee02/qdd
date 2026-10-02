@@ -609,7 +609,10 @@ GRAVITY_BOX_HALF = (0.025, 0.025, 0.03)  # m, coarse stand-in for the other arm'
 # B's choose_b (arm B choosing while avoiding arm A's box on the SAME object, much smaller than a handover zone)
 # was the #1 real B failure (6/7 executed-episode failures) -- same root cause, smaller object this time. Still a
 # box, not the real links (R1 stands); if real collisions start showing up in frame review, grow this back up.
-ZONE_TRIES = 6  # extra reach-verified handover cells tried when the drawn one fails either arm
+ZONE_TRIES = 12  # extra live handover points tried when the drawn one fails either arm
+ZONE_DX = (0.15, 0.25, 0.35)  # m ahead of the arms' base-link midpoint (live handover grid)
+ZONE_DY = (-0.08, 0.0, 0.08)  # m across the body midline
+ZONE_DZ = (0.12, 0.20, 0.28)  # m above the support
 SETTLE_TICKS = 30  # ~0.6 s at 20 Hz / dt: gripper close/open settle wait
 
 
@@ -1090,6 +1093,25 @@ class HandoverRuntime:
                 best_yaw, best_n = yaw, n
         return best_yaw, best_n, len(idx)
 
+    def _live_grid_ref(self):
+        env = self.world.env
+        bases = []
+        for slot in (self.giver, self.receiver):
+            env.use_arm(slot.arm)
+            bases.append(slot.rt.T_world_base()[:3, 3])
+        return (bases[0] + bases[1]) / 2
+
+    def _live_zone_grid(self, table_z: float, seed: int, episode_idx: int) -> list:
+        """Handover point candidates measured from THIS robot's live body, not a precomputed cell table (bimdeep
+        a10 frames 10-03: the cell-table zone sat beside the giver, out of the receiver's reach -- the cells were
+        computed for one shoulder height while AIW's lift axis and the table height are drawn per episode):
+        in front of the midpoint of the two arms' cuRobo base links, between them in y, ZONE_DZ above the support.
+        Seeded order (a different point each episode); `_run_episode` keeps the first one both arms reach."""
+        c = self._live_grid_ref()
+        pts = [np.array([c[0] + dx, c[1] + dy, float(table_z) + dz]) for dx in ZONE_DX for dy in ZONE_DY for dz in ZONE_DZ]
+        rng = np.random.default_rng([int(seed), 2026_10_03, 7, int(episode_idx)])
+        return [pts[i] for i in rng.permutation(len(pts))]
+
     def _move_to(self, slot: "_ArmSlot", target_xyz, quat_wxyz=None, below_z: float | None = None) -> dict:
         """A straight / planned cuRobo move to a world TCP pose, holding `slot.held_obj` attached if set.
         below_z: the support the held object leaves / reaches (rt9.Runtime.refresh_world)."""
@@ -1166,8 +1188,8 @@ class HandoverRuntime:
             T_obj_G = P9.inv_T(T_obj_pick) @ r["gc"].T  # the rigid grip, constant while held
             rt_g = self.giver.rt
             chosen = None
-            for j in range(ZONE_TRIES + 1):
-                zj, _cj = (zone, cell) if j == 0 else zone_point(self.profile, table_z, seed, 1000 * (episode_idx + 1) + j)
+            cands = [np.asarray(zone, float)] + self._live_zone_grid(table_z, seed, episode_idx)
+            for j, zj in enumerate(cands[:ZONE_TRIES + 1]):
                 _yaw, n_ok, n_tot = self._live_best_yaw(obj_key, zj)
                 self.world.env.use_arm(self.giver.arm)
                 for n_r, yaw_r in sorted(self._yaw_rank, key=lambda t: -t[0]):
