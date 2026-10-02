@@ -1159,7 +1159,10 @@ class HandoverRuntime:
         env2b = self.world.env
         env2b.use_arm(self.giver.arm)
         lift_xyz = np.asarray(self.giver.rt.tcp_T()[:3, 3], float).copy()
-        lift_xyz[2] = max(lift_xyz[2], float(carry_pos[2])) + 0.08
+        # bimdeep a4 10-03: max(tcp z, zone z) + 8 cm put the waypoint 40-43 cm above the pick (zone cells sit 22-46
+        # cm over the table) -- out of reach, 'no collision-free path' in 4 of 4 BIM_DEBUG lift failures. Clear the
+        # support only; the translate move takes it to the zone height.
+        lift_xyz[2] = lift_xyz[2] + 0.08
         r = self._move_to(self.giver, lift_xyz, below_z=float(table_z) - 0.02)
         log.append({"phase": "giver_lift_waypoint", **r})
         if not r["ok"]:
@@ -1455,7 +1458,7 @@ class LiftRuntime:
         return {"ok": True, "status": "ok", "gap_cm": round(gap * 100, 2)}
 
     def _move_both(self, T_obj_target: np.ndarray, T_obj_G_a: np.ndarray, T_obj_G_b: np.ndarray,
-                   below_z: float | None = None) -> dict:
+                   below_z: float | None = None, vertical: bool = False) -> dict:
         """below_z: the support the object leaves / reaches (rt9.Runtime.refresh_world): the attached object resting
         on it is otherwise a start / end collision."""
         env = self.world.env
@@ -1468,6 +1471,12 @@ class LiftRuntime:
             q = rt.plan_start()  # commanded joints, clipped inside the sim range (cuRobo refuses a start on a limit)
             Tb = rt.to_base(T_tcp)
             Q = _line_or_pose(rt, q, Tb)
+            if Q is None and vertical:
+                # straight vertical lift off / set down of an object both hands hold: the start state touches the
+                # object's surroundings by design (bimdeep b5: hands on a basket rim next to a step / stand = start
+                # penetration 1-5 cm, every lift refused). The world check is skipped for this short vertical line
+                # only (frames + the measured rise / tilt gate judge it).
+                Q = rt.planner.line(q, rt.to_base(rt.tcp_T()), Tb, 0.01, False)
             if Q is None:
                 return {"ok": False, "status": f"no collision-free path for {slot.arm}"}
             plans[slot.arm] = rt._resample(np.asarray(Q, float))
@@ -1544,7 +1553,7 @@ class LiftRuntime:
 
         T_obj_lift = T_obj_pick.copy()
         T_obj_lift[2, 3] += LIFT_HEIGHT_M
-        r = self._move_both(T_obj_lift, T_obj_Ga, T_obj_Gb, below_z=sup_z)
+        r = self._move_both(T_obj_lift, T_obj_Ga, T_obj_Gb, below_z=sup_z, vertical=True)
         p1, _ = env.object_pose(obj_key)
         rise = float(p1[2]) - float(p0[2])
         log.append({"phase": "lift", "rise_cm": round(rise * 100, 1), **r})
@@ -1566,7 +1575,7 @@ class LiftRuntime:
 
         T_obj_place = T_obj_carry.copy()
         T_obj_place[2, 3] = T_obj_pick[2, 3] + 0.005
-        r = self._move_both(T_obj_place, T_obj_Ga, T_obj_Gb, below_z=sup_z)
+        r = self._move_both(T_obj_place, T_obj_Ga, T_obj_Gb, below_z=sup_z, vertical=True)
         log.append({"phase": "place", **r})
         if not r["ok"]:
             return {"ok": False, "log": log}
