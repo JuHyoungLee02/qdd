@@ -72,3 +72,12 @@
 - 사슬: `tools/gp2/gp2_prep.sh`(78dc CPU: 선택 → 행 빌드 16+4조각 → 팔 → combine → 학습 3개 시작) + `tools/gp2/gp2_eval.sh`(서빙 파드 3개, 모델이 생기면 바로 평가).
 - 출력은 `/data/harvest/out/gp2/`, 기록은 `/data/harvest/logs/gp2/gp2.log`, 평가 정지는 `touch /data/harvest/out/gp2/STOP_EVAL`이다.
 - 끝나면 카드를 반납하고 `board/events.log`에 한 줄 적는다.
+
+## 변경 기록
+
+- **변경 1 (2026-10-02 15:16 KST, 학습 시작 시점·결과 보기 전): 빌드 명세**
+  - 동결 편: 성공 1,100편 중 조건 통과 1,017편(학습 790 / 보류 227, 정의 111 / 38; AI Worker 656 · Franka 361). `/data/harvest/out/gp2/data/episodes.json`.
+  - 첫 빌드가 `rot: null`인 잡기 행에서 멈췄다(그 pick에 영상 구간 기록 없음). `rot`가 정수가 아닌 잡기 행도 '연결 안 됨'으로 **두 팔 모두에서** 뺀다(0d8ada3). 학습 잡기 행 2,181(뺀 행 260), 보류 잡기 행 336(뺀 행 44).
+  - L9 학습 행 9,365(control 5,356 / aux 4,009), 보류 1,525행(control). 행 검사 오류 0.
+  - `train_a.jsonl` 125,600행 sha256 `5f95ee84…20ee8`, `train_b.jsonl` 125,600행 sha256 `57b04b31…7c51`, 걸음 2,603(두 팔 같음). 보류 `l9_eval_a` sha256 `c4496166…1964`, `l9_eval_b` `c8f9c92a…dc8`.
+  - 학습 3개 시작 06:16Z(코드 `/data/harvest/code_gp2_0d8ada3`), 평가 사슬 3개(코드 `code_gp2_c17c298` = dev d27a760과 같은 내용).
