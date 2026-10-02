@@ -136,8 +136,8 @@ class LiveRuntime(RT.Runtime):
         f_dir = point3d[:2] - self.T_world_base()[:2, 3]
         extra = self._extra_boxes_tuple(k)
         seed = int(getattr(self.w, "vseed", 0) or 0)
-        gc = L.choose_live(P, N, self.grip, approach, rot_bin, point3d, support_z, f_dir, category=category,
-                           obj_h=obj_h, extra_obstacles=extra, seed=seed, k=len(self.picks))
+        gc = L.choose_live(P, N, self.grip, approach, rot_bin, point3d, support_z, f_dir, cam=head_cam,
+                           category=category, obj_h=obj_h, extra_obstacles=extra, seed=seed, k=len(self.picks))
         if gc is None:
             self._dbg(f"{k}: no live candidate in {len(P)} pts, point3d={point3d} approach={approach} rot={rot_bin}")
             self.picks.append({"obj": k, "choice_fail": "no valid live candidate",
@@ -181,8 +181,8 @@ class LiveRuntime(RT.Runtime):
         N = L.estimate_normals(P)
         support_z = self._bottom_z(k)
         f_dir = point3d[:2] - self.T_world_base()[:2, 3]
-        new = L.choose_live(P, N, self.grip, approach, rot_bin, point3d, support_z, f_dir, category=category,
-                            obj_h=obj_h, extra_obstacles=self._extra_boxes_tuple(k),
+        new = L.choose_live(P, N, self.grip, approach, rot_bin, point3d, support_z, f_dir, cam=head_cam,
+                            category=category, obj_h=obj_h, extra_obstacles=self._extra_boxes_tuple(k),
                             seed=int(getattr(self.w, "vseed", 0) or 0), k=len(self.picks), rot_win=2)
         if new is None:
             return None, "no reachable live grasp of the commanded point (rot window already widened)"

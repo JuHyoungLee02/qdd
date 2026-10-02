@@ -96,6 +96,68 @@ def test_sample_grasps_cloud_respects_approach_family_and_rot_window():
         assert G.family(a, f_dir) == "side"
 
 
+def slab_cloud(hx, hy, hz, n=60, seed=0):
+    """Two parallel faces only (a thin slab, +-x normals) -- unlike a full box, every antipodal pair here shares the
+    SAME closing axis family (+-x), so a test can pin down a single, unambiguous rot_img bin."""
+    rng = np.random.default_rng(seed)
+    P, N = [], []
+    for s in (-1, 1):
+        y = rng.uniform(-hy, hy, n)
+        z = rng.uniform(-hz, hz, n)
+        P.append(np.stack([np.full(n, s * hx), y, z], 1))
+        N.append(np.stack([np.full(n, float(s)), np.zeros(n), np.zeros(n)], 1))
+    return np.concatenate(P), np.concatenate(N)
+
+
+def test_sample_grasps_cloud_rot_bin_is_image_projected_not_base_frame():
+    """Regression (10-02 pod smoke): the commanded rot bin is grasp9.rot_img (the closing axis projected into the
+    HEAD IMAGE, spec step 1), not grasp9.rot_base (a base-frame angle) -- comparing against rot_base left almost
+    every real VLM-style command unmatched (pod smoke: 2/2 cache-valid seeds skipped live). With a camera given,
+    only the rot bin that matches the pair's actual rot_img should keep any candidate; the opposite bin keeps none."""
+    from harvest.astra_motion.geometry import Cam
+    P, N = slab_cloud(0.03, 0.04, 0.05, n=40, seed=11)
+    gr = G.gripper("ffw_sg2")
+    pr = L.antipodal_pairs_cloud(P, N, gr, seed=0)
+    assert len(pr["w"]) > 0
+    cam = Cam("head", 100, 100, 100.0, 100.0, 50.0, 50.0, np.diag([1.0, -1.0, -1.0]), np.array([0.0, 0.0, 1.0]))
+    K = np.array([[cam.fx, 0, cam.cx], [0, cam.fy, cam.cy], [0, 0, 1.0]])
+    p, q, w = pr["p"][0], pr["q"][0], pr["w"][0]
+    c, m = (q - p) / w, (p + q) / 2
+    _, true_bin = G.rot_img(m, c, K, cam.R, cam.t)
+    opposite = (true_bin + 6) % 12
+    support_z = -0.06
+    f_dir = np.array([1.0, 0.0])
+    for fam in ("top", "oblique", "front", "side"):
+        matched = L.sample_grasps_cloud(P, N, "ffw_sg2", fam, true_bin, support_z, f_dir, cam=cam, seed=0)
+        far = L.sample_grasps_cloud(P, N, "ffw_sg2", fam, opposite, support_z, f_dir, cam=cam, seed=0)
+        assert len(far["w"]) == 0
+        if len(matched["w"]):
+            break
+    else:
+        raise AssertionError("no family matched the true rot_img bin at all")
+
+
+def test_choose_live_with_camera_succeeds_on_the_true_rot_bin():
+    from harvest.astra_motion.geometry import Cam
+    P, N = box_cloud(0.03, 0.035, 0.05, n_per_face=30, seed=12)
+    cam = Cam("head", 100, 100, 100.0, 100.0, 50.0, 50.0, np.diag([1.0, -1.0, -1.0]), np.array([0.0, 0.0, 1.0]))
+    K = np.array([[cam.fx, 0, cam.cx], [0, cam.fy, cam.cy], [0, 0, 1.0]])
+    gr = G.gripper("ffw_sg2")
+    pr = L.antipodal_pairs_cloud(P, N, gr, seed=0)
+    c0, m0 = (pr["q"][0] - pr["p"][0]) / pr["w"][0], (pr["p"][0] + pr["q"][0]) / 2
+    _, rot_bin = G.rot_img(m0, c0, K, cam.R, cam.t)
+    point3d = m0
+    found = None
+    for fam in ("top", "oblique", "front", "side"):
+        gc = L.choose_live(P, N, "ffw_sg2", fam, rot_bin, point3d, support_z=-0.06, f_dir=np.array([1.0, 0.0]),
+                           cam=cam, use_refiner=False)
+        if gc is not None:
+            found = gc
+            break
+    assert found is not None
+    assert found.meta["source"] == "live_cloud"
+
+
 def test_sample_grasps_cloud_rejects_candidates_colliding_with_extra_obstacles():
     P, N = box_cloud(0.025, 0.03, 0.05, n_per_face=30, seed=4)
     support_z = -0.06

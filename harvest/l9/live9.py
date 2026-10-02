@@ -184,14 +184,17 @@ def _hits_extra(T, bx, obstacles) -> bool:
 
 
 def sample_grasps_cloud(P: np.ndarray, N: np.ndarray, grip: str, approach: str, rot_bin: int, support_z: float,
-                        f_dir, extra_obstacles=None, seed: int = 0, cap: int = 60, rot_win: int = ROT_WIN) -> dict:
+                        f_dir, cam=None, extra_obstacles=None, seed: int = 0, cap: int = 60,
+                        rot_win: int = ROT_WIN) -> dict:
     """Live candidates on an observed cloud, restricted to the commanded approach family and rot bin +-1 (spec
     step 4): the swept gripper (fingers at the pre-shape opening + palm, back to the stand-off) must clear every
     OTHER cropped point (the object's own far side / neighbouring clutter inside the crop) and `extra_obstacles`
     ((C, H, R) scene cuboids in grasp9.obb_overlap's convention, already in P's frame -- neighbour objects /
     furniture the swept gripper must also clear, step 5's collision check). support_z: the local support plane
     (table / shelf top) the fingertips must stay SUPPORT_CLEAR above. f_dir: base-frame horizontal direction from
-    the robot to the object (splits front / side, as grasp9.family)."""
+    the robot to the object (splits front / side, as grasp9.family). cam: the head Cam the VLM's rot bin was
+    measured in (grasp9.rot_img, image-projected closing axis) -- required to filter by rot_bin; rot_bin is ignored
+    (every pair passes the rot test) when cam is None, e.g. a synthetic/offline test with no camera."""
     gr = G.gripper(grip)
     pr = antipodal_pairs_cloud(P, N, gr, seed=seed)
     if not len(pr["w"]):
@@ -199,10 +202,19 @@ def sample_grasps_cloud(P: np.ndarray, N: np.ndarray, grip: str, approach: str, 
     cos_c = math.cos(math.atan(G.MU))
     phis = np.radians(np.arange(0.0, 360.0, G.STEP_DEG))
     rng = np.random.default_rng(seed + 7)
+    Kc = None
+    if cam is not None:
+        Kc = np.array([[cam.fx, 0.0, cam.cx], [0.0, cam.fy, cam.cy], [0.0, 0.0, 1.0]])
     T_l, c1, c2, w_l, a_l, pre, sc = [], [], [], [], [], [], []
     for p, q, w, ang in zip(pr["p"], pr["q"], pr["w"], pr["ang"]):
         c = (q - p) / w
         m = (p + q) / 2
+        if Kc is not None:
+            # rot_img depends only on (m, c): one closing-axis LINE in the image, not on the approach direction
+            # swept below -- a mismatched image rotation rejects the whole pair before the (expensive) phi sweep.
+            _, rb_img = G.rot_img(m, c, Kc, np.asarray(cam.R, float), np.asarray(cam.t, float))
+            if min((rb_img - rot_bin) % 12, (rot_bin - rb_img) % 12) > rot_win:
+                continue
         u = np.cross(c, [0.0, 0.0, 1.0])
         if np.linalg.norm(u) < 1e-6:
             u = np.cross(c, [1.0, 0.0, 0.0])
@@ -210,9 +222,7 @@ def sample_grasps_cloud(P: np.ndarray, N: np.ndarray, grip: str, approach: str, 
         v = np.cross(c, u)
         A = np.cos(phis)[:, None] * u + np.sin(phis)[:, None] * v
         fam = np.array([G.family(a, f_dir) for a in A])
-        rb = np.array([G.rot_base(a, c)[1] for a in A])
-        d = np.minimum((rb - rot_bin) % 12, (rot_bin - rb) % 12)
-        keep = (fam == approach) & (d <= rot_win) & (A[:, 2] <= G.BELOW_Z)
+        keep = (fam == approach) & (A[:, 2] <= G.BELOW_Z)
         if not keep.any():
             continue
         open_w = float(min(w + rng.uniform(*G.PRE_OPEN), gr["max_open"]))
@@ -283,20 +293,20 @@ def pick_live(C: dict, point3d) -> int | None:
 
 
 def choose_live(P: np.ndarray, N: np.ndarray, grip: str, approach: str, rot_bin: int, point3d, support_z: float,
-                f_dir, category: str = "", obj_h: float = 0.0, extra_obstacles=None, seed: int = 0, k: int = 0,
-                use_refiner: bool = True, rot_win: int = ROT_WIN):
+                f_dir, cam=None, category: str = "", obj_h: float = 0.0, extra_obstacles=None, seed: int = 0,
+                k: int = 0, use_refiner: bool = True, rot_win: int = ROT_WIN):
     """-> v2plan.GraspChoice | None, built on the OBSERVED cloud alone (no per-object cache lookup anywhere in this
     call -- no disk read at all). Tries the installed refiner first (GraspGen-X hook, see `refine`); candidates it returns are
     treated exactly like the antipodal search's (same dict shape) and picked the same way. use_refiner=False
-    (tests, A/B 'antipodal only' runs) skips straight to the antipodal search."""
+    (tests, A/B 'antipodal only' runs) skips straight to the antipodal search. cam: see sample_grasps_cloud."""
     from . import v2plan as VP
     gr = G.gripper(grip)
     C = None
     if use_refiner:
         C = refine(P, point3d, approach, rot_bin, grip)
     if not C or not len(C.get("w", [])):
-        C = sample_grasps_cloud(P, N, grip, approach, rot_bin, support_z, f_dir, extra_obstacles=extra_obstacles,
-                                seed=seed, rot_win=rot_win)
+        C = sample_grasps_cloud(P, N, grip, approach, rot_bin, support_z, f_dir, cam=cam,
+                                extra_obstacles=extra_obstacles, seed=seed, rot_win=rot_win)
     i = pick_live(C, point3d)
     if i is None:
         return None
