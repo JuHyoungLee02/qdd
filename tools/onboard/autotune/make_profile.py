@@ -68,7 +68,7 @@ def build(robot: dict, arms: dict, rel: float, band_depth: float) -> dict:
     body = fr["body"]
     torso = {j: v for j, v in body["joints"].items() if j != "root_z_rel_surface"}
     prof = {
-        "schema": "l9-env-profile-v1", "profile": robot["profile"], "version": 1,
+        "schema": "l9-env-profile-v1", "profile": robot["profile"], "version": 2,  # 2 = cells gated on own-camera view + body clearance (consumers: follow cell stance)
         "source": {"tool": "tools/onboard/autotune (cuRobo batch IK sweep, no render)", "sha": _git_sha(),
                    "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
                    "n_ik": int(sum(d["meta"]["n_ik"] for d in arms.values())),
