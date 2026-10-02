@@ -638,8 +638,21 @@ def g1_stance(arm: str, reach_pts, view_pts, parts, table_z: float, seed: int):
                     feas.append((round(float(dx), 3), lean, round(dz, 4), round(float(s), 3)))
     if not feas:
         return None
-    dx, lean, dz, s = feas[int(np.random.default_rng([int(seed), 1932]).integers(len(feas)))]
-    return {"dx": dx, "lean": lean, "dz": dz, "surface": s, "n_feasible": len(feas)}
+    rng = np.random.default_rng([int(seed), 1932])
+    fam = os.environ.get("G1B_FAMILY", "")
+    # retest families (owner 10-03 04h): the family's factor is drawn uniformly among its feasible values, the
+    # others take the least-changed feasible value (lean 0 first, surface nearest the drawn one, base nearest)
+    canon = lambda f: (f[1], abs(f[2]), f[0])  # noqa: E731
+    key = {"height": 3, "stance": 0, "lean": 1}.get(fam)
+    if key is not None:
+        vals = sorted({f[key] for f in feas})
+        v = vals[int(rng.integers(len(vals)))]
+        dx, lean, dz, s = min((f for f in feas if f[key] == v), key=canon)
+    elif fam in ("mask", "room"):
+        dx, lean, dz, s = min(feas, key=canon)
+    else:
+        dx, lean, dz, s = feas[int(rng.integers(len(feas)))]
+    return {"dx": dx, "lean": lean, "dz": dz, "surface": s, "n_feasible": len(feas), "family": fam or "joint"}
 
 
 def g1_lean_ready(arm: str, lean: float) -> dict:
