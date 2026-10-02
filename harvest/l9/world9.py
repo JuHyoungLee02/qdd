@@ -240,10 +240,13 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
     v2r = robot in R9.V2_PROFILES  # L9 v2 R1 Pro / G1 (robot9.V2): either arm, its own head + used-arm wrist camera
     if franka and arm != "right":
         raise NotImplementedError("franka_mast: right-arm rows only (spec §9.2)")
-    cams = R9.CAMERAS if franka else (("cam_head", A.wrist_camera(arm)) if v2r else CAMS)
+    other = "left" if arm == "right" else "right"
+    # v2 dual-arm robots render both wrists (user 10-02, 4-slot schema): the used arm's is "wrist", the other one
+    # "wrist_left" (the AI Worker naming after its left-arm swap: "wrist_left" = the other wrist), saved per call
+    cams = R9.CAMERAS if franka else (("cam_head", A.wrist_camera(arm), A.wrist_camera(other)) if v2r else CAMS)
     keys = {"cam_head": "head", "cam_wrist_right": "wrist", "cam_wrist_left": "wrist_left"}
-    if v2r:  # one wrist camera: the used arm's is "wrist"
-        keys = {"cam_head": "head", A.wrist_camera(arm): "wrist"}
+    if v2r:
+        keys = {"cam_head": "head", A.wrist_camera(arm): "wrist", A.wrist_camera(other): "wrist_left"}
     register_l9_ids()
     ids = register_pool(pool)
     if mesh is not None:  # L9 v2: Poly Haven tabletop pieces join the process's mesh slots (render only)
