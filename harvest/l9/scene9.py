@@ -991,6 +991,12 @@ def usable(node: dict, scene: dict, rm, lift: float, reach: bool = True) -> np.n
         ok = R9.usable_points(m, scene["arm"], W[:, 0], W[:, 1], node["top_z"])
     else:
         ok = R9.visible_points(m, W[:, 0], W[:, 1], node["top_z"])
+    if reach and scene.get("robot"):
+        from . import envprof9 as E9
+        prof = E9.active(scene["robot"])
+        my = E9.mask_y_ok(prof, scene["arm"], W[:, 1]) if prof else None
+        if my is not None:  # env profile (opt-in): the arm's own work mask side (y); x is set by the stance (world9)
+            ok &= my
     if node.get("rim_z") is None:
         ok &= ~blocked_s(S, node["top_z"], scene["parts_s"], own)
     else:  # inside a container: only parts above its rim block (its own walls are handled by the margin)

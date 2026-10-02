@@ -897,6 +897,13 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                 if "stance_x" in cell:
                     v2 = int(prof.get("version", 1)) >= 2
                     pos = (self._stance_root_x(float(cell["stance_x"]), pos[0], v2), pos[1], pos[2])
+                objs = self.ep.get("objects") or {}
+                P = [objs[k]["xy"] for st in self.ep.get("steps", []) for k in st[:2] if k in objs and "xy" in objs[k]]
+                if P:  # final check: the task objects in the arm's work mask from the root actually used
+                    P = np.asarray(P, float)
+                    mk = E9.mask_ok(prof, arm, P[:, 0] - pos[0], P[:, 1] - pos[1])
+                    if mk is not None and not mk.all():
+                        raise SkipScene(f"{robot}: task objects outside its work mask from this stance (reach-limited)")
             for jn, v in joints.items():
                 rob.data.default_joint_pos[0, rob.joint_names.index(jn)] = float(v)
                 rob.cfg.init_state.joint_pos[jn] = float(v)

@@ -171,3 +171,44 @@ def lateral_range(p: dict, arm: str) -> list | None:
     if v is None:
         return None
     return list(v[arm]) if isinstance(v, dict) else list(v)
+
+
+def _mask(p: dict, arm: str):
+    m = ((p or {}).get("arms") or {}).get(arm, {}).get("work_mask")
+    if not m or not m.get("xs") or not m.get("ys"):
+        return None
+    return np.asarray(m["xs"], float), np.asarray(m["ys"], float), np.asarray(m["ok"], bool)
+
+
+def mask_ok(p: dict, arm: str, X, Y) -> np.ndarray | None:
+    """Root-frame points (x ahead, y as is) inside the arm's work mask (nearest grid cell, outside the grid = False);
+    None when the profile has no mask."""
+    M = _mask(p, arm)
+    if M is None:
+        return None
+    xs, ys, ok = M
+    X, Y = np.asarray(X, float).ravel(), np.asarray(Y, float).ravel()
+    sx = float(xs[1] - xs[0]) if len(xs) > 1 else 1.0
+    sy = float(ys[1] - ys[0]) if len(ys) > 1 else 1.0
+    i = np.round((X - xs[0]) / sx).astype(int)
+    j = np.round((Y - ys[0]) / sy).astype(int)
+    inside = (i >= 0) & (i < len(xs)) & (j >= 0) & (j < len(ys))
+    out = np.zeros(len(X), bool)
+    out[inside] = ok[i[inside], j[inside]]
+    return out
+
+
+def mask_y_ok(p: dict, arm: str, Y) -> np.ndarray | None:
+    """Scene stage (the root x is set later by the stance): y values whose mask column has any usable x."""
+    M = _mask(p, arm)
+    if M is None:
+        return None
+    xs, ys, ok = M
+    col = ok.any(axis=0)
+    Y = np.asarray(Y, float).ravel()
+    sy = float(ys[1] - ys[0]) if len(ys) > 1 else 1.0
+    j = np.round((Y - ys[0]) / sy).astype(int)
+    inside = (j >= 0) & (j < len(ys))
+    out = np.zeros(len(Y), bool)
+    out[inside] = col[j[inside]]
+    return out

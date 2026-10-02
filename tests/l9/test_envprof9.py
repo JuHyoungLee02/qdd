@@ -99,3 +99,15 @@ def test_draw_near_surface_picks_matching_cell_without_body_jitter():
         assert d["torso"]["j1"] == 0.7 and abs(d["stance_x"] - 0.4) < 1e-9
     assert E.draw(p, 1, near={"surface_z": 0.65}) is None
     assert E.draw(p, 3)["torso"]["j1"] != 0.1 or True  # no near: unchanged behaviour (jitter allowed)
+
+
+def test_work_mask_readers():
+    import numpy as np
+
+    from harvest.l9 import envprof9 as E
+    p = {"arms": {"left": {"work_mask": {"xs": [0.4, 0.45, 0.5], "ys": [0.0, 0.05, 0.1],
+                                         "ok": [[False, True, False], [False, True, True], [False, False, False]]}}}}
+    assert E.mask_ok(p, "left", [0.4, 0.45, 0.5, 0.9], [0.05, 0.1, 0.05, 0.05]).tolist() == [True, True, False, False]
+    assert E.mask_y_ok(p, "left", [0.0, 0.05, 0.1, 0.3]).tolist() == [False, True, True, False]
+    assert E.mask_ok(p, "right", [0.4], [0.0]) is None and E.mask_y_ok({}, "left", [0.0]) is None
+    assert isinstance(E.mask_ok(p, "left", np.array([0.4]), np.array([0.05])), np.ndarray)
