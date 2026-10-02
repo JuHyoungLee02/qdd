@@ -194,6 +194,7 @@ class Runtime:
         self.regrasp_n, self.timeline = 0, {}
         self.instruction_suffix = ""
         self.dead = False
+        self._n_dump = 0  # failed-plan dumps per episode (L9V2_DEBUG_DIR)
 
     def arm_q(self) -> np.ndarray:
         return self.w.env.robot.data.joint_pos[0, self.sim_ids].cpu().numpy().astype(float)
@@ -659,7 +660,7 @@ class Runtime:
         tools/l9/v2_collide_dbg.py."""
         dbg = os.environ.get("L9V2_DEBUG_DIR")
         self._n_dump = getattr(self, "_n_dump", 0)
-        if not dbg or self._n_dump >= 6:
+        if not dbg or self._n_dump >= 2:
             return
         import json
         self._n_dump += 1
@@ -669,7 +670,7 @@ class Runtime:
         scene = P9.scene_cuboids(parts, self.obstacle_boxes(), self.T_world_base(), pad=0.005)
         json.dump({"what": what, "scene": scene, "q": np.asarray(q0).tolist(), "joints": self.joints,
                    "T_world_base": self.T_world_base().tolist(), "tcp_T": np.asarray(T_world).tolist(),
-                   "goal_is_tcp_T": True}, open(os.path.join(dbg, f"fail_{os.getpid()}_{self._n_dump}.json"), "w"))
+                   "goal_is_tcp_T": True}, open(os.path.join(dbg, f"fail_{os.getpid()}_{getattr(self.w, 'vseed', 0)}_{self._n_dump}.json"), "w"))
 
     def _guard(self, Q):
         """Reject a plan that leaves the SIM joint range (cuRobo's URDF limits may be wider: smoke 10-02, joint2 at
