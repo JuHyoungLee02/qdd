@@ -107,6 +107,11 @@ def main(argv=None):
     ap.add_argument("--motion", action="store_true", help="spec §10 human-like motion (harvest.l9.motion9)")
     ap.add_argument("--v2", action="store_true", help="spec §12 L9 v2: real grasps + cuRobo (harvest.l9.rt9)")
     ap.add_argument("--v2-untested", action="store_true", help="v2 smoke only: allow candidates without the Isaac test")
+    ap.add_argument("--live-exec", action="store_true",
+                    help="L9 live (no-cache) executor: harvest.l9.rtlive9, opt-in, mutually exclusive with --v2. "
+                         "LIVE_CMD_SOURCE=cache (default): the 'VLM' command is the real cache's own label (needs "
+                         "candidates, cache-vs-live A/B). LIVE_CMD_SOURCE=gt: ground-truth command, no candidate "
+                         "cache read at all (new-object / no-npz proof).")
     ap.add_argument("--ext-p", type=float, default=0.0,
                     help="share of episodes paired with world-fixed external cameras (harvest.l9.ext9); 0 = none")
     ap.add_argument("--ext-n", type=int, default=1, help="external cameras per paired episode (1 or 2)")
@@ -127,8 +132,10 @@ def main(argv=None):
             a.motion = True  # run-level switch (spec §10 code swap: new episodes of a running production)
         if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(a.out)), "V2_ON")):
             a.v2 = True  # run-level switch (spec §12: L9 v2 code for new episodes after the pilot gate)
-        if a.v2:
-            a.motion = True  # the v2 executor takes its timing style from motion9
+        if a.v2 and a.live_exec:
+            raise ValueError("--v2 and --live-exec are mutually exclusive")
+        if a.v2 or a.live_exec:
+            a.motion = True  # the v2 / live executor takes its timing style from motion9
         if a.motion:
             from .motion9 import install
             install()
@@ -159,7 +166,8 @@ def main(argv=None):
         apply_arm_workspace(arm)  # left: mirrored safety box / reach corner (before the episode modules load)
         apply_prompts(robot)  # spec §9.1: robot / gripper / head-camera wording of the requests
         split = rows[0].get("split", "train")
-        pool = job_pool(rows, robot, a.v2, a.v2_untested)
+        live_needs_cache = a.live_exec and os.environ.get("LIVE_CMD_SOURCE", "cache") != "gt"
+        pool = job_pool(rows, robot, a.v2 or live_needs_cache, a.v2_untested)
         rooms = rooms_for(int(rows[0]["rooms"]), "train" if split == "train" else "ood")
         mesh = A9.mesh_for(int(rows[0]["rooms"]), split="train" if split == "train" else "ood")
         ext_on = os.path.join(os.path.dirname(os.path.abspath(a.out)), "EXT_ON")  # run-level switch: "<p> [<n>]"
@@ -177,6 +185,9 @@ def main(argv=None):
         if a.v2:
             from .rt9 import install as v2_install
             v2_install(world, robot, arm, allow_untested=a.v2_untested)
+        elif a.live_exec:
+            from .rtlive9 import install as live_install
+            live_install(world, robot, arm, allow_untested=a.v2_untested)
         if os.environ.get("L9_TIMING"):
             from . import timing9
             timing9.install(world)

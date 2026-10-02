@@ -892,9 +892,12 @@ def free_opening(T, gr: dict, boxes, w: float, pre: float):
 
 # ---------------------------------------------------------------------------------------------- install
 def install(world, profile: str = "ffw_sg2", arm: str = "right", device: str = "cuda:0", allow_untested=False,
-            style=None) -> Runtime:
+            style=None, runtime_cls: type = Runtime) -> Runtime:
+    """runtime_cls (default Runtime, unchanged behaviour): a Runtime subclass to install instead -- the opt-in
+    no-cache live executor (harvest.l9.rtlive9.LiveRuntime, harvest.l9.run9 --live-exec) reuses every hook below
+    unchanged and only swaps this one class out."""
     global CURRENT
-    rt = Runtime(world, profile, arm, device=device, allow_untested=allow_untested, style=style)
+    rt = runtime_cls(world, profile, arm, device=device, allow_untested=allow_untested, style=style)
     world.rt = rt
     CURRENT = rt
     from ..teach_l8d import xlabels as XL
