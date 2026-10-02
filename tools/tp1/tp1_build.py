@@ -114,6 +114,26 @@ def merge(out, nt, ne):
         return b
     ego = cat([os.path.join(out, f"l9tp_train.part{k:02d}.jsonl") for k in range(nt)])
     tp = cat([os.path.join(out, f"l9tp_train.part{k:02d}_third_person.jsonl") for k in range(nt)])
+    # change 4: drop every training row (ego and its third-person twin, and their aux rows) of a situation whose rows
+    # disagree (specgate9.contradictions > 0) -- the same rows leave both sets, so the ego bytes stay identical
+    re_, rt_ = [json.loads(x) for x in ego.decode().splitlines()], [json.loads(x) for x in tp.decode().splitlines()]
+    seen = {}
+    for r in re_ + rt_:
+        if r.get("kind", "control") == "control" and r.get("answer") is not None:
+            k = SG.situation_key(r)
+            if k is not None:
+                seen.setdefault(k, []).append(r)
+    badk = {k for k, v in seen.items() if len(v) > 1 and SG.contradictions(v) > 0}  # the gate's own rule per situation
+    bad_ids = {r["id"] for r in re_ + rt_ if r.get("kind", "control") == "control" and r.get("answer") is not None
+               and SG.situation_key(r) in badk}
+    base_ids = {i[:-3] if i.endswith("_tp") else i for i in bad_ids}
+    drop = lambda r: r["id"] in bad_ids or (r["id"][:-3] if r["id"].endswith("_tp") else r["id"]) in base_ids \
+        or any(str(r["id"]).startswith(b + "_aux") for b in base_ids)  # noqa: E731
+    if bad_ids:
+        ego = "".join(json.dumps(r) + "\n" for r in re_ if not drop(r)).encode()
+        tp = "".join(json.dumps(r) + "\n" for r in rt_ if not drop(r)).encode()
+    dropped = {"situations": len(badk), "rows": len(re_) + len(rt_) - ego.count(b"\n") - tp.count(b"\n"),
+               "ids": sorted(base_ids)[:20]}
     ev = cat([os.path.join(out, f"l9tp_eval.part{k:02d}.jsonl") for k in range(ne)])
     evtp = [json.loads(x) for k in range(ne)
             for x in open(os.path.join(out, f"l9tp_eval.part{k:02d}_third_person.jsonl"), encoding="utf-8")]
@@ -149,7 +169,7 @@ def merge(out, nt, ne):
            "rows_without_head": sum(1 for x in ctrl if (x.get("image_views") or ["head"])[0] != "head"),
            "eval_rows": len(rows_v), "eval_control": sum(1 for x in rows_v if x.get("kind", "control") == "control"),
            "eval_third_person_rows": sum(1 for x in rows_v if x.get("third_person") or x.get("view") == "external"),
-           "eval_tp_rows": len(evtp), "eval_tpdir_rows": len(evdir),
+           "eval_tp_rows": len(evtp), "eval_tpdir_rows": len(evdir), "contradiction_drop": dropped,
            "frame_note_missing": sum(1 for t in list(texts.values()) + list(vtexts.values()) if V.FRAME_NOTE not in t),
            "spec_gates_ok": g.get("ok"), "eval_spec_gates_ok": gv.get("ok"),
            "image_count_hist": dict(Counter(len(x["images"]) for x in rows_e + rows_t)),
