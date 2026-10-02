@@ -194,6 +194,7 @@ class Runtime:
         self.regrasp_n, self.timeline = 0, {}
         self.instruction_suffix = ""
         self.dead = False
+        self._retreat_fail = 0
         self._n_dump = 0  # failed-plan dumps per episode (L9V2_DEBUG_DIR)
 
     def arm_q(self) -> np.ndarray:
@@ -512,7 +513,7 @@ class Runtime:
             # retreat; the next target's first move (lift_clear straight up / a transit) dragged or knocked the placed
             # object (multi-step 3 / 42 successes). Retreat from the previous target first while the hand is near it.
             ptg = (self.choice_key or (None,))[0]
-            if self.choice is not None and ptg is not None and ptg != tg:
+            if self.choice is not None and ptg is not None and ptg != tg and not getattr(self, "_retreat_fail", 0):
                 r = self._retreat_from(ptg, self.choice, st)
                 if r is not None:
                     self.last_label, self._last_step = r, "retreat"
@@ -539,6 +540,9 @@ class Runtime:
         if not hold:
             self.held = None
         step, cmd = VP.plan(self.status2(st), info, table_z, w_open, gc, self.held)
+        if step == "retreat" and getattr(self, "_retreat_fail", 0):
+            # the retreat move could not be planned (dbg6: 20 identical retreat calls): the object is placed, stop
+            step, cmd = "done", {"mode": "stop"}
         if step == "reopen" and getattr(self, "_last_step", None) == "reopen":
             # the fingers could not open (blocked by the object / a neighbour): back off upward with the gripper
             # open instead of repeating 'reopen' (pilot 10-02: 38 reopens in a row until the call limit)
@@ -638,6 +642,8 @@ class Runtime:
             Q = self._guard(self.planner.line(q0, self.to_base(self.tcp_T()), self.to_base(T)))  # short straight moves
             if Q is not None:
                 self.timeline.setdefault("line_moves", []).append(step)
+        if Q is None and step == "retreat":
+            self._retreat_fail = getattr(self, "_retreat_fail", 0) + 1
         if Q is None:
             if Q0 is not None:
                 return self._resample(Q0), "lifted a little; the carry path is blocked", None
