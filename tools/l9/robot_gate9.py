@@ -4,6 +4,9 @@ A robot (per task kind: single-arm, articulated, bimanual) passes when
       of every denominator; they are only counted by reason;
   (b) every definition the robot attempted (>= 1 rendered episode) has >= 1 success AND a success rate >= 10 %;
   (c) the mean of the per-definition success rates is >= 40 %.
+(b) is judged only on definitions with >= 5 attempted episodes (user 10-03 02h); a definition with fewer is
+"pending" (fill it to 5, then judge). verdict: FAIL (a judged definition fails (b), or (c) fails with nothing
+pending) / PENDING (definitions still below 5) / PASS (all judged, (b) and (c) hold); pending_need = episodes to add.
 usage: python tools/l9/robot_gate9.py <collect root>... [--robot r1pro] [--min-eps 1] [--json out.json]
 A collect root is a dir with <split>/<family>/<episode>/meta.json (or skipped.json)."""
 import glob
@@ -12,6 +15,7 @@ import os
 import sys
 from collections import Counter, defaultdict
 
+JUDGE_MIN_EPS = 5  # user 10-03 02h: (b) is judged only on definitions with >= 5 attempted episodes; fewer = "pending"
 REACH_WORDS = ("reach", "outside its", "standing band", "ik precheck")  # articulated: IK precheck = arm cannot reach
 
 
@@ -60,19 +64,24 @@ def evaluate(roots, robot=None, min_eps=1) -> dict:
         if eps[k] < min_eps:
             continue
         rate = succ[k] / eps[k]
-        defs[k] = {"eps": eps[k], "succ": succ[k], "rate": round(rate, 3),
-                   "ok": succ[k] >= 1 and rate >= 0.10, "skips": dict(skips.get(k, {}))}
+        judged = eps[k] >= JUDGE_MIN_EPS
+        defs[k] = {"eps": eps[k], "succ": succ[k], "rate": round(rate, 3), "judged": judged,
+                   "ok": (succ[k] >= 1 and rate >= 0.10) if judged else None, "skips": dict(skips.get(k, {}))}
     rates = [v["rate"] for v in defs.values()]
     mean = round(sum(rates) / len(rates), 3) if rates else 0.0
-    failing = sorted(k for k, v in defs.items() if not v["ok"])
+    failing = sorted(k for k, v in defs.items() if v["ok"] is False)
+    pending = sorted(k for k, v in defs.items() if not v["judged"])
     sk_total = Counter()
     for c in skips.values():
         sk_total.update(c)
+    verdict = "FAIL" if failing or (defs and mean < 0.40 and not pending) else ("PENDING" if pending or not defs
+                                                                             else "PASS")
     return {"robot": robot, "defs_attempted": len(defs), "episodes": sum(eps.values()), "successes": sum(succ.values()),
             "pooled_rate": round(sum(succ.values()) / max(1, sum(eps.values())), 3), "mean_def_rate": mean,
-            "defs_failing_b": len(failing), "failing_examples": failing[:15], "skips_by_kind": dict(sk_total),
-            "pass_b": not failing, "pass_c": mean >= 0.40, "PASS": (not failing) and mean >= 0.40 and bool(defs),
-            "defs": defs}
+            "defs_failing_b": len(failing), "failing_examples": failing[:15],
+            "defs_pending": len(pending), "pending_need": {k: JUDGE_MIN_EPS - defs[k]["eps"] for k in pending},
+            "skips_by_kind": dict(sk_total), "pass_b": not failing, "pass_c": mean >= 0.40,
+            "PASS": verdict == "PASS", "verdict": verdict, "defs": defs}
 
 
 def main():
