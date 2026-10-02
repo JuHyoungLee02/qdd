@@ -25,11 +25,24 @@ def sha(p):
     return h.hexdigest()
 
 
+def gp2_holdout(task_id: str) -> bool:  # the E-GP2 definition hash (sha256("gp2:<task_id>") % 5 == 0)
+    return int(hashlib.sha256(f"gp2:{task_id}".encode()).hexdigest()[:8], 16) % 5 == 0
+
+
 def select(out, roots):
+    """change 1: held-out DEFINITIONS = the definitions of collect/holdout episodes + the E-GP2 hash definitions; every
+    eligible episode of those definitions (either folder) is evaluated, none is trained on."""
     from harvest.l9 import specgate9 as SG
+    ho_defs = set()
+    for root in roots:
+        for m in glob.glob(os.path.join(root, "holdout", "*", "*", "meta.json")):
+            try:
+                ho_defs.add(json.load(open(m))["task_id"])
+            except (OSError, ValueError, KeyError):
+                pass
     eps, c = {"train": [], "eval": []}, Counter()
     for root in roots:
-        for split, key in (("train", "train"), ("holdout", "eval")):
+        for split in ("train", "holdout"):
             for m in sorted(glob.glob(os.path.join(root, split, "*", "*", "meta.json"))):
                 try:
                     d = json.load(open(m))
@@ -38,6 +51,7 @@ def select(out, roots):
                     continue
                 if d.get("gen") != "l9" or d.get("grasp_v2") is None:
                     continue
+                key = "eval" if (d.get("task_id") in ho_defs or gp2_holdout(d.get("task_id", ""))) else "train"
                 c[f"{key}_v2"] += 1
                 if not d.get("success"):
                     continue
@@ -51,7 +65,8 @@ def select(out, roots):
                 eps[key].append({"dir": os.path.dirname(m), "def": d["task_id"], "robot": d.get("robot") or "ffw_sg2"})
     dt, de = {e["def"] for e in eps["train"]}, {e["def"] for e in eps["eval"]}
     info = dict(c, train=len(eps["train"]), eval=len(eps["eval"]), train_defs=len(dt), eval_defs=len(de),
-                shared_defs=len(dt & de), robots={s: dict(Counter(e["robot"] for e in eps[s])) for s in eps})
+                shared_defs=len(dt & de), holdout_folder_defs=len(ho_defs), robots={s: dict(Counter(e["robot"] for e in eps[s])) for s in eps})
+    assert not (dt & de), "a held-out definition in training"
     json.dump(dict(eps, info=info), open(out, "w"), indent=0)
     print(json.dumps(info))
 
