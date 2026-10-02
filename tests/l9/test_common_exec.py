@@ -119,7 +119,8 @@ def test_common_ab(tmp_path):
     from tools.l9 import common_ab
     src = tmp_path / "src"
     src.mkdir()
-    rows = [{"seed": 10 + i, "robot": "g1" if i % 2 else "r1pro", "job": f"v{i}"} for i in range(8)]
+    rows = [{"seed": 10 + i, "robot": "g1" if i % 2 else "r1pro", "job": f"v{i}", "arm": "left" if i < 4 else "right"}
+            for i in range(8)]
     (src / "plan_pilot_v2.json").write_text(json.dumps(rows))
     (src / "HCAM_ON").write_text("")
     out = tmp_path / "ab"
@@ -127,6 +128,7 @@ def test_common_ab(tmp_path):
     for arm in ("off", "on"):
         p = json.loads((out / arm / "plan_pilot_v2.json").read_text())
         assert [r["seed"] for r in p] == [11, 13, 15, 10, 12, 14]
+        assert {r["job"] for r in p} == {"cx_g1_l000", "cx_g1_l001", "cx_g1_r000", "cx_r1pro_l000", "cx_r1pro_l001", "cx_r1pro_r000"}
         assert len((out / arm / "jobs.txt").read_text().splitlines()) == 6 and (out / arm / "HCAM_ON").exists()
     assert (out / "on" / "COMMON_EXEC").exists() and not (out / "off" / "COMMON_EXEC").exists()
     for arm, ok in (("off", False), ("on", True)):

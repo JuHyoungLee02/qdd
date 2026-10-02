@@ -24,9 +24,12 @@ def mk(out: str, srcs: dict, n: int, rows_per_job: int = 1) -> dict:
     for robot, src in srcs.items():
         rows = [r for r in json.load(open(os.path.join(src, "plan_pilot_v2.json"))) if r.get("robot") == robot][:n]
         counts[robot] = len(rows)
-        for k, r in enumerate(rows):
+        seen: dict = {}
+        for r in rows:  # run9: one arm per job
+            hand = str(r.get("arm", "right"))
+            k = seen[hand] = seen.get(hand, -1) + 1
             for arm in plans:
-                plans[arm].append(dict(r, job=f"cx_{robot}_{k // rows_per_job:03d}"))
+                plans[arm].append(dict(r, job=f"cx_{robot}_{hand[0]}{k // rows_per_job:03d}"))
     for arm, rows in plans.items():
         d = os.path.join(out, arm)
         os.makedirs(d, exist_ok=True)
