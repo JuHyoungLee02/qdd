@@ -245,7 +245,11 @@ def success_d(final_xy_left, target_xy_left, final_xy_right, target_xy_right, to
 # contained "trajectory player" per arm -- and reuses only the self-contained pieces of Runtime: `choose()` (grasp
 # candidate selection), `_approach_plan()` (pre-grasp transit + straight approach + lift, already its own function),
 # `planner.pose()/line()` + `_resample()` for the carry / zone / final moves, and `refresh_world()` for obstacles.
-GRAVITY_BOX_HALF = (0.07, 0.07, 0.09)  # m, coarse stand-in for the other arm's hand + forearm end (spec note R1)
+GRAVITY_BOX_HALF = (0.045, 0.045, 0.05)  # m, coarse stand-in for the other arm's gripper (spec note R1). First pod
+# smoke (2026-10-02, seed 3950010): the original (0.07, 0.07, 0.09) box (18 cm tall) centred on the giver's TCP --
+# itself placed at/above the held object's top (a "top" family grasp) -- extended far enough past the object that
+# `choose()` found 0 reachable candidates for the receiver in EVERY approach family, not just the ones that would
+# really collide. Shrunk to roughly the gripper's own pad footprint; still a box, not the real links (R1 stands).
 SETTLE_TICKS = 30  # ~0.6 s at 20 Hz / dt: gripper close/open settle wait
 
 
@@ -418,7 +422,17 @@ class HandoverRuntime:
         """Category-A smoke episode: giver picks `obj_key`, carries to the handover zone and holds; the receiver
         approaches and closes on it (while the giver holds), the giver opens once the receiver has it, the receiver
         carries to `final_xy` (default: `final_spot_xyz`). Not the production collection loop (spec note §3): no
-        labels.jsonl / build9 row here, see tools/l9/bim_smoke.py for that wiring."""
+        labels.jsonl / build9 row here, see tools/l9/bim_smoke.py for that wiring. Every return path goes through
+        `finally`: env.use_arm(env.primary) (bug found in the first pod smoke run -- an early return left the dual
+        env's "current arm" context on the receiver, and the NEXT episode's world.reset() -> env.reset() -> its own
+        settle-step env.step() call raised "step() takes the primary arm's targets" because of it)."""
+        env = self.world.env
+        try:
+            return self._run_episode(obj_key, table_z, final_xy)
+        finally:
+            env.use_arm(env.primary)
+
+    def _run_episode(self, obj_key: str, table_z: float, final_xy=None) -> dict:
         zone = handover_zone_xyz(self.profile, table_z)
         if final_xy is None:
             final_xy = final_spot_xyz(zone, self.receiver.arm)[:2]
