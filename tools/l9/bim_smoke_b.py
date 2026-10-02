@@ -52,6 +52,8 @@ def _snapper(world, od):
     n = [0]
 
     def snap(name):
+        if hasattr(world, "_render"):  # cameras only update on a render (render_interval=NO_RENDER): fresh frame
+            world._render()
         from PIL import Image
         for cam, short in (("cam_head", "head"), ("cam_wrist_right", "wr"), ("cam_wrist_left", "wl")):
             im = Image.fromarray(world.env.camera_rgb(cam))
