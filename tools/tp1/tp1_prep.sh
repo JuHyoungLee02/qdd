@@ -16,7 +16,7 @@ if [ ! -s $D/episodes.json ]; then
     > $D/select.json 2>> $L/prep_tp1.err || { log "SELECT_FAIL"; exit 1; }
   log "SELECT $(cat $D/select.json)"
 fi
-NT=64; NE=4
+NT=64; NE=16
 for k in $(seq 0 $((NT - 1))); do
   grep -q episodes $D/rows_train_$k.json 2>/dev/null && continue
   $P tools/tp1/tp1_build.py rows $D/episodes.json $D train --part $k/$NT > $D/rows_train_$k.json 2>> $L/prep_tp1_rows_$k.err &

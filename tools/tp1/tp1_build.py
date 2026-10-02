@@ -15,6 +15,7 @@ import sys
 from collections import Counter
 
 ROBOTS = ("ffw_sg2", "franka_mast")
+EVAL_CAP = 10  # change 2
 
 
 def sha(p):
@@ -62,7 +63,14 @@ def select(out, roots):
                         or d.get("task_id") == "gate_move":
                     c[f"{key}_excluded"] += 1
                     continue
-                eps[key].append({"dir": os.path.dirname(m), "def": d["task_id"], "robot": d.get("robot") or "ffw_sg2"})
+                eps[key].append({"dir": os.path.dirname(m), "def": d["task_id"], "robot": d.get("robot") or "ffw_sg2",
+                                 "seed": d.get("seed")})
+    # change 2: at most EVAL_CAP episodes per held-out definition (seed order) -- evaluation time per model
+    by = {}
+    for e in sorted(eps["eval"], key=lambda e: (e["def"], int(e.get("seed") or 0), e["dir"])):
+        by.setdefault(e["def"], []).append(e)
+    c["eval_before_cap"] = len(eps["eval"])
+    eps["eval"] = [e for k in sorted(by) for e in by[k][:EVAL_CAP]]
     dt, de = {e["def"] for e in eps["train"]}, {e["def"] for e in eps["eval"]}
     info = dict(c, train=len(eps["train"]), eval=len(eps["eval"]), train_defs=len(dt), eval_defs=len(de),
                 shared_defs=len(dt & de), holdout_folder_defs=len(ho_defs), robots={s: dict(Counter(e["robot"] for e in eps[s])) for s in eps})
