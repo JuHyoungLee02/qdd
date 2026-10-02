@@ -355,9 +355,23 @@ def plan(st: dict, info: dict, table_z: float, w_open: float, gc: GraspChoice, h
                 held["carry_committed"] = bool(held.get("carry_committed")) or (
                     obj_near if obj_near is not None else float(np.linalg.norm(c[:2] - p[:2]))) < 2 * tol
             committed = bool(held and held.get("carry_committed"))
+            # smoke 10-03 (kit_to_sink): carry_over<->lower_open at the tol edge -- once lowering started, stay with
+            # it while the object is within 2x tol (same hysteresis rule, the place side)
+            if obj_near is not None and held is not None:
+                if held.get("lowering") and obj_near < 2 * tol:
+                    near = True
+                if near:
+                    held["lowering"] = True
+        lifted = False
+        if PLACE_ABOVE_FIX and held is not None:
+            # smoke 10-03 (sel_bigger): P0's carry_over goes BELOW zc - NEAR_XY, so the height test alone flipped the
+            # next call back to carry_up. Latch "reached carry height once" per hold; lift-first is kept.
+            if tcp[2] >= zc - L.NEAR_XY:
+                held["p0_lifted"] = True
+            lifted = bool(held.get("p0_lifted"))
         if near:
             return "lower_open", {"mode": "eef", "position_m": _r(put), "gripper": "open", "quat_wxyz": _q(pq)}
-        if committed or tcp[2] >= zc - L.NEAR_XY:
+        if committed or lifted or tcp[2] >= zc - L.NEAR_XY:
             if PLACE_ABOVE_FIX:
                 # P0: physically roll out "above" at the height it actually executes at (resolve.py's own
                 # convention: place top + ABOVE_DZ + grip_offset), not the 22 cm carry height -- the fix for the

@@ -304,3 +304,48 @@ def test_plan_hold_above_fix_grip_offset_captured_once(monkeypatch):
     assert held["grip_offset"] == pytest.approx(0.22)
     P.plan(_st([0.0, 0.0, 1.10], list(gc.quat), 0.04, hold=True, obj=obj), info, 0.75, 0.107, gc, held)
     assert held["grip_offset"] == pytest.approx(0.22)  # unchanged despite the new TCP height
+
+
+def _p0_setup(monkeypatch):
+    from harvest.astra_motion import harness
+    monkeypatch.setattr(harness, "obj_height", lambda k: 0.10)
+    C, c = _cands()
+    gc = P.choose(C, np.ones(5, bool), np.ones(5), c, (0.0, 0.0), 5, 0, allow_instruct=False)
+    info = {"tgt": "o1", "place": "o2", "sup_tgt": 0.75, "sup_place": 0.71, "place_top": 0.73}
+    return gc, info
+
+
+def test_p0_no_carry_up_after_descending_to_above_height(monkeypatch):
+    """smoke 10-03 sel_bigger: after P0's carry_over lowered the TCP below zc - NEAR_XY, the next call must stay
+    carry_over (lift reached once per hold), not flip back to carry_up."""
+    monkeypatch.setattr(P, "PLACE_ABOVE_FIX", True)
+    gc, info = _p0_setup(monkeypatch)
+    held = {"T_obj_G": np.eye(4)}
+    obj = {"o1": [0.45, -0.2, 0.80], "o2": [0.40, -0.55, 0.71]}
+    s1, _ = P.plan(_st([0.0, 0.0, 0.97], list(gc.quat), 0.04, hold=True, obj=obj), info, 0.75, 0.107, gc, held)
+    s2, _ = P.plan(_st([0.0, 0.0, 0.85], list(gc.quat), 0.04, hold=True, obj=obj), info, 0.75, 0.107, gc, held)
+    assert s1 == "carry_over" and s2 == "carry_over"
+
+
+def test_p0_lift_first_still_kept(monkeypatch):
+    """Fresh hold below carry height: carry_up first (the latch is only set after reaching zc)."""
+    monkeypatch.setattr(P, "PLACE_ABOVE_FIX", True)
+    gc, info = _p0_setup(monkeypatch)
+    obj = {"o1": [0.45, -0.2, 0.80], "o2": [0.40, -0.55, 0.71]}
+    s, _ = P.plan(_st([0.45, -0.2, 0.85], list(gc.quat), 0.04, hold=True, obj=obj), info, 0.75, 0.107, gc,
+                  {"T_obj_G": np.eye(4)})
+    assert s == "carry_up"
+
+
+def test_hyst_lowering_latch_at_tol_edge(monkeypatch):
+    """smoke 10-03 kit_to_sink: once lower_open was chosen, an object drifting just outside tol (but within 2x tol)
+    keeps lower_open instead of flipping to carry_over."""
+    monkeypatch.setattr(P, "PLACE_TOL_FIX", True)
+    monkeypatch.setattr(P, "PLACE_HYST_FIX", True)
+    monkeypatch.setattr(P, "place_tol", lambda key: 0.02)
+    gc, info = _p0_setup(monkeypatch)
+    held = {"T_obj_G": np.eye(4)}
+    st1 = _st([0.40, -0.54, 0.90], list(gc.quat), 0.04, hold=True, obj={"o1": [0.40, -0.54, 0.80], "o2": [0.40, -0.55, 0.71]})
+    st2 = _st([0.40, -0.525, 0.85], list(gc.quat), 0.04, hold=True, obj={"o1": [0.40, -0.525, 0.80], "o2": [0.40, -0.55, 0.71]})
+    assert P.plan(st1, info, 0.75, 0.107, gc, held)[0] == "lower_open"
+    assert P.plan(st2, info, 0.75, 0.107, gc, held)[0] == "lower_open"  # 2.5 cm: outside tol, inside 2x tol
