@@ -92,3 +92,13 @@ behind it is found from the logs (no rerun of the same arms to fish for a pass).
 
 ## Results
 (pending)
+
+## Confirmation A/B (pre-registered 07:4x KST, coordinator decision; starts after the P0 re-smoke passes)
+- A = main2's B (all general elements). B = A + `L9V2_PLACE_ABOVE=1 L9V2_PLACE_TOL=1 L9V2_PLACE_HYST=1` (P0 + (a) + (d),
+  the owner's fixed version) + `L9_CSPACE_READY=1` + `L9_EXEC_TABLE=1` (dev 84e45f2c, no robot-name branch: measured
+  ready/stow poses and hand9 tables). (b) is a build flag (`build_v2 --rationale on`), no sim effect.
+- Rows: whole jobs of main2's plan until each robot has >= 28 rows (same seeds), `gab/conf`, built by `mk_conf.py`.
+  Cards: none of main2's.
+- Adopt when: AIW and Franka non-inferior on success (B >= A − 10 pp), scene skips (B <= A + 10 pp of rows) and the
+  0.04 rad step gate (B <= A + 1 episode) — Franka is the one robot EXEC_TABLE changes (AIW has a FINGER entry); R1 and
+  G1: success moves in the same direction or up (B >= A), skips not up by > 10 pp; ABA share for every robot B <= A + 2 pp.
