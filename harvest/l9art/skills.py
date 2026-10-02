@@ -32,6 +32,22 @@ def T_pose(R, p) -> np.ndarray:
     return FX.T_of(R, p)
 
 
+def pad_offset(gr: dict) -> float:
+    """Pad-centre distance beyond the TCP along the approach, from the L9v2-ROBOT gripper json (pad_z_range_in_tcp;
+    z_G = -a): AI Worker 1.7 cm, Franka 0.1 cm, R1 Pro 0 (smoke 10-02: bars at the TCP sat outside the AI Worker pads)."""
+    import json as _j
+    import os as _o
+    from ..l9 import grasp9 as G9
+    name = gr.get("json")
+    if not name:
+        return 0.0
+    p = _o.path.join(G9.DIR, name)
+    if not _o.path.exists(p):
+        return 0.0
+    z = _j.load(open(p, encoding="utf-8")).get("pad_z_range_in_tcp")
+    return float(-(z[0] + z[1]) / 2) if z else 0.0
+
+
 def tip_offset(gr: dict) -> float:
     """Distance from the TCP to the fingertips along the approach (gripper model of harvest.l9.grasp9)."""
     t = gr.get("tip")
@@ -93,10 +109,10 @@ def handle_grasp(hf: dict, gr: dict, draw: dict) -> dict:
     R = frame_of(a, c)
     th = float(hf.get("thick", 0.012))
     open_w = float(min(gr["max_open"], th + 0.03 + 0.01 * abs(draw["u"])))
-    T = T_pose(R, p)
-    T_pre = T_pose(R, p - draw["standoff"] * (R[:, 2] * -1))  # back along -a (= +z_G)
-    T_pre[:3, 3] = p + draw["standoff"] * R[:, 2]
-    return {"T": T, "T_pre": T_pre, "a": a, "c": R[:, 1], "p": p, "open_w": open_w}
+    pt = p - a * pad_offset(gr)  # TCP so that the PAD CENTRE sits on the handle (AI Worker pads are 0.7-2.7 cm beyond its TCP)
+    T = T_pose(R, pt)
+    T_pre = T_pose(R, pt + draw["standoff"] * R[:, 2])  # back along -a (= +z_G)
+    return {"T": T, "T_pre": T_pre, "a": a, "c": R[:, 1], "p": p, "open_w": open_w, "pad_off": pad_offset(gr)}
 
 
 def contact_push(point, normal_in, gr: dict, draw: dict, c_hint=None) -> dict:

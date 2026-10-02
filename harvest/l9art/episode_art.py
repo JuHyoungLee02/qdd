@@ -425,7 +425,8 @@ class ArtEpisode:
         p = np.array([c[0], c[1], c[2] + he[2] - min(0.02, 0.4 * h)])
         Rg = SK.frame_of(a, ax if not self.draw["flip"] else -ax)
         w = float(min(self.ex.gr["max_open"], 2 * min(he[0], he[1]) + 0.03))
-        return {"T": SK.T_pose(Rg, p), "T_pre": SK.T_pose(Rg, p + self.draw["standoff"] * Rg[:, 2]), "a": a,
+        pt = p - a * SK.pad_offset(self.ex.gr)  # pad centre on the grasp point
+        return {"T": SK.T_pose(Rg, pt), "T_pre": SK.T_pose(Rg, pt + self.draw["standoff"] * Rg[:, 2]), "a": a,
                 "c": Rg[:, 1], "p": p, "open_w": w}
 
     def place_spot(self) -> dict:
