@@ -845,8 +845,54 @@ class Env:
         self._steps = 0  # episode clock starts after settling
         return hold
 
+    # ---- L9 generic grip layer (harvest/l9/hand9.py; opt-in L9_GRIP_LAYER=1, unset: gap_table() is None and every
+    # caller below keeps its old path): opening <-> finger joints and the width readout through the gripper's
+    # measured free-gap table, effort = the max over ALL finger joints (never one joint)
+    def gap_table(self, arm: str | None = None):
+        from ..l9 import hand9 as H
+        return H.active_table(getattr(self, "robot_name", None), arm or self.arm)
+
+    def _finger_order(self, arm: str) -> list:
+        """This robot's finger joints of `arm` in its action order."""
+        rn = getattr(self, "robot_name", None)
+        from ..l9 import robot9 as R9
+        if rn in R9.V2_PROFILES:
+            return list(R9.V2[rn]["arms"][arm]["fingers"])
+        return list(R9.FINGERS) if rn is not None else list(GRIP_ALL[arm])
+
+    def _gl_fingers(self, t, w: float, arm: str) -> list:
+        m = t.joints_for_gap(w)
+        return [m[j] for j in self._finger_order(arm)]
+
+    def _gl_ids(self, t) -> list:
+        c = self.__dict__.setdefault("_gl_idx", {})
+        if t.name not in c:
+            jn = self.robot.joint_names
+            c[t.name] = [jn.index(j) for j in t.joints]
+        return c[t.name]
+
+    def gripper_tcp_gap(self) -> float | None:
+        """(grip layer) the measured gap in the TCP plane (contact-width reading); None when the layer is off."""
+        t = self.gap_table()
+        if t is None:
+            return None
+        return t.tcp_gap_of_q(self.robot.data.joint_pos[0, self._gl_ids(t)].cpu().numpy())
+
+    def finger_forces(self, k: str) -> dict | None:
+        """(grip layer) contact force magnitude of object k on each finger contact body (this arm), None when the
+        layer is off or k has no contact sensor."""
+        if self.gap_table() is None or k not in getattr(self, "contact", {}):
+            return None
+        fb = getattr(self, "finger_bodies", None) or FINGER_BODIES[self.arm]  # = the sensor filter order (oracle_state)
+        f0, f1 = getattr(self, "finger_slice", (0, len(fb)))
+        mag = self.contact[k].data.force_matrix_w[0, 0].norm(dim=-1).cpu().numpy()
+        return {b: float(m) for b, m in zip(fb, mag[f0:f1])}
+
     @property
     def grip_max_w(self) -> float:
+        t = self.gap_table()
+        if t is not None:
+            return t.max_gap
         if getattr(self, "robot_name", None) is None:
             return GRIP_MAX_W
         from ..l9 import robot9 as R9
@@ -858,7 +904,11 @@ class Env:
         q_target = np.asarray(q_target, dtype=np.float32)
         if getattr(self, "dual", False) and self.arm != self.primary:
             raise RuntimeError("dual: step() takes the primary arm's targets; use_arm(primary) first")
-        if getattr(self, "robot_name", None) in ("r1pro", "g1"):  # L9 v2: arm joints + the profile's width map
+        t = self.gap_table()
+        if t is not None:  # grip layer: the opening is a measured free gap -> finger joints by the gap table
+            n = len(self.arm_ids)
+            a = np.concatenate([q_target[:n], self._gl_fingers(t, float(q_target[n]), self.arm)]).astype(np.float32)
+        elif getattr(self, "robot_name", None) in ("r1pro", "g1"):  # L9 v2: arm joints + the profile's width map
             from ..l9 import robot9 as R9
             n = len(self.arm_ids)
             w = R9.v2_width_to_joints(self.robot_name, self.arm, float(q_target[n]))
@@ -881,7 +931,10 @@ class Env:
         o = self.other_arm()
         c = self._ctx[o]
         q, w = self.arm2_target
-        if getattr(self, "robot_name", None) in ("r1pro", "g1"):
+        t = self.gap_table(o) if w is not None else None
+        if t is not None:  # grip layer
+            g = self._gl_fingers(t, float(w), o)
+        elif getattr(self, "robot_name", None) in ("r1pro", "g1"):
             from ..l9 import robot9 as R9
             ids = c["grip_ids"]
             if w is None:
@@ -919,6 +972,9 @@ class Env:
 
     def gripper_width(self) -> float:
         """Measured pad gap: finger link2 origin distance minus the pad inset (not the joint1 map)."""
+        t = self.gap_table()
+        if t is not None:  # grip layer: the measured free gap of the current finger joints
+            return t.gap_of_q(self.robot.data.joint_pos[0, self._gl_ids(t)].cpu().numpy())
         if getattr(self, "robot_name", None) in ("r1pro", "g1"):  # L9 v2: from the measured finger joints
             from ..l9 import robot9 as R9
             q = self.robot.data.joint_pos[0, self.grip_ids].cpu().numpy()
@@ -928,6 +984,9 @@ class Env:
         return max(float(d.norm()) - getattr(self, "pad_inset", PAD_INSET_M), 0.0)
 
     def gripper_effort(self) -> float:
+        t = self.gap_table()
+        if t is not None:  # grip layer: the largest torque over ALL finger joints (g1b H1: one joint read ~0)
+            return float(self.robot.data.applied_torque[0, self._gl_ids(t)].abs().max())
         return float(self.robot.data.applied_torque[0, self.grip_id].abs())
 
     def object_pose(self, k):

@@ -162,3 +162,30 @@ def test_contact_patch_is_inner_face_centre():
     P = _slab(0.02, 0.03, z0=-0.03, z1=0.01)
     c, (z0, z1) = H.contact_patch(P, toward=np.array([0.0, -0.05, -0.01]))
     assert c[1] == pytest.approx(0.02, abs=1e-3) and c[2] == pytest.approx(-0.01) and (z0, z1) == pytest.approx((-0.03, 0.01))
+
+
+def test_close_verdict_uses_tcp_plane_gap_for_contact():
+    # rotating fingers (AI Worker): the binding free gap reads narrower than the TCP-plane gap on the object
+    assert H.close_verdict(0.035, 0.054, 0.002, gap_tcp=0.055) == "CONTACT"
+    assert H.close_verdict(0.035, 0.054, 0.002) == "WIDE"
+
+
+@pytest.mark.parametrize("hand", ["two", "three"])
+def test_pinched_needs_both_sides(hand):
+    if hand == "two":
+        meta = {"method": {"chains": {"l2": ["l1", "l2"], "r2": ["r1", "r2"]}, "opposition": [[["l2"], ["r2"]]]}}
+        one, both = {"l1": 2.0, "r1": 0.0}, {"l1": 2.0, "r2": 1.0}
+    else:
+        meta = {"method": {"chains": {"th": ["th0", "th"], "ix": ["ix0", "ix"], "md": ["md0", "md"]},
+                           "opposition": [[["th"], ["ix", "md"]]]}}
+        one, both = {"ix": 3.0, "md": 3.0, "th": 0.1}, {"md0": 3.0, "th0": 1.0}
+    t = H.GapTable(dict(_table().meta, **meta))
+    assert not H.pinched(one, t) and H.pinched(both, t)
+
+
+def test_spec_r4_grip_tag(monkeypatch):
+    from harvest.l9 import specgate9 as S
+    assert S.spec_for("ffw_sg2", False) == S.SPEC and S.spec_for("franka_mast", False) == S.SPEC_FRANKA_R1
+    assert S.spec_for("g1", True) == "L9v2-spec-final-r4-grip"
+    assert S.spec_for("franka_mast", True) == "L9v2-spec-final-r1-r4-grip"
+    assert {S.spec_family(S.spec_for(r, g)) for r in ("ffw_sg2", "franka_mast") for g in (0, 1)} == {S.SPEC}

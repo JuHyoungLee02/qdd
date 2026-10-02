@@ -34,7 +34,19 @@ SPEC_FRANKA_R1 = "L9v2-spec-final-r1"
 # row of a slot build is stamped SPEC_CAMS, and the slot-build gate requires ALL rows to be SPEC_CAMS (rows built by
 # the pre-r2 builder never mix into an r2 set). Rows without extra views build byte-identical apart from the tag.
 SPEC_CAMS = "L9v2-spec-final-r2-cams"
-SPEC_FAMILY = {SPEC: SPEC, SPEC_FRANKA_R1: SPEC, SPEC_CAMS: SPEC}
+# r4-grip (user 10-03 03시, generic grip layer, NEW rows only): episodes run with L9_GRIP_LAYER=1 command / read every
+# gripper opening as the MEASURED free gap (harvest/l9/hand9.py gap9 tables) -- the width numbers in their rows
+# (pre-open, gaps in the history lines) use that semantics. Same family: the build gate still sees one spec.
+SPEC_GRIP_R4 = "L9v2-spec-final-r4-grip"
+SPEC_FRANKA_R1_GRIP_R4 = "L9v2-spec-final-r1-r4-grip"
+SPEC_FAMILY = {SPEC: SPEC, SPEC_FRANKA_R1: SPEC, SPEC_CAMS: SPEC, SPEC_GRIP_R4: SPEC, SPEC_FRANKA_R1_GRIP_R4: SPEC}
+
+
+def spec_for(robot: str | None, grip_layer: bool) -> str:
+    """spec_version of a NEW v2 episode."""
+    if robot == "franka_mast":
+        return SPEC_FRANKA_R1_GRIP_R4 if grip_layer else SPEC_FRANKA_R1
+    return SPEC_GRIP_R4 if grip_layer else SPEC
 
 
 def spec_family(v) -> str:

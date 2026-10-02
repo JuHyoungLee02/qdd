@@ -156,12 +156,14 @@ def run_episode(world, row: dict, out_dir: str, pool: dict, rm, ledger=None, p: 
     if rt is not None:
         from .rt9 import VERSION as V2_VERSION
         gv = rt.episode_meta()
-        from .specgate9 import SPEC, SPEC_FRANKA_R1
+        from .specgate9 import spec_for
+        from .hand9 import enabled as grip_layer
         meta.update(grasp_v2=gv, motion_version=V2_VERSION, label_origin="l9v2", gen_version="v2",
                     instruction=ep["instruction"] + gv.get("instruction_suffix", ""),
                     # frozen label spec (L9_PRINCIPLES §0); Franka rows get the r1 camera revision tag
                     # (specgate9.SPEC_FAMILY keeps the build gate's "one spec version" check passing)
-                    spec_version=SPEC_FRANKA_R1 if (row.get("robot") == "franka_mast") else SPEC)
+                    # (r4-grip: L9_GRIP_LAYER=1 rows, measured free-gap width semantics)
+                    spec_version=spec_for(row.get("robot"), grip_layer()))
     else:
         meta.update(gen_version="v1", label_origin="v1")
     if ep.get("task_v2"):  # L9 v2 task fields (task9v2.finish): grasp-label scene constraints, place pose / height,

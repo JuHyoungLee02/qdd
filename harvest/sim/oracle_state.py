@@ -124,6 +124,11 @@ def oracle_objects(env):
             # (nested rigid body of the physics USD, debug_objv_contact): resting on another object = geometric
             contacts |= mesh_rest_contacts(k, objs)
     tcp = to_table_frame(env.finger_mid(), z0)
-    grip = Gripper(width_m=env.gripper_width(), effort=env.gripper_effort(), pos=tcp)
+    t = env.gap_table() if hasattr(env, "gap_table") else None  # L9 grip layer (opt-in), None = unchanged
+    if t is not None:
+        from ..l9.hand9 import OPEN_TOL
+        grip = Gripper(width_m=env.gripper_width(), effort=env.gripper_effort(), pos=tcp, open_m=t.max_gap - OPEN_TOL)
+    else:
+        grip = Gripper(width_m=env.gripper_width(), effort=env.gripper_effort(), pos=tcp)
     support = support_from_contacts({k: o.pos for k, o in objs.items()}, half_z, contacts)
     return objs, grip, contacts, support

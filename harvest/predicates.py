@@ -30,6 +30,7 @@ class Gripper:
     width_m: float
     effort: float
     pos: np.ndarray
+    open_m: float | None = None  # L9 grip layer: "open" from the gripper's measured max gap (None = GRIP_OPEN_M)
 
 
 def _tilt_deg(q: np.ndarray) -> float:
@@ -48,6 +49,7 @@ class PredicateState:
     def update(self, objs, grip, contacts, support):
         out: dict[str, bool | None] = {}
         unknown = {k for k, o in objs.items() if o.occluded or o.id_uncertain}
+        open_m = GRIP_OPEN_M if getattr(grip, "open_m", None) is None else float(grip.open_m)
         for a, b in itertools.permutations(objs, 2):
             A, B = objs[a], objs[b]
             if a in unknown or b in unknown:
@@ -72,7 +74,7 @@ class PredicateState:
                 continue
             out[f"upright({a})"] = _tilt_deg(A.quat_wxyz) <= CFG.tilt_max_deg
             gripped = frozenset({"gripper", a}) in contacts
-            out[f"holding({a})"] = bool(gripped and grip.width_m < GRIP_OPEN_M and grip.effort >= GRIP_EFFORT_MIN)
+            out[f"holding({a})"] = bool(gripped and grip.width_m < open_m and grip.effort >= GRIP_EFFORT_MIN)
             out[f"lifted({a})"] = bool(support.get(a) is None and A.pos[2] - A.half_extents[2] >= CFG.h_lift_m)
-        out["gripper_open"] = grip.width_m >= GRIP_OPEN_M
+        out["gripper_open"] = grip.width_m >= open_m
         return out

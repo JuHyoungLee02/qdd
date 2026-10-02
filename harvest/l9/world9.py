@@ -290,6 +290,8 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             env.present_ids = tuple(env.present_ids) + SPOT_IDS + SURF_IDS  # Env.reset rebuilds present from these
             self.dt, self.w_open = float(env.step_dt), float(R9.GRIP_MAX_W if franka else (
                 R9.V2[robot]["grip_max_w"] if v2r else GRIP_MAX_W))
+            if env.gap_table() is not None:  # L9 grip layer (opt-in): fully open = the measured max free gap
+                self.w_open = float(env.grip_max_w)
             self.robot_profile, self.hcam_mode, self.cam_names = robot, hcam, cams
             self.joint_prefixes = ("panda_joint", "panda_finger") if franka else None
             if v2r:  # collect.py max_dq over the used arm's joints / fingers (str.startswith takes a tuple)

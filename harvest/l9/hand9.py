@@ -40,6 +40,7 @@ CONTACT_TOL, CONTACT_TOL_HI = 0.008, 0.020  # = rt9 (settled gaps run ~1.5 cm ov
 FORCE_MIN_N = 0.5  # = harvest.sim.oracle_state CONTACT_FORCE_N order of magnitude (finger contact)
 EFFORT_MIN = 1.0  # = harvest.predicates GRIP_EFFORT_MIN
 OPEN_TOL = 0.005  # "open" = measured gap within 5 mm of the measured max
+PRE_CLEAR = 0.020  # pre-open >= contact width + 2 cm of REAL free gap (1 cm each side; g1b H5, every robot)
 
 # profile + arm -> gripper json name (assets9/grippers/<name>.json, its gap9 table, its GraspGen-X registration)
 GRIPPER_JSON = {("ffw_sg2", "right"): "ffw_sg2_right", ("ffw_sg2", "left"): "ffw_sg2_left",
@@ -304,18 +305,20 @@ def active_table(profile: str | None, arm: str) -> GapTable | None:
 
 
 # ---------------------------------------------------------------------------------------------- verdicts
-def close_verdict(gap: float, w_contact: float, closed_gap: float = 0.0, touched=None, target=None) -> str:
-    """Generic close judgement on the MEASURED free gap (every robot, 2- or N-finger):
-    EMPTY  -- the hand closed to (within EMPTY_TOL of) its measured closed gap, or contact data exists and no
+def close_verdict(gap: float, w_contact: float, closed_gap: float = 0.0, touched=None, target=None,
+                  gap_tcp: float | None = None) -> str:
+    """Generic close judgement on the MEASURED gaps (every robot, 2- or N-finger):
+    EMPTY  -- the hand closed to (within EMPTY_TOL of) its measured closed free gap, or contact data exists and no
               fingertip touches the target;
-    CONTACT -- the settled gap matches the planned contact width (-0.8 / +2.0 cm);
+    CONTACT -- the settled TCP-plane gap (gap_tcp, default = gap) matches the planned contact width (-0.8 / +2.0 cm);
     WIDE   -- anything else."""
     gap = float(gap)
     if gap <= closed_gap + EMPTY_TOL:
         return "EMPTY"
     if touched is not None and target is not None and target not in touched:
         return "EMPTY"
-    if -CONTACT_TOL <= gap - float(w_contact) <= CONTACT_TOL_HI:
+    gc = gap if gap_tcp is None else float(gap_tcp)
+    if -CONTACT_TOL <= gc - float(w_contact) <= CONTACT_TOL_HI:
         return "CONTACT"
     return "WIDE"
 
@@ -331,6 +334,25 @@ def holding(tip_forces, joint_efforts, gap: float | None = None, tbl: GapTable |
     if gap is not None and tbl is not None and tbl.is_open(gap):
         return False
     return bool((f > force_min).any() and e.max() >= effort_min)
+
+
+def side_of(body: str, tbl: GapTable) -> int | None:
+    """0 / 1 = the opposition side whose finger chains contain `body` (first opposition pair), None = neither."""
+    m = tbl.meta.get("method", {})
+    chains, opp = m.get("chains", {}), m.get("opposition") or []
+    if not opp:
+        return None
+    for k, tips in enumerate(opp[0]):
+        if any(body == t or body in chains.get(t, ()) for t in tips):
+            return k
+    return None
+
+
+def pinched(forces: dict, tbl: GapTable, force_min: float = FORCE_MIN_N) -> bool:
+    """Truth for the A/B count: the object is in contact with BOTH opposing sides (forces = finger contact body ->
+    contact force magnitude)."""
+    sides = {side_of(b, tbl) for b, f in forces.items() if f > force_min}
+    return {0, 1} <= sides
 
 
 def torso_check(episodes: list, ranges: dict | None = None, still_tol: float = 1e-3, min_spread: float = 0.0) -> dict:

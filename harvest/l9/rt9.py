@@ -22,6 +22,7 @@ import types
 import numpy as np
 
 from . import grasp9 as G
+from . import hand9 as H
 from . import plan9 as P9
 from . import robot9 as R9
 from . import v2plan as VP
@@ -227,6 +228,9 @@ class Runtime:
         self.w, self.profile, self.arm = world, profile, arm
         self.grip = GRIP_NAME.get(profile, profile)
         self.gr = G.gripper(self.grip)
+        self.gtab = H.active_table(profile, arm)  # L9 grip layer (opt-in L9_GRIP_LAYER=1), None = unchanged
+        if self.gtab is not None:  # every opening is a measured free gap: the max is the measured one
+            self.gr = dict(self.gr, max_open=self.gtab.max_gap)
         self.allow_untested = allow_untested
         self.base_link = C9.base_link(profile, arm)
         self.joints = C9.arm_joints(profile, arm)
@@ -429,6 +433,11 @@ class Runtime:
         boxes = (np.array([b[0] for b in bl]).reshape(-1, 3), np.array([b[1] for b in bl]).reshape(-1, 3),
                  np.array([b[2] for b in bl]).reshape(-1, 3, 3))
         pre = np.asarray(Cw["pre_open"], float).copy()
+        if self.gtab is not None:  # grip layer: only candidates that fit the measured free gap; pre-open >= the
+            # contact width + 2 cm of REAL free gap (g1b H5, every robot), clipped to the measured max
+            w_c = np.asarray(Cw["w"], float)
+            ok &= w_c <= self.gtab.max_gap - G.OPEN_MARGIN
+            pre = np.minimum(np.maximum(pre, w_c + H.PRE_CLEAR), self.gtab.max_gap)
         vs = {"candidates": int(len(ok)), "test_ok": int(ok.sum()), "support_ok": 0, "free_ok": 0, "ik_ok": 0}
         for i in np.flatnonzero(ok):
             T = Cw["T"][i]
@@ -1075,7 +1084,19 @@ class Runtime:
             return None
         gap = float(ws[-1][1]) if ws else float(self.w.status()["grip_w"])
         out = classify_close(gap, gc.w)
-        if self.profile == "g1":
+        tg = (self.choice_key or (None,))[0]
+        gap_c = gap  # the reading compared with the contact width
+        if self.gtab is not None:
+            # grip layer (every robot, 2- or N-finger): EMPTY from the MEASURED free gap vs the measured closed gap
+            # (or no fingertip on the target); CONTACT / WIDE from the TCP-plane gap vs the contact width
+            env = self.w.env
+            gap_c = float(env.gripper_tcp_gap())
+            touched = self.w.status().get("gripper_contacts")
+            if tg not in getattr(env, "contact", {}):  # no sensor on the target: the gaps alone decide
+                touched = None
+            out = H.close_verdict(gap, gc.w, self.gtab.closed_gap, touched=touched, target=tg, gap_tcp=gap_c)
+            self.timeline["close_judge"] = "grip_layer"
+        elif self.profile == "g1":
             # the Dex3-1 width read from index_0 is 2-4 cm under the true gap (GTEST 10-02): no width verdict; the
             # finger contacts decide (no contact data: CONTACT, the micro-lift and the truth holding state decide)
             tg = (self.choice_key or (None,))[0]
@@ -1083,7 +1104,14 @@ class Runtime:
             out = "CONTACT" if touched is None or tg in touched else "EMPTY"
             self.timeline["close_judge"] = "contacts"
         self.timeline.update(t_settle=round(t, 3), final_gap=round(gap, 4), outcome_close=out, close_cmd_w=0.0)
-        if out == "CONTACT" or (out == "WIDE" and gap < gc.w + WIDE_KEEP):
+        if H.diag():  # A/B counting (L9_GRIP_DIAG=1, both arms): the pinch truth next to the verdict
+            ff = self.w.env.finger_forces(tg) if tg is not None and hasattr(self.w.env, "finger_forces") else None
+            tb = self.gtab or H.table_for(self.profile, self.arm)
+            self.timeline.setdefault("close_truth", []).append(
+                {"verdict": out, "gap": round(gap, 4), "gap_c": round(gap_c, 4), "w": round(float(gc.w), 4),
+                 "pinched": None if ff is None or tb is None else H.pinched(ff, tb),
+                 "touched": tg in (self.w.status().get("gripper_contacts") or ())})
+        if out == "CONTACT" or (out == "WIDE" and gap_c < gc.w + WIDE_KEEP):
             # WIDE with a plausible gap: the natural deep grasps often close on a wider section than the planned
             # contacts (pilot 10-02: 13 of 40 picks); the micro-lift (SLIP / SUCCESS) and the truth holding state decide
             self._gap_before = gap
