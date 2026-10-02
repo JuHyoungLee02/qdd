@@ -15,6 +15,7 @@ object's world pose to the returned 4x4 grasp poses itself.
 """
 from __future__ import annotations
 
+import math
 import os
 import time
 import uuid
@@ -22,6 +23,40 @@ import uuid
 import numpy as np
 
 QUEUE = os.environ.get("GGX_QUEUE", "/data/harvest/l9v2/graspgenx/queue")
+
+# ours (x,y,z) -> graspgenx (y,x,-z); P@P == I (verified: applying the permutation twice
+# is the identity), P is orthogonal (det=+1), so P is its own inverse AND its own transpose.
+P_TO_GRASPGENX = np.array([[0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, -1.0]])
+
+
+def _rpy_to_matrix(rpy):
+    """Extrinsic X-Y-Z Euler (URDF <origin rpy="r p y"> convention)."""
+    r, p, y = rpy
+    cr, sr, cp, sp, cy, sy = (
+        math.cos(r), math.sin(r), math.cos(p), math.sin(p), math.cos(y), math.sin(y),
+    )
+    rx = np.array([[1, 0, 0], [0, cr, -sr], [0, sr, cr]])
+    ry = np.array([[cp, 0, sp], [0, 1, 0], [-sp, 0, cp]])
+    rz = np.array([[cy, -sy, 0], [sy, cy, 0], [0, 0, 1]])
+    return rz @ ry @ rx
+
+
+def base_to_tcp(R_ggx, t_ggx, tcp_in_base_xyz, tcp_in_base_rpy=(0.0, 0.0, 0.0)):
+    """A GraspGenX grasp pose (R_ggx, t_ggx) is for the gripper's BASE_LINK origin, in
+    GraspGenX's own axis convention (ours (x,y,z) permuted to graspgenx (y,x,-z)) -- NOT
+    the TCP/pad-contact pose our own planning stack (rt9.Runtime.choose() etc) expects.
+    Verified 2026-10-02 against the live server (ffw_sg2_right, synthetic 6cm cube):
+    raw base_link origin sat 21.0cm from the object center; after this correction, 4.3cm
+    (cube half-size 3.0cm) with approach-axis alignment dot=0.989.
+
+    tcp_in_base_xyz/rpy: from the gripper's own assets9/grippers/<name>.json "tcp_in_base".
+    Returns (R_tcp_world, t_tcp_world)."""
+    R_base_world = R_ggx @ P_TO_GRASPGENX  # P is self-inverse, so this undoes our axis permutation
+    t_base_world = t_ggx  # P only permutes axes about the origin -- translation is unaffected
+    R_tcp_in_base = _rpy_to_matrix(tuple(tcp_in_base_rpy))
+    R_tcp_world = R_base_world @ R_tcp_in_base
+    t_tcp_world = R_base_world @ np.asarray(tcp_in_base_xyz, dtype=float) + t_base_world
+    return R_tcp_world, t_tcp_world
 
 
 def request_grasps(
