@@ -470,6 +470,52 @@ def g1_surface_ok(table_z: float) -> bool:
     return G1_SHOULDER_ABOVE[0] <= s <= G1_SHOULDER_ABOVE[1]
 
 
+# g1b H4: per-episode G1 base x (a range, not a constant). The scenes are drawn with the AI Worker reach probe (x
+# 0.30-0.62); the G1 arm (cuRobo reach maps assets9/reach_v2/g1_<arm>.json) reaches only x <= 0.33-0.43 from its
+# default root (offline, p1 rows: target AND place in reach for 3 of 97 drawn scenes). The base moves forward by dx,
+# drawn uniformly among the 1 cm steps where the target and the place are both in reach and the body (front <= 0.10 m
+# ahead of the root at every height, URDF collision meshes) keeps G1_BODY_CLEAR from every furniture part in front.
+G1_TORSO_IN_ROOT = (-0.004, 0.0, 0.044)  # torso_link (cuRobo base) origin in the pelvis frame, legs / waist at 0
+G1_BODY_FRONT, G1_BODY_CLEAR, G1_CORRIDOR_Y = 0.10, 0.03, 0.25
+G1_DX = (0.0, 0.40, 0.01)
+
+
+def _furniture_front(parts) -> float:
+    """Smallest world x of any furniture part (not walls / ground) inside the body corridor |y| < G1_CORRIDOR_Y."""
+    xs = []
+    for p in parts:
+        if p.get("role") in ("room_wall", "ground") or "size" not in p or "pos" not in p:
+            continue
+        c, s, yaw = np.asarray(p["pos"], float), np.asarray(p["size"], float) / 2, float(p.get("yaw") or 0.0)
+        if c[2] - s[2] > 1.3:
+            continue
+        R = np.array([[math.cos(yaw), -math.sin(yaw)], [math.sin(yaw), math.cos(yaw)]])
+        u = np.linspace(-1.0, 1.0, 21)
+        W = np.stack(np.meshgrid(u, u), -1).reshape(-1, 2) * s[:2] @ R.T + c[:2]
+        m = np.abs(W[:, 1]) < G1_CORRIDOR_Y
+        if m.any():
+            xs.append(float(W[m, 0].min()))
+    return min(xs) if xs else 9.0
+
+
+def g1_base_dx(arm: str, points, parts, seed: int):
+    """dx (m) to add to the G1 root x, or None when no step of G1_DX reaches every point. points: world xyz the
+    used arm must reach (any approach class of the reach map); parts: the scene's world furniture parts."""
+    from . import curobo9 as C9
+    root_x = V2_BASE_X["g1"]
+    dmax = _furniture_front(parts) - (root_x + G1_BODY_FRONT + G1_BODY_CLEAR)
+    ok = []
+    for dx in np.arange(G1_DX[0], G1_DX[1] + 1e-9, G1_DX[2]):
+        if dx > dmax:
+            break
+        t = np.array([root_x + dx + G1_TORSO_IN_ROOT[0], G1_TORSO_IN_ROOT[1], V2["g1"]["base_z"] + G1_TORSO_IN_ROOT[2]])
+        if all(any(C9.reach_ok("g1", arm, np.asarray(p, float) - t, ap) for ap in C9.APPROACHES) for p in points):
+            ok.append(float(dx))
+    if not ok:
+        return None
+    return round(ok[int(np.random.default_rng([int(seed), 1931]).integers(len(ok)))], 3)
+
+
 def v2_init_joints(profile: str, arm: str, table_z: float, ready: dict | None = None) -> dict:
     """Start joints: body for the surface, the used arm at its ready pose (V2_READY, inside the limits by >= 0.12
     for R1 Pro -- DIAG 9), the other arm at its stow pose, every finger open."""

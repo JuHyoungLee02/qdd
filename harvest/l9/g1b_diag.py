@@ -12,6 +12,8 @@ def snap(rt, tag: str) -> dict:
     d = env.robot.data
     gids = list(getattr(env, "grip_ids", []))
     out = {"tag": tag, "t": round(float(st["t"]), 3), "grip_w": round(float(st["grip_w"]), 4)}
+    if tag.startswith("plan:") and not rt.timeline.get("g1b"):
+        out["root"] = [round(float(v), 4) for v in (d.root_pos_w[0] - env.scene.env_origins[0]).cpu().numpy()]
     if gids:
         out["eff"] = [round(float(x), 3) for x in d.applied_torque[0, gids].cpu().numpy()]
         out["qf"] = [round(float(x), 3) for x in d.joint_pos[0, gids].cpu().numpy()]

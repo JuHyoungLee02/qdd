@@ -491,7 +491,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                 self._place_base(seed, tz)
                 head = {"tilt": None, "pan": None, "random": False}
             elif v2r:  # R1 Pro torso squat / G1 standing for this surface (robot9 rules), no neck
-                self._place_v2(tz)
+                self._place_v2(tz, float(ep.get("g1_base_dx", 0.0) or 0.0))
                 head = {"tilt": None, "pan": None, "random": False}
             else:
                 # lift + head (cfg.init_state too: the hard reset re-reads it, P131)
@@ -853,7 +853,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             _set_pose(stage.GetPrimAtPath("/World/envs/env_0/Stand"), (pos[0], pos[1], z - 1.0), (1.0, 0.0, 0.0, 0.0))
             self.base = {"pos": [round(v, 4) for v in pos], "drop_m": round(tz - z, 4), "stand_xy_m": R9.STAND_XY}
 
-        def _place_v2(self, tz: float) -> None:
+        def _place_v2(self, tz: float, dx: float = 0.0) -> None:
             """R1 Pro / G1: body joints for the work surface (robot9.v2_body_joints: R1 torso squat, G1 straight) +
             the used arm's ready pose + open fingers, written to the default joint state and cfg.init_state (the hard
             reset re-reads it, P131); root pose = robot9.v2_root_pos. G1 skips surfaces it cannot work at."""
@@ -870,6 +870,8 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                 rob.data.default_joint_pos[0, rob.joint_names.index(jn)] = float(v)
                 rob.cfg.init_state.joint_pos[jn] = float(v)
             pos = R9.v2_root_pos(robot)
+            if dx:  # g1b H4: per-episode base x (collect9.draw, robot9.g1_base_dx)
+                pos = (pos[0] + float(dx), pos[1], pos[2])
             rob.data.default_root_state[0, :3] = torch.tensor(pos, dtype=rob.data.default_root_state.dtype,
                                                               device=rob.data.default_root_state.device)
             rob.cfg.init_state.pos = pos

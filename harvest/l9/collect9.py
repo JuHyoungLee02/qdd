@@ -28,6 +28,29 @@ class NoEpisode(Exception):
     pass
 
 
+def g1_points(sc: dict, ep: dict) -> list:
+    """g1b H4: world points the G1 arm must reach for the first step: the target at grasp / pre-grasp height and the
+    place at put / carry height (spots, surfaces, objects of the episode; an unknown place adds no point)."""
+    nodes = {n["id"]: n for n in sc.get("nodes", [])}
+
+    def at(k):
+        for src in ("spots", "surfaces"):
+            s = (ep.get(src) or {}).get(k)
+            if s and "xy" in s and "top" in s:
+                return s["xy"], float(s["top"])
+        o = (ep.get("objects") or {}).get(k)
+        if o and o.get("node") in nodes:
+            return o["xy"], float(nodes[o["node"]]["top_z"])
+        return None
+    tg, dst = ep["steps"][0][0], ep["steps"][0][1]
+    out = []
+    for k, dz in ((tg, (0.05, 0.15)), (dst, (0.10, 0.18))):
+        r = at(k)
+        if r is not None:
+            out += [(float(r[0][0]), float(r[0][1]), r[1] + z) for z in dz]
+    return out
+
+
 def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 20, world=None) -> tuple:
     """(scene, ep, light family, head, combo hash, visual seed) for a plan row, or NoEpisode. With a world the combo
     record names the room / HDRI / materials the world will use (same draws), else their seed."""
@@ -67,6 +90,12 @@ def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 20, world=None) ->
             if not ok:
                 last = f"{robot}: surface {float(ep['table_z']):.2f} m outside its reach band"
                 continue
+            if robot == "g1" and os.environ.get("G1B_BASE", "1") != "0":  # g1b H4: base x per episode (a range)
+                dx = RB.g1_base_dx(row["arm"], g1_points(sc, ep), sc["furniture"], sd)
+                if dx is None:
+                    last = "g1: no base pose reaches the target and the place (reach-limited)"
+                    continue
+                ep["g1_base_dx"] = dx
         T9.add_clutter(ep, sc, pool, sd, rmx, grip_max=row.get("grip_max"))
         light = V.pick_light_family(sd, row["family"])
         head = V.head_pose(sd)
