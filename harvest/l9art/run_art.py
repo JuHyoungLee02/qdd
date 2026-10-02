@@ -140,6 +140,7 @@ def main(argv=None):
     ap.add_argument("--p", type=float, default=0.15)
     ap.add_argument("--video", action="store_true", help="per-episode review frames (head | wrist every 6 steps)")
     ap.add_argument("--diag-drift", action="store_true", help="diagnosis: passive joint drift of every fixture, no episodes")
+    ap.add_argument("--diag-reach", action="store_true", help="diagnosis: IK reach grid at three table heights")
     ap.add_argument("--video-seeds", default="", help="tools/l9/lane.sh passes it: review frames for these seeds only")
     a = ap.parse_args(argv)
     code = 0
@@ -180,6 +181,49 @@ def main(argv=None):
         ex = EA.Exec(world, robot, arm)
         print("WORLD " + json.dumps({"robot": robot, "arm": arm, "fixtures": {f: s["name"] for f, s in specs.items()},
                                      "pool": len(pool), "n": len(todo)}), flush=True)
+        if a.diag_reach:  # reach map of this robot / arm at a table height: IK of front / oblique / down TCP grids
+            from . import skills as SKd
+            r = todo[0]
+            seed = int(r["seed"])
+            prog = {"def": "diag", "stages": [], "start": {}, "instruction": "diag", "need_obj": None, "judge": {}}
+            objs = pick_objects(pool, prog, seed, robot)
+            for tzr in (0.62, 0.72, 0.80):
+                built = SA.build(seed, robot, arm, None, prog, objs)
+                built["sc"]["furniture"] = [dict(p, pos=[p["pos"][0], p["pos"][1], p["pos"][2] + tzr - built["tz"]])
+                                            for p in built["sc"]["furniture"]]
+                built["ep"]["table_z"] = tzr
+                built["sc"]["nodes"][0]["top_z"] = tzr
+                W9._ART_GHOST = None
+                register_task(built["ep"])
+                world.prepare(built["sc"], built["ep"], V.pick_light_family(seed, "office"), V.head_pose(seed), seed)
+                WA.stage_fixture(world, None, None, {})
+                try:
+                    world.reset(seed)
+                except SkipScene as e:
+                    print("REACH " + json.dumps({"tz": tzr, "skip": str(e)[:100]}), flush=True)
+                    continue
+                ex.reset()
+                ex.set_world(None, None, {}, {})
+                sg = 1 if arm == "right" else -1
+                for name, a_ in (("front", [1.0, 0, 0]), ("oblique", [0.7, 0, -0.7]), ("down", [0, 0, -1.0])):
+                    a_ = np.asarray(a_) / np.linalg.norm(a_)
+                    c_ = np.cross([0, 0, 1.0], a_) if abs(a_[2]) < 0.9 else np.array([0, 1.0, 0])
+                    R_ = SKd.frame_of(a_, c_)
+                    pts, Ts = [], []
+                    for x in np.arange(0.25, 0.76, 0.05):
+                        for y in (-0.35, -0.22, -0.10, 0.02):
+                            for dz in (0.05, 0.15, 0.25, 0.35, 0.45):
+                                pts.append((round(x, 2), y * sg, dz))
+                                Ts.append(SKd.T_pose(R_, np.array([x, y * sg, tzr + dz])))
+                    ok = ex.planner.ik(np.stack([ex.to_base(T) for T in Ts]))[0]
+                    grid = {}
+                    for (x, y, dz), o in zip(pts, ok):
+                        grid.setdefault(f"dz{dz:.2f}", {}).setdefault(f"x{x:.2f}", 0)
+                        grid[f"dz{dz:.2f}"][f"x{x:.2f}"] += int(bool(o))
+                    print("REACH " + json.dumps({"tz": tzr, "robot": robot, "arm": arm, "approach": name,
+                                                 "ok_of_4_y": grid}), flush=True)
+            print("RUN_DONE", flush=True)
+            os._exit(0)
         if a.diag_drift:  # passive joint drift test: each fixture's joints at mid-range, no contact
             import torch
             for r in todo[:1]:
