@@ -184,7 +184,7 @@ def plan_v2(out: str, lanes: int, arg, ft: dict, pod: str) -> dict:
     unhosted = sorted(k for k, p in pairs.items() if not p)
     unhost = AL.unhostable(json.load(open(arg("--hostable", "")))) if "--hostable" in sys.argv else []
     defmap = {k: d.family for k, d in use.items() if pairs[k] and k not in unhost}
-    holdout = [] if "--no-holdout" in sys.argv else AL.holdout_defs(defmap)
+    holdout = AL.holdout_defs(defmap)  # frozen; --no-holdout is ignored (owner 10-02: hold-out never trains)
     exclude = {tuple(x) for x in json.load(open(arg("--exclude", "")))} if "--exclude" in sys.argv else set()
     yields = {}
     if "--yields" in sys.argv:

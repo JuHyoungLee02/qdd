@@ -67,9 +67,25 @@ def unhostable(report: dict, robots=("ffw_sg2",)) -> list:
     return sorted(out)
 
 
+# The held-out definitions, FROZEN (owner 10-02, E-TP1 leak): the hashed choice below depends on the definition set,
+# which grew after the first production plans, and the pilot planner wrote these definitions as train rows. Every
+# planner, run9 and the build gate use this list; never change it (adding a definition must not move the hold-out).
+HOLDOUT_FROZEN = ("in_second_container", "ins_from_block", "kit_from_sink", "line_next_to", "rel_right",
+                  "sel_bigger_in", "sort_food_bowl_toy_side", "st_tower3_stand", "swap_levels", "tall_between")
+
+
+def is_holdout(def_id) -> bool:
+    return str(def_id) in HOLDOUT_FROZEN
+
+
 def holdout_defs(defs: dict, share: float = HOLDOUT_SHARE) -> list:
-    """~share of the definitions, at most one per family (families in a hashed order), the hashed-first definition
-    of each: deterministic."""
+    """The frozen hold-out definitions present in defs (HOLDOUT_FROZEN)."""
+    return sorted(k for k in HOLDOUT_FROZEN if k in defs)
+
+
+def holdout_defs_hashed(defs: dict, share: float = HOLDOUT_SHARE) -> list:
+    """(how HOLDOUT_FROZEN was chosen) ~share of the definitions, at most one per family (families in a hashed
+    order), the hashed-first definition of each: deterministic for a fixed definition set."""
     n = max(1, int(round(share * len(defs))))
     fams = sorted(set(defs.values()), key=lambda f: _h("l9v2-holdout-f", f))
     out = []

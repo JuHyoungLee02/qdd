@@ -118,8 +118,25 @@ def contradictions(rows: list) -> int:
     return n
 
 
-def gates(rows: list, texts: dict) -> dict:
-    """rows: control rows (with 'answer', 'spec_version', 'overlay', 'prompt_path'); texts: prompt_path -> text."""
+FRAME_SENTENCE = "Directions in the task (left, right, front, behind) are in the robot's frame, not the camera image."
+
+
+def split_leaks(rows: list, ood_objects=frozenset(), ood_rooms=frozenset()) -> dict:
+    """Training rows that must not exist (owner 10-02, E-TP1 leak): a frozen hold-out definition, an episode of
+    another split, an ood_o object, an ood room (rows carry task_def, ep_split, objects, room)."""
+    from .alloc9 import is_holdout
+    oo, orm = set(ood_objects), set(ood_rooms)
+    return {"holdout_def_rows": sum(1 for r in rows if is_holdout(r.get("task_def"))),
+            "non_train_split_rows": sum(1 for r in rows if r.get("ep_split", "train") != "train"),
+            "ood_object_rows": sum(1 for r in rows if oo & set(r.get("objects") or ())),
+            "ood_room_rows": sum(1 for r in rows if r.get("room") in orm)}
+
+
+def gates(rows: list, texts: dict, train: bool = False, frame_note: bool = False, ood_objects=frozenset(),
+          ood_rooms=frozenset()) -> dict:
+    """rows: control rows (with 'answer', 'spec_version', 'overlay', 'prompt_path'); texts: prompt_path -> text.
+    frame_note: every prompt carries FRAME_SENTENCE (slot builds, main 10-02). train: the split gate (no hold-out
+    definition / other split / ood object / ood room row)."""
     specs = {r.get("spec_version") for r in rows}
     overlays = {r.get("overlay", "mono") for r in rows}
     legends = {r.get("colour_legend", "none") for r in rows}
@@ -130,4 +147,11 @@ def gates(rows: list, texts: dict) -> dict:
            "schema_errors": schema}
     out["ok"] = (out["contradictions"] == 0 and len(specs) == 1 and len(overlays) == 1 and len(legends) == 1
                  and len(fams) <= 1 and schema == 0)
+    if frame_note:
+        out["frame_note_missing"] = sum(1 for r in rows if r.get("prompt_path") in texts
+                                        and FRAME_SENTENCE not in texts[r["prompt_path"]])
+        out["ok"] = out["ok"] and out["frame_note_missing"] == 0
+    if train:
+        out["split"] = split_leaks(rows, ood_objects, ood_rooms)
+        out["ok"] = out["ok"] and not any(out["split"].values())
     return out

@@ -233,7 +233,9 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera
         from .specgate9 import spec_of
         x.update(robot=robot, head_cam_mode=(hc.get("draw") or {}).get("mode", hc.get("mode", "std")), camera=line,
                  source=f"l9/{robot}", gen="l9", spec_version=spec_of(meta), overlay="mono", colour_legend="none",
-                 instruction=meta.get("instruction"), gt=r.get("gt"), step=r.get("step"))
+                 instruction=meta.get("instruction"), gt=r.get("gt"), step=r.get("step"),
+                 task_def=meta.get("task_id"), ep_split=meta.get("split", "train"),
+                 objects=sorted(meta.get("objects") or {}), room=meta.get("room") if isinstance(meta.get("room"), str) else None)
         if meta.get("grasp_v2") is not None:  # spec §12.8 format v2 (grasp_format=False: the old point format)
             rl = robot_line(meta)
             x.update(robot_line=rl, gen_version="v2", label_origin=meta.get("label_origin", "l9v2"))

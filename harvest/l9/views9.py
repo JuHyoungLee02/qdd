@@ -15,6 +15,8 @@ import numpy as np
 
 SLOTS = ("head", "wrist_left", "wrist_right", "third_person")
 POINT_NOTE = "- point_2d always refers to Image 1 (view: head)."
+# main 10-02 decision: one fixed sentence on every row (ego and third-person), build time only
+FRAME_NOTE = "Directions in the task (left, right, front, behind) are in the robot's frame, not the camera image."
 ARM_NOTE = ('- every command names its arm ("arm": "left"|"right"); a call may give one command, or two as '
             '"commands": [one per arm].')
 _HEAD = re.compile(r"^- Image 1: (head camera[^\n]*)$", re.M)
@@ -84,7 +86,7 @@ def canonical(text: str, answer: str, arm: str, head_img: str, used_wrist: tuple
         else:
             lines[s] = (f"- view: {s} -- Image {idx[s]}: third-person camera, fixed in the room (not on the robot), "
                         f"{cam_text(have[s][1])}")
-    block = "\n".join(lines[s] for s in SLOTS[1:]) + "\n" + POINT_NOTE + "\n" + ARM_NOTE
+    block = "\n".join(lines[s] for s in SLOTS[1:]) + "\n" + POINT_NOTE + "\n" + ARM_NOTE + "\n- " + FRAME_NOTE
     out = _WRIST.sub("", out) if wl else out
     out = re.sub(r"^(- view: head -- Image 1: [^\n]*)$", lambda m: m.group(1) + "\n" + block, out, count=1, flags=re.M)
     out = re.sub(r"\n\n+(?=- view: wrist_left)", "\n", out)

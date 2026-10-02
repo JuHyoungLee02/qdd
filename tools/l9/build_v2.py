@@ -27,6 +27,9 @@ def main():
     slots = "--no-slots" not in a
     eps = []
     n_old_spec = 0
+    train = "--eval" not in a
+    from harvest.l9 import alloc9 as AL
+    split_drop = {"holdout_def": 0, "non_train_split": 0}
     for r in roots:
         for m in sorted(glob.glob(os.path.join(r, "*", "*", "*", "meta.json"))):
             meta = json.load(open(m))
@@ -34,6 +37,12 @@ def main():
                 continue
             if SG.spec_of(meta) != arg("--spec", SG.SPEC):  # one spec per training set (L9_PRINCIPLES §0)
                 n_old_spec += 1
+                continue
+            if train and meta.get("split", "train") != "train":  # owner 10-02: another split's episodes never train
+                split_drop["non_train_split"] += 1
+                continue
+            if train and AL.is_holdout(meta.get("task_id")):  # E-TP1 leak: train episodes of a hold-out definition
+                split_drop["holdout_def"] += 1  # (pilot rows, kept on disk; the hold-out build may take them)
                 continue
             eps.append(os.path.dirname(m))
     c = B9.build(eps, out, arg("--split", "l9train"), name, train="--eval" not in a, camera_line="--camera-line" in a,
@@ -57,8 +66,15 @@ def main():
     ctrl = [x for x in ego if x.get("kind", "control") == "control" and x.get("gen") == "l9"]
     texts = {x["prompt_path"]: open(x["prompt_path"], encoding="utf-8").read() for x in ctrl
              if x.get("prompt_path") and os.path.exists(x["prompt_path"])}
-    g = SG.gates(ctrl, texts)  # hard gates: contradictions 0, one spec / overlay / template family / legend, schema
-    check.update(spec_gates=g, episodes_dropped_old_spec=n_old_spec)
+    ood_o, ood_r = set(), set()
+    if train:
+        from harvest.l9 import assets9 as A9
+        from harvest.l9 import run9 as RN
+        ood_o, ood_r = set(A9.catalog("ood_o")), set(RN.room_table("ood"))
+    # hard gates: contradictions 0, one spec / overlay / template family / legend, schema, frame sentence (slot
+    # builds), and for training sets the split gate (hold-out definitions, other splits, ood_o objects, ood rooms)
+    g = SG.gates(ctrl, texts, train=train, frame_note=slots, ood_objects=ood_o, ood_rooms=ood_r)
+    check.update(spec_gates=g, episodes_dropped_old_spec=n_old_spec, episodes_dropped_split=split_drop)
     check["ok"] = check["ok"] and g["ok"]
     if tp_on and "--both" in a:  # user 10-02: two sets from one build -- off = the ego rows, on = the same bytes + tp rows
         import hashlib

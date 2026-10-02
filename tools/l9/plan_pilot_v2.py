@@ -29,7 +29,9 @@ def main():
     al = AL.allocate(defs, per * len(defs), per, robot_share={robot: 1.0})
     rows = AL.plan_rows(al, pairs, arg("--start", 3900000), {k: 1.0 for k in defs})
     for r in rows:
-        r["split"] = "train"  # pilot: training pools (the pilot's successes may train, like v1 pilots)
+        # pilot: training pools (the pilot's successes may train, like v1 pilots) -- except the frozen hold-out
+        # definitions, never train rows (owner 10-02: this line wrote them as train, E-TP1 leak)
+        r["split"] = "holdout" if AL.is_holdout(r["def"]) else "train"
         r["pilot"] = True
     ch = AL.jobs_v2(rows, arg("--job-size", 10), arg("--pool0", 5000))
     res = PL.write(out, rows, ch, lanes, "plan_pilot_v2.json", arg("--pod", out))

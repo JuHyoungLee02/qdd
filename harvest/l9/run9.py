@@ -142,6 +142,12 @@ def main(argv=None):
         rows = [r for r in json.load(open(a.plan)) if str(r["job"]) == str(a.job)]
         if not rows:
             raise ValueError(f"no rows for job {a.job}")
+        from . import alloc9 as AL9
+        for r in rows:  # owner 10-02 (E-TP1 leak): hold-out definitions never become train episodes
+            if r.get("split", "train") == "train" and AL9.is_holdout(r.get("def")):
+                r["split"] = "holdout"
+        if len({r.get("split", "train") for r in rows}) != 1:
+            rows = [r for r in rows if r.get("split", "train") == rows[0].get("split", "train")]
         arms = {r["arm"] for r in rows}
         if len(arms) != 1:
             raise ValueError(f"job {a.job}: one arm per process, got {arms}")
