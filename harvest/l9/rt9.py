@@ -659,7 +659,8 @@ class Runtime:
             self._dump_fail("transit", q0, T_pre)
             return {"ok": False, "status": "transit to the pre-grasp failed", "approach": None, "grasp": None,
                     "lift": None}
-        Qg = self.planner.line(Qa[-1], self.to_base(T_pre), self.to_base(gc.T), 0.008)
+        self.refresh_world(exclude=(tg,), below_z=self._bottom_z(tg) - 0.02)  # the straight approach touches the
+        Qg = self.planner.line(Qa[-1], self.to_base(T_pre), self.to_base(gc.T), 0.008)  # target by design only
         if Qg is None:
             return {"ok": False, "status": "straight approach failed", "approach": None, "grasp": None, "lift": None}
         T_l = gc.T.copy()

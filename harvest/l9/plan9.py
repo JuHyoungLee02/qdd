@@ -228,7 +228,7 @@ class Planner9:
             for d in dirs:
                 T1 = T0.copy()
                 T1[:3, 3] = T0[:3, 3] + st * d / np.linalg.norm(d)
-                Q = self.line(q, T0, T1)
+                Q = self.line(q, T0, T1, check=False)
                 if Q is not None and not self.start_hits(Q[-1]):
                     return Q
         return None
@@ -265,7 +265,7 @@ class Planner9:
         margin = np.minimum(out_q - lo, hi - out_q).min(1) / np.maximum((hi - lo).min(), 1e-6)
         return out_ok, out_q, margin
 
-    def line(self, q0, T0_base, T1_base, step_m: float = 0.01):
+    def line(self, q0, T0_base, T1_base, step_m: float = 0.01, check: bool = True):
         """Straight tool move (short place descents, retreats, lifts) when plan_pose refuses near contact: IK per
         waypoint (no world collision, self-collision on), each seeded with the previous solution. -> (N, dof) or
         None when a waypoint has no solution or a joint jumps > 0.15 rad between waypoints."""
@@ -304,7 +304,13 @@ class Planner9:
                 return None
             out.append(qn)
             q = qn
-        return np.asarray(out)
+        out = np.asarray(out)
+        if check and getattr(self, "_scene", None):  # the IK has no world: reject a line through the loaded
+            for qq in out[1::2]:  # world (pilot 10-02: straight lifts / retreats knocked neighbours 7-23 cm away)
+                if self.start_hits(qq, act=0.0):
+                    self.n_line_reject = getattr(self, "n_line_reject", 0) + 1
+                    return None
+        return out
 
     def _limits(self):
         jl = self.mp.kinematics.get_joint_limits()
