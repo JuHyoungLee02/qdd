@@ -88,6 +88,37 @@ def art_pool(job: str, robot: str) -> dict:
     return out
 
 
+ALT_TRIES = 24
+
+
+def alt_placement(epi, spec, prog, arm, robot, built, seed, tr):
+    """Fixture poses on the same table that pass the IK precheck (checked against the live robot, no reset per try):
+    not further back than the drawn one (stays on the table), off the objects, path inside the arm box. -> T or None.
+    (R1 smoke 10-02: 13 of 17 rows skipped on the IK precheck at fixed placements.)"""
+    from . import scene_art as SA
+    rng = np.random.default_rng([int(seed), int(tr), 99])
+    T0 = np.asarray(built["fixture"]["T"], float)
+    objs = [o["xy"] for o in built["ep"]["objects"].values() if o.get("node") == "n0"]
+    real = epi.T_WF
+    try:
+        for _ in range(ALT_TRIES):
+            fx2 = SA.place_fixture(spec, prog, arm, built["tz"], rng, robot)
+            T2 = np.asarray(fx2["T"], float)
+            if T2[0, 3] > T0[0, 3] + 0.005:
+                continue
+            if not SA.in_ws(SA.path_points(spec, prog, T2), arm, built["tz"], robot):
+                continue
+            (x0, x1), (y0, y1) = SA.fixture_aabb(spec, T2, 0.05)
+            if any(x0 < x < x1 and y0 < y < y1 for x, y in objs):
+                continue
+            epi.T_WF = (lambda T=T2: T)
+            if epi.precheck() is None:
+                return T2
+    finally:
+        epi.T_WF = real
+    return None
+
+
 def fx_seeds(job: str, arm: str = "right") -> dict:
     """One fixture seed per family for a job; the door hinges on the arm's side (smoke 10-02: a door hinged on the
     far side swung its handle out of reach / left no pre-pose for the close push)."""
@@ -219,6 +250,22 @@ def main(argv=None):
                         if why:
                             raise SkipScene(f"outside the head image: {why}")
                         why = epi.precheck()
+                        if why and spec is not None:  # IK-guided re-placement on the same table / lift: try poses
+                            T2 = alt_placement(epi, spec, prog, arm, robot, built, seed, tr)  # without a reset each
+                            if T2 is not None:
+                                built["fixture"] = dict(built["fixture"], T=T2.tolist(), replaced=True)
+                                W9._ART_GHOST = WA.ghost_part(spec, T2)
+                                world.prepare(sc, ep, light, head, sd)
+                                WA.stage_fixture(world, fam, T2, prog["start"])
+                                world.reset(sd)
+                                ex.reset()
+                                fx_state = WA.settle_fixture(world, prog["start"])
+                                epi = EA.ArtEpisode(world, ex, r, built, spec, prog, od, p=a.p, video=vid)
+                                obs = world.observe(depth=False)
+                                why = epi.unseen(obs.cams["head"])
+                                if why:
+                                    raise SkipScene(f"outside the head image (re-placed): {why}")
+                                why = epi.precheck()
                         if why:
                             raise SkipScene(f"IK precheck: {why}")
                         break
