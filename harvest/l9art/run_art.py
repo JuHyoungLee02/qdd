@@ -109,6 +109,7 @@ def main(argv=None):
     ap.add_argument("--p", type=float, default=0.15)
     ap.add_argument("--video", action="store_true", help="per-episode review frames (head | wrist every 6 steps)")
     ap.add_argument("--diag-drift", action="store_true", help="diagnosis: passive joint drift of every fixture, no episodes")
+    ap.add_argument("--video-seeds", default="", help="tools/l9/lane.sh passes it: review frames for these seeds only")
     a = ap.parse_args(argv)
     code = 0
     try:
@@ -211,7 +212,8 @@ def main(argv=None):
                         if spec is not None and fx_state.get("root_err_m", 0) > 0.01:
                             raise SkipScene(f"fixture root off by {fx_state['root_err_m']:.3f} m")
                         os.makedirs(od, exist_ok=True)
-                        epi = EA.ArtEpisode(world, ex, r, built, spec, prog, od, p=a.p, video=a.video)
+                        vid = a.video or str(seed) in {s.strip() for s in a.video_seeds.split(",") if s.strip()}
+                        epi = EA.ArtEpisode(world, ex, r, built, spec, prog, od, p=a.p, video=vid)
                         obs = world.observe(depth=False)
                         why = epi.unseen(obs.cams["head"])
                         if why:
@@ -253,7 +255,7 @@ def main(argv=None):
                 for x in epi.rows:
                     f.write(json.dumps(dict(x, seed=seed, task=r["def"], hand=arm, gen="l9art")) + "\n")
             json.dump(meta, open(os.path.join(od, "meta.json"), "w"), default=lambda o: o.tolist() if hasattr(o, "tolist") else str(o))
-            if a.video and ex.frames:
+            if ex.frames:
                 _review(ex.frames, od)
             keep = ("seed", "task_id", "robot", "success", "end_reason", "n_calls", "max_dq_rad", "wall_s", "fail_counts")
             print("EP " + json.dumps(dict({k: meta.get(k) for k in keep}, wall_total_s=round(time.perf_counter() - t0, 1))),
