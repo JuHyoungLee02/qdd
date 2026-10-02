@@ -47,6 +47,13 @@ def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 20, world=None) ->
         if ep is None:
             last = "definition does not fit the scene"
             continue
+        robot = row.get("robot") or "ffw_sg2"
+        if robot in ("g1", "r1pro"):  # body reach band (world9._place_v2 skips the scene): draw another scene instead
+            from . import robot9 as RB  # of losing the row (G1 pilot 10-02: 58 of 60 rows skipped)
+            ok = RB.g1_surface_ok(ep["table_z"]) if robot == "g1" else RB.r1_surface_ok(ep["table_z"])
+            if not ok:
+                last = f"{robot}: surface {float(ep['table_z']):.2f} m outside its reach band"
+                continue
         T9.add_clutter(ep, sc, pool, sd, rmx, grip_max=row.get("grip_max"))
         light = V.pick_light_family(sd, row["family"])
         head = V.head_pose(sd)
