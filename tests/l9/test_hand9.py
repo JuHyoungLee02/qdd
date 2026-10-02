@@ -189,3 +189,15 @@ def test_spec_r4_grip_tag(monkeypatch):
     assert S.spec_for("g1", True) == "L9v2-spec-final-r4-grip"
     assert S.spec_for("franka_mast", True) == "L9v2-spec-final-r1-r4-grip"
     assert {S.spec_family(S.spec_for(r, g)) for r in ("ffw_sg2", "franka_mast") for g in (0, 1)} == {S.SPEC}
+
+
+def test_exec_offsets_interpolate_contact_mid_and_front():
+    meta = {"method": {"opposition": [[["a"], ["b"]]]},
+            "contacts_G": [{"a": [0.016, -0.001, -0.01], "b": [0.016, 0.001, -0.01]},
+                           {"a": [0.0, -0.03, 0.0], "b": [0.0, 0.03, 0.0]},
+                           {"a": [0.0, -0.05, 0.0], "b": [0.0, 0.05, 0.0]}],
+            "tip_front_G": [-0.04, -0.03, -0.02]}
+    t = H.GapTable(dict(_table().meta, **meta))
+    o = t.exec_offsets(0.025)
+    assert o["contact_mid"] == pytest.approx([0.008, 0.0, -0.005]) and o["tip_front"] == pytest.approx(-0.035)
+    assert H.GapTable(_table().meta).exec_offsets(0.02) == {}
