@@ -579,16 +579,33 @@ class HandoverRuntime:
         log.append({"phase": "giver_carry", **r})
         if not r["ok"]:
             return {"ok": False, "log": log}
-        if cell is not None and carry_quat is not None:  # diagnostic (2026-10-02): live-IK found good candidates
-            env2 = self.world.env  # at the DESIRED pose (yawik 6-9/15, smoke11) but choose() still got ik_ok=0 right
-            env2.use_arm(self.receiver.arm)  # after -- is the object actually where _move_to commanded it, or did
-            p_act, q_act = env2.object_pose(obj_key)  # the open-loop carry (plan once, no closed-loop correction)
-            p_des = T_obj_desired[:3, 3]  # leave it off by enough to flip marginal candidates?
+        if cell is not None and carry_quat is not None:
+            # smoke12 confirmed it (2.8cm/4.9deg, seed 3950165): the open-loop carry (_move_to plans once, no
+            # closed-loop re-measurement the way rt9.Runtime.plan()'s single-arm loop does every call) lands off
+            # the yaw-chosen T_obj_desired by enough to flip the live-IK probe's passing candidates back to failing.
+            # One corrective move, targeting T_obj_desired again from the FRESHLY measured grip (a small motion
+            # should track much more accurately than the long initial carry).
+            env2 = self.world.env
+            env2.use_arm(self.giver.arm)
+            p_act, q_act = env2.object_pose(obj_key)
             from . import grasp9 as G
+            p_des = T_obj_desired[:3, 3]
             err_m = float(np.linalg.norm(np.asarray(p_act, float) - p_des))
             R_act, R_des = G.qmat(np.asarray(q_act, float)), T_obj_desired[:3, :3]
             err_deg = math.degrees(math.acos(max(-1.0, min(1.0, (np.trace(R_act.T @ R_des) - 1) / 2))))
             log[-1]["carry_pose_err"] = f"{err_m * 100:.1f}cm/{err_deg:.1f}deg"
+            if err_m > 0.01 or err_deg > 2.0:
+                T_obj_actual = RT.T_of(p_act, q_act)
+                T_obj_G2 = P9.inv_T(T_obj_actual) @ self.giver.rt.tcp_T()
+                T_grip_corr = T_obj_desired @ T_obj_G2
+                r2 = self._move_to(self.giver, T_grip_corr[:3, 3], quat_wxyz=RT.G.mat_quat(T_grip_corr[:3, :3]))
+                log.append({"phase": "giver_carry_correct", **r2})
+                if r2["ok"]:
+                    p_act2, q_act2 = env2.object_pose(obj_key)
+                    err_m2 = float(np.linalg.norm(np.asarray(p_act2, float) - p_des))
+                    R_act2 = G.qmat(np.asarray(q_act2, float))
+                    err_deg2 = math.degrees(math.acos(max(-1.0, min(1.0, (np.trace(R_act2.T @ R_des) - 1) / 2))))
+                    log[-1]["carry_pose_err"] = f"{err_m2 * 100:.1f}cm/{err_deg2:.1f}deg"
         self.phase = "receiver_pick"
         self.overlap_ticks = 0
         r = self._grasp(self.receiver, obj_key)
