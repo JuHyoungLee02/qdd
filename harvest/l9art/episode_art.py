@@ -448,7 +448,24 @@ class ArtEpisode:
             xy = self.b["spot_xy"]
             p = np.array([xy[0], xy[1], float(self.b["tz"])])
         d = getattr(self, "_held_dz", 2 * he[2] - 0.02)
-        R = self.ex.tcp_T()[:3, :3]
+        key = (self.stage_i, st["ref"])
+        if getattr(self, "_place_cache", (None,))[0] != key:  # choose once per stage: the first IK-feasible hand yaw
+            R0 = self.ex.tcp_T()[:3, :3]  # / spot shift (pilot 10-02: the held hand's pose above the drawer had no IK)
+            cands = []
+            for yaw in (0.0, 0.5, -0.5, 1.0, -1.0, 1.57, -1.57):
+                for dxy in ((0, 0), (0.02, 0), (-0.02, 0), (0, 0.03), (0, -0.03)):
+                    Rz = FX.rot_axis([0, 0, 1.0], yaw)
+                    cands.append((Rz @ R0, np.array([dxy[0], dxy[1], 0.0])))
+            Ts = [SK.T_pose(R, p + sh + np.array([0, 0, d + 0.10])) for R, sh in cands]
+            try:
+                self.set_world(None)
+                ok = self.ex.planner.ik(np.stack([self.ex.to_base(T) for T in Ts]))[0]
+                i = int(np.argmax(ok)) if bool(np.any(ok)) else 0
+            except Exception:  # noqa: BLE001
+                i = 0
+            self._place_cache = (key, cands[i])
+        R, sh = self._place_cache[1]
+        p = p + sh
         Tp = SK.T_pose(R, p + np.array([0, 0, d + 0.012]))
         Ta = SK.T_pose(R, p + np.array([0, 0, d + 0.10]))
         return {"p": p, "T": Tp, "T_above": Ta}
