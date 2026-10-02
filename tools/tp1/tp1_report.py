@@ -122,16 +122,22 @@ def col(rows, k):
 def main():
     a = sys.argv[1:]
     out = a[0]
+    # change 6 (user 10-03): the primary set is l9_test = the HOLDOUT_FROZEN definitions (+ eval_ood when it has
+    # episodes); --subset all = every held-out definition of this build (secondary)
+    subset = a[a.index("--subset") + 1] if "--subset" in a else "l9test"
+    from harvest.l9.alloc9 import HOLDOUT_FROZEN
     labels = {}
     for x in open(os.path.join(out, "data", "l9_eval_off.jsonl")):
         r = json.loads(x)
         if r.get("kind", "control") != "control" or r.get("label_missing"):
             continue
+        if subset == "l9test" and r.get("task_def") not in HOLDOUT_FROZEN:
+            continue
         labels[r["id"]] = (json.loads(r["answer"]).get("command") or {})
     steps = {k: int(open(os.path.join(out, f"steps_{k}.txt")).read()) for k in ("off", "on", "onaux")
              if os.path.exists(os.path.join(out, f"steps_{k}.txt"))}
     runs = {"off_s0": "off", "on_s0": "on", "off_s1": "off", "onaux_s0": "onaux"}  # onaux: change 3
-    rep, R = {"steps": steps, "label_rows": len(labels), "grasp_label_rows": sum(1 for v in labels.values() if v.get("approach")),
+    rep, R = {"subset": subset, "l8x_note": "old-convention (L8 labels), secondary", "steps": steps, "label_rows": len(labels), "grasp_label_rows": sum(1 for v in labels.values() if v.get("approach")),
               "models": {}}, {}
     for run, arm in runs.items():
         if arm not in steps:
@@ -204,9 +210,7 @@ def decide(cmp):
 
     def ni(c):
         ok = c["px_fail20"][2] <= mf and c["px_median"][2] <= mm_ and (c["fam_acc"] is None or c["fam_acc"][1] >= -mfam)
-        for s, v in (c.get("l8x_fail20") or {}).items():
-            ok = ok and v is not None and v[2] <= ml.get(s, 0.02)
-        return ok
+        return ok  # change 6: L8-X (old convention) is reported, not judged
     if ni(c0) and ni(c1):
         better = all(c["px_fail20"][0] <= -mf and c["px_fail20"][2] < 0 for c in (c0, c1))
         r = "ON_BETTER" if better else "ON_NONINF"
@@ -229,9 +233,6 @@ def decide_aux(cmp):
         return floor if not v else max(floor, (v[2] - v[1]) / 2, abs(v[0]))
     mp, mf, mm_, mfam = m("persp_primary", 0.03), m("px_fail20", 0.02), m("px_median", 3.0), m("fam_acc", 0.03)
     ego_ok = c["px_fail20"][2] <= mf and c["px_median"][2] <= mm_ and (c["fam_acc"] is None or c["fam_acc"][1] >= -mfam)
-    for st, v in (c.get("l8x_fail20") or {}).items():
-        av = (aa.get("l8x_fail20") or {}).get(st)
-        ego_ok = ego_ok and v is not None and v[2] <= (max(0.02, (av[2] - av[1]) / 2, abs(av[0])) if av else 0.02)
     p = c["persp_primary"]
     r = "AUX_WORSE" if not ego_ok else ("AUX_BETTER" if (p[0] >= mp and p[1] > 0) else "AUX_SAME")
     return {"result": r, "margin_persp": round(mp, 4), "persp_primary_diff": p}
