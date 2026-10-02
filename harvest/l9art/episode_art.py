@@ -480,8 +480,9 @@ class ArtEpisode:
             for yaw in (0.0, 0.5, -0.5, 1.0, -1.0, 1.57, -1.57):
                 for dxy in ((0, 0), (0.02, 0), (-0.02, 0), (0, 0.03), (0, -0.03)):
                     Rz = FX.rot_axis([0, 0, 1.0], yaw)
-                    cands.append((Rz @ R0, np.array([dxy[0], dxy[1], 0.0])))
-            Ts = [SK.T_pose(R, p + sh + np.array([0, 0, d + 0.10])) for R, sh in cands]
+                    cands.append((Rz @ R0, np.array([dxy[0], dxy[1], 0.0]), Rz))
+            off = np.append(getattr(self, "_held_off", np.zeros(2)), 0.0)
+            Ts = [SK.T_pose(R, p + sh - Rz @ off + np.array([0, 0, d + 0.10])) for R, sh, Rz in cands]
             try:
                 self.set_world(None)
                 ok = self.ex.planner.ik(np.stack([self.ex.to_base(T) for T in Ts]))[0]
@@ -489,10 +490,11 @@ class ArtEpisode:
             except Exception:  # noqa: BLE001
                 i = 0
             self._place_cache = (key, cands[i])
-        R, sh = self._place_cache[1]
-        p = p + sh
-        Tp = SK.T_pose(R, p + np.array([0, 0, d + 0.012]))
-        Ta = SK.T_pose(R, p + np.array([0, 0, d + 0.10]))
+        R, sh, Rz = self._place_cache[1]
+        p = p + sh  # the object centre goes here; the TCP is offset by the held offset (turned with the hand)
+        pt = p - Rz @ np.append(getattr(self, "_held_off", np.zeros(2)), 0.0)
+        Tp = SK.T_pose(R, pt + np.array([0, 0, d + 0.012]))
+        Ta = SK.T_pose(R, pt + np.array([0, 0, d + 0.10]))
         return {"p": p, "T": Tp, "T_above": Ta}
 
     def axis_fields(self, cam, st) -> dict:
@@ -672,6 +674,7 @@ class ArtEpisode:
                 ex.set_gripper(self.w.w_open, False)
                 self.sub = "above"
                 return "the object did not come up with the gripper; reopened"
+            self._held_off = c[:2] - ex.tcp_T()[:2, 3]  # object centre vs TCP in the hand (placing aims the object)
             self.finish_stage()
             return f"lifted the {self.prog['words'].get('O', 'object')}"
         if sub == "place":
