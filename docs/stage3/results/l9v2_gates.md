@@ -100,3 +100,20 @@
 - 수정(R1 전용, 범위/검사, 상수 이동 아님): READY 면 위 ≈21 cm, 운반 여유 U[0.05,0.10] m, 잡기 끝에서 거꾸로 푼 직선 접근 + 관절공간 이동, 잡기 자세 링크 검사, 장면 배치를 R1 측정 도달띠(잡기·운반 높이 둘 다)로. lean 은 0.8 로 동결(0.6: 2/14, 0.4: 0/5 로 이득 없음, 기록 board/humanoid_failed.md).
 - 같은 시드(pilotR 잡 20개): 기준 6/36(17 %) → +READY·운반 6/21(29 %) → +거꾸로 접근 16/44(36 %) → +링크 검사(띠 없음) 7/22(32 %) → **+도달띠 vL8B 14/24(58 %), approach 실패 0**, 관절 걸음 위반 1. 다양성(diversity9 --all): 중복 0, std_y 0.33(pilotR 0.20).
 - 판정 스윕: /data/harvest/l9v2/r1sweep (pilotR 198정의 × 20행, 라운드로빈, robot_gate9.py).
+
+## 로봇별 자기 카메라 (사양 r2-cams, 사용자 10-03 02시 "각 로봇은 자기 카메라 그대로, 카메라 수 무관")
+
+출처: AI Worker = `FFW_SG2_REAL_cameras.py`·설계 §37/§47(공식 사양: 머리 ZED Mini 스테레오 기선 63 mm, 손목 D405 × 2); Franka = franka_description(카메라 없음); R1 Pro = GalaxeaManipSim `galaxea_sim/robots/r1_pro.py`(abe7f51)·`assets/r1_pro/robot.urdf`(카메라 링크 `zed_link`·`{left,right}_realsense_link` 뿐), BEHAVIOR `r1pro.urdf`(같은 3개), 같은 회사 R1-Lite 공개 데이터(`head_rgb`·`head_right_rgb`·손목 2 → 머리 ZED 는 실물 스테레오); G1 = unitree_ros `g1_29dof_with_hand_rev_1_0.urdf`(센서 링크 `d435_link`·`mid360_link`(라이다)·IMU 2, 손 Dex3-1 에 카메라 없음).
+
+| 로봇 | 실물 기본 카메라 | 지금 렌더 | 차이 | 처리 (10-03 02시 사용자 결정) |
+|---|---|---|---|---|
+| AI Worker FFW-SG2 | 머리 ZED Mini 스테레오(왼·오), 손목 D405 × 2 | 머리 왼눈(672×376, 85°) + 손목 D405 × 2 | 머리 오른눈 | 불필요 — 추가 안 함 |
+| Franka (mast) | 없음(Panda 는 카메라 없음) | 우리 설계: 받침대 D435 + panda_hand D405 | 해당 없음 | 정의된 장비 그대로(r1 카메라 위치) |
+| Galaxea R1 Pro | 머리 ZED 스테레오(왼·오) + 손목 RealSense × 2 (가슴·섀시 카메라는 공급사 시뮬·URDF 어디에도 없음 — 미확인) | 머리 ZED 한 눈(100.8°) + 손목 × 2 | 머리 오른눈(가슴·섀시는 미확인) | 오른눈은 AIW 와 같은 원칙으로 추가 안 함; 가슴·섀시는 공식 자료 확인 전 추가 안 함 |
+| Unitree G1 | 몸통 D435 하나(+ MID-360 라이다) | D435 + 손바닥 D405 × 2(§9.2 가설, 실물에 없음) | 손바닥 카메라는 실물에 없음 | **빌드에서 손목 뷰 제거**(편은 유지), 게이트 "G1 행 wrist 뷰 0" |
+
+- 형식(views9, specgate9.SPEC_CAMS = `L9v2-spec-final-r2-cams`): 표준 4칸(head·wrist_left·wrist_right·third_person, 고정 순서, 없으면 "(none)") 다음에 그 로봇의 추가 실물 카메라를 `- view: <이름> -- Image k: …` 로 덧붙인다(이름 = `views9.EXTRA_VIEWS`: head_right·chest·torso·base_front/rear/left/right). 이미지 라벨은 빌더·학습기(`teach_l8.dataset.image_labels`)·실행기가 `views9.view_label` 하나를 쓴다. 추가 카메라는 실행기가 cams.json `extra_views` = {이름: 카메라 기록 + "img"} 로 남기면 빌더가 읽는다(지금은 0건).
+- 사양 판: 디스크의 편은 그대로(meta spec = final / final-r1, 행에 `episode_spec` 로 기록), 슬롯 빌드의 모든 행에 `spec_version = L9v2-spec-final-r2-cams`. SPEC_FAMILY 로 세 문자열은 한 계열이고, 슬롯 빌드 게이트는 행 전부가 r2-cams 여야 통과(옛 빌더 행 섞임 금지). 추가 뷰 없는 행은 태그만 빼고 이전 빌드와 같다.
+- 스키마 게이트(`specgate9.view_schema_errors`, `gates(views=True)`, build_v2 슬롯 빌드에서 항상): 파싱, 표준 4칸 고정 순서, 추가 뷰 이름이 목록에 있음·중복 없음, 이미지 번호 1..n, `image_views` = 나열 순서, 이미지 수 = 나열 수, head = Image 1, 로봇에 없는 표준 칸 금지(G1 wrist), spec_version = r2-cams.
+- 함께 고침: build_v2 `--spec` 비교를 계열로(정확 문자열 비교가 Franka r1 편 전부를 빼고 있었음).
+- 장면 배치·시야 검사의 로봇별 카메라는 G1·R1 팀 배치 코드 소관(이 변경은 카메라 세트·스키마만).
