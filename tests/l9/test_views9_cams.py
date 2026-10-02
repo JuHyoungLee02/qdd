@@ -111,3 +111,20 @@ def test_build_extra_views_from_cams_json(tmp_path):
     assert [e[0] for e in ex] == ["chest"] and "img" not in ex[0][2]
     (d / "cams.json").write_text(json.dumps({"head": CAM}))
     assert B9.extra_views({"cams_path": str(d / "cams.json"), "call_dir": str(d)}) == []
+
+
+def test_hfov_choices_per_robot():
+    from harvest.l9 import hcam9 as HC
+    from harvest.l9 import robot9 as R9
+    assert HC.hfov_choices(HC.STD_HFOV) == HC.HFOV_CHOICES
+    assert HC.hfov_choices(R9.V2["g1"]["cameras"]["cam_head"]["hfov"]) == (64.0, 69.0, 74.0)
+    r1 = HC.hfov_choices(R9.V2["r1pro"]["cameras"]["cam_head"]["hfov"])
+    assert r1 == (95.84, 100.84, 105.84)
+    assert {HC.draw_ffw(s, 0.5, 0, choices=r1)["hfov"] for s in range(60)} == set(r1)
+    assert HC.draw_ffw(7, 0.5, 1) == HC.draw_ffw(7, 0.5, 1, choices=None)  # AIW draws unchanged
+
+
+def test_now_without_wrist_camera():
+    from harvest.astra_solo import prompts as PR
+    t = PR.now(None, [0.4, 0.0, 0.9], 0.05, 1, 10, 0.0, 60.0, [])
+    assert "wrist camera" not in t and "TCP at (0.400" in t

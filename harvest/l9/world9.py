@@ -248,7 +248,10 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
     other = "left" if arm == "right" else "right"
     # v2 dual-arm robots render both wrists (user 10-02, 4-slot schema): the used arm's is "wrist", the other one
     # "wrist_left" (the AI Worker naming after its left-arm swap: "wrist_left" = the other wrist), saved per call
-    cams = R9.CAMERAS if franka else (("cam_head", A.wrist_camera(arm), A.wrist_camera(other)) if v2r else CAMS)
+    # r2-cams (user 10-03 02h): only the robot's own cameras (robot9.V2 "cameras"); a robot without wrist cameras
+    # (G1) renders the head only and its observations carry no "wrist" (the episode code allows that)
+    cams = R9.CAMERAS if franka else (("cam_head",) + tuple(c for c in (A.wrist_camera(arm), A.wrist_camera(other))
+                                                            if c in R9.V2[robot]["cameras"]) if v2r else CAMS)
     keys = {"cam_head": "head", "cam_wrist_right": "wrist", "cam_wrist_left": "wrist_left"}
     if v2r:
         keys = {"cam_head": "head", A.wrist_camera(arm): "wrist", A.wrist_camera(other): "wrist_left"}
@@ -970,7 +973,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                     self._write_mount("cam_head", std)
                     if "cam_head" in self._K:  # only after a drawn episode changed it
                         self._write_K("cam_head", std_hfov)
-                    if v2r:  # the used arm's wrist camera (its default mount; nothing written when unchanged)
+                    if v2r and A.wrist_camera(arm) in cams:  # the used arm's wrist camera (default mount)
                         self._write_mount(A.wrist_camera(arm), self._default_mount(A.wrist_camera(arm)))
                 else:
                     pp, pq = self._parent_pose("cam_head")
@@ -978,7 +981,9 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                     R0 = Rp @ HC.quat_to_R(std[3:])
                     t0 = pp + Rp @ np.asarray(std[:3])
                     h0 = float(t0[2] - tz)
-                    d = (HC.draw_hold_ffw if mode == "hold" else HC.draw_ffw)(seed, h0, attempt)
+                    # drawn HFOV = the robot's OWN lens +/-5 deg (user 10-03 03h; AIW = HFOV_CHOICES as before)
+                    d = (HC.draw_hold_ffw(seed, h0, attempt) if mode == "hold" else
+                         HC.draw_ffw(seed, h0, attempt, choices=HC.hfov_choices(std_hfov) if v2r else None))
                     R, t = HC.ffw_pose(R0, t0, d)
                     pos, q = HC.mount_of(pp, pq, t, R)
                     self._write_mount("cam_head", [*pos, *q])
@@ -1188,8 +1193,10 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
         def frame(self) -> dict:
             self._render()
             w = A.wrist_camera(arm)
-            return {"head": self.env.camera_rgb("cam_head"), "wrist": self.env.camera_rgb(w),
-                    "wrist_cam": self._cam(w, "wrist")}
+            head = self.env.camera_rgb("cam_head")
+            if w not in cams:  # no wrist camera on this robot: review frames get a black tile (never data)
+                return {"head": head, "wrist": np.zeros((240, 424, 3), np.uint8), "wrist_cam": None}
+            return {"head": head, "wrist": self.env.camera_rgb(w), "wrist_cam": self._cam(w, "wrist")}
 
         # ------------------------------------------------------------------ task info / status
         def _status_from(self, pl):

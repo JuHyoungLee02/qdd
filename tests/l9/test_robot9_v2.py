@@ -59,8 +59,13 @@ def test_g1_head_d435_pitch():
     assert HC.pitch_pan(R)[0] == pytest.approx(47.6, abs=0.1)
 
 
-def test_g1_wrist_looks_at_the_pinch():
-    pos, q = R9.v2_mount("g1", "cam_wrist_right")
+def test_g1_renders_only_its_own_camera():  # r2-cams (user 10-03 02h): the palm D405s were ours, not Unitree's
+    assert tuple(R9.V2["g1"]["cameras"]) == ("cam_head",)
+    assert set(R9.V2["r1pro"]["cameras"]) == {"cam_head", "cam_wrist_left", "cam_wrist_right"}
+
+
+def test_g1_removed_palm_record_kept():
+    pos, q = R9._look_mount(*R9.V2["g1"]["cameras_removed"]["cam_wrist_right"]["look"])
     f = HC.quat_to_R(q)[:, 0]
     d = np.array([0.074, 0.056, 0.014]) - np.array(pos)
     assert np.allclose(f, d / np.linalg.norm(d))

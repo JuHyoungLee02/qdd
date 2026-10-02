@@ -192,16 +192,23 @@ def _choice(rng, choices) -> float:
     return float(rng.choice(np.asarray(choices, float)))
 
 
-def draw_ffw(seed: int, h0: float, attempt: int = 0) -> dict:
+def hfov_choices(std_hfov: float) -> tuple:
+    """The robot's own lens HFOV +/-5 deg in 5 deg steps (user 10-03 03h; R1 Pro ZED 100.84 -> (95.84, 100.84,
+    105.84), G1 D435 69 -> (64, 69, 74)); = HFOV_CHOICES for the AI Worker."""
+    return tuple(round(float(std_hfov) + d, 2) for d in (-5.0, 0.0, 5.0))
+
+
+def draw_ffw(seed: int, h0: float, attempt: int = 0, choices: tuple | None = None) -> dict:
     """Training band: dz with h0 + dz inside H_RANGE (h0 = standard camera height above the surface after the
     neck draw), a pitch target and a horizontal FOV (user 10-03: drawn from HFOV_CHOICES, the real lens +/-5 deg
-    in 5 deg steps, not uniformly over HFOV_RANGE)."""
+    in 5 deg steps, not uniformly over HFOV_RANGE). choices: another robot's own set (hfov_choices; default =
+    HFOV_CHOICES, the AI Worker's -- unchanged draws)."""
     rng = _rng(seed, attempt, 1)
     lo = max(-DZ_MAX, H_RANGE[0] - h0)
     hi = min(DZ_MAX, H_RANGE[1] - h0)
     dz = _u(rng, (lo, hi)) if hi > lo else float(np.clip(0.0, H_RANGE[0] - h0, H_RANGE[1] - h0))
     return {"mode": "rand", "dz": round(dz, 4), "pitch": round(_u(rng, PITCH_RANGE), 2),
-            "hfov": round(_choice(rng, HFOV_CHOICES), 2), "attempt": int(attempt)}
+            "hfov": round(_choice(rng, HFOV_CHOICES if choices is None else choices), 2), "attempt": int(attempt)}
 
 
 def draw_hold_ffw(seed: int, h0: float, attempt: int = 0) -> dict:

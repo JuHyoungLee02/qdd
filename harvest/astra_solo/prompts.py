@@ -97,7 +97,9 @@ def static(info: dict, head, table_z: float, w_close: float) -> str:
 
 
 def now(wrist, tcp, gap_m: float, i: int, n: int, t_used: float, t_max: float, history: list) -> str:
-    return NOW.format(wrist=_cam(wrist), tcp=np.asarray(tcp, float).tolist(), gap=gap_m * 100, i=i, n=n,
+    """wrist = the wrist camera, or None for a robot without one (r2-cams: its line is left out)."""
+    tpl = NOW if wrist is not None else NOW.replace("- Right wrist camera (image 2): {wrist}\n", "")
+    return tpl.format(wrist=_cam(wrist) if wrist is not None else "", tcp=np.asarray(tcp, float).tolist(), gap=gap_m * 100, i=i, n=n,
                       t_used=t_used, t_max=t_max, history="\n".join(history[-10:]) if history else "(none yet)")
 
 

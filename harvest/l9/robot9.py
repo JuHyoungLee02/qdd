@@ -268,6 +268,11 @@ V2 = {
         "cameras": {"cam_head": {"parent": "d435_link", "pos": (0.0, 0.0, 0.0), "quat": (1.0, 0.0, 0.0, 0.0),
                                  "width": HC.W, "height": HC.H, "hfov": HC.D435_HFOV,
                                  "model": "Intel RealSense D435 on torso_link (unitree_ros d435_joint, 47.6 deg down)"},
+                    },
+        # r2-cams (user 10-03 02h): G1 renders only its own camera (torso D435). The palm D405s below were our
+        # addition (spec §9.2 hypothesis, no Unitree camera there): kept as a record, never rendered (v2_mount reads
+        # "cameras" only; build9/views9 also drop G1 wrist views of older episodes).
+        "cameras_removed": {
                     # no official wrist camera (spec §9.2: wrist mount): a D405 on the palm looking at the pinch; 9 cm
                     # above the index finger the hand filled half the frame (smoke 10-02) -> 13 cm, 3 cm back
                     **{f"cam_wrist_{s}": {"parent": f"{s}_hand_palm_link",

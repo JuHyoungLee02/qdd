@@ -206,7 +206,7 @@ class PtEpisode(Episode):
     def _request(self, obs, i, statics):
         """-> (text asked, images asked); also prepares the side requests / ring image to save."""
         w = self.w
-        nowt = PT.now(obs.cams["wrist"], obs.tcp, obs.grip_w, i, self.max_calls, self._t(), self.motion_limit_s,
+        nowt = PT.now(obs.cams.get("wrist"), obs.tcp, obs.grip_w, i, self.max_calls, self._t(), self.motion_limit_s,
                       self.history)
         head_ovl, drawn = head_overlay(obs.rgb["head"], obs.cams["head"], w.table_z, obs.tcp)
         ring, rdrawn = ND.ring_overlay(obs.rgb["head"], obs.cams["head"], obs.tcp)
@@ -218,9 +218,10 @@ class PtEpisode(Episode):
             note = ("\nNOTE: the table point below the TCP is outside the head image this time: the drop line "
                     "leaves the image and its dot is not visible.")
         nd_note = "" if "tcp" in rdrawn else "\nNOTE: the TCP is outside the head image this time: no ring is drawn."
-        wrist = (PT.IMAGE_LABELS[1], png_bytes(obs.rgb["wrist"]))
-        ovl_ims = [(PT.IMAGE_LABELS[0], png_bytes(head_ovl)), wrist]
-        ring_ims = [(PT.IMAGE_LABELS[0], png_bytes(ring)), wrist]
+        # r2-cams: a robot without a wrist camera (its camera list decides) sends the head image only
+        wrist = [(PT.IMAGE_LABELS[1], png_bytes(obs.rgb["wrist"]))] if "wrist" in obs.rgb else []
+        ovl_ims = [(PT.IMAGE_LABELS[0], png_bytes(head_ovl))] + wrist
+        ring_ims = [(PT.IMAGE_LABELS[0], png_bytes(ring))] + wrist
         self.ring_png = ring_ims[0][1] if self.save_nd else None
         pt_text = statics["pt"] + nowt + PT.ANSWER + note
         if self.coords == "px":

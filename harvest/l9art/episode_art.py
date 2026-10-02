@@ -890,8 +890,10 @@ class ArtEpisode:
             with open(os.path.join(d, "prompt_v3.txt"), "w", encoding="utf-8", newline="\n") as f:
                 f.write(text)
             ring, _ = ND.ring_overlay(obs.rgb["head"], obs.cams["head"], obs.tcp)
-            for name, img in (("img1_head_camera.png", obs.rgb["head"]), ("img1_head_ring.png", ring),
-                              ("img2_right_wrist_camera.png", obs.rgb["wrist"])):
+            ims = [("img1_head_camera.png", obs.rgb["head"]), ("img1_head_ring.png", ring)]
+            if "wrist" in obs.rgb:  # r2-cams: robots without a wrist camera (camera list) save the head only
+                ims.append(("img2_right_wrist_camera.png", obs.rgb["wrist"]))
+            for name, img in ims:
                 with open(os.path.join(d, name), "wb") as f:
                     f.write(png_bytes(np.asarray(img)))
             with open(os.path.join(d, "cams.json"), "w") as f:

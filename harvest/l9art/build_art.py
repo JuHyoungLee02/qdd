@@ -128,6 +128,9 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool) -> tuple:
         dst_prompt = os.path.join(out_dir, "prompts_art", rid + ".txt")
         _copy_prompt(os.path.join(call_dir, "prompt_v3.txt"), dst_prompt)
         images = [os.path.join(call_dir, "img1_head_ring.png"), os.path.join(call_dir, "img2_right_wrist_camera.png")]
+        from ..l9.views9 import native_slots  # r2-cams: no wrist image for a robot without native wrist cameras (G1)
+        if not {"wrist_left", "wrist_right"} & set(native_slots(robot)) or not os.path.exists(images[1]):
+            images = images[:1]
         out.append({"id": rid, "kind": "control", "prompt_path": dst_prompt, "images": images,
                     "answer": answer, "label_missing": missing, "robot": robot, "camera": camera,
                     "source": f"l9art/{robot}", "gen": "l9art", "gen_version": "v3", "skill": r.get("skill"),
