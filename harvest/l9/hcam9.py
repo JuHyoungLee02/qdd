@@ -23,11 +23,19 @@ STD_HFOV = 2.0 * math.degrees(math.atan(336.0 / 367.0))  # 85.0 deg: ZED Mini WV
 H_RANGE = (0.35, 0.80)  # camera height above the work surface, m
 DZ_MAX = 0.15  # vertical mount shift, m
 PITCH_RANGE = (30.0, 62.0)  # deg
-HFOV_RANGE = (65.0, 95.0)  # deg
-# hold-out bands (prereg §4 (ii-a)): one axis outside the training band
+HFOV_RANGE = (65.0, 95.0)  # deg (outer bound, still used by the hold-out draw below; user 10-03 03시: the TRAINING
+# draw itself is no longer uniform over this whole band -- see HFOV_CHOICES)
+# hold-out bands (prereg §4 (ii-a)): one axis outside the training band -- unchanged (user 10-03: "hold 대역은 건드리지
+# 말고 보고만", eval-only)
 H_HOLD = ((0.25, 0.35), (0.80, 0.90))
 PITCH_HOLD = ((22.0, 30.0), (62.0, 68.0))
 HFOV_HOLD = ((55.0, 65.0), (95.0, 105.0))
+# New episodes only (user 10-03 03시, spec amendment, L9_PRINCIPLES.md): HFOV is drawn from the robot's own real
+# camera HFOV +/-5 deg in 5 deg steps, not uniformly over the old wide HFOV_RANGE band (a value far from the real
+# lens was an unrealistic train-time axis). AIW ZED Mini STD_HFOV ~85 -> {80, 85, 90}; Franka D435 69 -> {64, 69,
+# 74}. (R1 Pro ZED ~100.8 / G1 D435 69 +/-5: robot9.py V2 camera profiles, a different owner's file -- flagged,
+# not changed here.)
+HFOV_CHOICES = tuple(round(STD_HFOV + d, 2) for d in (-5.0, 0.0, 5.0))  # AIW: (80.0, 85.0, 90.0)
 
 # Franka head camera mast (spec §9.2-r1, user 10-02 ~21:40 "머리 카메라가 로봇팔에 가려": the rev. smoke 2 mount
 # (mast 0.23 m to the arm's left, pitch 38-55, h 0.45-0.70) sat on the SAME side the single right arm sweeps to
@@ -65,13 +73,22 @@ HFOV_HOLD = ((55.0, 65.0), (95.0, 105.0))
 # show up as the dominant effect here. r1-v5: keep r1-v3's x/y/h, push pitch even steeper (65-80, closer to
 # vertical) to see if the trend continues below r1-v3's 20.0 %. Re-validating (same 8-seed quick check, then
 # the full set) before switching production.
-# r1-v6 (this commit, run in parallel with r1-v5 on the same 8 seeds): closer distance (~0.6-0.8 m from
-# panda_link0, near/just outside the arm's reach sphere, scaled down from r1-v3/v4/v5's ~1.3 m) with the same
-# steep pitch (60-75) as r1-v3/v5, to see whether "steeper is better" holds at a shorter distance too (and
-# whether MIN_RADIUS_PX=6px, visgate9.py, starts to bite at the longer r1-v3/v5 distance -- closer should help it).
-MAST_DEFAULT = {"x": 0.0, "y": -0.34, "h": 0.70, "pitch": 68.0, "pan": 25.0}
-MAST_RANGE = {"x": (-0.10, 0.10), "y": (-0.40, -0.28), "h": (0.60, 0.80), "pitch": (60.0, 75.0), "pan": (15.0, 35.0)}
+# r1-v6 (closer distance ~0.6-0.8 m, same steep pitch as r1-v3/v5): also run as its own deploy in parallel with
+# r1-v5 -- results recorded in docs/stage3/results/l9v2_gates.md, not reflected in the constant below.
+# r1-v7 (this commit, user 10-03 03시, the user directly reviewed a frame and still saw the arm covering the
+# target -- the far-mount candidates (v3/v5/v6) also clipped the top of the scene, e.g. a tall shelf's upper
+# part): back to the OLD production mount position (x/y/h/pan) -- not a far mast -- and ONLY back the pitch off
+# the steepest OLD value toward horizontal, in discrete 5 deg steps: pitch = 55 (OLD's own steepest) minus a
+# uniform-random choice of {0, 5, 10, 15} deg, i.e. {55, 50, 45, 40}, never shallower than OLD's old minimum (38).
+# A rendered preview (tools/l9/pitch_preview.py, 3 production scenes x {+0,+5,+10,+15,+20} deg, same mast pose,
+# no re-simulation between panels) is what the user is reviewing to pick the amount of "backing off" before this
+# becomes the production range -- see docs/stage3/results/l9v2_gates.md for the chosen panel / final numbers.
+PITCH_OLD_STEEPEST = 55.0
+MAST_DEFAULT = {"x": -0.10, "y": 0.23, "h": 0.55, "pitch": PITCH_OLD_STEEPEST - 5.0, "pan": -10.0}
+MAST_RANGE = {"x": (-0.20, 0.0), "y": (0.15, 0.30), "h": (0.45, 0.70),
+              "pitch": [PITCH_OLD_STEEPEST - off for off in (0.0, 5.0, 10.0, 15.0)], "pan": (-20.0, 0.0)}
 D435_HFOV = 69.0  # Intel RealSense D435 colour, horizontal (datasheet 69 x 42 deg)
+FRANKA_HFOV_CHOICES = tuple(round(D435_HFOV + d, 2) for d in (-5.0, 0.0, 5.0))  # (64.0, 69.0, 74.0), user 10-03
 TRIES = 5
 
 
@@ -171,15 +188,20 @@ def _u(rng, lo_hi) -> float:
     return float(rng.uniform(*lo_hi))
 
 
+def _choice(rng, choices) -> float:
+    return float(rng.choice(np.asarray(choices, float)))
+
+
 def draw_ffw(seed: int, h0: float, attempt: int = 0) -> dict:
     """Training band: dz with h0 + dz inside H_RANGE (h0 = standard camera height above the surface after the
-    neck draw), a pitch target and a horizontal FOV."""
+    neck draw), a pitch target and a horizontal FOV (user 10-03: drawn from HFOV_CHOICES, the real lens +/-5 deg
+    in 5 deg steps, not uniformly over HFOV_RANGE)."""
     rng = _rng(seed, attempt, 1)
     lo = max(-DZ_MAX, H_RANGE[0] - h0)
     hi = min(DZ_MAX, H_RANGE[1] - h0)
     dz = _u(rng, (lo, hi)) if hi > lo else float(np.clip(0.0, H_RANGE[0] - h0, H_RANGE[1] - h0))
     return {"mode": "rand", "dz": round(dz, 4), "pitch": round(_u(rng, PITCH_RANGE), 2),
-            "hfov": round(_u(rng, HFOV_RANGE), 2), "attempt": int(attempt)}
+            "hfov": round(_choice(rng, HFOV_CHOICES), 2), "attempt": int(attempt)}
 
 
 def draw_hold_ffw(seed: int, h0: float, attempt: int = 0) -> dict:
@@ -200,11 +222,13 @@ def std_ffw() -> dict:
 
 
 def draw_mast(seed: int, attempt: int = 0, default: bool = False) -> dict:
+    """Per MAST_RANGE axis: a list -> a discrete uniform choice (e.g. r1-v7's pitch), a (lo, hi) tuple -> a
+    continuous uniform draw. hfov: a discrete choice from FRANKA_HFOV_CHOICES (user 10-03; was fixed D435_HFOV)."""
     if default:
         return dict(MAST_DEFAULT, mode="mast_default", hfov=D435_HFOV, attempt=int(attempt))
     rng = _rng(seed, attempt, 3)
-    out = {k: round(_u(rng, r), 4) for k, r in MAST_RANGE.items()}
-    return dict(out, mode="mast", hfov=D435_HFOV, attempt=int(attempt))
+    out = {k: round(_choice(rng, r) if isinstance(r, list) else _u(rng, r), 4) for k, r in MAST_RANGE.items()}
+    return dict(out, mode="mast", hfov=round(_choice(rng, FRANKA_HFOV_CHOICES), 2), attempt=int(attempt))
 
 
 def mast_pose(base_pos, surface_z: float, d: dict) -> tuple:

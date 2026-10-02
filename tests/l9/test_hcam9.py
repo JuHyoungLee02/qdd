@@ -84,15 +84,18 @@ def test_draw_hold_exactly_one_axis_out():
 def test_mast_draw_and_pose():
     for s in range(100):
         d = HC.draw_mast(s)
-        for k, (lo, hi) in HC.MAST_RANGE.items():
-            assert lo <= d[k] <= hi
-        assert d["hfov"] == HC.D435_HFOV
+        for k, r in HC.MAST_RANGE.items():
+            if isinstance(r, list):
+                assert d[k] in r  # discrete choice axis (r1-v7 pitch)
+            else:
+                assert r[0] <= d[k] <= r[1]
+        assert d["hfov"] in HC.FRANKA_HFOV_CHOICES
     d = HC.draw_mast(0, default=True)
     R, t = HC.mast_pose((0.0, -0.23, 0.80), 0.85, d)
-    assert t == pytest.approx((0.0, -0.57, 1.55))
-    assert HC.pitch_pan(R) == pytest.approx((68.0, 25.0))
+    assert t == pytest.approx((-0.10, 0.0, 1.40))
+    assert HC.pitch_pan(R) == pytest.approx((50.0, -10.0))
     r = HC.realized(R, t, 0.85)
-    assert r["height_above_surface_m"] == pytest.approx(0.70) and r["height_floor_m"] == pytest.approx(1.55)
+    assert r["height_above_surface_m"] == pytest.approx(0.55) and r["height_floor_m"] == pytest.approx(1.40)
 
 
 def test_camera_line_from_cams_json():
