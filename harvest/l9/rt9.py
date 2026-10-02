@@ -73,7 +73,9 @@ class TrajExec:
         self.cmd = np.asarray(st["tcp"], float).copy()
         self.target = self.cmd.copy()
         self.w_open, self.w_close = w.w_open, w.w_close
-        self.width = rt.open_width()
+        self.width = float(w.w_open)  # L9v2-DIAG 9: no pre-shape at the episode start: the hand may start low among
+        # objects, fingers closing there jammed on one side and the wrist roll saturated (5.1 Nm, 0.06-0.34 rad steps)
+        self.width_after = None
         self.goal_quat = np.asarray(getattr(w, "quat0", (1.0, 0, 0, 0)), float)
         self.Q, self.i, self.after = None, 0, None
         self.hold_t = None
@@ -89,8 +91,7 @@ class TrajExec:
     def go_to(self, pos, grip: str, t: float) -> list:
         self.target = np.asarray(pos, float).copy()
         Q, note, width = self.rt.motion_for(self.target, grip)
-        if width is not None:
-            self.width = width
+        self.width_after = width if Q is not None else None  # pre-open: set when the transit ends at the stand-off
         if Q is None:
             return [{"t": round(t, 3), "event": "timeout", "err_mm": 999.0, "note": note or "no collision-free path",
                      "note_only": True}]
@@ -143,6 +144,8 @@ class TrajExec:
             self.i += 1
             if self.i >= len(self.Q):
                 self.Q, self.hold_t = None, t
+                if self.width_after is not None:  # spec 12.12 P1: pre-open at the stand-off
+                    self.width, self.width_after = self.width_after, None
             return self.cmd.copy(), self.width, ev
         if self.hold_t is not None:  # trajectory sent: wait for the arm to arrive / stop
             err = float(np.linalg.norm(tcp - self.target))
