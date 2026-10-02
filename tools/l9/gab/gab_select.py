@@ -2,9 +2,12 @@
 Per robot: N single-arm train rows from that robot's pilot plan, round-robin over task families (sorted), then over
 definitions inside a family (arms as the plan drew them, no forced left/right balance); order inside a group = a fixed hash of
 the seed (deterministic, no RNG state). GAB_ROWS_PER_JOB (default 5) rows of one robot and arm per job. Both arms (A, B) get the SAME rows (same seeds).
-usage: python gab_select.py <ab dir> <n per robot> robot=plan.json [robot=plan.json ...]
+usage: python gab_select.py <ab dir> <n per robot> robot=<plan glob>[@<run dir glob>] ...
+  @<run dir glob>: keep only rows whose seed was RENDERED there (a meta.json under <run dir>/collect): production
+  prefilters rows that do not fit their scene (30-70 % skip in the raw pilot plans), so the A/B uses rows that fit.
 writes <ab dir>/plan_gab.json, <ab dir>/q.txt ("<arm> <robot> <plan> <job>", rows interleaved robot by robot, A then
 B for each row), <ab dir>/rows.tsv (job robot def family arm seed)."""
+import glob
 import hashlib
 import json
 import os
@@ -58,7 +61,23 @@ def main():
     plan, per, jobs = [], {}, {}
     for spec in sys.argv[3:]:
         robot, src = spec.split("=", 1)
-        sel = pick(json.load(open(src)), robot, n)
+        pg, _, rg = src.partition("@")
+        rows, seen = [], set()
+        for pf in sorted(glob.glob(pg)):
+            for r in json.load(open(pf)):
+                if r["seed"] not in seen:
+                    seen.add(r["seed"])
+                    rows.append(r)
+        if rg:
+            rendered = set()
+            for rd in glob.glob(rg):
+                for m in glob.glob(os.path.join(rd, "collect", "*", "*", "*", "meta.json")):
+                    try:
+                        rendered.add(int(json.load(open(m))["seed"]))
+                    except (OSError, ValueError, KeyError):
+                        pass
+            rows = [r for r in rows if int(r["seed"]) in rendered]
+        sel = pick(rows, robot, n)
         per[robot] = []
         cnt = defaultdict(int)
         for r in sel:
