@@ -555,6 +555,35 @@ def receiver_spot(sc: dict, ep: dict, obj_key: str, fr: float, rm, arm: str, see
     return float(x), float(y), top
 
 
+def handover_compat(C: dict, gr: dict, idx_g, idx_r, wrist: float = WRIST_M, standoff: float = 0.10) -> dict:
+    """Handover grasp PAIRS in the object frame (bimdeep a13 10-03: once the receiver's swept gripper was checked
+    against the giver's real hand, 0 of 706-800 receiver candidates were left -- the giver's pick (chosen alone, as
+    for a one-arm task) covered every surface the receiver could use). {giver idx: array of receiver idx} whose
+    receiver gripper, swept back `standoff` along its approach at its pre-open, clears the giver's hand (fingers at
+    the contact width + palm + wrist) at that giver grasp. C: candidate dict (object frame T / w / pre_open)."""
+    from . import grasp9 as G
+
+    def world_boxes(T, bx):
+        R, t = np.asarray(T, float)[:3, :3], np.asarray(T, float)[:3, 3]
+        return [(R @ np.asarray(c, float) + t, np.asarray(h, float), R) for c, h in bx]
+
+    rbox = {j: world_boxes(C["T"][j], G.boxes(gr, float(C["pre_open"][j]), standoff=standoff)) for j in idx_r}
+    out = {}
+    for i in idx_g:
+        gb = world_boxes(C["T"][i], G.boxes(gr, float(C["w"][i]), standoff=wrist))
+        Cg = np.array([b[0] for b in gb])
+        Hg = np.array([b[1] for b in gb])
+        Rg = np.array([b[2] for b in gb])
+        ok = []
+        for j in idx_r:
+            if j == i:
+                continue
+            if not any(G.obb_overlap(c, h, R, Cg, Hg, Rg).any() for c, h, R in rbox[j]):
+                ok.append(j)
+        out[int(i)] = np.asarray(ok, int)
+    return out
+
+
 def sync_resample(trajs: list) -> list:
     """Same number of waypoints for every arm (linear in the waypoint index): two hands on ONE object must move on
     one time axis, or the faster hand drags the object against the slower one (research doc sync requirement)."""
@@ -1002,6 +1031,26 @@ class HandoverRuntime:
             self.run_ticks(len(slot.traj) + 5)  # TypeError from P9.resample(None, ...); the straight-line micro-lift
         return {"ok": True, "status": "ok", "gc": gc, "T_obj_pick": T_obj_pick}  # an optimization, skip if None
 
+    def _pair_filter(self, obj_key: str, cap: int = 160):
+        """-> (giver candidate indices to exclude, {giver idx: compatible receiver idx}) | (set(), None)."""
+        import os as _os
+        from . import rt9 as RT
+        rt = self.giver.rt
+        C = rt._load(obj_key)
+        if C is None or not len(C["w"]):
+            return set(), None
+        if RT.COMMON or _os.environ.get("L9V2_GRASP_FLIP") == "1":
+            C = rt._with_flips(obj_key, C)
+        ok = np.flatnonzero(np.asarray(C["test_ok"], bool))
+        if not len(ok):
+            return set(), None
+        rng = np.random.default_rng(0)
+        sub = ok if len(ok) <= cap else np.sort(rng.choice(ok, cap, replace=False))
+        compat = handover_compat(C, rt.gr, sub, ok)
+        bad = {int(i) for i, v in compat.items() if len(v) == 0}
+        bad |= {int(i) for i in ok if int(i) not in compat}  # not evaluated (over the cap): left out
+        return bad, compat
+
     def _hand_clash(self, slot: "_ArmSlot", obj_key: str, standoff: float = 0.10) -> set:
         """Candidate indices (rt.choose() indexing, flips included) whose swept gripper hits the OTHER hand."""
         import os as _os
@@ -1105,6 +1154,8 @@ class HandoverRuntime:
             return 0.0, 0, 0
         ok0 = np.asarray(C["test_ok"], bool) if "test_ok" in C else np.ones(len(C["w"]), bool)
         idx = np.flatnonzero(ok0)
+        if getattr(self, "_compat_r", None) is not None:
+            idx = np.array([i for i in idx if int(i) in self._compat_r], int)
         if not len(idx):
             return 0.0, 0, 0
         self._yaw_rank = []
@@ -1211,7 +1262,17 @@ class HandoverRuntime:
             f = final_spot_xyz(zone, self.receiver.arm)
             final_xy = (float(f[0]), float(f[1]), float(table_z))
         log = []
-        r = self._grasp(self.giver, obj_key)
+        self._compat_r = None
+        excl, compat = self._pair_filter(obj_key)
+        saved = set(self.giver.rt.failed)
+        self.giver.rt.failed = saved | excl
+        try:
+            r = self._grasp(self.giver, obj_key)
+        finally:
+            self.giver.rt.failed = saved
+        if r.get("ok") and compat is not None and r.get("gc") is not None:
+            self._compat_r = set(int(j) for j in compat.get(int(r["gc"].idx), ()))
+            r["compat_r"] = len(self._compat_r)
         log.append({"phase": "giver_pick", **r})
         self._snap("giver_pick")
         if not r["ok"]:

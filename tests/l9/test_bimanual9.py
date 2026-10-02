@@ -385,3 +385,17 @@ def test_success_b_needs_held_through_and_low_tilt():
     assert B.success_b((0.5, 0.0), (0.5, 0.0), **base)["ok"]
     assert not B.success_b((0.5, 0.0), (0.5, 0.0), held_through=False, **base)["ok"]
     assert not B.success_b((0.5, 0.0), (0.5, 0.0), tilt_deg=35.0, **base)["ok"]
+
+
+def test_handover_compat_keeps_a_far_receiver_grasp_and_drops_an_overlapping_one():
+    from harvest.l9 import grasp9 as G
+    gr = G.gripper("ffw_sg2")
+    top = G.frame_of([0, 0, -1.0], [0, 1.0, 0])  # approach down, close along y
+    side_lo = G.frame_of([1.0, 0, 0], [0, 1.0, 0])  # approach +x, close along y
+    T = np.repeat(np.eye(4)[None], 3, 0)
+    T[0, :3, :3], T[0, :3, 3] = top, [0, 0, 0.10]  # giver: top of a 22 cm bottle
+    T[1, :3, :3], T[1, :3, 3] = side_lo, [0, 0, -0.10]  # receiver: low on the far side
+    T[2, :3, :3], T[2, :3, 3] = side_lo, [0, 0, 0.09]  # receiver: right under the giver's fingers
+    C = {"T": T, "w": np.array([0.05, 0.05, 0.05]), "pre_open": np.array([0.08, 0.08, 0.08])}
+    out = B.handover_compat(C, gr, [0], [1, 2])
+    assert list(out[0]) == [1]
