@@ -833,6 +833,7 @@ class HandoverRuntime:
         self.phase = "giver_pick"
         self.overlap_ticks = 0
         self.events = []
+        self._yaw_rank = []
         self.snap = None  # optional callback(name): per-phase frames (deep-dive 10-03: judge frames, not numbers)
         env.use_arm(env.primary)
         self._freeze(self.giver)
@@ -1055,6 +1056,7 @@ class HandoverRuntime:
         idx = np.flatnonzero(ok0)
         if not len(idx):
             return 0.0, 0, 0
+        self._yaw_rank = []
         STANDOFF_PROBE = 0.11  # m, the midpoint of v2plan.STANDOFF (0.08, 0.14) -- a fixed probe value; the real
         rt.refresh_world(extra_boxes=self.other_arm_boxes(self.receiver))  # per-pick draw happens in choose() itself
         best_yaw, best_n = 0.0, -1
@@ -1076,6 +1078,7 @@ class HandoverRuntime:
             ok_g, _, _ = rt.planner.ik(np.stack(Tg))
             ok_p, _, _ = rt.planner.ik(np.stack(Tp))
             n = int(np.sum(np.asarray(ok_g, bool) & np.asarray(ok_p, bool)))
+            self._yaw_rank.append((n, yaw))
             if n > best_n:
                 best_yaw, best_n = yaw, n
         return best_yaw, best_n, len(idx)
@@ -1148,6 +1151,23 @@ class HandoverRuntime:
                 T_obj_desired[:3, :3] = np.array([[cz, -sz, 0.0], [sz, cz, 0.0], [0.0, 0.0, 1.0]])
                 T_obj_desired[:3, 3] = zone
                 T_grip_desired = T_obj_desired @ T_obj_G
+                # bimdeep a5 10-03: the receiver-best yaw was often a wrist pose the GIVER cannot hold at the zone
+                # (final rotate 'no collision-free path'). Take the receiver-ranked yaws in order and keep the first
+                # whose giver grip pose solves IK (outcome-based, both arms measured).
+                rt_g = self.giver.rt
+                self.world.env.use_arm(self.giver.arm)
+                for n_r, yaw_r in sorted(self._yaw_rank, key=lambda t: -t[0]):
+                    if n_r <= 0:
+                        break
+                    cz, sz = math.cos(yaw_r), math.sin(yaw_r)
+                    T_try = np.eye(4)
+                    T_try[:3, :3] = np.array([[cz, -sz, 0.0], [sz, cz, 0.0], [0.0, 0.0, 1.0]])
+                    T_try[:3, 3] = zone
+                    ok_g, _, _ = rt_g.planner.ik(rt_g.to_base(T_try @ T_obj_G)[None])
+                    if bool(np.asarray(ok_g).reshape(-1)[0]):
+                        T_obj_desired, T_grip_desired = T_try, T_try @ T_obj_G
+                        log[-1]["release_yaw_giver"] = f"{n_r} rx cands, yaw {math.degrees(yaw_r):.0f}"
+                        break
                 carry_pos = T_grip_desired[:3, 3]
                 carry_quat = RT.G.mat_quat(T_grip_desired[:3, :3])
         # owner 2026-10-03 (1hr checkpoint, "no collision-free path" was the #1 real giver_carry failure, 7/9
@@ -1471,7 +1491,7 @@ class LiftRuntime:
             q = rt.plan_start()  # commanded joints, clipped inside the sim range (cuRobo refuses a start on a limit)
             Tb = rt.to_base(T_tcp)
             Q = _line_or_pose(rt, q, Tb)
-            if Q is None and vertical:
+            if Q is None and (vertical or rt.planner._call("start_hits", q, 0.0)):
                 # straight vertical lift off / set down of an object both hands hold: the start state touches the
                 # object's surroundings by design (bimdeep b5: hands on a basket rim next to a step / stand = start
                 # penetration 1-5 cm, every lift refused). The world check is skipped for this short vertical line
