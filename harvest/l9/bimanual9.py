@@ -1138,15 +1138,32 @@ class LiftRuntime:
         env = self.world.env
         log = []
 
-        env.use_arm(self.a.arm)
-        gc_a = self.a.rt.choose(obj_key, {"tgt": obj_key}, extra_boxes=self.other_arm_boxes(self.a))
-        if gc_a is None:
-            return {"ok": False, "log": [{"phase": "choose_a", "ok": False}]}
-        env.use_arm(self.b.arm)
-        gc_b = self.b.rt.choose(obj_key, {"tgt": obj_key}, extra_boxes=self.other_arm_boxes(self.b))
-        if gc_b is None:
-            return {"ok": False, "log": [{"phase": "choose_b", "ok": False}]}
-        log.append({"phase": "choose", "ok": True})
+        def _choose_pair(first, second):
+            """first picks unconstrained, second avoids first's box. -> (gc_first, gc_second) | (None, None)."""
+            env.use_arm(first.arm)
+            gc1 = first.rt.choose(obj_key, {"tgt": obj_key}, extra_boxes=self.other_arm_boxes(first))
+            if gc1 is None:
+                return None, None
+            env.use_arm(second.arm)
+            gc2 = second.rt.choose(obj_key, {"tgt": obj_key}, extra_boxes=self.other_arm_boxes(second))
+            if gc2 is None:
+                return None, None
+            return gc1, gc2
+
+        # owner 2026-10-03 (2hr+ checkpoint follow-up): choose_b (arm B blocked by arm A's box) was still the #1
+        # B failure after shrinking the box once (67% of executed failures) -- owner's next step is arm ORDER,
+        # not a further box shrink (shrinking more erodes real collision protection). Try A-first; if B then finds
+        # nothing, swap and try B-first instead of giving up -- whichever arm's candidate set is more constrained
+        # by this particular object's geometry gets to pick unconstrained.
+        gc_a, gc_b = _choose_pair(self.a, self.b)
+        swapped = False
+        if gc_a is None or gc_b is None:
+            gc_b2, gc_a2 = _choose_pair(self.b, self.a)
+            if gc_a2 is not None and gc_b2 is not None:
+                gc_a, gc_b, swapped = gc_a2, gc_b2, True
+        if gc_a is None or gc_b is None:
+            return {"ok": False, "log": [{"phase": "choose_b", "ok": False, "tried_swap": True}]}
+        log.append({"phase": "choose", "ok": True, "swapped_order": swapped})
 
         ra = self._approach_and_close(self.a, obj_key, gc_a)
         log.append({"phase": "grasp_a", **ra})
