@@ -327,10 +327,26 @@ class Planner9:
                 out.append(m)
         return out
 
-    def attach(self, q, names: list) -> None:
-        for m in self._managers():
-            m.attach_from_scene(self._js(q), names)
-        self.attached = names
+    ATTACH_SPHERES = (16, 12, 8)  # the yml's extra_collision_spheres {attached_object: 16}
+
+    def attach(self, q, names: list) -> bool:
+        """Attach the held objects on every solver. Automatic sphere fitting gave 26 spheres for a large object and
+        raised ('only 16 sphere slots'), which killed the whole job (pilot 10-02): fit at most 16, then fewer; if no
+        fit works, plan without the attachment (False) instead of crashing."""
+        for n in self.ATTACH_SPHERES:
+            try:
+                for m in self._managers():
+                    m.attach_from_scene(self._js(q), names, num_spheres=n)
+                self.attached = names
+                return True
+            except (ValueError, RuntimeError):
+                for m in self._managers():  # undo the managers that did attach
+                    try:
+                        m.detach()
+                    except Exception:
+                        pass
+                self.attached = None
+        return False
 
     def detach(self) -> None:
         if self.attached:

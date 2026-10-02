@@ -100,8 +100,9 @@ class PlannerProxy:
         return self._call("line", *a, **k)
 
     def attach(self, q, names):
-        self.attached = names
-        return self._call("attach", q, names)
+        ok = self._call("attach", q, names)
+        self.attached = names if ok else None
+        return ok
 
     def detach(self):
         self.attached = None

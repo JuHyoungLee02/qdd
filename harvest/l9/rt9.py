@@ -271,8 +271,8 @@ class Runtime:
                        "T_world_base": self.T_world_base().tolist(), "tcp_T": self.tcp_T().tolist(),
                        "parts": parts}, open(os.path.join(dbg, f"scene_{os.getpid()}.json"), "w"), default=str)
             self._dumped = True
-        if holding:
-            self.planner.attach(self.arm_q(), [f"obj_{holding}"])
+        if holding and self.planner.attach(self.arm_q(), [f"obj_{holding}"]) is False:
+            self.timeline["attach_fail"] = self.timeline.get("attach_fail", 0) + 1  # planned without the object
 
     # ------------------------------------------------------------------ candidates and the grasp choice
     def _load(self, k: str):
