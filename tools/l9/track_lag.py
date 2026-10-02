@@ -45,13 +45,17 @@ def scan(roots, motion_prefix: str = "l9v2", success_only: bool = True, since: f
     return out
 
 
-def summarize(dq, cap: float, q: float = 0.95, default_cap: float = 0.034) -> dict:
+def summarize(dq, cap: float, q: float = 0.95, default_cap: float = 0.034, jump: float = 2.0) -> dict:
+    """jump: episodes whose max step is over jump x cap are counted apart (a knock / contact jump, not the PD
+    lag-and-catch-up the cap can fix: R1 catch-ups were 1.2-1.5 x the cap, vL8 10-03) and left out of the quantile."""
     a = np.asarray(dq, float)
-    r = a / cap
+    r_all = a / cap
+    r = r_all[r_all <= jump]
     ov = float(np.quantile(r, q)) if len(r) else 0.0
     sug = default_cap if ov <= 1.0 else min(default_cap, math.floor(GATE / ov * 1000.0 + 1e-9) / 1000.0)
     return {"n": int(len(a)), "over_gate": int((a > GATE).sum()), "p50": round(float(np.median(r)), 3) if len(r) else None,
-            "q": q, "overshoot": round(ov, 3), "max": round(float(r.max()), 3) if len(r) else None,
+            "q": q, "overshoot": round(ov, 3), "max": round(float(r_all.max()), 3) if len(r_all) else None,
+            "n_jump": int((r_all > jump).sum()),
             "suggested_cap": sug}
 
 
