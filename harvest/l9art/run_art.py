@@ -273,6 +273,9 @@ def main(argv=None):
                     try:
                         built = SA.build(seed + 1000003 * tr, robot, arm, spec, prog, objs)
                         sc, ep = built["sc"], built["ep"]
+                        if spec is not None and built.get("fixture"):  # env profile stance (world9): the work band
+                            P = SA.path_points(spec, prog, np.asarray(built["fixture"]["T"], float))
+                            ep["work_front_x"] = float(np.min(np.asarray(P)[:, 0]))  # front = nearest path point
                         T = np.asarray(built["fixture"]["T"]) if built["fixture"] else None
                         W9._ART_GHOST = WA.ghost_part(spec, T) if spec is not None else None
                         register_task(ep)
