@@ -19,7 +19,8 @@ A robot (per task kind: single-arm, articulated, bimanual) passes when
 verdict: FAIL (a judged definition fails (b), or (c)/(d) fail with nothing pending) / PENDING (definitions below 5,
 or no reference given) / PASS.
 usage: python tools/l9/robot_gate9.py <collect root>... --robot r1pro [--ref <collect root>,...] [--ref-robots
-       ffw_sg2,franka_mast] [--min-eps 1] [--json out.json] [--exclude a,b]
+       ffw_sg2,franka_mast] [--min-eps 1] [--json out.json] [--exclude a,b] [--raw-set]
+--raw-set: judge (d) on every raw success (old behaviour); default = the final build set (build9.episode_filter).
 --exclude: definitions still experimental for every robot (main 10-03 02h); default EXPERIMENTAL_ALL below.
 A collect root is a dir with <split>/<family>/<episode>/meta.json (or skipped.json)."""
 import glob
@@ -27,6 +28,8 @@ import json
 import os
 import sys
 from collections import Counter, defaultdict
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 JUDGE_MIN_EPS = 5  # user 10-03 02h: (b) is judged only on definitions with >= 5 attempted episodes; fewer = "pending"
 MEAN_MIN = 0.25  # user 10-03 03h (was 0.40), only together with the diversity check (d)
@@ -68,7 +71,7 @@ def _episodes(roots, robots):
                     continue
                 if robots and (meta.get("robot") or "ffw_sg2") not in robots:
                     continue
-                yield "ep", meta, None
+                yield "ep", meta, d
                 continue
             s = os.path.join(d, "skipped.json")
             if os.path.exists(s):
@@ -139,11 +142,23 @@ def diversity_check(p: dict, ref: dict, robot: str, high_min=None) -> dict:
     return out
 
 
+def _build_set(pairs, build_set: bool) -> list:
+    """(meta, dir) successes -> their metas; build_set=True keeps only what the training build keeps
+    (build9.episode_filter: key-call occlusion drop + per-robot arm balance, user 10-03)."""
+    if not build_set:
+        return [m for m, _ in pairs]
+    from harvest.l9 import build9 as B9
+    kept = set(B9.episode_filter([d for _, d in pairs])[0])
+    return [m for m, d in pairs if d in kept]
+
+
 def evaluate(roots, robot=None, min_eps=1, exclude=EXPERIMENTAL_ALL, ref_roots=(), ref_robots=("ffw_sg2", "franka_mast"),
-             high_min=None):
+             high_min=None, build_set: bool = True):
+    """build_set (default, user 10-03): the diversity check (d) -- arms included -- is judged on the final build set
+    (episode_filter), not on every raw success; (a)-(c) success rates stay on all attempts."""
     eps, succ = Counter(), Counter()
     skips = defaultdict(Counter)
-    ok_metas = []
+    ok_pairs = []
     ex = set(exclude)
     for kind, x, row in _episodes(roots, {robot} if robot else None):
         if kind == "ep":
@@ -152,7 +167,7 @@ def evaluate(roots, robot=None, min_eps=1, exclude=EXPERIMENTAL_ALL, ref_roots=(
             if x.get("success"):
                 succ[k] += 1
                 if k not in ex:
-                    ok_metas.append(x)
+                    ok_pairs.append((x, row))
         else:
             skips[row.get("def") or "?"][skip_kind(x.get("reason", ""))] += 1
     defs = {}
@@ -171,11 +186,12 @@ def evaluate(roots, robot=None, min_eps=1, exclude=EXPERIMENTAL_ALL, ref_roots=(
     sk_total = Counter()
     for c in skips.values():
         sk_total.update(c)
+    ok_metas = _build_set(ok_pairs, build_set)
     prof = profile(ok_metas)
     div = None
     if ref_roots:
-        ref_metas = [x for kind, x, _ in _episodes(ref_roots, set(ref_robots)) if kind == "ep" and x.get("success")
-                     and (x.get("task_id") not in ex)]
+        ref_metas = _build_set([(x, d) for kind, x, d in _episodes(ref_roots, set(ref_robots)) if kind == "ep"
+                                and x.get("success") and (x.get("task_id") not in ex)], build_set)
         div = diversity_check(prof, profile(ref_metas), robot, high_min)
     div_ok = bool(div and div["ok"])
     if failing or (defs and not pending and (mean < MEAN_MIN or (div is not None and not div_ok))):
@@ -205,7 +221,7 @@ def main():
     rr = tuple(x for x in arg("--ref-robots", "ffw_sg2,franka_mast").split(",") if x)
     rep = evaluate(roots, arg("--robot", None), int(arg("--min-eps", "1")),
                    tuple(x for x in ex.split(",") if x) if ex is not None else EXPERIMENTAL_ALL, ref, rr,
-                   float(arg("--high-min", "nan")) if "--high-min" in a else None)
+                   float(arg("--high-min", "nan")) if "--high-min" in a else None, build_set="--raw-set" not in a)
     out = arg("--json", None)
     if out:
         json.dump(rep, open(out, "w"), indent=1)
