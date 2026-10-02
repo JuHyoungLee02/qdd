@@ -3,7 +3,7 @@
 Checks: off-build 0 third-person rows; on-build third-person rows = third-person index entries of the episodes (one
 view per row); every ego row parses to the 4 slots; 0 rows without the head image; image-count histogram.
 usage: python tools/l9/build_v2.py <out dir> <name> <collect root>... [--third-person off|on] [--split l9train]
-       [--eval] [--no-slots] [--seed 0] [--success-only] [--camera-line] [--both]
+       [--eval] [--no-slots] [--seed 0] [--success-only] [--camera-line] [--both] [--spec L9v2-spec-final]
 --both (with --third-person on): also <name>_tp_off.jsonl and <name>_tp_on.jsonl from the same build; the ego rows are
 byte-identical (checked)."""
 import glob
@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from harvest.l9 import build9 as B9  # noqa: E402
 from harvest.l9 import tp9  # noqa: E402
 from harvest.l9 import views9 as V  # noqa: E402
+from harvest.l9 import specgate9 as SG  # noqa: E402
 
 
 def main():
@@ -25,10 +26,14 @@ def main():
     tp_on = arg("--third-person", "off") == "on"
     slots = "--no-slots" not in a
     eps = []
+    n_old_spec = 0
     for r in roots:
         for m in sorted(glob.glob(os.path.join(r, "*", "*", "*", "meta.json"))):
             meta = json.load(open(m))
             if meta.get("grasp_v2") is None or ("--success-only" in a and not meta.get("success")):
+                continue
+            if SG.spec_of(meta) != arg("--spec", SG.SPEC):  # one spec per training set (L9_PRINCIPLES §0)
+                n_old_spec += 1
                 continue
             eps.append(os.path.dirname(m))
     c = B9.build(eps, out, arg("--split", "l9train"), name, train="--eval" not in a, camera_line="--camera-line" in a,
@@ -49,6 +54,12 @@ def main():
              "image_count_hist": c.get("image_count_hist"), "slot_combos": c.get("slot_combos")}
     check["ok"] = (check["ego_third_person_rows"] == 0 and bad == 0 and not check["rows_without_head"]
                    and (c["third_person_rows"] == 0 if not tp_on else True))
+    ctrl = [x for x in ego if x.get("kind", "control") == "control" and x.get("gen") == "l9"]
+    texts = {x["prompt_path"]: open(x["prompt_path"], encoding="utf-8").read() for x in ctrl
+             if x.get("prompt_path") and os.path.exists(x["prompt_path"])}
+    g = SG.gates(ctrl, texts)  # hard gates: contradictions 0, one spec / overlay / template family / legend, schema
+    check.update(spec_gates=g, episodes_dropped_old_spec=n_old_spec)
+    check["ok"] = check["ok"] and g["ok"]
     if tp_on and "--both" in a:  # user 10-02: two sets from one build -- off = the ego rows, on = the same bytes + tp rows
         import hashlib
         ego_b = open(c["path"], "rb").read()
