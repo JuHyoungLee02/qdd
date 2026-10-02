@@ -22,11 +22,26 @@ def test_bim_a_defs_cover_six_object_groups():
     assert groups == set(B.BIM_A_OBJECTS)
 
 
-def test_handover_zone_ai_worker_midline_and_above_table():
-    z = B.handover_zone_xyz("ffw_sg2", table_z=0.85)
-    assert z[1] == pytest.approx(0.0)  # shared midline (both arms mirrored about y)
-    assert z[2] > 0.85  # above the table, not resting on it (in-air handover)
-    assert 0.30 <= z[0] <= 0.55
+def test_handover_zone_ai_worker_within_reach_verified_box():
+    z = B.handover_zone_xyz("ffw_sg2", table_z=0.85, seed=1, episode_idx=0)
+    assert z.shape == (3,)
+    assert z[2] > 0.85  # above the table (the common-reach box starts at table + 0.22 m, see bim_zone/ffw_sg2.json)
+    assert 0.15 <= z[0] <= 0.38  # the reach-verified box's x range, with a little jitter margin
+    assert -0.21 <= z[1] <= 0.21
+
+
+def test_handover_zone_ai_worker_reproducible_per_seed_and_episode():
+    a = B.sample_handover_zone("ffw_sg2", 0.85, seed=7, episode_idx=3)
+    b = B.sample_handover_zone("ffw_sg2", 0.85, seed=7, episode_idx=3)
+    assert np.allclose(a, b)  # same (seed, episode_idx) -> same draw (reproducible, not fixed-point)
+
+
+def test_handover_zone_ai_worker_varies_across_episodes():
+    # owner 2026-10-02: the same definition must put the robot and the object in a different spot every episode,
+    # not one hardcoded point -- different episode_idx (same seed) must not collapse onto a single repeated point.
+    pts = [B.sample_handover_zone("ffw_sg2", 0.85, seed=42, episode_idx=i) for i in range(12)]
+    uniq = {tuple(np.round(p, 3)) for p in pts}
+    assert len(uniq) >= 8
 
 
 @pytest.mark.parametrize("profile", ["r1pro", "g1"])

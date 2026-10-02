@@ -95,7 +95,7 @@ def main(argv=None):
             print("DRAW " + json.dumps({"seed": seed, "obj": obj_key, "wall_s": round(time.time() - t0, 1)}),
                   flush=True)
             hr = B.install_handover(world, a.robot, giver, receiver, device=a.device, allow_untested=True)
-            r = hr.run_episode(obj_key, world.table_z)
+            r = hr.run_episode(obj_key, world.table_z, seed=seed, episode_idx=i)
             r["seed"], r["obj"] = seed, obj_key
             r["wall_s"] = round(time.time() - t0, 1)
             print("EP " + json.dumps({k: v for k, v in r.items() if k != "log"}, default=_jsonable), flush=True)

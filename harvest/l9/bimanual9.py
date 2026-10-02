@@ -96,26 +96,52 @@ GRIPPERS = ("grasp", "release", "hold")  # research doc §(d): "hold" is new (ro
 ROLES = ("lead", "support", "independent")
 
 # ---------------------------------------------------------------------------------------------- pure: zone geometry
-# [가설] per the research doc §(d).3: a fixed handover-zone point in the robot's own frame (not a scene node), so the
-# receiver's label never depends on a dynamic estimate of the giver's future position. AI Worker: y=0 (both arms'
-# workspaces are mirror images about y, harvest.l9.arm), x/z matched to scene.INIT_R_ARM's own TCP (0.34, -0.25,
-# table + 0.25) -- a pose the right arm already rests at by default, so x and z (not y) are known-reachable; y=0 is
-# the untested part. First pod smoke (2026-10-02) at (0.38, 0.0, table+0.20) found ik_ok=0 of 6 geometrically valid
-# candidates for the receiver (left) at the zone -- not the other-arm obstacle box (that filter runs later; this was
-# the bare cuRobo IK check on the candidate poses themselves) -- so (x, z) moved to INIT_R_ARM's own values as the
-# best-evidenced reachable point; y=0 stands as the part still needing the pilot to confirm reachable for both arms.
-ZONE_X = 0.34  # m, world frame; = scene.INIT_R_ARM's TCP x (right arm's own default resting x)
-ZONE_Z_ABOVE_TABLE = 0.25  # m above the table top; = scene.INIT_R_ARM's TCP height offset
-# R1 Pro / G1: no measured zone yet (category A ships AI Worker first, owner's plan step 3); same formula, their own
-# reach bands (robot9.V2[profile]), marked untested.
+# R4 fix (2026-10-02, owner directive): a SINGLE fixed handover point was wrong twice over -- (a) two guessed points
+# both turned out unreachable by one arm (pod smoke #2-5; ik_ok=0), and (b) the owner separately asked that the
+# same definition draw a different robot-object geometry every episode, not one fixed spot. Both are fixed the same
+# way: `assets9/bim_zone/<profile>.json` holds every (x, y, dz_table) cell where >= 1 cuRobo approach class is
+# reachable by BOTH arms at once (computed offline, laptop, pure: `curobo9.reach_ok` on the existing per-arm
+# `assets9/reach_v2/<profile>_<arm>.json` maps -- no torch/Isaac needed for this step -- converted into world frame
+# by a per-arm shoulder offset: scene.py's measured AI Worker shoulder xyz, mirrored in y for the left arm, same
+# convention as `arm.py`'s mirror_y/side). Finding: no cell in the probed box has "top" reachable by both arms at
+# once (only front/oblique/side) -- a handover near the body midline is just not a top-down-friendly reach for
+# either arm; this matches the owner's brief treating the zone as a hypothesis to validate, not assume.
+ZONE_CACHE: dict = {}  # profile -> loaded json (lazy, process-local)
+
+
+def _zone_cells(profile: str) -> dict:
+    if profile not in ZONE_CACHE:
+        import json
+        import os
+        p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets9", "bim_zone", f"{profile}.json")
+        ZONE_CACHE[profile] = json.load(open(p))
+    return ZONE_CACHE[profile]
+
+
+def sample_handover_zone(profile: str, table_z: float, seed: int, episode_idx: int = 0) -> np.ndarray:
+    """A handover-zone point drawn uniformly from the precomputed common-reach cells (both arms, >= 1 approach
+    class), jittered within its own cell (+/- half the grid step) so repeated draws are not snapped to the same few
+    points -- seeded per (seed, episode_idx), so the SAME definition gives a different robot-object geometry every
+    episode (owner 2026-10-02) while staying reproducible."""
+    d = _zone_cells(profile)
+    cells = d["cells"]
+    rng = np.random.default_rng([int(seed), 2026_10_02, int(episode_idx)])
+    c = cells[int(rng.integers(len(cells)))]
+    step = 0.0125  # half of the 0.025 m grid step the cells were computed at
+    jit = rng.uniform(-step, step, size=3)
+    return np.array([c["x"] + jit[0], c["y"] + jit[1], table_z + c["dz_table"] + jit[2]], float)
+
+
+# R1 Pro / G1: no reach-map-verified zone yet (category A ships AI Worker first, owner's plan step 3); kept as the
+# old single-point hypothesis until the same reach-sweep + cell file is built for them.
 ZONE_X_V2 = {"r1pro": 0.45, "g1": 0.30}
 ZONE_Z_ABOVE_TABLE_V2 = {"r1pro": 0.22, "g1": 0.18}
 
 
-def handover_zone_xyz(profile: str, table_z: float) -> np.ndarray:
-    if profile in ZONE_X_V2:
-        return np.array([ZONE_X_V2[profile], 0.0, table_z + ZONE_Z_ABOVE_TABLE_V2[profile]], float)
-    return np.array([ZONE_X, 0.0, table_z + ZONE_Z_ABOVE_TABLE], float)
+def handover_zone_xyz(profile: str, table_z: float, seed: int = 0, episode_idx: int = 0) -> np.ndarray:
+    if profile == "ffw_sg2":
+        return sample_handover_zone(profile, table_z, seed, episode_idx)
+    return np.array([ZONE_X_V2[profile], 0.0, table_z + ZONE_Z_ABOVE_TABLE_V2[profile]], float)
 
 
 def final_spot_xyz(zone: np.ndarray, receiver_arm: str, reach: float = 0.14) -> np.ndarray:
@@ -423,22 +449,25 @@ class HandoverRuntime:
             slot.held_obj = None
 
     # -------------------------------------------------------------- episode
-    def run_episode(self, obj_key: str, table_z: float, final_xy=None, max_phase_ticks: int = 400) -> dict:
+    def run_episode(self, obj_key: str, table_z: float, seed: int = 0, episode_idx: int = 0, final_xy=None,
+                    max_phase_ticks: int = 400) -> dict:
         """Category-A smoke episode: giver picks `obj_key`, carries to the handover zone and holds; the receiver
         approaches and closes on it (while the giver holds), the giver opens once the receiver has it, the receiver
         carries to `final_xy` (default: `final_spot_xyz`). Not the production collection loop (spec note §3): no
-        labels.jsonl / build9 row here, see tools/l9/bim_smoke.py for that wiring. Every return path goes through
-        `finally`: env.use_arm(env.primary) (bug found in the first pod smoke run -- an early return left the dual
-        env's "current arm" context on the receiver, and the NEXT episode's world.reset() -> env.reset() -> its own
+        labels.jsonl / build9 row here, see tools/l9/bim_smoke.py for that wiring. `seed`/`episode_idx` draw the
+        zone from the reach-verified common cells (owner 2026-10-02: a different robot-object geometry every
+        episode, not one fixed point -- see `sample_handover_zone`). Every return path goes through `finally`:
+        env.use_arm(env.primary) (bug found in the first pod smoke run -- an early return left the dual env's
+        "current arm" context on the receiver, and the NEXT episode's world.reset() -> env.reset() -> its own
         settle-step env.step() call raised "step() takes the primary arm's targets" because of it)."""
         env = self.world.env
         try:
-            return self._run_episode(obj_key, table_z, final_xy)
+            return self._run_episode(obj_key, table_z, seed, episode_idx, final_xy)
         finally:
             env.use_arm(env.primary)
 
-    def _run_episode(self, obj_key: str, table_z: float, final_xy=None) -> dict:
-        zone = handover_zone_xyz(self.profile, table_z)
+    def _run_episode(self, obj_key: str, table_z: float, seed: int, episode_idx: int, final_xy=None) -> dict:
+        zone = handover_zone_xyz(self.profile, table_z, seed, episode_idx)
         if final_xy is None:
             final_xy = final_spot_xyz(zone, self.receiver.arm)[:2]
         log = []
