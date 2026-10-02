@@ -686,7 +686,9 @@ class HandoverRuntime:
         rt = slot.rt
         gc = None
         if slot is self.receiver and self.receiver_source == "graspgenx":
+            print(f"GGXDBG _grasp entering graspgenx branch for {slot.arm}, obj={obj_key}", flush=True)
             gc = self._receiver_grasp_graspgenx(obj_key)
+            print(f"GGXDBG _receiver_grasp_graspgenx -> {'None' if gc is None else 'GraspChoice'}", flush=True)
         if gc is None:
             gc = rt.choose(obj_key, {"tgt": obj_key}, extra_boxes=self.other_arm_boxes(slot))
         if gc is None:
@@ -740,6 +742,7 @@ class HandoverRuntime:
         oid = OBJ_GEOM.get(obj_key, {}).get("catalog_id") or obj_key
         mesh_path = _os.path.join("/data/harvest/l9v2/meshes", oid + ".npz")
         if not _os.path.exists(mesh_path):
+            print(f"GGXDBG mesh missing: {mesh_path}", flush=True)
             return None
         m = np.load(mesh_path)
         V, F = m["v"], m["f"]
@@ -756,9 +759,11 @@ class HandoverRuntime:
             gc = L.choose_live(P, N, self.profile, fam, rot_bin=0, point3d=point3d,
                                support_z=self.world.table_z, f_dir=f_dir, cam=None, category="", obj_h=0.0,
                                extra_obstacles=None, seed=0, k=0, use_refiner=True)
+            print(f"GGXDBG fam={fam} choose_live -> {'None' if gc is None else 'GraspChoice(src=' + str(gc.meta.get('source')) + ')'}", flush=True)
             if gc is None:
                 continue
             ok, _, _ = rt.planner.ik(rt.to_base(gc.T)[None])
+            print(f"GGXDBG fam={fam} ik_ok={bool(ok[0])}", flush=True)
             if bool(ok[0]):
                 return gc
         return None
