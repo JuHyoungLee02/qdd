@@ -27,6 +27,7 @@ STALL_SEG = 2
 PERTURB = (0.01, 0.025)
 VIDEO_EVERY = 6
 VERSION = "l9art-1"
+PUSH_MODE = {"franka_mast": "v2"}
 
 
 class Halt(Exception):
@@ -202,6 +203,8 @@ class ArtEpisode:
         self.knob_goal = None
         self._push = None
         self.regrasp = False
+        # pilots 10-02: re-aimed pushes won on Franka (0.62 / far 0.58), lost on the AI Worker (0 / 6 vs 0.56)
+        self.push_mode = PUSH_MODE.get(ex.profile, "v1")
 
     # ---------------------------------------------------------------- geometry of now
     def T_WF(self):
@@ -525,7 +528,13 @@ class ArtEpisode:
         P = self._push
         c_now = np.asarray(self.w.env.object_pose(k)[0], float)
         rem = P["dist"] - float((c_now - P["c0"])[:2] @ P["d"][:2])
-        plan = SK.push_plan(c_now, P["half"], float(self.b["tz"]), P["d"], max(0.0, rem), self.ex.gr, self.draw)
+        if self.push_mode == "v2":
+            q_now = self.w.env.object_pose(k)[1]
+            ext = float(np.abs(FX.qmat(q_now).T @ np.asarray(P["d"], float)) @ np.asarray(P["half"], float))
+            plan = SK.push_plan_v2(c_now, (ext, ext, P["half"][2]), float(self.b["tz"]), P["d"], max(0.0, rem),
+                                   self.ex.gr, self.draw)
+        else:
+            plan = SK.push_plan(c_now, P["half"], float(self.b["tz"]), P["d"], max(0.0, rem), self.ex.gr, self.draw)
         plan["goal_xy"] = P["c0"][:2] + P["d"][:2] * P["dist"]
         return plan
 
@@ -762,6 +771,8 @@ class ArtEpisode:
         return f"stopped at {unit(qn)} (goal {unit(goal)}): {why}"
 
     def push_object(self, lab) -> str:
+        if self.push_mode == "v2":
+            return self.push_object_v2(lab)
         ex = self.ex
         k = self.b["tgt"]
         for _ in range(12):
@@ -777,6 +788,39 @@ class ArtEpisode:
             if np.linalg.norm(d) < 1e-4:
                 break
             T[:3, 3] = p0 + d / np.linalg.norm(d) * seg
+            Q = ex.plan_line(T, check=False, step_m=0.006)
+            if Q is None:
+                self.bump("push_unreachable")
+                break
+            ex.run(Q, slow=1.4, target=T, dq=CMD_DQ_CONTACT)
+        c_obj = np.asarray(self.w.env.object_pose(k)[0], float)
+        err = float(np.linalg.norm(self._push["c0"][:2] + self._push["d"][:2] * self._push["dist"] - c_obj[:2]))
+        self.sub = "retreat"
+        return f"pushed; object {err * 100:.1f} cm from the goal"
+
+    def push_object_v2(self, lab) -> str:
+        ex = self.ex
+        k = self.b["tgt"]
+        from ..sim.scene import OBJ_GEOM
+        he = np.asarray(OBJ_GEOM[k]["half_extents"], float)
+        fw = float(ex.gr.get("finger_t", 0.012))
+        R0 = ex.tcp_T()[:3, :3]
+        z0 = float(ex.tcp_T()[2, 3])
+        goal = self._push["c0"][:2] + self._push["d"][:2] * self._push["dist"]
+        for _ in range(16):  # re-aimed pushes: the hand goes behind the object on the object -> goal line each 2.5 cm
+            c_obj, q_obj = self.w.env.object_pose(k)
+            c_obj = np.asarray(c_obj, float)
+            v = goal - c_obj[:2]
+            rem = float(np.linalg.norm(v))
+            if rem <= 0.010:
+                break
+            dvec = v / rem
+            Ro = FX.qmat(q_obj)
+            d3 = np.array([dvec[0], dvec[1], 0.0])
+            ext = float(np.abs(Ro.T @ d3) @ he)  # the object's extent along the push direction (its yaw)
+            step = min(0.025, rem)
+            hand = c_obj[:2] + dvec * (step - ext - fw - 0.004)
+            T = SK.T_pose(R0, np.array([hand[0], hand[1], z0]))
             Q = ex.plan_line(T, check=False, step_m=0.006)
             if Q is None:
                 self.bump("push_unreachable")
@@ -853,7 +897,7 @@ class ArtEpisode:
         res = self.judge()
         return {"success": res["ok"], "judge": res, "end_reason": self.end_reason, "n_calls": self.calls,
                 "wall_s": round(time.perf_counter() - t0, 1), "sim_t": round(float(w.env.sim_time) - sim_t0, 2),
-                "fail_counts": dict(self.fail_counts), "events": self.events[:12], "draw": {k: (round(v, 4) if isinstance(v, float) else v)
+                "fail_counts": dict(self.fail_counts), "events": self.events[:12], "push_mode": self.push_mode, "draw": {k: (round(v, 4) if isinstance(v, float) else v)
                                                                for k, v in self.draw.items()}}
 
     def judge(self) -> dict:

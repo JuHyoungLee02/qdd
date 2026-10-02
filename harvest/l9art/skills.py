@@ -181,6 +181,26 @@ def push_plan(obj_c, half, tz: float, direction, dist: float, gr: dict, draw: di
             "T_goal": T_pose(R, np.array([end[0], end[1], z])), "a": a, "c": c, "goal_xy": goal_xy, "dir": d}
 
 
+def push_plan_v2(obj_c, half, tz: float, direction, dist: float, gr: dict, draw: dict) -> dict:
+    """Vertical-hand push (fingers down, closed, their side as a paddle) of an object of box half extents `half`
+    (world-aligned approximation) by dist along direction. -> {T_pre_high, T_pre, T_goal, a, c, goal_xy}."""
+    d = np.asarray(direction, float)
+    d = d / np.linalg.norm(d)
+    ext = float(abs(d[0]) * half[0] + abs(d[1]) * half[1])
+    a = np.array([0.0, 0.0, -1.0])
+    # straight-down hand (smoke: a tilted paddle tipped a box pushed away from the robot)
+    c = np.array([-d[1], d[0], 0.0])  # closing axis across the push direction: the two fingers side by side
+    R = frame_of(a, c)
+    fw = float(gr.get("finger_t", 0.012))
+    z = tz + 0.015 + tip_offset(gr)  # fingertips 1.5 cm over the table
+    start = np.asarray(obj_c, float)[:2] - d[:2] * (ext + fw + 0.012)
+    goal_xy = np.asarray(obj_c, float)[:2] + d[:2] * dist
+    end = goal_xy - d[:2] * (ext + fw + 0.004)
+    p_pre = np.array([start[0], start[1], z])
+    return {"T_pre_high": T_pose(R, p_pre + np.array([0, 0, draw["standoff"]])), "T_pre": T_pose(R, p_pre),
+            "T_goal": T_pose(R, np.array([end[0], end[1], z])), "a": a, "c": c, "goal_xy": goal_xy, "dir": d}
+
+
 # ------------------------------------------------------------------------------------------------ labels
 def to_px(cam, X) -> list | None:
     """0-1000 image coordinates of world point X in a pinhole camera (harvest Cam: W, H, fx, fy, cx, cy, R, t with
