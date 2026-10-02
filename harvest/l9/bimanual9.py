@@ -585,6 +585,20 @@ def handover_compat(C: dict, gr: dict, idx_g, idx_r, wrist: float = 0.0, standof
     return out
 
 
+def receiver_spots(sc: dict, ep: dict, obj_key: str, fr: float, rm, arm: str, seed: int, k: int = 6) -> list:
+    """Up to k `receiver_spot` points in seeded order (the runtime keeps the first its IK reaches)."""
+    from . import reach9 as R9
+    P, top = _node_free_points(sc, ep, obj_key, fr)
+    if not len(P):
+        return []
+    m = rm.at_lift(sc["lift"])
+    xy0 = ep["objects"][obj_key]["xy"]
+    ok = R9.usable_points(m, arm, P[:, 0], P[:, 1], top) & (np.hypot(P[:, 0] - xy0[0], P[:, 1] - xy0[1]) > 2 * fr + 0.03)
+    P = P[ok]
+    rng = np.random.default_rng([int(seed), 2026_10_03, 1])
+    return [(float(P[i][0]), float(P[i][1]), top) for i in rng.permutation(len(P))[:k]]
+
+
 def sync_resample(trajs: list) -> list:
     """Same number of waypoints for every arm (linear in the waypoint index): two hands on ONE object must move on
     one time axis, or the faster hand drags the object against the slower one (research doc sync requirement)."""
@@ -1457,11 +1471,35 @@ class HandoverRuntime:
         p_o, q_o = env.object_pose(obj_key)
         T_obj = RT.T_of(p_o, q_o)
         T_obj_Gr = P9.inv_T(T_obj) @ self.receiver.rt.tcp_T()
-        top = float(final_xy[2]) if len(final_xy) > 2 else float(table_z)
         he = OBJ_GEOM.get(obj_key, {}).get("half_extents", (0.03, 0.03, 0.05))
-        T_tgt = T_obj.copy()
-        T_tgt[:3, 3] = [float(final_xy[0]), float(final_xy[1]), top + bottom_offset(T_obj[:3, :3], he) + 0.01]
-        T_tcp = T_tgt @ T_obj_Gr
+        # final spot + object yaw chosen by the receiver's own IK with ITS grip (bimdeep a19 10-03: the one drawn
+        # spot at the held yaw was out of reach -> receiver_carry 'no collision-free path' right after the first
+        # GraspGen-X receiver grasp): the harness's spots in order, each at yaw offsets 0, +-45, +-90, 180 deg
+        spots = [final_xy] if np.ndim(final_xy[0]) == 0 else list(final_xy)
+        rt_r = self.receiver.rt
+        pick = None
+        for sp in spots:
+            top = float(sp[2]) if len(sp) > 2 else float(table_z)
+            for dyaw in (0.0, math.pi / 4, -math.pi / 4, math.pi / 2, -math.pi / 2, math.pi):
+                cz, sz = math.cos(dyaw), math.sin(dyaw)
+                Rz = np.array([[cz, -sz, 0.0], [sz, cz, 0.0], [0.0, 0.0, 1.0]])
+                T_tgt = np.eye(4)
+                T_tgt[:3, :3] = Rz @ T_obj[:3, :3]
+                T_tgt[:3, 3] = [float(sp[0]), float(sp[1]), top + bottom_offset(T_tgt[:3, :3], he) + 0.01]
+                T_tcp = T_tgt @ T_obj_Gr
+                T_up = T_tcp.copy()
+                T_up[2, 3] += 0.06
+                ok, _, _ = rt_r.planner.ik(np.stack([rt_r.to_base(T_tcp), rt_r.to_base(T_up)]))
+                if bool(np.all(np.asarray(ok, bool))):
+                    pick = (sp, top, T_tcp, dyaw)
+                    break
+            if pick is not None:
+                break
+        if pick is None:
+            log.append({"phase": "receiver_carry", "ok": False, "status": "no final spot the receiver reaches"})
+            return {"ok": False, "log": log}
+        final_xy, top, T_tcp, dyaw = pick
+        log[-1]["final_spot"] = [round(float(v), 3) for v in final_xy]
         quat = RT.G.mat_quat(T_tcp[:3, :3])
         r = self._move_to(self.receiver, T_tcp[:3, 3] + np.array([0.0, 0.0, 0.06]), quat_wxyz=quat)
         log.append({"phase": "receiver_carry", **r})

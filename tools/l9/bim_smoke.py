@@ -188,7 +188,7 @@ def main(argv=None):
             hr.snap = _snapper(world, od)
             fspot = None
             if obj_key in ep["objects"] and obj_key in pool:
-                fspot = B.receiver_spot(sc, ep, obj_key, float(pool[obj_key]["footprint_r"]), rm, receiver_i, sd)
+                fspot = B.receiver_spots(sc, ep, obj_key, float(pool[obj_key]["footprint_r"]), rm, receiver_i, sd) or None
             try:
                 with _episode_timeout(a.episode_timeout_s):
                     r = hr.run_episode(obj_key, world.table_z, seed=seed, episode_idx=i, final_xy=fspot)
@@ -213,7 +213,7 @@ def main(argv=None):
             print("PHASES " + json.dumps({"seed": seed, "gate": r.get("gate"), "log": [
                 {k: v for k, v in e.items() if k in ("phase", "ok", "status", "rise_cm", "held", "z_gap_cm", "gap_cm",
                                                      "overlap_ticks", "carry_pose_err", "release_yaw_ik", "valid_stats",
-                                                     "lead", "fam", "swapped_order", "compat_r", "zone_try", "release_yaw_giver")}
+                                                     "lead", "fam", "swapped_order", "compat_r", "zone_try", "release_yaw_giver", "final_spot")}
                 for e in (r.get("log") or [])]}, default=_jsonable), flush=True)
             try:
                 from PIL import Image
