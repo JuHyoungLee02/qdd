@@ -12,7 +12,8 @@ import numpy as np
 from robocasa.utils.dataset_registry import TARGET_TASKS
 
 root = sys.argv[1] if len(sys.argv) > 1 else "/data/harvest/out/rc0"
-rows = [json.load(open(p)) for p in glob.glob(os.path.join(root, "*", "*", "k*", "row.json"))]
+rows = [r for p in glob.glob(os.path.join(root, "*", "*", "k*", "row.json"))
+        for r in [json.load(open(p))] if p.split(os.sep)[-4] == r["arm"]]  # skip kept invalid runs (A_v1)
 split = {t: s for s, ts in TARGET_TASKS.items() for t in ts}
 
 
