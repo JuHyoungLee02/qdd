@@ -14,6 +14,7 @@ floor). Every node: {id, kind, part, top_z, box [[x0, x1], [y0, y1]] (S), rim_z 
 from __future__ import annotations
 
 import math
+import os
 
 import numpy as np
 
@@ -953,7 +954,12 @@ def usable(node: dict, scene: dict, rm, lift: float, reach: bool = True) -> np.n
         return W[:0]  # covered / front-approach places: not usable by the top-down reach model (L9 v2)
     m = rm.at_lift(lift)
     own = {node["part"]}
-    if reach:
+    if reach and scene.get("robot") == "r1pro" and os.environ.get("IR_L9_R1_BAND", "") == "1":
+        # L9v2-R1: R1 Pro node points from its own measured top-down band (grasp + carry height), not the AI
+        # Worker probe (harvest/l9/r1_band.py)
+        from . import r1_band as RB
+        ok = RB.usable_mask(scene["arm"], node["top_z"], W[:, 0], W[:, 1], node["top_z"])
+    elif reach:
         ok = R9.usable_points(m, scene["arm"], W[:, 0], W[:, 1], node["top_z"])
     else:
         ok = R9.visible_points(m, W[:, 0], W[:, 1], node["top_z"])
@@ -987,7 +993,8 @@ def choose_lift(scene: dict, rm, lifts=LIFTS, min_pts: int = 4):
 
 
 # ----------------------------------------------------------------------------------------------- sampling
-def sample(family: str, rule: str, seed: int, arm: str, rm=None, tries: int = 24, lifts=None) -> dict:
+def sample(family: str, rule: str, seed: int, arm: str, rm=None, tries: int = 24, lifts=None,
+           robot: str | None = None) -> dict:
     """One scene: parts (S and world), nodes, robot pose, lift, usable point counts per node.
     Redraws (new sub-seed) while parts enter the robot keep-out box or no node is usable; RuntimeError after
     `tries`."""
@@ -1018,7 +1025,7 @@ def sample(family: str, rule: str, seed: int, arm: str, rm=None, tries: int = 24
             continue
         sc = {"family": family, "rule": rule, "seed": int(seed), "arm": arm, "try": k, "yaw": round(yaw, 5),
               "robot_pose": {"distance": round(d, 4), "yaw": round(-yaw, 5)}, "params": params,
-              "parts_s": b.parts, "nodes": b.nodes}
+              "parts_s": b.parts, "nodes": b.nodes, "robot": robot}
         lift, per = choose_lift(sc, rm) if lifts is None else choose_lift(sc, rm, lifts=tuple(lifts))
         if max(per.values(), default=0) < 4:
             last = f"no usable node {per}"

@@ -38,7 +38,8 @@ def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 20, world=None) ->
                 from . import reach9 as R9
                 rmx = R9.load_base()
             sc = S9.sample(row["family"], row["rule"], sd, row["arm"], rmx,
-                           lifts=[S9.LIFT_DEFAULT] if row.get("lift_mode") == "default" else None)
+                           lifts=[S9.LIFT_DEFAULT] if row.get("lift_mode") == "default" else None,
+                           robot=row.get("robot"))  # L9v2-R1: r1pro may use its own reach band (scene9.usable)
         except RuntimeError as ex:
             last = str(ex)
             continue

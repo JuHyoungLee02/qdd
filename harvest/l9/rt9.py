@@ -45,6 +45,7 @@ SETTLE_DW, SETTLE_N, SETTLE_MAX_S, WIN_S = 0.001, 3, 0.6, 0.05
 REACH_TOL, HOLD_MAX_S = 0.012, 1.5
 # L9v2-R1: straight approach from the grasp end + joint-space transit when the forward one fails (opt-in per robot)
 REVERSE_APPROACH = {"r1pro": os.environ.get("IR_L9_R1_REVERSE", "") == "1"}
+GRASP_LINKS_CHECK = {"r1pro": os.environ.get("IR_L9_R1_GRASPCHK", "") == "1"}  # L9v2-R1, see Runtime._valid
 CURRENT = None
 
 
@@ -362,6 +363,15 @@ class Runtime:
             self.refresh_world(below_z=self._bottom_z(k) - 0.02, extra_boxes=extra_boxes)
             r_ok, _, _ = self.planner.ik(np.stack(Tp), contact_links_off=False)
             ok[idx] = r_ok
+            idx = np.flatnonzero(ok)
+            if len(idx) and GRASP_LINKS_CHECK.get(self.profile):
+                # L9v2-R1: the grasp pose with the gripper links checked against everything but the target and its
+                # support (replay 10-03: 9 of 11 unplannable straight approaches had the fingers / gripper body in a
+                # fixture, holder or bucket wall at the grasp itself; the check above frees those links)
+                self.refresh_world(exclude=(k,), below_z=self._bottom_z(k) - 0.02, extra_boxes=extra_boxes)
+                r_ok, _, _ = self.planner.ik(np.stack([self.to_base(Cw["T"][i]) for i in idx]), contact_links_off=False)
+                ok[idx] = r_ok
+                vs["grasp_links_ok"] = int(r_ok.sum())
             self.refresh_world(exclude=(k,), extra_boxes=extra_boxes)
         vs["ik_ok"] = int(ok.sum())
         self._vstats = vs

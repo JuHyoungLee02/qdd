@@ -350,6 +350,7 @@ class Planner9:
         P = P[:, [names.index(n) for n in self._planned]]
         lo, hi = self._limits()
         order = sorted(np.flatnonzero(ok), key=lambda i: -float(np.minimum(P[i] - lo, hi - P[i]).min()))
+        self.last_reverse = {"n_ik": int(len(order))}
         for i in order:
             Q = self.line(P[i], T, T_pre_base, step_m)
             if Q is not None:
