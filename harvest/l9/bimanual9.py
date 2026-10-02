@@ -118,18 +118,52 @@ def _zone_cells(profile: str) -> dict:
     return ZONE_CACHE[profile]
 
 
-def sample_handover_zone(profile: str, table_z: float, seed: int, episode_idx: int = 0) -> np.ndarray:
-    """A handover-zone point drawn uniformly from the precomputed common-reach cells (both arms, >= 1 approach
-    class), jittered within its own cell (+/- half the grid step) so repeated draws are not snapped to the same few
-    points -- seeded per (seed, episode_idx), so the SAME definition gives a different robot-object geometry every
-    episode (owner 2026-10-02) while staying reproducible."""
+def sample_zone_cell(profile: str, table_z: float, seed: int, episode_idx: int = 0) -> dict:
+    """The cell drawn for an episode (see `sample_handover_zone`) + its xyz and reachable approach classes, so a
+    caller can pick a release yaw the receiver can actually use at that point (owner 2026-10-02, R4 follow-up:
+    the zone cell knows which approach direction works, but a candidate grasp only matches it if the object's
+    yaw when released puts a graspable face that way)."""
     d = _zone_cells(profile)
     cells = d["cells"]
     rng = np.random.default_rng([int(seed), 2026_10_02, int(episode_idx)])
     c = cells[int(rng.integers(len(cells)))]
     step = 0.0125  # half of the 0.025 m grid step the cells were computed at
     jit = rng.uniform(-step, step, size=3)
-    return np.array([c["x"] + jit[0], c["y"] + jit[1], table_z + c["dz_table"] + jit[2]], float)
+    xyz = np.array([c["x"] + jit[0], c["y"] + jit[1], table_z + c["dz_table"] + jit[2]], float)
+    return {"xyz": xyz, "classes": tuple(c["classes"]), "shoulder_right": tuple(d["shoulder_right"]),
+            "shoulder_left": tuple(d["shoulder_left"])}
+
+
+def sample_handover_zone(profile: str, table_z: float, seed: int, episode_idx: int = 0) -> np.ndarray:
+    """A handover-zone point drawn uniformly from the precomputed common-reach cells (both arms, >= 1 approach
+    class), jittered within its own cell (+/- half the grid step) so repeated draws are not snapped to the same few
+    points -- seeded per (seed, episode_idx), so the SAME definition gives a different robot-object geometry every
+    episode (owner 2026-10-02) while staying reproducible."""
+    return sample_zone_cell(profile, table_z, seed, episode_idx)["xyz"]
+
+
+def best_release_yaw(cand_a_local: np.ndarray, zone_classes, shoulder_receiver, zone_xy: tuple,
+                     n_steps: int = 16) -> tuple:
+    """Owner 2026-10-02 (R4 follow-up): the zone cell's `classes` say which approach direction the RECEIVER can
+    reach there, but the receiver's actual grasp candidates are the object's cached candidate set carried over to
+    wherever the giver releases it -- if the giver releases it at some arbitrary yaw, none of those candidates may
+    point the right way even though the cell itself is reachable (pod smoke #6-9: ik_ok=0 despite free_ok > 0).
+    Searches `n_steps` world yaw values (about world z, object otherwise kept upright) for the one under which the
+    most of `cand_a_local` (the object's RAW, object-frame cached approach vectors, i.e. `grasp9` npz "a" before
+    `to_world`) classify (`curobo9.approach_class`) into `zone_classes` as seen from the receiver's shoulder.
+    -> (best_yaw_rad, n_matching, n_total)."""
+    from . import curobo9 as C
+    zxy_base = (zone_xy[0] - shoulder_receiver[0], zone_xy[1] - shoulder_receiver[1])
+    best_yaw, best_n = 0.0, -1
+    for k in range(n_steps):
+        yaw = 2 * math.pi * k / n_steps
+        cz, sz = math.cos(yaw), math.sin(yaw)
+        Rz = np.array([[cz, -sz, 0.0], [sz, cz, 0.0], [0.0, 0.0, 1.0]])
+        a_world = cand_a_local @ Rz.T
+        n = sum(1 for a in a_world if C.approach_class(a, zxy_base) in zone_classes)
+        if n > best_n:
+            best_yaw, best_n = yaw, n
+    return best_yaw, best_n, len(cand_a_local)
 
 
 # R1 Pro / G1: no reach-map-verified zone yet (category A ships AI Worker first, owner's plan step 3); kept as the
@@ -420,10 +454,11 @@ class HandoverRuntime:
         if RT.classify_close(gap, gc.w) == "EMPTY":
             return {"ok": False, "status": f"EMPTY close (gap {gap * 100:.1f} cm)"}
         slot.held_obj = obj_key  # attached before the lift line so refresh_world/choose see it held if that line
+        T_obj_pick = RT.T_of(*env.object_pose(obj_key))  # the rigid grip (object <-> gripper), while it holds, is
         if r.get("lift") is not None:  # needs replanning (rt9.Runtime._approach_plan can return ok=True with a
             slot.traj, slot.traj_i = rt._resample(r["lift"]), 0  # None lift -- pod smoke #6 crashed here, bare
             self.run_ticks(len(slot.traj) + 5)  # TypeError from P9.resample(None, ...); the straight-line micro-lift
-        return {"ok": True, "status": "ok", "gc": gc}  # is an optimization, not required -- skip it, stay at grasp
+        return {"ok": True, "status": "ok", "gc": gc, "T_obj_pick": T_obj_pick}  # an optimization, skip if None
 
     def _move_to(self, slot: "_ArmSlot", target_xyz, quat_wxyz=None) -> dict:
         """A straight / planned cuRobo move to a world TCP pose, holding `slot.held_obj` attached if set."""
@@ -468,7 +503,11 @@ class HandoverRuntime:
             env.use_arm(env.primary)
 
     def _run_episode(self, obj_key: str, table_z: float, seed: int, episode_idx: int, final_xy=None) -> dict:
-        zone = handover_zone_xyz(self.profile, table_z, seed, episode_idx)
+        if self.profile == "ffw_sg2":
+            cell = sample_zone_cell(self.profile, table_z, seed, episode_idx)
+            zone = cell["xyz"]
+        else:
+            zone, cell = handover_zone_xyz(self.profile, table_z, seed, episode_idx), None
         if final_xy is None:
             final_xy = final_spot_xyz(zone, self.receiver.arm)[:2]
         log = []
@@ -476,7 +515,28 @@ class HandoverRuntime:
         log.append({"phase": "giver_pick", **r})
         if not r["ok"]:
             return {"ok": False, "log": log}
-        r = self._move_to(self.giver, zone)
+        carry_pos, carry_quat = zone, None
+        if cell is not None:  # owner 2026-10-02 (R4 follow-up): release at a yaw whose candidates actually point
+            giver_arm = self.giver.arm  # the direction the zone cell is reachable from, for the receiver
+            shoulder_recv = cell["shoulder_right" if self.receiver.arm == "right" else "shoulder_left"]
+            C = self.receiver.rt._load(obj_key)
+            if C is not None and len(C.get("a", ())):
+                yaw, n_match, n_tot = best_release_yaw(np.asarray(C["a"], float), cell["classes"], shoulder_recv,
+                                                       (zone[0], zone[1]))
+                log[-1]["release_yaw_match"] = f"{n_match}/{n_tot}"
+                T_obj_pick = r.get("T_obj_pick")
+                if T_obj_pick is not None:
+                    from . import plan9 as P9
+                    from . import rt9 as RT
+                    T_obj_G = P9.inv_T(T_obj_pick) @ r["gc"].T  # the rigid grip, constant while held
+                    cz, sz = math.cos(yaw), math.sin(yaw)
+                    T_obj_desired = np.eye(4)
+                    T_obj_desired[:3, :3] = np.array([[cz, -sz, 0.0], [sz, cz, 0.0], [0.0, 0.0, 1.0]])
+                    T_obj_desired[:3, 3] = zone
+                    T_grip_desired = T_obj_desired @ T_obj_G
+                    carry_pos = T_grip_desired[:3, 3]
+                    carry_quat = RT.G.mat_quat(T_grip_desired[:3, :3])
+        r = self._move_to(self.giver, carry_pos, quat_wxyz=carry_quat)
         log.append({"phase": "giver_carry", **r})
         if not r["ok"]:
             return {"ok": False, "log": log}

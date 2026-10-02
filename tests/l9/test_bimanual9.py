@@ -171,6 +171,31 @@ def test_success_d_both_placed_no_self_collision():
     assert off["ok"] is False
 
 
+def test_best_release_yaw_never_turns_a_top_only_candidate_into_side():
+    # a candidate pointing straight down (local [0,0,-1]) is invariant under any rotation about world z -- it can
+    # never classify as "side" no matter which yaw is tried, so n_match must stay 0 for every yaw.
+    cand = np.array([[0.0, 0.0, -1.0]])
+    yaw, n_match, n_tot = B.best_release_yaw(cand, ("side",), (0.0, -0.23), (0.4, 0.0))
+    assert n_tot == 1
+    assert n_match == 0
+
+
+def test_best_release_yaw_finds_a_top_candidate_for_a_top_zone():
+    cand = np.array([[0.0, 0.0, -1.0], [1.0, 0.0, 0.0]])
+    yaw, n_match, n_tot = B.best_release_yaw(cand, ("top",), (0.0, -0.23), (0.4, 0.0))
+    assert n_match >= 1  # the invariant top candidate always matches a "top" zone, at any yaw
+
+
+def test_best_release_yaw_picks_more_matches_when_more_are_possible():
+    # two side-ish horizontal candidates, 180 deg apart: some yaw should line at least one of them up with "side"
+    # or "front" (whichever the geometry gives) better than both being, say, classified as the wrong one at yaw 0.
+    cand = np.array([[1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, -1.0, 0.0]])
+    from harvest.l9 import curobo9 as C
+    yaw, n_match, n_tot = B.best_release_yaw(cand, C.APPROACHES[1:], (0.0, -0.23), (0.4, 0.0), n_steps=16)
+    assert n_tot == 4
+    assert n_match >= 2  # at least half of 4 roughly-evenly-spread horizontal candidates should match some class
+
+
 def test_success_a_gate():
     g = B.success_a((0.40, 0.01), (0.40, 0.0), overlap_ticks=3)
     assert g["ok"] is True and g["place_err_m"] == pytest.approx(0.01, abs=1e-4)
