@@ -78,6 +78,7 @@ class Monitor:
         st = world.status()
         self.tgt, self.place, self.table_z = info["tgt"], info["place"], world.table_z
         self.start = {k: np.asarray(v, float).copy() for k, v in st["obj"].items()}
+        self.done_tgts: set = set()  # earlier step targets of a multi-step task (moved on purpose, never "knocked")
         self.t_ok = None
         self.success = False
         self.ever_hold = self.ever_lift = self.tipped = self.off_table = False
@@ -127,7 +128,7 @@ class Monitor:
 
     def summary(self) -> dict:
         moved = {k: round(float(np.linalg.norm((np.asarray(self.last["obj"][k]) - v)[:2])) * 1e3, 1)
-                 for k, v in self.start.items() if k != self.tgt}
+                 for k, v in self.start.items() if k != self.tgt and k not in self.done_tgts}
         knocked = sorted(k for k, d in moved.items() if d > KNOCK_M * 1e3)
         if self.success:
             stage = None
