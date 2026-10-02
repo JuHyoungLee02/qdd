@@ -29,7 +29,7 @@ def main():
             if meta.get("grasp_v2") is None or ("--success-only" in a and not meta.get("success")):
                 continue
             eps.append(os.path.dirname(m))
-    c = B9.build(eps, out, arg("--split", "l9train"), name, train="--eval" not in a, camera_line=True,
+    c = B9.build(eps, out, arg("--split", "l9train"), name, train="--eval" not in a, camera_line="--camera-line" in a,
                  seed=int(arg("--seed", "0")), slots=slots, third_person=tp_on)
     ego = [json.loads(x) for x in open(c["path"])]
     bad = 0

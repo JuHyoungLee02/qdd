@@ -219,3 +219,14 @@ def test_slot_build_schema_and_third_person_switch(tmp_path, on):
     if on:
         tp = [json.loads(x) for x in open(str(tmp_path / "out" / "x_third_person.jsonl"))]
         assert tp[0]["image_views"][-1] == "third_person" and tp[0]["images"][-1].endswith("img1_external0.png")
+
+
+def test_v2_build_keeps_the_whole_request(tmp_path):
+    """grasp_format rewrote the request file it was reading: opened for write first, it kept the GRASP block only."""
+    ep, _ = _episode(str(tmp_path / "src"), ext=False)
+    m = json.load(open(os.path.join(ep, "meta.json")))
+    m["grasp_v2"] = {"gripper": {"name": "ffw_sg2_right", "max_open": 0.109}}
+    json.dump(m, open(os.path.join(ep, "meta.json"), "w"))
+    rows, _, _ = B9.episode_rows(ep, str(tmp_path / "o"), "l9train", False, np.random.default_rng(0))
+    t = open(rows[0]["prompt_path"], encoding="utf-8").read()
+    assert "CAMERAS" in t and B9.GRASP_BLOCK in t and "- Image 1: head camera" in t

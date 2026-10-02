@@ -237,8 +237,9 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera
             x.update(robot_line=rl, gen_version="v2", label_origin=meta.get("label_origin", "l9v2"))
             p = x["prompt_path"]
             if grasp_format:
-                with open(p, "w", encoding="utf-8", newline="\n") as f:
-                    f.write(add_grasp_format(open(p, encoding="utf-8").read(), rl))
+                t = open(p, encoding="utf-8").read()  # read before opening for write (that truncated the request
+                with open(p, "w", encoding="utf-8", newline="\n") as f:  # to the GRASP block alone, 10-02)
+                    f.write(add_grasp_format(t, rl))
             elif not x["label_missing"]:
                 x["answer"] = strip_grasp_fields(x["answer"])
         ext_rows = []
