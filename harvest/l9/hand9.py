@@ -295,6 +295,25 @@ class GapTable:
         i, s = self._project(q)
         return float(self.gap_tcp[i] + s * (self.gap_tcp[i + 1] - self.gap_tcp[i]))
 
+    def exec_offsets(self, w: float) -> dict:
+        """Where the fingers actually are, in frame G, when the hand is closed to the opening w (rows interpolated):
+        contact_mid = midpoint of the two opposing sides' contact patches (the real grasp centre: the G1 Dex3-1
+        meets ~16 mm off the frame origin in x_G), tip_front = the deepest finger point along the approach (z_G,
+        negative = ahead; the closing pads' arc drop). For a generic exec_pose (support back-off / lateral
+        correction) -- data only, nothing here changes a pose."""
+        m = self.meta
+        opp = (m.get("method") or {}).get("opposition") or []
+        cs = m.get("contacts_G") or []
+        out = {}
+        if opp and len(cs) == len(self.gap):
+            A, B = opp[0]
+            mid = np.array([(np.mean([c[t] for t in A], axis=0) + np.mean([c[t] for t in B], axis=0)) / 2
+                            for c in cs])
+            out["contact_mid"] = [float(np.interp(float(w), self.gap, mid[:, k])) for k in range(3)]
+        if len(m.get("tip_front_G") or []) == len(self.gap):
+            out["tip_front"] = float(np.interp(float(w), self.gap, m["tip_front_G"]))
+        return out
+
     def is_open(self, gap: float) -> bool:
         return float(gap) >= self.max_gap - OPEN_TOL
 

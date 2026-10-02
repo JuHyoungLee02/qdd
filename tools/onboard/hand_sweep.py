@@ -158,9 +158,10 @@ def sweep(name: str, dense: int = 21, sample: int = 3000) -> dict:
             A, B = d["opposition"][0]
             return np.concatenate([g[t] for t in A]), np.concatenate([g[t] for t in B])
         rows, claimed = path_from_limits(u, js, gfn, dense)
-    gaps, gtcp, contacts, zr = [], [], [], []
+    gaps, gtcp, contacts, zr, front = [], [], [], [], []
     for q in rows:
         g = groups(q)
+        front.append(float(min(v[:, 2].min() for v in g.values())))  # deepest finger point along the approach
         gaps.append(H.hand_gap(g, d["opposition"]))
         gtcp.append(H.hand_gap(g, d["opposition"], bands=H.TCP_BAND))
         tips = {t: pts(t, q) for t in d["tips"]}
@@ -186,6 +187,7 @@ def sweep(name: str, dense: int = 21, sample: int = 3000) -> dict:
                               for n, i in enumerate(ki[1:])],
         "claimed_m": [None if c is None else round(c, 5) for c in claimed_k],
         "contacts_G": [{t: [round(x, 5) for x in v] for t, v in contacts[i].items()} for i in ki],
+        "tip_front_G": [round(front[i], 5) for i in ki],
         "frame_G": {k: [round(float(x), 5) for x in v] for k, v in fr.items()}, "frame_check": fc,
         "sweep": [{"claimed_m": None if c is None else round(c, 5),
                    "gap_m": None if not np.isfinite(g) else round(float(g), 5),
