@@ -48,3 +48,17 @@
 
 - 누적 526편 잡기 지표(gate_v2): top 34 %·oblique 37 %·front 12 %·side 11 %(top ≤ 50 % 통과, 계열마다 ≥ 5 % 통과), 회전 영상 구간 12/12, 보이는 점 70 %, 자연 1순위 48 %, 지시 행 12 %, 재잡기 12 %, 닫힘 CONTACT 58 %·WIDE 14 %·EMPTY 7 %. 관문 '계열별 실행 ≥ 70 %'와 '관절 걸음'은 아직 미통과.
 
+
+- 10-02 09:10–13:00 KST (AI Worker 시범 계속, Franka·R1·G1 시범 시작):
+
+| 판 (코드) | 로봇 | 편 | 성공 | 실패 단계 | 고친 것 |
+|---|---|---|---|---|---|
+| since 1790898547 (cdc9714–d102de6) | AI Worker | 260 | 39 % | place 89·approach 37·joint_step 18·lift_carry 7·grasp 4·timeout 3 | 직선 이동 세계 충돌 검사, retreat 실패 시 정지 |
+| 95e8ce0–3792b9a (11:07~) | AI Worker | 188 | 52 % | place 51·approach 22·joint_step 8·lift_carry 5·grasp 3 | attach 구 ≤ 16(P185), 놓기 yaw 재선택(P187), 명령 걸음 0.034(P188), pre-open 스탠드오프(P189), 대체 잡기 라벨 유지 |
+| 95e8ce0–3792b9a | Franka | 85 | 55 % | place 17·approach 10·lift_carry 6·grasp 3 | (첫 33편 79 %, 가족이 늘며 내려감) |
+| 3792b9a | R1 Pro | 2 | 1/2 | lift_carry 1 | 면 높이 관문(DIAG 8)·장면 다시 뽑기 |
+| 04f9295–3792b9a | G1 | 3 | 0/3 | approach 2·lift_carry 1 | 닫힘 판정 = 손가락 접촉; SKIP 대부분(면 높이 밴드·유효 잡기 없음) → 레인 멈춤, 진단 |
+
+- 놓기 실패의 정체(v2_release_check): 실패 편도 열기 순간 손은 put 자세(dz 중앙 0 mm, dxy 6–8 mm, 성공과 같음) → 연 뒤 대상이 넘어짐. DIAG 10: 열 때 대상 바닥이 면보다 10–34 mm 위(놓을 곳 높이가 카탈로그 값: 누운 책 +22 mm, 2층 쌓기), 열 때 넘어짐 6/11·내려가며 기울어짐 2/11.
+- 잡기 분포(95e8ce0~ 성공): AI Worker top 32 %·oblique 39 %·side 18 %·front 12 %, 지시 19 %, 왼 54 / 오른 53; Franka top 25 %.
+- 처리량: 13:00 기준 2 h 동안 AI Worker 123 + Franka 49 성공(~86/h). 레인 가동률 ~42 %(재기동 대기·job 부팅) → job 20행, 재기동 묶음.
