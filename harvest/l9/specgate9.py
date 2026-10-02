@@ -27,7 +27,14 @@ SPEC = "L9v2-spec-final"
 # exact string (SPEC vs SPEC_FRANKA_R1) on each row is itself the spec_rev marker for anyone auditing which rows
 # used which camera.
 SPEC_FRANKA_R1 = "L9v2-spec-final-r1"
-SPEC_FAMILY = {SPEC: SPEC, SPEC_FRANKA_R1: SPEC}
+# Build-time camera schema revision r2-cams (user 10-03 02h, L9_PRINCIPLES §5 / record "r2-cams"): each robot uses
+# its own native cameras, any number -- 4 standard slots first (fixed order, "(none)" markers) + extra native views
+# tagged "- view: <name>" (views9.EXTRA_VIEWS); G1 rows never carry the (non-native) palm wrist views. Nothing on
+# disk changes: an episode keeps its meta spec (SPEC / SPEC_FRANKA_R1, recorded per row as "episode_spec"); every
+# row of a slot build is stamped SPEC_CAMS, and the slot-build gate requires ALL rows to be SPEC_CAMS (rows built by
+# the pre-r2 builder never mix into an r2 set). Rows without extra views build byte-identical apart from the tag.
+SPEC_CAMS = "L9v2-spec-final-r2-cams"
+SPEC_FAMILY = {SPEC: SPEC, SPEC_FRANKA_R1: SPEC, SPEC_CAMS: SPEC}
 
 
 def spec_family(v) -> str:
@@ -164,6 +171,35 @@ def rationale_mismatches(rows: list) -> int:
     return n
 
 
+def view_schema_errors(row: dict, text: str) -> list:
+    """r2-cams camera-schema gate of one slot row (user 10-03 02h): the text parses (views9.parse_slots: the 4
+    standard slots first in fixed order, then extra views with known names, no duplicates); the image indices are
+    1..n in listing order; image_views == the listed views with an image; len(images) == that count; head is image
+    1; no standard robot-camera slot the robot lacks natively (G1: no wrist views); spec_version == SPEC_CAMS."""
+    from . import views9 as V
+    try:
+        got = V.parse_slots(text)
+    except ValueError as e:
+        return [f"parse: {e}"]
+    errs = []
+    listed = [(v, k) for v, k in got.items() if k is not None]
+    if [k for _, k in listed] != list(range(1, len(listed) + 1)):
+        errs.append(f"image indices {[k for _, k in listed]}")
+    if list(row.get("image_views") or []) != [v for v, _ in listed]:
+        errs.append(f"image_views {row.get('image_views')} != listed {[v for v, _ in listed]}")
+    if len(row.get("images") or []) != len(listed):
+        errs.append(f"{len(row.get('images') or [])} images != {len(listed)} listed views")
+    if got.get("head") != 1:
+        errs.append("head is not image 1")
+    nat = V.native_slots(row.get("robot"))
+    bad = [v for v in ("wrist_left", "wrist_right") if got.get(v) is not None and v not in nat]
+    if bad:
+        errs.append(f"non-native views {bad} for {row.get('robot')}")
+    if row.get("spec_version") != SPEC_CAMS:
+        errs.append(f"spec_version {row.get('spec_version')!r} != {SPEC_CAMS}")
+    return errs
+
+
 FRAME_SENTENCE = "Directions in the task (left, right, front, behind) are in the robot's frame, not the camera image."
 
 
@@ -182,7 +218,7 @@ def split_leaks(rows: list, ood_objects=frozenset(), ood_rooms=frozenset()) -> d
 
 
 def gates(rows: list, texts: dict, train: bool = False, frame_note: bool = False, ood_objects=frozenset(),
-          ood_rooms=frozenset()) -> dict:
+          ood_rooms=frozenset(), views: bool = False) -> dict:
     """rows: control rows (with 'answer', 'spec_version', 'overlay', 'prompt_path'); texts: prompt_path -> text.
     frame_note: every prompt carries FRAME_SENTENCE (slot builds, main 10-02). train: the split gate (no hold-out
     definition / other split / ood object / ood room row). The 'one spec version' gate is checked by spec FAMILY
@@ -205,6 +241,13 @@ def gates(rows: list, texts: dict, train: bool = False, frame_note: bool = False
         out["frame_note_missing"] = sum(1 for r in rows if r.get("prompt_path") in texts
                                         and FRAME_SENTENCE not in texts[r["prompt_path"]])
         out["ok"] = out["ok"] and out["frame_note_missing"] == 0
+    if views:  # r2-cams camera-schema gate (slot builds): every row, missing text = an error
+        bad = [(r.get("id"), e) for r in rows
+               for e in (view_schema_errors(r, texts[r["prompt_path"]]) if r.get("prompt_path") in texts
+                         else ["prompt text missing"])]
+        out["view_schema_errors"] = len({i for i, _ in bad})
+        out["view_schema_examples"] = [f"{i}: {e}" for i, e in bad[:5]]
+        out["ok"] = out["ok"] and not bad
     if train:
         out["split"] = split_leaks(rows, ood_objects, ood_rooms)
         out["ok"] = out["ok"] and not any(out["split"].values())

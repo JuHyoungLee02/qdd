@@ -207,6 +207,20 @@ def external_rows(r: dict, x: dict, base_prompt: str, robot: str, out_dir: str) 
     return out, c
 
 
+def extra_views(r: dict) -> list:
+    """r2-cams: the call's further native cameras, cams.json "extra_views" = {view name (views9.EXTRA_VIEWS): camera
+    record + "img" (file name in the call dir)}, in views9.EXTRA_VIEWS order, only those whose image exists ->
+    [(name, image path, record)]. No entry (every episode so far) -> []."""
+    from . import views9 as V
+    ex = json.load(open(r["cams_path"])).get("extra_views") or {}
+    out = []
+    for name in V.EXTRA_VIEWS:
+        rec = ex.get(name)
+        if rec and rec.get("img") and os.path.exists(os.path.join(r["call_dir"], rec["img"])):
+            out.append((name, os.path.join(r["call_dir"], rec["img"]), {k: v for k, v in rec.items() if k != "img"}))
+    return out
+
+
 def slot_rows(r: dict, x: dict, meta: dict, robot: str, seed: int, third_person: bool) -> tuple:
     """The 4-slot schema (views9) of one ego row x: (ego row, [third-person variant], visibility-drop Counter) --
     user 10-02 (4 slots); the third-person variant is gated by _vis_gate (owner order 10-02)."""
@@ -219,15 +233,18 @@ def slot_rows(r: dict, x: dict, meta: dict, robot: str, seed: int, third_person:
     other = (op, cams["wrist_other"]) if cams.get("wrist_other") and os.path.exists(op) else None
     text = open(x["prompt_path"], encoding="utf-8").read()
     src = f"l9/{robot}"
+    extras = extra_views(r)
+    from .specgate9 import SPEC_CAMS
 
     def one(third, tag):
         res = V.canonical(text, x["answer"], arm, x["images"][0], used, other, third, V.row_rng(x["id"], seed),
-                          source=src, anchor=CAM_ANCHOR)
+                          source=src, anchor=CAM_ANCHOR, robot=robot, extras=extras)
         pp = x["prompt_path"][:-4] + f"_{tag}.txt"
         with open(pp, "w", encoding="utf-8", newline="\n") as f:
             f.write(res["text"])
         return dict(x, prompt_path=pp, images=res["images"], answer=res["answer"], image_views=res["image_views"],
-                    slots=res["slots"], arm=arm)
+                    slots=res["slots"], arm=arm, spec_version=SPEC_CAMS,
+                    episode_spec=x.get("episode_spec", x.get("spec_version")))
     ego = one(None, "slots")
     tps = []
     cv = Counter()

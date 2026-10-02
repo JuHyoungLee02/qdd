@@ -3,7 +3,7 @@
 Checks: off-build 0 third-person rows; on-build third-person rows = third-person index entries of the episodes (one
 view per row); every ego row parses to the 4 slots; 0 rows without the head image; image-count histogram.
 usage: python tools/l9/build_v2.py <out dir> <name> <collect root>... [--third-person off|on] [--split l9train]
-       [--eval] [--no-slots] [--seed 0] [--success-only] [--camera-line] [--both] [--spec L9v2-spec-final]
+       [--eval] [--no-slots] [--seed 0] [--success-only] [--camera-line] [--both] [--spec L9v2-spec-final (family)]
        [--rationale off|on|both]
 --both (with --third-person on): also <name>_tp_off.jsonl and <name>_tp_on.jsonl from the same build; the ego rows are
 byte-identical (checked).
@@ -42,7 +42,9 @@ def main():
             meta = json.load(open(m))
             if meta.get("grasp_v2") is None or ("--success-only" in a and not meta.get("success")):
                 continue
-            if SG.spec_of(meta) != arg("--spec", SG.SPEC):  # one spec per training set (L9_PRINCIPLES §0)
+            # one spec per training set (L9_PRINCIPLES §0), compared by FAMILY (specgate9.SPEC_FAMILY: the Franka r1
+            # camera episodes belong to the frozen spec; the exact-string test dropped every one of them)
+            if SG.spec_family(SG.spec_of(meta)) != SG.spec_family(arg("--spec", SG.SPEC)):
                 n_old_spec += 1
                 continue
             if train and meta.get("split", "train") != "train":  # owner 10-02: another split's episodes never train
@@ -86,7 +88,14 @@ def main():
         ood_o, ood_r = set(A9.catalog("ood_o")), set(RN.room_table("ood"))
     # hard gates: contradictions 0, one spec / overlay / template family / legend, schema, frame sentence (slot
     # builds), and for training sets the split gate (hold-out definitions, other splits, ood_o objects, ood rooms)
-    g = SG.gates(ctrl, texts, train=train, frame_note=slots, ood_objects=ood_o, ood_rooms=ood_r)
+    g = SG.gates(ctrl, texts, train=train, frame_note=slots, ood_objects=ood_o, ood_rooms=ood_r, views=slots)
+    if slots:  # r2-cams (user 10-03 02h): views per robot (each robot's own camera set, any number)
+        from collections import Counter
+        vb = {}
+        for x in ctrl:
+            vb.setdefault(x.get("robot"), Counter())["+".join(x.get("image_views") or [])] += 1
+        check["views_by_robot"] = {k: dict(v) for k, v in vb.items()}
+        check["episode_specs"] = dict(Counter(x.get("episode_spec") for x in ctrl))
     check.update(spec_gates=g, episodes_dropped_old_spec=n_old_spec, episodes_dropped_split=split_drop)
     check["ok"] = check["ok"] and g["ok"]
     if tp_on and "--both" in a:  # user 10-02: two sets from one build -- off = the ego rows, on = the same bytes + tp rows

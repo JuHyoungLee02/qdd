@@ -41,13 +41,14 @@ AUX_TAIL = '\nReturn JSON only: {"xy": [x, y]} in metres.'
 
 # 4-slot camera schema rows (harvest.l9.views9) carry image_views; their image labels follow the slot (E-TP1 10-03:
 # the positional labels above named a third-person / left-wrist image "right wrist camera" or "head depth")
-VIEW_LABELS = {"head": "head camera", "wrist_left": "left wrist camera", "wrist_right": "right wrist camera",
-               "third_person": "third-person camera"}
+# r2-cams (user 10-03 02h): one tag function for builder / trainer / runtime -- views9.view_label (standard slots
+# and the extra native views)
+from ..l9.views9 import VIEW_LABELS, view_label  # noqa: E402,F401
 
 
 def image_labels(n_images: int, views=None) -> list:
     if views:
-        return [VIEW_LABELS[v] for v in views[:n_images]]
+        return [view_label(v) for v in views[:n_images]]
     return [IMAGE_LABELS[i] for i in range(n_images)]
 
 
