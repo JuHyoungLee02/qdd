@@ -280,7 +280,7 @@ V2 = {
 }
 
 
-R1_LEAN = 0.80  # rad, torso_link4 pitched forward [hypothesis, smoke 10-02]: upright the ZED looks 20 deg down and the
+R1_LEAN = float(os.environ.get("IR_L9_R1_LEAN", "0.80"))  # rad (env: one-off lean A/B only, L9v2-R1), torso_link4 pitched forward [hypothesis, smoke 10-02]: upright the ZED looks 20 deg down and the
 # table filled only the bottom rows; 0.40 still put objects at x 0.40 on the bottom edge (r1_posture.py: v 349 of 376);
 # 0.80 gives a 66 deg view with objects at x 0.4-0.6 at rows 195-280
 R1_T4_ABOVE = 0.36  # torso_link4 origin above the work surface: the cuRobo top-down sweep (lean 0.80, world-aligned)
@@ -350,6 +350,24 @@ V2_READY = {  # ready_pose.py 10-02: R1 TCP (0.542, -+0.20, 0.169) in torso_link
               "left": (1.103, 2.72263, 0.84415, -1.58942, 0.99495, 0.76179, -0.07563)},
     "g1": {"right": (-0.30265, -0.76872, 0.61976, -0.1309, -0.88791, 0.69321, 0.59968),
            "left": (-0.20483, 0.01847, 0.32992, -0.08547, 1.68825, -0.23174, -0.83459)}}
+# L9v2-R1 (10-03): the ready TCP above sat 9 cm over the surface (median, pilotR): 142 / 207 episodes began with a
+# lift_clear that is outside the arm's reach (replay: goal IK fails even in an empty world, elbow joint4 at its
+# limit after 5-6 cm) -> raised to ~0.21 m over the surface (torso_link4 frame, world-aligned: dx ahead, dz up),
+# per lean: the top-down workspace of the leaned arm is a narrow column (tools ready_grid / reach_lean, r1own/out)
+R1_READY_BY_LEAN = {  # lean: (dx, dz, right q, left q); best joint-limit margin branch (return_seeds 32)
+    0.8: (0.55, -0.18, (-2.16078, -0.53409, 2.03003, -1.65822, -0.71462, 0.94938, 0.49983),  # margin 0.087
+          (-2.28784, 0.46346, -2.23887, -1.65823, 0.96476, 0.83092, -0.3315)),
+    0.6: (0.55, -0.15, (1.01043, -2.7955, -0.78242, -1.42999, -0.9994, 0.65483, 0.44398),
+          (0.99592, 2.80971, 0.75086, -1.43, 1.03208, 0.63469, -0.42835)),
+    0.4: (0.49, -0.15, (-1.71181, -0.43204, 2.07445, -1.38539, -0.66566, 0.78176, 0.57974),
+          (-1.70225, 0.43672, -2.05653, -1.38539, 0.64402, 0.78897, -0.59301)),
+}
+if os.environ.get("IR_L9_R1_READY", "") in ("1", "high") and round(R1_LEAN, 2) in R1_READY_BY_LEAN:
+    _r = R1_READY_BY_LEAN[round(R1_LEAN, 2)]
+    if any(_r[2]):
+        V2_READY["r1pro"] = {"right": _r[2], "left": _r[3]}
+# carry clearance of the held object's bottom over carry_base (m), drawn per episode (v2plan.carry_z): R1 only
+V2_CARRY_CLEAR = {"r1pro": (0.05, 0.10)} if os.environ.get("IR_L9_R1_CARRY", "") == "1" else {}
 
 
 def v2_joints_to_width(profile: str, arm: str, q) -> float:

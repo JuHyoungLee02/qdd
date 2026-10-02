@@ -23,6 +23,7 @@ import numpy as np
 
 from . import grasp9 as G
 from . import plan9 as P9
+from . import robot9 as R9
 from . import v2plan as VP
 
 GRASP_DIR = os.environ.get("L9V2_GRASPS", "/data/harvest/l9v2/grasps")
@@ -399,6 +400,11 @@ class Runtime:
             self.picks.append({"obj": k, "choice_fail": "no valid candidate", "valid_stats": getattr(self, "_vstats", None)})
         if gc is not None:
             gc.meta["valid_stats"] = getattr(self, "_vstats", None)
+            cr = getattr(R9, "V2_CARRY_CLEAR", {}).get(self.profile)
+            if cr is not None:  # L9v2-R1: per-episode carry clearance draw (range, robot-specific)
+                rng = np.random.default_rng([seed, 913, len(self.picks)])
+                gc.carry_clear = float(rng.uniform(*cr))
+                gc.meta["carry_clear"] = round(gc.carry_clear, 4)
             self._exec_pose(gc, float(c[2]) - float(he[2]))
             gc.meta.update(obj=k, obj_h=round(2 * float(he[2]), 4), tested=bool(C.get("tested", False)),
                            n_candidates=int(len(C["w"])),
@@ -477,6 +483,8 @@ class Runtime:
                 if new is None:
                     continue
                 new.idx = i
+                if getattr(gc, "carry_clear", None) is not None:
+                    new.carry_clear = gc.carry_clear
                 new.meta.update({x: gc.meta.get(x) for x in ("obj", "tested", "n_candidates", "n_valid", "curobo",
                                                            "grip", "valid_set", "label_rule", "rule_step",
                                                            "approach_reason", "instructed_approach", "natural_order",
@@ -511,7 +519,7 @@ class Runtime:
         if info.get("place_xy_offset"):
             p = p + np.array([*info["place_xy_offset"], 0.0], float)
         q_obj = np.asarray(self.w.env.object_pose(tg)[1], float)
-        zc = H["carry_base"] + L.CARRY_DZ
+        zc = VP.carry_z(H, L.CARRY_DZ, gc, st["tcp"], st["obj"][tg], h, True)
         Ts = []
         for d in self.YAW_TRIES:
             T = VP.put_pose(q_obj, p, H["place_top"] + h / 2 + gc.place_dz, self.held["T_obj_G"], d)

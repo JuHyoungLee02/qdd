@@ -253,6 +253,19 @@ def put_pose(obj_quat_held, place_xy, centre_z: float, T_obj_G, yaw_delta: float
     return T_w_obj @ np.asarray(T_obj_G, float)
 
 
+def carry_z(H: dict, carry_dz: float, gc, tcp, c, h: float, hold: bool) -> float:
+    """TCP carry height. Default: carry_base + CARRY_DZ (0.22). A robot with a short vertical reach (R1 Pro, L9v2-R1:
+    its leaned arm reaches only ~0.2-0.3 m of height at a given distance) sets gc.carry_clear (a per-episode draw from
+    a range): the held object's bottom clears carry_base by that much, i.e. TCP = carry_base + (TCP - object bottom)
+    + carry_clear, never above the default."""
+    clear = getattr(gc, "carry_clear", None)
+    zd = H["carry_base"] + carry_dz
+    if clear is None or not hold:
+        return zd if clear is None else min(zd, H["carry_base"] + h + float(clear) + 0.03)
+    hang = float(tcp[2]) - (float(c[2]) - h / 2)
+    return min(zd, H["carry_base"] + max(hang, 0.0) + float(clear))
+
+
 def plan(st: dict, info: dict, table_z: float, w_open: float, gc: GraspChoice, held: dict | None, cam=None):
     """-> (step, command | None). st: world.status() with 'tcp' and 'tcp_quat'; held: {'T_obj_G'} measured after the
     close (None before). The steps keep the xlabels names (labels / texts / phase stay comparable). cam: head
@@ -279,7 +292,7 @@ def plan(st: dict, info: dict, table_z: float, w_open: float, gc: GraspChoice, h
         return "done", {"mode": "stop"}
     if not hold and pred.get(f"upright({tg})") is False:
         return "tipped", None
-    zc = H["carry_base"] + L.CARRY_DZ
+    zc = carry_z(H, L.CARRY_DZ, gc, tcp, c, h, hold)
     if hold:
         T_og = held["T_obj_G"] if held else None
         if T_og is not None:  # put TCP: object upright at the place (its current yaw), bottom place_dz above the top

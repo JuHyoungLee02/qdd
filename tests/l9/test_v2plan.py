@@ -181,3 +181,19 @@ def test_plan_sequence_side_grasp(monkeypatch):
     s, cmd = P.plan(_st([put_xy[0], put_xy[1], 1.2], list(gc.quat), 0.04, hold=True), info, 0.75, 0.107, gc,
                     {"T_obj_G": T_og})
     assert s == "lower_open" and cmd["gripper"] == "open"
+
+
+def test_carry_z_default_and_r1_clearance():
+    """L9v2-R1: no carry_clear -> carry_base + CARRY_DZ; with carry_clear the held object's bottom clears carry_base
+    by carry_clear (TCP = base + hang + clear), never above the default."""
+    import types
+
+    from harvest.l9.v2plan import carry_z
+    H = {"carry_base": 0.75}
+    gc = types.SimpleNamespace()
+    assert carry_z(H, 0.22, gc, [0, 0, 0.80], [0, 0, 0.78], 0.06, True) == 0.75 + 0.22
+    gc.carry_clear = 0.07
+    # object centre 0.78, height 0.06 -> bottom 0.75; TCP 0.80 -> hang 0.05; z = 0.75 + 0.05 + 0.07
+    assert abs(carry_z(H, 0.22, gc, [0, 0, 0.80], [0, 0, 0.78], 0.06, True) - 0.87) < 1e-9
+    # a tall hang is capped at the default
+    assert carry_z(H, 0.22, gc, [0, 0, 1.10], [0, 0, 0.78], 0.06, True) == 0.75 + 0.22
