@@ -9,15 +9,20 @@ mkdir -p $D $L
 log() { echo "$(date -u +%FT%TZ) prep $*" >> $L/gp2.log; }
 cd $C
 export PYTHONPATH=$C
-log "SELECT start"
-$P tools/gp2/gp2_build.py select $D/episodes.json /data/harvest/l9v2/pilot1/collect /data/harvest/l9v2/pilotF/collect \
-  > $D/select.json 2>> $L/prep.err || { log "SELECT_FAIL"; exit 1; }
-log "SELECT $(cat $D/select.json)"
+# a re-run keeps the frozen episode list and the finished row parts (only the missing steps run again)
+if [ ! -s $D/episodes.json ]; then
+  log "SELECT start"
+  $P tools/gp2/gp2_build.py select $D/episodes.json /data/harvest/l9v2/pilot1/collect /data/harvest/l9v2/pilotF/collect \
+    > $D/select.json 2>> $L/prep.err || { log "SELECT_FAIL"; exit 1; }
+  log "SELECT $(cat $D/select.json)"
+fi
 NT=16; NE=4
 for k in $(seq 0 $((NT - 1))); do
+  grep -q episodes $D/rows_train_$k.json 2>/dev/null && continue
   $P tools/gp2/gp2_build.py rows $D/episodes.json $D train --part $k/$NT > $D/rows_train_$k.json 2>> $L/prep_rows_$k.err &
 done
 for k in $(seq 0 $((NE - 1))); do
+  grep -q episodes $D/rows_eval_$k.json 2>/dev/null && continue
   $P tools/gp2/gp2_build.py rows $D/episodes.json $D eval --part $k/$NE > $D/rows_eval_$k.json 2>> $L/prep_rows_e$k.err &
 done
 wait

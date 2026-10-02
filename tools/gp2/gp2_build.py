@@ -91,6 +91,8 @@ def pick_for(row, picks):
     """The pick of this grasp row: same object, family and image bin as the label; None when absent or when the
     candidates disagree on the base bin (ambiguous)."""
     cmd = json.loads(row["answer"]).get("command") or {}
+    if not isinstance(cmd.get("rot"), int):  # rot null (no image bin recorded for that pick): no label to compare
+        return None
     cand = [p for p in picks if p.get("obj") == row.get("tgt") and p.get("family") == cmd.get("approach")
             and p.get("rot_bin_img") == cmd.get("rot") and p.get("rot_bin_base") is not None]
     if not cand or len({p["rot_bin_base"] for p in cand}) > 1:
