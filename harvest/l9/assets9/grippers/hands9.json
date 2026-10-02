@@ -1,0 +1,21 @@
+{
+ "note": "Hand descriptors (harvest/l9/hand9.py): the ONLY hand-authored input of the generic gripper layer. tips = fingertip (distal) links; opposition = list of [tips on side A, tips on side B] pairs (thumb vs the rest, or a finger pair). The finger chains (tip + its ancestors below the base link), the closing path, the free-gap table, the fingertip contact points and the grasp frame are derived by tools/onboard/hand_sweep.py from the gripper URDF (same file name .urdf) collision meshes. path = 'table' (the gripper json width_to_joint rows, densified) or 'limits' (new robots: every finger joint from its open limit to its closed limit, the closing side found by FK).",
+ "hands": {
+  "ffw_sg2_right": {"tips": ["gripper_r_rh_p12_rn_l2", "gripper_r_rh_p12_rn_r2"],
+                    "opposition": [[["gripper_r_rh_p12_rn_l2"], ["gripper_r_rh_p12_rn_r2"]]], "path": "table"},
+  "ffw_sg2_left": {"tips": ["gripper_l_rh_p12_rn_l2", "gripper_l_rh_p12_rn_r2"],
+                   "opposition": [[["gripper_l_rh_p12_rn_l2"], ["gripper_l_rh_p12_rn_r2"]]], "path": "table"},
+  "franka_hand": {"tips": ["panda_leftfinger", "panda_rightfinger"],
+                  "opposition": [[["panda_leftfinger"], ["panda_rightfinger"]]], "path": "table"},
+  "r1pro_right": {"tips": ["right_gripper_finger_link1", "right_gripper_finger_link2"],
+                  "opposition": [[["right_gripper_finger_link1"], ["right_gripper_finger_link2"]]], "path": "table"},
+  "r1pro_left": {"tips": ["left_gripper_finger_link1", "left_gripper_finger_link2"],
+                 "opposition": [[["left_gripper_finger_link1"], ["left_gripper_finger_link2"]]], "path": "table"},
+  "g1_right": {"tips": ["right_hand_thumb_2_link", "right_hand_index_1_link", "right_hand_middle_1_link"],
+               "opposition": [[["right_hand_thumb_2_link"], ["right_hand_index_1_link", "right_hand_middle_1_link"]]],
+               "path": "table"},
+  "g1_left": {"tips": ["left_hand_thumb_2_link", "left_hand_index_1_link", "left_hand_middle_1_link"],
+              "opposition": [[["left_hand_thumb_2_link"], ["left_hand_index_1_link", "left_hand_middle_1_link"]]],
+              "path": "table"}
+ }
+}
