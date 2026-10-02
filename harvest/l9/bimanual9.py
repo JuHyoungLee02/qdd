@@ -1025,6 +1025,12 @@ class HandoverRuntime:
         # GraspGen-X candidates' swept gripper, so the receiver never picks the surface the giver's pads cover
         obst = boxes_as_obstacles(self.other_arm_boxes(self.receiver))
         env.use_arm(self.receiver.arm)
+        # bimdeep 10-03: nothing installed the GraspGen-X refiner on this path (live9.refine() returned None and
+        # choose_live silently fell back to its antipodal cloud search -- the earlier rule-vs-'ggx' A/B compared
+        # antipodal with antipodal). Install it bound to the receiver arm, the same way rtlive9.install does.
+        if os.environ.get("LIVE_REFINER", "ggx") == "ggx":
+            from . import ggx_refine as GGXR
+            L.set_refiner(GGXR.make_refiner(self.receiver.arm))
         for fam in ("front", "oblique", "side", "top"):
             gc = L.choose_live(P, N, self.profile, fam, rot_bin=0, point3d=point3d,
                                support_z=self.world.table_z, f_dir=f_dir, cam=None, category="", obj_h=0.0,
