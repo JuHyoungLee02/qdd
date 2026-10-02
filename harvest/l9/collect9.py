@@ -28,6 +28,34 @@ class NoEpisode(Exception):
     pass
 
 
+def g1_shift_heights(sc: dict, ep: dict, dz: float) -> None:
+    """g1b H7: move the drawn furniture scene vertically by dz (floor-standing parts change height, the others move),
+    with every absolute height the episode keeps (nodes, main surface, spots, surfaces, step place heights)."""
+    dz = float(dz)
+    for key in ("furniture", "parts_s"):
+        for p in sc.get(key, []):
+            if p.get("role") in ("room_wall", "ground") or "size" not in p or "pos" not in p:
+                continue
+            if float(p["pos"][2]) - float(p["size"][2]) / 2 < 0.01:  # standing on the floor: change its height
+                p["size"] = [p["size"][0], p["size"][1], round(float(p["size"][2]) + dz, 5)]
+                p["pos"] = [p["pos"][0], p["pos"][1], round(float(p["size"][2]) / 2, 5)]
+            else:
+                p["pos"] = [p["pos"][0], p["pos"][1], round(float(p["pos"][2]) + dz, 5)]
+    for n in sc.get("nodes", []):
+        for k in ("top_z", "rim_z", "covered_above"):
+            if n.get(k) is not None:
+                n[k] = round(float(n[k]) + dz, 5)
+    ep["table_z"] = round(float(ep["table_z"]) + dz, 5)
+    for src in ("spots", "surfaces"):
+        for v in (ep.get(src) or {}).values():
+            if v.get("top") is not None:
+                v["top"] = round(float(v["top"]) + dz, 5)
+    for si in ep.get("step_info") or []:
+        ph = si.get("place_height") or {}
+        if ph.get("z") is not None:
+            ph["z"] = round(float(ph["z"]) + dz, 5)
+
+
 def g1_points(sc: dict, ep: dict) -> list:
     """g1b H4: world points the G1 arm must reach for the first step: the target at grasp / pre-grasp height and the
     place at put / carry height (spots, surfaces, objects of the episode; an unknown place adds no point)."""
@@ -79,18 +107,26 @@ def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 20, world=None) ->
             continue
         robot = row.get("robot") or "ffw_sg2"
         prof = E9.active(robot)
-        if prof is not None and "surface_z_m" in prof:  # env profile (opt-in): every robot's own surface band
+        stance = None
+        if robot == "g1" and os.environ.get("G1B_STANCE", "1") != "0":  # g1b H7: dx + lean + surface height together
+            from . import robot9 as RB
+            pts = g1_points(sc, ep)
+            stance = RB.g1_stance(row["arm"], pts, pts[0::2], sc["furniture"], float(ep["table_z"]), sd)
+            if stance is None:
+                last = "g1: no stance (base x, lean, surface height) reaches the target and the place (reach-limited)"
+                continue
+        if stance is None and prof is not None and "surface_z_m" in prof:  # env profile (opt-in): own surface band
             lo, hi = prof["surface_z_m"]
             if not lo <= float(ep["table_z"]) <= hi:
                 last = f"{robot}: surface {float(ep['table_z']):.2f} m outside its profile band [{lo}, {hi}]"
                 continue
-        elif robot in ("g1", "r1pro"):  # body reach band (world9._place_v2 skips the scene): draw another scene instead
+        elif robot in ("g1", "r1pro") and stance is None:  # body reach band (world9._place_v2 skips the scene): draw another scene instead
             from . import robot9 as RB  # of losing the row (G1 pilot 10-02: 58 of 60 rows skipped)
             ok = RB.g1_surface_ok(ep["table_z"]) if robot == "g1" else RB.r1_surface_ok(ep["table_z"])
             if not ok:
                 last = f"{robot}: surface {float(ep['table_z']):.2f} m outside its reach band"
                 continue
-            if robot == "g1" and os.environ.get("G1B_BASE", "1") != "0":  # g1b H4: base x per episode (a range)
+            if robot == "g1" and os.environ.get("G1B_BASE", "1") != "0" and stance is None:  # g1b H4: base x
                 pts = g1_points(sc, ep)
                 dx = RB.g1_base_dx(row["arm"], pts, sc["furniture"], sd, view=pts[0::2])
                 if dx is None:
@@ -98,6 +134,10 @@ def draw(row: dict, pool: dict, rm, ledger=None, tries: int = 20, world=None) ->
                     continue
                 ep["g1_base_dx"] = dx
         T9.add_clutter(ep, sc, pool, sd, rmx, grip_max=row.get("grip_max"))
+        if stance is not None:  # after the clutter (drawn with the reach probe at the drawn heights)
+            g1_shift_heights(sc, ep, stance["dz"])
+            ep["g1_stance"] = stance
+            ep["g1_base_dx"] = stance["dx"]
         light = V.pick_light_family(sd, row["family"])
         head = V.head_pose(sd)
         rp, hp = V.pose_key(sc["robot_pose"], head)

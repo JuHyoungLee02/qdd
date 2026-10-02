@@ -491,7 +491,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                 self._place_base(seed, tz)
                 head = {"tilt": None, "pan": None, "random": False}
             elif v2r:  # R1 Pro torso squat / G1 standing for this surface (robot9 rules), no neck
-                self._place_v2(tz, float(ep.get("g1_base_dx", 0.0) or 0.0))
+                self._place_v2(tz, float(ep.get("g1_base_dx", 0.0) or 0.0), ep.get("g1_stance"))
                 head = {"tilt": None, "pan": None, "random": False}
             else:
                 # lift + head (cfg.init_state too: the hard reset re-reads it, P131)
@@ -853,19 +853,22 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             _set_pose(stage.GetPrimAtPath("/World/envs/env_0/Stand"), (pos[0], pos[1], z - 1.0), (1.0, 0.0, 0.0, 0.0))
             self.base = {"pos": [round(v, 4) for v in pos], "drop_m": round(tz - z, 4), "stand_xy_m": R9.STAND_XY}
 
-        def _place_v2(self, tz: float, dx: float = 0.0) -> None:
+        def _place_v2(self, tz: float, dx: float = 0.0, stance: dict | None = None) -> None:
             """R1 Pro / G1: body joints for the work surface (robot9.v2_body_joints: R1 torso squat, G1 straight) +
             the used arm's ready pose + open fingers, written to the default joint state and cfg.init_state (the hard
             reset re-reads it, P131); root pose = robot9.v2_root_pos. G1 skips surfaces it cannot work at."""
             import torch
 
             from ..teach_l8d.fx import SkipScene
-            if robot == "g1" and not R9.g1_surface_ok(tz):
+            if robot == "g1" and not stance and not R9.g1_surface_ok(tz):
                 raise SkipScene(f"g1: surface {tz:.2f} m outside its standing reach band")
             if robot == "r1pro" and not R9.r1_surface_ok(tz):
                 raise SkipScene(f"r1pro: surface {tz:.2f} m above its torso reach (L9v2-DIAG 8)")
             rob = self.env.robot
-            joints = R9.v2_init_joints(robot, arm, tz)
+            lean = float((stance or {}).get("lean", 0.0)) if robot == "g1" else 0.0
+            joints = R9.v2_init_joints(robot, arm, tz, ready=R9.g1_lean_ready(arm, lean) if lean else None)
+            if lean:  # g1b H7: torso lean of this episode (fixed), shoulder pitch compensated in the ready pose
+                joints["waist_pitch_joint"] = lean
             for jn, v in joints.items():
                 rob.data.default_joint_pos[0, rob.joint_names.index(jn)] = float(v)
                 rob.cfg.init_state.joint_pos[jn] = float(v)
@@ -876,6 +879,8 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                                                               device=rob.data.default_root_state.device)
             rob.cfg.init_state.pos = pos
             body = R9.v2_body_joints(robot, tz)
+            if lean:
+                body["waist_pitch_joint"] = lean
             self.base = {"pos": [round(v, 4) for v in pos], "body_joints": {k: round(v, 4) for k, v in body.items()},
                          "surface_z": round(tz, 4)}
 

@@ -548,6 +548,91 @@ def g1_base_dx(arm: str, points, parts, seed: int, view=()):
     return round(ok[int(np.random.default_rng([int(seed), 1931]).integers(len(ok)))], 3)
 
 
+# g1b H7 (user 10-03 03h): G1 stance per episode = base x (dx), torso lean (waist pitch, fixed in the episode) and the
+# work-surface height (the furniture moves down / up by dz so the main surface lands in the G1 band), drawn together
+# uniformly among the combinations where the target and the place are in reach (reach maps, leaned torso frame), in
+# the torso D435 view (leaned camera) and the body (front 0.10 m, upper body leaning) clears the furniture by 3 cm.
+G1_LEANS = tuple(round(v, 2) for v in np.arange(0.0, 0.401, 0.05))  # waist_pitch (limit 0.52); arm shoulder pitch -lean
+G1_SURF = (0.575, 0.785, 0.01)  # surface band: reach-map area >= 36 cells (0.575) .. shoulders 0.30 m over it (0.785)
+G1_CAM_IN_TORSO = (0.05766, 0.01753, 0.42987)  # d435_link origin in torso_link (URDF FK); axes = G1_HEAD_IN_ROOT[1]
+G1_PIVOT_Z = 0.837  # torso_link origin height (pelvis 0.793 + 0.044)
+
+
+def _Ry(t: float) -> np.ndarray:
+    c, s = math.cos(t), math.sin(t)
+    return np.array([[c, 0.0, s], [0.0, 1.0, 0.0], [-s, 0.0, c]])
+
+
+def g1_sees(p_world, root_x: float, lean: float, margin: float = 0.06) -> bool:
+    """World point inside the (leaned) torso D435 image with the world9._head_sees margin (+1 %)."""
+    Ry = _Ry(lean)
+    o = np.array([root_x + G1_TORSO_IN_ROOT[0], 0.0, G1_PIVOT_Z])
+    t = o + Ry @ np.asarray(G1_CAM_IN_TORSO, float)
+    R = Ry @ np.asarray(G1_HEAD_IN_ROOT[1], float)
+    c = R.T @ (np.asarray(p_world, float) - t)
+    if c[0] <= 1e-6:
+        return False
+    fx = HC.fx_from_hfov(HC.D435_HFOV, HC.W)
+    u, v = HC.W / 2 - fx * c[1] / c[0], HC.H / 2 - fx * c[2] / c[0]
+    return bool(margin * HC.W <= u <= (1 - margin) * HC.W and margin * HC.H <= v <= (1 - margin) * HC.H)
+
+
+def _part_fronts(parts) -> list:
+    """(front x in the body corridor, top z, bottom z, floor-standing) of every furniture part (not walls / ground)."""
+    out = []
+    for p in parts:
+        if p.get("role") in ("room_wall", "ground") or "size" not in p or "pos" not in p:
+            continue
+        c, s, yaw = np.asarray(p["pos"], float), np.asarray(p["size"], float) / 2, float(p.get("yaw") or 0.0)
+        R = np.array([[math.cos(yaw), -math.sin(yaw)], [math.sin(yaw), math.cos(yaw)]])
+        u = np.linspace(-1.0, 1.0, 21)
+        W = np.stack(np.meshgrid(u, u), -1).reshape(-1, 2) * s[:2] @ R.T + c[:2]
+        m = np.abs(W[:, 1]) < G1_CORRIDOR_Y
+        if m.any():
+            out.append((float(W[m, 0].min()), float(c[2] + s[2]), float(c[2] - s[2]), bool(c[2] - s[2] < 0.01)))
+    return out
+
+
+def g1_stance(arm: str, reach_pts, view_pts, parts, table_z: float, seed: int):
+    """-> {dx, lean, dz, surface, n_feasible} drawn uniformly among the feasible stances, or None. Points are world
+    xyz at the drawn (unshifted) heights; dz moves them with the furniture."""
+    from . import curobo9 as C9
+    root0 = V2_BASE_X["g1"]
+    fronts = _part_fronts(parts)
+    floor_h = min([t - b for f, t, b, fl in fronts if fl] or [9.0])
+    feas = []
+    for s in np.arange(G1_SURF[0], G1_SURF[1] + 1e-9, G1_SURF[2]):
+        dz = float(s) - float(table_z)
+        if floor_h + dz < 0.10:
+            continue
+        rp = [np.asarray(p, float) + [0.0, 0.0, dz] for p in reach_pts]
+        vp = [np.asarray(p, float) + [0.0, 0.0, dz] for p in view_pts]
+        for lean in G1_LEANS:
+            Ry = _Ry(lean)
+            sl = math.sin(lean)
+            for dx in np.arange(G1_DX[0], G1_DX[1] + 1e-9, G1_DX[2]):
+                rx = root0 + float(dx)
+                if any(f < rx + G1_BODY_FRONT + max(0.0, min(t + dz, 1.35) - G1_PIVOT_Z) * sl + G1_BODY_CLEAR
+                       for f, t, b, fl in fronts):
+                    break
+                o = np.array([rx + G1_TORSO_IN_ROOT[0], 0.0, G1_PIVOT_Z])
+                if not all(g1_sees(p, rx, lean) for p in vp):
+                    continue
+                if all(any(C9.reach_ok("g1", arm, Ry.T @ (p - o), ap) for ap in C9.APPROACHES) for p in rp):
+                    feas.append((round(float(dx), 3), lean, round(dz, 4), round(float(s), 3)))
+    if not feas:
+        return None
+    dx, lean, dz, s = feas[int(np.random.default_rng([int(seed), 1932]).integers(len(feas)))]
+    return {"dx": dx, "lean": lean, "dz": dz, "surface": s, "n_feasible": len(feas)}
+
+
+def g1_lean_ready(arm: str, lean: float) -> dict:
+    """V2_READY with the used arm's shoulder pitch -lean (keeps the top-down ready TCP, FK: 1-3 cm lower)."""
+    q = list(V2_READY["g1"][arm])
+    q[0] -= float(lean)
+    return {arm: tuple(q)}
+
+
 def v2_init_joints(profile: str, arm: str, table_z: float, ready: dict | None = None) -> dict:
     """Start joints: body for the surface, the used arm at its ready pose (V2_READY, inside the limits by >= 0.12
     for R1 Pro -- DIAG 9), the other arm at its stow pose, every finger open."""
