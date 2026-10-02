@@ -43,10 +43,19 @@ HFOV_HOLD = ((55.0, 65.0), (95.0, 105.0))
 # old mount (26.1 % vs 9.1 % of calls >50 % occluded, docs/stage3/results/l9v2_gates.md "Franka camera r1"):
 # occ was 1.0 on many calls across every phase (approach/carry/retreat alike), i.e. a near-field object blocking
 # almost the whole frame -- the forward-shifted high mast was hanging almost directly over the arm's own reach
-# path. r1-v2 (below) keeps x behind/at the base (same side as the old mount, not forward into the reach corridor)
-# and only changes the lateral side (negative y, away from the old left mount), height and pitch.
-MAST_DEFAULT = {"x": -0.10, "y": -0.25, "h": 0.68, "pitch": 52.0, "pan": 18.0}
-MAST_RANGE = {"x": (-0.20, -0.05), "y": (-0.33, -0.18), "h": (0.55, 0.80), "pitch": (45.0, 62.0), "pan": (10.0, 30.0)}
+# path. r1-v2 (x behind/at the base, same side as the old mount, negative y / higher / steeper pitch otherwise)
+# measured WORSE again on the same 24 seeds (46.5 % vs the matched OLD 9.6 %; a head image confirmed it, a single
+# white link fills the whole frame). Both r1-v1 and r1-v2 kept the mast within about the SAME lateral/height
+# distance from panda_link0 as the old mount (|y| 0.15-0.33 m, h 0.45-0.80 m -- a few tens of cm); a 7-DOF arm
+# swings its upper-arm link through a wide volume around the base in many configurations (not only straight
+# toward the table), so any mast that close is liable to have a link sweep right past the lens regardless of
+# which side it is on -- consistent with the OLD mount's own 26.1 % production rate. r1-v3: move the mast well
+# OUTSIDE the arm's ~0.855 m reach sphere from its shoulder (euclidean distance from panda_link0 at the range's
+# midpoint ~1.3 m, versus ~0.25-0.85 m for the old / r1-v1 / r1-v2 ranges) -- high and to the side opposite the
+# old mount, pitched steeply down (near top-down, smaller apparent arm silhouette at this range) and panned back
+# toward the workspace. Re-validating before switching production.
+MAST_DEFAULT = {"x": 0.0, "y": -0.48, "h": 1.15, "pitch": 68.0, "pan": 30.0}
+MAST_RANGE = {"x": (-0.15, 0.15), "y": (-0.58, -0.40), "h": (1.00, 1.30), "pitch": (60.0, 75.0), "pan": (20.0, 40.0)}
 D435_HFOV = 69.0  # Intel RealSense D435 colour, horizontal (datasheet 69 x 42 deg)
 TRIES = 5
 
