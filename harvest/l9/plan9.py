@@ -138,6 +138,8 @@ class Planner9:
         sc = SceneCfg.create(scene)
         self.mp.update_world(sc)
         self.ikb.update_world(sc)
+        if getattr(self, "mpc", None) is not None:
+            self.mpc.update_world(sc)
         if getattr(self, "ikr", None) is not None:
             self.ikr.update_world(sc)
         self._scene = scene  # start_hits() checks the start state against these cuboids
@@ -356,15 +358,27 @@ class Planner9:
         return None
 
     def cspace(self, q, q_goal):
-        """Collision-aware joint-space plan q -> q_goal (world as loaded). -> (N, dof) or None."""
+        """Collision-aware joint-space plan q -> q_goal (world as loaded). -> (N, dof) or None. Its own MotionPlanner:
+        the pose planner's CUDA graphs are built for pose goals and cuRobo 0.8 cannot reset them for a joint goal
+        ('CUDA graph reset is not available', offline test 10-03)."""
         from curobo.types import JointState
+        if getattr(self, "mpc", None) is None:
+            import copy
+            from curobo.motion_planner import MotionPlanner, MotionPlannerCfg
+            from curobo._src.geom.types import SceneCfg
+            self.mpc = MotionPlanner(MotionPlannerCfg.create(
+                robot=copy.deepcopy(self._robot_cfg), scene_model={"cuboid": {"_floor": {
+                    "dims": [0.1, 0.1, 0.01], "pose": [5.0, 5.0, -5.0, 1, 0, 0, 0]}}},
+                collision_cache={"cuboid": 64}, max_goalset=1, num_ik_seeds=SEEDS[0], num_trajopt_seeds=SEEDS[1],
+                self_collision_check=True))
+            if getattr(self, "_scene", None):
+                self.mpc.update_world(SceneCfg.create(self._scene))
         g = JointState.from_position(self.torch.tensor(np.asarray(q_goal, np.float32)[None], device=self.dev),
                                      joint_names=self.joint_names)
-        r = self.mp.plan_cspace(g, self._js(q), max_attempts=SEEDS[2])
+        r = self.mpc.plan_cspace(g, self._js(q), max_attempts=SEEDS[2])
         if r is None or not bool(r.success.any()):
             return None
         return self._pos(r.get_interpolated_plan())
-
     def _limits(self):
         jl = self.mp.kinematics.get_joint_limits()
         pos = jl.position.cpu().numpy()
