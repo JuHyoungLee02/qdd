@@ -895,7 +895,8 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                         body[jn] = float(np.clip(v, lim[i, 0] + 0.01, lim[i, 1] - 0.01))
                 joints.update(body)
                 if "stance_x" in cell:
-                    pos = (self._stance_root_x(float(cell["stance_x"]), pos[0]), pos[1], pos[2])
+                    v2 = int(prof.get("version", 1)) >= 2
+                    pos = (self._stance_root_x(float(cell["stance_x"]), pos[0], v2), pos[1], pos[2])
             for jn, v in joints.items():
                 rob.data.default_joint_pos[0, rob.joint_names.index(jn)] = float(v)
                 rob.cfg.init_state.joint_pos[jn] = float(v)
@@ -913,7 +914,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
                 self.base["env_cell"] = {k: (round(v, 4) if isinstance(v, float) else v) for k, v in cell.items()
                                          if k != "torso"}
 
-        def _stance_root_x(self, stance_x: float, x0: float) -> float:
+        def _stance_root_x(self, stance_x: float, x0: float, body_clear: bool = False) -> float:
             """Root x for an env-profile stance: stance_x behind the front of the work band (the nearest task object
             of the episode), never closer than the robot keep-out box allows to the nearest furniture front (the scene
             keeps furniture out of x < KEEP_OUT x-max with the root at x0)."""
@@ -930,7 +931,7 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             want = min(xs) - stance_x
             fronts = [float(p["pos"][0]) - float(p["size"][0]) / 2 for p in sc.get("furniture", [])
                       if "pos" in p and "size" in p and p.get("role") not in ("room_wall", "ground")]
-            if fronts:
+            if fronts and not body_clear:  # profile v2 cells already keep the body clear of the furniture (autotune)
                 want = min(want, min(fronts) - float(KEEP_OUT[0][1]) + x0)
             return float(want)
 
