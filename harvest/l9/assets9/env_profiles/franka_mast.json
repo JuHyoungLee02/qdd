@@ -4,8 +4,8 @@
  "version": 1,
  "source": {
   "tool": "tools/onboard/autotune (cuRobo batch IK sweep, no render)",
-  "sha": "fb86992",
-  "date": "2026-10-02T18:45Z",
+  "sha": "9de8f94",
+  "date": "2026-10-02T19:25Z",
   "n_ik": 73440,
   "selftest_fk_ik": {
    "right": 0.95703125
@@ -4123,6 +4123,26 @@
    "score": 0.9228
   }
  ],
+ "core": {
+  "rel": 0.9,
+  "n": 480,
+  "surface_z_m": [
+   0.4,
+   1.1
+  ],
+  "stance_x_m": [
+   0.2,
+   0.6
+  ],
+  "lean_rad": [
+   -0.0,
+   -0.0
+  ],
+  "mount_above_surface_m": [
+   -0.4,
+   0.1
+  ]
+ },
  "stats": {
   "best_score": 1.0,
   "n_feasible": 795,
@@ -4133,7 +4153,11 @@
    -0.4,
    0.0
   ],
-  "lift_ref_m": 0.1
+  "lift_ref_m": 0.1,
+  "cam_pitch_band_deg": [
+   20.0,
+   70.0
+  ]
  },
  "arms": {
   "right": {

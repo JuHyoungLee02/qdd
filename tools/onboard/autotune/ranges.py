@@ -18,6 +18,20 @@ from __future__ import annotations
 import numpy as np
 
 EPS = 1e-6
+# Head-camera pitch (deg below horizontal) every robot's views must stay inside: the union of the pitches the four
+# robots' accepted production views use today (AIW hcam9 rand 30-62 / neck 45+-15, R1 ZED at lean 0.8 ~67,
+# G1 D435 47.6 + lean 0.1-0.4 = 53-70, Franka mast ~20-40). One constant for all robots: a body posture whose camera
+# looks straight down (R1 lean >1, 85-90 deg) is outside every robot's view distribution (L9: no VLM confusion).
+CAM_PITCH_BAND = (20.0, 70.0)
+
+
+def with_pitch_band(d: dict, band) -> dict:
+    """Copy of a sweep dict whose camera options outside the pitch band see nothing."""
+    if band is None:
+        return d
+    cp = np.asarray(d["cam_pitch"], float)
+    ok = (cp >= band[0] - EPS) & (cp <= band[1] + EPS)  # [C,S,P]
+    return dict(d, vis=d["vis"] & ok[:, :, None, None, :])
 
 
 def _lvl(levels, dz):
@@ -73,7 +87,7 @@ def _arm_section(d, feas, st, band_depth, lateral, lift_ref):
     n = max(int(Wv.sum()), 1)
     yaw_rate = {int(y): round(float((cov_y[..., k] & Wv).sum()) / n, 4) for k, y in enumerate(yaws)}
     best = max(yaw_rate.values()) or 1.0
-    ok_y = [y for y, r in yaw_rate.items() if r >= 0.5 * best]
+    ok_y = [y for y, r in yaw_rate.items() if r >= 0.75 * best]  # bad yaw = < 3/4 of the best yaw
     tilt_keys = sorted({(o["tilt_deg"], o["tdir_deg"]) for o in orients})
     tilt_rate = {}
     for t in tilt_keys:
@@ -145,10 +159,11 @@ def _arm_section(d, feas, st, band_depth, lateral, lift_ref):
 
 
 def extract(arms, band_depth: float = 0.25, lateral=(-0.40, 0.0), lift_ref: float = 0.10, rel: float = 0.7,
-            max_cells: int = 400) -> dict:
+            max_cells: int = 400, cam_pitch_band=CAM_PITCH_BAND, core_rel: float = 0.9) -> dict:
     """arms: one sweep dict or {arm name: sweep dict} (same configs / surfaces / grids). -> profile fragment."""
     if not isinstance(arms, dict) or "reach" in arms:
         arms = {"right": arms}
+    arms = {a: with_pitch_band(d, cam_pitch_band) for a, d in arms.items()}
     names = list(arms)
     d0 = arms[names[0]]
     scores = []
@@ -168,16 +183,23 @@ def extract(arms, band_depth: float = 0.25, lateral=(-0.40, 0.0), lift_ref: floa
                      "torso": {j: d0["configs"][c][j] for j in joints}, "score": round(float(score[c, s, k]), 4)}
                     for c, s, k in idx), key=lambda r: -r["score"])
     prof = {
-        "surface_z_m": _rng(surf[[s for _, s, _ in idx]]),
-        "stance_x_m": _rng([st[k] for _, _, k in idx]),
-        "body": {"joints": {j: _rng([d0["configs"][c][j] for c, _, _ in idx]) for j in joints},
-                 "lean_rad": _rng([d0["lean"][c] for c, _, _ in idx]),
-                 "mount_above_surface_m": _rng([mz[c, s] - surf[s] for c, s, _ in idx])},
+        "surface_z_m": _rng(surf[[s for _, s, _ in idx]]) if idx else None,
+        "stance_x_m": _rng([st[k] for _, _, k in idx]) if idx else None,
+        "body": {"joints": {j: _rng([d0["configs"][c][j] for c, _, _ in idx]) for j in joints} if idx else {},
+                 "lean_rad": _rng([d0["lean"][c] for c, _, _ in idx]) if idx else None,
+                 "mount_above_surface_m": _rng([mz[c, s] - surf[s] for c, s, _ in idx]) if idx else None},
         "cells": cells[:max_cells],
         "stats": {"best_score": round(best, 4), "n_feasible": len(idx), "n_cells": int(score.size), "rel": rel,
                   "band_depth_m": band_depth, "lateral_m": list(lateral), "lift_ref_m": lift_ref},
         "arms": {a: _arm_section(arms[a], feas, st, band_depth, lateral, lift_ref) for a in names},
     }
+    core = list(zip(*np.nonzero(score >= core_rel * best - EPS))) if best > 0 else []
+    prof["core"] = {"rel": core_rel, "n": len(core),
+                    "surface_z_m": _rng(surf[[s for _, s, _ in core]]) if core else None,
+                    "stance_x_m": _rng([st[k] for _, _, k in core]) if core else None,
+                    "lean_rad": _rng([d0["lean"][c] for c, _, _ in core]) if core else None,
+                    "mount_above_surface_m": _rng([mz[c, s] - surf[s] for c, s, _ in core]) if core else None}
+    prof["stats"]["cam_pitch_band_deg"] = list(cam_pitch_band) if cam_pitch_band else None
     a0 = prof["arms"][names[0]]
     prof["hand"] = {"yaw_deg_ok": a0["yaw_deg_ok"], "yaw_deg_bad": a0["yaw_deg_bad"], "tilt_deg": a0["tilt_deg"],
                     "fallback": a0["fallback"]}

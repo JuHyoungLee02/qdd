@@ -22,6 +22,12 @@ sys.path.insert(0, HERE)
 import ranges as RG  # noqa: E402
 
 
+def has_arm(out_dir: str, profile: str, arm: str) -> bool:
+    import glob
+    return bool(glob.glob(os.path.join(out_dir, f"{profile}_{arm}.npz"))
+                or glob.glob(os.path.join(out_dir, f"{profile}_{arm}.s*of*.npz")))
+
+
 def load_arm(out_dir: str, profile: str, arm: str) -> dict:
     """One arm's sweep; sharded runs (<arm>.s<k>of<n>.npz, disjoint rotation groups) are OR-merged."""
     import glob
@@ -71,7 +77,7 @@ def build(robot: dict, arms: dict, rel: float, band_depth: float) -> dict:
         "body": {"joints": torso, "lean_rad": body["lean_rad"], "mount_above_surface_m": body["mount_above_surface_m"]},
         "hand": fr["hand"], "ready": fr["ready"], "lift_clear_m": fr["lift_clear_m"],
         "carry_clear_m": fr["carry_clear_m"], "head_cam": {"pitch_deg": a0["cam_pitch_deg"]},
-        "cells": fr["cells"], "stats": fr["stats"], "arms": fr["arms"],
+        "cells": fr["cells"], "core": fr["core"], "stats": fr["stats"], "arms": fr["arms"],
     }
     d0 = next(iter(arms.values()))
     half = {"surface_z": round(float(np.diff(d0["surfaces"]).min()) / 2, 4),
@@ -102,7 +108,7 @@ def main():
     a = ap.parse_args()
     robot = json.load(open(a.robot))
     arms = {arm: load_arm(a.sweep_dir, robot["profile"], arm) for arm in robot["arms"]
-            if os.path.exists(os.path.join(a.sweep_dir, f"{robot['profile']}_{arm}.npz"))}
+            if has_arm(a.sweep_dir, robot["profile"], arm)}
     prof = build(robot, arms, a.rel, a.band_depth)
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     json.dump(prof, open(a.out, "w"), indent=1)

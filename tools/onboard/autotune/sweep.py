@@ -136,15 +136,15 @@ def selftest(u, profile, arm, ik: IK, base, tool, arm_joints, n=512):
 
 
 def sweep_arm(r: dict, arm: str, out: str, seeds: int, batch: int, snap: float, do_selftest: bool,
-              shard=(0, 1)) -> dict:
+              shard=(0, 1), vis_only: bool = False) -> dict:
     from urdf_fk import Urdf
     from harvest.l9 import curobo9 as C9
     prof = r["profile"]
     u = Urdf(r["urdf"])
     base, tool, aj = C9.base_link(prof, arm), C9.tool_frame(prof, arm), C9.arm_joints(prof, arm)
     t0 = time.time()
-    ik = IK(prof, arm, seeds, batch)
-    st = selftest(u, prof, arm, ik, base, tool, aj) if do_selftest else None
+    ik = None if vis_only else IK(prof, arm, seeds, batch)
+    st = selftest(u, prof, arm, ik, base, tool, aj) if do_selftest and ik else None
     print(f"[{prof}/{arm}] selftest FK->IK success {st}", flush=True)
     rad = reach_radius(u, base, tool, aj) + 0.03
     cfgs = body_configs(r, u)
@@ -192,6 +192,11 @@ def sweep_arm(r: dict, arm: str, out: str, seeds: int, batch: int, snap: float, 
                 cw = camera_world(r, u, cam, qb, Twr, po)
                 vis[c, s, :, :, p] = G.visible(cw, Pw, margin=0.05).reshape(X, Y)
                 cam_pitch[c, s, p] = G.cam_pitch_deg(cw["R"])
+    sfx = "" if shard[1] == 1 else f".s{shard[0]}of{shard[1]}"
+    if vis_only:  # recompute camera visibility / pitch only, keep the stored IK results
+        old = np.load(os.path.join(out, f"{prof}_{arm}{sfx}.npz"))
+        reach = old["reach"]
+        groups = {}
     vis_any = vis.any(-1)  # IK only where the robot's own camera sees the point (score = coverage x visible)
     from harvest.l9.grasp9 import mat_quat
     n_ik = 0
@@ -236,10 +241,12 @@ def sweep_arm(r: dict, arm: str, out: str, seeds: int, batch: int, snap: float, 
             reach[c, s] = flat.reshape(X, Y, H, O)
             i0 += k
     print(f"[{prof}/{arm}] ik done t {time.time() - t0:.0f}s", flush=True)
+    if vis_only:
+        mo = json.load(open(os.path.join(out, f"{prof}_{arm}{sfx}_meta.json")))
+        n_ik, st = mo["n_ik"], mo["selftest_success"]
     meta = {"profile": prof, "arm": arm, "configs": cfgs, "orients": ori, "pitch_options": popts,
             "selftest_success": st, "reach_radius_m": rad, "n_ik": n_ik, "n_groups": len(groups),
             "seconds": round(time.time() - t0, 1), "seeds": seeds, "snap_m": snap, "shard": list(shard)}
-    sfx = "" if shard[1] == 1 else f".s{shard[0]}of{shard[1]}"
     np.savez_compressed(os.path.join(out, f"{prof}_{arm}{sfx}.npz"), reach=reach, vis=vis, cam_pitch=cam_pitch, xs=XS,
                         ys=YS, levels=LEVELS, surfaces=SURFACES, lean=lean, mount_z=mount_z, mount_x=mount_x)
     json.dump(meta, open(os.path.join(out, f"{prof}_{arm}{sfx}_meta.json"), "w"), indent=1)
@@ -256,12 +263,14 @@ def main():
     ap.add_argument("--batch", type=int, default=2048)
     ap.add_argument("--snap", type=float, default=0.03)
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--vis-only", action="store_true", help="recompute visibility / camera pitch, keep IK")
     ap.add_argument("--shard", default="0/1", help="k/n: only rotation groups g with g %% n == k (merge: merge.py)")
     a = ap.parse_args()
     r = load_robot(a.robot)
     os.makedirs(a.out, exist_ok=True)
     for arm in (a.arms.split(",") if a.arms else list(r["arms"])):
-        sweep_arm(r, arm, a.out, a.seeds, a.batch, a.snap, a.selftest, tuple(int(v) for v in a.shard.split("/")))
+        sweep_arm(r, arm, a.out, a.seeds, a.batch, a.snap, a.selftest, tuple(int(v) for v in a.shard.split("/")),
+                  a.vis_only)
 
 
 if __name__ == "__main__":

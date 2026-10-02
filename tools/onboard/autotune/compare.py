@@ -49,9 +49,13 @@ def hand_mask(d: dict, spec: dict, n_stance: int) -> np.ndarray:
     return np.repeat(m[:, :, None], n_stance, 2)
 
 
-def compare(arms: dict, spec: dict, rel: float = 0.7, band_depth: float = 0.25, lateral=(-0.40, 0.0)) -> dict:
+def compare(arms: dict, spec: dict, rel: float = 0.7, band_depth: float = 0.25, lateral=(-0.40, 0.0),
+            cam_pitch_band=RG.CAM_PITCH_BAND) -> dict:
+    """Auto set = the profile's cells (same pitch band); hand set scored twice: over every stance and at the best
+    stance of each (body, surface) -- the latter never handicaps the hand setting by a stance choice."""
     scores, st = [], None
     for d in arms.values():
+        d = RG.with_pitch_band(d, cam_pitch_band)
         sc, st = RG.cell_scores(d, band_depth, lateral, 0.10)
         scores.append(sc)
     score = np.mean(scores, 0)
@@ -62,7 +66,14 @@ def compare(arms: dict, spec: dict, rel: float = 0.7, band_depth: float = 0.25, 
     out = {"best": round(best, 4), "auto_mean": round(float(score[auto].mean()), 4), "auto_n": int(auto.sum()),
            "hand_mean": round(float(score[hand].mean()), 4) if hand.any() else None, "hand_n": int(hand.sum()),
            "hand_inside_auto": round(float((hand & auto).sum() / max(hand.sum(), 1)), 4)}
-    out["pass"] = out["hand_mean"] is None or out["auto_mean"] >= out["hand_mean"]
+    hb = hand[:, :, 0] & np.isfinite(score.max(-1))
+    out["hand_mean_best_stance"] = round(float(score.max(-1)[hb].mean()), 4) if hb.any() else None
+    ks = np.nonzero(auto.any((0, 1)))[0]  # the stance range the auto profile draws from
+    hs = hand.copy()
+    hs[:, :, :] &= np.isin(np.arange(score.shape[2]), np.arange(ks.min(), ks.max() + 1))[None, None, :] if len(ks) else False
+    out["hand_mean_auto_stance"] = round(float(score[hs].mean()), 4) if hs.any() else None
+    ref = out["hand_mean_auto_stance"] if out["hand_mean_auto_stance"] is not None else out["hand_mean"]
+    out["pass"] = ref is None or out["auto_mean"] >= ref
     # per-yaw rate inside the HAND set (does the sweep rediscover the bad yaws under today's settings too?)
     return out
 
@@ -77,7 +88,7 @@ def main():
     import make_profile as PF
     robot = json.load(open(a.robot))
     arms = {arm: PF.load_arm(a.sweep_dir, robot["profile"], arm) for arm in robot["arms"]
-            if os.path.exists(os.path.join(a.sweep_dir, f"{robot['profile']}_{arm}.npz"))}
+            if PF.has_arm(a.sweep_dir, robot["profile"], arm)}
     spec = json.load(open(a.hand)).get(robot["profile"], {})
     print(json.dumps({"profile": robot["profile"], **compare(arms, spec, a.rel)}))
 

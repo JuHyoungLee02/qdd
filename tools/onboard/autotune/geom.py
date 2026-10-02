@@ -58,7 +58,7 @@ def look_R(pitch_deg: float, pan_deg: float = 0.0) -> np.ndarray:
 
 def cam_pitch_deg(R: np.ndarray) -> float:
     f = R[:, 0]
-    return math.degrees(math.atan2(-f[2], math.hypot(f[0], f[1])))
+    return math.degrees(math.atan2(-f[2], f[0]))  # signed vs the robot heading +x: > 90 = looking backwards
 
 
 def visible(cam: dict, P: np.ndarray, margin: float = 0.05, near: float = 0.05) -> np.ndarray:

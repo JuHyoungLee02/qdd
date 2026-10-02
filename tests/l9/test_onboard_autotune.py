@@ -109,3 +109,22 @@ def test_work_mask_marks_reachable_visible_points():
     wm = prof["arms"]["right"]["work_mask"]
     assert wm["xs"] == [0.2, 0.3, 0.4, 0.5] and len(wm["ok"]) == 4
     assert wm["ok"][0] == [False, False, False] and all(all(r) for r in wm["ok"][1:])
+
+
+def test_camera_pitch_band_removes_cells_outside():
+    prof = RG.extract(_synthetic(), band_depth=0.2, lateral=(-0.3, -0.1), lift_ref=0.10, rel=0.7,
+                      cam_pitch_band=(50.0, 70.0))
+    assert prof["stats"]["n_feasible"] == 0
+    prof = RG.extract(_synthetic(), band_depth=0.2, lateral=(-0.3, -0.1), lift_ref=0.10, rel=0.7,
+                      cam_pitch_band=(30.0, 50.0))
+    assert prof["stats"]["n_feasible"] > 0 and prof["core"]["surface_z_m"] == [0.7, 0.7]
+
+
+def test_compare_hand_best_stance_mean():
+    import compare as CMP
+    out = CMP.compare({"right": _synthetic()}, {"lean_rad": [0.75, 0.85]}, band_depth=0.2, lateral=(-0.3, -0.1))
+    assert out["hand_mean_best_stance"] >= out["hand_mean"]
+
+
+def test_pitch_beyond_vertical_is_not_folded():
+    assert abs(G.cam_pitch_deg(G.look_R(110.0)) - 110.0) < 1e-6
