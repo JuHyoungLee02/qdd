@@ -17,7 +17,7 @@ def main():
     ap.add_argument("--workers", type=int, default=8)
     a = ap.parse_args()
     from harvest.astra_motion.models import LocalVLM
-    from harvest.teach_l8.dataset import IMAGE_LABELS
+    from harvest.teach_l8.dataset import image_labels
     items = [json.loads(x) for x in open(a.data, encoding="utf-8")]
     os.makedirs(a.out, exist_ok=True)
     rp = os.path.join(a.out, "replies.jsonl")
@@ -27,7 +27,8 @@ def main():
     f = open(rp, "a")
 
     def one(it):
-        imgs = [(IMAGE_LABELS[i], open(p, "rb").read()) for i, p in enumerate(it["images"])]
+        labs = image_labels(len(it["images"]), it.get("image_views") or [it.get("view", "head")])
+        imgs = [(labs[i], open(p, "rb").read()) for i, p in enumerate(it["images"])]
         rep = vlm.ask(it["prompt"], imgs, {})
         with lock:
             f.write(json.dumps({"id": it["id"], "text": rep.text, "error": rep.error}) + "\n")

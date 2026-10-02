@@ -16,4 +16,4 @@ export CC=/data/harvest/jevl/bin/cc ZIG_GLOBAL_CACHE_DIR=/data/harvest/cache/zig
 echo "START $(date -u +%FT%TZ) host=$(hostname) gpu=$G $M $N $PORT" >> $L/vllm_$N.log
 exec /data/harvest/venv_vllm/bin/vllm serve $M --host 127.0.0.1 --port $PORT --dtype bfloat16 --max-model-len 12288 \
   --served-model-name $N --gpu-memory-utilization $U --enable-prefix-caching \
-  --limit-mm-per-prompt '{"image":3,"video":0,"audio":0}' --seed 0 >> $L/vllm_$N.log 2>&1
+  --limit-mm-per-prompt '{"image":4,"video":0,"audio":0}' --seed 0 >> $L/vllm_$N.log 2>&1

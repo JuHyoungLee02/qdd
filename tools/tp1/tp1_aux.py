@@ -99,7 +99,7 @@ def make(row, kind, view, img, cam, rng):
     gt = row.get("gt") or {}
     tgt = row.get("tgt")
     name = ((meta_of(row).get("objects") or {}).get(tgt) or {}).get("name")
-    base = {"kind": "aux", "arm": "persp", "aux_kind": kind, "images": [img], "view": view, "gen": "l9",
+    base = {"kind": "aux", "arm": "persp", "aux_kind": kind, "images": [img], "image_views": [view], "view": view, "gen": "l9",
             "robot": row.get("robot"), "head_cam_mode": row.get("head_cam_mode"), "src_id": row["id"]}
     if kind == "P":
         X = gt.get("tgt")

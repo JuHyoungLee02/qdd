@@ -25,7 +25,7 @@ LORA_TARGET = r".*language_model\.layers\.\d+\.(self_attn\.(q|k|v|o)_proj|mlp\.(
 def messages(row: dict, with_answer: bool) -> list:
     from .dataset import user_content
     text = row["prompt"] if row["kind"] == "aux" else open(row["prompt_path"], encoding="utf-8").read()
-    m = [{"role": "user", "content": user_content(text, len(row["images"]))}]
+    m = [{"role": "user", "content": user_content(text, len(row["images"]), row.get("image_views"))}]
     if with_answer:
         m.append({"role": "assistant", "content": [{"type": "text", "text": row["answer"]}]})
     return m

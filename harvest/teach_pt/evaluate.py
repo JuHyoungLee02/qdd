@@ -21,8 +21,9 @@ W, H = 672, 376
 
 
 def _images(row):
-    from ..teach_l8.dataset import IMAGE_LABELS
-    return [(IMAGE_LABELS[i], open(p, "rb").read()) for i, p in enumerate(row["images"])]
+    from ..teach_l8.dataset import image_labels
+    labs = image_labels(len(row["images"]), row.get("image_views"))
+    return [(labs[i], open(p, "rb").read()) for i, p in enumerate(row["images"])]
 
 
 def _text(row, coords):

@@ -39,11 +39,23 @@ AUX_ASK = {
 AUX_TAIL = '\nReturn JSON only: {"xy": [x, y]} in metres.'
 
 
-def user_content(text: str, n_images: int) -> list:
+# 4-slot camera schema rows (harvest.l9.views9) carry image_views; their image labels follow the slot (E-TP1 10-03:
+# the positional labels above named a third-person / left-wrist image "right wrist camera" or "head depth")
+VIEW_LABELS = {"head": "head camera", "wrist_left": "left wrist camera", "wrist_right": "right wrist camera",
+               "third_person": "third-person camera"}
+
+
+def image_labels(n_images: int, views=None) -> list:
+    if views:
+        return [VIEW_LABELS[v] for v in views[:n_images]]
+    return [IMAGE_LABELS[i] for i in range(n_images)]
+
+
+def user_content(text: str, n_images: int, views=None) -> list:
     """Chat content of one request, in the LocalVLM order (text, then 'Image k: label' + image per image)."""
     out = [{"type": "text", "text": text}]
-    for i in range(n_images):
-        out.append({"type": "text", "text": f"Image {i + 1}: {IMAGE_LABELS[i]}"})
+    for i, lab in enumerate(image_labels(n_images, views)):
+        out.append({"type": "text", "text": f"Image {i + 1}: {lab}"})
         out.append({"type": "image"})
     return out
 

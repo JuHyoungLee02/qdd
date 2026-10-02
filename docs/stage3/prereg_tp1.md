@@ -82,3 +82,11 @@
     - **AUX_SAME**은 그 밖의 비열등이고, **AUX_WORSE**는 ego 비열등을 어긴 경우다.
   - on 대 off 판정(§5)은 그대로다. 걸음은 팔마다 같은 식으로 정한다(onaux는 행이 많아 걸음도 많다).
 - **변경 4 (10-03 00시대 KST, 학습 전)**: 병합 게이트에서 학습 74,765 ego 행 중 '같은 상황 다른 답' 모순이 1건 나왔다(`specgate9.contradictions`). 그 상황의 행을 **모두** 뺀다(ego 행, 3인칭 쌍둥이, 보조 행). 같은 행이 off·on 두 묶음에서 함께 빠지므로 ego 바이트 동일은 유지된다. 뺀 수는 `check.json`의 `contradiction_drop`에 남긴다. 병합 실패(23:05 KST)와 세션 중단 때문에 78dc 4장이 약 1시간 놀았다.
+- **변경 5 (10-03 01시대 KST, 결과 전 — 학습 재시작)**: on·onaux 학습이 첫 배치에서 죽었다. 원인은 4장 행(머리+손목 둘+3인칭)에서 `teach_l8.dataset.user_content`가 위치 고정 라벨 3개만 알았기 때문이다(IndexError).
+  - 같은 원인으로 슬롯 스키마 행의 이미지 라벨이 슬롯과 어긋나 있었다. 예를 들어 왼손목·3인칭 영상이 "right wrist camera"나 "head depth"로 붙었다. off 팔도 마찬가지였다.
+  - 고침:
+    - `image_views`가 있는 행은 슬롯 이름 라벨을 쓴다(head / left wrist / right wrist / third-person camera). 학습 `train.py`와 평가 `evaluate.py`, `tp1_persp_eval.py`가 같은 함수(`dataset.image_labels`)를 쓴다.
+    - 보조 행에 `image_views`를 붙인다.
+    - vLLM 이미지 상한을 3에서 4로 올린다.
+    - `image_views`가 없는 행(L8·E-GP2)은 예전과 같다.
+  - 네 팔 모두 처음부터 다시 학습한다. 앞선 off 진행분(약 500걸음)은 `out/tp1/aborted_labels_*`에 남긴다. 데이터 행(동결 목록·병합)은 같다.
