@@ -356,9 +356,10 @@ def plan(st: dict, info: dict, table_z: float, w_open: float, gc: GraspChoice, h
                     obj_near if obj_near is not None else float(np.linalg.norm(c[:2] - p[:2]))) < 2 * tol
             committed = bool(held and held.get("carry_committed"))
             # smoke 10-03 (kit_to_sink): carry_over<->lower_open at the tol edge -- once lowering started, stay with
-            # it while the object is within 2x tol (same hysteresis rule, the place side)
+            # it while the object is within 1.5x tol (place side; 2x tol = the success tolerance itself, so the band
+            # stays inside it with margin -- releasing at the success edge would trade the loop for off-centre places)
             if obj_near is not None and held is not None:
-                if held.get("lowering") and obj_near < 2 * tol:
+                if held.get("lowering") and obj_near < 1.5 * tol:
                     near = True
                 if near:
                     held["lowering"] = True

@@ -339,7 +339,7 @@ def test_p0_lift_first_still_kept(monkeypatch):
 
 def test_hyst_lowering_latch_at_tol_edge(monkeypatch):
     """smoke 10-03 kit_to_sink: once lower_open was chosen, an object drifting just outside tol (but within 2x tol)
-    keeps lower_open instead of flipping to carry_over."""
+    keeps lower_open instead of flipping to carry_over (band 1.5x tol)."""
     monkeypatch.setattr(P, "PLACE_TOL_FIX", True)
     monkeypatch.setattr(P, "PLACE_HYST_FIX", True)
     monkeypatch.setattr(P, "place_tol", lambda key: 0.02)
@@ -348,4 +348,4 @@ def test_hyst_lowering_latch_at_tol_edge(monkeypatch):
     st1 = _st([0.40, -0.54, 0.90], list(gc.quat), 0.04, hold=True, obj={"o1": [0.40, -0.54, 0.80], "o2": [0.40, -0.55, 0.71]})
     st2 = _st([0.40, -0.525, 0.85], list(gc.quat), 0.04, hold=True, obj={"o1": [0.40, -0.525, 0.80], "o2": [0.40, -0.55, 0.71]})
     assert P.plan(st1, info, 0.75, 0.107, gc, held)[0] == "lower_open"
-    assert P.plan(st2, info, 0.75, 0.107, gc, held)[0] == "lower_open"  # 2.5 cm: outside tol, inside 2x tol
+    assert P.plan(st2, info, 0.75, 0.107, gc, held)[0] == "lower_open"  # 2.5 cm: outside tol, inside 1.5x tol
