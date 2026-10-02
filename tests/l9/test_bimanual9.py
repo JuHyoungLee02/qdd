@@ -22,6 +22,38 @@ def test_bim_a_defs_cover_six_object_groups():
     assert groups == set(B.BIM_A_OBJECTS)
 
 
+def test_bim_bf_review_covers_every_bf_def_exactly_once():
+    bf_names = set(B.BIM_B_DEFS) | set(B.BIM_C_DEFS) | set(B.BIM_D_DEFS) | set(B.BIM_E_DEFS) | set(B.BIM_F_DEFS)
+    assert set(B.BIM_BF_REVIEW) == bf_names
+
+
+def test_bim_bf_review_entries_have_bool_and_nonempty_reason():
+    for name, (kept, reason) in B.BIM_BF_REVIEW.items():
+        assert isinstance(kept, bool), name
+        assert isinstance(reason, str) and len(reason) > 0, name
+
+
+def test_bim_bf_review_owner_r3_counts():
+    # owner r3 (10-02 22:30) review: B 6/6, C 6/6, D 0/6, E 3/4, F 3/6 kept.
+    def n_kept(defs):
+        return sum(1 for name in defs if B.BIM_BF_REVIEW[name][0])
+
+    assert n_kept(B.BIM_B_DEFS) == 6
+    assert n_kept(B.BIM_C_DEFS) == 6
+    assert n_kept(B.BIM_D_DEFS) == 0
+    assert n_kept(B.BIM_E_DEFS) == 3
+    assert n_kept(B.BIM_F_DEFS) == 3
+
+
+def test_kept_bim_defs_includes_all_of_a_and_only_kept_bf():
+    kept = B.kept_bim_defs()
+    assert set(B.BIM_A_DEFS) <= set(kept)
+    for name in kept:
+        if name in B.BIM_BF_REVIEW:
+            assert B.BIM_BF_REVIEW[name][0]
+    assert len(kept) == len(B.BIM_A_DEFS) + 18  # 12 handover + 18 kept B-F (6+6+0+3+3)
+
+
 def test_handover_zone_ai_worker_within_reach_verified_box():
     z = B.handover_zone_xyz("ffw_sg2", table_z=0.85, seed=1, episode_idx=0)
     assert z.shape == (3,)

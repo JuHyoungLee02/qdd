@@ -92,6 +92,61 @@ assert len(ALL_BIM_DEFS) == 40, len(ALL_BIM_DEFS)  # owner 10-02: 40 definitions
 # robot x category eligibility (owner's brief, 2026-10-02): AI Worker / R1 Pro = all; G1 = A/C/E/F only (no B: payload)
 ROBOT_CATEGORIES = {"ffw_sg2": "ABCDEF", "r1pro": "ABCDEF", "g1": "ACEF"}
 
+# owner r3 (10-02 22:30): "한 팔로 될 일에 두 팔 금지" -- every B-F def reviewed for genuine two-arm necessity.
+# Definitions are NOT deleted (kept/dropped marked here only); production/build must filter through kept_bim_defs().
+# A (handover) is reviewed separately/restored by r3, not part of this B-F pass.
+BIM_BF_REVIEW: dict = {
+    # B: all 6 kept -- tray/pot/big_box/basket/crate/bar are literally the wide/large/long object class the
+    # category is defined around; a long bar/rod carried one-handed is the textbook case FOR two-handed carry.
+    "lift_tray": (True, "넓은 쟁반, 자연스러운 두 손 운반"),
+    "lift_pot": (True, "양쪽 손잡이 냄비, 자연스러운 두 손"),
+    "lift_big_box": (True, "큰 상자(big=True), 두 손 필요"),
+    "lift_basket": (True, "넓은 바구니, 두 손 운반"),
+    "lift_crate": (True, "양쪽 손잡이 crate/bin, 두 손 운반"),
+    "lift_bar": (True, "길고 긴 막대, 양 끝을 두 손으로 드는 전형적 사례"),
+    # C: all 6 kept -- canonical "hold steady with one hand, act with the other" real-world actions.
+    "hold_bowl_fill": (True, "그릇을 손으로 받쳐 채우는 자연스러운 동작"),
+    "hold_basket_fill": (True, "바구니를 받쳐 담는 자연스러운 동작"),
+    "hold_openbox_fill": (True, "열린 상자를 받쳐 담는 자연스러운 동작(포장 작업과 동일)"),
+    "hold_tray_load": (True, "쟁반을 받쳐 올리는 자연스러운 동작(서빙과 동일)"),
+    "hold_cup_pour": (True, "컵을 쥐고 다른 손으로 따르는 전형적인 두 손 동작"),
+    "hold_pot_lid": (True, "냄비를 받치고 뚜껑을 올리는 자연스러운 동작"),
+    # D: all 6 dropped -- these are "two independent single-arm placements drawn into one scene", not a task
+    # whose INSTRUCTION requires simultaneity. No such explicit-simultaneity instruction mechanism exists yet;
+    # until one does, these are single-arm rows that happen to share a scene, not bimanual rows.
+    "indep_cup_cup": (False, "지시가 동시 수행을 명시하지 않음 -- 단일팔 행 2개"),
+    "indep_can_bottle": (False, "지시가 동시 수행을 명시하지 않음 -- 단일팔 행 2개"),
+    "indep_block_block": (False, "지시가 동시 수행을 명시하지 않음 -- 단일팔 행 2개"),
+    "indep_bottle_cup": (False, "지시가 동시 수행을 명시하지 않음 -- 단일팔 행 2개"),
+    "indep_box_box": (False, "지시가 동시 수행을 명시하지 않음 -- 단일팔 행 2개"),
+    "indep_bowl_bowl": (False, "지시가 동시 수행을 명시하지 않음 -- 단일팔 행 2개"),
+    # E: 3 kept conditionally (runtime must gate on single-hand reachability -- only a TRUE regrasp-required case
+    # should execute as bimanual; this is a per-episode check, not something this static mark alone settles).
+    # tray_level dropped: leveling a tray is a small-angle correction well within a single wrist's range -- no
+    # real regrasp/handoff is ever required for it.
+    "regrasp_box_face": (True, "일부 목표 면은 한 손목 회전만으로 못 닿음(런타임 도달성 게이트 필요)"),
+    "regrasp_cup_upright": (True, "누운 컵을 세우는 재정렬은 손목 범위를 넘을 수 있음(런타임 게이트 필요)"),
+    "regrasp_bottle_cap": (True, "병 방향 전환이 손목 범위를 넘을 수 있음(런타임 게이트 필요)"),
+    "regrasp_tray_level": (False, "수평 보정은 손목 회전 범위 내, 진짜 regrasp 불필요"),
+    # F: pot_lid/bowl_nest/box_in_box kept -- the base is held steady during a precision insert (same structure
+    # as C's container-holding tasks). cup_saucer/bottle_rack/crate_shelf dropped -- the base (tray/rack/shelf) is
+    # a table-stable or fixed scene object; placing onto/into it needs no steadying hand, it's a single-arm task.
+    "align_pot_lid": (True, "냄비를 받치고 뚜껑을 정렬하는 자연스러운 동작(C의 용기 받치기와 동일 구조)"),
+    "align_bowl_nest": (True, "기준 그릇을 받치고 포개는 정밀 작업"),
+    "align_cup_saucer": (False, "기준(tray)이 테이블에 안정적, 컵 놓기는 한 손으로 충분"),
+    "align_bottle_rack": (False, "기준(holder/rack)이 고정 구조물, 한 손으로 충분"),
+    "align_box_in_box": (True, "바깥 상자를 받치고 안쪽 상자를 끼우는 동작(열린 상자 받치기와 동일 구조)"),
+    "align_crate_shelf": (False, "대상(shelf)이 장면 노드일 뿐 쥘 대상이 아님 -- 두 번째 역할이 없는 단일팔 행"),
+}
+assert set(BIM_BF_REVIEW) == set(BIM_B_DEFS) | set(BIM_C_DEFS) | set(BIM_D_DEFS) | set(BIM_E_DEFS) | set(BIM_F_DEFS)
+
+
+def kept_bim_defs() -> dict:
+    """-> {name: def_dict} for every B-F definition marked kept (True) in BIM_BF_REVIEW, plus all of BIM_A_DEFS
+    (handover, reviewed/restored separately by owner r3 -- not part of the B-F two-arm-necessity pass)."""
+    bf = {**BIM_B_DEFS, **BIM_C_DEFS, **BIM_D_DEFS, **BIM_E_DEFS, **BIM_F_DEFS}
+    return {**BIM_A_DEFS, **{n: d for n, d in bf.items() if BIM_BF_REVIEW[n][0]}}
+
 GRIPPERS = ("grasp", "release", "hold")  # research doc §(d): "hold" is new (role=support, contact maintained)
 ROLES = ("lead", "support", "independent")
 
