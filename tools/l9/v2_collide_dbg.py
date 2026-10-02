@@ -9,6 +9,8 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.insert(0, "/data/harvest/l9v2/pylib")  # cuRobo 0.8 / warp 1.14 (plan9_server.PYLIB): this tool imports
+# curobo directly in the collection process's own python, which plan9_server's separate-process split avoids
 from harvest.l9 import curobo9 as C9  # noqa: E402
 from harvest.l9 import plan9 as P9  # noqa: E402
 
