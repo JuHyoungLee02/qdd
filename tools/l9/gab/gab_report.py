@@ -10,6 +10,14 @@ from collections import Counter, defaultdict
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 import robot_gate9 as g  # noqa: E402
+import qmon9  # noqa: E402
+
+
+def aba_gt(meta, ep_dir):
+    """Default ABA: GT step column of the episode labels (qmon9.aba_oscillations, owner ab86d5b7): True when the
+    carry phase has >= 1 round trip h[k] == h[k-2] != h[k-1]; None when the episode never reaches the carry phase."""
+    n, k = qmon9.aba_oscillations(ep_dir)
+    return None if n == 0 else k > 0
 
 GATE = 0.04
 ROBOTS = ("ffw_sg2", "franka_mast", "r1pro", "g1")
@@ -63,7 +71,7 @@ def arm_stats(eps, skips):
 def main():
     a = sys.argv[1:]
     ab = a[0]
-    aba = None
+    aba = aba_gt
     if "--aba" in a:
         mod, fn = a[a.index("--aba") + 1].split(":")
         aba = getattr(importlib.import_module(mod), fn)

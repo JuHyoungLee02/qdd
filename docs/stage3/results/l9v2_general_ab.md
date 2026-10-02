@@ -5,7 +5,7 @@ B turns on every general element at once. A is the current way. Production start
 This file was written before any result. The rules below do not change after the runs start.
 
 ## Arms
-Both arms use the **same code copy** (`/data/harvest/code_l9_gab_<sha>`, sha in the Results section). Every element
+Both arms use the **same code copy** (`/data/harvest/code_l9_gab_<sha>` = dev `<sha>`, recorded in the Results section). Every element
 in B is opt-in, so A with the switches off runs the current production path. Common to both arms:
 `L9V2_COLLIDERS=1` (production), `L9_TIMING=1`, the production head-camera coin (`HCAM_ON` in each arm dir), the
 camera rule r2-cams (each robot's own cameras; not under test, user decision) and R1 Pro's dev defaults (lean 0.8,
@@ -14,17 +14,20 @@ ready pose, carry clearance, reverse approach, grasp-link check).
 | element | switch (B only) | source |
 |---|---|---|
 | GraspGen-X candidates + label rule ggx_v1 | `L9V2_GGX_GRASPS=/data/harvest/l9v2/grasps_ggx` `L9V2_GGX_TESTED=/data/harvest/l9v2/tested_ggx` `L9V2_SEL=ggx_v1` | dev 59c3a29 (owner af9cdf1e) |
-| common grip layer (measured free gap, max-over-fingers grip, spec r4-grip) | `L9_GRIP_LAYER=1` | 724a10d..5e944ed (owner ade5e035) |
-| per-robot env profile (autotune ranges; a robot with no profile keeps its current draw) | `L9_ENV_PROFILE=1` | e5e7b52 (grip layer) + profiles from autotune (a8caa656) |
+| common grip layer (measured free gap, max-over-fingers grip, spec r4-grip) | `L9_GRIP_LAYER=1` | dev 238b57b (owner ade5e035) |
+| per-robot env profile (autotune ranges; a robot with no profile keeps its current draw) | `L9_ENV_PROFILE=1` | dev fed711c + 4 profiles dev 8ee26d0 (autotune a8caa656) |
 | carry keeps the object in view | `L9_CARRY_INVIEW=1` | dev ef829ad |
-| common executor (carry height range, reverse straight approach, grasp-link check, place-aware grasp, lift_clear skip, joint-margin ready pose, both closing-axis signs) | `L9_COMMON_EXEC=1` | dev ed4dab8 + 44a3695 (owner a9ea58a9) |
-| place round-trip prescription: P0 (carry-height meaning matched) + (a) tolerance place + (d) hysteresis + (b) place-ready evidence | switches named by the owner | owner ab86d5b7, sha added below when ready |
+| common executor (carry height range, reverse straight approach, grasp-link check, place-aware grasp, lift_clear skip, joint-margin ready pose, both closing-axis signs) | `L9_COMMON_EXEC=1` | dev ed4dab8 + 44a3695 + 6e8f535 retreat axis (owner a9ea58a9) |
+| place round-trip prescription: P0 (carry-height meaning matched) + (a) tolerance place + (d) hysteresis + (b) place-ready evidence | `L9V2_PLACE_ABOVE=1` (P0) `L9V2_PLACE_TOL=1` (a) `L9V2_PLACE_HYST=1` (d); (b) = build flag `build_v2 --rationale on` (label text only, no sim effect) | ef4728c merged into dev (owner ab86d5b7) |
+| high/shelf place share lever (extra high fixture draw per scene; plan reweighting is plan-time only, unused here) | `L9_HIGH_SHARE=0.10` | dev (work of a747477b, committed by this A/B) |
 
 Notes fixed before the runs:
 - GGX caches exist only for ffw_sg2 and franka (sim-tested only for the GGX A/B objects). R1 and G1 run ggx_v1 on
   antipodal candidates only (`GGXDBG ... ggx_file=missing`). This is what general production would do today, so B keeps
   it on for every robot (no per-robot switch, L9_PRINCIPLES "one way for every robot").
-- G1 team switches that are not on dev (`L9V2_G1_*`) are in neither arm.
+- G1 team switches that are not on dev (`L9V2_G1_*`) are in neither arm. The short-arm mechanisms `L9_EXEC_TABLE` / `L9_CSPACE_READY` (dev 84e45f2c, own G1/R1 A/B running) are in neither arm.
+- Known label defect in both arms (external review 1): some left-arm rows' prompt says "You control the right arm".
+  It changes label text only, not the sim outcome, so it does not bias this comparison; it is fixed generally elsewhere.
 - The smoke test (below) runs B without P0. The main A/B runs only with P0 included (coordinator 10-03: no
   trajectory-mode mix inside one spec).
 
@@ -49,8 +52,8 @@ Notes fixed before the runs:
   this A/B the left share is reported for reference only and is not part of the verdict. B contains no forcing switch.
 - Diversity of successful episodes (robot_gate9.profile): approach-family shares, image rotation bins, left share (reference only),
   IQR of support height and of grasp x / y, high/shelf place share.
-- Place round trip (ABA): share of episodes whose held-phase height commands contain h[k] = h[k-2] != h[k-1]
-  (definition in docs/research/place_oscillation_2026-10-03.md; the function comes from the owner ab86d5b7).
+- Place round trip (ABA): share of episodes (that reach the carry phase) whose GT carry steps (labels.jsonl "step" in carry_up/carry_over/lower_open, qmon9.aba_oscillations) contain h[k] = h[k-2] != h[k-1]
+  (definition in docs/research/place_oscillation_2026-10-03.md, function from the owner ab86d5b7). The result.json "knocked" field over-counts on multi-step definitions (external review 1) and is not used.
 - Proof that each switch ran: spec_version `...r4-grip` on B metas, `GGXDBG load` lines, common-executor and
   carry-in-view log lines.
 
