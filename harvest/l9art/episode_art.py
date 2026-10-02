@@ -656,6 +656,7 @@ class ArtEpisode:
                 k = self.b["tgt"]
                 c = np.asarray(self.w.env.object_pose(k)[0], float)
                 self._held_dz = float(ex.tcp_T()[2, 3] - (c[2] - OBJ_GEOM[k]["half_extents"][2]))
+                self._pick_z0 = float(c[2])
                 self.sub = lab["next"]
                 return f"closed on the {self.prog['words'].get('O', 'object')} (pad gap {w * 100:.1f} cm)"
             self.rel = np.linalg.inv(WA.link_world(self.w, st["link"])) @ ex.tcp_T()
@@ -667,7 +668,8 @@ class ArtEpisode:
             ex.move(T, "line")
             k = self.b["tgt"]
             c = np.asarray(self.w.env.object_pose(k)[0], float)
-            if float(np.linalg.norm(c - ex.tcp_T()[:3, 3])) > 0.12 or ex.grip_w() < EMPTY_GAP:
+            if float(np.linalg.norm(c - ex.tcp_T()[:3, 3])) > 0.12 or ex.grip_w() < EMPTY_GAP or c[2] < getattr(self, "_pick_z0", -9.0) + 0.04:
+                # the object must rise with the hand (combo pilot: a pick in a drawer counted lifted on the drawer floor)
                 self.bump("lift_drop")
                 ex.set_gripper(self.w.w_open, False)
                 self.sub = "above"
