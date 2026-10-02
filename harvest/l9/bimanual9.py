@@ -1066,6 +1066,11 @@ class HandoverRuntime:
         compat = handover_compat(C, rt.gr, sub, ok)
         bad = {int(i) for i, v in compat.items() if len(v) == 0}
         bad |= {int(i) for i in ok if int(i) not in compat}  # not evaluated (over the cap): left out
+        if len(bad) >= len(ok):
+            # no cached receiver grasp is compatible with any giver grasp (bimdeep a28 10-03: cups, rim grasps only,
+            # 13 of 13 giver picks blocked by this filter). The cache is only a proxy -- the receiver's real grasp is
+            # drawn live (GraspGen-X) on the in-hand object -- so the giver picks unconstrained instead.
+            return set(), None
         return bad, compat
 
     def _hand_clash(self, slot: "_ArmSlot", obj_key: str, standoff: float | None = None) -> set:
