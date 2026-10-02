@@ -106,9 +106,18 @@ def main(argv=None):
                 continue
             light, head = V.pick_light_family(sd, "bim_b"), V.head_pose(sd)
             from harvest.l9 import collect9 as C9L
+            from harvest.teach_l8d.fx import SkipScene
             C9L.register_task(ep)
             world.prepare(sc, ep, light, head, sd)
-            world.reset(sd, C9L.T9_TASK)
+            try:
+                world.reset(sd, C9L.T9_TASK)
+            except SkipScene as ex:
+                # production's own "this exact draw doesn't work, try another" signal -- MUST be caught per
+                # episode, not left to the outer try/except, which would otherwise kill the whole remaining run
+                # (found on the pod, bim_b_smoke6: a single SkipScene truncated a --n 10 run to 4 episodes).
+                print("SKIP_SCENE " + json.dumps({"seed": seed, "err": str(ex)}), flush=True)
+                results.append({"seed": seed, "ok": False, "status": f"SkipScene: {ex}"})
+                continue
             obj_key = ep["steps"][0][0]
             print("DRAW " + json.dumps({"seed": seed, "obj": obj_key, "wall_s": round(time.time() - t0, 1)}),
                   flush=True)
