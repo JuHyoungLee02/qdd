@@ -60,7 +60,30 @@ def load_config(profile: str, arm: str) -> dict:
     if root:
         for key in ("urdf_path", "asset_root_path"):
             k[key] = k[key].replace(ASSET_ROOT, root.rstrip("/"))
+    if os.environ.get("L9_CSPACE_READY") == "1":
+        cspace_ready(profile, arm, k)
     return d
+
+
+def cspace_ready(profile: str, arm: str, k: dict) -> None:
+    """Opt-in L9_CSPACE_READY=1, every robot with a measured ready / stow pose (robot9.V2_READY / V2_STOW, robot
+    data): cuRobo's cspace.default_joint_position (the IK null-space / retract bias) = the arm's ready pose and the
+    other arm's stow pose, instead of the all-zero straight-arm singular posture the G1 / R1 Pro configs were built
+    with (AI Worker / Franka configs already carry a bent ready pose). Joints without data keep their value."""
+    from . import robot9 as RB
+    ready, stow = getattr(RB, "V2_READY", {}).get(profile), getattr(RB, "V2_STOW", {}).get(profile)
+    arms = (getattr(RB, "V2", {}).get(profile) or {}).get("arms")
+    if not ready or not arms:
+        return
+    want = {}
+    for s, a in arms.items():
+        q = ready.get(s) if s == arm else (stow or {}).get(s)
+        if q:
+            want.update(zip(a["joints"], q))
+    cs = k.get("cspace") or {}
+    names, dflt = cs.get("joint_names") or [], list(cs.get("default_joint_position") or [])
+    if len(names) == len(dflt):
+        cs["default_joint_position"] = [float(want.get(n, v)) for n, v in zip(names, dflt)]
 
 
 def base_link(profile: str, arm: str) -> str:

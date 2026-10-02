@@ -337,9 +337,48 @@ def slot_rows(r: dict, x: dict, meta: dict, robot: str, seed: int, third_person:
     return ego, tps, cv
 
 
+RING_LEGEND = "- White ring with a black outline: the TCP now."
+TIPS_LEGEND = ("- Small white rings with a black outline: the gripper's fingertips now (they close towards each other; "
+               "the grasp point is where they meet).")
+
+
+def tip_overlay_row(r: dict, x: dict, robot: str, arm: str, out_dir: str) -> dict | None:
+    """(build option tip_overlay) the control row with its head image redrawn with a ring on every fingertip
+    (hand9.tip_points_world + astra_solo.nd.tips_overlay, the one shared draw function) and the overlay legend line
+    swapped; None when the row cannot be drawn the same way (no recorded hand orientation -> never mix overlays)."""
+    from PIL import Image
+
+    from ..astra_solo import nd as ND
+    from ..astra_solo.overlay import png_bytes
+    from ..astra_motion.geometry import Cam
+    from . import hand9 as H9
+    gt = r.get("gt") or {}
+    tbl = H9.table_for(robot, arm)
+    if tbl is None or not gt.get("tcp_quat") or gt.get("tcp") is None or gt.get("grip_w") is None:
+        return None
+    raw = os.path.join(os.path.dirname(x["images"][0]), "img1_head_camera.png")
+    if not os.path.exists(raw):
+        return None
+    pts = H9.tip_points_world(tbl, gt["tcp"], gt["tcp_quat"], float(gt["grip_w"]))
+    cam = Cam.from_json(json.load(open(r["cams_path"]))["head"])
+    img, drawn = ND.tips_overlay(np.asarray(Image.open(raw).convert("RGB")), cam, pts)
+    text = open(x["prompt_path"], encoding="utf-8").read()
+    if RING_LEGEND not in text:
+        return None
+    ip = os.path.join(out_dir, "tips", f"{x['id']}.png")
+    os.makedirs(os.path.dirname(ip), exist_ok=True)
+    with open(ip, "wb") as f:
+        f.write(png_bytes(img))
+    pp = x["prompt_path"][:-4] + "_tips.txt"
+    with open(pp, "w", encoding="utf-8", newline="\n") as f:
+        f.write(text.replace(RING_LEGEND, TIPS_LEGEND if drawn else
+                             "- (the fingertips are outside the head image this time: nothing is drawn)"))
+    return dict(x, images=[ip] + list(x["images"][1:]), prompt_path=pp, overlay="tips")
+
+
 def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera_line: bool = False,
                  grasp_format: bool = True, external: bool = False, slots: bool = False,
-                 third_person: bool = False, seed: int = 0, rationale: bool = False) -> tuple:
+                 third_person: bool = False, seed: int = 0, rationale: bool = False, tip_overlay: bool = False) -> tuple:
     """-> (control rows, aux rows, counts) of one L9 episode. external=True adds the paired external-view rows of
     paired episodes (ext9; default off = the head-only build, unchanged). rationale=True: each control row's answer
     (ego + any third-person slot variant) gets the build-time "why" (rationale9.build) inserted before "reason";
@@ -409,6 +448,12 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera
                 c["rationale_rows"] += 1
             else:
                 c["rationale_missing"] += 1
+        if tip_overlay:  # 8B check arm (user 10-03 03시): fingertip markers instead of the TCP ring, whole set only
+            x = tip_overlay_row(r, x, robot, meta.get("arm") or "right", out_dir)
+            if x is None:
+                c["tip_overlay_dropped"] += 1
+                continue
+            c["tip_overlay_rows"] += 1
         ctrl += [x] * (repeat_of(x) if train else 1)
         for e in ext_rows:  # right after their head row, same repeats
             ctrl += [e] * (repeat_of(x) if train else 1)
@@ -421,7 +466,8 @@ def episode_rows(ep_dir: str, out_dir: str, split: str, train: bool, rng, camera
 
 def build(ep_dirs, out_dir: str, split: str, name: str, train: bool = True, camera_line: bool = False,
           seed: int = 0, grasp_format: bool = True, external: bool = False, slots: bool = False,
-          third_person: bool = False, rationale: bool = False, ep_filter: bool | None = None) -> dict:
+          third_person: bool = False, rationale: bool = False, ep_filter: bool | None = None,
+          tip_overlay: bool = False) -> dict:
     """external=True (--third-person on): + the paired external-view rows, written to their own shard
     <name>_third_person.jsonl (user 10-02: the ego shard <name>.jsonl never holds third-person rows; off = 0 of them).
     rationale=True: see episode_rows (default False = unchanged output, owner 10-02 22:40).
@@ -435,7 +481,7 @@ def build(ep_dirs, out_dir: str, split: str, name: str, train: bool = True, came
     ctrl, aux, c = [], [], Counter()
     for d in ep_dirs:
         a, b, k = episode_rows(d, out_dir, split, train, rng, camera_line, grasp_format, external, slots,
-                               third_person, seed, rationale)
+                               third_person, seed, rationale, tip_overlay)
         ctrl += a
         aux += b
         c.update(k)

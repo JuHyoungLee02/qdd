@@ -652,7 +652,7 @@ class Runtime:
             return
         T0 = gc.T.copy()
         try:
-            gc.T = np.asarray(f(T0, gc.w, self.grip, None, support_z), float)
+            gc.T = np.asarray(f(T0, gc.w, self.grip, None, support_z, arm=self.arm), float)
         except TypeError:
             gc.T = np.asarray(f(T0, gc.w, self.grip), float)
         gc.meta["pad_drop_m"] = round(float(np.linalg.norm(gc.T[:3, 3] - T0[:3, 3])), 4)

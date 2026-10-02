@@ -13,6 +13,7 @@ Pure numpy."""
 from __future__ import annotations
 
 import math
+import os
 
 import numpy as np
 
@@ -302,7 +303,36 @@ FINGER = {"ffw_sg2": {"depth": 0.0274, "half_w": 0.013, "t": 0.012}}  # fingerti
 SUPPORT_CLEAR = 0.004
 
 
-def exec_pose(T, w, grip: str, table=None, support_z=None) -> np.ndarray:
+GRIP_PROFILE = {"franka": "franka_mast"}  # gtest9 grip name -> robot profile of hand9.table_for (else the same)
+
+
+def exec_pose_table(T, w, grip: str, support_z=None, arm: str = "right") -> np.ndarray:
+    """Every gripper without a hand-tuned FINGER / PAD_DROP entry (opt-in L9_EXEC_TABLE=1), from the measured hand
+    table (hand9 exec_offsets, URDF collision-mesh FK): (1) lateral: the opposing fingers meet at contact_mid (frame G),
+    not at the frame origin (G1 Dex3-1: x_G ~ +16 mm) -> move the TCP by -contact_mid's x_G / y_G so the real contact
+    centre lands on the planned one (along the approach nothing, like the parallel pads: deeper is steadier);
+    (2) support: back off along the approach only when the deepest closed finger point (tip_front, z_G) would go below
+    support_z + SUPPORT_CLEAR (the same rule as the FINGER path). No table -> T unchanged. No robot-name branch."""
+    from . import hand9 as H
+    T = np.asarray(T, float).copy()
+    t = H.table_for(GRIP_PROFILE.get(grip, grip), arm)
+    if t is None:
+        return T
+    off = t.exec_offsets(float(w))
+    R = T[:3, :3]
+    cm = off.get("contact_mid")
+    if cm is not None:
+        T[:3, 3] = T[:3, 3] - R[:, 0] * float(cm[0]) - R[:, 1] * float(cm[1])
+    tip = off.get("tip_front")
+    if support_z is None or tip is None or R[2, 2] < 0.1:
+        return T
+    half = 0.01  # finger half width / thickness beside the deepest point [hypothesis, as FINGER half_w]
+    low = T[2, 3] + float(tip) * R[2, 2] - abs(R[2, 0]) * half - abs(R[2, 1]) * (float(w) / 2 + half)
+    need = float(support_z) + SUPPORT_CLEAR - low
+    return backoff(T, need / R[2, 2]) if need > 0 else T
+
+
+def exec_pose(T, w, grip: str, table=None, support_z=None, arm: str = "right") -> np.ndarray:
     """Hand TCP pose to command for a candidate T (4x4, world frame, TCP = contact centre) of contact width w (m).
     The pads drop along the approach while closing (PAD_DROP), so the closed pads grip up to 2.8 cm below the
     planned centre (deeper = steadier on rims and bodies: smoke 10-02, pad drop compensation lost 12 of 13 mug
@@ -310,6 +340,8 @@ def exec_pose(T, w, grip: str, table=None, support_z=None) -> np.ndarray:
     support_z + 4 mm (support_z = world z of the surface the object stands on; None -> T unchanged)."""
     T = np.asarray(T, float)
     f = FINGER.get(grip)
+    if f is None and os.environ.get("L9_EXEC_TABLE") == "1":
+        return exec_pose_table(T, w, grip, support_z, arm)
     if support_z is None or f is None:
         return T.copy()
     R = T[:3, :3]

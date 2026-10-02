@@ -121,6 +121,24 @@ def resolve_est(cam, cmd: dict, est_table_z: float, tcp, holding: bool, grip_off
     return g, dict(res, goal=[round(v, 4) for v in g], notes=notes)
 
 
+def tips_overlay(img: np.ndarray, cam, pts: dict):
+    """Head image with a small ring on every fingertip (L9 grip layer overlay option: a multi-finger hand shows
+    where its fingers meet; the builder and the executor call this one function); -> (annotated copy, drawn tips)."""
+    from PIL import Image, ImageDraw
+
+    from .overlay import BLACK, WHITE, _inside, _px
+    im = Image.fromarray(np.ascontiguousarray(img).copy()).convert("RGB")
+    d = ImageDraw.Draw(im)
+    drawn = []
+    for name, p in pts.items():
+        uv = _px(cam, np.asarray(p, float))
+        if _inside(cam, uv):
+            d.ellipse([uv[0] - 4, uv[1] - 4, uv[0] + 4, uv[1] + 4], outline=BLACK, width=3)
+            d.ellipse([uv[0] - 4, uv[1] - 4, uv[0] + 4, uv[1] + 4], outline=WHITE, width=1)
+            drawn.append(name)
+    return np.asarray(im), drawn
+
+
 def ring_overlay(img: np.ndarray, cam, tcp):
     """Head image with the TCP ring only (robot self-information); -> (annotated copy, drawn names)."""
     from PIL import Image, ImageDraw

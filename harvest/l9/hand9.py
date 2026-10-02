@@ -152,6 +152,25 @@ def contact_patch(P_tip: np.ndarray, toward: np.ndarray, depth: float = 0.002) -
     return pa.mean(0), (float(pa[:, 2].min()), float(pa[:, 2].max()))
 
 
+def tip_points_world(tbl: "GapTable", tcp, quat_wxyz, gap: float) -> dict:
+    """tip name -> world xyz of its contact patch with the hand at TCP (tcp, quat wxyz of frame G) opened to `gap`
+    (the gap table's contacts_G rows interpolated) -- what the fingertip overlay draws."""
+    w, x, y, z = (float(v) for v in quat_wxyz)
+    R = np.array([[1 - 2 * (y * y + z * z), 2 * (x * y - w * z), 2 * (x * z + w * y)],
+                  [2 * (x * y + w * z), 1 - 2 * (x * x + z * z), 2 * (y * z - w * x)],
+                  [2 * (x * z - w * y), 2 * (y * z + w * x), 1 - 2 * (x * x + y * y)]])
+    cs = tbl.meta.get("contacts_G") or []
+    if len(cs) != len(tbl.gap):
+        return {}
+    g = float(np.clip(gap, tbl.gap[0], tbl.gap[-1]))
+    out = {}
+    for t in cs[0]:
+        P = np.array([c[t] for c in cs], float)
+        p = np.array([np.interp(g, tbl.gap, P[:, k]) for k in range(3)])
+        out[t] = R @ p + np.asarray(tcp, float)
+    return out
+
+
 def tip_points(tips: dict, opposition) -> dict:
     """tip name -> (contact patch centroid, patch z range) in frame G, for every tip in the opposition pairs."""
     out = {}
