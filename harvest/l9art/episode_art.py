@@ -180,6 +180,14 @@ class Exec:
             Q = self.plan_line(T, check=True)
         if Q is None and mode == "line":  # a straight move with no continuous IK (another elbow branch): a planned
             Q = self.plan_pose(T)  # move in the current world (Franka pilot: presses and grasps stopped at the pre-pose)
+        if Q is None and mode == "line":  # short contact moves (press in, grasp in): joint interpolation to the IK
+            try:  # solution when it stays near the current joints (R1 smoke: presses stopped at 0.0 mm, 6/6)
+                ok, qs, _ = self.planner.ik(np.asarray([self.to_base(T)]))
+                q0 = self.plan_start()
+                if bool(ok[0]) and float(np.abs(qs[0] - q0).max()) < 0.6:
+                    Q = np.linspace(q0, qs[0], 12)
+            except Exception:  # noqa: BLE001
+                Q = None
         if Q is None:
             return {"ok": False, "why": "no path"}
         return self.run(Q, slow=slow, target=T, dq=dq)
@@ -231,6 +239,7 @@ class ArtEpisode:
         else:
             self.ex.set_world(None, None, {}, {})
         q = dict(self.q())
+        q0 = dict(q)  # start joint values (the start-collision check)
         names, Ts = [], []
         for i, st in enumerate(self.prog["stages"]):
             k = st["kind"]
@@ -268,6 +277,14 @@ class ArtEpisode:
             return None
         ok = self.ex.planner.ik(np.stack([self.ex.to_base(T) for T in Ts]))[0]
         bad = [n for n, o in zip(names, ok) if not bool(o)]
+        if self.spec is not None:  # the arm's start state must not sit inside the fixture (R1 smoke 10-02: the ready
+            self.ex.set_world(self.spec, self.T_WF(), q0, {})  # pose overlapped an open drawer front: 6/6 'no path')
+            try:
+                hits = [h for h in self.ex.planner._call("start_hits", self.ex.plan_start()) if str(h[0]).startswith("fx_")]
+            except Exception:  # noqa: BLE001
+                hits = []
+            if hits:
+                bad.append("start_in_fixture:" + str(hits[0][0]))
         self.precheck_result = {"n": len(Ts), "bad": bad}
         return ",".join(bad) if bad else None
 
