@@ -82,3 +82,5 @@ def test_v2_init_joints_inside_limits_and_g1_band():
     j = R9.v2_init_joints("r1pro", "right", 0.75)
     assert j["torso_joint3"] < 0 and j["right_gripper_finger_joint1"] == pytest.approx(0.04995)
     assert R9.g1_surface_ok(0.70) and not R9.g1_surface_ok(0.95) and not R9.g1_surface_ok(0.40)
+    assert R9.r1_surface_ok(0.52) and R9.r1_surface_ok(0.72) and not R9.r1_surface_ok(0.82)
+    assert not R9.r1_surface_ok(0.92)

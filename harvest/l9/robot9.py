@@ -387,6 +387,13 @@ def v2_root_pos(profile: str) -> tuple:
     return (V2_BASE_X[profile], 0.0, V2[profile]["base_z"])
 
 
+def r1_surface_ok(table_z: float) -> bool:
+    """R1 Pro works a surface only where its torso reaches the planned height (torso_link4 R1_T4_ABOVE over it, within
+    2 cm): its top (1.112 m) caps it at surfaces of ~0.77 m. Above that the ready TCP ended 1.5-12 cm over or even under
+    the surface and every episode died at the start (L9v2-DIAG 8: 0/6, z - table -0.049..+0.118)."""
+    return r1_torso_for_surface(table_z)[1] >= -0.02
+
+
 def g1_surface_ok(table_z: float) -> bool:
     """G1 stands straight: its shoulders (pelvis 0.793 + 0.044 + 0.248 m) must be 0.30-0.55 m over the surface."""
     s = V2["g1"]["base_z"] + 0.044 + 0.248 - float(table_z)

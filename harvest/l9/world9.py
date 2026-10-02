@@ -826,6 +826,8 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             from ..teach_l8d.fx import SkipScene
             if robot == "g1" and not R9.g1_surface_ok(tz):
                 raise SkipScene(f"g1: surface {tz:.2f} m outside its standing reach band")
+            if robot == "r1pro" and not R9.r1_surface_ok(tz):
+                raise SkipScene(f"r1pro: surface {tz:.2f} m above its torso reach (L9v2-DIAG 8)")
             rob = self.env.robot
             joints = R9.v2_init_joints(robot, arm, tz)
             for jn, v in joints.items():
