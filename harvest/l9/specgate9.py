@@ -138,8 +138,9 @@ def contradictions(rows: list) -> int:
 
 def rationale_mismatches(rows: list) -> int:
     """Parse-back consistency gate (owner 10-02 22:40): a row's "rationale" must name the same arm(s) / approach /
-    rot / handover / axis as the commands that produced it (rationale9.parse vs. rationale9.commands_of). Rows
-    without a rationale are skipped -- nothing to check, not a mismatch."""
+    rot / place verdict / handover / axis as the commands (and, for place, the row's own step) that produced it
+    (rationale9.parse vs. rationale9.commands_of / r["step"]). Rows without a rationale are skipped -- nothing to
+    check, not a mismatch."""
     from . import rationale9 as RT
     n = 0
     for r in rows:
@@ -156,6 +157,7 @@ def rationale_mismatches(rows: list) -> int:
         bad = ((got["arms"] and got["arms"] != exp_arms)
                or (got["approach"] is not None and (not grasp or grasp[0].get("approach") != got["approach"]))
                or (got["rot"] is not None and (not grasp or grasp[0].get("rot") != got["rot"]))
+               or (got["place"] is not None and RT.PLACE_VERDICT.get(r.get("step")) != got["place"])
                or (got["handover"] and not any(c.get("handover_point") is not None
                                                or c.get("handover_height") is not None for c in cmds))
                or (got["axis"] is not None and not any(c.get("axis") == got["axis"][0] for c in cmds)))

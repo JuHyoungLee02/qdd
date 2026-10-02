@@ -1,6 +1,7 @@
 import math
 
 import numpy as np
+import pytest
 
 from harvest.astra_motion.geometry import Cam
 from harvest.l9 import grasp9 as G
@@ -197,3 +198,109 @@ def test_carry_z_default_and_r1_clearance():
     assert abs(carry_z(H, 0.22, gc, [0, 0, 0.80], [0, 0, 0.78], 0.06, True) - 0.87) < 1e-9
     # a tall hang is capped at the default
     assert carry_z(H, 0.22, gc, [0, 0, 1.10], [0, 0, 0.78], 0.06, True) == 0.75 + 0.22
+
+
+# ---------------------------------------------------------------- place_oscillation fix (a)/(d), L9V2_PLACE_TOL/HYST
+def test_place_tol_half_success_tol_bounded_by_pointing_resolution(monkeypatch):
+    """(a)'s tol_rel: 0.5x PLACE_SUCCESS_TOL (0.03 -> 0.015), floored at this object's pointing resolution and
+    capped at PLACE_TOL_MAX (0.025)."""
+    import harvest.astra_solo.pt_truth as PT
+    monkeypatch.setattr(PT, "xy_tol", lambda key: 0.012)
+    assert P.place_tol("x") == pytest.approx(0.015)  # 0.015 floor wins (small object, pointing res below it)
+    monkeypatch.setattr(PT, "xy_tol", lambda key: 0.025)
+    assert P.place_tol("x") == pytest.approx(0.025)  # large tray's own resolution wins
+    monkeypatch.setattr(PT, "xy_tol", lambda key: 0.05)
+    assert P.place_tol("x") == pytest.approx(0.025)  # PLACE_TOL_MAX caps it
+
+
+def test_plan_hold_tol_fix_places_by_object_centre_regardless_of_height(monkeypatch):
+    """(a), L9V2_PLACE_TOL=1: the HELD OBJECT's centre (not TCP) within tol of the place -> lower_open even with
+    the TCP still low (today's height-only carry_over/carry_up split would say carry_up here)."""
+    from harvest.astra_motion import harness
+    monkeypatch.setattr(harness, "obj_height", lambda k: 0.10)
+    monkeypatch.setattr(P, "PLACE_TOL_FIX", True)
+    monkeypatch.setattr(P, "place_tol", lambda key: 0.02)
+    C, c = _cands()
+    gc = P.choose(C, np.ones(5, bool), np.ones(5), c, (0.0, 0.0), 5, 0, allow_instruct=False)
+    info = {"tgt": "o1", "place": "o2", "sup_tgt": 0.75, "sup_place": 0.71, "place_top": 0.73}
+    held = {"T_obj_G": np.eye(4)}
+    obj = {"o1": [0.40, -0.551, 0.80], "o2": [0.40, -0.55, 0.71]}  # 1 mm xy off, well inside tol (2 cm)
+    st = _st([0.40, -0.55, 0.78], list(gc.quat), 0.04, hold=True, obj=obj)  # TCP low: zc here is ~0.97
+    s, cmd = P.plan(st, info, 0.75, 0.107, gc, held)
+    assert s == "lower_open" and cmd["gripper"] == "open"
+
+
+def test_plan_hold_hyst_fix_keeps_carry_over_once_committed(monkeypatch):
+    """(d), L9V2_PLACE_HYST=1 (needs PLACE_TOL_FIX for tol_rel): once the object entered 2x tol of the place, a
+    later call outside tol AND below the carry-height threshold still gets carry_over, not carry_up (no observed
+    failure) -- the hysteresis bit lives in `held`, threaded across calls the same way T_obj_G already is."""
+    from harvest.astra_motion import harness
+    monkeypatch.setattr(harness, "obj_height", lambda k: 0.10)
+    monkeypatch.setattr(P, "PLACE_TOL_FIX", True)
+    monkeypatch.setattr(P, "PLACE_HYST_FIX", True)
+    monkeypatch.setattr(P, "place_tol", lambda key: 0.02)
+    C, c = _cands()
+    gc = P.choose(C, np.ones(5, bool), np.ones(5), c, (0.0, 0.0), 5, 0, allow_instruct=False)
+    info = {"tgt": "o1", "place": "o2", "sup_tgt": 0.75, "sup_place": 0.71, "place_top": 0.73}
+    held = {"T_obj_G": np.eye(4)}
+    # step 1: object 2 cm off (outside tol 2 cm, inside 2x tol 4 cm), TCP low (fails the height check too) ->
+    # committed goes True and that alone must drive carry_over
+    obj1 = {"o1": [0.40, -0.53, 0.80], "o2": [0.40, -0.55, 0.71]}
+    st1 = _st([0.40, -0.53, 0.80], list(gc.quat), 0.04, hold=True, obj=obj1)
+    s1, _ = P.plan(st1, info, 0.75, 0.107, gc, held)
+    assert s1 == "carry_over" and held["carry_committed"] is True
+    # step 2: object now 5 cm off (outside both tol and 2x tol) and TCP still low -- the un-hysteresis'd rule would
+    # say carry_up; committed (still True from step 1) keeps carry_over
+    obj2 = {"o1": [0.40, -0.60, 0.80], "o2": [0.40, -0.55, 0.71]}
+    st2 = _st([0.40, -0.60, 0.80], list(gc.quat), 0.04, hold=True, obj=obj2)
+    s2, _ = P.plan(st2, info, 0.75, 0.107, gc, held)
+    assert s2 == "carry_over"
+
+
+def test_plan_hold_flags_off_byte_identical_to_legacy(monkeypatch):
+    """K0 (both flags at their default False): the new branches must not change a single decision -- same scenario
+    as test_plan_sequence_side_grasp's carry_up leg."""
+    assert P.PLACE_TOL_FIX is False and P.PLACE_HYST_FIX is False and P.PLACE_ABOVE_FIX is False
+
+
+# ---------------------------------------------------------------- place_oscillation fix P0, L9V2_PLACE_ABOVE
+def test_place_above_dz_matches_resolve():
+    """P0's whole point: v2plan's carry_over target must use the SAME height astra_solo.resolve.py's executor
+    actually resolves "above" to -- this constant is the single source both must stay pinned to."""
+    from harvest.astra_solo import resolve as RS
+    assert P.PLACE_ABOVE_DZ == RS.ABOVE_DZ
+
+
+def test_plan_hold_above_fix_targets_resolve_height_and_captures_grip_offset(monkeypatch):
+    """L9V2_PLACE_ABOVE=1: carry_over's z must be place_top + ABOVE_DZ + grip_offset (captured once, right after
+    the close, as tcp_z_at_close - sup_tgt), not zc (22 cm carry height) -- same scenario as
+    test_plan_carry_over_default_matches_legacy_formula, flag on instead."""
+    from harvest.astra_motion import harness
+    monkeypatch.setattr(harness, "obj_height", lambda k: 0.10)
+    monkeypatch.setattr(P, "PLACE_ABOVE_FIX", True)
+    C, c = _cands()
+    gc = P.choose(C, np.ones(5, bool), np.ones(5), c, (0.0, 0.0), 5, 0, allow_instruct=False)
+    info = {"tgt": "o1", "place": "o2", "sup_tgt": 0.75, "sup_place": 0.71, "place_top": 0.73}
+    held = {"T_obj_G": np.eye(4)}
+    obj = {"o1": [0.45, -0.2, 0.80], "o2": [0.40, -0.55, 0.71]}
+    st = _st([0.0, 0.0, 0.97], list(gc.quat), 0.04, hold=True, obj=obj)  # TCP at zc=0.97 (carry height), far xy
+    s, cmd = P.plan(st, info, 0.75, 0.107, gc, held)
+    assert held["grip_offset"] == pytest.approx(0.97 - 0.75)  # tcp_z - sup_tgt at this (first) call
+    assert s == "carry_over" and cmd["position_m"][2] == pytest.approx(0.73 + 0.08 + 0.22, abs=1e-4)
+
+
+def test_plan_hold_above_fix_grip_offset_captured_once(monkeypatch):
+    """The grip_offset must not be re-measured on later calls (resolve.py's own convention: measured once, at the
+    close) -- held["grip_offset"] sticks even as the TCP height changes on a later call."""
+    from harvest.astra_motion import harness
+    monkeypatch.setattr(harness, "obj_height", lambda k: 0.10)
+    monkeypatch.setattr(P, "PLACE_ABOVE_FIX", True)
+    C, c = _cands()
+    gc = P.choose(C, np.ones(5, bool), np.ones(5), c, (0.0, 0.0), 5, 0, allow_instruct=False)
+    info = {"tgt": "o1", "place": "o2", "sup_tgt": 0.75, "sup_place": 0.71, "place_top": 0.73}
+    held = {"T_obj_G": np.eye(4)}
+    obj = {"o1": [0.45, -0.2, 0.80], "o2": [0.40, -0.55, 0.71]}
+    P.plan(_st([0.0, 0.0, 0.97], list(gc.quat), 0.04, hold=True, obj=obj), info, 0.75, 0.107, gc, held)
+    assert held["grip_offset"] == pytest.approx(0.22)
+    P.plan(_st([0.0, 0.0, 1.10], list(gc.quat), 0.04, hold=True, obj=obj), info, 0.75, 0.107, gc, held)
+    assert held["grip_offset"] == pytest.approx(0.22)  # unchanged despite the new TCP height
