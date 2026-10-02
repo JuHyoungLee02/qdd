@@ -308,8 +308,9 @@ class Runtime:
         self._cand[k] = d
         return d
 
-    def _valid(self, k: str, Cw: dict) -> tuple:
-        """valid mask (test pass, support clearance, neighbour finger clearance at pre_open, reach) + margin."""
+    def _valid(self, k: str, Cw: dict, extra_boxes: dict | None = None) -> tuple:
+        """valid mask (test pass, support clearance, neighbour finger clearance at pre_open, reach) + margin.
+        extra_boxes: see Runtime.refresh_world (L9 bimanual, opt-in, default None = unchanged)."""
         from ..sim.scene import OBJ_GEOM
         ok = np.asarray(Cw["test_ok"], bool).copy()
         g = OBJ_GEOM[k]
@@ -353,15 +354,16 @@ class Runtime:
                 T = Cw["T"][i].copy()
                 T[:3, 3] = T[:3, 3] - Cw["a"][i] * sd
                 Tp.append(self.to_base(T))
-            self.refresh_world(below_z=self._bottom_z(k) - 0.02)
+            self.refresh_world(below_z=self._bottom_z(k) - 0.02, extra_boxes=extra_boxes)
             r_ok, _, _ = self.planner.ik(np.stack(Tp), contact_links_off=False)
             ok[idx] = r_ok
-            self.refresh_world(exclude=(k,))
+            self.refresh_world(exclude=(k,), extra_boxes=extra_boxes)
         vs["ik_ok"] = int(ok.sum())
         self._vstats = vs
         return ok, margin
 
-    def choose(self, k: str, info: dict):
+    def choose(self, k: str, info: dict, extra_boxes: dict | None = None):
+        """extra_boxes: see Runtime.refresh_world (L9 bimanual, opt-in, default None = unchanged)."""
         C = self._load(k)
         if C is None or not len(C["w"]):
             self.picks.append({"obj": k, "choice_fail": "no candidate file" if C is None else "no candidates"})
@@ -371,8 +373,8 @@ class Runtime:
         Cw["test_ok"] = C["test_ok"].copy()
         for j in self.failed:
             Cw["test_ok"][j] = False
-        self.refresh_world(exclude=(k,))
-        ok, margin = self._valid(k, Cw)
+        self.refresh_world(exclude=(k,), extra_boxes=extra_boxes)
+        ok, margin = self._valid(k, Cw, extra_boxes=extra_boxes)
         obs = getattr(self.w, "last_obs", None)
         cam = obs.cams.get("head") if obs is not None else None
         depth = (obs.depth or {}).get("head") if obs is not None and getattr(obs, "depth", None) else None
@@ -711,21 +713,23 @@ class Runtime:
             Q = np.concatenate([Q0, Q])
         return self._resample(Q), note, width
 
-    def _approach_plan(self, q0, gc, tg) -> dict:
+    def _approach_plan(self, q0, gc, tg, extra_boxes: dict | None = None) -> dict:
         """Transit to the pre-grasp with EVERY link checked against the full target box (plan_grasp frees the
         gripper links for its whole first leg: the open fingers swept through the target and knocked it over in the
         pilot), then straight lines pre-grasp -> grasp -> lift (IK per waypoint, the target is touched there by
-        design). -> {ok, status, approach, grasp, lift}."""
-        self.refresh_world(below_z=self._bottom_z(tg) - 0.02)  # not the support: padded + activation distance it
-        T_pre = gc.T.copy()                                     # collided with fingertips 4 mm above it (pilot)
-        T_pre[:3, 3] = gc.pre
+        design). extra_boxes: see Runtime.refresh_world (L9 bimanual, opt-in, default None = unchanged).
+        -> {ok, status, approach, grasp, lift}."""
+        self.refresh_world(below_z=self._bottom_z(tg) - 0.02, extra_boxes=extra_boxes)  # not the support: padded +
+        T_pre = gc.T.copy()                             # activation distance it collided with fingertips 4 mm above
+        T_pre[:3, 3] = gc.pre                            # it (pilot)
         Qa = self.planner.pose(q0, self.to_base(T_pre))
         if Qa is None:
             self._dump_fail("transit", q0, T_pre)
             return {"ok": False, "status": "transit to the pre-grasp failed", "approach": None, "grasp": None,
                     "lift": None}
-        self.refresh_world(exclude=(tg,), below_z=self._bottom_z(tg) - 0.02)  # the straight approach touches the
-        Qg = self.planner.line(Qa[-1], self.to_base(T_pre), self.to_base(gc.T), 0.008)  # target by design only
+        self.refresh_world(exclude=(tg,), below_z=self._bottom_z(tg) - 0.02, extra_boxes=extra_boxes)
+        Qg = self.planner.line(Qa[-1], self.to_base(T_pre), self.to_base(gc.T), 0.008)  # the straight approach
+        # touches the target by design only
         if Qg is None:
             return {"ok": False, "status": "straight approach failed", "approach": None, "grasp": None, "lift": None}
         T_l = gc.T.copy()
