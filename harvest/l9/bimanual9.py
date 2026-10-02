@@ -1097,6 +1097,15 @@ class HandoverRuntime:
         Tb = rt.to_base(T)
         Q = _line_or_pose(rt, q, Tb)
         if Q is None:
+            if os.environ.get("BIM_DEBUG") == "1":  # diagnosis: which ingredient blocks the move
+                res = {}
+                rt.refresh_world(holding=slot.held_obj or None, below_z=below_z)
+                res["no_boxes"] = rt.planner.pose(q, Tb) is not None
+                rt.refresh_world(below_z=below_z, exclude=(slot.held_obj,) if slot.held_obj else ())
+                res["no_obj"] = rt.planner.pose(q, Tb) is not None
+                res["ik_goal"] = bool(np.asarray(rt.planner.ik(Tb[None])[0]).reshape(-1)[0])
+                res["attach_fail"] = rt.timeline.get("attach_fail", 0)
+                print("BIMDBG movefail " + str({"arm": slot.arm, **res}), flush=True)
             return {"ok": False, "status": "no collision-free path"}
         slot.traj, slot.traj_i = rt._resample(np.asarray(Q, float)), 0
         self.run_ticks(len(slot.traj) + 5)
