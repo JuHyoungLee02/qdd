@@ -443,6 +443,8 @@ class ArtEpisode:
         ax = ax / max(np.linalg.norm(ax), 1e-9)
         a = np.array([0.0, 0.0, -1.0])
         tilt = 0.5 * self.draw["pitch"]  # up to 15 deg towards the robot (natural spread)
+        if self.prog["def"] == "drawer_take_close":  # out of an open drawer: oblique from the robot side (combo pilot
+            tilt = 0.45 + 0.5 * self.draw["pitch"]  # 5: the top-down pre-pose over the drawer had no IK in 9 of 16)
         toward = np.array([-c[0], -c[1], 0.0])
         toward /= max(np.linalg.norm(toward), 1e-9)
         a = SK._tilt(a, np.cross(toward, [0, 0, 1.0]), -tilt)
