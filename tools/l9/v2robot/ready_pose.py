@@ -4,6 +4,7 @@ orientation in the base frame = Ry(-lean) Rz(yaw). usage: ready_pose.py <profile
 [arm...]  (x y z = right-arm TCP in the cuRobo base frame; left = y mirrored, yaw negated). Prints the solutions."""
 import json
 import math
+import os
 import sys
 
 sys.path.insert(0, "/data/harvest/l9v2/pylib")  # cuRobo 0.8 / warp 1.14 (plan9_server.PYLIB); this tool imports
@@ -35,9 +36,12 @@ for arm in arms:
     if arm == "left":
         t[1], yaw = -t[1], -YAW
     q = qmul([math.cos(-LEAN / 2), 0, math.sin(-LEAN / 2), 0], [math.cos(yaw / 2), 0, 0, math.sin(yaw / 2)])
-    offs = [(0.0, 0.0)] + [(dx, dz) for dx in (-0.05, 0.0, 0.05) for dz in (-0.05, 0.0, 0.05) if dx or dz]
-    T = [[t[0] + dx, t[1], t[2] + dz] for dx, dz in offs]  # batch: the target + 8 neighbours (first success wins)
-    import os
+    GRID = float(os.environ.get("READY_GRID", 0.05))  # half-width of the dx/dz search (m); DIAG 9: the single
+    # 9-neighbour search around one hand-picked point found 0 reachable candidates on the current URDF/limits
+    STEP = float(os.environ.get("READY_STEP", 0.04))
+    rng = np.arange(-GRID, GRID + 1e-9, STEP)
+    offs = [(0.0, 0.0)] + [(dx, dz) for dx in rng for dz in rng if dx or dz]
+    T = [[t[0] + dx, t[1], t[2] + dz] for dx, dz in offs]  # batch: the target + grid neighbours (best margin wins)
     ik = C.make_ik(profile, arm, num_seeds=64, max_batch_size=len(T),
                     self_collision_check=os.environ.get("SELFCOL", "1") == "1")
     tf = C.tool_frame(profile, arm)
