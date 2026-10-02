@@ -98,6 +98,8 @@ def oracle_objects(env):
         half_z[k] = he[2]
     all_ids = list(getattr(env, "obj_ids", ["o3", "o5", "o8", "o9", "o10"]))  # = the contact filter order (scene)
     n_f = len(getattr(env, "finger_bodies", None) or FINGER_BODIES[env.arm])  # L9 profile: its finger links
+    f0, f1 = getattr(env, "finger_slice", (0, n_f))  # dual (L9 bimanual): this arm's fingers among both arms'
+    n_all = getattr(env, "n_finger_filters", n_f)
     contacts = set()
     for k in env.present:
         if k in VISUAL_ONLY or k in X_VISUAL_ONLY:  # marker / L8-X spots: no sensor; virtual contacts
@@ -112,10 +114,10 @@ def oracle_objects(env):
             continue
         fm = env.contact[k].data.force_matrix_w  # (1, 1, n_filters, 3); filters = fingers + other objects
         mag = fm[0, 0].norm(dim=-1).cpu().numpy()
-        if (mag[:n_f] > CONTACT_FORCE_N).any():
+        if (mag[f0:f1] > CONTACT_FORCE_N).any():
             contacts.add(frozenset({"gripper", k}))
         others = [j for j in all_ids if j != k and not OBJ_GEOM[j].get("kinematic")]  # = the sensor filter order
-        for j, m in zip(others, mag[n_f:]):
+        for j, m in zip(others, mag[n_all:]):
             if m > CONTACT_FORCE_N and j in env.present:
                 contacts.add(frozenset({k, j}))
         if OBJ_GEOM[k]["shape"] == "mesh":  # L8-X mesh objects report finger contacts but not object contacts

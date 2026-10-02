@@ -340,7 +340,7 @@ def _place_layout_event(env, env_ids):
 def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu", variant: str = "standard",
                decimation: int = 5, render_interval: int | None = None, task: str = "mug_tray",
                table_z: float = TABLE_TOP_Z, ws=None, lift: float | None = None, objset: str | None = None,
-               robot: str | None = None, extra_cameras: dict | None = None):
+               robot: str | None = None, extra_cameras: dict | None = None, dual: bool = False):
     import isaaclab.envs.mdp as mdp
     import isaaclab.sim as sim_utils
     from isaaclab.assets import AssetBaseCfg, RigidObjectCfg
@@ -368,6 +368,14 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
     if robot is not None:
         bodies = R9.v2_contact_bodies(robot, arm) if v2r else R9.FINGER_BODIES
         finger_paths = [f"{{ENV_REGEX_NS}}/Robot/{b}" for b in bodies]
+    other = "left" if arm == "right" else "right"
+    if dual:  # L9 bimanual: the other arm's finger links join the contact filters (after the used arm's)
+        if robot is None:
+            finger_paths = finger_paths + [f"{robot_prefix}/{GRIPPER_PRIM[other]}/{b}" for b in FINGER_BODIES[other]]
+        elif v2r:
+            finger_paths = finger_paths + [f"{{ENV_REGEX_NS}}/Robot/{b}" for b in R9.v2_contact_bodies(robot, other)]
+        else:
+            raise NotImplementedError(f"dual: robot {robot!r} has one arm")
     obj_ids = ["o3", "o5", "o8", "o9", "o10"] + (list(X_RIGID) + list(OBJV_IDS) if objset == "x" else [])
 
     def obj_cfg(k):
@@ -490,6 +498,18 @@ def _build_cfg(seed: int, cameras, arm: str, depth: bool, sim_device: str = "cpu
         gripper_action = mdp.JointPositionActionCfg(asset_name="robot", joint_names=grip_all, scale=1.0,
                                                     preserve_order=True,
                                                     use_default_offset=False)
+    if dual:  # L9 bimanual: the other arm + gripper after the used arm's (action = [arm, grip, arm2, grip2])
+        if v2r:
+            arm2, grip2 = list(R9.V2[robot_name]["arms"][other]["joints"]), list(R9.V2[robot_name]["arms"][other]["fingers"])
+        else:
+            arm2, grip2 = ARM_JOINTS[other], GRIP_ALL[other]
+
+        @configclass
+        class ActionsCfg(ActionsCfg):  # noqa: F811
+            arm2_action = mdp.JointPositionActionCfg(asset_name="robot", joint_names=arm2, scale=1.0,
+                                                     use_default_offset=False, preserve_order=True)
+            gripper2_action = mdp.JointPositionActionCfg(asset_name="robot", joint_names=grip2, scale=1.0,
+                                                         preserve_order=True, use_default_offset=False)
 
     @configclass
     class ObsCfg:
@@ -576,7 +596,8 @@ class Env:
     def __init__(self, seed: int, headless=True, cameras=DEFAULT_CAMERAS, arm="right", depth=True, sim_device="cpu",
                  variant="standard", decimation: int = 5, render_interval: int | None = None, task: str = "mug_tray",
                  hard_reset: bool = True, table_z: float | None = None, ws=None, lift: float | None = None,
-                 objset: str | None = None, robot: str | None = None, extra_cameras: dict | None = None):
+                 objset: str | None = None, robot: str | None = None, extra_cameras: dict | None = None,
+                 dual: bool = False):
         from . import randomize
         from .tasks import check_task
         if objset not in (None, "x"):
@@ -602,9 +623,10 @@ class Env:
         _LAYOUT["table_z"] = tz  # randomize.write_distractor_poses reads it (distractors stand on this table)
         self.robot_name = robot  # L9 profile (None = the AI Worker)
         ext = {"extra_cameras": dict(extra_cameras)} if extra_cameras else {}
+        self.dual = bool(dual)
         cfg, self.layout = _build_cfg(seed, cameras, arm, depth, sim_device, variant, decimation, render_interval,
                                       task, tz, self.ws, self.lift, objset, **({"robot": robot} if robot else {}),
-                                      **ext)
+                                      **ext, **({"dual": True} if dual else {}))
         if ext:  # the hard reset keeps every camera's render product (callbacks muted for self.cameras)
             self.cameras = cameras + tuple(extra_cameras)
         self.sim_device = cfg.sim.device
@@ -653,9 +675,58 @@ class Env:
             self.tcp_offset, self.tip_offset = 0.0, float(R9.V2[robot]["finger_depth_m"])
         else:
             self.tcp_offset, self.tip_offset = _measure_finger_offsets(arm, robot) if robot else _measure_finger_offsets(arm)
+        self.finger_slice, self.n_finger_filters = (0, len(self.finger_idx)), len(self.finger_idx)
+        self.primary = arm
+        if self.dual:
+            self._setup_dual(robot)
         if self.variant != "standard":
             randomize.setup_visuals(self)
             self.rand_mesh_fit = dict(randomize.MESH_FIT)
+
+    # ---- L9 bimanual: per-arm readout contexts (use_arm) + the other arm's targets in every step
+    _CTX = ("arm", "arm_ids", "grip_id", "grip_ids", "ee_idx", "finger_idx", "finger_bodies", "pad_pair", "pad_inset",
+            "tcp_offset", "tip_offset", "finger_slice")
+
+    def _setup_dual(self, robot):
+        jn, bn = self.robot.joint_names, self.robot.body_names
+        p = self.primary
+        o = "left" if p == "right" else "right"
+        self._ctx = {p: {k: getattr(self, k) for k in self._CTX if hasattr(self, k)}}
+        c = {"arm": o}
+        if robot is None:
+            c.update(arm_ids=[jn.index(n) for n in ARM_JOINTS[o]], grip_id=jn.index(GRIP_JOINT[o]),
+                     ee_idx=bn.index(EE_BODY[o]), finger_idx=[bn.index(b) for b in FINGER_BODIES[o]])
+            c["tcp_offset"], c["tip_offset"] = _measure_finger_offsets(o)
+        else:
+            from ..l9 import robot9 as R9
+            a = R9.V2[robot]["arms"][o]
+            c.update(arm_ids=[jn.index(n) for n in a["joints"]], grip_ids=[jn.index(n) for n in a["fingers"]],
+                     ee_idx=bn.index(a["tcp"]), finger_bodies=tuple(a["finger_bodies"]), pad_pair=(0, 1),
+                     pad_inset=0.0, tcp_offset=0.0, tip_offset=float(R9.V2[robot]["finger_depth_m"]))
+            c["grip_id"] = c["grip_ids"][0]
+            c["finger_idx"] = [bn.index(b) for b in c["finger_bodies"]]
+        n1 = self.finger_slice[1]
+        if robot is None:
+            nf2 = len(FINGER_BODIES[o])
+        else:
+            from ..l9 import robot9 as R9
+            nf2 = len(R9.v2_contact_bodies(robot, o))
+            self.finger_slice = (0, len(R9.v2_contact_bodies(robot, p)))
+            self._ctx[p]["finger_slice"] = self.finger_slice
+            n1 = self.finger_slice[1]
+        c["finger_slice"] = (n1, n1 + nf2)
+        self.n_finger_filters = n1 + nf2
+        self._ctx[o] = c
+        q = self.robot.data.joint_pos[0, c["arm_ids"]].cpu().numpy().astype(np.float32)
+        self.arm2_target = (q, None)  # (joint targets, width or None = the current finger joints)
+
+    def use_arm(self, arm: str) -> None:
+        """Readouts (arm_q, ee_pose, finger_mid, gripper_width, contacts) of `arm` from now on (dual only)."""
+        for k, v in self._ctx[arm].items():
+            setattr(self, k, v)
+
+    def other_arm(self) -> str:
+        return "left" if self.primary == "right" else "right"
 
 
     # ---- time / stepping
@@ -777,6 +848,8 @@ class Env:
 
     def step(self, q_target: np.ndarray) -> None:
         q_target = np.asarray(q_target, dtype=np.float32)
+        if getattr(self, "dual", False) and self.arm != self.primary:
+            raise RuntimeError("dual: step() takes the primary arm's targets; use_arm(primary) first")
         if getattr(self, "robot_name", None) in ("r1pro", "g1"):  # L9 v2: arm joints + the profile's width map
             from ..l9 import robot9 as R9
             n = len(self.arm_ids)
@@ -790,8 +863,34 @@ class Env:
         else:
             g = width_to_joint(float(q_target[7]))
             a = np.concatenate([q_target[:7], [g, g, g, g]]).astype(np.float32)
+        if getattr(self, "dual", False):
+            a = np.concatenate([a, self._arm2_action()]).astype(np.float32)
         self.env.step(self.torch.as_tensor(a, device=self.env.device).unsqueeze(0))
         self._steps += 1
+
+    def _arm2_action(self) -> np.ndarray:
+        """The other arm's action part (joint targets + its finger joints for the held width)."""
+        o = self.other_arm()
+        c = self._ctx[o]
+        q, w = self.arm2_target
+        if getattr(self, "robot_name", None) in ("r1pro", "g1"):
+            from ..l9 import robot9 as R9
+            ids = c["grip_ids"]
+            if w is None:
+                g = self.robot.data.joint_pos[0, ids].cpu().numpy()
+            else:
+                m = R9.v2_width_to_joints(self.robot_name, o, float(w))
+                g = [m[j] for j in R9.V2[self.robot_name]["arms"][o]["fingers"]]
+        else:
+            if w is None:
+                g = [float(self.robot.data.joint_pos[0, c["grip_id"]])] * 4
+            else:
+                g = [width_to_joint(float(w))] * 4
+        return np.concatenate([np.asarray(q, np.float32), np.asarray(g, np.float32)])
+
+    def set_arm2_target(self, q, width=None) -> None:
+        """Joint targets (and gripper width; None = keep the fingers where they are) of the other arm (dual)."""
+        self.arm2_target = (np.asarray(q, np.float32), None if width is None else float(width))
 
     # ---- robot readouts (world frame)
     def arm_q(self) -> np.ndarray:

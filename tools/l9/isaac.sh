@@ -7,6 +7,7 @@ case "$(hostname)-$G" in
   *7a2a-x2-1) ;;
   *7a2a-x2-*|*7a2a-x3-*) echo "refused: $(hostname) GPU $G is not an L9 render card"; exit 2;;
   *7a2a-0|*7a2a-1|*7a2a-3) ;;
+  *q-fe08-0|*q-fe08-2|*q-fe08-3|*q-fe08-6) ;;  # fe08 render probe 10-02: GPU 1/4/5/7 DEVICE_LOST (never render)
   *) echo "refused: $(hostname) GPU $G is not an L9 render card"; exit 2;;
 esac
 L=$Q/logs/l9
