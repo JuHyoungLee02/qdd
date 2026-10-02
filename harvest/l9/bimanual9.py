@@ -848,3 +848,241 @@ class HandoverRuntime:
 def install_handover(world, profile: str, giver_arm: str, receiver_arm: str, device: str = "cuda:0",
                       allow_untested: bool = False) -> HandoverRuntime:
     return HandoverRuntime(world, profile, giver_arm, receiver_arm, device=device, allow_untested=allow_untested)
+
+
+# ================================================================================================= category B: lift
+LIFT_HEIGHT_M = 0.08  # m, clearance lift before carrying -- a first guess (no tuned value exists yet for a dual
+# rigid carry; single-arm micro-lifts elsewhere in rt9 are much smaller, that's a grasp-settle lift, not a carry).
+
+
+class LiftRuntime:
+    """Category-B orchestrator: two `rt9.Runtime` (one per arm) gripping the SAME object simultaneously, against
+    one dual SimEnv -- choose split grasps (arm B's choose() sees arm A's gripper as an obstacle, same
+    `extra_boxes` mechanism as HandoverRuntime, which naturally pushes the two picks to opposite sides of the
+    object instead of needing an explicit left/right split heuristic), approach + close both (the sync-close gate
+    in `lift_phase` is about CLOSE timing, not approach timing -- both arms simply reach `held` before `_move_both`
+    is ever called), then lift/carry/place by moving BOTH arms to the TCP pose implied by one shared rigid object
+    target pose (`_move_both`), using each arm's own grip transform captured at grasp time (same `T_obj_G` trick as
+    HandoverRuntime's carry-correction step). KNOWN APPROXIMATION (flag, like HandoverRuntime's R1 other-arm-box):
+    each arm's Cartesian path to its own endpoint is planned independently (`rt.planner.line`/`pose`), so the two
+    grippers are only guaranteed object-consistent AT the keypoints this class calls `_move_both` for (lift /
+    carry / place), not necessarily at every intermediate tick between them -- real contact friction + the dual
+    SimEnv's physics resolve the rest, same as any real-world grasp compliance. If pod smoke shows this is too
+    loose (object slips / arms fight each other), the fix is more keypoints (finer-grained `_move_both` calls), not
+    a different architecture. Not wired into collect9/build9 yet, see tools/l9/bim_smoke_b.py for the smoke
+    harness (spec note §3, same caveat as HandoverRuntime)."""
+
+    def __init__(self, world, profile: str, arm_a: str, arm_b: str, device: str = "cuda:0",
+                 allow_untested: bool = False):
+        from . import rt9 as RT
+        env = world.env
+        if not getattr(env, "dual", False):
+            raise ValueError("LiftRuntime needs world.env built with dual=True (world9.make_world9(dual=True))")
+        if env.primary not in (arm_a, arm_b):
+            raise ValueError(f"env.primary={env.primary!r} must be arm_a or arm_b")
+        self.world, self.profile = world, profile
+        env.use_arm(arm_a)
+        rt_a = RT.Runtime(world, profile, arm_a, device=device, allow_untested=allow_untested)
+        env.use_arm(arm_b)
+        rt_b = RT.Runtime(world, profile, arm_b, device=device, allow_untested=allow_untested)
+        self.a = _ArmSlot(arm_a, rt_a, width=float(rt_a.w.w_open))
+        self.b = _ArmSlot(arm_b, rt_b, width=float(rt_b.w.w_open))
+        self.slots = (self.a, self.b)
+        self.phase = "approach"
+        self.events = []
+        env.use_arm(env.primary)
+        self._freeze(self.a)
+        self._freeze(self.b)
+
+    def slot_of(self, arm: str) -> "_ArmSlot":
+        return self.a if arm == self.a.arm else self.b
+
+    def other_of(self, slot: "_ArmSlot") -> "_ArmSlot":
+        return self.b if slot is self.a else self.a
+
+    # -------------------------------------------------------------- per-tick stepping (identical pattern to
+    # HandoverRuntime, generalized over self.slots instead of two named attributes)
+    def _freeze(self, slot: "_ArmSlot") -> None:
+        env = self.world.env
+        env.use_arm(slot.arm)
+        slot.rt.q_target = env.arm_q().astype(np.float32)
+        slot.traj = None
+
+    def _gravity_target(self, slot: "_ArmSlot") -> np.ndarray:
+        env = self.world.env
+        env.use_arm(slot.arm)
+        g = self.world.pl._gravity_offset()[0].cpu().numpy()
+        rt = slot.rt
+        q = env.robot.data.joint_pos[0, rt.arm_ids].cpu().numpy().copy()
+        if rt.q_target is not None:
+            for j, sid in enumerate(rt.sim_ids):
+                q[rt.arm_ids.index(sid)] = rt.q_target[j]
+        return (q + g).astype(np.float32)
+
+    def tick(self) -> None:
+        for slot in self.slots:
+            if slot.traj is not None:
+                if slot.traj_i < len(slot.traj):
+                    slot.rt.q_target = slot.traj[slot.traj_i]
+                    slot.traj_i += 1
+                if slot.traj_i >= len(slot.traj):
+                    slot.traj = None
+        env = self.world.env
+        primary = self.slot_of(env.primary)
+        other = self.other_of(primary)
+        q_other = self._gravity_target(other)
+        env.use_arm(other.arm)
+        env.set_arm2_target(q_other, other.width)
+        q_prim = self._gravity_target(primary)
+        env.use_arm(primary.arm)
+        env.step(np.concatenate([q_prim, [primary.width]]).astype(np.float32))
+
+    def run_ticks(self, n: int) -> None:
+        for _ in range(n):
+            self.tick()
+
+    def other_arm_boxes(self, slot: "_ArmSlot") -> dict:
+        env = self.world.env
+        other = self.other_of(slot)
+        env.use_arm(other.arm)
+        p_other, _ = self.world.pl.tcp_pose()
+        env.use_arm(slot.arm)
+        return {"other_arm": (np.asarray(p_other, float), [2 * h for h in GRAVITY_BOX_HALF],
+                              np.array([1.0, 0.0, 0.0, 0.0]))}
+
+    def _approach_and_close(self, slot: "_ArmSlot", obj_key: str, gc) -> dict:
+        """Same body as HandoverRuntime._grasp, minus the choose() call (B picks both arms' candidates together,
+        before either approaches, so arm B's choose() sees arm A's FINAL gripper box, not a mid-approach one)."""
+        env = self.world.env
+        env.use_arm(slot.arm)
+        rt = slot.rt
+        r = rt._approach_plan(rt.plan_start(), gc, obj_key, extra_boxes=self.other_arm_boxes(slot))
+        if not r["ok"]:
+            return {"ok": False, "status": r["status"]}
+        slot.traj, slot.traj_i = rt._resample(r["approach"]), 0
+        self.run_ticks(len(slot.traj) + 5)
+        slot.traj, slot.traj_i = rt._resample(r["grasp"]), 0
+        self.run_ticks(len(slot.traj) + 5)
+        slot.width = 0.0
+        self.run_ticks(SETTLE_TICKS)
+        env.use_arm(slot.arm)
+        gap = float(env.gripper_width())
+        from . import rt9 as RT
+        if RT.classify_close(gap, gc.w) == "EMPTY":
+            return {"ok": False, "status": f"EMPTY close (gap {gap * 100:.1f} cm)"}
+        slot.held_obj = obj_key
+        if r.get("lift") is not None:
+            slot.traj, slot.traj_i = rt._resample(r["lift"]), 0
+            self.run_ticks(len(slot.traj) + 5)
+        return {"ok": True, "status": "ok"}
+
+    def _move_both(self, T_obj_target: np.ndarray, T_obj_G_a: np.ndarray, T_obj_G_b: np.ndarray) -> dict:
+        """Plan each arm's own Cartesian path to the TCP pose implied by the SAME object target pose (via its own
+        captured grip transform), then execute both simultaneously (shared tick loop, generic over self.slots --
+        tick() already holds a slot at its last waypoint once its own traj is exhausted, so differing path
+        lengths are handled for free)."""
+        env = self.world.env
+        plans = {}
+        for slot, T_obj_G in ((self.a, T_obj_G_a), (self.b, T_obj_G_b)):
+            env.use_arm(slot.arm)
+            rt = slot.rt
+            rt.refresh_world(holding=slot.held_obj or None, extra_boxes=self.other_arm_boxes(slot))
+            T_tcp = T_obj_target @ T_obj_G
+            q = env.arm_q() if rt.q_target is None else np.asarray(rt.q_target, float)
+            Tb = rt.to_base(T_tcp)
+            Q = rt.planner.line(q, rt.to_base(rt.tcp_T()), Tb) or rt.planner.pose(q, Tb)
+            if Q is None:
+                return {"ok": False, "status": f"no collision-free path for {slot.arm}"}
+            plans[slot.arm] = rt._resample(np.asarray(Q, float))
+        n = 0
+        for slot in self.slots:
+            slot.traj, slot.traj_i = plans[slot.arm], 0
+            n = max(n, len(slot.traj))
+        self.run_ticks(n + 5)
+        return {"ok": True, "status": "ok"}
+
+    def _gripper(self, slot: "_ArmSlot", action: str) -> None:
+        slot.width = 0.0 if action == "close" else float(slot.rt.w.w_open)
+        self.run_ticks(SETTLE_TICKS)
+        if action == "open":
+            slot.held_obj = None
+
+    # -------------------------------------------------------------- episode
+    def run_episode(self, obj_key: str, table_z: float, target_xy, seed: int = 0, episode_idx: int = 0) -> dict:
+        """Category-B smoke episode: both arms choose a (mutually obstacle-aware) grasp on `obj_key`, approach and
+        close together, lift `LIFT_HEIGHT_M`, carry to `target_xy`, place back at the pick height, open together.
+        Not the production collection loop (spec note §3). Every return path restores env.primary (same bug class
+        HandoverRuntime.run_episode fixed first)."""
+        env = self.world.env
+        try:
+            return self._run_episode(obj_key, table_z, target_xy, seed, episode_idx)
+        finally:
+            env.use_arm(env.primary)
+
+    def _run_episode(self, obj_key: str, table_z: float, target_xy, seed: int, episode_idx: int) -> dict:
+        from . import plan9 as P9
+        from . import rt9 as RT
+        env = self.world.env
+        log = []
+
+        env.use_arm(self.a.arm)
+        gc_a = self.a.rt.choose(obj_key, {"tgt": obj_key}, extra_boxes=self.other_arm_boxes(self.a))
+        if gc_a is None:
+            return {"ok": False, "log": [{"phase": "choose_a", "ok": False}]}
+        env.use_arm(self.b.arm)
+        gc_b = self.b.rt.choose(obj_key, {"tgt": obj_key}, extra_boxes=self.other_arm_boxes(self.b))
+        if gc_b is None:
+            return {"ok": False, "log": [{"phase": "choose_b", "ok": False}]}
+        log.append({"phase": "choose", "ok": True})
+
+        ra = self._approach_and_close(self.a, obj_key, gc_a)
+        log.append({"phase": "grasp_a", **ra})
+        if not ra["ok"]:
+            return {"ok": False, "log": log}
+        rb = self._approach_and_close(self.b, obj_key, gc_b)
+        log.append({"phase": "grasp_b", **rb})
+        if not rb["ok"]:
+            return {"ok": False, "log": log}
+        self.phase = "lift"
+
+        T_obj_pick = RT.T_of(*env.object_pose(obj_key))
+        T_obj_Ga = P9.inv_T(T_obj_pick) @ gc_a.T
+        T_obj_Gb = P9.inv_T(T_obj_pick) @ gc_b.T
+
+        T_obj_lift = T_obj_pick.copy()
+        T_obj_lift[2, 3] += LIFT_HEIGHT_M
+        r = self._move_both(T_obj_lift, T_obj_Ga, T_obj_Gb)
+        log.append({"phase": "lift", **r})
+        if not r["ok"]:
+            return {"ok": False, "log": log}
+        self.phase = "carry"
+
+        T_obj_carry = T_obj_lift.copy()
+        T_obj_carry[:2, 3] = np.asarray(target_xy, float)
+        r = self._move_both(T_obj_carry, T_obj_Ga, T_obj_Gb)
+        log.append({"phase": "carry", **r})
+        if not r["ok"]:
+            return {"ok": False, "log": log}
+        self.phase = "place_gate"
+
+        T_obj_place = T_obj_carry.copy()
+        T_obj_place[2, 3] = T_obj_pick[2, 3]  # same table height assumed for pick and place spots
+        r = self._move_both(T_obj_place, T_obj_Ga, T_obj_Gb)
+        log.append({"phase": "place", **r})
+        if not r["ok"]:
+            return {"ok": False, "log": log}
+
+        self._gripper(self.a, "open")
+        self._gripper(self.b, "open")
+        log.append({"phase": "release", "ok": True})
+        self.phase = "done"
+
+        env.use_arm(self.a.arm)
+        final_xy = np.asarray(env.object_pose(obj_key)[0], float)[:2]
+        gate = success_b(final_xy, target_xy, both_closed_before_lift=True, min_table_gap_m=LIFT_HEIGHT_M)
+        return {"ok": gate["ok"], "gate": gate, "log": log}
+
+
+def install_lift(world, profile: str, arm_a: str, arm_b: str, device: str = "cuda:0",
+                  allow_untested: bool = False) -> LiftRuntime:
+    return LiftRuntime(world, profile, arm_a, arm_b, device=device, allow_untested=allow_untested)
