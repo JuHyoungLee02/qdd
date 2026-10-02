@@ -124,6 +124,12 @@ class PlannerProxy:
     def line(self, *a, **k):
         return self._call("line", *a, **k)
 
+    def reverse_approach(self, *a, **k):
+        return self._call("reverse_approach", *a, **k)
+
+    def cspace(self, *a, **k):
+        return self._call("cspace", *a, **k)
+
     def _limits(self, *a, **k):
         return self._call("_limits", *a, **k)
 

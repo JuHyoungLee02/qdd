@@ -43,6 +43,8 @@ TARGET_CORE = 0.5  # while approaching, the target is an obstacle at half its bo
 MAX_FALLBACK = 6
 SETTLE_DW, SETTLE_N, SETTLE_MAX_S, WIN_S = 0.001, 3, 0.6, 0.05
 REACH_TOL, HOLD_MAX_S = 0.012, 1.5
+# L9v2-R1: straight approach from the grasp end + joint-space transit when the forward one fails (opt-in per robot)
+REVERSE_APPROACH = {"r1pro": os.environ.get("IR_L9_R1_REVERSE", "") == "1"}
 CURRENT = None
 
 
@@ -745,13 +747,28 @@ class Runtime:
         T_pre = gc.T.copy()                             # activation distance it collided with fingertips 4 mm above
         T_pre[:3, 3] = gc.pre                            # it (pilot)
         Qa = self.planner.pose(q0, self.to_base(T_pre))
-        if Qa is None:
+        if Qa is None and not REVERSE_APPROACH.get(self.profile):
             self._dump_fail("transit", q0, T_pre)
             return {"ok": False, "status": "transit to the pre-grasp failed", "approach": None, "grasp": None,
                     "lift": None}
         self.refresh_world(exclude=(tg,), below_z=self._bottom_z(tg) - 0.02, extra_boxes=extra_boxes)
-        Qg = self.planner.line(Qa[-1], self.to_base(T_pre), self.to_base(gc.T), 0.008)  # the straight approach
-        # touches the target by design only
+        Qg = None if Qa is None else self.planner.line(Qa[-1], self.to_base(T_pre), self.to_base(gc.T), 0.008)
+        # the straight approach touches the target by design only
+        if Qg is None and REVERSE_APPROACH.get(self.profile):
+            # L9v2-R1: walk the straight approach back from a grasp-pose IK branch, then a joint-space transit to
+            # its pre-grasp end with the target as a full obstacle (same worlds as the forward path)
+            Qr = self.planner.reverse_approach(self.to_base(gc.T), self.to_base(T_pre), 0.008)
+            if Qr is not None:
+                self.refresh_world(below_z=self._bottom_z(tg) - 0.02, extra_boxes=extra_boxes)
+                Qc = self.planner.cspace(q0, Qr[0])
+                if Qc is not None:
+                    Qa, Qg = Qc, Qr
+                    self.timeline["reverse_approach"] = self.timeline.get("reverse_approach", 0) + 1
+                self.refresh_world(exclude=(tg,), below_z=self._bottom_z(tg) - 0.02, extra_boxes=extra_boxes)
+        if Qa is None:
+            self._dump_fail("transit", q0, T_pre)
+            return {"ok": False, "status": "transit to the pre-grasp failed", "approach": None, "grasp": None,
+                    "lift": None}
         if Qg is None:
             return {"ok": False, "status": "straight approach failed", "approach": None, "grasp": None, "lift": None}
         T_l = gc.T.copy()

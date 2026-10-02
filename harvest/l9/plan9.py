@@ -138,6 +138,8 @@ class Planner9:
         sc = SceneCfg.create(scene)
         self.mp.update_world(sc)
         self.ikb.update_world(sc)
+        if getattr(self, "ikr", None) is not None:
+            self.ikr.update_world(sc)
         self._scene = scene  # start_hits() checks the start state against these cuboids
 
     def _js(self, q):
@@ -315,6 +317,53 @@ class Planner9:
                     self.n_line_reject = getattr(self, "n_line_reject", 0) + 1
                     return None
         return out
+
+    def reverse_approach(self, T_grasp_base, T_pre_base, step_m: float = 0.008, n_branches: int = 8):
+        """Straight approach found from the GRASP end (L9v2-R1): IK branches of the grasp pose (world as loaded,
+        self-collision on), best joint-limit margin first, each walked back to the pre-grasp with plan9.line.
+        A forward walk from the transit's pre-grasp configuration often hits a joint limit on the way down (R1 Pro
+        elbow joint4, replay 10-03), although another branch of the same grasp pose has a clean straight line.
+        -> (N, dof) pre-grasp -> grasp joint path, or None."""
+        from curobo.inverse_kinematics import InverseKinematics, InverseKinematicsCfg
+        from curobo.types import GoalToolPose, Pose
+        from .grasp9 import mat_quat
+        if getattr(self, "ikr", None) is None:
+            import copy
+            self.ikr = InverseKinematics(InverseKinematicsCfg.create(
+                robot=copy.deepcopy(self._robot_cfg), scene_model={"cuboid": {"_floor": {
+                    "dims": [0.1, 0.1, 0.01], "pose": [5.0, 5.0, -5.0, 1, 0, 0, 0]}}},
+                num_seeds=32, self_collision_check=True, max_batch_size=1, collision_cache={"cuboid": 64}))
+            if getattr(self, "_scene", None):
+                from curobo._src.geom.types import SceneCfg
+                self.ikr.update_world(SceneCfg.create(self._scene))
+        T = np.asarray(T_grasp_base, float)
+        g = GoalToolPose.from_poses({self.ikr.tool_frames[0]: Pose(
+            position=self.torch.tensor(T[:3, 3][None], dtype=self.torch.float32, device=self.dev),
+            quaternion=self.torch.tensor(mat_quat(T[:3, :3])[None], dtype=self.torch.float32, device=self.dev))},
+            num_goalset=1)
+        r = self.ikr.solve_pose(g, return_seeds=n_branches)
+        ok = r.success.reshape(-1).cpu().numpy().astype(bool)
+        names = list(r.js_solution.joint_names)
+        P = r.js_solution.position.reshape(len(ok), -1).cpu().numpy()
+        P = P[:, [names.index(n) for n in self._planned]]
+        lo, hi = self._limits()
+        order = sorted(np.flatnonzero(ok), key=lambda i: -float(np.minimum(P[i] - lo, hi - P[i]).min()))
+        for i in order:
+            Q = self.line(P[i], T, T_pre_base, step_m)
+            if Q is not None:
+                self.n_reverse = getattr(self, "n_reverse", 0) + 1
+                return Q[::-1].copy()
+        return None
+
+    def cspace(self, q, q_goal):
+        """Collision-aware joint-space plan q -> q_goal (world as loaded). -> (N, dof) or None."""
+        from curobo.types import JointState
+        g = JointState.from_position(self.torch.tensor(np.asarray(q_goal, np.float32)[None], device=self.dev),
+                                     joint_names=self.joint_names)
+        r = self.mp.plan_cspace(g, self._js(q), max_attempts=SEEDS[2])
+        if r is None or not bool(r.success.any()):
+            return None
+        return self._pos(r.get_interpolated_plan())
 
     def _limits(self):
         jl = self.mp.kinematics.get_joint_limits()
