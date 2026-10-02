@@ -136,7 +136,7 @@ def main():
     out = a[0]
     truth = [json.loads(x) for x in open(os.path.join(out, "data", "truth_eval.jsonl"))]
     steps = int(open(os.path.join(out, "steps_a.txt")).read())
-    runs = {"a_s0": "a", "b_s0": "b", "a_s2": "a"}
+    runs = {"a_s0": "a", "b_s0": "b", "a_s2": "a", "b_s2": "b"}  # b_s2: change 3 (78dc GPU0)
     rep = {"steps": steps, "truth_rows": len(truth), "models": {}}
     R = {}
     for run, arm in runs.items():
@@ -163,8 +163,9 @@ def main():
     med = lambda v: np.median(np.where(np.isfinite(v), v, 1e4))  # noqa: E731
     cmp = {}
     for tag in (f"q{steps // 4}", f"q{steps // 2}", "final"):
-        for lab, (x, y) in {"AA_a_s2-a_s0": ("a_s0", "a_s2"), "b_s0-a_s0": ("a_s0", "b_s0"),
-                            "b_s0-a_s2": ("a_s2", "b_s0")}.items():
+        for lab, (x, y) in {"AA_a_s2-a_s0": ("a_s0", "a_s2"), "AA_b_s2-b_s0": ("b_s0", "b_s2"),
+                            "b_s0-a_s0": ("a_s0", "b_s0"), "b_s0-a_s2": ("a_s2", "b_s0"),
+                            "b_s2-a_s0": ("a_s0", "b_s2"), "b_s2-a_s2": ("a_s2", "b_s2")}.items():
             mx, my = f"{x}_{tag}", f"{y}_{tag}"
             if mx not in R or my not in R:
                 continue
@@ -196,15 +197,18 @@ def main():
 
 def decide(cmp, tag, key="rot_pm1"):
     """prereg_gp2 §5 (fixed before results); change 2: key = skill_pm1 (chance-corrected) is the primary."""
-    aa = cmp.get(f"AA_a_s2-a_s0@{tag}")
-    b0, b2 = cmp.get(f"b_s0-a_s0@{tag}"), cmp.get(f"b_s0-a_s2@{tag}")
-    if not (aa and b0 and b2) or not aa.get(key) or not b0.get(key) or not b2.get(key):
+    aas = [cmp[k] for k in (f"AA_a_s2-a_s0@{tag}", f"AA_b_s2-b_s0@{tag}") if cmp.get(k)]
+    crosses = [cmp[k] for k in (f"b_s0-a_s0@{tag}", f"b_s0-a_s2@{tag}", f"b_s2-a_s0@{tag}", f"b_s2-a_s2@{tag}")
+               if cmp.get(k)]
+    if not aas or len(crosses) < 2 or any(not c.get(key) for c in aas + crosses):
         return {"result": "INCOMPLETE", "key": key}
-    m = max(0.03, (aa[key][2] - aa[key][1]) / 2, abs(aa[key][0]))
-    nf = max(0.03, (aa["fam"][2] - aa["fam"][1]) / 2, abs(aa["fam"][0]))
+
+    def marg(k, floor):  # change 3: the larger of the A/A pairs (a and, when present, b)
+        return max([floor] + [max((c[k][2] - c[k][1]) / 2, abs(c[k][0])) for c in aas if c.get(k)])
+    m, nf, np_ = marg(key, 0.03), marg("fam", 0.03), marg("pt_px_median", 3.0)
     # change 2: the L9 v2 point check is the pixel error to the label point (the 3D approach scorer gives the label
     # itself a 117 mm median on above_target rows, so it is not valid on L9 v2 rows; it stays for L8-X)
-    np_ = max(3.0, (aa["pt_px_median"][2] - aa["pt_px_median"][1]) / 2, abs(aa["pt_px_median"][0]))
+    aa = aas[0]
 
     def ni(c):  # b not worse than that a run: family accuracy, point > 20 mm rate, L8-X > 20 mm rates
         ok = c["fam"][1] >= -nf and c["pt_px_median"][2] <= np_
@@ -213,9 +217,9 @@ def decide(cmp, tag, key="rot_pm1"):
             ml = max(0.02, (aav[2] - aav[1]) / 2) if aav else 0.02
             ok = ok and v["fail20"] is not None and v["fail20"][2] <= ml
         return ok
-    win_b = all(c[key][0] >= m and c[key][1] > 0 for c in (b0, b2))
-    win_a = all(c[key][0] <= -m and c[key][2] < 0 for c in (b0, b2))
-    if win_b and ni(b0) and ni(b2):
+    win_b = all(c[key][0] >= m and c[key][1] > 0 for c in crosses)
+    win_a = all(c[key][0] <= -m and c[key][2] < 0 for c in crosses)
+    if win_b and all(ni(c) for c in crosses):
         r = "B_BETTER"
     elif win_b:
         r = "B_BETTER_BUT_NI_FAIL"
@@ -223,7 +227,7 @@ def decide(cmp, tag, key="rot_pm1"):
         r = "A_BETTER"
     else:
         r = "SAME"
-    return {"result": r, "key": key, "margin": round(m, 4), "margin_fam": round(nf, 4), "margin_pt_px": round(np_, 2),
+    return {"result": r, "key": key, "n_cross": len(crosses), "n_aa": len(aas), "margin": round(m, 4), "margin_fam": round(nf, 4), "margin_pt_px": round(np_, 2),
             "keep": "b (base frame)" if r == "B_BETTER" else "a (image frame)",
             "note": "early pilot: re-run at 7,500 L9 v2 episodes before the format is frozen"}
 
