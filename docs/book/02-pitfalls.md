@@ -332,3 +332,12 @@
 | P189 | 성공 편 손목 roll(joint7) 실측이 0.06–0.34 rad 튐 | 손가락 한쪽이 물체·면에 막힌 채 집게가 움직이거나 손이 끌려 손목 토크가 상한 5.1 Nm 에 포화; 편 시작 직후 사례는 TrajExec 가 시작부터 pre_open 으로 닫아 낮은 시작 자세에서 손가락이 걸림 | pre-open 은 스탠드오프 도착 뒤(§12.12 P1), 나머지는 실제 사건이라 관문으로 버림(USD 손목 effort 는 바꾸지 않음) | L9v2-DIAG 9 |
 | P190 | 라이브(무캐시) 실행기: 캐시로는 성공하는 바로 그 물체·시드에서 점군 antipodal 이 "no valid grasp"(파드 2/2 재현) | 명령된 rot bin 은 grasp9.rot_img(머리 영상 투영 각)인데 sample_grasps_cloud 가 grasp9.rot_base(베이스프레임 각)로 비교 — 서로 다른 좌표계라 거의 전부 불일치 | 후보마다 (m, c) 한 번으로 rot_img 계산해 비교(접근 방향 스윕과 무관하므로 phi 루프 밖으로 이동) | 2026-10-02 L9-live |
 | P191 | 위 수정 뒤에도 같은 두 시드에서 antipodal_pairs_cloud 가 400점에서 쌍 0개 | 점군 법선을 "크롭 중심에서 바깥쪽"으로 추정 — 깊이카메라는 물체 한쪽 면만 보여줘 크롭 중심이 표면 위(또는 거의 위)에 있어 방향이 신뢰 불가(닫힌 메시 가정이 단일/이중 시점 부분 점군엔 안 맞음) | crop_cloud 가 점마다 '본 카메라 원점'도 반환, estimate_normals(view_origin=) 가 그쪽으로 법선을 고정(센서가 보는 면은 항상 센서 쪽이 바깥) — 합성 호(arc) 시험으로 재현·검증 | 2026-10-02 L9-live |
+
+## 추가: L9 집게·손 공통 층에서 (2026-10-03)
+
+| # | 증상 | 원인 | 예방 규칙 | 발생 |
+|---|---|---|---|---|
+| P193 | 로봇마다 폭 표(패드 점·링크 원점 거리)가 실제 빈틈과 다름: AIW 중간 폭에서 최대 24 mm(54.6 → 35.2 mm), G1 45 mm, R1 3 mm, Franka 0.04 mm | 표를 패드 점(G1)·finger link2 원점 거리 − 7.7 mm(AIW, 시뮬 probe2)·시각 메시(R1)로 만듦: AIW 는 손가락이 원호로 열려 TCP 뒤(+10 mm)에서 근위 링크가 틈을 좁히고(P166), R1 시뮬 손가락 콜라이더는 URDF 상자(0.06×0.01×0.04)라 시각 메시보다 3 mm 좁음 | 손 기술자(손끝 링크+맞섬, hands9.json)만 주고 충돌 메시 FK 로 닫힘 경로를 쓸어 TCP 면 창(z_G −20…+10 mm, \|x_G\|<20 mm)의 맞선 손가락 사슬 사이 빈틈을 잼(tools/onboard/hand_sweep.py → assets9/grippers/gap9); 열림·읽기·빈손 판정이 이 표를 씀(L9_GRIP_LAYER=1); 새 로봇은 grip_check.py 통과가 표준 | 10-03 집게 공통 층 |
+| P194 | R1 Pro 손가락의 충돌 점이 0개(빈틈 측정 실패) | urdf_fk.link_points 가 메시만 읽고 URDF 원시 도형(box·cylinder·sphere) 충돌체를 건너뜀 — R1 손가락 콜라이더가 상자 | hand_sweep.link_pts 가 원시 도형 표면도 표본; 측정 도구는 링크마다 점 수를 찍어(diag) 0 을 먼저 잡는다 | 같은 회차 |
+| P195 | 쥠(holding) 토크를 손가락 관절 하나(grip_ids[0])로 읽음: G1 은 thumb_0 이라 16–33 N 접촉에도 ~0 → holding 거짓(g1b H1) | Env.gripper_effort 가 grip_id 한 관절 | 집게 층: 모든 손가락 관절 토크의 최댓값 + 손가락 접촉은 하나라도(any) — 2지·다지 같은 함수(hand9.holding, scene.gripper_effort) | 같은 회차 |
+| P196 | Franka 는 GraspGen-X 잡기 후보를 쓸 수 없음 | GGX 서버 gripper_json 에 franka_hand 등록이 없음(ffw_sg2·r1pro·g1 만) | grip_check grip4 가 등록 여부를 검사(--ggx-dir); 쓰기 전에 graspgenx_gripper_cfg.py 로 등록 | 같은 회차 |
