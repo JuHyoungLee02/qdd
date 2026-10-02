@@ -263,7 +263,7 @@ class ArtEpisode:
                 q = qg
             elif k == "press":
                 J = self.spec["joints"][self.joint_of(st)]
-                pp = SK.press_pose(self.hf(st, q), J["hi"], self.ex.gr, self.draw)
+                pp = SK.press_pose(self.hf(st, q), J["hi"], self.ex.gr, self.draw, SK.PRESS_EXTRA_BY.get(self.ex.profile, SK.PRESS_EXTRA))
                 Ts += [pp["T_pre"], pp["T_in"]]
                 names += [f"{i}:press:pre", f"{i}:press:in"]
             elif k == "slide":
@@ -375,7 +375,7 @@ class ArtEpisode:
         if kind == "press":
             hf = self.hf(st)
             J = self.spec["joints"][self.joint_of(st)]
-            pp = SK.press_pose(hf, J["hi"], self.ex.gr, self.draw)
+            pp = SK.press_pose(hf, J["hi"], self.ex.gr, self.draw, SK.PRESS_EXTRA_BY.get(self.ex.profile, SK.PRESS_EXTRA))
             if sub == "start" and self.ex.grip_w() > 0.01:
                 out.update(cmd={"mode": "gripper", "gripper": "close", "skill": skill}, next="above")
             elif sub in ("start", "above"):

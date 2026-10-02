@@ -17,6 +17,7 @@ YAW_MAX = math.radians(15)
 ROLL_MAX = math.radians(10)
 PUSH_IN = 0.004  # push follower: target 4 mm past the contact
 PRESS_EXTRA = 0.004
+PRESS_EXTRA_BY = {"r1pro": 0.03}  # [가설] R1 press smoke: the TCP reached the press pose within 3 mm and the button did not move (0/4)
 FOLLOW_STEP = {"prismatic": 0.03, "door": math.radians(7.0), "knob": math.radians(6.0)}  # line() rejects > 0.15 rad between waypoints (a 12 deg roll failed as "ik")
 
 
@@ -133,11 +134,11 @@ def contact_push(point, normal_in, gr: dict, draw: dict, c_hint=None) -> dict:
     return {"T": T, "T_pre": T_pre, "a": a, "c": R[:, 1], "p": p}
 
 
-def press_pose(hf: dict, travel: float, gr: dict, draw: dict) -> dict:
+def press_pose(hf: dict, travel: float, gr: dict, draw: dict, extra: float = PRESS_EXTRA) -> dict:
     fn = np.asarray(hf["fn"], float)
     r = contact_push(hf["gc"], -fn, gr, draw)
     T_in = r["T"].copy()
-    T_in[:3, 3] = r["p"] - fn * (travel + PRESS_EXTRA)
+    T_in[:3, 3] = r["p"] - fn * (travel + extra)
     r["T_in"] = T_in
     return r
 
