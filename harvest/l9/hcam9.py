@@ -36,11 +36,17 @@ HFOV_HOLD = ((55.0, 65.0), (95.0, 105.0))
 # and the TCP. docs/stage3/results/l9v2_gates.md "Franka camera r1": measured on 600 real pilotF/prodF* calls
 # (head_depth.npz distance_to_image_plane vs. the TCP the ring marks, tools/l9/hcam9_occ_probe.py) 29.4 % of
 # on-screen calls had > 50 % of the TCP's footprint occluded by the robot's own links (36.6 % the TCP pixel
-# itself; 18.8 % of all calls had the TCP off-screen). r1 moves the mast to the OTHER side of the base (negative
-# y, away from the old left mount), further forward and higher, pitched down steeper (more top-down, less
-# side-on) and panned back toward the workspace -- validated A/B (same seeds) before switching production.
-MAST_DEFAULT = {"x": 0.15, "y": -0.25, "h": 0.75, "pitch": 58.0, "pan": 18.0}
-MAST_RANGE = {"x": (0.05, 0.25), "y": (-0.33, -0.18), "h": (0.60, 0.90), "pitch": (50.0, 68.0), "pan": (8.0, 28.0)}
+# itself; 18.8 % of all calls had the TCP off-screen). r1-v1 (x forward 0.05..0.25, same y/h/pitch as below) moved
+# the camera itself into the arm's own forward reach corridor (x > 0 = toward the table, the same direction the
+# forearm extends) -- a same-seed A/B (14 Franka eps, the production occ>=0.5 field, harvest/teach_l8d/collect.py
+# _occ/clutter_x.occlusion -- the target-object/place-target occlusion, not just the TCP) measured WORSE than the
+# old mount (26.1 % vs 9.1 % of calls >50 % occluded, docs/stage3/results/l9v2_gates.md "Franka camera r1"):
+# occ was 1.0 on many calls across every phase (approach/carry/retreat alike), i.e. a near-field object blocking
+# almost the whole frame -- the forward-shifted high mast was hanging almost directly over the arm's own reach
+# path. r1-v2 (below) keeps x behind/at the base (same side as the old mount, not forward into the reach corridor)
+# and only changes the lateral side (negative y, away from the old left mount), height and pitch.
+MAST_DEFAULT = {"x": -0.10, "y": -0.25, "h": 0.68, "pitch": 52.0, "pan": 18.0}
+MAST_RANGE = {"x": (-0.20, -0.05), "y": (-0.33, -0.18), "h": (0.55, 0.80), "pitch": (45.0, 62.0), "pan": (10.0, 30.0)}
 D435_HFOV = 69.0  # Intel RealSense D435 colour, horizontal (datasheet 69 x 42 deg)
 TRIES = 5
 
