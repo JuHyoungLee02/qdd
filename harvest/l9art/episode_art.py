@@ -608,9 +608,10 @@ class ArtEpisode:
                 self.bump("approach_fail")
                 try:  # stagewise: reach (IK with the world) or path (collision on the way)?
                     ok_ik = bool(ex.planner.ik(np.asarray([ex.to_base(T)]))[0][0])
+                    hits = ex.planner._call("start_hits", ex.plan_start())  # start state inside the world?
                 except Exception:  # noqa: BLE001
-                    ok_ik = None
-                self.events.append({"call": self.calls, "approach_fail": True, "ik_ok": ok_ik,
+                    ok_ik, hits = None, None
+                self.events.append({"call": self.calls, "approach_fail": True, "ik_ok": ok_ik, "start_hits": hits,
                                     "T": np.round(T, 4).tolist()})
                 return f"no collision-free path to the pre-pose (pose reachable: {ok_ik})"
             if "T_high" in lab:  # push objects: down to the low pre-pose next to the object
