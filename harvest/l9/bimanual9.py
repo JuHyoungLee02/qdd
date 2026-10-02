@@ -1122,7 +1122,8 @@ class HandoverRuntime:
         f_dir = point3d[:2] - base_xy
         # deep-dive 10-03: the giver's hand (measured gripper model, live pose + gap) is collision geometry for the
         # GraspGen-X candidates' swept gripper, so the receiver never picks the surface the giver's pads cover
-        obst = boxes_as_obstacles(self.other_arm_boxes(self.receiver))
+        env.use_arm(self.giver.arm)
+        obst = boxes_as_obstacles(hand_boxes(self.giver.rt.tcp_T(), self.giver.rt.gr, float(env.gripper_width()), wrist=0.0))
         env.use_arm(self.receiver.arm)
         # bimdeep 10-03: nothing installed the GraspGen-X refiner on this path (live9.refine() returned None and
         # choose_live silently fell back to its antipodal cloud search -- the earlier rule-vs-'ggx' A/B compared
@@ -1190,6 +1191,31 @@ class HandoverRuntime:
             if n > best_n:
                 best_yaw, best_n = yaw, n
         return best_yaw, best_n, len(idx)
+
+    def _receiver_reach(self, p) -> int:
+        """How many of a few receiver TCP frames AT point p solve IK: approach horizontal from the receiver's side
+        (toward p from its base, +-45 deg) and 45 deg down, closing axis vertical or horizontal."""
+        from . import grasp9 as G
+        env = self.world.env
+        env.use_arm(self.receiver.arm)
+        rt = self.receiver.rt
+        b = rt.T_world_base()[:3, 3]
+        d = np.asarray(p, float)[:2] - b[:2]
+        d = d / max(np.linalg.norm(d), 1e-6)
+        Ts = []
+        for ang in (-math.pi / 4, 0.0, math.pi / 4):
+            c, s_ = math.cos(ang), math.sin(ang)
+            h = np.array([c * d[0] - s_ * d[1], s_ * d[0] + c * d[1], 0.0])
+            for a in (h, (h + np.array([0.0, 0.0, -1.0])) / math.sqrt(2.0)):
+                for cl in (np.array([0.0, 0.0, 1.0]), np.cross(a, [0.0, 0.0, 1.0])):
+                    if np.linalg.norm(np.cross(a, cl)) < 1e-6 or np.linalg.norm(cl) < 1e-6:
+                        continue
+                    T = np.eye(4)
+                    T[:3, :3] = G.frame_of(a, cl)
+                    T[:3, 3] = p
+                    Ts.append(rt.to_base(T))
+        ok, _, _ = rt.planner.ik(np.stack(Ts))
+        return int(np.sum(np.asarray(ok, bool)))
 
     def _live_grid_ref(self):
         env = self.world.env
@@ -1298,7 +1324,16 @@ class HandoverRuntime:
             chosen = None
             cands = [np.asarray(zone, float)] + self._live_zone_grid(table_z, seed, episode_idx)
             for j, zj in enumerate(cands[:ZONE_TRIES + 1]):
-                _yaw, n_ok, n_tot = self._live_best_yaw(obj_key, zj)
+                if self.receiver_source == "graspgenx":
+                    # GraspGen-X samples the receiver grasp live on the in-hand object, so the zone test is the
+                    # receiver's reach of the point itself (any of a few approach frames from its side), not a
+                    # cached-candidate count (bimdeep a17/a18 10-03: only 1-5 cached bottle grasps were compatible
+                    # with the giver's hand, zone choice failed 4 of 6)
+                    n_reach = self._receiver_reach(zj)
+                    self._yaw_rank = [(n_reach, 2 * math.pi * k / 8) for k in range(8)] if n_reach else []
+                    n_tot = 8
+                else:
+                    _yaw, n_ok, n_tot = self._live_best_yaw(obj_key, zj)
                 self.world.env.use_arm(self.giver.arm)
                 for n_r, yaw_r in sorted(self._yaw_rank, key=lambda t: -t[0]):
                     if n_r <= 0:
