@@ -919,8 +919,12 @@ def make_world9(arm: str, pool: dict, rooms: dict | None = None, split: str = "t
             keeps furniture out of x < KEEP_OUT x-max with the root at x0)."""
             from ..sim.assets_x.furniture import KEEP_OUT
             ep, sc = self.ep, self.scene9
-            objs = ep.get("objects") or {}
-            xs = [float(objs[k]["xy"][0]) for st in ep.get("steps", []) for k in st[:2] if k in objs and "xy" in objs[k]]
+            if ep.get("work_front_x") is not None:  # a runner's own work band front (L9 articulated: the fixture path)
+                xs = [float(ep["work_front_x"])]
+            else:
+                objs = ep.get("objects") or {}
+                xs = [float(objs[k]["xy"][0]) for st in ep.get("steps", []) for k in st[:2]
+                      if k in objs and "xy" in objs[k]]
             if not xs:
                 return x0
             want = min(xs) - stance_x

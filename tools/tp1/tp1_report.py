@@ -30,9 +30,20 @@ def circ(a, b):
 
 
 def load(out, model, labels, sub="l9_eval"):
+    """labels: {id: label command} for the ids to score; empty/None -> load every control row's own label from
+    <out>/data/<sub>.jsonl (change 7: e.g. the l9_eval_tpdir subset, whose ids are not in the off-arm labels dict)."""
     d = os.path.join(out, "eval", model, sub)
     if not os.path.exists(os.path.join(d, "scores.jsonl")):
         return {}
+    if not labels:
+        dp = os.path.join(out, "data", f"{sub}.jsonl")
+        labels = {}
+        if os.path.exists(dp):
+            for x in open(dp, encoding="utf-8"):
+                r = json.loads(x)
+                if r.get("kind", "control") != "control" or r.get("label_missing"):
+                    continue
+                labels[r["id"]] = json.loads(r["answer"]).get("command") or {}
     rep = {json.loads(x)["id"]: json.loads(x)["text"] for x in open(os.path.join(d, "replies.jsonl"))}
     px = {}
     for x in open(os.path.join(d, "scores.jsonl")):
@@ -40,12 +51,18 @@ def load(out, model, labels, sub="l9_eval"):
         v = s.get("point_px")
         px[s["id"]] = float(v) if (s.get("valid") and v is not None) else float("inf")
     rows = {}
-    for i in (labels if labels else rep):
-        lab = labels.get(i) if labels else None
+    for i in labels:
+        lab = labels.get(i)
         if i not in rep:
             continue
+        # change 7 (bug fix 10-03): a row whose LABEL is not a point command (mode keep/close/edit, no point_2d) has
+        # no target pixel -- metrics.score leaves point_px None for it, same as a prediction that missed. Only rows
+        # whose label HAS a point_2d go into the px aggregate (n, median, fail20); those where the prediction still
+        # produced no matching point count as inf (a real failure), not excluded.
+        label_has_point = bool(lab) and lab.get("point_2d") is not None
         c = parse(rep[i])
-        r = {"px": px.get(i, float("inf")), "schema_fail": float(c is None)}
+        r = {"px": px.get(i, float("inf")) if label_has_point else None, "has_px_label": label_has_point,
+             "schema_fail": float(c is None)}
         if lab and lab.get("approach"):
             r["fam"] = float((c or {}).get("approach") == lab["approach"])
             rot = (c or {}).get("rot")
@@ -116,7 +133,7 @@ def boot(x, y, stat, reps=10000, seed=0):
 
 
 def col(rows, k):
-    return {i: r[k] for i, r in rows.items() if k in r}
+    return {i: r[k] for i, r in rows.items() if r.get(k) is not None}
 
 
 def main():
@@ -152,20 +169,23 @@ def main():
             pz = persp(out, m)
             R[(run, key, "persp")] = pz
             prim = [z["ok"] for z in pz.values() if z["stratum"] != "head_std" and z["kind"] in "PQ"]
-            v = np.array([r["px"] for r in rows.values()]) if rows else np.array([np.inf])
+            pxv = col(rows, "px")  # change 7: only rows whose LABEL is a point command
+            v = np.array(list(pxv.values())) if pxv else np.array([np.inf])
             e = {"persp": {f"{st}/{k}": round(mean(np.array([z["ok"] for z in pz.values()
                                                             if z["stratum"] == st and z["kind"] == k])), 4)
                            for st in ("head_std", "head_tilt", "third_person") for k in ("P", "Q", "Y")
                            if any(z["stratum"] == st and z["kind"] == k for z in pz.values())},
                  "persp_primary": round(mean(np.array(prim)), 4) if prim else None,
-                 "n": len(rows), "px_median": round(med(v), 2), "px_fail20": round(fail_px(v), 4),
+                 "n": len(rows), "n_point_label": len(pxv), "px_median": round(med(v), 2), "px_fail20": round(fail_px(v), 4),
                  "schema_fail": round(mean(np.array([r["schema_fail"] for r in rows.values()])), 4),
                  "fam_acc": round(mean(np.array(list(col(rows, "fam").values()))), 4) if col(rows, "fam") else None,
                  "rot_pm1": round(mean(np.array(list(col(rows, "rot_pm1").values()))), 4) if col(rows, "rot_pm1") else None}
             if tag == "final":
                 tq = load(out, m, {}, "l9_eval_tpdir")
-                tv = np.array([r["px"] for r in tq.values()]) if tq else np.array([np.inf])
-                e["tpdir"] = {"n": len(tq), "px_median": round(med(tv), 2), "px_fail20": round(fail_px(tv), 4)}
+                tpxv = col(tq, "px")
+                tv = np.array(list(tpxv.values())) if tpxv else np.array([np.inf])
+                e["tpdir"] = {"n": len(tq), "n_point_label": len(tpxv), "px_median": round(med(tv), 2),
+                             "px_fail20": round(fail_px(tv), 4)}
                 L = lx(out, m)
                 R[(run, "l8x")] = L
                 e["l8x"] = {s: {"n": len(d), "median_mm": round(med(np.array(list(d.values()))), 2),
