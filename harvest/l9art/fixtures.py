@@ -378,7 +378,7 @@ def sample(family: str, seed: int) -> dict:
         raise ValueError(f"family {family!r}")
     rng = np.random.default_rng([int(seed), 4711, FAMILY_CODE[family]])
     spec = {"family": family, "seed": int(seed), "name": f"art_{family}_{int(seed)}", "links": {}, "joints": {},
-            "handles": {}, "interior": {}, "version": "l9art-fx1"}
+            "handles": {}, "interior": {}, "version": "l9art-fx2"}
     BUILDERS[family](rng, spec)
     spec["dims"] = {k: round(float(v), 4) for k, v in spec["dims"].items()}
     return spec

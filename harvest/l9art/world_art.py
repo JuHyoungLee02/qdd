@@ -19,7 +19,7 @@ SETTLE_STEPS = 6
 
 def write_usd(spec: dict, out_dir: str = ASSET_DIR) -> str:
     os.makedirs(out_dir, exist_ok=True)
-    p = os.path.join(out_dir, spec["name"] + ".usda")
+    p = os.path.join(out_dir, f"{spec['name']}_{spec.get('version', 'fx')}.usda")  # versioned: running lanes keep their files
     txt = FX.usda(spec)
     if not os.path.exists(p) or open(p).read() != txt:
         tmp = p + f".tmp{os.getpid()}"

@@ -53,6 +53,40 @@ def pick_objects(pool: dict, prog: dict, seed: int, robot: str) -> dict:
     return out
 
 
+POOL_N = {"push": 6, "small": 6, "prop": 8}
+
+
+def art_pool(job: str, robot: str) -> dict:
+    """The job's objects (L9 train catalog): flat-sided push objects, small grasp-tested targets (combos), props.
+    (smoke 10-02: L9 pick-place pools had no box / block in half the jobs -> push rows skipped)."""
+    from ..l9 import assets9 as A9
+    from ..l9 import robot9 as RB
+    cat = A9.catalog("train")
+    gmax = {"franka_mast": 0.066}.get(robot) or (float(RB.V2[robot]["grip_max_w"]) - 0.014 if robot in ("r1pro", "g1") else 0.093)
+
+    def dims(v):
+        he = v.get("half_extents") or [0.1, 0.1, 0.1]
+        return 2 * float(he[0]), 2 * float(he[1]), 2 * float(he[2])
+    push, small, prop = [], [], []
+    for k, v in sorted(cat.items()):
+        if v.get("role9") == "container":
+            continue
+        dx, dy, h = dims(v)
+        if v.get("l9cat") in ("box", "block", "book") and h <= 1.3 * min(dx, dy) and 0.04 <= min(dx, dy) \
+                and max(dx, dy) <= 0.14:
+            push.append(k)
+        if v.get("role9") == "target" and max(dx, dy) <= 0.09 and h <= 0.06 and min(dx, dy) <= min(0.06, gmax):
+            small.append(k)
+        if max(dx, dy) <= 0.14 and h <= 0.16:
+            prop.append(k)
+    rng = np.random.default_rng(int(hashlib.sha256(f"l9art-pool:{job}".encode()).hexdigest()[:8], 16))
+    out = {}
+    for lst, n in ((push, POOL_N["push"]), (small, POOL_N["small"]), (prop, POOL_N["prop"])):
+        for j in rng.permutation(len(lst))[:n]:
+            out[lst[int(j)]] = cat[lst[int(j)]]
+    return out
+
+
 def fx_seeds(job: str, arm: str = "right") -> dict:
     """One fixture seed per family for a job; the door hinges on the arm's side (smoke 10-02: a door hinged on the
     far side swung its handle out of reach / left no pre-pose for the close push)."""
@@ -104,7 +138,7 @@ def main(argv=None):
             os._exit(0)
         apply_arm_workspace(arm)
         apply_prompts(robot)
-        pool = R9run.job_pool([dict(rows[0], pool=rows[0].get("pool", 0))], robot, False)
+        pool = art_pool(a.job, robot)
         rooms = R9run.rooms_for(int(rows[0].get("rooms", 0)), "train")
         mesh = A9.mesh_for(int(rows[0].get("rooms", 0)), split="train")
         seeds = rows[0].get("fx_seed") or fx_seeds(a.job, arm)
@@ -163,7 +197,7 @@ def main(argv=None):
                 W9._ART_GHOST = WA.ghost_part(spec, T) if spec is not None else None
                 register_task(ep)
                 light = V.pick_light_family(seed, sc["family"])
-                head = V.head_pose(seed)
+                head = SA.head_aim(seed, built["p_int"], sc["lift"]) if robot == "ffw_sg2" else V.head_pose(seed)
                 world.prepare(sc, ep, light, head, seed)
                 WA.stage_fixture(world, fam if spec is not None else None, T, prog["start"])
                 world.reset(seed)

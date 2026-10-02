@@ -93,6 +93,21 @@ def interaction_z(spec: dict | None, prog: dict, T, tz: float) -> float:
     return float(np.mean(zs)) if zs else tz + 0.1
 
 
+HEAD_XZ = (0.05, 1.45)  # [가설] AI Worker head camera (x, z) at the default lift
+PAN_MAX, TILT_LIM = 0.34, (0.40, 0.98)
+
+
+def head_aim(seed: int, p_int, lift: float) -> dict:
+    """AI Worker neck pose looking at the interaction point (+ small jitter) so the part and its goal stay in view
+    (smoke 10-02: random pans left handles / push goals outside the head image). Pan > 0 = to the robot's left."""
+    rng = np.random.default_rng([int(seed), 7171])
+    x, y, z = (float(v) for v in p_int)
+    zh = HEAD_XZ[1] + (lift - LIFT_DEFAULT)
+    pan = float(np.clip(math.atan2(y, max(0.1, x - HEAD_XZ[0])) + rng.uniform(-0.08, 0.08), -PAN_MAX, PAN_MAX))
+    tilt = float(np.clip(math.atan2(zh - z, max(0.1, x - HEAD_XZ[0])) + rng.uniform(-0.10, 0.10), *TILT_LIM))
+    return {"tilt": round(tilt, 4), "pan": round(pan, 4), "random": True, "aimed": True}
+
+
 def lift_for(z_int: float, rng) -> float:
     return float(np.clip(LIFT_DEFAULT + (z_int - H_REF) + rng.uniform(-0.02, 0.02), -0.5, 0.0))
 
@@ -203,4 +218,10 @@ def build(seed: int, robot: str, arm: str, spec: dict | None, prog: dict, objs: 
     sc = {"family": family, "rule": "art", "seed": int(seed), "arm": arm, "try": 0, "yaw": 0.0,
           "robot_pose": {"distance": round(x_front, 4), "yaw": 0.0}, "params": {"art": True}, "furniture": parts,
           "nodes": nodes, "lift": round(lift, 4), "usable_n": {"n0": 99}}
-    return {"sc": sc, "ep": ep, "fixture": fx, "tz": tz, "z_int": round(z_int, 4), "tgt": tgt, "spot_xy": spot_xy}
+    if fx is not None:
+        P = path_points(spec, prog, np.asarray(fx["T"]))
+        p_int = P.mean(0) if len(P) else np.asarray(fx["T"])[:3, 3]
+    else:
+        p_int = np.array([objects[tgt]["xy"][0] + 0.05, objects[tgt]["xy"][1], tz + 0.05])
+    return {"sc": sc, "ep": ep, "fixture": fx, "tz": tz, "z_int": round(z_int, 4), "tgt": tgt, "spot_xy": spot_xy,
+            "p_int": [round(float(v), 4) for v in p_int]}
