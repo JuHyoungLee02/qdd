@@ -587,8 +587,8 @@ class ArtEpisode:
             if kind == "place":  # carrying: plan with the held object attached, else without (as rt9)
                 ex.planner.attach(ex.plan_start(), [f"obj_{self.b['tgt']}"])
             r = ex.move(T, "pose")
-            if not r["ok"] and kind == "place":
-                self.set_world(st)
+            if not r["ok"] and kind == "place":  # no attach, the held object out of the world (combo pilot: the
+                self.set_world(st, skip_held=True)  # fingers around it made every carry start 'in collision')
                 r = ex.move(T, "pose")
             if not r["ok"]:
                 self.bump("approach_fail")
@@ -686,17 +686,18 @@ class ArtEpisode:
         self.sub = "start"
         self.rel = None
 
-    def set_world(self, st, skip_all_links: bool = False):
+    def set_world(self, st, skip_all_links: bool = False, skip_held: bool = False):
+        so = (self.b["tgt"],) if skip_held else ()  # the held object is not an obstacle of its own carry
         if self.spec is None:
-            self.ex.set_world(None, None, {}, {})
+            self.ex.set_world(None, None, {}, {}, skip_objs=so)
             return
         q = self.q()
         if skip_all_links:
-            self.ex.set_world(self.spec, self.T_WF(), q, {}, skip_links=tuple(self.spec["links"]))
+            self.ex.set_world(self.spec, self.T_WF(), q, {}, skip_links=tuple(self.spec["links"]), skip_objs=so)
         elif st is not None and st.get("link"):
-            self.ex.set_world(self.spec, self.T_WF(), q, {}, skip_links=(st["link"],))
+            self.ex.set_world(self.spec, self.T_WF(), q, {}, skip_links=(st["link"],), skip_objs=so)
         else:
-            self.ex.set_world(self.spec, self.T_WF(), q, {})
+            self.ex.set_world(self.spec, self.T_WF(), q, {}, skip_objs=so)
 
     def follow(self, st, lab, grasped: bool) -> str:
         """Small Cartesian follower: plan short straight hand moves that keep the grasp / contact relation to the
