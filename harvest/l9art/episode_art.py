@@ -1,0 +1,666 @@
+"""(pod) One articulated episode: observe -> truth label (format v3) -> behaviour command (label + DART-style offsets
+on pre-poses) -> cuRobo / Cartesian-follower execution -> measured history; calls/, labels.jsonl, meta.json,
+joints.npz, frames for review. The arm is driven in joint-target mode (commanded step <= 0.034 rad, as rt9.CMD_DQ);
+harvest.l9 is used read-only (PlannerProxy, plan9.resample / scene_cuboids, grasp9 gripper models, world9)."""
+from __future__ import annotations
+
+import json
+import math
+import os
+import time
+
+import numpy as np
+
+from . import fixtures as FX
+from . import prompts_art as PA
+from . import skills as SK
+from . import world_art as WA
+
+CMD_DQ = 0.034
+MAX_CALLS = 24
+REACH_TOL, HOLD_MAX_S = 0.012, 1.5
+CLOSE_S, OPEN_S = 0.6, 0.5
+EMPTY_GAP = 0.004  # pad gap after a close below this = nothing between the pads
+LOST_M = 0.03  # follower: hand-to-grasp-point distance above this = the grasp / contact is lost
+STALL_SEG = 2
+PERTURB = (0.01, 0.025)
+VIDEO_EVERY = 6
+VERSION = "l9art-1"
+
+
+class Halt(Exception):
+    pass
+
+
+class Exec:
+    """Joint-target execution + cuRobo planning for one (robot, arm) process."""
+
+    def __init__(self, world, profile: str, arm: str, device: str = "cuda:0"):
+        from ..l9 import curobo9 as C9
+        from ..l9 import grasp9 as G
+        from ..l9.plan9_server import PlannerProxy
+        from ..l9.rt9 import GRIP_NAME
+        self.w, self.profile, self.arm = world, profile, arm
+        self.gr = G.gripper(GRIP_NAME.get(profile, profile))
+        self.joints = C9.arm_joints(profile, arm)
+        self.base_link = C9.base_link(profile, arm)
+        self.planner = PlannerProxy(C9.load_config(profile, arm), device=device)
+        rob = world.env.robot
+        self.sim_ids = [rob.joint_names.index(j) for j in self.joints]
+        self.arm_ids = list(world.env.arm_ids)
+        self.base_idx = rob.body_names.index(self.base_link)
+        lim = rob.data.soft_joint_pos_limits[0].cpu().numpy()
+        self.q_lo, self.q_hi = lim[self.sim_ids, 0] + 0.01, lim[self.sim_ids, 1] - 0.01
+        self.q_target, self.width = None, float(world.w_open)
+        self.frames, self.video, self._k = [], False, 0
+        self.stats = {"plan_fail": 0, "limit_rejects": 0}
+
+    # ---------------------------------------------------------------- state
+    def reset(self):
+        self.q_target, self.width = None, float(self.w.w_open)
+        self.frames, self._k = [], 0
+
+    def arm_q(self):
+        return self.w.env.robot.data.joint_pos[0, self.sim_ids].cpu().numpy().astype(float)
+
+    def plan_start(self):
+        q = self.arm_q()
+        if self.q_target is not None and np.abs(np.asarray(self.q_target) - q).max() < 0.15:
+            q = np.asarray(self.q_target, float)
+        return np.clip(q, self.q_lo + 0.03, self.q_hi - 0.03)
+
+    def T_world_base(self):
+        d = self.w.env.robot.data
+        o = self.w.env.scene.env_origins[0].cpu().numpy()
+        return FX.T_of(FX.qmat(d.body_quat_w[0, self.base_idx].cpu().numpy()), d.body_pos_w[0, self.base_idx].cpu().numpy() - o)
+
+    def to_base(self, T):
+        from ..l9.plan9 import inv_T
+        return inv_T(self.T_world_base()) @ np.asarray(T, float)
+
+    def tcp_T(self):
+        p, q = self.w.pl.tcp_pose()
+        return FX.T_of(FX.qmat(q), p)
+
+    def grip_w(self) -> float:
+        return float(self.w.env.gripper_width())
+
+    # ---------------------------------------------------------------- stepping
+    def step(self):
+        env = self.w.env
+        q = env.robot.data.joint_pos[0, self.arm_ids].cpu().numpy().copy()
+        if self.q_target is not None:
+            for j, sid in enumerate(self.sim_ids):
+                q[self.arm_ids.index(sid)] = self.q_target[j]
+        g = self.w.pl._gravity_offset()[0].cpu().numpy()
+        env.step(np.concatenate([q + g, [float(self.width)]]).astype(np.float32))
+        self.w._st = None
+        self.w._log_step()
+        if hasattr(self.w, "_jlog"):
+            self.w._jlog.append(env.robot.data.joint_pos[0].cpu().numpy().copy())
+        self._k += 1
+        if self.video and self._k % VIDEO_EVERY == 0:
+            fr = self.w.frame()
+            self.frames.append((fr["head"], fr["wrist"]))
+
+    def hold(self, seconds: float):
+        if self.q_target is None:
+            self.q_target = self.arm_q()
+        for _ in range(max(1, int(round(seconds / self.w.dt)))):
+            self.step()
+
+    def run(self, Q, slow: float = 1.0, target=None) -> dict:
+        """Execute a joint path (resampled to <= CMD_DQ per step), then wait for the arm to arrive."""
+        from ..l9.plan9 import resample
+        Q = np.asarray(Q, float)
+        if (Q < self.q_lo).any() or (Q > self.q_hi).any():
+            self.stats["limit_rejects"] += 1
+            return {"ok": False, "why": "plan leaves the joint range"}
+        Q = resample(np.concatenate([[self.plan_start()], Q]), dq_max=CMD_DQ, slow=slow)
+        for q in Q[1:]:
+            self.q_target = q
+            self.step()
+        T_goal = target
+        t0, last, still = 0.0, None, 0
+        err = 0.0
+        while t0 < HOLD_MAX_S:
+            self.step()
+            t0 += self.w.dt
+            p = self.tcp_T()[:3, 3]
+            err = float(np.linalg.norm(p - T_goal[:3, 3])) if T_goal is not None else 0.0
+            moved = 1.0 if last is None else float(np.linalg.norm(p - last))
+            last = p
+            still = still + 1 if moved < 3e-4 else 0
+            if err < REACH_TOL or still >= 4:
+                break
+        return {"ok": True, "err_mm": round(err * 1e3, 1)}
+
+    def set_gripper(self, w: float, close: bool) -> float:
+        self.width = 0.0 if close else float(w)
+        ws = []
+        n = int(round((CLOSE_S if close else OPEN_S) / self.w.dt))
+        for i in range(n):
+            self.step()
+            ws.append(self.grip_w())
+            if close and i > 8 and abs(ws[-1] - ws[-6]) < 0.0005:
+                break
+        return self.grip_w()
+
+    # ---------------------------------------------------------------- planning
+    def set_world(self, spec, T_WF, q, objects: dict, skip_links=(), skip_prefix=(), skip_objs=()):
+        from ..l9.plan9 import scene_cuboids
+        from ..sim.scene import OBJ_GEOM
+        fs = getattr(self.w, "scene9", {}) or {}
+        parts = [p for p in fs.get("furniture", []) if "size" in p and "pos" in p]
+        boxes = FX.boxes_world(spec, T_WF, q, skip_links=skip_links, skip_prefix=skip_prefix) if spec else {}
+        env = self.w.env
+        for k in env.present:
+            g = OBJ_GEOM.get(k, {})
+            if k in skip_objs or g.get("shape") in ("marker", "surface") or "half_extents" not in g:
+                continue
+            c, qq = env.object_pose(k)
+            boxes[f"obj_{k}"] = (np.asarray(c, float), [2 * float(v) for v in g["half_extents"]], np.asarray(qq, float))
+        self.planner.world(scene_cuboids(parts, boxes, self.T_world_base(), pad=0.005))
+
+    def plan_pose(self, T):
+        Q = self.planner.pose(self.plan_start(), self.to_base(T))
+        if Q is None:
+            self.stats["plan_fail"] += 1
+        return Q
+
+    def plan_line(self, T, check: bool = False, step_m: float = 0.008):
+        Q = self.planner.line(self.plan_start(), self.to_base(self.tcp_T()), self.to_base(T), step_m, check)
+        return Q
+
+    def move(self, T, mode: str = "pose", slow: float = 1.0) -> dict:
+        Q = self.plan_pose(T) if mode == "pose" else self.plan_line(T)
+        if Q is None and mode == "pose":
+            Q = self.plan_line(T, check=True)
+        if Q is None:
+            return {"ok": False, "why": "no path"}
+        return self.run(Q, slow=slow, target=T)
+
+
+# ================================================================================================ episode
+class ArtEpisode:
+    def __init__(self, world, ex: Exec, row: dict, built: dict, spec: dict | None, prog: dict, out_dir: str,
+                 p: float = 0.15, video: bool = False):
+        self.w, self.ex, self.row, self.b, self.spec, self.prog = world, ex, row, built, spec, prog
+        self.out_dir, self.p, self.video = out_dir, p, video
+        self.rng = np.random.default_rng([int(row["seed"]), 515])
+        self.draw = SK.grasp_draw(self.rng)
+        self.rows, self.history, self.calls = [], [], 0
+        self.stage_i, self.sub = 0, "start"
+        self.rel = None  # T_link_tcp of the current grasp / contact
+        self.done_stages, self.fail_counts = [], {}
+        self.events = []
+        self.end_reason = None
+        self.press_peak = {}
+        self.knob_goal = None
+        self._push = None
+
+    # ---------------------------------------------------------------- geometry of now
+    def T_WF(self):
+        return WA.T_WF_now(self.w)
+
+    def q(self):
+        return WA.joints(self.w) if self.spec is not None else {}
+
+    def stage(self):
+        return self.prog["stages"][self.stage_i] if self.stage_i < len(self.prog["stages"]) else None
+
+    def joint_of(self, st):
+        return self.spec["handles"][st["link"]]["joint"]
+
+    def hf(self, st, q=None):
+        return FX.handle_frame(self.spec, st["link"], self.T_WF(), self.q() if q is None else q)
+
+    # ---------------------------------------------------------------- labels
+    def label(self, obs) -> dict:
+        """The truth command for the current state (v3) + 3D targets for the executor."""
+        st = self.stage()
+        cam = obs.cams["head"]
+        if st is None:
+            return {"cmd": {"mode": "stop"}, "sub": "stop", "skill": None}
+        kind, skill = st["kind"], st["skill"]
+        sub = self.sub
+        out = {"skill": skill, "sub": sub, "stage": self.stage_i}
+        if kind in ("pull", "rotate"):
+            hf = self.hf(st)
+            g = SK.handle_grasp(hf, self.ex.gr, self.draw)
+            if sub in ("start", "above"):
+                cmd = self._pt(cam, skill, g["p"], "above", "open", g)
+                out.update(cmd=cmd, T=g["T_pre"], open_w=g["open_w"], next="grasp", g=g)
+            elif sub == "grasp":
+                cmd = self._pt(cam, skill, g["p"], "grasp", "close", g)
+                out.update(cmd=cmd, T=g["T"], next="move", g=g)
+            elif sub == "move":
+                jn = self.joint_of(st)
+                qg = dict(self.q(), **{jn: st["goal"]})
+                hg = self.hf(st, qg)
+                end = hg["mark"] if kind == "rotate" else hg["gc"]
+                now = hf["mark"] if kind == "rotate" else hf["gc"]
+                cmd = self._pt(cam, skill, hf["gc"], "grasp", "keep", g, p2=end)
+                if kind == "rotate":
+                    cmd["point_2d"] = SK.to_px(cam, hf["gc"])
+                out.update(cmd=cmd, goal=st["goal"], next="release", now=now)
+            elif sub == "release":
+                out.update(cmd={"mode": "gripper", "gripper": "open", "skill": skill}, next="retreat")
+            else:  # retreat
+                d = -np.asarray(self.tcp_a()) * 0.10
+                out.update(cmd={"mode": "edit", "delta_m": [round(float(v), 3) for v in d], "gripper": "keep",
+                                "skill": skill}, next="done")
+            return out
+        if kind == "push":
+            hf = self.hf(st)
+            c = self.push_contact(st)
+            if sub in ("start",) and self.ex.grip_w() > 0.01:
+                out.update(cmd={"mode": "gripper", "gripper": "close", "skill": skill}, next="above")
+            elif sub in ("start", "above"):
+                cmd = self._pt(cam, skill, c["point"], "above", "keep", c)
+                out.update(cmd=cmd, T=c["T_pre"], next="move", c=c)
+            elif sub == "move":
+                jn = self.joint_of(st)
+                qg = dict(self.q(), **{jn: st["goal"]})
+                end = self.push_contact(st, qg)["point"]
+                cmd = self._pt(cam, skill, c["point"], "grasp", "keep", c, p2=end)
+                out.update(cmd=cmd, goal=st["goal"], T=c["T"], next="retreat", c=c)
+            else:
+                d = -np.asarray(self.tcp_a()) * 0.10
+                out.update(cmd={"mode": "edit", "delta_m": [round(float(v), 3) for v in d], "gripper": "keep",
+                                "skill": skill}, next="done")
+            return out
+        if kind == "press":
+            hf = self.hf(st)
+            J = self.spec["joints"][self.joint_of(st)]
+            pp = SK.press_pose(hf, J["hi"], self.ex.gr, self.draw)
+            if sub == "start" and self.ex.grip_w() > 0.01:
+                out.update(cmd={"mode": "gripper", "gripper": "close", "skill": skill}, next="above")
+            elif sub in ("start", "above"):
+                cmd = self._pt(cam, skill, hf["gc"], "above", "keep", pp)
+                out.update(cmd=cmd, T=pp["T_pre"], next="press", c=pp)
+            else:  # press (in and back out to the pre-pose)
+                cmd = self._pt(cam, skill, hf["gc"], "grasp", "keep", pp)
+                out.update(cmd=cmd, T=pp["T_in"], T_back=pp["T_pre"], next="done", c=pp)
+            return out
+        if kind == "slide":
+            k = self.b["tgt"]
+            plan = self.push_plan()
+            if sub == "start" and self.ex.grip_w() > 0.01:
+                out.update(cmd={"mode": "gripper", "gripper": "close", "skill": skill}, next="above")
+            elif sub in ("start", "above"):
+                c_obj = np.asarray(self.w.env.object_pose(k)[0], float)
+                cmd = self._pt(cam, skill, c_obj, "above", "keep", plan, p_ref=plan["T_pre"][:3, 3])
+                out.update(cmd=cmd, T=plan["T_pre"], T_high=plan["T_pre_high"], next="move", c=plan)
+            elif sub == "move":
+                c_obj = np.asarray(self.w.env.object_pose(k)[0], float)
+                g3 = np.array([plan["goal_xy"][0], plan["goal_xy"][1], c_obj[2]])
+                cmd = self._pt(cam, skill, c_obj, "grasp", "keep", plan, p2=g3, p_ref=plan["T_pre"][:3, 3])
+                out.update(cmd=cmd, T=plan["T_goal"], next="retreat", c=plan)
+            else:
+                out.update(cmd={"mode": "edit", "delta_m": [0.0, 0.0, 0.10], "gripper": "keep", "skill": skill},
+                           next="done")
+            return out
+        raise ValueError(kind)
+
+    def tcp_a(self):
+        return -self.ex.tcp_T()[:3, 2]  # approach = -z_G
+
+    def push_contact(self, st, q=None) -> dict:
+        """Contact for a push along the joint: drawers / doors: the front panel beside the handle; sliding doors: the
+        handle bar's side (pushed sideways)."""
+        sp = self.spec
+        J = sp["joints"][self.joint_of(st)]
+        h = sp["handles"][st["link"]]
+        T = self.T_WF() @ FX.link_T(sp, st["link"], self.q() if q is None else q)
+        R = T[:3, :3]
+        if J["kind"] == "slide":
+            ax = R @ np.asarray(J["axis"], float)  # open direction; closing pushes along -ax
+            gc = R @ np.asarray(h["gc"]) + T[:3, 3]
+            point = gc + ax * (float(h.get("thick", 0.012)) / 2)
+            c = SK.contact_push(point, -ax, self.ex.gr, self.draw, c_hint=[0, 0, 1.0])
+        else:
+            gc = np.asarray(h["gc"], float)
+            if J["kind"] == "door":  # outer face (link x = 0) near the free edge, 7 cm above / below the handle
+                Hh = float(sp["dims"]["H"]) / 2
+                z = gc[2] - 0.07 if gc[2] - 0.07 > -Hh + 0.03 else gc[2] + 0.07
+                loc = np.array([0.0, gc[1], z])
+            else:  # drawer front panel beside the handle
+                W = sp["dims"]["W"]
+                off = 0.5 * float(h.get("length") or 0.04) + 0.035
+                yy = gc[1] - off if gc[1] - off > -W / 2 + 0.03 else gc[1] + off
+                loc = np.array([-0.018, yy, gc[2]])
+            point = R @ loc + T[:3, 3]
+            c = SK.contact_push(point, R @ np.array([1.0, 0, 0]), self.ex.gr, self.draw)
+        c["point"] = point
+        return c
+
+    def push_plan(self):
+        from ..sim.scene import OBJ_GEOM
+        k = self.b["tgt"]
+        if getattr(self, "_push", None) is None:
+            c_obj = np.asarray(self.w.env.object_pose(k)[0], float)
+            words = self.prog["words"]
+            dist = float(words.get("DIST", 10)) / 100.0
+            dmap = {"left": [0, 1.0], "right": [0, -1.0], "back": [1.0, 0], None: [1.0, 0]}
+            d = np.array(dmap.get(words.get("DIR"), [1.0, 0]) + [0.0])
+            if self.prog["judge"].get("dir") == "away":
+                d = np.array([1.0, 0, 0])
+            he = OBJ_GEOM[k]["half_extents"]
+            self._push = {"c0": c_obj, "d": d, "dist": dist, "half": he}
+        P = self._push
+        c_now = np.asarray(self.w.env.object_pose(k)[0], float)
+        rem = P["dist"] - float((c_now - P["c0"])[:2] @ P["d"][:2])
+        plan = SK.push_plan(c_now, P["half"], float(self.b["tz"]), P["d"], max(0.0, rem), self.ex.gr, self.draw)
+        plan["goal_xy"] = P["c0"][:2] + P["d"][:2] * P["dist"]
+        return plan
+
+    def _pt(self, cam, skill, p, height, grip, g, p2=None, p_ref=None) -> dict:
+        cmd = {"mode": "point", "skill": skill, "point_2d": SK.to_px(cam, p), "height": height, "gripper": grip,
+               "hand": self.ex.arm}
+        a, c = g.get("a"), g.get("c")
+        if a is not None:
+            cmd["approach"] = SK.approach_family(a, p if p_ref is None else p_ref)
+            if c is not None:
+                cmd["rot"] = SK.rot_bin(cam, p, c)[1]
+        if p2 is not None:
+            cmd["point2"] = SK.to_px(cam, p2)
+        return cmd
+
+    # ---------------------------------------------------------------- behaviour + execution
+    def execute(self, lab: dict) -> str:
+        """Run the label's command (behaviour = label + DART-style offset on pre-poses); -> outcome text."""
+        cmd = lab["cmd"]
+        m = cmd["mode"]
+        ex = self.ex
+        sub = lab["sub"]
+        st = self.stage()
+        kind = None if st is None else st["kind"]
+        if m == "stop":
+            raise Halt("stop")
+        if m == "gripper":
+            w = ex.set_gripper(self.w.w_open if cmd["gripper"] == "open" else 0.0, cmd["gripper"] == "close")
+            if cmd["gripper"] == "open":
+                self.rel = None
+            self.sub = lab["next"]
+            return f"gripper {cmd['gripper']}: pad gap {w * 100:.1f} cm"
+        if m == "edit":
+            T = ex.tcp_T()
+            T[:3, 3] += np.asarray(cmd["delta_m"], float)
+            self.set_world(st, skip_all_links=True)
+            r = ex.move(T, "line")
+            if not r["ok"]:
+                r = ex.move(T, "pose")
+            self.sub = lab["next"]
+            if lab["next"] == "done":
+                self.finish_stage()
+            return "moved back" if r["ok"] else f"retreat failed ({r.get('why')})"
+        # point commands
+        if sub in ("start", "above"):
+            T = np.asarray(lab.get("T_high", lab["T"]), float).copy()
+            kind_p = "clean"
+            if self.p > 0 and self.rng.random() < self.p:
+                off = self.rng.normal(size=3)
+                off *= self.rng.uniform(*PERTURB) / np.linalg.norm(off)
+                T[:3, 3] += off
+                kind_p = "perturb_xyz"
+            lab["exec_kind"] = kind_p
+            self.set_world(st)
+            if lab.get("open_w") is not None:
+                ex.width = float(lab["open_w"])
+            r = ex.move(T, "pose")
+            if not r["ok"]:
+                self.bump("approach_fail")
+                return f"no collision-free path to the pre-pose ({r.get('why')})"
+            if "T_high" in lab:  # push objects: down to the low pre-pose next to the object
+                r = ex.move(np.asarray(lab["T"], float), "line")
+            self.sub = lab["next"]
+            return f"reached the pre-pose (error {r.get('err_mm', 0):.0f} mm)"
+        if sub == "grasp":
+            r = ex.move(np.asarray(lab["T"], float), "line", slow=1.6)
+            if not r["ok"]:
+                self.bump("approach_fail")
+                self.sub = "above"
+                return "could not move in to the handle"
+            w = ex.set_gripper(0.0, True)
+            if w < EMPTY_GAP:
+                self.bump("grasp_fail")
+                ex.set_gripper(lab.get("open_w") or self.w.w_open, False)
+                ex.move(np.asarray(lab["T"], float) @ FX.T_of(np.eye(3), (0, 0, 0.08)), "line")
+                self.sub = "above"
+                return f"closed on nothing (pad gap {w * 100:.1f} cm); reopened and backed off"
+            self.rel = np.linalg.inv(WA.link_world(self.w, st["link"])) @ ex.tcp_T()
+            self.sub = lab["next"]
+            return f"closed on the handle (pad gap {w * 100:.1f} cm)"
+        if sub == "move":
+            if kind in ("pull", "rotate"):
+                return self.follow(st, lab, grasped=True)
+            if kind == "push":
+                r = ex.move(np.asarray(lab["T"], float), "line", slow=1.6)  # in to the contact
+                self.rel = np.linalg.inv(WA.link_world(self.w, st["link"])) @ ex.tcp_T()
+                return self.follow(st, lab, grasped=False)
+            if kind == "slide":
+                return self.push_object(lab)
+        if sub == "press":
+            jn = self.joint_of(st)
+            r = ex.move(np.asarray(lab["T"], float), "line", slow=2.0)
+            peak = max(self.press_peak.get(jn, 0.0), self.q().get(jn, 0.0))
+            ex.hold(0.3)
+            peak = max(peak, self.q().get(jn, 0.0))
+            self.press_peak[jn] = peak
+            ex.move(np.asarray(lab["T_back"], float), "line")
+            J = self.spec["joints"][jn]
+            if peak >= self.prog["judge"].get("press_share", 0.6) * J["hi"]:
+                self.finish_stage()
+                return f"pressed {peak * 1000:.1f} mm of {J['hi'] * 1000:.0f} mm and backed off"
+            self.bump("press_short")
+            self.sub = "above"
+            return f"pressed only {peak * 1000:.1f} mm of {J['hi'] * 1000:.0f} mm"
+        raise ValueError(sub)
+
+    def bump(self, k):
+        self.fail_counts[k] = self.fail_counts.get(k, 0) + 1
+
+    def finish_stage(self):
+        self.done_stages.append(self.stage_i)
+        self.stage_i += 1
+        self.sub = "start"
+        self.rel = None
+
+    def set_world(self, st, skip_all_links: bool = False):
+        if self.spec is None:
+            self.ex.set_world(None, None, {}, {})
+            return
+        q = self.q()
+        if skip_all_links:
+            self.ex.set_world(self.spec, self.T_WF(), q, {}, skip_links=tuple(self.spec["links"]))
+        elif st is not None and st.get("link"):
+            self.ex.set_world(self.spec, self.T_WF(), q, {}, skip_links=(st["link"],))
+        else:
+            self.ex.set_world(self.spec, self.T_WF(), q, {})
+
+    def follow(self, st, lab, grasped: bool) -> str:
+        """Small Cartesian follower: plan short straight hand moves that keep the grasp / contact relation to the
+        link at the next joint value (from the MEASURED value each segment) until the goal, a stall or a lost grip."""
+        ex, sp = self.ex, self.spec
+        jn = self.joint_of(st)
+        J = sp["joints"][jn]
+        goal = float(lab["goal"])
+        step = SK.follow_step(J["kind"])
+        tol = 0.01 * J["hi"] if J["type"] == "prismatic" else math.radians(3.0)
+        stall, q_prev = 0, self.q()[jn]
+        a = self.tcp_a()
+        why = None
+        for _ in range(60):
+            qn = self.q()[jn]
+            if abs(qn - goal) <= tol:
+                why = "reached"
+                break
+            T_link = WA.link_world(self.w, st["link"])
+            hand_err = float(np.linalg.norm((T_link @ self.rel)[:3, 3] - ex.tcp_T()[:3, 3]))
+            if hand_err > LOST_M:
+                why = "lost"
+                break
+            q_next = SK.next_value(qn, goal, step)
+            q_all = dict(self.q(), **{jn: q_next})
+            T_link_next = self.T_WF() @ FX.link_T(sp, st["link"], q_all)
+            T = SK.follow_target(T_link_next, self.rel, 0.0 if grasped else SK.PUSH_IN, a)
+            Q = ex.plan_line(T, check=False, step_m=0.006)
+            if Q is None:
+                why = "ik"
+                break
+            ex.run(Q, slow=1.3, target=T)
+            qm = self.q()[jn]
+            if abs(qm - q_prev) < 0.15 * step:
+                stall += 1
+                if stall >= STALL_SEG:
+                    why = "stall"
+                    break
+            else:
+                stall = 0
+            q_prev = qm
+        qn = self.q()[jn]
+        unit = (lambda v: f"{v * 100:.1f} cm") if J["type"] == "prismatic" else (lambda v: f"{math.degrees(v):.0f} deg")
+        if why == "reached" or abs(qn - goal) <= tol:
+            self.sub = lab["next"] if grasped else "retreat"
+            return f"moved along the joint to {unit(qn)} (goal {unit(goal)})"
+        self.bump({"lost": "axis_slip", "stall": "axis_stall", "ik": "axis_unreachable"}.get(why, "axis_short"))
+        if grasped and why == "lost":
+            self.sub = "above"
+            ex.set_gripper(self.w.w_open, False)
+            return f"lost the handle at {unit(qn)} (goal {unit(goal)}); reopened"
+        if grasped:
+            self.sub = "move"  # try again from here (still holding)
+        else:
+            self.sub = "above"
+        return f"stopped at {unit(qn)} (goal {unit(goal)}): {why}"
+
+    def push_object(self, lab) -> str:
+        ex = self.ex
+        k = self.b["tgt"]
+        for _ in range(12):
+            plan = self.push_plan()
+            c_obj = np.asarray(self.w.env.object_pose(k)[0], float)
+            rem = float(np.linalg.norm(plan["goal_xy"] - c_obj[:2]))
+            if rem <= 0.012:
+                break
+            T = plan["T_goal"].copy()
+            p0 = ex.tcp_T()[:3, 3]
+            seg = min(0.03, float(np.linalg.norm(T[:3, 3] - p0)))
+            d = T[:3, 3] - p0
+            if np.linalg.norm(d) < 1e-4:
+                break
+            T[:3, 3] = p0 + d / np.linalg.norm(d) * seg
+            Q = ex.plan_line(T, check=False, step_m=0.006)
+            if Q is None:
+                self.bump("push_unreachable")
+                break
+            ex.run(Q, slow=1.4, target=T)
+        c_obj = np.asarray(self.w.env.object_pose(k)[0], float)
+        err = float(np.linalg.norm(self._push["c0"][:2] + self._push["d"][:2] * self._push["dist"] - c_obj[:2]))
+        self.sub = "retreat"
+        return f"pushed; object {err * 100:.1f} cm from the goal"
+
+    # ---------------------------------------------------------------- loop
+    def run(self) -> dict:
+        from ..astra_solo import nd as ND
+        from ..astra_solo.overlay import png_bytes
+        w = self.w
+        t0 = time.perf_counter()
+        sim_t0 = float(w.env.sim_time)
+        self.ex.video = self.video
+        static = None
+        last_note = None
+        for i in range(1, MAX_CALLS + 1):
+            obs = w.observe(depth=True)
+            lab = self.label(obs)
+            self.calls = i
+            if static is None:
+                static = PA.static(self)
+            text = static + PA.now(self, obs, i, MAX_CALLS)
+            ans = PA.answer(self, lab, last_note)
+            d = os.path.join(self.out_dir, "calls", f"c{i:03d}")
+            os.makedirs(d, exist_ok=True)
+            with open(os.path.join(d, "prompt_v3.txt"), "w", encoding="utf-8", newline="\n") as f:
+                f.write(text)
+            ring, _ = ND.ring_overlay(obs.rgb["head"], obs.cams["head"], obs.tcp)
+            for name, img in (("img1_head_camera.png", obs.rgb["head"]), ("img1_head_ring.png", ring),
+                              ("img2_right_wrist_camera.png", obs.rgb["wrist"])):
+                with open(os.path.join(d, name), "wb") as f:
+                    f.write(png_bytes(np.asarray(img)))
+            with open(os.path.join(d, "cams.json"), "w") as f:
+                json.dump({k: c.to_json() for k, c in obs.cams.items()}, f)
+            if hasattr(w, "other_wrist_save"):
+                w.other_wrist_save(d)
+            if obs.depth and obs.depth.get("head") is not None:
+                np.savez_compressed(os.path.join(d, "head_depth.npz"), depth=np.asarray(obs.depth["head"], np.float32))
+            row = {"call": i, "stage": lab.get("stage"), "sub": lab["sub"], "skill": lab.get("skill"),
+                   "answer": ans, "command": lab["cmd"], "joints": {k: round(v, 5) for k, v in self.q().items()},
+                   "tcp": [round(float(v), 4) for v in self.ex.tcp_T()[:3, 3]], "grip_w": round(self.ex.grip_w(), 4),
+                   "drop": None if lab["cmd"].get("mode") != "point" or lab["cmd"].get("point_2d") is not None
+                   else "not_visible"}
+            try:
+                note = self.execute(lab)
+            except Halt:
+                row["exec_kind"] = "clean"
+                row["outcome"] = "stop"
+                self.rows.append(row)
+                with open(os.path.join(d, "reply.txt"), "w") as f:
+                    f.write(json.dumps(lab["cmd"]))
+                self.end_reason = "stop"
+                break
+            row["exec_kind"] = lab.get("exec_kind", "clean")
+            row["outcome"] = note
+            self.rows.append(row)
+            with open(os.path.join(d, "reply.txt"), "w") as f:
+                f.write(json.dumps(lab["cmd"]))
+            last_note = note
+            self.history.append(f"{i}: {PA.describe(lab['cmd'])} -> {note}")
+            if sum(self.fail_counts.values()) >= 6:
+                self.end_reason = "too_many_failures"
+                break
+        else:
+            self.end_reason = "call_cap"
+        self.ex.hold(1.0)
+        res = self.judge()
+        return {"success": res["ok"], "judge": res, "end_reason": self.end_reason, "n_calls": self.calls,
+                "wall_s": round(time.perf_counter() - t0, 1), "sim_t": round(float(w.env.sim_time) - sim_t0, 2),
+                "fail_counts": dict(self.fail_counts), "draw": {k: (round(v, 4) if isinstance(v, float) else v)
+                                                               for k, v in self.draw.items()}}
+
+    def judge(self) -> dict:
+        prog, sp = self.prog, self.spec
+        out = {"stages": []}
+        ok = self.stage_i >= len(prog["stages"]) and self.end_reason == "stop"
+        q = self.q()
+        for st in prog["stages"]:
+            if st["kind"] in ("pull", "push", "rotate"):
+                jn = self.joint_of(st)
+                J = dict(sp["joints"][jn])
+                goal = st["goal"]
+                jj = dict(prog["judge"])
+                if st["kind"] == "rotate":
+                    jj = {"tol_deg": jj.get("tol_deg", 15.0)}
+                elif prog["combo"]:
+                    jj = {"max_share": jj["max_share"]} if st["kind"] == "push" else {"min_share": 0.75}
+                r = SK.judge_joint(J, q[jn], jj, goal)
+            elif st["kind"] == "press":
+                jn = self.joint_of(st)
+                J = sp["joints"][jn]
+                pk = self.press_peak.get(jn, 0.0)
+                r = {"ok": pk >= prog["judge"].get("press_share", 0.6) * J["hi"], "peak_mm": round(pk * 1000, 2)}
+            elif st["kind"] == "slide":
+                from ..predicates import _tilt_deg
+                k = self.b["tgt"]
+                c, qq = self.w.env.object_pose(k)
+                P = self._push or {}
+                goal = P["c0"][:2] + P["d"][:2] * P["dist"] if P else c[:2]
+                r = SK.judge_push(P.get("c0", c)[:2], np.asarray(c)[:2], goal, float(_tilt_deg(np.asarray(qq))), prog["judge"])
+            else:
+                r = {"ok": False, "why": "stage kind not judged"}
+            out["stages"].append(dict(r, kind=st["kind"]))
+            ok = ok and r["ok"]
+        if prog["combo"] and len(prog["stages"]) > 1 and prog["stages"][0]["kind"] == "rotate":
+            pass
+        out["ok"] = bool(ok)
+        return out
