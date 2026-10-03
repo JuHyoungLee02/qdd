@@ -90,8 +90,35 @@ behind it is found from the logs (no rerun of the same arms to fish for a pass).
 ## Smoke (B without P0)
 2 rows per robot, B only, `/data/harvest/l9v2/gab/smoke1`, e9f3b GPU 0/1. Goal: nothing crashes with all switches on.
 
-## Results
-(pending)
+## Results (main2, dev b4fe4a4c, finished 09:03 KST; `gab/main2/report.json`)
+Verdict by the pre-registered rule: **FAIL** (no robot passes every item). Pooled pass rate B 0.433 vs A 0.381
+(pool_ok). R1 and G1 were topped up per the rule (+60 / +37 rows; G1 has no more production-rendered rows).
+
+| robot | A pass/eps | B pass/eps | skips A / B (rows) | paired A-only / B-only | 0.04 gate over A / B | GT ABA A / B | failing items |
+|---|---|---|---|---|---|---|---|
+| AIW ffw_sg2 | 11/26 (0.42) | 14/22 (0.64) | 5 / 9 | 1 / 4 | 5 / 1 | 0.08 / 0.09 | iqr_x 0.080 < 0.8 × 0.102 (by 1.4 mm) |
+| Franka | 12/25 (0.48) | 13/24 (0.54) | 5 / 6 | 5 / 5 | 1 / 1 | 0.10 / 0.05 | family lost: insert 2/3 → 0/2; top approach oblique 0.59 > 0.54 |
+| R1 Pro | 23/76 (0.30) | 12/34 (0.35) | 16 / 58 | 6 / 4 | 17 / 5 | 0.00 / 0.16 | families lost insert, stack; ABA up |
+| G1 | 18/41 (0.44) | 3/17 (0.18) | 28 / 52 | 4 / 0 | 0 / 0 | 0.00 / 0.10 | success, n < 20, diversity, ABA |
+
+Reading (evidence, not a new rule):
+- AIW and Franka: B is better on success (+21 pp, +6 pp) and AIW on the step gate (1 vs 5 over); skips equal. The
+  failing items are single small-n diversity cells (AIW grasp-x IQR 1.4 mm under the line with 14 vs 11 successes;
+  Franka insert 0/2 and one more oblique grasp). Not a clear harm, but the rule says FAIL; a larger-n recheck of these two
+  cells is the cheap next step.
+- R1 and G1: `L9_ENV_PROFILE` v1 (profile surface + world9 body/stance cell, 919c2ab2) is the cause. B skips 58 of 92
+  R1 rows (A 16) and 52 of 69 G1 rows (A 28): "head: target/place out of view" R1 22 / G1 24, "body joints off (P131)"
+  R1 6 / G1 10, "no valid grasp" R1 24. G1 success also drops (3/17 vs 18/41). Recorded wording (coordinator):
+  **"ENV_PROFILE v1 worsens humanoid throughput."** Profile v2 (e7458ec5 / 3705df9c: camera-coverage ≥ 70 % and body
+  clearance in the cell choice) is judged by autotune's own A/B (`gab/envprof_ab*`), not here.
+- GT ABA appears in B for the humanoids (R1 4/25, G1 1/10 carry episodes; A 0) — label-side round trips, to check
+  with the place-prescription owner (COMMON_EXEC carry range / CARRY_INVIEW are the B-only carry changes).
+- Bug baseline `gab/main` (b69a765, no world9 profile consumer) is kept, not judged.
+
+Related hand-over checks (10-03 09h): grip-layer A/B (`gripab`, 724a10d, off/on): AIW 10/19 vs 10/20, Franka 14/23 vs
+14/23, R1 6/15 vs 8/15, empty-hand FP/FN 0 both arms (Franka empty closes 2 → 12, the gap judge). r2-cams rebuild
+compare `cams_check/cmp.txt`: 2,665 / 2,665 rows identical except the tag. G1 runtime smoke2 (0f74476 vs 8a2ba0f):
+5/13 vs 5/13.
 
 ## Confirmation A/B (pre-registered 07:4x KST, coordinator decision; starts after the P0 re-smoke passes)
 - A = main2's B (all general elements). B = A + `L9V2_PLACE_ABOVE=1 L9V2_PLACE_TOL=1 L9V2_PLACE_HYST=1` (P0 + (a) + (d),
