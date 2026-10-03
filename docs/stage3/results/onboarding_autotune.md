@@ -122,11 +122,36 @@ The R1 Pro sweep covers 216 torso configs and 5.7 M IK.
 - **Franka**: the hand stand drop (0–0.12 m below the surface) sits inside the auto stand range (−0.40..+0.10). The
   auto range is wider, which adds diversity, at a near-equal score (0.90 vs 0.87).
 
-## Stage 3: short sim confirmation (≥20 episodes, auto vs hand) — pending
+## Stage 3: sim A/B, env profile only (envprof_ab5 + ab5x, 2026-10-03)
 
-The profiles are on dev (8ee26d03) and go into the integrated all-general A/B (agent ad8d597abf00e0fe7,
-B arm `L9_ENV_PROFILE=1`, ≈08:30 KST, lanes via the L9 owner, judged with `tools/l9/robot_gate9.py`). This doc will
-get the per-robot success rates (auto vs hand, ≥20 episodes each). Until then the pass verdict above is offline only.
+Setup:
+- Code: dev 3705df9c, profiles v2 (41bf10aa). Profile cells require >= 70 % of the work band in the robot's own
+  camera view and body clearance from the furniture.
+- Consumer: uses the cell torso and stance with no AIW keep-out clamp, and places objects inside the arm work_mask.
+- Arms: same rows and seeds in both. A = L9_ENV_PROFILE off, B = on, nothing else differs.
+- Rows: 20 per robot, plus 25 more each for R1 and G1. Run on e9f3 GPU1, 6 lanes.
+- Dirs: /data/harvest/l9v2/gab/envprof_ab5{,x} (report.txt).
+- Not used for the verdict: ab (d8f8cb9, no consumer, so B == A), ab2 (profile v1, humanoid out-of-view skips) and
+  ab3/ab4 (replaced before any result).
+
+| robot | A success / rendered | B success / rendered | B skips that A did not have |
+|---|---|---|---|
+| AIW | 3/7 | 3/7 | none (identical episodes; the profile is only consumed on the R1/G1 path) |
+| Franka | 6/12 | 6/12 | none (identical) |
+| R1 Pro | 2/9 | 0/7 | reach 12 vs 5 (work_mask final check), out of view 5 vs 2 |
+| G1 | 3/16 | 3/9 | out of view 7 vs 2 |
+
+Head camera, 5 frames per row (`autotune_out/frames/headcam_sheet_ab5.png`):
+- R1 B frames show the table at an angle from above, as in A and AIW.
+- Many G1 B frames are close-ups where the arm covers up to about 1/3 of the image, which is less natural than AIW.
+
+**Verdict: not adopted for the general spec in this round.** Neither rendered rows nor successes improve, and R1 is
+worse. No humanoid reached 20 rendered episodes in either arm. So this shows no gain; it does not prove harm.
+
+Before discarding (re-check rule), candidates for the next round:
+- a G1 stance floor against close-ups;
+- the final mask check uses the drawn cell's own reach/view mask instead of the all-cells mean;
+- the surface height comes from the profile only where the robot's own reach band agrees (grip-layer 20e4a27 issue).
 
 ## Caveats (the "re-check before discarding" rule)
 
