@@ -654,6 +654,7 @@ GRAVITY_BOX_HALF = (0.025, 0.025, 0.03)  # m, coarse stand-in for the other arm'
 # was the #1 real B failure (6/7 executed-episode failures) -- same root cause, smaller object this time. Still a
 # box, not the real links (R1 stands); if real collisions start showing up in frame review, grow this back up.
 ZONE_TRIES = 12  # extra live handover points tried when the drawn one fails either arm
+HOLD_NEAR_M = 0.10  # object centre within this of a hand's TCP = that hand holds it (overlap gate)
 HANDOVER_SWEEP = 0.03  # m of the receiver's straight approach checked against the giver's hand (fingers + palm, no
 # wrist extension): bimdeep a15 10-03, with 10 cm + the 6 cm wrist no receiver grasp of any bottle survived
 ZONE_DX = (0.20, 0.30, 0.40)  # m ahead of the arms' base-link midpoint (live handover grid)
@@ -950,6 +951,19 @@ class HandoverRuntime:
         rw = env.gripper_width()
         env.use_arm(env.primary)
         if holding(gw, self.giver.width, RT.EMPTY_M) and holding(rw, self.receiver.width, RT.EMPTY_M):
+            # ... and the object is in BOTH hands, not lying somewhere (bimdeep a31 10-03: a bottle the giver had lost
+            # on the table was picked up by the receiver while the giver's empty fingers read a 3+ mm gap -- the
+            # gate counted 30 'overlap' ticks; frames + carry error 44 cm showed no handover)
+            k = getattr(self, "_obj_key", None)
+            if k is not None:
+                c = np.asarray(env.object_pose(k)[0], float)
+                d = []
+                for slot in (self.giver, self.receiver):
+                    env.use_arm(slot.arm)
+                    d.append(float(np.linalg.norm(slot.rt.tcp_T()[:3, 3] - c)))
+                env.use_arm(env.primary)
+                if max(d) > HOLD_NEAR_M:
+                    return
             self.overlap_ticks += 1
 
     def _snap(self, name: str) -> None:
@@ -1325,6 +1339,7 @@ class HandoverRuntime:
             env.use_arm(env.primary)
 
     def _run_episode(self, obj_key: str, table_z: float, seed: int, episode_idx: int, final_xy=None) -> dict:
+        self._obj_key = obj_key
         zone, cell = zone_point(self.profile, table_z, seed, episode_idx)
         if final_xy is None:
             f = final_spot_xyz(zone, self.receiver.arm)
@@ -1415,9 +1430,15 @@ class HandoverRuntime:
         # cm over the table) -- out of reach, 'no collision-free path' in 4 of 4 BIM_DEBUG lift failures. Clear the
         # support only; the translate move takes it to the zone height.
         lift_xyz[2] = lift_xyz[2] + 0.08
+        z_obj0 = float(self.world.env.object_pose(obj_key)[0][2])
         r = self._move_to(self.giver, lift_xyz, below_z=float(table_z) - 0.02)
+        rise = float(self.world.env.object_pose(obj_key)[0][2]) - z_obj0
+        r["rise_cm"] = round(rise * 100, 1)
         log.append({"phase": "giver_lift_waypoint", **r})
         if not r["ok"]:
+            return {"ok": False, "log": log}
+        if rise < 0.03:  # the object did not come up with the giver's hand: not a handover any more
+            log[-1].update(ok=False, status=f"object not lifted ({rise * 100:.1f} cm)")
             return {"ok": False, "log": log}
         # owner 2026-10-03 (2hr checkpoint follow-up): split the remaining translation+rotation into two moves
         # instead of one -- translate to carry_pos FIRST, keeping the current (lift) orientation (quat_wxyz=None),
