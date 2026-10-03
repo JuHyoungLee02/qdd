@@ -27,6 +27,11 @@ off_s1_v4(시드1)는 아직 평가 전이라 포함 못 함, 끝나면 추가.
 - **(c) approach/rot 예측가능성**: task_def별 approach 엔트로피 평균 0.82비트(균등 4종 최대 2.0) — **완전 무작위는 아니고 과제마다 꽤 결정돼 있음**(일부는 엔트로피 0, 전부 한 방향). grasp_v2.picks의 `instructed_approach`(지시로 강제한 방향) 비율은 샘플 79편 중 13건뿐 — 대부분은 지시가 아니라 **도달성 등 장면에서 정해짐**, 화면에서 원칙적으로 배울 수 있는 정보라는 뜻.
 - **(d) 채점 범위**: 정상 — approach/rot 라벨이 있는 575행 전부 `step`이 `above_target`/`descend_close`(잡기 단계)뿐, 다른 단계 행 섞임 없음.
 
+## (1c) 누락 원인 가설 — 형식 줄에 approach/rot/arm이 안 적혀 있어서(확인 실험 'fmtfix' 진행 중)
+
+- **단계별 확인(새 학습 없이, off_v4 바로)**: 정답은 above_target·descend_close **두 단계 모두 100%** approach/rot을 갖는다(285/285, 290/290) — 라벨이 한쪽 단계에만 있고 모델이 그 패턴을 따라간 게 아니다. 모델의 전체-누락(approach·rot 둘 다 없음) 비율도 두 단계가 비슷하다(above_target 56.5%, descend_close 60.7%) — **누락은 단계가 아니라 형식 줄 자체를 따라간 결과로 보인다.**
+- **확인 실험 'fmtfix'**: off_v4와 같은 편·같은 걸음 수(302)·시드 0. 라벨은 그대로 두되(hand·arm은 같은 뜻이라 arm 하나로 합침, 둘이 다른 적은 1,702행 중 0건) **프롬프트의 "Return JSON only" 형식 줄에 approach·rot·arm을 직접 나열**(`x8b2_build_fmtfix.py`, GRASP 블록·중복 문장은 그대로 두고 형식 줄만 수정). juhyoung-0에서 CPU 빌드 중, x2 큐(fieldsB 다음)에 걸어둠 — 끝나면 누락 비율·필드별 정확도(포함/제외)·point px·action을 이 절에 추가.
+
 ## (2) 비교 학습 A(F1=전체형식, off_v4 재사용) vs B(F2=점·높이·그리퍼만, fieldsB)
 
 - 같은 편(episodes_g2.json, gen2 1,381train/300eval)·같은 걸음 수(302, off_v4와 동일)·시드 0.
